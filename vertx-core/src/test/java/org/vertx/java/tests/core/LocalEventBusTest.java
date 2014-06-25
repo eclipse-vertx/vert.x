@@ -28,9 +28,7 @@ import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.http.HttpClientOptions;
 import org.vertx.java.core.http.HttpServerOptions;
 import org.vertx.java.core.http.RequestOptions;
-import org.vertx.java.core.impl.ConcurrentHashSet;
-import org.vertx.java.core.impl.ContextImpl;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -577,24 +575,61 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testInVerticle() throws Exception {
+    testInVerticle(false, false);
+  }
+
+  @Test
+  public void testInWorkerVerticle() throws Exception {
+    testInVerticle(true, false);
+  }
+
+  @Test
+  public void testInMultithreadedWorkerVerticle() throws Exception {
+    testInVerticle(true, true);
+  }
+
+  private void testInVerticle(boolean  worker, boolean multiThreaded) throws Exception {
     class MyVerticle extends AbstractVerticle {
-      AtomicInteger cnt = new AtomicInteger();
+      Context ctx;
       @Override
       public void start() {
+        ctx = vertx.currentContext();
+        if (worker) {
+          if (multiThreaded) {
+            assertTrue(ctx instanceof MultiThreadedWorkerContext);
+          } else {
+            assertTrue(ctx instanceof WorkerContext && !(ctx instanceof MultiThreadedWorkerContext));
+          }
+        } else {
+          assertTrue(ctx instanceof EventLoopContext);
+        }
         Thread thr = Thread.currentThread();
-        vertx.eventBus().registerHandler(ADDRESS1, msg -> {
-          assertSame(thr, Thread.currentThread());
+        Registration reg = vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+          assertSame(ctx, vertx.currentContext());
+          if (!worker) {
+            assertSame(thr, Thread.currentThread());
+          }
           msg.reply("bar");
         });
-        vertx.eventBus().send(ADDRESS1, "foo", reply -> {
-          assertSame(thr, Thread.currentThread());
-          assertEquals("bar", reply.body());
-          testComplete();
+        reg.doneHandler(ar -> {
+          assertTrue(ar.succeeded());
+          assertSame(ctx, vertx.currentContext());
+          if (!worker) {
+            assertSame(thr, Thread.currentThread());
+          }
+          vertx.eventBus().send(ADDRESS1, "foo", reply -> {
+            assertSame(ctx, vertx.currentContext());
+            if (!worker) {
+              assertSame(thr, Thread.currentThread());
+            }
+            assertEquals("bar", reply.body());
+            testComplete();
+          });
         });
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle);
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded));
     await();
   }
 

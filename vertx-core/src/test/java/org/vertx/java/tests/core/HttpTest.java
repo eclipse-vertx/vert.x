@@ -25,9 +25,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.http.*;
 import org.vertx.java.core.http.impl.HttpHeadersAdapter;
-import org.vertx.java.core.impl.ConcurrentHashSet;
-import org.vertx.java.core.impl.ContextImpl;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.net.NetClientOptions;
 import org.vertx.java.core.net.NetServerOptions;
 import org.vertx.java.core.net.NetSocket;
@@ -64,7 +62,6 @@ public class HttpTest extends HttpTestBase {
     testDir.deleteOnExit();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
     client = vertx.createHttpClient(new HttpClientOptions());
-    System.out.println("====================================================");
   }
 
   @Test
@@ -1626,7 +1623,6 @@ public class HttpTest extends HttpTestBase {
     HttpServer[] servers = new HttpServer[numServers];
     CountDownLatch startServerLatch = new CountDownLatch(numServers);
     Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
-    AtomicInteger res = new AtomicInteger(0);
     for (int i = 0; i < numServers; i++) {
       HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
       server.requestHandler(req -> {
@@ -1643,7 +1639,6 @@ public class HttpTest extends HttpTestBase {
     awaitLatch(startServerLatch);
 
     CountDownLatch reqLatch = new CountDownLatch(requests);
-    AtomicInteger reqs = new AtomicInteger(0);
     for (int count = 0; count < requests; count++) {
       client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
         assertEquals(200, resp.statusCode());
@@ -2956,24 +2951,48 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testInVerticle() throws Exception {
+    testInVerticle(false);
+  }
+
+  @Test
+  public void testInWorkerVerticle() throws Exception {
+    testInVerticle(true);
+  }
+
+  private void testInVerticle(boolean worker) throws Exception {
     client.close();
     server.close();
     class MyVerticle extends AbstractVerticle {
+      Context ctx;
       @Override
       public void start() {
+        ctx = vertx.currentContext();
+        if (worker) {
+          assertTrue(ctx instanceof WorkerContext);
+        } else {
+          assertTrue(ctx instanceof EventLoopContext);
+        }
         Thread thr = Thread.currentThread();
         server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
-          assertSame(thr, Thread.currentThread());
+          assertSame(ctx, vertx.currentContext());
+          if (!worker) {
+            assertSame(thr, Thread.currentThread());
+          }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(thr, Thread.currentThread());
+          assertSame(ctx, vertx.currentContext());
+          if (!worker) {
+            assertSame(thr, Thread.currentThread());
+          }
           client = vertx.createHttpClient(new HttpClientOptions());
           client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT), res -> {
-            assertSame(thr, Thread.currentThread());
-            assertSame(thr, Thread.currentThread());
+            assertSame(ctx, vertx.currentContext());
+            if (!worker) {
+              assertSame(thr, Thread.currentThread());
+            }
             assertEquals(200, res.statusCode());
             testComplete();
           });
@@ -2981,7 +3000,7 @@ public class HttpTest extends HttpTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle);
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker));
     await();
   }
 

@@ -23,9 +23,7 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.Registration;
-import org.vertx.java.core.impl.ConcurrentHashSet;
-import org.vertx.java.core.impl.ContextImpl;
-import org.vertx.java.core.impl.VertxInternal;
+import org.vertx.java.core.impl.*;
 import org.vertx.java.core.net.*;
 import org.vertx.java.core.net.impl.SocketDefaults;
 
@@ -1299,30 +1297,58 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testInVerticle() throws Exception {
+    testInVerticle(false);
+  }
+
+  @Test
+  public void testInWorkerVerticle() throws Exception {
+    testInVerticle(true);
+  }
+
+  private void testInVerticle(boolean worker) throws Exception {
     client.close();
     server.close();
     class MyVerticle extends AbstractVerticle {
+      Context ctx;
       @Override
       public void start() {
+        ctx = vertx.currentContext();
+        if (worker) {
+          assertTrue(ctx instanceof WorkerContext);
+        } else {
+          assertTrue(ctx instanceof EventLoopContext);
+        }
         Thread thr = Thread.currentThread();
         server = vertx.createNetServer(new NetServerOptions().setPort(1234));
         server.connectHandler(sock -> {
           sock.dataHandler(sock::write);
-          assertSame(thr, Thread.currentThread());
+          assertSame(ctx, vertx.currentContext());
+          if (!worker) {
+            assertSame(thr, Thread.currentThread());
+          }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(thr, Thread.currentThread());
+          assertSame(ctx, vertx.currentContext());
+          if (!worker) {
+            assertSame(thr, Thread.currentThread());
+          }
           client = vertx.createNetClient(new NetClientOptions());
           client.connect(1234, ar2 -> {
-            assertSame(thr, Thread.currentThread());
+            assertSame(ctx, vertx.currentContext());
+            if (!worker) {
+              assertSame(thr, Thread.currentThread());
+            }
             assertTrue(ar2.succeeded());
             NetSocket sock = ar2.result();
             Buffer buff = randomBuffer(10000);
             sock.write(buff);
             Buffer brec = new Buffer();
             sock.dataHandler(rec -> {
-              assertSame(thr, Thread.currentThread());
+              assertSame(ctx, vertx.currentContext());
+              if (!worker) {
+                assertSame(thr, Thread.currentThread());
+              }
               brec.appendBuffer(rec);
               if (brec.length() == buff.length()) {
                 testComplete();
@@ -1333,12 +1359,12 @@ public class NetTest extends VertxTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle);
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker));
     await();
   }
 
   @Test
-  public void testUseInMultithreadedWorker() throws Exception {
+  public void testInMultithreadedWorker() throws Exception {
     class MyVerticle extends AbstractVerticle {
       @Override
       public void start() {

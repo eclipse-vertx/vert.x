@@ -164,10 +164,6 @@ public abstract class ConnectionBase {
     }
   }
 
-//  protected void setContext() {
-//    vertx.setContext(context);
-//  }
-
   protected void handleHandlerException(Throwable t) {
     vertx.reportException(t);
   }
