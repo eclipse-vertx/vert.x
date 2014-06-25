@@ -56,6 +56,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private boolean paused = false;
   private SSLHelper helper;
   private boolean client;
+  private ChannelFuture writeFuture;
 
   public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client) {
     super(vertx, channel, context);
@@ -226,64 +227,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
   }
 
-  protected ContextImpl getContext() {
-    return super.getContext();
-  }
-
-  protected void handleClosed() {
-    checkContext();
-    if (endHandler != null) {
-      try {
-        endHandler.handle(null);
-      } catch (Throwable t) {
-        handleHandlerException(t);
-      }
-    }
-    super.handleClosed();
-    if (vertx.eventBus() != null) {
-      registration.unregister();
-    }
-  }
-
   public void handleInterestedOpsChanged() {
     checkContext();
     callDrainHandler();
-  }
-
-  void handleDataReceived(Buffer data) {
-    checkContext();
-    if (paused) {
-      if (pendingData == null) {
-        pendingData = new ArrayDeque<>();
-      }
-      pendingData.add(data);
-      return;
-    }
-    if (dataHandler != null) {
-      try {
-        dataHandler.handle(data);
-      } catch (Throwable t) {
-        handleHandlerException(t);
-      }
-    }
-  }
-
-  private ChannelFuture writeFuture;
-
-  private void write(ByteBuf buff) {
-    writeFuture = super.write(buff);
-  }
-
-  private void callDrainHandler() {
-    if (drainHandler != null) {
-      if (!writeQueueFull()) {
-        try {
-          drainHandler.handle(null);
-        } catch (Throwable t) {
-          handleHandlerException(t);
-        }
-      }
-    }
   }
 
   @Override
@@ -312,5 +258,60 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   public boolean isSsl() {
     return channel.pipeline().get(SslHandler.class) != null;
   }
+
+  protected ContextImpl getContext() {
+    return super.getContext();
+  }
+
+  protected void handleClosed() {
+    checkContext();
+    if (endHandler != null) {
+      try {
+        endHandler.handle(null);
+      } catch (Throwable t) {
+        handleHandlerException(t);
+      }
+    }
+    super.handleClosed();
+    if (vertx.eventBus() != null) {
+      registration.unregister();
+    }
+  }
+
+
+  void handleDataReceived(Buffer data) {
+    checkContext();
+    if (paused) {
+      if (pendingData == null) {
+        pendingData = new ArrayDeque<>();
+      }
+      pendingData.add(data);
+      return;
+    }
+    if (dataHandler != null) {
+      try {
+        dataHandler.handle(data);
+      } catch (Throwable t) {
+        handleHandlerException(t);
+      }
+    }
+  }
+
+  private void write(ByteBuf buff) {
+    writeFuture = super.write(buff);
+  }
+
+  private void callDrainHandler() {
+    if (drainHandler != null) {
+      if (!writeQueueFull()) {
+        try {
+          drainHandler.handle(null);
+        } catch (Throwable t) {
+          handleHandlerException(t);
+        }
+      }
+    }
+  }
+
 }
 

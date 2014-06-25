@@ -705,6 +705,31 @@ public class BufferTest {
     buff = new Buffer(bytes);
     assertEquals(buff.length(), bytes.length);
     assertTrue(buffersEqual(new Buffer(bytes), new Buffer(buff.getBytes())));
+  }
 
+  @Test
+  public void testSlice1() throws Exception {
+    Buffer buff = randomBuffer(100);
+    Buffer sliced = buff.slice();
+    assertTrue(buffersEqual(buff, sliced));
+    long rand = randomLong();
+    sliced.setLong(0, rand);
+    assertEquals(rand, buff.getLong(0));
+    buff.appendString(randomUnicodeString(100));
+    assertEquals(100, sliced.length());
+  }
+
+  @Test
+  public void testSlice2() throws Exception {
+    Buffer buff = randomBuffer(100);
+    Buffer sliced = buff.slice(10, 20);
+    for (int i = 0; i < 10; i++) {
+      assertEquals(buff.getByte(10 + i), sliced.getByte(i));
+    }
+    long rand = randomLong();
+    sliced.setLong(0, rand);
+    assertEquals(rand, buff.getLong(10));
+    buff.appendString(randomUnicodeString(100));
+    assertEquals(10, sliced.length());
   }
 }

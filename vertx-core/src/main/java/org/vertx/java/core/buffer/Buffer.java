@@ -224,7 +224,7 @@ public class Buffer {
    * any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendBuffer(Buffer buff, int offset,int len) {
+  public Buffer appendBuffer(Buffer buff, int offset, int len) {
     buffer.writeBytes(buff.getByteBuf(), offset, len);
     return this;
   }
@@ -460,6 +460,24 @@ public class Buffer {
    */
   public Buffer copy() {
     return new Buffer(buffer.copy());
+  }
+
+  /**
+   * Returns a slice of this buffer. Modifying the content
+   * of the returned buffer or this buffer affects each other's content
+   * while they maintain separate indexes and marks.
+   */
+  public Buffer slice() {
+    return new Buffer(buffer.slice());
+  }
+
+  /**
+   * Returns a slice of this buffer. Modifying the content
+   * of the returned buffer or this buffer affects each other's content
+   * while they maintain separate indexes and marks.
+   */
+  public Buffer slice(int start, int end) {
+    return new Buffer(buffer.slice(start, end - start));
   }
 
   /**
