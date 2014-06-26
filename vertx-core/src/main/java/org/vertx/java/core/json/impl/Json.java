@@ -17,7 +17,6 @@
 package org.vertx.java.core.json.impl;
 
 
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -35,6 +34,8 @@ public class Json {
   static {
     // Non-standard JSON but we allow C style comments in our JSON
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+
+    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
   }
 
   public static String encode(Object obj) throws EncodeException {
@@ -62,10 +63,6 @@ public class Json {
     catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage());
     }
-  }
-
-  static {
- 	 	prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
   }
 
 }
