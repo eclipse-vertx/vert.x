@@ -22,8 +22,10 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
@@ -53,6 +55,13 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
 
   @Override
   protected void channelRead(final C connection, final DefaultContext context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
+    if (msg instanceof HttpObject) {
+        DecoderResult result = ((HttpObject) msg).getDecoderResult();
+        if (result.isFailure()) {
+            chctx.pipeline().fireExceptionCaught(result.cause());
+            return;
+        }
+    }
     if (connection != null) {
       // we are reading from the channel
       Channel ch = chctx.channel();

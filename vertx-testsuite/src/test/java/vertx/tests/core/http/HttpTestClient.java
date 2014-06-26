@@ -3434,6 +3434,43 @@ public class HttpTestClient extends TestClientBase {
       }
     }, handler);
   }
+
+  public void testRequestHandlerNotCalledInvalidRequest() throws Exception {
+    if (compression()) {
+      tu.testComplete();
+      return;
+    }
+
+    AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
+      @Override
+      public void handle(AsyncResult<HttpServer> ar) {
+        tu.azzert(ar.succeeded());
+        vertx.createNetClient().connect(8080, "127.0.0.1", new AsyncResultHandler<NetSocket>() {
+          @Override
+          public void handle(AsyncResult<NetSocket> event) {
+            NetSocket socket = event.result();
+            socket.closeHandler(new Handler<Void>() {
+              @Override
+              public void handle(Void event) {
+                tu.testComplete();
+              }
+            });
+            socket.write("GET HTTP/1.1\r\n");
+
+            // trigger another write to be sure we detect that the other peer has closed the connection.
+            socket.write("X-Header: test\r\n");
+          }
+        });
+      }
+    };
+
+    startServer(new Handler<HttpServerRequest>() {
+      public void handle(final HttpServerRequest req) {
+        // should never be called as we issue a malformed HTTP GET...
+        tu.azzert(false);
+      }
+    }, handler);
+  }
 }
 
 
