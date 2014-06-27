@@ -107,28 +107,31 @@ public class VertxImpl implements VertxInternal {
   }
 
   public VertxImpl(VertxOptions options) {
-    this.clusterManager = null;
-    this.eventBus = new EventBusImpl(this);
-    configurePools(options);
+    this(options, null);
   }
 
   public VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     configurePools(options);
-    this.clusterManager = getClusterManager(options);
-    this.clusterManager.setVertx(this);
-    this.clusterManager.join();
-    Vertx inst = this;
-    this.eventBus = new EventBusImpl(this, options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
-      if (resultHandler != null) {
-        if (res.succeeded()) {
-          resultHandler.handle(new FutureResultImpl<>(inst));
-        } else {
-          resultHandler.handle(new FutureResultImpl<>(res.cause()));
+    if (options.isClustered()) {
+      this.clusterManager = getClusterManager(options);
+      this.clusterManager.setVertx(this);
+      this.clusterManager.join();
+      Vertx inst = this;
+      this.eventBus = new EventBusImpl(this, options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
+        if (resultHandler != null) {
+          if (res.succeeded()) {
+            resultHandler.handle(new FutureResultImpl<>(inst));
+          } else {
+            resultHandler.handle(new FutureResultImpl<>(res.cause()));
+          }
+        } else if (res.failed()) {
+          log.error("Failed to start event bus", res.cause());
         }
-      } else if (res.failed()) {
-        log.error("Failed to start event bus", res.cause());
-      }
-    });
+      });
+    } else {
+      this.clusterManager = null;
+      this.eventBus = new EventBusImpl(this);
+    }
   }
 
   /**
