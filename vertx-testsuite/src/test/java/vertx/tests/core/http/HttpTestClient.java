@@ -17,6 +17,7 @@
 package vertx.tests.core.http;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
@@ -1408,13 +1409,17 @@ public class HttpTestClient extends TestClientBase {
     testStatusCode(-1, null);
   }
 
-  public void testOtherStatus() {
+  public void testDefaultOther() {
     // Doesn't really matter which one we choose
     testStatusCode(405, null);
   }
 
-  public void testStatusMessage() {
+  public void testOverrideStatusMessage() {
     testStatusCode(404, "some message");
+  }
+
+  public void testOverrideDefaultStatusMessage() {
+    testStatusCode(-1, "some other message");
   }
 
   private void testStatusCode(final int code, final String statusMessage) {
@@ -1425,13 +1430,18 @@ public class HttpTestClient extends TestClientBase {
         HttpClientRequest req = getRequest(true, "GET", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
-            if (code != -1) {
-              tu.azzert(resp.statusCode() == code);
+            int theCode;
+            if (code == -1) {
+              // Default code - 200
+              tu.azzert(200 == resp.statusCode());
+              theCode = 200;
             } else {
-              tu.azzert(resp.statusCode() == 200);
+              theCode = code;
             }
             if (statusMessage != null) {
               tu.azzert(statusMessage.equals(resp.statusMessage()));
+            } else {
+              tu.azzert(HttpResponseStatus.valueOf(theCode).reasonPhrase().equals(resp.statusMessage()));
             }
             tu.testComplete();
           }

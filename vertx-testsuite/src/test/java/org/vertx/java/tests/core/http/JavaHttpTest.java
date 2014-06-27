@@ -311,11 +311,15 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
-  public void testOtherStatus() {
+  public void testDefaultOther() {
     startTest(getMethodName());
   }
 
-  public void testStatusMessage() {
+  public void testOverrideStatusMessage() {
+    startTest(getMethodName());
+  }
+
+  public void testOverrideDefaultStatusMessage() {
     startTest(getMethodName());
   }
 
