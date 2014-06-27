@@ -43,6 +43,9 @@ import java.security.cert.X509Certificate;
 import java.util.Set;
 
 /**
+ *
+ * This is a pretty sucky class - could do with a refactoring
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SSLHelper {
@@ -196,10 +199,10 @@ public class SSLHelper {
     }
     SSLEngine engine = sslContext.createSSLEngine();
     String[] current = engine.getSupportedCipherSuites();
-    System.out.println("Enabled cipher suites:");
-    for (String str: current) {
-      System.out.println("\"" + str+ "\",");
-    }
+//    System.out.println("Enabled cipher suites:");
+//    for (String str: current) {
+//      System.out.println("\"" + str+ "\",");
+//    }
 
     if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);

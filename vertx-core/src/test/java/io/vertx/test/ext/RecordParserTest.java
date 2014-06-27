@@ -18,10 +18,9 @@ package io.vertx.test.ext;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.ext.parsetools.RecordParser;
+import io.vertx.core.parsetools.RecordParser;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
-import io.vertx.test.core.TestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
