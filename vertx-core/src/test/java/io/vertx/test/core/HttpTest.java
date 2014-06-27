@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -1178,14 +1179,19 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testOtherStatus() {
+  public void testDefaultOther() {
     // Doesn't really matter which one we choose
     testStatusCode(405, null);
   }
 
   @Test
-  public void testStatusMessage() {
+  public void testOverrideStatusMessage() {
     testStatusCode(404, "some message");
+  }
+
+  @Test
+  public void testOverrideDefaultStatusMessage() {
+    testStatusCode(-1, "some other message");
   }
 
   private void testStatusCode(int code, String statusMessage) {
@@ -1201,13 +1207,18 @@ public class HttpTest extends HttpTestBase {
 
     server.listen(onSuccess(s -> {
       client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
-        if (code != -1) {
-          assertEquals(code, resp.statusCode());
-        } else {
+        int theCode;
+        if (code == -1) {
+          // Default code - 200
           assertEquals(200, resp.statusCode());
+          theCode = 200;
+        } else {
+          theCode = code;
         }
         if (statusMessage != null) {
           assertEquals(statusMessage, resp.statusMessage());
+        } else {
+          assertEquals(HttpResponseStatus.valueOf(theCode).reasonPhrase(), resp.statusMessage());
         }
         testComplete();
       });
