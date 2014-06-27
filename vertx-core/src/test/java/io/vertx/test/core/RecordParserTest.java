@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.test.ext;
+package io.vertx.test.core;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
