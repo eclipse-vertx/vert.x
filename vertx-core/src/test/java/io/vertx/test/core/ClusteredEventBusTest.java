@@ -23,17 +23,17 @@ import io.vertx.core.VertxFactory;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.Registration;
-import io.vertx.test.fakecluster.FakeClusterManagerFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import io.vertx.test.fakecluster.FakeClusterManagerFactory;
+import org.junit.After;
+
+import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -43,10 +43,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   private Vertx[] vertices;
   private static final String ADDRESS1 = "some-address1";
 
-  @Before
-  public void before() throws Exception {
-    System.setProperty("vertx.clusterManagerFactory", FakeClusterManagerFactory.class.getCanonicalName());
-    //System.setProperty("vertx.clusterManagerFactory", HazelcastClusterManagerFactory.class.getCanonicalName());
+  protected ClusterManager getClusterManager() {
+    return new FakeClusterManager();
   }
 
   @After
@@ -160,7 +158,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      VertxFactory.newVertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0), ar -> {
+      VertxFactory.newVertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0).setClustered(true)
+                            .setClusterManager(getClusterManager()), ar -> {
         assertTrue("Failed to start node", ar.succeeded());
         vertices[index] = ar.result();
         latch.countDown();

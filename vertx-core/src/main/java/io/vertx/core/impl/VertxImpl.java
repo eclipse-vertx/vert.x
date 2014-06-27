@@ -56,7 +56,6 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.ClusterManagerFactory;
 import io.vertx.ext.sockjs.SockJSServer;
 
 import java.util.HashMap;
@@ -115,24 +114,8 @@ public class VertxImpl implements VertxInternal {
 
   public VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     configurePools(options);
-    ClusterManagerFactory factory;
-    String clusterManagerFactoryClassName = System.getProperty("vertx.clusterManagerFactory");
-    if (clusterManagerFactoryClassName != null) {
-      // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
-      try {
-        Class<?> clazz = Class.forName(clusterManagerFactoryClassName);
-        factory = (ClusterManagerFactory)clazz.newInstance();
-      } catch (Exception e) {
-        throw new IllegalStateException("Failed to instantiate " + clusterManagerFactoryClassName, e);
-      }
-    } else {
-      ServiceLoader<ClusterManagerFactory> factories = ServiceLoader.load(ClusterManagerFactory.class);
-      if (!factories.iterator().hasNext()) {
-        throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
-      }
-      factory = factories.iterator().next();
-    }
-    this.clusterManager = factory.createClusterManager(this);
+    this.clusterManager = getClusterManager(options);
+    this.clusterManager.setVertx(this);
     this.clusterManager.join();
     Vertx inst = this;
     this.eventBus = new EventBusImpl(this, options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
@@ -277,6 +260,35 @@ public class VertxImpl implements VertxInternal {
   @Override
   public DnsClient createDnsClient(int port, String host) {
     return new DnsClientImpl(this, port, host);
+  }
+
+  private ClusterManager getClusterManager(VertxOptions options) {
+    if (options.isClustered()) {
+      if (options.getClusterManager() != null) {
+        return options.getClusterManager();
+      } else {
+        ClusterManager mgr;
+        String clusterManagerClassName = System.getProperty("vertx.clusterManager");
+        if (clusterManagerClassName != null) {
+          // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
+          try {
+            Class<?> clazz = Class.forName(clusterManagerClassName);
+            mgr = (ClusterManager)clazz.newInstance();
+          } catch (Exception e) {
+            throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
+          }
+        } else {
+          ServiceLoader<ClusterManager> mgrs = ServiceLoader.load(ClusterManager.class);
+          if (!mgrs.iterator().hasNext()) {
+            throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
+          }
+          mgr = mgrs.iterator().next();
+        }
+        return mgr;
+      }
+    } else {
+      return null;
+    }
   }
 
   private long scheduleTimeout(ContextImpl context, Handler<Long> handler, long delay, boolean periodic) {

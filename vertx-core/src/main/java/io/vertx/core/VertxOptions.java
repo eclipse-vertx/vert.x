@@ -16,6 +16,8 @@
 
 package io.vertx.core;
 
+import io.vertx.core.spi.cluster.ClusterManager;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -29,6 +31,7 @@ public class VertxOptions {
   private long blockedThreadCheckPeriod = 1000;
   private long maxEventLoopExecuteTime = 2000l * 1000000;
   private long maxWorkerExecuteTime = 1l * 60 * 1000 * 1000000;
+  private ClusterManager clusterManager;
 
   public VertxOptions() {
   }
@@ -42,6 +45,7 @@ public class VertxOptions {
     this.blockedThreadCheckPeriod = other.blockedThreadCheckPeriod;
     this.maxEventLoopExecuteTime = other.maxEventLoopExecuteTime;
     this.maxWorkerExecuteTime = other.maxWorkerExecuteTime;
+    this.clusterManager = other.clusterManager;
   }
 
   public int getEventLoopPoolSize() {
@@ -131,6 +135,15 @@ public class VertxOptions {
       throw new IllegalArgumentException("maxWorkerpExecuteTime must be > 0");
     }
     this.maxWorkerExecuteTime = maxWorkerExecuteTime;
+    return this;
+  }
+
+  public ClusterManager getClusterManager() {
+    return clusterManager;
+  }
+
+  public VertxOptions setClusterManager(ClusterManager clusterManager) {
+    this.clusterManager = clusterManager;
     return this;
   }
 }

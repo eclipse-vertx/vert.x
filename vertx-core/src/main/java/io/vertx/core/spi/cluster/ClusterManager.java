@@ -17,6 +17,8 @@
 package io.vertx.core.spi.cluster;
 
 
+import io.vertx.core.spi.VertxSPI;
+
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +42,8 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface ClusterManager {
+
+  void setVertx(VertxSPI vertx);
 
   /**
    * Return an async multi-map for the given name

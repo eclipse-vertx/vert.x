@@ -130,7 +130,7 @@ public class Starter {
           log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
-      vertx = VertxFactory.newVertx(new VertxOptions().setClusterHost(clusterHost).setClusterPort(clusterPort));
+      vertx = VertxFactory.newVertx(new VertxOptions().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true));
     } else {
       vertx = VertxFactory.newVertx();
     }

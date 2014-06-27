@@ -49,13 +49,12 @@ import java.util.Set;
 class HazelcastClusterManager implements ClusterManager, MembershipListener {
 
   private static final Logger log = LoggerFactory.getLogger(HazelcastClusterManager.class);
-  // Hazelcast config file
 
+  // Hazelcast config file
   private static final String DEFAULT_CONFIG_FILE = "default-cluster.xml";
   private static final String CONFIG_FILE = "cluster.xml";
 
-
-  private final VertxSPI vertx;
+  private VertxSPI vertx;
 
   private HazelcastInstance hazelcast;
   private String nodeID;
@@ -64,13 +63,26 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   private NodeListener nodeListener;
   private boolean active;
 
+  private Config conf;
+
   /**
-   * Constructor
+   * Constructor - gets config from classpath
    */
-  public HazelcastClusterManager(final VertxSPI vertx) {
-  	this.vertx = vertx;
+  public HazelcastClusterManager() {
     // We have our own shutdown hook and need to ensure ours runs before Hazelcast is shutdown
     System.setProperty("hazelcast.shutdownhook.enabled", "false");
+  }
+
+  /**
+   * Constructor - config supplied
+   * @param conf
+   */
+  public HazelcastClusterManager(Config conf) {
+    this.conf = conf;
+  }
+
+  public void setVertx(VertxSPI vertx) {
+    this.vertx = vertx;
   }
 
   public synchronized void join() {
@@ -101,7 +113,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
 	 *     additional MultiMap config parameters.
 	 * @return subscription map
 	 */
-  public <K, V> AsyncMultiMap<K, V> getAsyncMultiMap(final String name) {
+  public <K, V> AsyncMultiMap<K, V> getAsyncMultiMap(String name) {
     com.hazelcast.core.MultiMap map = hazelcast.getMultiMap(name);
     return new HazelcastAsyncMultiMap(vertx, map);
   }
@@ -182,12 +194,11 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
     }
   }
 
-    @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+  @Override
+  public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+  }
 
-    }
-
-    private InputStream getConfigStream() {
+  private InputStream getConfigStream() {
     ClassLoader ctxClsLoader = Thread.currentThread().getContextClassLoader();
     InputStream is = null;
     if (ctxClsLoader != null) {
@@ -207,6 +218,9 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
    * @return a config object
    */
   protected Config getConfig() {
+    if (conf != null) {
+      return conf;
+    }
     Config cfg = null;
     try (InputStream is = getConfigStream();
          InputStream bis = new BufferedInputStream(is)) {

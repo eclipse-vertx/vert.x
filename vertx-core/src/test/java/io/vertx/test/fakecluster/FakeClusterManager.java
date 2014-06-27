@@ -49,7 +49,7 @@ public class FakeClusterManager implements ClusterManager {
   private NodeListener nodeListener;
   private VertxSPI vertx;
 
-  public FakeClusterManager(VertxSPI vertx) {
+  public void setVertx(VertxSPI vertx) {
     this.vertx = vertx;
   }
 
