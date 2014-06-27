@@ -73,7 +73,7 @@
           <configuration>
             <systemPropertyVariables>
               <vertx.test.timeout>60</vertx.test.timeout>
-              <vertx.clusterManagerFactory>org.vertx.java.fakecluster.FakeClusterManagerFactory</vertx.clusterManagerFactory>
+              <vertx.clusterManagerFactory>org.vertx.test.fakecluster.FakeClusterManagerFactory</vertx.clusterManagerFactory>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
             </systemPropertyVariables>
             <argLine>-server -Xms128m -Xmx1024m -XX:NewRatio=2</argLine>
