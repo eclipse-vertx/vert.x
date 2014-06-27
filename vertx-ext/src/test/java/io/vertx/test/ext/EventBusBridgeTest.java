@@ -24,12 +24,11 @@ import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.sockjs.SockJSServer;
+import io.vertx.test.core.HttpTestBase;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import io.vertx.test.core.HttpTestBase;
-import io.vertx.test.core.VertxTestBase;
 
 import java.util.concurrent.CountDownLatch;
 

@@ -56,7 +56,6 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.ext.sockjs.SockJSServer;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -170,28 +169,8 @@ public class VertxImpl implements VertxInternal {
     return new HttpClientImpl(this, options);
   }
 
-  public SockJSServer createSockJSServer(HttpServer httpServer) {
-    return new SockJSServer(this, httpServer);
-  }
-
   public EventBus eventBus() {
     return eventBus;
-  }
-
-  public boolean isEventLoop() {
-    ContextImpl context = getContext();
-    if (context != null) {
-      return context instanceof EventLoopContext;
-    }
-    return false;
-  }
-
-  public boolean isWorker() {
-    ContextImpl context = getContext();
-    if (context != null) {
-      return context instanceof WorkerContext;
-    }
-    return false;
   }
 
   public long setPeriodic(long delay, Handler<Long> handler) {
@@ -352,43 +331,50 @@ public class VertxImpl implements VertxInternal {
 
     // TODO call deploymentManager.undeployAll
 
-    if (sharedHttpServers != null) {
-      // Copy set to prevent ConcurrentModificationException
-      for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
-        server.close();
+    eventBus.close(ar -> {
+      if (sharedHttpServers != null) {
+        // Copy set to prevent ConcurrentModificationException
+        for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
+          server.close();
+        }
+        sharedHttpServers.clear();
       }
-      sharedHttpServers.clear();
-    }
 
-    if (sharedNetServers != null) {
-      // Copy set to prevent ConcurrentModificationException
-      for (NetServer server : new HashSet<>(sharedNetServers.values())) {
-        server.close();
+      if (sharedNetServers != null) {
+        // Copy set to prevent ConcurrentModificationException
+        for (NetServer server : new HashSet<>(sharedNetServers.values())) {
+          server.close();
+        }
+        sharedNetServers.clear();
       }
-      sharedNetServers.clear();
-    }
 
-    if (backgroundPool != null) {
-      backgroundPool.shutdown();
-    }
-
-    try {
       if (backgroundPool != null) {
-        backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+        backgroundPool.shutdown();
       }
-    } catch (InterruptedException ex) {
-      // ignore
-    }
 
-    if (eventLoopGroup != null) {
-      eventLoopGroup.shutdownGracefully();
-    }
+      try {
+        if (backgroundPool != null) {
+          backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+        }
+      } catch (InterruptedException ex) {
+        // ignore
+      }
 
-    eventBus.close(doneHandler);
+      if (eventLoopGroup != null) {
+        eventLoopGroup.shutdownGracefully();
+      }
 
-    checker.close();
+      checker.close();
 
-    setContext(null);
+      setContext(null);
+
+      if (doneHandler != null) {
+        // Call directly - we have no context
+        doneHandler.handle(new FutureResultImpl<>((Void)null));
+      }
+    });
+
+
   }
 
   @Override
@@ -456,10 +442,6 @@ public class VertxImpl implements VertxInternal {
         context.execute(() -> res.setHandler(resultHandler), false);
       }
     });
-  }
-
-  public ClusterManager clusterManager() {
-    return clusterManager;
   }
 
   private void configurePools(VertxOptions options) {

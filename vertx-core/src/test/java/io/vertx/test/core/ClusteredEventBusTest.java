@@ -26,7 +26,6 @@ import io.vertx.core.eventbus.Registration;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.After;
-
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -49,8 +48,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
 
   @After
   public void after() throws Exception {
-    CountDownLatch latch = new CountDownLatch(vertices.length);
     if (vertices != null) {
+      CountDownLatch latch = new CountDownLatch(vertices.length);
       for (Vertx vertx: vertices) {
         if (vertx != null) {
           vertx.close(ar -> {
@@ -59,14 +58,15 @@ public class ClusteredEventBusTest extends EventBusTestBase {
           });
         }
       }
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
-    assertTrue(latch.await(30, TimeUnit.SECONDS));
+
     FakeClusterManager.reset(); // Bit ugly
   }
 
 
   @Override
-  protected <T> void testSend(T val, Consumer<T> consumer) {
+  protected <T> void testSend(T val, Consumer <T> consumer) {
     startNodes(2);
     Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
       if (consumer == null) {
