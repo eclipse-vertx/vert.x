@@ -3064,6 +3064,28 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testRequestHandlerNotCalledInvalidRequest() {
+    server.requestHandler(req -> {
+      fail();
+    });
+
+    server.listen(onSuccess(s -> {
+      vertx.createNetClient(new NetClientOptions()).connect(8080, "127.0.0.1", result -> {
+        NetSocket socket = result.result();
+        socket.closeHandler(r -> {
+          testComplete();
+        });
+        socket.write("GET HTTP1/1\r\n");
+
+        // trigger another write to be sure we detect that the other peer has closed the connection.
+        socket.write("X-Header: test\r\n");
+      });
+    }));
+
+    await();
+  }
+
+  @Test
   public void testContexts() throws Exception {
     Set<ContextImpl> contexts = new ConcurrentHashSet<>();
     AtomicInteger cnt = new AtomicInteger();
