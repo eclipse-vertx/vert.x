@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.java.spi.cluster.impl.hazelcast;
+package io.vertx.spi.cluster.impl.hazelcast;
 
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.spi.cluster.ChoosableIterable;
