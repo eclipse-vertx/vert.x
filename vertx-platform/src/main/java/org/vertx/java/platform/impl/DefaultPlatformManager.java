@@ -1678,7 +1678,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
 
     // Include the language impl module as a parent of the classloader
-    if (langImplInfo.moduleName != null) {
+    if (langImplInfo.moduleName != null && !langImplInfo.moduleName.isEmpty()) {
       loadIncludedModules(modRoot, modDir, mr, langImplInfo.moduleName);
     }
 
