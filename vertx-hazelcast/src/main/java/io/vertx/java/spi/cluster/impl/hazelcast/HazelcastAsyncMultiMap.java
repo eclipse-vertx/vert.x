@@ -24,8 +24,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.Action;
-import io.vertx.core.spi.VertxSPI;
+import io.vertx.core.spi.cluster.Action;
+import io.vertx.core.spi.cluster.VertxSPI;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 

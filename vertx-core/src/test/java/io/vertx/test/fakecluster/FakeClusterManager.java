@@ -18,8 +18,8 @@ package io.vertx.test.fakecluster;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.spi.Action;
-import io.vertx.core.spi.VertxSPI;
+import io.vertx.core.spi.cluster.Action;
+import io.vertx.core.spi.cluster.VertxSPI;
 import io.vertx.core.spi.cluster.AsyncMap;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;

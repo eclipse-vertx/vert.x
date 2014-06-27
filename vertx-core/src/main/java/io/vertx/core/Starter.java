@@ -24,6 +24,7 @@ import io.vertx.core.logging.impl.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -256,12 +257,16 @@ public class Starter {
   }
 
   public String getVersion() {
-    InputStream is = getClass().getClassLoader().getResourceAsStream("vertx-version.txt");
-    if (is == null) {
-      throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
+    try (InputStream is = getClass().getClassLoader().getResourceAsStream("vertx-version.txt")) {
+      if (is == null) {
+        throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
+      }
+      try (Scanner scanner = new Scanner(is, "UTF-8").useDelimiter("\\A")) {
+        return scanner.hasNext() ? scanner.next() : "";
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException(e.getMessage());
     }
-    Scanner scanner = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A");
-    return scanner.hasNext() ? scanner.next() : "";
   }
 
   private void displaySyntax() {

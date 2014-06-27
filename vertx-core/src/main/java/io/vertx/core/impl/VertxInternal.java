@@ -21,7 +21,7 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.spi.VertxSPI;
+import io.vertx.core.spi.cluster.VertxSPI;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;

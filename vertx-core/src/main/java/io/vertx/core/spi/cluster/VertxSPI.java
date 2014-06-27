@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.spi;
+package io.vertx.core.spi.cluster;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;

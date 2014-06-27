@@ -54,7 +54,7 @@ import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
-import io.vertx.core.spi.Action;
+import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.ext.sockjs.SockJSServer;
 

@@ -17,7 +17,7 @@
 package io.vertx.core.spi.cluster;
 
 
-import io.vertx.core.spi.VertxSPI;
+import io.vertx.core.spi.cluster.VertxSPI;
 
 import java.util.List;
 import java.util.Map;
@@ -36,8 +36,8 @@ import java.util.Map;
  * of nodes returned by getNodes must be identical.
  * 4. All of the methods in the implementation must return immediately, i.e. they must not block while the operation
  * is being executed. If the underlying implementation does block, that can be wrapped in an
- * {@link io.vertx.core.spi.Action} instance and executed using the method
- * {@link io.vertx.core.spi.VertxSPI#executeBlocking(io.vertx.core.spi.Action, io.vertx.core.Handler)}
+ * {@link Action} instance and executed using the method
+ * {@link VertxSPI#executeBlocking(Action, io.vertx.core.Handler)}
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
