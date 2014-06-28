@@ -21,10 +21,13 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ServerID;
+
+import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -61,7 +64,7 @@ public abstract class BaseMessage<T> implements Message<T> {
 
   @Override
   public void reply() {
-    sendReply(EventBusImpl.createMessage(true, replyAddress, null), null);
+    sendReply(bus.createMessage(true, replyAddress, null), null);
   }
 
   @Override
@@ -71,22 +74,22 @@ public abstract class BaseMessage<T> implements Message<T> {
 
   @Override
   public <R> void reply(Handler<Message<R>> replyHandler) {
-    sendReply(EventBusImpl.createMessage(true, replyAddress, null), replyHandler);
+    sendReply(bus.createMessage(true, replyAddress, null), replyHandler);
   }
 
   @Override
   public <R> void replyWithTimeout(long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
-    sendReplyWithTimeout(EventBusImpl.createMessage(true, replyAddress, null), timeout, replyHandler);
+    sendReplyWithTimeout(bus.createMessage(true, replyAddress, null), timeout, replyHandler);
   }
 
   @Override
   public <R> void reply(Object message, Handler<Message<R>> replyHandler) {
-    sendReply(EventBusImpl.createMessage(true, replyAddress, message), replyHandler);
+    sendReply(bus.createMessage(true, replyAddress, message), replyHandler);
   }
 
   @Override
   public <R> void replyWithTimeout(Object message, long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
-    sendReplyWithTimeout(EventBusImpl.createMessage(true, replyAddress, message), timeout, replyHandler);
+    sendReplyWithTimeout(bus.createMessage(true, replyAddress, message), timeout, replyHandler);
   }
 
   @Override
@@ -95,6 +98,10 @@ public abstract class BaseMessage<T> implements Message<T> {
   }
 
   protected BaseMessage(Buffer readBuff) {
+    this(readBuff, null);
+  }
+
+  protected BaseMessage(Buffer readBuff, Map<String, MessageCodec<T>> codecMap) {
     int pos = 1;
     byte bsend = readBuff.getByte(pos);
     send = bsend == 0;
@@ -121,7 +128,8 @@ public abstract class BaseMessage<T> implements Message<T> {
     } else {
       replyAddress = null;
     }
-    readBody(pos, readBuff);
+
+    readBody(pos, readBuff, codecMap);
   }
 
   protected void write(NetSocket socket) {
@@ -157,17 +165,21 @@ public abstract class BaseMessage<T> implements Message<T> {
 
   protected abstract void readBody(int pos, Buffer readBuff);
 
+  protected void readBody(int pos, Buffer readBuff, Map<String, MessageCodec<T>> codecMap) {
+    readBody(pos, readBuff);
+  }
+
   protected abstract void writeBody(Buffer buff);
 
   protected abstract int getBodyLength();
 
-  private <T> void sendReply(BaseMessage msg, Handler<Message<T>> replyHandler) {
+  private <R> void sendReply(BaseMessage msg, Handler<Message<R>> replyHandler) {
     if (bus != null && replyAddress != null) {
       bus.sendReply(sender, msg, replyHandler);
     }
   }
 
-  private <T> void sendReplyWithTimeout(BaseMessage msg, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
+  private <R> void sendReplyWithTimeout(BaseMessage msg, long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (bus != null) {
       bus.sendReplyWithTimeout(sender, msg, timeout, replyHandler);
     }

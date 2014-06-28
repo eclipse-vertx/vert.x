@@ -68,6 +68,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   @Override
   protected <T> void testSend(T val, Consumer <T> consumer) {
     startNodes(2);
+    registerCodecs();
+
     Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(val, msg.body());
@@ -86,6 +88,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   @Override
   protected <T> void testReply(T val, Consumer<T> consumer) {
     startNodes(2);
+    registerCodecs();
     String str = TestUtils.randomUnicodeString(1000);
     Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
@@ -110,6 +113,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   protected <T> void testPublish(T val, Consumer<T> consumer) {
     int numNodes = 3;
     startNodes(numNodes);
+    registerCodecs();
+
     AtomicInteger count = new AtomicInteger();
     class MyHandler implements Handler<Message<T>> {
       @Override
@@ -169,6 +174,12 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       assertTrue(latch.await(30, TimeUnit.SECONDS));
     } catch (InterruptedException e) {
       fail(e.getMessage());
+    }
+  }
+
+  private void registerCodecs() {
+    for (Vertx vertx : vertices) {
+      registerCodecs(vertx.eventBus());
     }
   }
 

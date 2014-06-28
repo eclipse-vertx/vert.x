@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -72,6 +73,7 @@ public class EventBusImpl implements EventBus {
   private long defaultReplyTimeout = -1;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, MessageCodec<?>> codecMap = new ConcurrentHashMap<>();
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
   private boolean closed;
@@ -131,6 +133,21 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
+  public <T> EventBus registerCodec(Class<T> type, MessageCodec<T> codec) {
+    Objects.requireNonNull(type);
+    Objects.requireNonNull(codec);
+    codecMap.put(type.getName(), codec);
+    return this;
+  }
+
+  @Override
+  public <T> EventBus unregisterCodec(Class<T> type) {
+    Objects.requireNonNull(type);
+    codecMap.remove(type.getName());
+    return this;
+  }
+
+  @Override
   public void close(Handler<AsyncResult<Void>> doneHandler) {
 		if (clusterMgr != null) {
 			clusterMgr.leave();
@@ -166,7 +183,7 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  static <U> BaseMessage<U> createMessage(boolean send, String address, U message) {
+  <U> BaseMessage<U> createMessage(boolean send, String address, U message) {
     BaseMessage bm;
     if (message instanceof String) {
       bm = new StringMessage(send, address, (String)message);
@@ -197,8 +214,18 @@ public class EventBusImpl implements EventBus {
     } else if (message == null) {
       bm = new StringMessage(send, address, null);
     } else {
-      throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus: " + message);
+      String typeName = message.getClass().getName();
+      MessageCodec<?> codec = codecMap.get(typeName);
+      if (codec == null) {
+        throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus: " + message);
+      } else {
+        @SuppressWarnings("unchecked")
+        ObjectMessage<?> om = new ObjectMessage(send, address, message, typeName, codec);
+        bm = om;
+      }
     }
+    bm.bus = this;
+
     return bm;
   }
 
@@ -212,7 +239,7 @@ public class EventBusImpl implements EventBus {
             size = buff.getInt(0);
             parser.fixedSizeMode(size);
           } else {
-            BaseMessage received = MessageFactory.read(buff);
+            BaseMessage received = MessageFactory.read(buff, codecMap);
             if (received.type() == MessageFactory.TYPE_PING) {
               // Send back a pong - a byte will do
               socket.write(PONG);
