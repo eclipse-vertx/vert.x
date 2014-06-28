@@ -526,29 +526,44 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSendPojoShareable() {
     ShareablePojo pojo = new ShareablePojo("foo");
-    testPublish(pojo, recieved -> {
-      assertEquals(pojo, recieved);
-      assertTrue(pojo == recieved); // Make sure it's *not* copied, since it implements Shareable
+    testPublish(pojo, received -> {
+      assertEquals(pojo, received);
+      assertTrue(pojo == received); // Make sure it's *not* copied, since it implements Shareable
     });
   }
 
   @Test
   public void testPublishPojoShareable() {
     ShareablePojo pojo = new ShareablePojo("foo");
-    testPublish(pojo, recieved -> {
-      assertEquals(pojo, recieved);
-      assertTrue(pojo == recieved); // Make sure it's *not* copied, since it implements Shareable
+    testPublish(pojo, received -> {
+      assertEquals(pojo, received);
+      assertTrue(pojo == received); // Make sure it's *not* copied, since it implements Shareable
     });
   }
 
   @Test
   public void testReplyPojoShareable() {
     ShareablePojo pojo = new ShareablePojo("foo");
-    testPublish(pojo, recieved -> {
-      assertEquals(pojo, recieved);
-      assertTrue(pojo == recieved); // Make sure it's *not* copied, since it implements Shareable
+    testPublish(pojo, received -> {
+      assertEquals(pojo, received);
+      assertTrue(pojo == received); // Make sure it's *not* copied, since it implements Shareable
     });
   }
+
+  @Test
+  public void testSendPojoWithBadCopy() {
+    registerCodecs(eb);
+    SomePojo pojo = new SomePojo("foo", 100, true);
+    eb.registerHandler(ADDRESS1, msg -> {});
+    try {
+      eb.send(ADDRESS1, pojo);
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+
 
   @Test
   public void testSendNonCloneable() {

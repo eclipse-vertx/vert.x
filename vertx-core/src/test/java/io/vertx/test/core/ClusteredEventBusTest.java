@@ -158,6 +158,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
 
+
+
   private void startNodes(int numNodes) {
     CountDownLatch latch = new CountDownLatch(numNodes);
     vertices = new Vertx[numNodes];

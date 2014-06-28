@@ -17,12 +17,13 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.Copyable;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
 import org.junit.Test;
-import io.vertx.core.eventbus.MessageCodec;
 
 import java.util.function.Consumer;
 
@@ -319,27 +320,27 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   @Test
   public void testSendPojo() {
     SomePojo pojo = new SomePojo("foo", 100);
-    testSend(pojo, recieved -> {
-      assertEquals(pojo, recieved);
-      assertFalse(pojo == recieved); // Make sure it's copied
+    testSend(pojo, received -> {
+      assertEquals(pojo, received);
+      assertFalse(pojo == received); // Make sure it's copied
     });
   }
 
   @Test
   public void testPublishPojo() {
     SomePojo pojo = new SomePojo("foo", 100);
-    testPublish(pojo, recieved -> {
-      assertEquals(pojo, recieved);
-      assertFalse(pojo == recieved); // Make sure it's copied
+    testPublish(pojo, received -> {
+      assertEquals(pojo, received);
+      assertFalse(pojo == received); // Make sure it's copied
     });
   }
 
   @Test
   public void testReplyPojo() {
     SomePojo pojo = new SomePojo("foo", 100);
-    testReply(pojo, recieved -> {
-      assertEquals(pojo, recieved);
-      assertFalse(pojo == recieved); // Make sure it's copied
+    testReply(pojo, received -> {
+      assertEquals(pojo, received);
+      assertFalse(pojo == received); // Make sure it's copied
     });
   }
 
@@ -366,9 +367,16 @@ public abstract class EventBusTestBase extends AsyncTestBase {
     bus.registerCodec(ShareablePojo.class, new ShareablePojoCodec());
   }
 
-  protected static class SomePojo implements Cloneable {
+  protected static class SomePojo implements Copyable {
     private final String string;
     private final int number;
+    boolean badCopy;
+
+    protected SomePojo(String string, int number, boolean badCopy) {
+      this.string = string;
+      this.number = number;
+      this.badCopy = badCopy;
+    }
 
     protected SomePojo(String string, int number) {
       this.string = string;
@@ -384,8 +392,12 @@ public abstract class EventBusTestBase extends AsyncTestBase {
     }
 
     @Override
-    public Object clone() throws CloneNotSupportedException {
-      return super.clone();
+    public Object copy() {
+      if (badCopy) {
+        return this;
+      } else {
+        return new SomePojo(this.string, this.number);
+      }
     }
 
     @Override

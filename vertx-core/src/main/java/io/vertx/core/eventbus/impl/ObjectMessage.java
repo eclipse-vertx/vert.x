@@ -18,12 +18,11 @@ package io.vertx.core.eventbus.impl;
 
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.Copyable;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.shareddata.Shareable;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
@@ -56,21 +55,17 @@ public class ObjectMessage<T> extends BaseMessage<T> {
   protected Message<T> copy() {
     if (body instanceof Shareable) {
       return this;
-    } else if (body instanceof Cloneable) {
-      Class<?> c = body.getClass();
-      try {
-        // FIXME - seems a bit clunky. Is there a better way?
-        Method method = c.getMethod("clone");
-        @SuppressWarnings("unchecked")
-        T clone = (T) method.invoke(body);
-        return new ObjectMessage<>(send, address, clone, decodedType, codec);
-      } catch (NoSuchMethodException e) {
-        throw new IllegalArgumentException("No public clone() method for cloneable class " + c);
-      } catch (IllegalAccessException | InvocationTargetException e) {
-        throw new IllegalArgumentException("Could not invoke clone method for class " + c, e);
+    } else if (body instanceof Copyable) {
+      Copyable copyable = (Copyable)body;
+      Object copy = copyable.copy();
+      if (copy == body) {
+        throw new IllegalStateException("copy() must actually copy the object");
       }
+      @SuppressWarnings("unchecked")
+      Message<T> ret = new ObjectMessage(send, address, copy, decodedType, codec);
+      return ret;
     } else {
-      throw new IllegalArgumentException(body.getClass() + " does not implement Cloneable or Shareable.");
+      throw new IllegalArgumentException(body.getClass() + " does not implement Copyable or Shareable.");
     }
   }
 
