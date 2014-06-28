@@ -215,11 +215,14 @@ public class EventBusImpl implements EventBus {
       bm = new StringMessage(send, address, null);
     } else {
       String typeName = message.getClass().getName();
-      MessageCodec<?>  codec = codecMap.get(typeName);
-      // FIXME - we only need a codec if the event bus is clustered. Otherwise any Copyable or Shareable object
-      // can be passed!
-      if (codec == null) {
-        throw new IllegalArgumentException("No codec registered for " + message.getClass() + " on the event bus: " + message);
+      MessageCodec<?>  codec;
+      if (clusterMgr != null) {
+        codec = codecMap.get(typeName);
+        if (codec == null) {
+          throw new IllegalArgumentException("No codec registered for " + message.getClass() + " on the event bus: " + message);
+        }
+      } else {
+        codec = null;
       }
       @SuppressWarnings("unchecked")
       ObjectMessage<?> om = new ObjectMessage(send, address, message, typeName, codec);

@@ -24,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxFactory;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.Copyable;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
@@ -36,12 +37,10 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
-import io.vertx.core.shareddata.Shareable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -612,41 +611,6 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
   }
 
-  @Test
-  public void testUnregisterCodec() {
-    class Foo implements Shareable {
-    }
-    class FooCodec implements MessageCodec<Foo> {
-      @Override
-      public Buffer encode(Foo object) {
-        return new Buffer();
-      }
-
-      @Override
-      public Foo decode(Buffer buffer) {
-        return new Foo();
-      }
-    }
-
-    eb.registerCodec(Foo.class, new FooCodec());
-    eb.registerHandler("foo", (Message<Foo> msg) -> {
-      eb.unregisterCodec(Foo.class);
-      try {
-        eb.send("bar", new Foo());
-        fail("Should throw exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
-    });
-    eb.registerHandler("bar", (Message<Foo> msg) -> {
-      fail("Should not be called");
-    });
-
-    eb.send("foo", new Foo());
-
-    await();
-  }
 
   @Test
   public void testCloseEventBus() {
@@ -658,53 +622,19 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testSendUnsupportedObject() {
-    try {
-      eb.send(ADDRESS1, new Object());
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
+  public void testSendObjectWithNoCodec() {
+    class MyObject implements Copyable {
+      @Override
+      public Object copy() {
+        return new MyObject();
+      }
     }
-    try {
-      eb.send(ADDRESS1, new HashMap<>());
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-  }
-
-  @Test
-  public void testSendWithReplyUnsupportedObject() {
-    try {
-      eb.send(ADDRESS1, new Object(), reply -> {});
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      eb.send(ADDRESS1, new HashMap<>(), reply -> {});
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-  }
-
-  @Test
-  public void testSendWithTimeoutUnsupportedObject() {
-    try {
-      eb.sendWithTimeout(ADDRESS1, new Object(), 1, reply -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      eb.sendWithTimeout(ADDRESS1, new HashMap<>(), 1, reply -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    // OK to do this on an unclustered event bus
+    eb.registerHandler(ADDRESS1, (Message<MyObject> msg) -> {
+      testComplete();
+    });
+    eb.send(ADDRESS1, new MyObject());
+    await();
   }
 
   @Test

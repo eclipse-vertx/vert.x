@@ -21,13 +21,18 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxFactory;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
+import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.After;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -158,7 +163,104 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
 
+  // FIXME - these tests should test specifically with Copyable objects not just Object
+  // Testing whether an Object with no codec can be sent and an object that is not Copyable/Shareable can be sent
+  // should be separate tests
+  // Also... need tests for replying with both objects with no codec and objects that are not Copyable/Shareable
 
+  @Test
+  public void testSendUnsupportedObject() {
+    startNodes(1);
+    EventBus eb = vertices[0].eventBus();
+    try {
+      eb.send(ADDRESS1, new Object());
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      eb.send(ADDRESS1, new HashMap<>());
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testSendWithReplyUnsupportedObject() {
+    startNodes(1);
+    EventBus eb = vertices[0].eventBus();
+    try {
+      eb.send(ADDRESS1, new Object(), reply -> {});
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      eb.send(ADDRESS1, new HashMap<>(), reply -> {});
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testSendWithTimeoutUnsupportedObject() {
+    startNodes(1);
+    EventBus eb = vertices[0].eventBus();
+    try {
+      eb.sendWithTimeout(ADDRESS1, new Object(), 1, reply -> {
+      });
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      eb.sendWithTimeout(ADDRESS1, new HashMap<>(), 1, reply -> {
+      });
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testUnregisterCodec() {
+    startNodes(1);
+    EventBus eb = vertices[0].eventBus();
+    class Foo implements Shareable {
+    }
+    class FooCodec implements MessageCodec<Foo> {
+      @Override
+      public Buffer encode(Foo object) {
+        return new Buffer();
+      }
+
+      @Override
+      public Foo decode(Buffer buffer) {
+        return new Foo();
+      }
+    }
+
+    eb.registerCodec(Foo.class, new FooCodec());
+    eb.registerHandler("foo", (Message<Foo> msg) -> {
+      eb.unregisterCodec(Foo.class);
+      try {
+        eb.send("bar", new Foo());
+        fail("Should throw exception");
+      } catch (IllegalArgumentException e) {
+        // OK
+        testComplete();
+      }
+    });
+    eb.registerHandler("bar", (Message<Foo> msg) -> {
+      fail("Should not be called");
+    });
+
+    eb.send("foo", new Foo());
+
+    await();
+  }
 
   private void startNodes(int numNodes) {
     CountDownLatch latch = new CountDownLatch(numNodes);
