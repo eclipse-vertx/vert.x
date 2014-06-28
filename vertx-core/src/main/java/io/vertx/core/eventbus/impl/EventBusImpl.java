@@ -217,7 +217,7 @@ public class EventBusImpl implements EventBus {
       String typeName = message.getClass().getName();
       MessageCodec<?> codec = codecMap.get(typeName);
       if (codec == null) {
-        throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus: " + message);
+        throw new IllegalArgumentException("No codec registered for " + message.getClass() + " on the event bus: " + message);
       } else {
         @SuppressWarnings("unchecked")
         ObjectMessage<?> om = new ObjectMessage(send, address, message, typeName, codec);

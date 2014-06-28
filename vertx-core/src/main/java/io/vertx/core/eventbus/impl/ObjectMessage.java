@@ -43,7 +43,8 @@ public class ObjectMessage<T> extends BaseMessage<T> {
   }
 
   public ObjectMessage(Buffer readBuff, Map<String, MessageCodec<T>> codecMap) {
-    super(readBuff, codecMap);
+    int pos = readNonBodyFields(readBuff);
+    readBody(pos, readBuff, codecMap);
   }
 
   @Override
@@ -58,6 +59,7 @@ public class ObjectMessage<T> extends BaseMessage<T> {
     } else if (body instanceof Cloneable) {
       Class<?> c = body.getClass();
       try {
+        // FIXME - seems a bit clunky. Is there a better way?
         Method method = c.getMethod("clone");
         @SuppressWarnings("unchecked")
         T clone = (T) method.invoke(body);
@@ -74,7 +76,7 @@ public class ObjectMessage<T> extends BaseMessage<T> {
 
   @Override
   protected void readBody(int pos, Buffer readBuff) {
-    throw new UnsupportedOperationException("ObjectMessage does not support reading of body w/out codec map");
+    throw new UnsupportedOperationException();
   }
 
   @Override

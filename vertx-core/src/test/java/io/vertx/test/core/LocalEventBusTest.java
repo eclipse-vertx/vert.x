@@ -36,6 +36,7 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.shareddata.Shareable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -592,6 +593,42 @@ public class LocalEventBusTest extends EventBusTestBase {
     } catch (IllegalArgumentException e) {
       testComplete();
     }
+
+    await();
+  }
+
+  @Test
+  public void testUnregisterCodec() {
+    class Foo implements Shareable {
+    }
+    class FooCodec implements MessageCodec<Foo> {
+      @Override
+      public Buffer encode(Foo object) {
+        return new Buffer();
+      }
+
+      @Override
+      public Foo decode(Buffer buffer) {
+        return new Foo();
+      }
+    }
+
+    eb.registerCodec(Foo.class, new FooCodec());
+    eb.registerHandler("foo", (Message<Foo> msg) -> {
+      eb.unregisterCodec(Foo.class);
+      try {
+        eb.send("bar", new Foo());
+        fail("Should throw exception");
+      } catch (IllegalArgumentException e) {
+        // OK
+        testComplete();
+      }
+    });
+    eb.registerHandler("bar", (Message<Foo> msg) -> {
+      fail("Should not be called");
+    });
+
+    eb.send("foo", new Foo());
 
     await();
   }

@@ -41,6 +41,9 @@ public abstract class BaseMessage<T> implements Message<T> {
   protected String replyAddress;
   protected boolean send; // Is it a send or a publish?
 
+  protected BaseMessage() {
+  }
+
   protected BaseMessage(boolean send, String address, T body) {
     this.send = send;
     this.body = body;
@@ -98,10 +101,11 @@ public abstract class BaseMessage<T> implements Message<T> {
   }
 
   protected BaseMessage(Buffer readBuff) {
-    this(readBuff, null);
+    int pos = readNonBodyFields(readBuff);
+    readBody(pos, readBuff);
   }
 
-  protected BaseMessage(Buffer readBuff, Map<String, MessageCodec<T>> codecMap) {
+  protected int readNonBodyFields(Buffer readBuff) {
     int pos = 1;
     byte bsend = readBuff.getByte(pos);
     send = bsend == 0;
@@ -128,8 +132,7 @@ public abstract class BaseMessage<T> implements Message<T> {
     } else {
       replyAddress = null;
     }
-
-    readBody(pos, readBuff, codecMap);
+    return pos;
   }
 
   protected void write(NetSocket socket) {
