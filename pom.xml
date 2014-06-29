@@ -162,6 +162,9 @@
           <version>2.14</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+            <systemPropertyVariables>
+              <java.util.logging.SimpleFormatter.format>%4$s: %2$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
           <plugin>
