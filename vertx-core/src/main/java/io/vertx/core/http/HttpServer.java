@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.GenIgnore;
 
 /**
  * An HTTP and WebSockets server<p>
@@ -44,6 +45,7 @@ public interface HttpServer {
    * Get the request handler
    * @return The request handler
    */
+  @GenIgnore
   Handler<HttpServerRequest> requestHandler();
 
   /**
@@ -52,6 +54,7 @@ public interface HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
+  @GenIgnore
   HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler);
 
   /**

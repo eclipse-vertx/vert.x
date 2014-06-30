@@ -18,6 +18,8 @@ package io.vertx.core.streams;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * Represents a stream of data that can be read from.<p>
@@ -28,10 +30,36 @@ import io.vertx.core.buffer.Buffer;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface ReadStream<T> extends ReadSupport<T, Buffer> {
+@VertxGen
+public interface ReadStream<T> {
+
+  /**
+   * Set a data handler. As data is read, the handler will be called with the data.
+   */
+  @Fluent
+  T dataHandler(Handler<Buffer> handler);
+
+  /**
+   * Pause the {@code ReadSupport}. While it's paused, no data will be sent to the {@code dataHandler}
+   */
+  @Fluent
+  T pause();
+
+  /**
+   * Resume reading. If the {@code ReadSupport} has been paused, reading will recommence on it.
+   */
+  @Fluent
+  T resume();
 
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
    */
+  @Fluent
   T endHandler(Handler<Void> endHandler);
+
+  /**
+   * Set an exception handler.
+   */
+  @Fluent
+  T exceptionHandler(Handler<Throwable> handler);
 }

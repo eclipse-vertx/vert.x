@@ -18,6 +18,7 @@ package io.vertx.core.datagram.impl;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetSocketAddress;
 
@@ -38,7 +39,7 @@ final class DatagramPacketImpl implements DatagramPacket {
   @Override
   public SocketAddress sender() {
     if (senderAddress == null) {
-      senderAddress = new SocketAddress(sender.getPort(), sender.getAddress().getHostAddress());
+      senderAddress = new SocketAddressImpl(sender.getPort(), sender.getAddress().getHostAddress());
     }
     return senderAddress;
   }

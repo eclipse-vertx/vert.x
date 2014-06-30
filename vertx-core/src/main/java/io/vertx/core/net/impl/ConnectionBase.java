@@ -223,12 +223,12 @@ public abstract class ConnectionBase {
 
   public SocketAddress remoteAddress() {
     InetSocketAddress addr = (InetSocketAddress)channel.remoteAddress();
-    return new SocketAddress(addr.getPort(), addr.getAddress().getHostAddress());
+    return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
   public SocketAddress localAddress() {
     InetSocketAddress addr = (InetSocketAddress)channel.localAddress();
-    return new SocketAddress(addr.getPort(), addr.getAddress().getHostAddress());
+    return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
 

@@ -19,6 +19,8 @@ package io.vertx.core.buffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
+import io.vertx.core.gen.GenIgnore;
+import io.vertx.core.gen.VertxGen;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -41,6 +43,7 @@ import java.nio.charset.Charset;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public class Buffer {
 
   private final ByteBuf buffer;
@@ -66,6 +69,7 @@ public class Buffer {
   /**
    * Create a new Buffer that contains the contents of a {@code byte[]}
    */
+  @GenIgnore
   public Buffer(byte[] bytes) {
     buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
   }
@@ -88,6 +92,7 @@ public class Buffer {
    * Create a new Buffer from a Netty {@code ByteBuf} instance.
    * This method is meant for internal use only.
    */
+  @GenIgnore
   public Buffer(ByteBuf buffer) {
     this.buffer = Unpooled.unreleasableBuffer(buffer);
   }
@@ -404,6 +409,7 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code ByteBuffer b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
+  @GenIgnore
   public Buffer setBytes(int pos, ByteBuffer b) {
     ensureWritable(pos, b.limit());
     buffer.setBytes(pos, b);
@@ -414,6 +420,7 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
+  @GenIgnore
   public Buffer setBytes(int pos, byte[] b) {
     ensureWritable(pos, b.length);
     buffer.setBytes(pos, b);
@@ -425,6 +432,7 @@ public class Buffer {
    * Sets the given number of bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p></p>
    * The buffer will expand as necessary to accommodate any value written.
    */
+  @GenIgnore
   public Buffer setBytes(int pos, byte[] b, int offset, int len) {
     ensureWritable(pos, len);
     buffer.setBytes(pos, b, offset, len);
@@ -435,6 +443,8 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in UTF-8.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
+  @GenIgnore
   public Buffer setString(int pos, String str) {
     return setBytes(pos, str, CharsetUtil.UTF_8);
   }
@@ -443,6 +453,8 @@ public class Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in encoding {@code enc}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
+  @GenIgnore
   public Buffer setString(int pos, String str, String enc) {
     return setBytes(pos, str, Charset.forName(enc));
   }
@@ -476,6 +488,8 @@ public class Buffer {
    * of the returned buffer or this buffer affects each other's content
    * while they maintain separate indexes and marks.
    */
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
+  @GenIgnore
   public Buffer slice(int start, int end) {
     return new Buffer(buffer.slice(start, end - start));
   }
@@ -518,6 +532,7 @@ public class Buffer {
   }
 
   @Override
+  @GenIgnore
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

@@ -31,6 +31,7 @@ import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -43,8 +44,7 @@ import java.net.UnknownHostException;
  */
 public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket {
 
-  private Handler<Void> drainHandler;
-  private Handler<io.vertx.core.datagram.DatagramPacket> dataHandler;
+  private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
 
   public DatagramSocketImpl(VertxInternal vertx, io.vertx.core.datagram.InternetProtocolFamily family,
                             DatagramSocketOptions options) {
@@ -142,36 +142,30 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   @Override
   public DatagramSocket listen(int port, String address, Handler<AsyncResult<DatagramSocket>> handler) {
-    return listen(new SocketAddress(port, address), handler);
+    return listen(new SocketAddressImpl(port, address), handler);
   }
 
   @Override
   public DatagramSocket listen(int port, Handler<AsyncResult<DatagramSocket>> handler) {
-    return listen(new SocketAddress(port, "0.0.0.0"), handler);
-  }
-
-  private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
-    InetSocketAddress is = new InetSocketAddress(local.getHostAddress(), local.getPort());
-    ChannelFuture future = channel().bind(is);
-    addListener(future, handler);
-    return this;
+    return listen(new SocketAddressImpl(port, "0.0.0.0"), handler);
   }
 
   @Override
-  public DatagramSocket dataHandler(Handler<io.vertx.core.datagram.DatagramPacket> handler) {
-    dataHandler = handler;
+  public DatagramSocket packetHandler(Handler<io.vertx.core.datagram.DatagramPacket> handler) {
+    this.packetHandler = handler;
     return this;
-  }
-
-  final void handleMessage(io.vertx.core.datagram.DatagramPacket message) {
-    if (dataHandler != null) {
-      dataHandler.handle(message);
-    }
   }
 
   @Override
   public DatagramSocket exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
+    this.exceptionHandler = handler;
+    return this;
+  }
+
+  private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
+    InetSocketAddress is = new InetSocketAddress(local.hostAddress(), local.hostPort());
+    ChannelFuture future = channel().bind(is);
+    addListener(future, handler);
     return this;
   }
 
@@ -191,32 +185,6 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   @SuppressWarnings("unchecked")
   public DatagramSocket resume() {
     doResume();
-    return this;
-  }
-
-  @Override
-  protected void handleInterestedOpsChanged() {
-    if (drainHandler != null) {
-      drainHandler.handle(null);
-    }
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket setWriteQueueMaxSize(int maxSize) {
-    doSetWriteQueueMaxSize(maxSize);
-    return this;
-  }
-
-  @Override
-  public boolean writeQueueFull() {
-    return isNotWritable();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DatagramSocket drainHandler(Handler<Void> handler) {
-    drainHandler = handler;
     return this;
   }
 
@@ -306,5 +274,20 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     // which could make the JVM run out of file handles.
     close();
     super.finalize();
+  }
+
+  protected void handleClosed() {
+    checkContext();
+    super.handleClosed();
+  }
+
+  void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
+    if (packetHandler != null) {
+      packetHandler.handle(packet);
+    }
+  }
+
+  @Override
+  protected void handleInterestedOpsChanged() {
   }
 }

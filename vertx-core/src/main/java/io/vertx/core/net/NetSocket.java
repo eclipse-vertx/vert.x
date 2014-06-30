@@ -19,6 +19,8 @@ package io.vertx.core.net;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -34,6 +36,7 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket> {
 
   /**
@@ -49,30 +52,35 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * Write a {@link Buffer} to the request body.
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   NetSocket write(Buffer data);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8.
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   NetSocket write(String str);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   NetSocket write(String str, String enc);
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    */
+  @Fluent
   NetSocket sendFile(String filename);
 
   /**
    * Same as {@link #sendFile(String)} but also takes a handler that will be called when the send has completed or
    * a failure has occurred
    */
+  @Fluent
   NetSocket sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
 
   /**
@@ -93,11 +101,13 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
   /**
    * Set a handler that will be called when the NetSocket is closed
    */
+  @Fluent
   NetSocket closeHandler(Handler<Void> handler);
 
   /**
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
    */
+  @Fluent
   NetSocket ssl(Handler<Void> handler);
 
   /**

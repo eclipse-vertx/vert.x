@@ -18,6 +18,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * A TCP/SSL client.<p>
@@ -33,6 +34,7 @@ import io.vertx.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface NetClient {
 
   /**

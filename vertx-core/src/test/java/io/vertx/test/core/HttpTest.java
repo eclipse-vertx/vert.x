@@ -2501,7 +2501,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testRemoteAddress() {
     server.requestHandler(req -> {
-      assertEquals("127.0.0.1", req.remoteAddress().getHostAddress());
+      assertEquals("127.0.0.1", req.remoteAddress().hostAddress());
       req.response().end();
     });
 

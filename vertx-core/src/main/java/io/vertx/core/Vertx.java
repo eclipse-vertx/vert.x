@@ -22,6 +22,8 @@ import io.vertx.core.datagram.InternetProtocolFamily;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.gen.GenIgnore;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
@@ -47,9 +49,8 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface Vertx {
-
-  //Http http();
 
   /**
    * Create a TCP/SSL server
@@ -159,6 +160,7 @@ public interface Vertx {
 
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
+  @GenIgnore
   Set<String> deployments();
 
 }

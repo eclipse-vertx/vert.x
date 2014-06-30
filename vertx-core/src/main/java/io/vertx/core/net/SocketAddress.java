@@ -16,28 +16,15 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.gen.VertxGen;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SocketAddress {
+@VertxGen
+public interface SocketAddress {
 
-  private final String hostAddress;
-  private final int port;
+  String hostAddress();
 
-  public SocketAddress(int port, String host) {
-    this.port = port;
-    this.hostAddress = host;
-  }
-
-  public String getHostAddress() {
-    return hostAddress;
-  }
-
-  public int getPort() {
-    return port;
-  }
-
-  public String toString() {
-    return hostAddress + ":" + port;
-  }
+  int hostPort();
 }

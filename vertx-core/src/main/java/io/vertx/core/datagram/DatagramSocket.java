@@ -19,8 +19,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.streams.DrainSupport;
-import io.vertx.core.streams.ReadSupport;
 
 /**
  * A Datagram socket which can be used to send {@link DatagramPacket}'s to remote Datagram servers and receive {@link DatagramPacket}s .
@@ -34,7 +32,7 @@ import io.vertx.core.streams.ReadSupport;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public interface DatagramSocket extends DrainSupport<DatagramSocket>, ReadSupport<DatagramSocket, DatagramPacket> {
+public interface DatagramSocket {
 
   /**
    * Write the given {@link io.vertx.core.buffer.Buffer} to the {@link io.vertx.core.net.SocketAddress}. The {@link io.vertx.core.Handler} will be notified once the
@@ -175,5 +173,9 @@ public interface DatagramSocket extends DrainSupport<DatagramSocket>, ReadSuppor
   DatagramSocket listen(int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   DatagramSocket listen(int port, Handler<AsyncResult<DatagramSocket>> handler);
+
+  DatagramSocket packetHandler(Handler<DatagramPacket> handler);
+
+  DatagramSocket exceptionHandler(Handler<Throwable> handler);
 
 }
