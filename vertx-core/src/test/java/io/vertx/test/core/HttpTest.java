@@ -680,6 +680,21 @@ public class HttpTest extends HttpTestBase {
     testURIAndPath("/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
 
+  @Test
+  public void testAbsoluteURIWithHttpSchemaInQuery() {
+    testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
+  }
+
+  @Test
+  public void testRelativeURIWithHttpSchemaInQuery() {
+    testURIAndPath("/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
+  }
+
+  @Test
+  public void testAbsoluteURIEmptyPath() {
+    testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/", "/");
+  }
+
   private void testURIAndPath(String uri, String path) {
     server.requestHandler(req -> {
       assertEquals(uri, req.uri());
