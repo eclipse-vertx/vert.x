@@ -339,7 +339,7 @@ class ClientConnection extends ConnectionBase {
 
   void endRequest() {
     if (currentRequest == null) {
-      throw new IllegalStateException("No writeBuffer in progress");
+      throw new IllegalStateException("No write in progress");
     }
     currentRequest = null;
     listener.requestEnded(this);

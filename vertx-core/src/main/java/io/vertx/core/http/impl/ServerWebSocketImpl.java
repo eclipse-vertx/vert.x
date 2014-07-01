@@ -183,7 +183,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   protected void writeFrame(WebSocketFrame frame) {
     if (connectRunnable != null) {
       if (rejected) {
-        throw new IllegalStateException("Cannot writeBuffer to websocket, it has been rejected");
+        throw new IllegalStateException("Cannot write to websocket, it has been rejected");
       }
       if (!connected && !closed) {
         connect();

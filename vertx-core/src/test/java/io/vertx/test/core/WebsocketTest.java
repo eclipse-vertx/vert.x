@@ -283,14 +283,14 @@ public class WebsocketTest extends VertxTestBase {
 
 
   @Test
-  // Let's manually handle the websocket handshake and writeBuffer a frame to the client
+  // Let's manually handle the websocket handshake and write a frame to the client
   public void testHandleWSManually() throws Exception {
     String path = "/some/path";
     String message = "here is some text data";
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, path);
-      // Let's writeBuffer a Text frame raw
+      // Let's write a Text frame raw
       Buffer buff = new Buffer();
       buff.appendByte((byte)129); // Text frame
       buff.appendByte((byte)message.length());
@@ -566,7 +566,7 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, path);
 
-      // Let's writeBuffer a Text frame raw
+      // Let's write a Text frame raw
       Buffer buff = new Buffer();
       buff.appendByte((byte) 0x01); // Incomplete Text frame
       buff.appendByte((byte) firstFrame.length());

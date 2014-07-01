@@ -51,7 +51,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * of the file, the file will be enlarged to encompass it.<p>
    * When multiple writes are invoked on the same file
    * there are no guarantees as to order in which those writes actually occur.<p>
-   * The handler will be called when the writeBuffer is complete, or if an error occurs.
+   * The handler will be called when the write is complete, or if an error occurs.
    */
   AsyncFile write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler);
 

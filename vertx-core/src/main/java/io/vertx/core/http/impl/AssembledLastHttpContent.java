@@ -24,7 +24,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 
 /**
  * Helper wrapper class which allows to assemble a ByteBuf and a HttpHeaders into one "packet" and so more
- * efficient writeBuffer it through the pipeline.
+ * efficient write it through the pipeline.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */

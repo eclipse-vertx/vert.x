@@ -332,7 +332,7 @@ public class AsyncFileImpl implements AsyncFile {
         long pos = position;
 
         if (buff.hasRemaining()) {
-          // partial writeBuffer
+          // partial write
           pos += bytesWritten;
           // resubmit
           writeInternal(buff, pos, handler);

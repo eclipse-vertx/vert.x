@@ -55,7 +55,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <netty.version>4.0.20.Final</netty.version>
+    <netty.version>4.0.21.Final</netty.version>
     <jackson.version>2.2.2</jackson.version>
     <hazelcast.version>3.2.1</hazelcast.version>
     <log4j.version>1.2.16</log4j.version>

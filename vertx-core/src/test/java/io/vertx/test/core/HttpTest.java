@@ -1060,16 +1060,16 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testRequestBodyWriteBufferChunked() {
-    testRequestBodyWriteBuffer(true);
+  public void testRequestBodyWriteChunked() {
+    testRequestBodyWrite(true);
   }
 
   @Test
-  public void testRequestBodyWriteBufferNonChunked() {
-    testRequestBodyWriteBuffer(false);
+  public void testRequestBodyWriteNonChunked() {
+    testRequestBodyWrite(false);
   }
 
-  private void testRequestBodyWriteBuffer(boolean chunked) {
+  private void testRequestBodyWrite(boolean chunked) {
     Buffer body = new Buffer();
 
     server.requestHandler(req -> {
@@ -1168,7 +1168,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testRequestWriteBuffer() {
+  public void testRequestWrite() {
     Buffer body = TestUtils.randomBuffer(1000);
 
     server.requestHandler(req -> {
@@ -1492,16 +1492,16 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testResponseBodyWriteBufferChunked() {
-    testResponseBodyWriteBuffer(true);
+  public void testResponseBodyWriteChunked() {
+    testResponseBodyWrite(true);
   }
 
   @Test
-  public void testResponseBodyWriteBufferNonChunked() {
-    testResponseBodyWriteBuffer(false);
+  public void testResponseBodyWriteNonChunked() {
+    testResponseBodyWrite(false);
   }
 
-  private void testResponseBodyWriteBuffer(boolean chunked) {
+  private void testResponseBodyWrite(boolean chunked) {
     Buffer body = new Buffer();
 
     int numWrites = 10;
@@ -1601,7 +1601,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testResponseWriteBuffer() {
+  public void testResponseWrite() {
     Buffer body = TestUtils.randomBuffer(1000);
 
     server.requestHandler(req -> {
@@ -1636,7 +1636,7 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.bodyHandler(buff -> {
         assertEquals("This is content " + theCount, buff.toString());
-        // We writeBuffer the response back after a random time to increase the chances of responses written in the
+        // We write the response back after a random time to increase the chances of responses written in the
         // wrong order if we didn't implement pipelining correctly
         vertx.setTimer(1 + (long) (10 * Math.random()), id -> {
           req.response().headers().set("count", String.valueOf(theCount));
@@ -3182,7 +3182,7 @@ public class HttpTest extends HttpTestBase {
         });
         socket.writeString("GET HTTP1/1\r\n");
 
-        // trigger another writeBuffer to be sure we detect that the other peer has closed the connection.
+        // trigger another write to be sure we detect that the other peer has closed the connection.
         socket.writeString("X-Header: test\r\n");
       });
     }));

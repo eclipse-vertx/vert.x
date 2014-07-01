@@ -342,7 +342,7 @@ public interface FileSystem {
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
-   * If {@code read} is {@code true} the file will be opened for reading. If {@code writeBuffer} is {@code true} the file
+   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
    * will be opened for writing.<p>
    * If the file does not already exist and
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
@@ -358,13 +358,13 @@ public interface FileSystem {
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
-   * If {@code read} is {@code true} the file will be opened for reading. If {@code writeBuffer} is {@code true} the file
+   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
    * will be opened for writing.<p>
    * If the file does not already exist and
    * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
    * the operation will fail.<p>
    * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
-   * storage on each writeBuffer.
+   * storage on each write.
    */
   FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew,
       boolean flush, Handler<AsyncResult<AsyncFile>> handler);

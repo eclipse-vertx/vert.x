@@ -36,40 +36,40 @@ public interface DatagramSocket {
 
   /**
    * Write the given {@link io.vertx.core.buffer.Buffer} to the {@link io.vertx.core.net.SocketAddress}. The {@link io.vertx.core.Handler} will be notified once the
-   * writeBuffer completes.
+   * write completes.
    *
    *
-   * @param packet    the {@link io.vertx.core.buffer.Buffer} to writeBuffer
+   * @param packet    the {@link io.vertx.core.buffer.Buffer} to write
    * @param host      the host address of the remote peer
    * @param port      the host port of the remote peer
-   * @param handler   the {@link io.vertx.core.Handler} to notify once the writeBuffer completes.
+   * @param handler   the {@link io.vertx.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
   DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
-   * writeBuffer completes.
+   * write completes.
    *
    *
-   * @param str       the {@link String} to writeBuffer
+   * @param str       the {@link String} to write
    * @param host      the host address of the remote peer
    * @param port      the host port of the remote peer
-   * @param handler   the {@link io.vertx.core.Handler} to notify once the writeBuffer completes.
+   * @param handler   the {@link io.vertx.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
   DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using the given encoding. The {@link Handler} will be notified once the
-   * writeBuffer completes.
+   * write completes.
    *
    *
-   * @param str       the {@link String} to writeBuffer
+   * @param str       the {@link String} to write
    * @param enc       the charset used for encoding
    * @param host      the host address of the remote peer
    * @param port      the host port of the remote peer
-   * @param handler   the {@link io.vertx.core.Handler} to notify once the writeBuffer completes.
+   * @param handler   the {@link io.vertx.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
   DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);

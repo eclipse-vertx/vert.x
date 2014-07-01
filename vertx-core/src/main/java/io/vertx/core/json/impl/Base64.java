@@ -63,7 +63,7 @@ package io.vertx.core.json.impl;
  * <li>v1.5 - Output stream pases on flush() command but doesn't do anything itself.
  * This helps when using GZIP streams.
  * Added the ability to GZip-compress objects before encoding them.</li>
- * <li>v1.4 - Added helper methods to read/writeBuffer files.</li>
+ * <li>v1.4 - Added helper methods to read/write files.</li>
  * <li>v1.3.6 - Fixed OutputStream.flush() so that 'position' is reset.</li>
  * <li>v1.3.5 - Added flag to turn on and off line breaks. Fixed bug in input stream
  * where last buffer being read, if not completely full, was not returned.</li>
@@ -1922,7 +1922,7 @@ public class Base64 {
   /* ********  I N N E R   C L A S S   O U T P U T S T R E A M  ******** */
 
   /**
-   * A {@link Base64.OutputStream} will writeBuffer data to another
+   * A {@link Base64.OutputStream} will write data to another
    * <tt>java.io.OutputStream</tt>, given in the constructor,
    * and encode/decode to/from Base64 notation on the fly.
    *
@@ -2002,11 +2002,11 @@ public class Base64 {
      * converting to/from Base64 notation.
      * When encoding, bytes are buffered three
      * at a time before the output stream actually
-     * gets a writeBuffer() call.
+     * gets a write() call.
      * When decoding, bytes are buffered four
      * at a time.
      *
-     * @param theByte the byte to writeBuffer
+     * @param theByte the byte to write
      * @since 1.3
      */
     @Override
@@ -2043,7 +2043,7 @@ public class Base64 {
           {
             int len = Base64.decode4to3(buffer, 0, b4, 0, options);
             out.write(b4, 0, len);
-            // out.writeBuffer( Base64.decode4to3( buffer ) );
+            // out.write( Base64.decode4to3( buffer ) );
             position = 0;
           } // end if: enough to output
         } // end if: meaningful base64 character
@@ -2051,7 +2051,7 @@ public class Base64 {
           throw new java.io.IOException("Invalid character in Base64 data.");
         }
       } // end else: decoding
-    } // end writeBuffer
+    } // end write
 
     /**
      * Calls {@link #write(int)} repeatedly until <var>len</var>
@@ -2074,7 +2074,7 @@ public class Base64 {
         write(theBytes[off + i]);
       } // end for: each byte written
 
-    } // end writeBuffer
+    } // end write
 
     /**
      * Method added by PHIL. [Thanks, PHIL. -Rob]

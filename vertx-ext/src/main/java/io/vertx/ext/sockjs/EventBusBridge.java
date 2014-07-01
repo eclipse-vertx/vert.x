@@ -403,7 +403,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             new JsonObject().putString("address", address).putNumber("failureCode",
               cause.failureCode()).putString("failureType", cause.failureType().name())
               .putString("message", cause.getMessage());
-          sock.write(new Buffer(envelope.encode()));
+          sock.writeBuffer(new Buffer(envelope.encode()));
         }
         info.handlerCount--;
       };

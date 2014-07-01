@@ -43,7 +43,7 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * handler is given by {@code writeHandlerID}.<p>
    * Given this ID, a different event loop can send a buffer to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
-   * allows you to writeBuffer data to other connections which are owned by different event loops.
+   * allows you to write data to other connections which are owned by different event loops.
    */
   String writeHandlerID();
 
