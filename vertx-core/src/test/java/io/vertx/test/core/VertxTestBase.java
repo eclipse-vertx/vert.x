@@ -5,6 +5,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.file.impl.ClasspathPathResolver;
+import io.vertx.core.net.*;
 import org.junit.After;
 import org.junit.Before;
 
@@ -79,6 +80,58 @@ public class VertxTestBase extends AsyncTestBase {
       if (now - start > timeout) {
         throw new IllegalStateException("Timed out");
       }
+    }
+  }
+
+  protected TrustStoreOptions getClientTrustOptions(TS trust) {
+    switch (trust) {
+      case JKS:
+        return new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble");
+      case PKCS12:
+        return new PKCS12Options().setPath(findFileOnClasspath("tls/client-truststore.p12")).setPassword("wibble");
+      case PEM:
+        return new CaOptions().addCertPath(findFileOnClasspath("tls/server-cert.pem"));
+      default:
+        return null;
+    }
+  }
+
+  protected KeyStoreOptions getClientCertOptions(KS cert) {
+    switch (cert) {
+      case JKS:
+        return new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble");
+      case PKCS12:
+        return new PKCS12Options().setPath(findFileOnClasspath("tls/client-keystore.p12")).setPassword("wibble");
+      case PEM:
+        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert.pem"));
+      default:
+        return null;
+    }
+  }
+
+  protected TrustStoreOptions getServerTrustOptions(TS trust) {
+    switch (trust) {
+      case JKS:
+        return new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble");
+      case PKCS12:
+        return new PKCS12Options().setPath(findFileOnClasspath("tls/server-truststore.p12")).setPassword("wibble");
+      case PEM:
+        return new CaOptions().addCertPath(findFileOnClasspath("tls/client-cert.pem"));
+      default:
+        return null;
+    }
+  }
+
+  protected KeyStoreOptions getServerCertOptions(KS cert) {
+    switch (cert) {
+      case JKS:
+        return new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
+      case PKCS12:
+        return new PKCS12Options().setPath(findFileOnClasspath("tls/server-keystore.p12")).setPassword("wibble");
+      case PEM:
+        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert.pem"));
+      default:
+        return null;
     }
   }
 

@@ -17,6 +17,8 @@
 package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.ClientOptions;
 
 /**
@@ -186,26 +188,14 @@ public class HttpClientOptions extends ClientOptions {
   }
 
   @Override
-  public HttpClientOptions setKeyStorePath(String keyStorePath) {
-    super.setKeyStorePath(keyStorePath);
+  public HttpClientOptions setKeyStore(KeyStoreOptions keyStore) {
+    super.setKeyStore(keyStore);
     return this;
   }
 
   @Override
-  public HttpClientOptions setKeyStorePassword(String keyStorePassword) {
-    super.setKeyStorePassword(keyStorePassword);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setTrustStorePath(String trustStorePath) {
-    super.setTrustStorePath(trustStorePath);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setTrustStorePassword(String trustStorePassword) {
-    super.setTrustStorePassword(trustStorePassword);
+  public HttpClientOptions setTrustStore(TrustStoreOptions trustStore) {
+    super.setTrustStore(trustStore);
     return this;
   }
 

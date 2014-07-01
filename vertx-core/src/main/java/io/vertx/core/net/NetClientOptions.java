@@ -135,26 +135,14 @@ public class NetClientOptions extends ClientOptions {
   }
 
   @Override
-  public NetClientOptions setKeyStorePath(String keyStorePath) {
-    super.setKeyStorePath(keyStorePath);
+  public NetClientOptions setKeyStore(KeyStoreOptions keyStore) {
+    super.setKeyStore(keyStore);
     return this;
   }
 
   @Override
-  public NetClientOptions setKeyStorePassword(String keyStorePassword) {
-    super.setKeyStorePassword(keyStorePassword);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTrustStorePath(String trustStorePath) {
-    super.setTrustStorePath(trustStorePath);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTrustStorePassword(String trustStorePassword) {
-    super.setTrustStorePassword(trustStorePassword);
+  public NetClientOptions setTrustStore(TrustStoreOptions trustStore) {
+    super.setTrustStore(trustStore);
     return this;
   }
 

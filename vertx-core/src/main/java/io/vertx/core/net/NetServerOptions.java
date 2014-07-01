@@ -158,26 +158,14 @@ public class NetServerOptions extends TCPOptions {
   }
 
   @Override
-  public NetServerOptions setKeyStorePath(String keyStorePath) {
-    super.setKeyStorePath(keyStorePath);
+  public NetServerOptions setKeyStore(KeyStoreOptions keyStore) {
+    super.setKeyStore(keyStore);
     return this;
   }
 
   @Override
-  public NetServerOptions setKeyStorePassword(String keyStorePassword) {
-    super.setKeyStorePassword(keyStorePassword);
-    return this;
-  }
-
-  @Override
-  public NetServerOptions setTrustStorePath(String trustStorePath) {
-    super.setTrustStorePath(trustStorePath);
-    return this;
-  }
-
-  @Override
-  public NetServerOptions setTrustStorePassword(String trustStorePassword) {
-    super.setTrustStorePassword(trustStorePassword);
+  public NetServerOptions setTrustStore(TrustStoreOptions trustStore) {
+    super.setTrustStore(trustStore);
     return this;
   }
 
