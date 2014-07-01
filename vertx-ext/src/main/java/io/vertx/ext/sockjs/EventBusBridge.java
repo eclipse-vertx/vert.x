@@ -329,6 +329,12 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     sock.writeBuffer(new Buffer(envelope.encode()));
   }
 
+  private static void replyStatus(SockJSSocket sock, String replyAddress, String status) {
+    JsonObject body = new JsonObject().putString("status", status);
+    JsonObject envelope = new JsonObject().putString("address", replyAddress).putValue("body", body);
+    sock.writeBuffer(new Buffer(envelope.encode()));
+  }
+
   private void doSendOrPub(final boolean send, final SockJSSocket sock, final String address,
                            final JsonObject message) {
     final Object body = message.getValue("body");
@@ -355,16 +361,19 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                 checkAndSend(send, address, body, sock, replyAddress);
               } else {
                 // invalid session id
+                replyStatus(sock, replyAddress, "access_denied");
                 if (debug) {
                   log.debug("Inbound message for address " + address + " rejected because sessionID is not authorised");
                 }
               }
             } else {
+              replyStatus(sock, replyAddress, "auth_error");
               log.error("Error in performing authorisation", res.cause());
             }
           });
         } else {
-          // session id null
+          // session id null, authentication is required
+          replyStatus(sock, replyAddress, "auth_required");
           if (debug) {
             log.debug("Inbound message for address " + address + " rejected because it requires auth and sessionID is missing");
           }
@@ -374,6 +383,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       }
     } else {
       // inbound match failed
+      replyStatus(sock, replyAddress, "access_denied");
       if (debug) {
         log.debug("Inbound message for address " + address + " rejected because there is no match");
       }
