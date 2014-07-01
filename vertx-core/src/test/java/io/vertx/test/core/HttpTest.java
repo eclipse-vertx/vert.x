@@ -2277,7 +2277,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testConnectInvalidHost() {
     client.exceptionHandler(t -> testComplete());
-    client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost("127.0.0.2").setRequestURI(DEFAULT_TEST_URI), resp -> fail("Connect should not be called"));
+    client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost("255.255.255.255").setRequestURI(DEFAULT_TEST_URI), resp -> fail("Connect should not be called"));
 
     await();
   }
