@@ -105,6 +105,12 @@ public class NetClientOptions extends ClientOptions {
   }
 
   @Override
+  public NetClientOptions setIdleTimeout(int idleTimeout) {
+    super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
   public NetClientOptions setTcpNoDelay(boolean tcpNoDelay) {
     super.setTcpNoDelay(tcpNoDelay);
     return this;

@@ -126,6 +126,12 @@ public class NetServerOptions extends TCPOptions {
   }
 
   @Override
+  public NetServerOptions setIdleTimeout(int idleTimeout) {
+    super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
   public NetServerOptions setTcpNoDelay(boolean tcpNoDelay) {
     super.setTcpNoDelay(tcpNoDelay);
     return this;

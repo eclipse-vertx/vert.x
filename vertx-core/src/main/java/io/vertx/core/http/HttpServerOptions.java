@@ -134,6 +134,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setIdleTimeout(int idleTimeout) {
+    super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setTcpNoDelay(boolean tcpNoDelay) {
     super.setTcpNoDelay(tcpNoDelay);
     return this;

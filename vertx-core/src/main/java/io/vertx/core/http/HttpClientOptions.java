@@ -142,6 +142,12 @@ public class HttpClientOptions extends ClientOptions {
   }
 
   @Override
+  public HttpClientOptions setIdleTimeout(int idleTimeout) {
+    super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions setTcpNoDelay(boolean tcpNoDelay) {
     super.setTcpNoDelay(tcpNoDelay);
     return this;

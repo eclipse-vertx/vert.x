@@ -36,6 +36,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.impl.HttpHeadersAdapter;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -2167,6 +2168,32 @@ public class HttpTest extends HttpTestBase {
       req.setTimeout(100);
       req.end();
     }));
+
+    await();
+  }
+
+  @Test
+  public void testServerIdleTimeout() {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server.websocketHandler(ws -> {}).listen();
+
+    client.connectWebsocket(new WebSocketConnectOptions().setPort(DEFAULT_HTTP_PORT), ws -> {
+      ws.closeHandler(v -> testComplete());
+    });
+
+    await();
+  }
+
+  @Test
+  public void testClientIdleTimeout() {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
+    server.websocketHandler(ws -> {}).listen();
+
+    client.connectWebsocket(new WebSocketConnectOptions().setPort(DEFAULT_HTTP_PORT), ws -> {
+      ws.closeHandler(v -> testComplete());
+    });
 
     await();
   }

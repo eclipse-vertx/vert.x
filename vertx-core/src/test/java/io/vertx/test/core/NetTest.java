@@ -149,6 +149,10 @@ public class NetTest extends VertxTestBase {
       // OK
     }
 
+    assertEquals(0, options.getIdleTimeout());
+    assertEquals(options, options.setIdleTimeout(10));
+    assertEquals(10, options.getIdleTimeout());
+
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
     assertFalse(options.isTcpNoDelay());
@@ -691,6 +695,37 @@ public class NetTest extends VertxTestBase {
       assertFalse(res.succeeded());
       assertTrue(res.failed());
       testComplete();
+    });
+
+    await();
+  }
+
+  @Test
+  public void testServerIdleTimeout() {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost").setIdleTimeout(1));
+    server.connectHandler(s -> {}).listen();
+
+    client.connect(1234, res -> {
+      assertTrue(res.succeeded());
+      NetSocket socket = res.result();
+      socket.closeHandler(v -> testComplete());
+    });
+
+    await();
+  }
+
+  @Test
+  public void testClientIdleTimeout() {
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(1));
+
+    server.connectHandler(s -> {}).listen();
+
+    client.connect(1234, res -> {
+      assertTrue(res.succeeded());
+      NetSocket socket = res.result();
+      socket.closeHandler(v -> testComplete());
     });
 
     await();

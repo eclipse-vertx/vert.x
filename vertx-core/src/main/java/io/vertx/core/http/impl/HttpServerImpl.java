@@ -46,6 +46,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
@@ -216,6 +217,9 @@ public class HttpServerImpl implements HttpServer, Closeable {
               if (sslHelper.isSSL() || options.isCompressionSupported()) {
                 // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
                 pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+              }
+              if (options.getIdleTimeout() > 0) {
+                pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
               }
               pipeline.addLast("handler", new ServerHandler());
             }

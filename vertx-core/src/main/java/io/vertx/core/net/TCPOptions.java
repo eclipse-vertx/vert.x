@@ -37,6 +37,7 @@ public class TCPOptions extends NetworkOptions {
   private static final boolean DEFAULT_TCPKEEPALIVE = SOCK_DEFAULTS.isTcpKeepAlive();
   private static final int DEFAULT_SOLINGER = SOCK_DEFAULTS.getSoLinger();
 
+  private int idleTimeout;
   private boolean tcpNoDelay = DEFAULT_TCPNODELAY;
   private boolean tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
   private int soLinger = DEFAULT_SOLINGER;
@@ -53,6 +54,7 @@ public class TCPOptions extends NetworkOptions {
 
   public TCPOptions(TCPOptions other) {
     super(other);
+    this.idleTimeout = other.idleTimeout;
     this.tcpNoDelay = other.tcpNoDelay;
     this.tcpKeepAlive = other.tcpKeepAlive;
     this.soLinger = other.soLinger;
@@ -85,6 +87,32 @@ public class TCPOptions extends NetworkOptions {
     tcpNoDelay = DEFAULT_TCPNODELAY;
     tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
     soLinger = DEFAULT_SOLINGER;
+  }
+
+  /**
+   * The time (in seconds) to close an idle connection.
+   *
+   * Default is 0, meaning no user timeout.
+   *
+   * @return the idle timeout
+   * @see #setIdleTimeout(int)
+   */
+  public int getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Sets the amount of time (in seconds) to close an idle connection. An idle connection is
+   * determined by the amount of time it has not read or written any data.
+   *
+   * Default is 0, meaning no user timeout.
+   *
+   * @param idleTimeout the idle timeout
+   * @return this
+   */
+  public TCPOptions setIdleTimeout(int idleTimeout) {
+    this.idleTimeout = idleTimeout;
+    return this;
   }
 
   public boolean isTcpNoDelay() {
