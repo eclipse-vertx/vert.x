@@ -18,6 +18,9 @@ package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
  * Instances of this class are not thread-safe<p>
@@ -45,6 +48,12 @@ public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
    * A map of all headers in the request to upgrade to websocket
    */
   MultiMap headers();
+
+  /**
+   * @return an array of the peer certificates. Returns null if connection is not SSL.
+   * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  X509Certificate[] peerCertificationChain() throws SSLPeerUnverifiedException;
 
   /**
    * Reject the WebSocket<p>

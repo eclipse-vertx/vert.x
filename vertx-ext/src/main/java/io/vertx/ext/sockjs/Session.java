@@ -23,7 +23,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.shareddata.Shareable;
 
 import java.util.LinkedList;
@@ -39,7 +38,7 @@ import java.util.Queue;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Session extends SockJSSocketBase implements Shareable {
+abstract class Session extends SockJSSocketBase implements Shareable {
 
   private static final Logger log = LoggerFactory.getLogger(Session.class);
   private final Map<String, Session> sessions;
@@ -61,18 +60,15 @@ class Session extends SockJSSocketBase implements Shareable {
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean handleCalled;
-  private SocketAddress localAddress;
-  private SocketAddress remoteAddress;
-  private String uri;
   private MultiMap headers;
 
   Session(Vertx vertx, Map<String, Session> sessions, long heartbeatPeriod,
-          Handler<SockJSSocket> sockHandler) {
-    this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler);
+          Handler<SockJSSocket> sockHandler, MultiMap headers) {
+    this(vertx, sessions, null, -1, heartbeatPeriod, sockHandler, headers);
   }
 
   Session(Vertx vertx, Map<String, Session> sessions, String id, long timeout, long heartbeatPeriod,
-          Handler<SockJSSocket> sockHandler) {
+          Handler<SockJSSocket> sockHandler, MultiMap headers) {
     super(vertx);
     this.sessions = sessions;
     this.id = id;
@@ -81,13 +77,18 @@ class Session extends SockJSSocketBase implements Shareable {
 
     // Start a heartbeat
 
-    heartbeatID = vertx.setPeriodic(heartbeatPeriod, new Handler<Long>() {
-      public void handle(Long id) {
-        if (listener != null) {
-          listener.sendFrame("h");
-        }
+    heartbeatID = vertx.setPeriodic(heartbeatPeriod, id1 -> {
+      if (listener != null) {
+        listener.sendFrame("h");
       }
     });
+
+    this.headers = BaseTransport.removeCookieHeaders(headers);
+  }
+
+  @Override
+  public MultiMap headers() {
+    return headers;
   }
 
   @Override
@@ -172,26 +173,6 @@ class Session extends SockJSSocketBase implements Shareable {
     if (listener != null && handleCalled) {
       listener.sessionClosed();
     }
-  }
-
-  @Override
-  public SocketAddress remoteAddress() {
-    return remoteAddress;
-  }
-
-  @Override
-  public SocketAddress localAddress() {
-    return localAddress;
-  }
-
-  @Override
-  public MultiMap headers() {
-    return headers;
-  }
-
-  @Override
-  public String uri() {
-    return uri;
   }
 
   synchronized boolean isClosed() {
@@ -364,13 +345,5 @@ class Session extends SockJSSocketBase implements Shareable {
     StringBuilder sb = new StringBuilder("o");
     lst.sendFrame(sb.toString());
     openWritten = true;
-  }
-
-  void setInfo(SocketAddress localAddress, SocketAddress remoteAddress, String uri,
-               MultiMap headers) {
-    this.localAddress = localAddress;
-    this.remoteAddress = remoteAddress;
-    this.uri = uri;
-    this.headers = BaseTransport.removeCookieHeaders(headers);
   }
 }

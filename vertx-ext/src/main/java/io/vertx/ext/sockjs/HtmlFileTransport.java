@@ -66,24 +66,21 @@ class HtmlFileTransport extends BaseTransport {
     super(vertx, sessions, config);
     String htmlFileRE = basePath + COMMON_PATH_ELEMENT_RE + "htmlfile";
 
-    rm.getWithRegEx(htmlFileRE, new Handler<HttpServerRequest>() {
-      public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("HtmlFile, get: " + req.uri());
-        String callback = req.params().get("callback");
+    rm.getWithRegEx(htmlFileRE, req -> {
+      if (log.isTraceEnabled()) log.trace("HtmlFile, get: " + req.uri());
+      String callback = req.params().get("callback");
+      if (callback == null) {
+        callback = req.params().get("c");
         if (callback == null) {
-          callback = req.params().get("c");
-          if (callback == null) {
-            req.response().setStatusCode(500);
-            req.response().end("\"callback\" parameter required\n");
-            return;
-          }
+          req.response().setStatusCode(500);
+          req.response().end("\"callback\" parameter required\n");
+          return;
         }
-
-        String sessionID = req.params().get("param0");
-        Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
-        session.setInfo(req.localAddress(), req.remoteAddress(), req.uri(), req.headers());
-        session.register(new HtmlFileListener(config.getInteger("max_bytes_streaming"), req, callback, session));
       }
+
+      String sessionID = req.params().get("param0");
+      Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler, req);
+      session.register(new HtmlFileListener(config.getInteger("max_bytes_streaming"), req, callback, session));
     });
   }
 

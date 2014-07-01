@@ -38,6 +38,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
@@ -257,6 +259,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   @Override
   public boolean isSsl() {
     return channel.pipeline().get(SslHandler.class) != null;
+  }
+
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return getPeerCertificateChain();
   }
 
   protected ContextImpl getContext() {

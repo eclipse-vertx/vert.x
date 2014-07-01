@@ -18,7 +18,6 @@ package io.vertx.ext.sockjs;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.RouteMatcher;
 import io.vertx.core.json.JsonObject;
@@ -42,86 +41,78 @@ class JsonPTransport extends BaseTransport {
 
     String jsonpRE = basePath + COMMON_PATH_ELEMENT_RE + "jsonp";
 
-    rm.getWithRegEx(jsonpRE, new Handler<HttpServerRequest>() {
-      public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("JsonP, get: " + req.uri());
-        String callback = req.params().get("callback");
+    rm.getWithRegEx(jsonpRE, req -> {
+      if (log.isTraceEnabled()) log.trace("JsonP, get: " + req.uri());
+      String callback = req.params().get("callback");
+      if (callback == null) {
+        callback = req.params().get("c");
         if (callback == null) {
-          callback = req.params().get("c");
-          if (callback == null) {
-            req.response().setStatusCode(500);
-            req.response().end("\"callback\" parameter required\n");
-            return;
-          }
+          req.response().setStatusCode(500);
+          req.response().end("\"callback\" parameter required\n");
+          return;
         }
-
-        String sessionID = req.params().get("param0");
-        Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
-        session.setInfo(req.localAddress(), req.remoteAddress(), req.uri(), req.headers());
-        session.register(new JsonPListener(req, session, callback));
       }
+
+      String sessionID = req.params().get("param0");
+      Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler, req);
+      session.register(new JsonPListener(req, session, callback));
     });
 
     String jsonpSendRE = basePath + COMMON_PATH_ELEMENT_RE + "jsonp_send";
 
-    rm.postWithRegEx(jsonpSendRE, new Handler<HttpServerRequest>() {
-      public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("JsonP, post: " + req.uri());
-        String sessionID = req.params().get("param0");
-        final Session session = sessions.get(sessionID);
-        if (session != null && !session.isClosed()) {
-          handleSend(req, session);
-        } else {
-          req.response().setStatusCode(404);
-          setJSESSIONID(config, req);
-          req.response().end();
-        }
+    rm.postWithRegEx(jsonpSendRE, req -> {
+      if (log.isTraceEnabled()) log.trace("JsonP, post: " + req.uri());
+      String sessionID = req.params().get("param0");
+      final Session session = sessions.get(sessionID);
+      if (session != null && !session.isClosed()) {
+        handleSend(req, session);
+      } else {
+        req.response().setStatusCode(404);
+        setJSESSIONID(config, req);
+        req.response().end();
       }
     });
   }
 
   private void handleSend(final HttpServerRequest req, final Session session) {
-    req.bodyHandler(new Handler<Buffer>() {
+    req.bodyHandler(buff -> {
+      String body = buff.toString();
 
-      public void handle(Buffer buff) {
-        String body = buff.toString();
+      boolean urlEncoded;
+      String ct = req.headers().get("content-type");
+      if ("application/x-www-form-urlencoded".equalsIgnoreCase(ct)) {
+        urlEncoded = true;
+      } else if ("text/plain".equalsIgnoreCase(ct)) {
+        urlEncoded = false;
+      } else {
+        req.response().setStatusCode(500);
+        req.response().end("Invalid Content-Type");
+        return;
+      }
 
-        boolean urlEncoded;
-        String ct = req.headers().get("content-type");
-        if ("application/x-www-form-urlencoded".equalsIgnoreCase(ct)) {
-          urlEncoded = true;
-        } else if ("text/plain".equalsIgnoreCase(ct)) {
-          urlEncoded = false;
-        } else {
-          req.response().setStatusCode(500);
-          req.response().end("Invalid Content-Type");
-          return;
+      if (body.equals("") || urlEncoded && (!body.startsWith("d=") || body.length() <= 2)) {
+        req.response().setStatusCode(500);
+        req.response().end("Payload expected.");
+        return;
+      }
+
+      if (urlEncoded) {
+        try {
+          body = URLDecoder.decode(body, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+          throw new IllegalStateException("No UTF-8!");
         }
+        body = body.substring(2);
+      }
 
-        if (body.equals("") || urlEncoded && (!body.startsWith("d=") || body.length() <= 2)) {
-          req.response().setStatusCode(500);
-          req.response().end("Payload expected.");
-          return;
-        }
-
-        if (urlEncoded) {
-          try {
-            body = URLDecoder.decode(body, "UTF-8");
-          } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException("No UTF-8!");
-          }
-          body = body.substring(2);
-        }
-
-        if (!session.handleMessages(body)) {
-          sendInvalidJSON(req.response());
-        } else {
-          setJSESSIONID(config, req);
-          req.response().headers().set("Content-Type", "text/plain; charset=UTF-8");
-          setNoCacheHeaders(req);
-          req.response().end("ok");
-          if (log.isTraceEnabled()) log.trace("send handled ok");
-        }
+      if (!session.handleMessages(body)) {
+        sendInvalidJSON(req.response());
+      } else {
+        setJSESSIONID(config, req);
+        req.response().headers().set("Content-Type", "text/plain; charset=UTF-8");
+        setNoCacheHeaders(req);
+        req.response().end("ok");
+        if (log.isTraceEnabled()) log.trace("send handled ok");
       }
     });
   }
