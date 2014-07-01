@@ -16,15 +16,24 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.gen.VertxGen;
+import io.vertx.core.json.JsonObject;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public class NetworkOptions {
 
-  private int sendBufferSize = -1;
-  private int receiveBufferSize = -1;
-  private boolean reuseAddress = true;
-  private int trafficClass = -1;
+  private static final int DEFAULT_SENDBUFFERSIZE = -1;
+  private static final int DEFAULT_RECEIVEBUFFERSIZE = -1;
+  private static final boolean DEFAULT_REUSEADDRESS = true;
+  private static final int DEFAULT_TRAFFICCLASS = -1;
+
+  private int sendBufferSize = DEFAULT_SENDBUFFERSIZE;
+  private int receiveBufferSize = DEFAULT_RECEIVEBUFFERSIZE;
+  private boolean reuseAddress = DEFAULT_REUSEADDRESS;
+  private int trafficClass = DEFAULT_TRAFFICCLASS;
 
   public NetworkOptions(NetworkOptions other) {
     this.sendBufferSize = other.sendBufferSize;
@@ -33,7 +42,18 @@ public class NetworkOptions {
     this.trafficClass = other.trafficClass;
   }
 
+  public NetworkOptions(JsonObject json) {
+    this.sendBufferSize = json.getInteger("sendBufferSize", DEFAULT_SENDBUFFERSIZE);
+    this.receiveBufferSize = json.getInteger("receiveBufferSize", DEFAULT_RECEIVEBUFFERSIZE);
+    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSEADDRESS);
+    this.trafficClass = json.getInteger("trafficClass", DEFAULT_TRAFFICCLASS);
+  }
+
   public NetworkOptions() {
+    sendBufferSize = DEFAULT_SENDBUFFERSIZE;
+    receiveBufferSize = DEFAULT_RECEIVEBUFFERSIZE;
+    reuseAddress = DEFAULT_REUSEADDRESS;
+    trafficClass = DEFAULT_TRAFFICCLASS;
   }
 
   public int getSendBufferSize() {

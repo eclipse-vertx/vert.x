@@ -65,7 +65,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
   HttpServerResponse setStatusMessage(String statusMessage);
 
   /**
-   * If {@code chunked} is {@code true}, this response will use HTTP chunked encoding, and each call to write to the body
+   * If {@code chunked} is {@code true}, this response will use HTTP chunked encoding, and each call to writeBuffer to the body
    * will correspond to a new HTTP chunk sent on the wire.<p>
    * If chunked encoding is used the HTTP header {@code Transfer-Encoding} with a value of {@code Chunked} will be
    * automatically inserted in the response.<p>
@@ -142,7 +142,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse write(Buffer chunk);
+  HttpServerResponse writeBuffer(Buffer chunk);
 
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.

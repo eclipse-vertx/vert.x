@@ -153,7 +153,7 @@ public abstract class BaseMessage<T> implements Message<T> {
     }
     writeBody(totBuff);
     totBuff.setInt(0, totBuff.length() - 4);
-    socket.write(totBuff);
+    socket.writeBuffer(totBuff);
   }
 
   protected void writeString(Buffer buff, String str) {

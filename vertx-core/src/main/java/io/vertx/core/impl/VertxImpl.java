@@ -388,16 +388,6 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, new DeploymentOptions(), doneHandler);
-  }
-
-  @Override
-  public void deployVerticle(String verticleClass, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, new DeploymentOptions(), doneHandler);
-  }
-
-  @Override
   public void deployVerticle(Verticle verticle, DeploymentOptions options) {
     deploymentManager.deployVerticle(verticle, options, null);
   }

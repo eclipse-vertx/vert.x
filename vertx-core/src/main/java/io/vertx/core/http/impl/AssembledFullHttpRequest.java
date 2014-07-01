@@ -26,7 +26,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 
 /**
  * Helper wrapper class which allows to assemble a LastHttpContent and a HttpRequest into one "packet" and so more
- * efficient write it through the pipeline.
+ * efficient writeBuffer it through the pipeline.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */

@@ -1007,7 +1007,7 @@ public class FileSystemTest extends VertxTestBase {
         for (int i = 0; i < chunks; i++) {
           Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
           assertEquals(chunkSize, chunk.length());
-          ws.write(chunk);
+          ws.writeBuffer(chunk);
         }
         ar.result().close(ar2 -> {
           if (ar2.failed()) {
@@ -1045,7 +1045,7 @@ public class FileSystemTest extends VertxTestBase {
       if (ar.succeeded()) {
         WriteStream<AsyncFile> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
-        ws.write(buff);
+        ws.writeBuffer(buff);
         ar.result().close(ar2 -> {
           if (ar2.failed()) {
             fail(ar2.cause().getMessage());

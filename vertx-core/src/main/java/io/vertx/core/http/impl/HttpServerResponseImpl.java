@@ -227,7 +227,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl write(Buffer chunk) {
+  public HttpServerResponseImpl writeBuffer(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
     return write(buf, null);
   }
@@ -282,7 +282,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     checkWritten();
 
     if (!headWritten) {
-      // if the head was not written yet we can write out everything in on go
+      // if the head was not written yet we can writeBuffer out everything in on go
       // which is more cheap.
       prepareHeaders();
       FullHttpResponse resp;
@@ -374,7 +374,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       conn.queueForWrite(response);
       conn.sendFile(file);
 
-      // write an empty last content to let the http encoder know the response is complete
+      // writeBuffer an empty last content to let the http encoder know the response is complete
       channelFuture = conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
       headWritten = written = true;
 

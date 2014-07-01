@@ -278,7 +278,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
           final TimeoutInfo timeout = iter.next();
           vertx.setTimer(timeout.timeout, new Handler<Long>() {
             public void handle(Long id) {
-              response.write(timeout.buff);
+              response.writeBuffer(timeout.buff);
               nextTimeout(timeouts, iter, response);
             }
           });
@@ -398,7 +398,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
       public void handle(final SockJSSocket sock) {
         sock.dataHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
-            sock.write(buff);
+            sock.writeBuffer(buff);
           }
         });
       }
@@ -419,7 +419,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
           public void handle(final SockJSSocket sock) {
             sock.dataHandler(new Handler<Buffer>() {
               public void handle(Buffer buff) {
-                sock.write(buff);
+                sock.writeBuffer(buff);
               }
             });
           }
@@ -430,7 +430,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
       public void handle(final SockJSSocket sock) {
         final long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
-            sock.write(new Buffer("tick!"));
+            sock.writeBuffer(new Buffer("tick!"));
           }
         });
         sock.endHandler(new VoidHandler() {
@@ -456,7 +456,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
             for (int i = 0; i < num; i++) {
               buff.appendByte((byte)'x');
             }
-            sock.write(buff);
+            sock.writeBuffer(buff);
           }
         });
       }
@@ -487,7 +487,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
         public void handle(final SockJSSocket sock) {
           sock.dataHandler(new Handler<Buffer>() {
             public void handle(Buffer buff) {
-              sock.write(buff);
+              sock.writeBuffer(buff);
             }
           });
         }

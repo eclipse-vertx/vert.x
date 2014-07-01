@@ -97,7 +97,7 @@ public class StringEscapeUtils {
    * <p></p>
    * <p>A <code>null</code> string input has no effect.</p>
    *
-   * @param out Writer to write escaped string into
+   * @param out Writer to writeBuffer escaped string into
    * @param str String to escape values in, may be null
    * @throws IllegalArgumentException if the Writer is <code>null</code>
    * @throws IOException              if error occurs on underlying Writer
@@ -137,7 +137,7 @@ public class StringEscapeUtils {
    * <p></p>
    * <p>A <code>null</code> string input has no effect.</p>
    *
-   * @param out Writer to write escaped string into
+   * @param out Writer to writeBuffer escaped string into
    * @param str String to escape values in, may be null
    * @throws IllegalArgumentException if the Writer is <code>null</code>
    * @throws IOException              if error occurs on underlying Writer
@@ -168,7 +168,7 @@ public class StringEscapeUtils {
   /**
    * <p>Worker method for the {@link #escapeJavaScript(String)} method.</p>
    *
-   * @param out                write to receieve the escaped string
+   * @param out                writeBuffer to receieve the escaped string
    * @param str                String to escape values in, may be null
    * @param escapeSingleQuote  escapes single quotes if <code>true</code>
    * @param escapeForwardSlash TODO

@@ -16,17 +16,24 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.gen.VertxGen;
+import io.vertx.core.json.JsonObject;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-
+@VertxGen
 public class NetServerOptions extends TCPOptions {
 
   // Server specific HTTP stuff
 
-  private int port = 0;
-  private String host = "0.0.0.0";
-  private int acceptBacklog = 1024;
+  private static final int DEFAULT_PORT = 0;
+  private static final String DEFAULT_HOST = "0.0.0.0";
+  private static final int DEFAULT_ACCEPT_BACKLOG = 1024;
+
+  private int port;
+  private String host;
+  private int acceptBacklog;
 
   // Server specific SSL stuff
 
@@ -34,6 +41,16 @@ public class NetServerOptions extends TCPOptions {
 
   public NetServerOptions() {
     super();
+    this.port = DEFAULT_PORT;
+    this.host = DEFAULT_HOST;
+    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
+  }
+
+  public NetServerOptions(JsonObject json) {
+    super(json);
+    this.port = json.getInteger("port", DEFAULT_PORT);
+    this.host = json.getString("host", DEFAULT_HOST);
+    this.acceptBacklog = json.getInteger("acceptBacklog", DEFAULT_ACCEPT_BACKLOG);
   }
 
   public NetServerOptions(NetServerOptions other) {

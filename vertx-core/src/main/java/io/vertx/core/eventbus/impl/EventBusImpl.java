@@ -246,7 +246,7 @@ public class EventBusImpl implements EventBus {
             BaseMessage received = MessageFactory.read(buff, codecMap);
             if (received.type() == MessageFactory.TYPE_PING) {
               // Send back a pong - a byte will do
-              socket.write(PONG);
+              socket.writeBuffer(PONG);
             } else {
               receiveMessage(received, -1, null, null);
             }

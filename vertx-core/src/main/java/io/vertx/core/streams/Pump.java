@@ -21,11 +21,11 @@ import io.vertx.core.buffer.Buffer;
 
 /**
  * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
- * prevent the write stream buffer from getting overfull.<p>
- * Instances of this class read bytes from a {@link ReadStream} and write them to a {@link WriteStream}. If data
- * can be read faster than it can be written this could result in the write queue of the {@link WriteStream} growing
+ * prevent the writeBuffer stream buffer from getting overfull.<p>
+ * Instances of this class read bytes from a {@link ReadStream} and writeBuffer them to a {@link WriteStream}. If data
+ * can be read faster than it can be written this could result in the writeBuffer queue of the {@link WriteStream} growing
  * without bound, eventually causing it to exhaust all available RAM.<p>
- * To prevent this, after each write, instances of this class check whether the write queue of the {@link
+ * To prevent this, after each writeBuffer, instances of this class check whether the writeBuffer queue of the {@link
  * WriteStream} is full, and if so, the {@link ReadStream} is paused, and a {@code drainHandler} is set on the
  * {@link WriteStream}. When the {@link WriteStream} has processed half of its backlog, the {@code drainHandler} will be
  * called, which results in the pump resuming the {@link ReadStream}.<p>
@@ -59,7 +59,7 @@ public class Pump {
   }
 
   /**
-   * Set the write queue max size to {@code maxSize}
+   * Set the writeBuffer queue max size to {@code maxSize}
    */
   public Pump setWriteQueueMaxSize(int maxSize) {
     this.writeStream.setWriteQueueMaxSize(maxSize);
@@ -95,8 +95,8 @@ public class Pump {
   private final Handler<Buffer> dataHandler;
 
   /**
-   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
-   * of the write stream to {@code maxWriteQueueSize}
+   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the writeBuffer queue max size
+   * of the writeBuffer stream to {@code maxWriteQueueSize}
    */
   private Pump(ReadStream<?> rs, WriteStream <?> ws, int maxWriteQueueSize) {
     this(rs, ws);
@@ -108,7 +108,7 @@ public class Pump {
     this.writeStream = ws;
     drainHandler = v-> readStream.resume();
     dataHandler = buffer -> {
-      writeStream.write(buffer);
+      writeStream.writeBuffer(buffer);
       pumped += buffer.length();
       if (writeStream.writeQueueFull()) {
         readStream.pause();

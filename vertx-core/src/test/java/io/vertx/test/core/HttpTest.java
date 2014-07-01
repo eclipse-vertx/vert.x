@@ -459,7 +459,7 @@ public class HttpTest extends HttpTestBase {
       assertTrue(req.sendHead() == req);
       assertTrue(req.write("foo", "UTF-8") == req);
       assertTrue(req.write("foo") == req);
-      assertTrue(req.write(new Buffer("foo")) == req);
+      assertTrue(req.writeBuffer(new Buffer("foo")) == req);
       testComplete();
     }));
 
@@ -949,7 +949,7 @@ public class HttpTest extends HttpTestBase {
         //OK
       }
       try {
-        req.write(buff);
+        req.writeBuffer(buff);
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -967,7 +967,7 @@ public class HttpTest extends HttpTestBase {
         //OK
       }
       try {
-        req.write(buff);
+        req.writeBuffer(buff);
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1077,7 +1077,7 @@ public class HttpTest extends HttpTestBase {
       for (int i = 0; i < numWrites; i++) {
         Buffer b = TestUtils.randomBuffer(chunkSize);
         body.appendBuffer(b);
-        req.write(b);
+        req.writeBuffer(b);
       }
       req.end();
     }));
@@ -1166,7 +1166,7 @@ public class HttpTest extends HttpTestBase {
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.post(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
       req.setChunked(true);
-      req.write(body);
+      req.writeBuffer(body);
       req.end();
     }));
 
@@ -1343,7 +1343,7 @@ public class HttpTest extends HttpTestBase {
         //OK
       }
       try {
-        resp.write(buff);
+        resp.writeBuffer(buff);
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1362,7 +1362,7 @@ public class HttpTest extends HttpTestBase {
       }
 
       try {
-        resp.write(buff);
+        resp.writeBuffer(buff);
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1502,7 +1502,7 @@ public class HttpTest extends HttpTestBase {
       for (int i = 0; i < numWrites; i++) {
         Buffer b = TestUtils.randomBuffer(chunkSize);
         body.appendBuffer(b);
-        req.response().write(b);
+        req.response().writeBuffer(b);
       }
       req.response().end();
     });
@@ -1591,7 +1591,7 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
-      req.response().write(body);
+      req.response().writeBuffer(body);
       req.response().end();
     });
 
@@ -1621,11 +1621,11 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.bodyHandler(buff -> {
         assertEquals("This is content " + theCount, buff.toString());
-        // We write the response back after a random time to increase the chances of responses written in the
+        // We writeBuffer the response back after a random time to increase the chances of responses written in the
         // wrong order if we didn't implement pipelining correctly
         vertx.setTimer(1 + (long) (10 * Math.random()), id -> {
           req.response().headers().set("count", String.valueOf(theCount));
-          req.response().write(buff);
+          req.response().writeBuffer(buff);
           req.response().end();
         });
       });
@@ -1851,7 +1851,7 @@ public class HttpTest extends HttpTestBase {
       req.headers().set("Expect", "100-continue");
       req.setChunked(true);
       req.continueHandler(v -> {
-        req.write(toSend);
+        req.writeBuffer(toSend);
         req.end();
       });
       req.sendHead();
@@ -1878,7 +1878,7 @@ public class HttpTest extends HttpTestBase {
       req.headers().set("Expect", "100-continue");
       req.setChunked(true);
       req.continueHandler(v -> {
-        req.write(toSend);
+        req.writeBuffer(toSend);
         req.end();
       });
       req.sendHead();
@@ -1896,7 +1896,7 @@ public class HttpTest extends HttpTestBase {
       req.setWriteQueueMaxSize(1000);
       Buffer buff = TestUtils.randomBuffer(10000);
       vertx.setPeriodic(1, id -> {
-        req.write(buff);
+        req.writeBuffer(buff);
         if (req.writeQueueFull()) {
           vertx.cancelTimer(id);
           req.drainHandler(v -> {
@@ -2552,7 +2552,7 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       // Send back a big response in several chunks
       for (int i = 0; i < numWrites; i++) {
-        req.response().write(TestUtils.randomBuffer(numBytes));
+        req.response().writeBuffer(TestUtils.randomBuffer(numBytes));
       }
       req.response().end();
     });
@@ -2655,7 +2655,7 @@ public class HttpTest extends HttpTestBase {
       buffer.appendString(body);
       req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
-      req.write(buffer).end();
+      req.writeBuffer(buffer).end();
     }));
 
     await();
@@ -2698,7 +2698,7 @@ public class HttpTest extends HttpTestBase {
         buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
         req.headers().set("content-length", String.valueOf(buffer.length()));
         req.headers().set("content-type", "application/x-www-form-urlencoded");
-        req.write(buffer).end();
+        req.writeBuffer(buffer).end();
       } catch (UnsupportedEncodingException e) {
         fail(e.getMessage());
       }
@@ -2742,7 +2742,7 @@ public class HttpTest extends HttpTestBase {
       buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
       req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "application/x-www-form-urlencoded");
-      req.write(buffer).end();
+      req.writeBuffer(buffer).end();
     }));
 
     await();
@@ -2768,7 +2768,7 @@ public class HttpTest extends HttpTestBase {
         });
       });
       req.headers().set("content-length", String.valueOf(toSend.length()));
-      req.write(toSend);
+      req.writeBuffer(toSend);
     }));
 
     await();
@@ -2818,7 +2818,7 @@ public class HttpTest extends HttpTestBase {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = new Buffer();
     vertx.createNetServer(new NetServerOptions().setPort(1235)).connectHandler(socket -> {
-      socket.dataHandler(socket::write);
+      socket.dataHandler(socket::writeBuffer);
     }).listen(onSuccess(netServer -> {
       server.requestHandler(req -> {
         vertx.createNetClient(new NetClientOptions()).connect(netServer.actualPort(), onSuccess(socket -> {
@@ -2844,7 +2844,7 @@ public class HttpTest extends HttpTestBase {
               testComplete();
             }
           });
-          socket.write(buffer);
+          socket.writeBuffer(buffer);
         }).end();
       }));
     }));
@@ -3165,10 +3165,10 @@ public class HttpTest extends HttpTestBase {
         socket.closeHandler(r -> {
           testComplete();
         });
-        socket.write("GET HTTP1/1\r\n");
+        socket.writeString("GET HTTP1/1\r\n");
 
-        // trigger another write to be sure we detect that the other peer has closed the connection.
-        socket.write("X-Header: test\r\n");
+        // trigger another writeBuffer to be sure we detect that the other peer has closed the connection.
+        socket.writeString("X-Header: test\r\n");
       });
     }));
     await();
@@ -3183,7 +3183,7 @@ public class HttpTest extends HttpTestBase {
       req.endHandler(v -> reg.unregister());
 
       req.dataHandler(buff -> {
-        req.response().write(buff);
+        req.response().writeBuffer(buff);
       });
     });
 
@@ -3199,7 +3199,7 @@ public class HttpTest extends HttpTestBase {
       Buffer buff = TestUtils.randomBuffer(10000);
       //Send data until the buffer is full
       vertx.setPeriodic(1, id -> {
-        req.response().write(buff);
+        req.response().writeBuffer(buff);
         if (req.response().writeQueueFull()) {
           vertx.cancelTimer(id);
           req.response().drainHandler(v -> {

@@ -60,16 +60,19 @@ public interface Vertx {
   /**
    * Create a TCP/SSL client
    */
+  @GenIgnore
   NetClient createNetClient(NetClientOptions options);
 
   /**
    * Create an HTTP/HTTPS server
    */
+  @GenIgnore
   HttpServer createHttpServer(HttpServerOptions options);
 
   /**
    * Create a HTTP/HTTPS client
    */
+  @GenIgnore
   HttpClient createHttpClient(HttpClientOptions options);
 
   /**
@@ -79,26 +82,31 @@ public interface Vertx {
    *                operation system to detect it's default.
    * @return socket the created {@link io.vertx.core.datagram.DatagramSocket}.
    */
+  @GenIgnore
   DatagramSocket createDatagramSocket(InternetProtocolFamily family, DatagramSocketOptions options);
 
   /**
    * The File system object
    */
+  @GenIgnore
   FileSystem fileSystem();
 
   /**
    * The event bus
    */
+  @GenIgnore
   EventBus eventBus();
 
   /**
    * Return the {@link DnsClient}
    */
+  @GenIgnore
   DnsClient createDnsClient(int port, String host);
 
   /**
    * The shared data object
    */
+  @GenIgnore
   SharedData sharedData();
 
   /**
@@ -106,6 +114,7 @@ public interface Vertx {
    * the id of the timer.
    * @return the unique ID of the timer
    */
+  @GenIgnore
   long setTimer(long delay, Handler<Long> handler);
 
   /**
@@ -113,23 +122,27 @@ public interface Vertx {
    * the id of the timer.
    * @return the unique ID of the timer
    */
+  @GenIgnore
   long setPeriodic(long delay, Handler<Long> handler);
 
   /**
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
    * {@code false} if the timer does not exist.
    */
+  @GenIgnore
   boolean cancelTimer(long id);
 
   /**
    * @return The current context
    */
+  @GenIgnore
   Context currentContext();
 
   /**
    * Put the handler on the event queue for the current loop (or worker context) so it will be run asynchronously ASAP after this event has
    * been processed
    */
+  @GenIgnore
   void runOnContext(Handler<Void> action);
 
   /**
@@ -142,22 +155,25 @@ public interface Vertx {
    */
   void close(Handler<AsyncResult<Void>> doneHandler);
 
+  @GenIgnore
   void deployVerticle(Verticle verticle);
 
+  @GenIgnore
   void deployVerticle(String verticleClass);
 
-  void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> doneHandler);
-
-  void deployVerticle(String verticleClass, Handler<AsyncResult<String>> doneHandler);
-
+  @GenIgnore
   void deployVerticle(Verticle verticle, DeploymentOptions options);
 
+  @GenIgnore
   void deployVerticle(String verticleClass, DeploymentOptions options);
 
+  @GenIgnore
   void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
 
+  @GenIgnore
   void deployVerticle(String verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
 
+  @GenIgnore
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
   @GenIgnore

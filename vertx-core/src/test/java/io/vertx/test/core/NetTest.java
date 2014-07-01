@@ -369,14 +369,14 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
-    testEcho(sock -> sock.write(sent), buff -> TestUtils.buffersEqual(sent, buff), sent.length());
+    testEcho(sock -> sock.writeBuffer(sent), buff -> TestUtils.buffersEqual(sent, buff), sent.length());
   }
 
   @Test
   public void testEchoString() {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = new Buffer(sent);
-    testEcho(sock -> sock.write(sent), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.writeString(sent), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
   }
 
   @Test
@@ -392,7 +392,7 @@ public class NetTest extends VertxTestBase {
   void testEchoStringWithEncoding(String encoding) {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = new Buffer(sent, encoding);
-    testEcho(sock -> sock.write(sent, encoding), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.writeString(sent, encoding), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
   }
 
   void testEcho(Consumer<NetSocket> writer, Consumer<Buffer> dataChecker, int length) {
@@ -420,7 +420,7 @@ public class NetTest extends VertxTestBase {
   }
 
   void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler) {
-    Handler<NetSocket> serverHandler = socket -> socket.dataHandler(socket::write);
+    Handler<NetSocket> serverHandler = socket -> socket.dataHandler(socket::writeBuffer);
     server.connectHandler(serverHandler).listen(listenHandler);
   }
 
@@ -585,7 +585,7 @@ public class NetTest extends VertxTestBase {
         sock.setWriteQueueMaxSize(1000);
         Buffer buff = TestUtils.randomBuffer(10000);
         vertx.setPeriodic(1, id -> {
-          sock.write(buff.copy());
+          sock.writeBuffer(buff.copy());
           if (sock.writeQueueFull()) {
             vertx.cancelTimer(id);
             sock.drainHandler(v -> {
@@ -638,7 +638,7 @@ public class NetTest extends VertxTestBase {
       Buffer buff = TestUtils.randomBuffer(10000);
       //Send data until the buffer is full
       vertx.setPeriodic(1, id -> {
-        sock.write(buff.copy());
+        sock.writeBuffer(buff.copy());
         if (sock.writeQueueFull()) {
           vertx.cancelTimer(id);
           sock.drainHandler(v -> {
@@ -778,7 +778,7 @@ public class NetTest extends VertxTestBase {
     Handler<NetSocket> serverHandler = socket -> {
       AtomicBoolean upgradedServer = new AtomicBoolean();
       socket.dataHandler(buff -> {
-        socket.write(buff); // echo the data
+        socket.writeBuffer(buff); // echo the data
         if (startTLS && !upgradedServer.get()) {
           assertFalse(socket.isSsl());
           socket.ssl(v -> assertTrue(socket.isSsl()));
@@ -860,7 +860,7 @@ public class NetTest extends VertxTestBase {
   void sendBuffer(NetSocket socket, Buffer sent, int chunkSize) {
     Buffer buff = TestUtils.randomBuffer(chunkSize);
     sent.appendBuffer(buff);
-    socket.write(buff);
+    socket.writeBuffer(buff);
   }
 
   @Test
@@ -1022,7 +1022,7 @@ public class NetTest extends VertxTestBase {
 
     // Send some data
     client.connect(1234, res -> {
-      res.result().write("foo");
+      res.result().writeString("foo");
     });
     assertTrue(receivedLatch.await(10, TimeUnit.SECONDS));
 
@@ -1062,8 +1062,8 @@ public class NetTest extends VertxTestBase {
       client.connect(1234, result -> {
         NetSocket socket = result.result();
         Buffer buff = new Buffer("foo");
-        socket.write(buff);
-        socket.write(buff);
+        socket.writeBuffer(buff);
+        socket.writeBuffer(buff);
       });
     });
     await();
@@ -1085,7 +1085,7 @@ public class NetTest extends VertxTestBase {
         }
       });
       // Send some data to the client to trigger the sendfile
-      sock.write("foo");
+      sock.writeString("foo");
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -1125,7 +1125,7 @@ public class NetTest extends VertxTestBase {
             testComplete();
           }
         });
-        sock.write("foo");
+        sock.writeString("foo");
       });
     });
 
@@ -1304,7 +1304,7 @@ public class NetTest extends VertxTestBase {
     Thread[] threads = new Thread[numThreads];
     CountDownLatch latch = new CountDownLatch(numThreads);
     server.connectHandler(socket -> {
-      socket.dataHandler(socket::write);
+      socket.dataHandler(socket::writeBuffer);
     }).listen(ar -> {
       assertTrue(ar.succeeded());
       for (int i = 0; i < numThreads; i++) {
@@ -1314,7 +1314,7 @@ public class NetTest extends VertxTestBase {
               assertTrue(result.succeeded());
               Buffer buff = TestUtils.randomBuffer(100000);
               NetSocket sock = result.result();
-              sock.write(buff);
+              sock.writeBuffer(buff);
               Buffer received = new Buffer();
               sock.dataHandler(rec -> {
                 received.appendBuffer(rec);
@@ -1361,7 +1361,7 @@ public class NetTest extends VertxTestBase {
         Thread thr = Thread.currentThread();
         server = vertx.createNetServer(new NetServerOptions().setPort(1234));
         server.connectHandler(sock -> {
-          sock.dataHandler(sock::write);
+          sock.dataHandler(sock::writeBuffer);
           assertSame(ctx, vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
@@ -1382,7 +1382,7 @@ public class NetTest extends VertxTestBase {
             assertTrue(ar2.succeeded());
             NetSocket sock = ar2.result();
             Buffer buff = TestUtils.randomBuffer(10000);
-            sock.write(buff);
+            sock.writeBuffer(buff);
             Buffer brec = new Buffer();
             sock.dataHandler(rec -> {
               assertSame(ctx, vertx.currentContext());
@@ -1435,7 +1435,7 @@ public class NetTest extends VertxTestBase {
     AtomicReference<ContextImpl> serverConnectContext = new AtomicReference<>();
     // Server connect handler should always be called with same context
     server.connectHandler(sock -> {
-      sock.dataHandler(sock::write);
+      sock.dataHandler(sock::writeBuffer);
       ContextImpl serverContext = ((VertxInternal) vertx).getContext();
       if (serverConnectContext.get() != null) {
         assertSame(serverConnectContext.get(), serverContext);

@@ -162,6 +162,9 @@
           <version>2.14</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+              <excludes>
+                <exclude>**/HazelcastClusteredEventbusTest.java</exclude>
+              </excludes>
           </configuration>
         </plugin>
           <plugin>

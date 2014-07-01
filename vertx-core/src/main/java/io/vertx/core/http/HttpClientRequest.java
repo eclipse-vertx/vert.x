@@ -48,8 +48,8 @@ import io.vertx.core.streams.WriteStream;
  *
  * req.headers().put("some-header", "hello")
  *     .put("Content-Length", 5)
- *     .write(new Buffer(new byte[]{1, 2, 3, 4, 5}))
- *     .write(new Buffer(new byte[]{6, 7, 8, 9, 10}))
+ *     .writeBuffer(new Buffer(new byte[]{1, 2, 3, 4, 5}))
+ *     .writeBuffer(new Buffer(new byte[]{6, 7, 8, 9, 10}))
  *     .end();
  *
  * </pre>
@@ -103,7 +103,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpClientRequest write(Buffer chunk);
+  HttpClientRequest writeBuffer(Buffer chunk);
 
   /**
    * Write a {@link String} to the request body, encoded in UTF-8.
@@ -123,7 +123,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
    * and the server responds with an interim HTTP response with a status code of {@code 100} and a continue handler
    * has been set using this method, then the {@code handler} will be called.<p>
-   * You can then continue to write data to the request body and later end it. This is normally used in conjunction with
+   * You can then continue to writeBuffer data to the request body and later end it. This is normally used in conjunction with
    * the {@link #sendHead()} method to force the request header to be written before the request has ended.
    * @return A reference to this, so multiple method calls can be chained.
    */

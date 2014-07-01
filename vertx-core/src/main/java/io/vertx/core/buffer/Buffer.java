@@ -28,8 +28,8 @@ import java.nio.charset.Charset;
 /**
  * A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as
  * necessary to accommodate any bytes written to it.<p>
- * There are two ways to write data to a Buffer: The first method involves methods that take the form {@code setXXX}.
- * These methods write data into the buffer starting at the specified position. The position does not have to be inside data that
+ * There are two ways to writeBuffer data to a Buffer: The first method involves methods that take the form {@code setXXX}.
+ * These methods writeBuffer data into the buffer starting at the specified position. The position does not have to be inside data that
  * has already been written to the buffer; the buffer will automatically expand to encompass the position plus any data that needs
  * to be written. All positions are measured in bytes and start with zero.<p>
  * The second method involves methods that take the form {@code appendXXX}; these methods append data
@@ -38,7 +38,7 @@ import java.nio.charset.Charset;
  * other instances of Buffer.<p>
  * Data can be read from a buffer by invoking methods which take the form {@code getXXX}. These methods take a parameter
  * representing the position in the Buffer from where to read data.<p>
- * Once a buffer has been written to a socket or other write stream, the same buffer instance can't be written again to another WriteStream.<p>
+ * Once a buffer has been written to a socket or other writeBuffer stream, the same buffer instance can't be written again to another WriteStream.<p>
  * Instances of this class are not thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -100,6 +100,8 @@ public class Buffer {
   /**
    * Returns a {@code String} representation of the Buffer assuming it contains a {@code String} encoding in UTF-8
    */
+  @GenIgnore
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
   public String toString() {
     return buffer.toString(Charset.forName("UTF-8"));
   }
@@ -107,6 +109,8 @@ public class Buffer {
   /**
    * Returns a {@code String} representation of the Buffer with the encoding specified by {@code enc}
    */
+  @GenIgnore
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
   public String toString(String enc) {
     return buffer.toString(Charset.forName(enc));
   }
@@ -168,6 +172,7 @@ public class Buffer {
   /**
    * Returns a copy of the entire Buffer as a {@code byte[]}
    */
+  @GenIgnore
   public byte[] getBytes() {
     byte[] arr = new byte[buffer.writerIndex()];
     buffer.getBytes(0, arr);
@@ -178,6 +183,7 @@ public class Buffer {
    * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
    * and ending at position {@code end - 1}
    */
+  @GenIgnore
   public byte[] getBytes(int start, int end) {
     byte[] arr = new byte[end - start];
     buffer.getBytes(start, arr, 0, end - start);
@@ -220,7 +226,7 @@ public class Buffer {
   public Buffer appendBuffer(Buffer buff) {
     ByteBuf cb = buff.getByteBuf();
     buffer.writeBytes(buff.getByteBuf());
-    cb.readerIndex(0); // Need to reset readerindex since Netty write modifies readerIndex of source!
+    cb.readerIndex(0); // Need to reset readerindex since Netty writeBuffer modifies readerIndex of source!
     return this;
   }
 
@@ -238,6 +244,7 @@ public class Buffer {
    * Appends the specified {@code byte[]} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
+  @GenIgnore
   public Buffer appendBytes(byte[] bytes) {
     buffer.writeBytes(bytes);
     return this;
@@ -248,6 +255,7 @@ public class Buffer {
    * The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
+  @GenIgnore
   public Buffer appendBytes(byte[] bytes, int offset, int len) {
     buffer.writeBytes(bytes, offset, len);
     return this;

@@ -67,8 +67,8 @@ class RawWebSocketTransport {
       return this;
     }
 
-    public SockJSSocket write(Buffer data) {
-      ws.write(data);
+    public SockJSSocket writeBuffer(Buffer data) {
+      ws.writeBuffer(data);
       return this;
     }
 

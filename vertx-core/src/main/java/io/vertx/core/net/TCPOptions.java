@@ -16,6 +16,9 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.gen.VertxGen;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SocketDefaults;
 
 import java.util.HashSet;
@@ -24,14 +27,19 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public class TCPOptions extends NetworkOptions {
 
   // TCP stuff
   private static SocketDefaults SOCK_DEFAULTS = SocketDefaults.instance;
 
-  private boolean tcpNoDelay = true;
-  private boolean tcpKeepAlive = SOCK_DEFAULTS.isTcpKeepAlive();
-  private int soLinger = SOCK_DEFAULTS.getSoLinger();
+  private static final boolean DEFAULT_TCPNODELAY = true;
+  private static final boolean DEFAULT_TCPKEEPALIVE = SOCK_DEFAULTS.isTcpKeepAlive();
+  private static final int DEFAULT_SOLINGER = SOCK_DEFAULTS.getSoLinger();
+
+  private boolean tcpNoDelay = DEFAULT_TCPNODELAY;
+  private boolean tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
+  private int soLinger = DEFAULT_SOLINGER;
   private boolean usePooledBuffers;
   
   // SSL stuff
@@ -57,8 +65,26 @@ public class TCPOptions extends NetworkOptions {
     this.enabledCipherSuites = other.enabledCipherSuites == null ? null : new HashSet<>(other.enabledCipherSuites);
   }
 
+  public TCPOptions(JsonObject json) {
+    super(json);
+    this.tcpNoDelay = json.getBoolean("tcpNoDelay", DEFAULT_TCPNODELAY);
+    this.tcpKeepAlive = json.getBoolean("tcpKeepAlive", DEFAULT_TCPKEEPALIVE);
+    this.soLinger = json.getInteger("soLinger", DEFAULT_SOLINGER);
+    this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
+    this.ssl = json.getBoolean("ssl", false);
+    this.keyStorePath = json.getString("keyStorePath", null);
+    this.keyStorePassword = json.getString("keyStorePassword", null);
+    this.trustStorePath = json.getString("trustStorePath", null);
+    this.trustStorePassword = json.getString("trustStorePassword", null);
+    JsonArray arr = json.getArray("enabledCipherSuites");
+    this.enabledCipherSuites = arr == null ? null : new HashSet<String>(arr.toList());
+  }
+
   public TCPOptions() {
     super();
+    tcpNoDelay = DEFAULT_TCPNODELAY;
+    tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
+    soLinger = DEFAULT_SOLINGER;
   }
 
   public boolean isTcpNoDelay() {

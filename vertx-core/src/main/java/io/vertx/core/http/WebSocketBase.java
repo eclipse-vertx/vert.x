@@ -40,7 +40,7 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
    * handler is given by {@code binaryHandlerID}.<p>
    * Given this ID, a different event loop can send a binary frame to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
-   * allows you to write data to other websockets which are owned by different event loops.
+   * allows you to writeBuffer data to other websockets which are owned by different event loops.
    */
   String binaryHandlerID();
 
@@ -49,7 +49,7 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
    * handler is given by {@code textHandlerID}.<p>
    * Given this ID, a different event loop can send a text frame to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
-   * allows you to write data to other websockets which are owned by different event loops.
+   * allows you to writeBuffer data to other websockets which are owned by different event loops.
    */
   String textHandlerID();
 

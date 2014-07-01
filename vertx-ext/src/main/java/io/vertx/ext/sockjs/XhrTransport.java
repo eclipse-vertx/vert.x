@@ -187,11 +187,11 @@ class XhrTransport extends BaseTransport {
       boolean hr = headersWritten;
       super.sendFrame(body);
       if (!hr) {
-        req.response().write(H_BLOCK);
+        req.response().writeBuffer(H_BLOCK);
       }
       String sbody = body + "\n";
       Buffer buff = new Buffer(sbody);
-      req.response().write(buff);
+      req.response().writeBuffer(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
         close();

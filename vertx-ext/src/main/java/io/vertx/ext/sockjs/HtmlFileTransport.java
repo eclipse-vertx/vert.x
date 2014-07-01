@@ -119,7 +119,7 @@ class HtmlFileTransport extends BaseTransport {
       sb.append(body);
       sb.append("\");\n</script>\r\n");
       Buffer buff = new Buffer(sb.toString());
-      req.response().write(buff);
+      req.response().writeBuffer(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {
         if (log.isTraceEnabled()) log.trace("More than maxBytes sent so closing connection");

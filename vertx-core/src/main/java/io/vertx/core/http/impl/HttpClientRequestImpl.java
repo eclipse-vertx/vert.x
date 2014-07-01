@@ -113,7 +113,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequestImpl write(Buffer chunk) {
+  public HttpClientRequestImpl writeBuffer(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false);
@@ -123,13 +123,13 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public HttpClientRequestImpl write(String chunk) {
     check();
-    return write(new Buffer(chunk));
+    return writeBuffer(new Buffer(chunk));
   }
 
   @Override
   public HttpClientRequestImpl write(String chunk, String enc) {
     check();
-    return write(new Buffer(chunk, enc));
+    return writeBuffer(new Buffer(chunk, enc));
   }
 
   @Override
@@ -341,7 +341,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.conn = conn;
 
     // If anything was written or the request ended before we got the connection, then
-    // we need to write it now
+    // we need to writeBuffer it now
 
     if (pendingMaxSize != -1) {
       conn.doSetWriteQueueMaxSize(pendingMaxSize);
@@ -352,7 +352,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       pendingChunks = null;
 
       if (completed) {
-        // we also need to write the head so optimize this and write all out in once
+        // we also need to writeBuffer the head so optimize this and writeBuffer all out in once
         writeHeadWithContent(pending, true);
 
         conn.endRequest();
@@ -361,7 +361,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       }
     } else {
       if (completed) {
-        // we also need to write the head so optimize this and write all out in once
+        // we also need to writeBuffer the head so optimize this and writeBuffer all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
         conn.endRequest();
       } else {
@@ -414,7 +414,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private synchronized void write(ByteBuf buff, boolean end) {
     int readableBytes = buff.readableBytes();
     if (readableBytes == 0 && !end) {
-      // nothing to write to the connection just return
+      // nothing to writeBuffer to the connection just return
       return;
     }
 

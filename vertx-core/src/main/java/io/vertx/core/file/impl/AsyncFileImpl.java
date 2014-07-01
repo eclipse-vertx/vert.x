@@ -143,7 +143,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile write(Buffer buffer) {
+  public AsyncFile writeBuffer(Buffer buffer) {
     check();
     int length = buffer.length();
     Handler<AsyncResult<Void>> handler = ar -> {
@@ -332,7 +332,7 @@ public class AsyncFileImpl implements AsyncFile {
         long pos = position;
 
         if (buff.hasRemaining()) {
-          // partial write
+          // partial writeBuffer
           pos += bytesWritten;
           // resubmit
           writeInternal(buff, pos, handler);

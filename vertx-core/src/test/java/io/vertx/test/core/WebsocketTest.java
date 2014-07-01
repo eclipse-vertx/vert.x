@@ -251,7 +251,7 @@ public class WebsocketTest extends VertxTestBase {
     }
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.websocketHandler(ws -> {
-      ws.dataHandler(ws::write);
+      ws.dataHandler(ws::writeBuffer);
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -283,19 +283,19 @@ public class WebsocketTest extends VertxTestBase {
 
 
   @Test
-  // Let's manually handle the websocket handshake and write a frame to the client
+  // Let's manually handle the websocket handshake and writeBuffer a frame to the client
   public void testHandleWSManually() throws Exception {
     String path = "/some/path";
     String message = "here is some text data";
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, path);
-      // Let's write a Text frame raw
+      // Let's writeBuffer a Text frame raw
       Buffer buff = new Buffer();
       buff.appendByte((byte)129); // Text frame
       buff.appendByte((byte)message.length());
       buff.appendString(message);
-      sock.write(buff);
+      sock.writeBuffer(buff);
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -505,7 +505,7 @@ public class WebsocketTest extends VertxTestBase {
     String secHeader = req.headers().get("Sec-WebSocket-Key");
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
-    sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
+    sock.writeString("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
       "Upgrade: WebSocket\r\n" +
       "Connection: Upgrade\r\n" +
       "Sec-WebSocket-Accept: " + encoded + "\r\n" +
@@ -524,7 +524,7 @@ public class WebsocketTest extends VertxTestBase {
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
       assertEquals("Upgrade", ws.headers().get("Connection"));
-      ws.dataHandler(data -> ws.write(data));
+      ws.dataHandler(data -> ws.writeBuffer(data));
     });
 
     server.listen(ar -> {
@@ -566,18 +566,18 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, path);
 
-      // Let's write a Text frame raw
+      // Let's writeBuffer a Text frame raw
       Buffer buff = new Buffer();
       buff.appendByte((byte) 0x01); // Incomplete Text frame
       buff.appendByte((byte) firstFrame.length());
       buff.appendString(firstFrame);
-      sock.write(buff);
+      sock.writeBuffer(buff);
 
       buff = new Buffer();
       buff.appendByte((byte) (0x00 | 0x80)); // Complete continuation frame
       buff.appendByte((byte) continuationFrame.length());
       buff.appendString(continuationFrame);
-      sock.write(buff);
+      sock.writeBuffer(buff);
     });
 
     server.listen(ar -> {

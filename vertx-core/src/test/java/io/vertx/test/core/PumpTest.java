@@ -158,7 +158,7 @@ public class PumpTest {
       return this;
     }
 
-    public FakeWriteStream write(Buffer data) {
+    public FakeWriteStream writeBuffer(Buffer data) {
       received.appendBuffer(data);
       return this;
     }

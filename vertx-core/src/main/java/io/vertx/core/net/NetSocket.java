@@ -18,7 +18,6 @@ package io.vertx.core.net;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.VertxGen;
 import io.vertx.core.streams.ReadStream;
@@ -44,30 +43,23 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * handler is given by {@code writeHandlerID}.<p>
    * Given this ID, a different event loop can send a buffer to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
-   * allows you to write data to other connections which are owned by different event loops.
+   * allows you to writeBuffer data to other connections which are owned by different event loops.
    */
   String writeHandlerID();
-
-  /**
-   * Write a {@link Buffer} to the request body.
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  @Fluent
-  NetSocket write(Buffer data);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8.
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  NetSocket write(String str);
+  NetSocket writeString(String str);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  NetSocket write(String str, String enc);
+  NetSocket writeString(String str, String enc);
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection,

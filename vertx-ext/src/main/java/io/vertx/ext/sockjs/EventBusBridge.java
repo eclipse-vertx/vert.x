@@ -325,7 +325,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (message.replyAddress() != null) {
       envelope.putString("replyAddress", message.replyAddress());
     }
-    sock.write(new Buffer(envelope.encode()));
+    sock.writeBuffer(new Buffer(envelope.encode()));
   }
 
   private void doSendOrPub(final boolean send, final SockJSSocket sock, final String address,
