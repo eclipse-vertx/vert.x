@@ -2009,20 +2009,16 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testConnectionErrorsGetReportedToRequest() {
+  public void testConnectionErrorsGetReportedToRequest() throws InterruptedException {
     AtomicInteger clientExceptions = new AtomicInteger();
     AtomicInteger req2Exceptions = new AtomicInteger();
     AtomicInteger req3Exceptions = new AtomicInteger();
 
-    Handler<String> checkEndHandler = name -> {
-      if (clientExceptions.get() == 1 && req2Exceptions.get() == 1 && req3Exceptions.get() == 1) {
-        testComplete();
-      }
-    };
+    CountDownLatch latch = new CountDownLatch(3);
 
     client.exceptionHandler(t -> {
-      assertEquals("More than more call to client exception handler was not expected", 1, clientExceptions.incrementAndGet());
-      checkEndHandler.handle("Client");
+      assertEquals("More than one call to client exception handler was not expected", 1, clientExceptions.incrementAndGet());
+      latch.countDown();
     });
 
     // This one should cause an error in the Client Exception handler, because it has no exception handler set specifically.
@@ -2036,8 +2032,8 @@ public class HttpTest extends HttpTestBase {
     });
 
     req2.exceptionHandler(t -> {
-      assertEquals("More than more call to req2 exception handler was not expected", 1, req2Exceptions.incrementAndGet());
-      checkEndHandler.handle("Request2");
+      assertEquals("More than one call to req2 exception handler was not expected", 1, req2Exceptions.incrementAndGet());
+      latch.countDown();
     });
 
     HttpClientRequest req3 = client.get(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setPort(9998).setRequestURI("someurl2"), resp -> {
@@ -2045,15 +2041,16 @@ public class HttpTest extends HttpTestBase {
     });
 
     req3.exceptionHandler(t -> {
-      assertEquals("More than more call to req2 exception handler was not expected", 1, req3Exceptions.incrementAndGet());
-      checkEndHandler.handle("Request3");
+      assertEquals("More than one call to req2 exception handler was not expected", 1, req3Exceptions.incrementAndGet());
+      latch.countDown();
     });
 
     req1.end();
     req2.end();
     req3.end();
 
-    await();
+    awaitLatch(latch);
+    testComplete();
   }
 
   @Test
