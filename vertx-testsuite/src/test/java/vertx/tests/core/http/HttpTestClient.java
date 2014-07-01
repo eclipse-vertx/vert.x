@@ -595,6 +595,18 @@ public class HttpTestClient extends TestClientBase {
     testURIAndPath("/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
 
+  public void testAbsoluteURIWithHttpSchemaInQuery() {
+    testURIAndPath("http://localhost:8080/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
+  }
+
+  public void testRelativeURIWithHttpSchemaInQuery() {
+    testURIAndPath("/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
+  }
+
+  public void testAbsoluteURIEmptyPath() {
+    testURIAndPath("http://localhost:8080/", "/");
+  }
+
   private void testURIAndPath(final String uri, final String path) {
     AsyncResultHandler<HttpServer> handler = new AsyncResultHandler<HttpServer>() {
       @Override
