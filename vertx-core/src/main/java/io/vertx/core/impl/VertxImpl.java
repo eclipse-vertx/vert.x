@@ -350,14 +350,13 @@ public class VertxImpl implements VertxInternal {
 
       if (backgroundPool != null) {
         backgroundPool.shutdown();
-      }
-
-      try {
-        if (backgroundPool != null) {
-          backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+        try {
+          if (backgroundPool != null) {
+            backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+          }
+        } catch (InterruptedException ex) {
+          // ignore
         }
-      } catch (InterruptedException ex) {
-        // ignore
       }
 
       if (eventLoopGroup != null) {
