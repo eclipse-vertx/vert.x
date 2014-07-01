@@ -361,7 +361,7 @@ public class VertxImpl implements VertxInternal {
       }
 
       if (eventLoopGroup != null) {
-        eventLoopGroup.shutdownGracefully();
+        eventLoopGroup.shutdownNow();
       }
 
       checker.close();
