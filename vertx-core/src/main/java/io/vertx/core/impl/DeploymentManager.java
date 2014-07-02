@@ -22,6 +22,8 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
+import io.vertx.core.VerticleFactory;
+import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -30,11 +32,15 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -48,9 +54,22 @@ public class DeploymentManager {
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
+  private List<VerticleFactory> verticleFactories = new CopyOnWriteArrayList<>();
+  private static final VerticleFactory DEFAULT_VERTICLE_FACTORY = new SimpleJavaVerticleFactory();
 
   public DeploymentManager(VertxInternal vertx) {
     this.vertx = vertx;
+    loadVerticleFactories();
+  }
+
+  private void loadVerticleFactories() {
+    ServiceLoader<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
+    Iterator<VerticleFactory> iter = factories.iterator();
+    while (iter.hasNext()) {
+      VerticleFactory factory = iter.next();
+      factory.init(vertx);
+      verticleFactories.add(factory);
+    }
   }
 
   public void deployVerticle(Verticle verticle, DeploymentOptions options,
@@ -59,22 +78,34 @@ public class DeploymentManager {
     doDeploy(verticle, options, currentContext, doneHandler);
   }
 
-  public void deployVerticle(String verticleClass,
+  public void deployVerticle(String verticleName,
                              DeploymentOptions options,
                              Handler<AsyncResult<String>> doneHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options.getIsolationGroup());
-    Class clazz;
-    Verticle verticle;
     try {
-      clazz = cl.loadClass(verticleClass);
-      try {
-        verticle = (Verticle)clazz.newInstance();
-        doDeploy(verticle, options, currentContext, doneHandler);
-      } catch (Exception e) {
-        reportFailure(e, currentContext, doneHandler);
+      VerticleFactory verticleFactory = null;
+      for (VerticleFactory factory: verticleFactories) {
+        if (factory.matches(verticleName)) {
+          if (verticleFactory != null) {
+            reportFailure(new VertxException("Multiple VerticleFactory matches for verticleName: " + verticleName),
+                          currentContext, doneHandler);
+            return;
+          }
+          verticleFactory = factory;
+        }
       }
-    } catch (ClassNotFoundException e) {
+      if (verticleFactory == null) {
+        // Use default Java verticle factory
+        verticleFactory = DEFAULT_VERTICLE_FACTORY;
+      }
+      Verticle verticle = verticleFactory.createVerticle(verticleName, cl);
+      if (verticle == null) {
+        reportFailure(new NullPointerException("VerticleFactory::createVerticle returned null"), currentContext, doneHandler);
+      } else {
+        doDeploy(verticle, options, currentContext, doneHandler);
+      }
+    } catch (Exception e) {
       reportFailure(e, currentContext, doneHandler);
     }
   }
@@ -106,6 +137,23 @@ public class DeploymentManager {
         }
       });
     }
+  }
+
+  public void registerVerticleFactory(VerticleFactory factory) {
+    if (verticleFactories.contains(factory)) {
+      throw new IllegalArgumentException("Factory " + factory + " is already registered");
+    }
+    verticleFactories.add(factory);
+  }
+
+  public void unregisterVerticleFactory(VerticleFactory factory) {
+    if (!verticleFactories.remove(factory)) {
+      throw new IllegalArgumentException("Factory " + factory + " is not registered");
+    }
+  }
+
+  public List<VerticleFactory> verticleFactories() {
+    return Collections.unmodifiableList(verticleFactories);
   }
 
   private ClassLoader getClassLoader(String isolationGroup) {

@@ -25,6 +25,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
+import io.vertx.core.VerticleFactory;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
@@ -59,6 +60,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -405,6 +407,21 @@ public class VertxImpl implements VertxInternal {
   @Override
   public Set<String> deployments() {
     return deploymentManager.deployments();
+  }
+
+  @Override
+  public void registerVerticleFactory(VerticleFactory factory) {
+    deploymentManager.registerVerticleFactory(factory);
+  }
+
+  @Override
+  public void unregisterVerticleFactory(VerticleFactory factory) {
+    deploymentManager.unregisterVerticleFactory(factory);
+  }
+
+  @Override
+  public List<VerticleFactory> verticleFactories() {
+    return deploymentManager.verticleFactories();
   }
 
   @Override

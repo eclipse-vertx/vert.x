@@ -34,6 +34,7 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -159,24 +160,33 @@ public interface Vertx {
   void deployVerticle(Verticle verticle);
 
   @GenIgnore
-  void deployVerticle(String verticleClass);
+  void deployVerticle(String verticleName);
 
   @GenIgnore
   void deployVerticle(Verticle verticle, DeploymentOptions options);
 
   @GenIgnore
-  void deployVerticle(String verticleClass, DeploymentOptions options);
+  void deployVerticle(String verticleName, DeploymentOptions options);
 
   @GenIgnore
   void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
 
   @GenIgnore
-  void deployVerticle(String verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
 
   @GenIgnore
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
   @GenIgnore
   Set<String> deployments();
+
+  @GenIgnore
+  void registerVerticleFactory(VerticleFactory factory);
+
+  @GenIgnore
+  void unregisterVerticleFactory(VerticleFactory factory);
+
+  @GenIgnore
+  List<VerticleFactory> verticleFactories();
 
 }
