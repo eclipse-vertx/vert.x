@@ -29,6 +29,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -44,6 +46,8 @@ import java.net.InetSocketAddress;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ConnectionBase {
+
+  private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
   protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context) {
     this.vertx = vertx;
@@ -137,17 +141,13 @@ public abstract class ConnectionBase {
     if (exceptionHandler != null) {
       context.execute(() -> exceptionHandler.handle(t), false);
     } else {
-      context.reportException(t);
+      log.error(t);
     }
   }
 
   protected void handleClosed() {
     if (closeHandler != null) {
-      try {
-        closeHandler.handle(null);
-      } catch (Throwable t) {
-        handleHandlerException(t);
-      }
+      closeHandler.handle(null);
     }
   }
 
@@ -167,10 +167,6 @@ public abstract class ConnectionBase {
         }
       });
     }
-  }
-
-  protected void handleHandlerException(Throwable t) {
-    vertx.reportException(t);
   }
 
   protected boolean supportsFileRegion() {

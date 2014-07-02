@@ -41,8 +41,6 @@ public interface VertxInternal extends VertxSPI {
 
   ContextImpl getOrCreateContext();
 
-  void reportException(Throwable t);
-
   Map<ServerID, HttpServerImpl> sharedHttpServers();
 
   Map<ServerID, NetServerImpl> sharedNetServers();

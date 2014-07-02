@@ -50,6 +50,8 @@ import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
@@ -63,6 +65,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HttpClientImpl implements HttpClient {
+
+  private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
+
 
   private final VertxInternal vertx;
   private final HttpClientOptions options;
@@ -208,7 +213,7 @@ public class HttpClientImpl implements HttpClient {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     } else {
-      vertx.reportException(e);
+      log.error(e);
     }
   }
 
@@ -340,7 +345,7 @@ public class HttpClientImpl implements HttpClient {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     // If that doesn't exist just log it
     Handler<Throwable> exHandler =
-      connectionExceptionHandler == null ? (exceptionHandler == null ? context::reportException : exceptionHandler ): connectionExceptionHandler;
+      connectionExceptionHandler == null ? (exceptionHandler == null ? log::error : exceptionHandler ): connectionExceptionHandler;
 
     context.execute(() -> {
       listener.connectionClosed(null);
@@ -351,7 +356,7 @@ public class HttpClientImpl implements HttpClient {
       if (exHandler != null) {
         exHandler.handle(t);
       } else {
-        context.reportException(t);
+        log.error(t);
       }
     }, true);
   }

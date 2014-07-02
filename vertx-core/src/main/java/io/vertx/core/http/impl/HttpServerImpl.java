@@ -240,7 +240,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
             vertx.runOnContext(v -> listenHandler.handle(new FutureResultImpl<>(t)));
           } else {
             // No handler - log so user can see failure
-            listenContext.reportException(t);
+            log.error(t);
           }
           listening = false;
           return this;
@@ -267,7 +267,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
           } else if (!future.isSuccess()) {
             listening  = false;
             // No handler - log so user can see failure
-            listenContext.reportException(future.cause());
+            log.error(future.cause());
           }
         }
       });

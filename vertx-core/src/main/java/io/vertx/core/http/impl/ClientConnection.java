@@ -249,19 +249,14 @@ class ClientConnection extends ConnectionBase {
     return requests.size();
   }
 
-  //TODO - combine these with same in ServerConnection and NetSocket
   @Override
   public void handleInterestedOpsChanged() {
-    try {
-      if (!isNotWritable()) {
-        if (currentRequest != null) {
-          currentRequest.handleDrained();
-        } else if (ws != null) {
-          ws.writable();
-        }
+    if (!isNotWritable()) {
+      if (currentRequest != null) {
+        currentRequest.handleDrained();
+      } else if (ws != null) {
+        ws.writable();
       }
-    } catch (Throwable t) {
-      handleHandlerException(t);
     }
   }
 
@@ -282,19 +277,12 @@ class ClientConnection extends ConnectionBase {
   }
 
   void handleResponseChunk(Buffer buff) {
-    try {
-      currentResponse.handleChunk(buff);
-    } catch (Throwable t) {
-      handleHandlerException(t);
-    }
+    currentResponse.handleChunk(buff);
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    try {
-      currentResponse.handleEnd(trailer);
-    } catch (Throwable t) {
-      handleHandlerException(t);
-    }
+    currentResponse.handleEnd(trailer);
+
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
     if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {

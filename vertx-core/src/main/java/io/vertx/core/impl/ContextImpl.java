@@ -77,10 +77,6 @@ public abstract class ContextImpl implements Context {
     return null;
   }
 
-  public void reportException(Throwable t) {
-    log.error("Unhandled exception", t);
-  }
-
   public void addCloseHook(Closeable hook) {
     if (closeHooks == null) {
       closeHooks = new HashSet<>();
@@ -115,7 +111,7 @@ public abstract class ContextImpl implements Context {
             }
           });
         } catch (Throwable t) {
-          reportException(t);
+          log.warn("Failed to run close hooks", t);
         }
       }
     } else {
@@ -190,7 +186,7 @@ public abstract class ContextImpl implements Context {
         vertx.setContext(ContextImpl.this);
         task.run();
       } catch (Throwable t) {
-        reportException(t);
+        log.error("Unhandled exception", t);
       } finally {
         // TODO - we might have to restore the thread name in case it's been changed during the execution
         if (checkThread) {

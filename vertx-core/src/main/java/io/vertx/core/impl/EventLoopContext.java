@@ -55,7 +55,6 @@ public class EventLoopContext extends ContextImpl {
         log.warn("Expected to be on Vert.x thread, but actually on: " + current);
       } else if (!correct && contextThread != null) {
         log.warn("Event delivered on unexpected thread " + current + " expected: " + contextThread);
-        new Exception().printStackTrace();
       }
     }
     return correct;

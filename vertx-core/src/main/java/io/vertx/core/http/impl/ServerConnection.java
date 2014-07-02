@@ -188,67 +188,43 @@ class ServerConnection extends ConnectionBase {
   }
 
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
-    try {
-      this.currentRequest = req;
-      pendingResponse = resp;
-      if (requestHandler != null) {
-        requestHandler.handle(req);
-      }
-    } catch (Throwable t) {
-      handleHandlerException(t);
+    this.currentRequest = req;
+    pendingResponse = resp;
+    if (requestHandler != null) {
+      requestHandler.handle(req);
     }
   }
 
   private void handleChunk(Buffer chunk) {
-    try {
-      currentRequest.handleData(chunk);
-    } catch (Throwable t) {
-      handleHandlerException(t);
-    }
+    currentRequest.handleData(chunk);
   }
 
   private void handleEnd() {
-    try {
-      currentRequest.handleEnd();
-      currentRequest = null;
-    } catch (Throwable t) {
-      handleHandlerException(t);
-    }
+    currentRequest.handleEnd();
+    currentRequest = null;
   }
 
   @Override
   public void handleInterestedOpsChanged() {
-    try {
-      if (!isNotWritable()) {
-        if (pendingResponse != null) {
-          pendingResponse.handleDrained();
-        } else if (ws != null) {
-          ws.writable();
-        }
+    if (!isNotWritable()) {
+      if (pendingResponse != null) {
+        pendingResponse.handleDrained();
+      } else if (ws != null) {
+        ws.writable();
       }
-    } catch (Throwable t) {
-      handleHandlerException(t);
     }
   }
 
   void handleWebsocketConnect(ServerWebSocketImpl ws) {
-    try {
-      if (wsHandler != null) {
-        wsHandler.handle(ws);
-        this.ws = ws;
-      }
-    } catch (Throwable t) {
-      handleHandlerException(t);
+    if (wsHandler != null) {
+      wsHandler.handle(ws);
+      this.ws = ws;
     }
   }
 
   private void handleWsFrame(WebSocketFrameInternal frame) {
-    try {
-      if (ws != null) {
-        ws.handleFrame(frame);
-      }
-    } catch (Throwable t) {
-      handleHandlerException(t);
+    if (ws != null) {
+      ws.handleFrame(frame);
     }
   }
 

@@ -34,6 +34,8 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 
 import java.util.concurrent.TimeoutException;
 
@@ -42,6 +44,8 @@ import java.util.concurrent.TimeoutException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientRequestImpl implements HttpClientRequest {
+
+  private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   private final RequestOptions options;
   private final HttpClientImpl client;
@@ -282,7 +286,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   private Handler<Throwable> getExceptionHandler() {
-    return exceptionHandler != null ? exceptionHandler : conn.getContext()::reportException;
+    return exceptionHandler != null ? exceptionHandler : log::error;
   }
 
   private void cancelOutstandingTimeoutTimer() {

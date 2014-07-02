@@ -208,15 +208,6 @@ public class VertxImpl implements VertxInternal {
     return ctx;
   }
 
-  public void reportException(Throwable t) {
-    ContextImpl ctx = getContext();
-    if (ctx != null) {
-      ctx.reportException(t);
-    } else {
-      log.error("Unhandled exception ", t);
-    }
-  }
-
   public Map<ServerID, HttpServerImpl> sharedHttpServers() {
     return sharedHttpServers;
   }

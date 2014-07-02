@@ -35,6 +35,8 @@ import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -45,6 +47,8 @@ import java.util.Queue;
 import java.util.UUID;
 
 public class NetSocketImpl extends ConnectionBase implements NetSocket {
+
+  private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
 
@@ -246,7 +250,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
           if (future.isSuccess()) {
             handler.handle(null);
           } else {
-            context.reportException(future.cause());
+            log.error(future.cause());
           }
         }, true);
       }
@@ -266,11 +270,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   protected void handleClosed() {
     checkContext();
     if (endHandler != null) {
-      try {
-        endHandler.handle(null);
-      } catch (Throwable t) {
-        handleHandlerException(t);
-      }
+      endHandler.handle(null);
     }
     super.handleClosed();
     if (vertx.eventBus() != null) {
@@ -289,11 +289,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       return;
     }
     if (dataHandler != null) {
-      try {
-        dataHandler.handle(data);
-      } catch (Throwable t) {
-        handleHandlerException(t);
-      }
+      dataHandler.handle(data);
     }
   }
 
@@ -304,11 +300,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private void callDrainHandler() {
     if (drainHandler != null) {
       if (!writeQueueFull()) {
-        try {
-          drainHandler.handle(null);
-        } catch (Throwable t) {
-          handleHandlerException(t);
-        }
+        drainHandler.handle(null);
       }
     }
   }
