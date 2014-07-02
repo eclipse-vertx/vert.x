@@ -15,10 +15,26 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.buffer.Buffer;
+
 /**
  * Key or trust store options configuring private key and/or certificates based on Java Keystore files.<p>
- * When used as a key store, it should point to a store containing a private key and its certificate.<p>
+ *
+ * When used as a key store, it should point to a store containing a private key and its certificate.
  * When used as a trust store, it should point to a store containing a list of accepted certificates.<p>
+ *
+ * The store can either be loaded by Vert.x from the filesystem:<p>
+ * <pre>
+ * HttpServerOptions options = new HttpServerOptions();
+ * options.setKeyStore(new JKSOptions().setPath("/mykeystore.jks").setPassword("foo"));
+ * </pre>
+ *
+ * Or directly provided as a buffer:<p>
+ *
+ * <pre>
+ * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.jks");
+ * options.setKeyStore(new JKSOptions().setValue(store).setPassword("foo"));
+ * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -26,6 +42,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions {
 
   private String password;
   private String path;
+  private Buffer value;
 
   public JKSOptions() {
     super();
@@ -35,6 +52,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions {
     super();
     this.password = other.password;
     this.path = other.path;
+    this.value = other.value;
   }
 
   public String getPassword() {
@@ -52,6 +70,15 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions {
 
   public JKSOptions setPath(String path) {
     this.path = path;
+    return this;
+  }
+
+  public Buffer getValue() {
+    return value;
+  }
+
+  public JKSOptions setValue(Buffer value) {
+    this.value = value;
     return this;
   }
 

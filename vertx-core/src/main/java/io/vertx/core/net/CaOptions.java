@@ -15,6 +15,8 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.buffer.Buffer;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,20 +35,37 @@ import java.util.List;
  * -----END CERTIFICATE-----
  * </pre>
  *
+ * The certificates can either be loaded by Vert.x from the filesystem:<p>
+ * <pre>
+ * HttpServerOptions options = new HttpServerOptions();
+ * options.setTrustStore(new CaOptions().addCertPath("/cert.pem"));
+ * </pre>
+ *
+ * Or directly provided as a buffer:<p>
+ *
+ * <pre>
+ * Buffer cert = vertx.fileSystem().readFileSync("/cert.pem");
+ * HttpServerOptions options = new HttpServerOptions();
+ * options.setTrustStore(new CaOptions().addCertValue(cert));
+ * </pre>
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class CaOptions implements TrustStoreOptions {
 
   private ArrayList<String> certPaths;
+  private ArrayList<Buffer> certValues;
 
   public CaOptions() {
     super();
     this.certPaths = new ArrayList<>();
+    this.certValues = new ArrayList<>();
   }
 
   public CaOptions(CaOptions other) {
     super();
     this.certPaths = new ArrayList<>(other.certPaths);
+    this.certValues = new ArrayList<>(other.certValues);
   }
 
   public List<String> getCertPaths() {
@@ -58,6 +77,18 @@ public class CaOptions implements TrustStoreOptions {
       throw new NullPointerException("No null certificate accepted");
     }
     certPaths.add(certPath);
+    return this;
+  }
+
+  public List<Buffer> getCertValues() {
+    return certValues;
+  }
+
+  public CaOptions addCertValue(Buffer certValue) throws NullPointerException {
+    if (certValue == null) {
+      throw new NullPointerException("No null certificate accepted");
+    }
+    certValues.add(certValue);
     return this;
   }
 

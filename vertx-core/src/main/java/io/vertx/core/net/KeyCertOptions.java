@@ -15,6 +15,8 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.buffer.Buffer;
+
 /**
  * Key store options configuring a private key and its certificate based on
  * <i>Privacy-enhanced Electronic Email</i> (PEM) files.<p>
@@ -40,12 +42,28 @@ package io.vertx.core.net;
  * -----END CERTIFICATE-----
  * </pre>
  *
+ * The key and certificate can either be loaded by Vert.x from the filesystem:<p>
+ * <pre>
+ * HttpServerOptions options = new HttpServerOptions();
+ * options.setKeyStore(new KeyCertOptions().setKeyPath("/mykey.pem").setCertPath("/mycert.pem"));
+ * </pre>
+ *
+ * Or directly provided as a buffer:<p>
+ *
+ * <pre>
+ * Buffer key = vertx.fileSystem().readFileSync("/mykey.pem");
+ * Buffer cert = vertx.fileSystem().readFileSync("/mycert.pem");
+ * options.setKeyStore(new KeyCertOptions().setKeyValue(key).setCertValue(cert));
+ * </pre>
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class KeyCertOptions implements KeyStoreOptions {
 
   private String keyPath;
+  private Buffer keyValue;
   private String certPath;
+  private Buffer certValue;
 
   public KeyCertOptions() {
     super();
@@ -70,8 +88,26 @@ public class KeyCertOptions implements KeyStoreOptions {
     return certPath;
   }
 
+  public Buffer getKeyValue() {
+    return keyValue;
+  }
+
+  public KeyCertOptions setKeyValue(Buffer keyValue) {
+    this.keyValue = keyValue;
+    return this;
+  }
+
   public KeyCertOptions setCertPath(String certPath) {
     this.certPath = certPath;
+    return this;
+  }
+
+  public Buffer getCertValue() {
+    return certValue;
+  }
+
+  public KeyCertOptions setCertValue(Buffer certValue) {
+    this.certValue = certValue;
     return this;
   }
 

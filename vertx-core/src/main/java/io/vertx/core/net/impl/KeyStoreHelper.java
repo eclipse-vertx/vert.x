@@ -15,6 +15,7 @@
  */
 package io.vertx.core.net.impl;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
@@ -24,7 +25,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
-import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -32,7 +32,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
-import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -42,26 +43,67 @@ public abstract class KeyStoreHelper {
   // Dummy password for encrypting pem based stores in memory
   private static final String DUMMY_PASSWORD = "dummy";
 
-  public static KeyStoreHelper create(KeyStoreOptions options) {
+  public static KeyStoreHelper create(VertxInternal vertx, KeyStoreOptions options) {
     if (options instanceof JKSOptions) {
       JKSOptions jks = (JKSOptions) options;
-      return new JKSOrPKCS12("JKS", jks.getPassword(), jks.getPath());
+      Callable<Buffer> value;
+      if (jks.getPath() != null) {
+        value = () -> vertx.fileSystem().readFileSync(PathAdjuster.adjust(vertx, jks.getPath()));
+      } else if (jks.getValue() != null) {
+        value = () -> jks.getValue();
+      } else {
+        return null;
+      }
+      return new JKSOrPKCS12("JKS", jks.getPassword(), value);
     } else if (options instanceof PKCS12Options) {
       PKCS12Options pkcs12 = (PKCS12Options) options;
-      return new JKSOrPKCS12("PKCS12", pkcs12.getPassword(), pkcs12.getPath());
+      Callable<Buffer> value;
+      if (pkcs12.getPath() != null) {
+        value = () -> vertx.fileSystem().readFileSync(PathAdjuster.adjust(vertx, pkcs12.getPath()));
+      } else if (pkcs12.getValue() != null) {
+        value = () -> pkcs12.getValue();
+      } else {
+        return null;
+      }
+      return new JKSOrPKCS12("PKCS12", pkcs12.getPassword(), value);
     } else if (options instanceof KeyCertOptions) {
       KeyCertOptions keyCert = (KeyCertOptions) options;
-      return new KeyCert(DUMMY_PASSWORD, keyCert.getKeyPath(), keyCert.getCertPath());
+      Callable<Buffer> key = () -> {
+        if (keyCert.getKeyPath() != null) {
+          return vertx.fileSystem().readFileSync(PathAdjuster.adjust(vertx, keyCert.getKeyPath()));
+        } else if (keyCert.getKeyValue() != null) {
+          return keyCert.getKeyValue();
+        } else {
+          throw new RuntimeException("Missing private key");
+        }
+      };
+      Callable<Buffer> cert = () -> {
+        if (keyCert.getCertPath() != null) {
+          return vertx.fileSystem().readFileSync(PathAdjuster.adjust(vertx, keyCert.getCertPath()));
+        } else if (keyCert.getCertValue() != null) {
+          return keyCert.getCertValue();
+        } else {
+          throw new RuntimeException("Missing X.509 certificate");
+        }
+      };
+      return new KeyCert(DUMMY_PASSWORD, key, cert);
     } else {
       return null;
     }
   }
 
-  public static KeyStoreHelper create(TrustStoreOptions options) {
+  public static KeyStoreHelper create(VertxInternal vertx, TrustStoreOptions options) {
     if (options instanceof KeyStoreOptions) {
-      return create((KeyStoreOptions) options);
+      return create(vertx, (KeyStoreOptions) options);
     } else if (options instanceof CaOptions) {
-      return new CA(((CaOptions) options).getCertPaths());
+      CaOptions caOptions = (CaOptions) options;
+      Stream<Buffer> values = caOptions.
+          getCertPaths().
+          stream().
+          map(path -> PathAdjuster.adjust(vertx, path)).
+          map(vertx.fileSystem()::readFileSync);
+      values = Stream.concat(values, caOptions.getCertValues().stream());
+      return new CA(values);
     } else {
       return null;
     }
@@ -92,20 +134,19 @@ public abstract class KeyStoreHelper {
   static class JKSOrPKCS12 extends KeyStoreHelper {
 
     private String type;
-    private String path;
+    private Callable<Buffer> value;
 
-    JKSOrPKCS12(String type, String password, String path) {
+    JKSOrPKCS12(String type, String password, Callable<Buffer> value) {
       super(password);
       this.type = type;
-      this.path = path;
+      this.value = value;
     }
 
     protected KeyStore loadStore(VertxInternal vertx, String ksPassword) throws Exception {
-      String ksPath = PathAdjuster.adjust(vertx, path);
       KeyStore ks = KeyStore.getInstance(type);
       InputStream in = null;
       try {
-        in = new FileInputStream(new File(ksPath));
+        in = new ByteArrayInputStream(value.call().getBytes());
         ks.load(in, ksPassword != null ? ksPassword.toCharArray(): null);
       } finally {
         if (in != null) {
@@ -121,33 +162,33 @@ public abstract class KeyStoreHelper {
 
   static class KeyCert extends KeyStoreHelper {
 
-    private String keyPath;
-    private String certPath;
+    private Callable<Buffer> keyValue;
+    private Callable<Buffer> certValue;
 
-    KeyCert(String password, String keyPath, String certPath) {
+    KeyCert(String password, Callable<Buffer> keyValue, Callable<Buffer> certValue) {
       super(password);
-      this.keyPath = keyPath;
-      this.certPath = certPath;
+      this.keyValue = keyValue;
+      this.certValue = certValue;
     }
 
     @Override
     protected KeyStore loadStore(VertxInternal vertx, String password) throws Exception {
       KeyStore keyStore = KeyStore.getInstance("jks");
       keyStore.load(null, null);
-      PrivateKey key = loadPrivateKey(this.keyPath);
-      Certificate[] chain = loadCert(this.certPath);
-      keyStore.setEntry("foo", new KeyStore.PrivateKeyEntry(key, chain), new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
+      PrivateKey key = loadPrivateKey(this.keyValue.call());
+      Certificate[] chain = loadCert(this.certValue.call());
+      keyStore.setEntry("dummy-entry", new KeyStore.PrivateKeyEntry(key, chain), new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
       return keyStore;
     }
   }
 
   static class CA extends KeyStoreHelper {
 
-    private List<String> list;
+    private Stream<Buffer> certValues;
 
-    CA(List<String> list) {
+    CA(Stream<Buffer> certValues) {
       super(null);
-      this.list = list;
+      this.certValues = certValues;
     }
 
     @Override
@@ -155,17 +196,18 @@ public abstract class KeyStoreHelper {
       KeyStore keyStore = KeyStore.getInstance("jks");
       keyStore.load(null, null);
       int count = 0;
-      for (String path : list) {
-        for (Certificate certificate : loadCert(path)) {
-          keyStore.setCertificateEntry("cert-" + count, certificate);
+      Iterable<Buffer> iterable = certValues::iterator;
+      for (Buffer certValue : iterable) {
+        for (Certificate cert : loadCert(certValue)) {
+          keyStore.setCertificateEntry("cert-" + count, cert);
         }
       }
       return keyStore;
     }
   }
 
-  private static byte[] loadPem(String path, String delimiter) throws IOException {
-    String pem = new String(Files.readAllBytes(new File(path).toPath()));
+  private static byte[] loadPem(Buffer data, String delimiter) throws IOException {
+    String pem = data.toString();
     String beginDelimiter = "-----BEGIN " + delimiter + "-----";
     String endDelimiter = "-----END " + delimiter + "-----";
     int begin = pem.indexOf(beginDelimiter);
@@ -185,20 +227,20 @@ public abstract class KeyStoreHelper {
     return Base64.getDecoder().decode(content);
   }
 
-  private static PrivateKey loadPrivateKey(String path) throws Exception {
-    if (path == null) {
+  private static PrivateKey loadPrivateKey(Buffer key) throws Exception {
+    if (key == null) {
       throw new RuntimeException("Missing private key path");
     }
-    byte[] value = loadPem(path, "PRIVATE KEY");
+    byte[] value = loadPem(key, "PRIVATE KEY");
     KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
     return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(value));
   }
 
-  private static Certificate[] loadCert(String path) throws Exception {
-    if (path == null) {
+  private static Certificate[] loadCert(Buffer cert) throws Exception {
+    if (cert == null) {
       throw new RuntimeException("Missing X.509 certificate path");
     }
-    byte[] value = loadPem(path, "CERTIFICATE");
+    byte[] value = loadPem(cert, "CERTIFICATE");
     CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
     return certFactory.generateCertificates(new ByteArrayInputStream(value)).toArray(new Certificate[0]);
   }

@@ -83,7 +83,7 @@ public class NetServerImpl implements NetServer, Closeable {
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(options.getKeyStore()), KeyStoreHelper.create(options.getTrustStore()));
+    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStore()), KeyStoreHelper.create(vertx, options.getTrustStore()));
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
       if (creatingContext.isMultithreaded()) {

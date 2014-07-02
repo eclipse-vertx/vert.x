@@ -2307,7 +2307,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testJKSInvalidPath() {
-    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPath("/invalid.jks"), "/invalid.jks (No such file or directory)");
+    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: /invalid.jks");
   }
 
   @Test
@@ -2322,7 +2322,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testPKCS12InvalidPath() {
-    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPath("/invalid.p12"), "/invalid.p12 (No such file or directory)");
+    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: /invalid.p12");
   }
 
   @Test
@@ -2337,22 +2337,22 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testKeyCertMissingKeyPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(null), "Missing private key path");
+    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(null), "Missing private key");
   }
 
   @Test
   public void testKeyCertInvalidKeyPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath("/invalid.pem"), "/invalid.pem");
+    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
   public void testKeyCertMissingCertPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath(null), "Missing X.509 certificate path");
+    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath(null), "Missing X.509 certificate");
   }
 
   @Test
   public void testKeyCertInvalidCertPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath("/invalid.pem"), "/invalid.pem");
+    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
@@ -2380,7 +2380,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(new CaOptions().addCertPath("/invalid.pem"), "/invalid.pem");
+    testInvalidTrustStore(new CaOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
