@@ -77,7 +77,7 @@ public class TestUtils {
    */
   public static Buffer randomBuffer(int length, boolean avoid, byte avoidByte) {
     byte[] line = randomByteArray(length, avoid, avoidByte);
-    return new Buffer(line);
+    return Buffer.newBuffer(line);
   }
 
   /**

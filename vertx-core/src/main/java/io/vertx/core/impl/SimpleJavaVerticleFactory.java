@@ -17,7 +17,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Verticle;
-import io.vertx.core.VerticleFactory;
+import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.Vertx;
 
 /**

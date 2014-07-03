@@ -164,7 +164,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       }
     } else {
       if (pauseBuff == null) {
-        pauseBuff = new Buffer();
+        pauseBuff = Buffer.newBuffer();
       }
       pauseBuff.appendBuffer(data);
     }

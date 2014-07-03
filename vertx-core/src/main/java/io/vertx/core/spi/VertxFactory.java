@@ -13,34 +13,26 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.impl;
+package io.vertx.core.spi;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.VertxOptions;
 
 /**
+ * Factory for creating Vertx instances.<p>
+ * Use this to create Vertx instances when embedding Vert.x core directly.<p>
+ *
  * @author pidster
- * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class VertxFactoryImpl implements VertxFactory {
+public interface VertxFactory {
 
-  @Override
-  public Vertx createVertx() {
-    return new VertxImpl();
-  }
+  Vertx createVertx();
 
-  @Override
-  public Vertx createVertx(VertxOptions options) {
-    return new VertxImpl(options);
-  }
+  Vertx createVertx(VertxOptions options);
 
-  @Override
-  public void createVertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
-    new VertxImpl(options, resultHandler);
-  }
+  void createVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
 
 }

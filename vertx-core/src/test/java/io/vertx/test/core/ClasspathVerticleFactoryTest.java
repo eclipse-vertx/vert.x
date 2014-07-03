@@ -16,7 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.VerticleFactory;
+import io.vertx.core.spi.VerticleFactory;
 import org.junit.Test;
 
 /**

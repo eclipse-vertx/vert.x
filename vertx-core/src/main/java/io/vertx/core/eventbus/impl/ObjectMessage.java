@@ -98,7 +98,7 @@ public class ObjectMessage<T> extends BaseMessage<T> {
       int buffLength = readBuff.getInt(pos);
       pos += 4;
       byte[] bytes = readBuff.getBytes(pos, pos + buffLength);
-      encodedData = new Buffer(bytes);
+      encodedData = Buffer.newBuffer(bytes);
       encoded = true;
     }
     body = codec.decode(encodedData);

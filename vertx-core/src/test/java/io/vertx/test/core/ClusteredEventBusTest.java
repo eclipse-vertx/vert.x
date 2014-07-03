@@ -19,7 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxFactory;
+import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
@@ -233,7 +233,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     class FooCodec implements MessageCodec<Foo> {
       @Override
       public Buffer encode(Foo object) {
-        return new Buffer();
+        return Buffer.newBuffer();
       }
 
       @Override
@@ -267,7 +267,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      VertxFactory.newVertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0).setClustered(true)
+      Vertx.newVertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0).setClustered(true)
                             .setClusterManager(getClusterManager()), ar -> {
         assertTrue("Failed to start node", ar.succeeded());
         vertices[index] = ar.result();

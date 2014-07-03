@@ -21,6 +21,7 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.VertxFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -131,9 +132,9 @@ public class Starter {
           log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
-      vertx = VertxFactory.newVertx(new VertxOptions().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true));
+      vertx = Vertx.newVertx(new VertxOptions().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true));
     } else {
-      vertx = VertxFactory.newVertx();
+      vertx = Vertx.newVertx();
     }
     return vertx;
   }

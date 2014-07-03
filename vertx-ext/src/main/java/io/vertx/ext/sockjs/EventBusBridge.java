@@ -326,7 +326,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (message.replyAddress() != null) {
       envelope.putString("replyAddress", message.replyAddress());
     }
-    sock.writeBuffer(new Buffer(envelope.encode()));
+    sock.writeBuffer(Buffer.newBuffer(envelope.encode()));
   }
 
   private void doSendOrPub(final boolean send, final SockJSSocket sock, final String address,
@@ -403,7 +403,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             new JsonObject().putString("address", address).putNumber("failureCode",
               cause.failureCode()).putString("failureType", cause.failureType().name())
               .putString("message", cause.getMessage());
-          sock.writeBuffer(new Buffer(envelope.encode()));
+          sock.writeBuffer(Buffer.newBuffer(envelope.encode()));
         }
         info.handlerCount--;
       };

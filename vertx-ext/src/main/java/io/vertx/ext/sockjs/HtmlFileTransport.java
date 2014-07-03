@@ -118,7 +118,7 @@ class HtmlFileTransport extends BaseTransport {
       sb.append("<script>\np(\"");
       sb.append(body);
       sb.append("\");\n</script>\r\n");
-      Buffer buff = new Buffer(sb.toString());
+      Buffer buff = Buffer.newBuffer(sb.toString());
       req.response().writeBuffer(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {

@@ -33,8 +33,11 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
+import io.vertx.core.spi.VerticleFactory;
+import io.vertx.core.spi.VertxFactory;
 
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -52,6 +55,21 @@ import java.util.Set;
  */
 @VertxGen
 public interface Vertx {
+
+  @GenIgnore
+  static Vertx newVertx() {
+    return factory.createVertx();
+  }
+
+  @GenIgnore
+  static Vertx newVertx(VertxOptions options) {
+    return factory.createVertx(options);
+  }
+
+  @GenIgnore
+  static void newVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    factory.createVertx(options, resultHandler);
+  }
 
   /**
    * Create a TCP/SSL server
@@ -188,5 +206,17 @@ public interface Vertx {
 
   @GenIgnore
   List<VerticleFactory> verticleFactories();
+
+  static final VertxFactory factory = loadFactory();
+
+  @GenIgnore
+  static VertxFactory loadFactory() {
+    ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
+    if (factories.iterator().hasNext()) {
+      return factories.iterator().next();
+    } else {
+      throw new IllegalStateException("Cannot find BufferFactory service");
+    }
+  }
 
 }

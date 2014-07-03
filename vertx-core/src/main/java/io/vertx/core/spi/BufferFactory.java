@@ -14,18 +14,25 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core;
+package io.vertx.core.spi;
+
+import io.netty.buffer.ByteBuf;
+import io.vertx.core.buffer.Buffer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface VerticleFactory {
+public interface BufferFactory {
 
-  void init(Vertx vertx);
+  Buffer newBuffer(int initialSizeHint);
 
-  boolean matches(String verticleName);
+  Buffer newBuffer();
 
-  Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception;
+  Buffer newBuffer(String str);
 
-  void close();
+  Buffer newBuffer(String str, String enc);
+
+  Buffer newBuffer(byte[] bytes);
+
+  Buffer newBuffer(ByteBuf byteBuffer);
 }

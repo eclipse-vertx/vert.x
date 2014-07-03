@@ -17,13 +17,13 @@ package io.vertx.core.buffer;
 
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.util.CharsetUtil;
+import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.GenIgnore;
 import io.vertx.core.gen.VertxGen;
+import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.util.ServiceLoader;
 
 /**
  * A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as
@@ -44,66 +44,35 @@ import java.nio.charset.Charset;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public class Buffer {
+public interface Buffer {
 
-  private final ByteBuf buffer;
-
-  /**
-   * Create an empty buffer
-   */
-  public Buffer() {
-    this(0);
-  }
-
-  /**
-   * Creates a new empty Buffer that is expected to have a size of {@code initialSizeHint} after data has been
-   * written to it.<p>
-   * Please note that {@code length} of the Buffer immediately after creation will be zero.<p>
-   * The {@code initialSizeHint} is merely a hint to the system for how much memory to initially allocate to the buffer to prevent excessive
-   * automatic re-allocations as data is written to it.
-   */
-  public Buffer(int initialSizeHint) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
-  }
-
-  /**
-   * Create a new Buffer that contains the contents of a {@code byte[]}
-   */
   @GenIgnore
-  public Buffer(byte[] bytes) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+  static Buffer newBuffer() {
+    return factory.newBuffer();
   }
 
-  /**
-   * Create a new Buffer that contains the contents of a {@code String str} encoded according to the encoding {@code enc}
-   */
-  public Buffer(String str, String enc) {
-    this(str.getBytes(Charset.forName(enc)));
-  }
-
-  /**
-   * Create a new Buffer that contains the contents of {@code String str} encoded with UTF-8 encoding
-   */
-  public Buffer(String str) {
-    this(str, "UTF-8");
-  }
-
-  /**
-   * Create a new Buffer from a Netty {@code ByteBuf} instance.
-   * This method is meant for internal use only.
-   */
   @GenIgnore
-  public Buffer(ByteBuf buffer) {
-    this.buffer = Unpooled.unreleasableBuffer(buffer);
+  static Buffer newBuffer(int initialSizeHint) {
+    return factory.newBuffer(initialSizeHint);
   }
 
-  /**
-   * Returns a {@code String} representation of the Buffer assuming it contains a {@code String} encoding in UTF-8
-   */
+  static Buffer newBuffer(String string) {
+    return factory.newBuffer(string);
+  }
+
   @GenIgnore
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  public String toString() {
-    return buffer.toString(Charset.forName("UTF-8"));
+  static Buffer newBuffer(String string, String enc) {
+    return factory.newBuffer(string, enc);
+  }
+
+  @GenIgnore
+  static Buffer newBuffer(byte[] bytes) {
+    return factory.newBuffer(bytes);
+  }
+
+  @GenIgnore
+  static Buffer newBuffer(ByteBuf byteBuf) {
+    return factory.newBuffer(byteBuf);
   }
 
   /**
@@ -111,144 +80,104 @@ public class Buffer {
    */
   @GenIgnore
   // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  public String toString(String enc) {
-    return buffer.toString(Charset.forName(enc));
-  }
+  String toString(String enc);
 
   /**
    * Returns the {@code byte} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 1} is greater than the length of the Buffer.
    */
-  public byte getByte(int pos) {
-    return buffer.getByte(pos);
-  }
+  byte getByte(int pos);
 
   /**
    * Returns the {@code int} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
    */
-  public int getInt(int pos) {
-    return buffer.getInt(pos);
-  }
+  int getInt(int pos);
 
   /**
    * Returns the {@code long} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 8} is greater than the length of the Buffer.
    */
-  public long getLong(int pos) {
-    return buffer.getLong(pos);
-  }
+  long getLong(int pos);
 
   /**
    * Returns the {@code double} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 8} is greater than the length of the Buffer.
    */
-  public double getDouble(int pos) {
-    return buffer.getDouble(pos);
-  }
+  double getDouble(int pos);
 
   /**
    * Returns the {@code float} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
    */
-  public float getFloat(int pos) {
-    return buffer.getFloat(pos);
-  }
+  float getFloat(int pos);
 
   /**
    * Returns the {@code short} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 2} is greater than the length of the Buffer.
    */
-  public short getShort(int pos) {
-    return buffer.getShort(pos);
-  }
+  short getShort(int pos);
 
   /**
    * Returns a copy of the entire Buffer as a {@code byte[]}
    */
   @GenIgnore
-  public byte[] getBytes() {
-    byte[] arr = new byte[buffer.writerIndex()];
-    buffer.getBytes(0, arr);
-    return arr;
-  }
+  byte[] getBytes();
 
   /**
    * Returns a copy of a sub-sequence the Buffer as a {@code byte[]} starting at position {@code start}
    * and ending at position {@code end - 1}
    */
   @GenIgnore
-  public byte[] getBytes(int start, int end) {
-    byte[] arr = new byte[end - start];
-    buffer.getBytes(start, arr, 0, end - start);
-    return arr;
-  }
+  byte[] getBytes(int start, int end);
 
   /**
    * Returns a copy of a sub-sequence the Buffer as a {@link Buffer} starting at position {@code start}
    * and ending at position {@code end - 1}
    */
-  public Buffer getBuffer(int start, int end) {
-    return new Buffer(getBytes(start, end));
-  }
+  Buffer getBuffer(int start, int end);
 
   /**
    * Returns a copy of a sub-sequence the Buffer as a {@code String} starting at position {@code start}
    * and ending at position {@code end - 1} interpreted as a String in the specified encoding
    */
-  public String getString(int start, int end, String enc) {
-    byte[] bytes = getBytes(start, end);
-    Charset cs = Charset.forName(enc);
-    return new String(bytes, cs);
-  }
+  String getString(int start, int end, String enc);
 
   /**
    * Returns a copy of a sub-sequence the Buffer as a {@code String} starting at position {@code start}
    * and ending at position {@code end - 1} interpreted as a String in UTF-8 encoding
    */
-  public String getString(int start, int end) {
-    byte[] bytes = getBytes(start, end);
-    Charset cs = Charset.forName("UTF-8");
-    return new String(bytes, cs);
-  }
+  String getString(int start, int end);
 
   /**
    * Appends the specified {@code Buffer} to the end of this Buffer. The buffer will expand as necessary to accommodate
    * any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendBuffer(Buffer buff) {
-    ByteBuf cb = buff.getByteBuf();
-    buffer.writeBytes(buff.getByteBuf());
-    cb.readerIndex(0); // Need to reset readerindex since Netty write modifies readerIndex of source!
-    return this;
-  }
+  @Fluent
+  Buffer appendBuffer(Buffer buff);
 
   /**
    * Appends the specified {@code Buffer} starting at the {@code offset} using {@code len} to the end of this Buffer. The buffer will expand as necessary to accommodate
    * any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendBuffer(Buffer buff, int offset, int len) {
-    buffer.writeBytes(buff.getByteBuf(), offset, len);
-    return this;
-  }
+  @Fluent
+  Buffer appendBuffer(Buffer buff, int offset, int len);
 
   /**
    * Appends the specified {@code byte[]} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   @GenIgnore
-  public Buffer appendBytes(byte[] bytes) {
-    buffer.writeBytes(bytes);
-    return this;
-  }
+  @Fluent
+  Buffer appendBytes(byte[] bytes);
 
   /**
    * Appends the specified number of bytes from {@code byte[]} to the end of the Buffer, starting at the given offset.
@@ -256,196 +185,152 @@ public class Buffer {
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   @GenIgnore
-  public Buffer appendBytes(byte[] bytes, int offset, int len) {
-    buffer.writeBytes(bytes, offset, len);
-    return this;
-  }
+  @Fluent
+  Buffer appendBytes(byte[] bytes, int offset, int len);
 
   /**
    * Appends the specified {@code byte} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendByte(byte b) {
-    buffer.writeByte(b);
-    return this;
-  }
+  @Fluent
+  Buffer appendByte(byte b);
 
   /**
    * Appends the specified {@code int} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendInt(int i) {
-    buffer.writeInt(i);
-    return this;
-  }
+  @Fluent
+  Buffer appendInt(int i);
 
   /**
    * Appends the specified {@code long} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendLong(long l) {
-    buffer.writeLong(l);
-    return this;
-  }
+  @Fluent
+  Buffer appendLong(long l);
 
   /**
    * Appends the specified {@code short} to the end of the Buffer.The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendShort(short s) {
-    buffer.writeShort(s);
-    return this;
-  }
+  @Fluent
+  Buffer appendShort(short s);
 
   /**
    * Appends the specified {@code float} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendFloat(float f) {
-    buffer.writeFloat(f);
-    return this;
-  }
+  @Fluent
+  Buffer appendFloat(float f);
 
   /**
    * Appends the specified {@code double} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
-  public Buffer appendDouble(double d) {
-    buffer.writeDouble(d);
-    return this;
-  }
+  @Fluent
+  Buffer appendDouble(double d);
 
   /**
    * Appends the specified {@code String} to the end of the Buffer with the encoding as specified by {@code enc}.<p>
    * The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.<p>
    */
-  public Buffer appendString(String str, String enc) {
-    return append(str, Charset.forName(enc));
-  }
+  @Fluent
+  Buffer appendString(String str, String enc);
 
   /**
    * Appends the specified {@code String str} to the end of the Buffer with UTF-8 encoding.<p>
    * The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together<p>
    */
-  public Buffer appendString(String str) {
-    return append(str, CharsetUtil.UTF_8);
-  }
+  @Fluent
+  Buffer appendString(String str);
 
   /**
    * Sets the {@code byte} at position {@code pos} in the Buffer to the value {@code b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setByte(int pos, byte b) {
-    ensureWritable(pos, 1);
-    buffer.setByte(pos, b);
-    return this;
-  }
+  @Fluent
+  Buffer setByte(int pos, byte b);
 
   /**
    * Sets the {@code int} at position {@code pos} in the Buffer to the value {@code i}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setInt(int pos, int i) {
-    ensureWritable(pos, 4);
-    buffer.setInt(pos, i);
-    return this;
-  }
+  @Fluent
+  Buffer setInt(int pos, int i);
 
   /**
    * Sets the {@code long} at position {@code pos} in the Buffer to the value {@code l}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setLong(int pos, long l) {
-    ensureWritable(pos, 8);
-    buffer.setLong(pos, l);
-    return this;
-  }
+  @Fluent
+  Buffer setLong(int pos, long l);
 
   /**
    * Sets the {@code double} at position {@code pos} in the Buffer to the value {@code d}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setDouble(int pos, double d) {
-    ensureWritable(pos, 8);
-    buffer.setDouble(pos, d);
-    return this;
-  }
+  @Fluent
+  Buffer setDouble(int pos, double d);
 
   /**
    * Sets the {@code float} at position {@code pos} in the Buffer to the value {@code f}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setFloat(int pos, float f) {
-    ensureWritable(pos, 4);
-    buffer.setFloat(pos, f);
-    return this;
-  }
+  @Fluent
+  Buffer setFloat(int pos, float f);
 
   /**
    * Sets the {@code short} at position {@code pos} in the Buffer to the value {@code s}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setShort(int pos, short s) {
-    ensureWritable(pos, 2);
-    buffer.setShort(pos, s);
-    return this;
-  }
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
+  @GenIgnore
+  @Fluent
+  Buffer setShort(int pos, short s);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setBuffer(int pos, Buffer b) {
-    ensureWritable(pos, b.length());
-    buffer.setBytes(pos, b.getByteBuf());
-    return this;
-  }
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
+  @GenIgnore
+  @Fluent
+  Buffer setBuffer(int pos, Buffer b);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b} on the given {@code offset} and {@code len}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  public Buffer setBuffer(int pos, Buffer b, int offset, int len) {
-    ensureWritable(pos, len);
-    buffer.setBytes(pos, b.getByteBuf(), offset, len);
-    return this;
-  }
+  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
+  @GenIgnore
+  @Fluent
+  Buffer setBuffer(int pos, Buffer b, int offset, int len);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code ByteBuffer b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @GenIgnore
-  public Buffer setBytes(int pos, ByteBuffer b) {
-    ensureWritable(pos, b.limit());
-    buffer.setBytes(pos, b);
-    return this;
-  }
+  @Fluent
+  Buffer setBytes(int pos, ByteBuffer b);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @GenIgnore
-  public Buffer setBytes(int pos, byte[] b) {
-    ensureWritable(pos, b.length);
-    buffer.setBytes(pos, b);
-    return this;
-  }
-
+  @Fluent
+  Buffer setBytes(int pos, byte[] b);
 
   /**
    * Sets the given number of bytes at position {@code pos} in the Buffer to the bytes represented by the {@code byte[] b}.<p></p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @GenIgnore
-  public Buffer setBytes(int pos, byte[] b, int offset, int len) {
-    ensureWritable(pos, len);
-    buffer.setBytes(pos, b, offset, len);
-    return this;
-  }
+  @Fluent
+  Buffer setBytes(int pos, byte[] b, int offset, int len);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in UTF-8.<p>
@@ -453,9 +338,8 @@ public class Buffer {
    */
   // FIXME - currently ignored as it causes a MVEL barf when run through codegen
   @GenIgnore
-  public Buffer setString(int pos, String str) {
-    return setBytes(pos, str, CharsetUtil.UTF_8);
-  }
+  @Fluent
+  Buffer setString(int pos, String str);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in encoding {@code enc}.<p>
@@ -463,33 +347,26 @@ public class Buffer {
    */
   // FIXME - currently ignored as it causes a MVEL barf when run through codegen
   @GenIgnore
-  public Buffer setString(int pos, String str, String enc) {
-    return setBytes(pos, str, Charset.forName(enc));
-  }
+  @Fluent
+  Buffer setString(int pos, String str, String enc);
 
   /**
    * Returns the length of the buffer, measured in bytes.
    * All positions are indexed from zero.
    */
-  public int length() {
-    return buffer.writerIndex();
-  }
+  int length();
 
   /**
    * Returns a copy of the entire Buffer.
    */
-  public Buffer copy() {
-    return new Buffer(buffer.copy());
-  }
+  Buffer copy();
 
   /**
    * Returns a slice of this buffer. Modifying the content
    * of the returned buffer or this buffer affects each other's content
    * while they maintain separate indexes and marks.
    */
-  public Buffer slice() {
-    return new Buffer(buffer.slice());
-  }
+  Buffer slice();
 
   /**
    * Returns a slice of this buffer. Modifying the content
@@ -498,54 +375,26 @@ public class Buffer {
    */
   // FIXME - currently ignored as it causes a MVEL barf when run through codegen
   @GenIgnore
-  public Buffer slice(int start, int end) {
-    return new Buffer(buffer.slice(start, end - start));
-  }
+  Buffer slice(int start, int end);
 
   /**
    * Returns the Buffer as a Netty {@code ByteBuf}.<p>
    * This method is meant for internal use only.
    */
   @GenIgnore
-  public ByteBuf getByteBuf() {
-    // Return a duplicate so the Buffer can be written multiple times.
-    // See #648
-    return buffer.duplicate();
-  }
+  ByteBuf getByteBuf();
 
-  private Buffer append(String str, Charset charset) {
-    byte[] bytes = str.getBytes(charset);
-    buffer.writeBytes(bytes);
-    return this;
-  }
+  static final BufferFactory factory = loadFactory();
 
-  private Buffer setBytes(int pos, String str, Charset charset) {
-    byte[] bytes = str.getBytes(charset);
-    ensureWritable(pos, bytes.length);
-    buffer.setBytes(pos, bytes);
-    return this;
-  }
-
-  private void ensureWritable(int pos, int len) {
-    int ni = pos + len;
-    int cap = buffer.capacity();
-    int over = ni - cap;
-    if (over > 0) {
-      buffer.writerIndex(cap);
-      buffer.ensureWritable(over);
-    }
-    //We have to make sure that the writerindex is always positioned on the last bit of data set in the buffer
-    if (ni > buffer.writerIndex()) {
-      buffer.writerIndex(ni);
-    }
-  }
-
-  @Override
   @GenIgnore
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    Buffer buffer1 = (Buffer) o;
-    return buffer.equals(buffer1.buffer);
+  static BufferFactory loadFactory() {
+    ServiceLoader<BufferFactory> factories = ServiceLoader.load(BufferFactory.class);
+    if (factories.iterator().hasNext()) {
+      return factories.iterator().next();
+    } else {
+      throw new IllegalStateException("Cannot find BufferFactory service");
+    }
   }
+
+
 }

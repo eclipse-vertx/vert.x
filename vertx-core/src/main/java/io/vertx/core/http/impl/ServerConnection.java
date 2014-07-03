@@ -279,7 +279,7 @@ class ServerConnection extends ConnectionBase {
     if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
-        Buffer buff = new Buffer(chunk.content());
+        Buffer buff = Buffer.newBuffer(chunk.content());
         handleChunk(buff);
       }
 

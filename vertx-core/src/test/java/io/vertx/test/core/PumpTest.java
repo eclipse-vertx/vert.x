@@ -39,7 +39,7 @@ public class PumpTest {
     for (int i = 0; i < 10; i++) { // Repeat a few times
       p.start();
 
-      Buffer inp = new Buffer();
+      Buffer inp = Buffer.newBuffer();
       for (int j = 0; j < 10; j++) {
         Buffer b = TestUtils.randomBuffer(100);
         inp.appendBuffer(b);
@@ -66,7 +66,7 @@ public class PumpTest {
     p.start();
 
     for (int i = 0; i < 10; i++) {   // Repeat a few times
-      Buffer inp = new Buffer();
+      Buffer inp = Buffer.newBuffer();
       for (int j = 0; j < 4; j++) {
         Buffer b = TestUtils.randomBuffer(100);
         inp.appendBuffer(b);
@@ -84,7 +84,7 @@ public class PumpTest {
 
       TestUtils.buffersEqual(inp, ws.received);
       ws.clearReceived();
-      inp = new Buffer();
+      inp = Buffer.newBuffer();
       assertFalse(rs.paused);
       assertEquals(i + 1, rs.pauseCount);
       assertEquals(i + 1, rs.resumeCount);
@@ -133,12 +133,12 @@ public class PumpTest {
   private class FakeWriteStream implements WriteStream<FakeWriteStream> {
 
     int maxSize;
-    Buffer received = new Buffer();
+    Buffer received = Buffer.newBuffer();
     Handler<Void> drainHandler;
 
     void clearReceived() {
       boolean callDrain = writeQueueFull();
-      received = new Buffer();
+      received = Buffer.newBuffer();
       if (callDrain && drainHandler != null) {
         drainHandler.handle(null);
       }

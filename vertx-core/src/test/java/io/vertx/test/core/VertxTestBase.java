@@ -3,7 +3,7 @@ package io.vertx.test.core;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxFactory;
+import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.file.impl.ClasspathPathResolver;
 import org.junit.After;
 import org.junit.Before;
@@ -24,7 +24,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   @Before
   public void beforeVertxTestBase() throws Exception {
-    vertx = VertxFactory.newVertx();
+    vertx = Vertx.newVertx();
   }
 
   @After

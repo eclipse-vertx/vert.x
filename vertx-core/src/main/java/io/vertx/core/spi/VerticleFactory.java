@@ -14,34 +14,21 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.test.core;
+package io.vertx.core.spi;
 
 import io.vertx.core.Verticle;
-import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.Vertx;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClasspathVerticleFactory implements VerticleFactory{
+public interface VerticleFactory {
 
-  @Override
-  public void init(Vertx vertx) {
+  void init(Vertx vertx);
 
-  }
+  boolean matches(String verticleName);
 
-  @Override
-  public boolean matches(String verticleName) {
-    return false;
-  }
+  Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception;
 
-  @Override
-  public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
-    return null;
-  }
-
-  @Override
-  public void close() {
-
-  }
+  void close();
 }

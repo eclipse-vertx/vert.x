@@ -118,7 +118,7 @@ class Session extends SockJSSocketBase implements Shareable {
     paused = false;
     if (dataHandler != null) {
       for (String msg: this.pendingReads) {
-        dataHandler.handle(new Buffer(msg));
+        dataHandler.handle(Buffer.newBuffer(msg));
       }
     }
     return this;
@@ -328,7 +328,7 @@ class Session extends SockJSSocketBase implements Shareable {
         for (String msg : msgArr) {
           if (!paused) {
             try {
-              dataHandler.handle(new Buffer(msg));
+              dataHandler.handle(Buffer.newBuffer(msg));
             } catch (Throwable t) {
               log.error("Unhandle exception", t);
             }

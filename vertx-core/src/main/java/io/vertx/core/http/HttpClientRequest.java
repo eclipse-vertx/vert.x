@@ -48,8 +48,8 @@ import io.vertx.core.streams.WriteStream;
  *
  * req.headers().put("some-header", "hello")
  *     .put("Content-Length", 5)
- *     .write(new Buffer(new byte[]{1, 2, 3, 4, 5}))
- *     .write(new Buffer(new byte[]{6, 7, 8, 9, 10}))
+ *     .write(Buffer.newBuffer(new byte[]{1, 2, 3, 4, 5}))
+ *     .write(Buffer.newBuffer(new byte[]{6, 7, 8, 9, 10}))
  *     .end();
  *
  * </pre>

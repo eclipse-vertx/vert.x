@@ -47,8 +47,8 @@ import java.io.File;
  */
 public class HttpServerResponseImpl implements HttpServerResponse {
 
-  private static final Buffer NOT_FOUND = new Buffer("<html><body>Resource not found</body><html>");
-  private static final Buffer FORBIDDEN = new Buffer("<html><body>Forbidden</body><html>");
+  private static final Buffer NOT_FOUND = Buffer.newBuffer("<html><body>Resource not found</body><html>");
+  private static final Buffer FORBIDDEN = Buffer.newBuffer("<html><body>Forbidden</body><html>");
 
   private final VertxInternal vertx;
   private final ServerConnection conn;
@@ -234,22 +234,22 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponseImpl write(String chunk, String enc) {
-    return write(new Buffer(chunk, enc).getByteBuf(),  null);
+    return write(Buffer.newBuffer(chunk, enc).getByteBuf(),  null);
   }
 
   @Override
   public HttpServerResponseImpl write(String chunk) {
-    return write(new Buffer(chunk).getByteBuf(), null);
+    return write(Buffer.newBuffer(chunk).getByteBuf(), null);
   }
 
   @Override
   public void end(String chunk) {
-    end(new Buffer(chunk));
+    end(Buffer.newBuffer(chunk));
   }
 
   @Override
   public void end(String chunk, String enc) {
-    end(new Buffer(chunk, enc));
+    end(Buffer.newBuffer(chunk, enc));
   }
 
   @Override

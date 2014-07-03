@@ -375,7 +375,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testEchoString() {
     String sent = TestUtils.randomUnicodeString(100);
-    Buffer buffSent = new Buffer(sent);
+    Buffer buffSent = Buffer.newBuffer(sent);
     testEcho(sock -> sock.writeString(sent), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
   }
 
@@ -391,7 +391,7 @@ public class NetTest extends VertxTestBase {
 
   void testEchoStringWithEncoding(String encoding) {
     String sent = TestUtils.randomUnicodeString(100);
-    Buffer buffSent = new Buffer(sent, encoding);
+    Buffer buffSent = Buffer.newBuffer(sent, encoding);
     testEcho(sock -> sock.writeString(sent, encoding), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
   }
 
@@ -399,7 +399,7 @@ public class NetTest extends VertxTestBase {
     Handler<AsyncResult<NetSocket>> clientHandler = (asyncResult) -> {
       if (asyncResult.succeeded()) {
         NetSocket sock = asyncResult.result();
-        Buffer buff = new Buffer();
+        Buffer buff = Buffer.newBuffer();
         sock.dataHandler((buffer) -> {
           buff.appendBuffer(buffer);
           if (buff.length() == length) {
@@ -815,8 +815,8 @@ public class NetTest extends VertxTestBase {
           }
           final int numChunks = 100;
           final int chunkSize = 100;
-          final Buffer received = new Buffer();
-          final Buffer sent = new Buffer();
+          final Buffer received = Buffer.newBuffer();
+          final Buffer sent = Buffer.newBuffer();
           final NetSocket socket = ar2.result();
 
           final AtomicBoolean upgradedClient = new AtomicBoolean();
@@ -1050,7 +1050,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testWriteSameBufferMoreThanOnce() throws Exception {
     server.connectHandler(socket -> {
-      Buffer received = new Buffer();
+      Buffer received = Buffer.newBuffer();
       socket.dataHandler(buff -> {
         received.appendBuffer(buff);
         if (received.toString().equals("foofoo")) {
@@ -1061,7 +1061,7 @@ public class NetTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       client.connect(1234, result -> {
         NetSocket socket = result.result();
-        Buffer buff = new Buffer("foo");
+        Buffer buff = Buffer.newBuffer("foo");
         socket.writeBuffer(buff);
         socket.writeBuffer(buff);
       });
@@ -1074,8 +1074,8 @@ public class NetTest extends VertxTestBase {
     File fDir = Files.createTempDirectory("vertx-test").toFile();
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile(fDir.toString(), "some-file.txt", content);
-    Buffer expected = new Buffer(content);
-    Buffer received = new Buffer();
+    Buffer expected = Buffer.newBuffer(content);
+    Buffer received = Buffer.newBuffer();
     server.connectHandler(sock -> {
       sock.dataHandler(buff -> {
         received.appendBuffer(buff);
@@ -1106,8 +1106,8 @@ public class NetTest extends VertxTestBase {
     File fDir = Files.createTempDirectory("vertx-test").toFile();
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile(fDir.toString(), "some-file.txt", content);
-    Buffer expected = new Buffer(content);
-    Buffer received = new Buffer();
+    Buffer expected = Buffer.newBuffer(content);
+    Buffer received = Buffer.newBuffer();
     server.connectHandler(sock -> {
       sock.dataHandler(buf -> {
         sock.sendFile(file.getAbsolutePath());
@@ -1315,7 +1315,7 @@ public class NetTest extends VertxTestBase {
               Buffer buff = TestUtils.randomBuffer(100000);
               NetSocket sock = result.result();
               sock.writeBuffer(buff);
-              Buffer received = new Buffer();
+              Buffer received = Buffer.newBuffer();
               sock.dataHandler(rec -> {
                 received.appendBuffer(rec);
                 if (received.length() == buff.length()) {
@@ -1383,7 +1383,7 @@ public class NetTest extends VertxTestBase {
             NetSocket sock = ar2.result();
             Buffer buff = TestUtils.randomBuffer(10000);
             sock.writeBuffer(buff);
-            Buffer brec = new Buffer();
+            Buffer brec = Buffer.newBuffer();
             sock.dataHandler(rec -> {
               assertSame(ctx, vertx.currentContext());
               if (!worker) {

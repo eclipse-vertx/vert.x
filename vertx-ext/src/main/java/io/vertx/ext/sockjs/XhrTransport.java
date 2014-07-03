@@ -42,7 +42,7 @@ class XhrTransport extends BaseTransport {
       bytes[i] = (byte)'h';
     }
     bytes[bytes.length - 1] = (byte)'\n';
-    H_BLOCK = new Buffer(bytes);
+    H_BLOCK = Buffer.newBuffer(bytes);
   }
 
   XhrTransport(Vertx vertx, RouteMatcher rm, String basePath, final Map<String, Session> sessions, final JsonObject config,
@@ -190,7 +190,7 @@ class XhrTransport extends BaseTransport {
         req.response().writeBuffer(H_BLOCK);
       }
       String sbody = body + "\n";
-      Buffer buff = new Buffer(sbody);
+      Buffer buff = Buffer.newBuffer(sbody);
       req.response().writeBuffer(buff);
       bytesSent += buff.length();
       if (bytesSent >= maxBytesStreaming) {

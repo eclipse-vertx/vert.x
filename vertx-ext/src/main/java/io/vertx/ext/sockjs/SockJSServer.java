@@ -293,10 +293,10 @@ public class SockJSServer implements Handler<HttpServerRequest> {
         BaseTransport.setCORS(req);
         req.response().setChunked(true);
 
-        Buffer h = new Buffer(2);
+        Buffer h = Buffer.newBuffer(2);
         h.appendString("h\n");
 
-        Buffer hs = new Buffer(2050);
+        Buffer hs = Buffer.newBuffer(2050);
         for (int i = 0; i < 2048; i++) {
           hs.appendByte((byte) ' ');
         }
@@ -380,7 +380,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
 
   // For debug only
 //  public static void main(String[] args) throws Exception {
-//    Vertx vertx = VertxFactory.newVertx();
+//    Vertx vertx = Vertx.newVertx();
 //    HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
 //    SockJSServerImpl sjsServer = (SockJSServerImpl)vertx.createSockJSServer(httpServer);
 //    sjsServer.installTestApplications();
@@ -430,7 +430,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
       public void handle(final SockJSSocket sock) {
         final long timerID = vertx.setPeriodic(1000, new Handler<Long>() {
           public void handle(Long id) {
-            sock.writeBuffer(new Buffer("tick!"));
+            sock.writeBuffer(Buffer.newBuffer("tick!"));
           }
         });
         sock.endHandler(new VoidHandler() {
@@ -452,7 +452,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
               n = 1;
             }
             int num = (int)Math.pow(2, n);
-            Buffer buff = new Buffer(num);
+            Buffer buff = Buffer.newBuffer(num);
             for (int i = 0; i < num; i++) {
               buff.appendByte((byte)'x');
             }

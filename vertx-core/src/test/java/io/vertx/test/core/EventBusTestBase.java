@@ -424,7 +424,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   protected static class SomePojoCodec implements MessageCodec<SomePojo> {
     @Override
     public Buffer encode(SomePojo pojo) {
-      return new Buffer().appendInt(pojo.number).appendString(pojo.string);
+      return Buffer.newBuffer().appendInt(pojo.number).appendString(pojo.string);
     }
 
     @Override
@@ -461,7 +461,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   protected static class ShareablePojoCodec implements MessageCodec<ShareablePojo> {
     @Override
     public Buffer encode(ShareablePojo object) {
-      return new Buffer().appendString(object.string);
+      return Buffer.newBuffer().appendString(object.string);
     }
 
     @Override

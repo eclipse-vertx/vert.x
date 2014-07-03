@@ -877,7 +877,7 @@ public class FileSystemTest extends VertxTestBase {
       if (ar.failed()) {
         fail(ar.cause().getMessage());
       } else {
-        assertTrue(TestUtils.buffersEqual(new Buffer(content), ar.result()));
+        assertTrue(TestUtils.buffersEqual(Buffer.newBuffer(content), ar.result()));
         testComplete();
       }
     });
@@ -887,7 +887,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testWriteFile() throws Exception {
     byte[] content = TestUtils.randomByteArray(1000);
-    Buffer buff = new Buffer(content);
+    Buffer buff = Buffer.newBuffer(content);
     String fileName = "some-file.dat";
     vertx.fileSystem().writeFile(testDir + pathSep + fileName, buff, ar -> {
       if (ar.failed()) {
@@ -902,7 +902,7 @@ public class FileSystemTest extends VertxTestBase {
           fail(e.getMessage());
           return;
         }
-        assertTrue(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
+        assertTrue(TestUtils.buffersEqual(buff, Buffer.newBuffer(readBytes)));
         testComplete();
       }
     });
@@ -915,7 +915,7 @@ public class FileSystemTest extends VertxTestBase {
     int chunkSize = 1000;
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
-    Buffer buff = new Buffer(content);
+    Buffer buff = Buffer.newBuffer(content);
     AtomicInteger count = new AtomicInteger();
     vertx.fileSystem().open(testDir + pathSep + fileName, null, false, true, true, true, arr -> {
       if (arr.succeeded()) {
@@ -937,7 +937,7 @@ public class FileSystemTest extends VertxTestBase {
                       fail(e.getMessage());
                       return;
                     }
-                    Buffer read = new Buffer(readBytes);
+                    Buffer read = Buffer.newBuffer(readBytes);
                     assertTrue(TestUtils.buffersEqual(buff, read));
                     testComplete();
                   }
@@ -961,12 +961,12 @@ public class FileSystemTest extends VertxTestBase {
     int chunkSize = 1000;
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
-    Buffer expected = new Buffer(content);
+    Buffer expected = Buffer.newBuffer(content);
     createFile(fileName, content);
     AtomicInteger reads = new AtomicInteger();
     vertx.fileSystem().open(testDir + pathSep + fileName, null, true, false, false, arr -> {
       if (arr.succeeded()) {
-        Buffer buff = new Buffer(chunks * chunkSize);
+        Buffer buff = Buffer.newBuffer(chunks * chunkSize);
         for (int i = 0; i < chunks; i++) {
           arr.result().read(buff, i * chunkSize, i * chunkSize, chunkSize, arb -> {
             if (arb.succeeded()) {
@@ -999,7 +999,7 @@ public class FileSystemTest extends VertxTestBase {
     int chunkSize = 1000;
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
-    Buffer buff = new Buffer(content);
+    Buffer buff = Buffer.newBuffer(content);
     vertx.fileSystem().open(testDir + pathSep + fileName, ar -> {
       if (ar.succeeded()) {
         WriteStream<AsyncFile> ws = ar.result();
@@ -1021,7 +1021,7 @@ public class FileSystemTest extends VertxTestBase {
               fail(e.getMessage());
               return;
             }
-            assertTrue(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
+            assertTrue(TestUtils.buffersEqual(buff, Buffer.newBuffer(readBytes)));
             testComplete();
           }
         });
@@ -1040,7 +1040,7 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content1 = TestUtils.randomByteArray(chunkSize * (chunks / 2));
     byte[] content2 = TestUtils.randomByteArray(chunkSize * (chunks / 2));
     ByteBuf byteBuf = Unpooled.wrappedBuffer(content1, content2);
-    Buffer buff = new Buffer(byteBuf);
+    Buffer buff = Buffer.newBuffer(byteBuf);
     vertx.fileSystem().open(testDir + pathSep + fileName, ar -> {
       if (ar.succeeded()) {
         WriteStream<AsyncFile> ws = ar.result();
@@ -1058,7 +1058,7 @@ public class FileSystemTest extends VertxTestBase {
               fail(e.getMessage());
               return;
             }
-            assertTrue(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
+            assertTrue(TestUtils.buffersEqual(buff, Buffer.newBuffer(readBytes)));
             byteBuf.release();
             testComplete();
           }
@@ -1080,7 +1080,7 @@ public class FileSystemTest extends VertxTestBase {
     vertx.fileSystem().open(testDir + pathSep + fileName, null, true, false, false, ar -> {
       if (ar.succeeded()) {
         ReadStream<AsyncFile> rs = ar.result();
-        Buffer buff = new Buffer();
+        Buffer buff = Buffer.newBuffer();
         rs.dataHandler(buff::appendBuffer);
         rs.exceptionHandler(t -> fail(t.getMessage()));
         rs.endHandler(v -> {
@@ -1088,7 +1088,7 @@ public class FileSystemTest extends VertxTestBase {
             if (ar2.failed()) {
               fail(ar2.cause().getMessage());
             } else {
-              assertTrue(TestUtils.buffersEqual(buff, new Buffer(content)));
+              assertTrue(TestUtils.buffersEqual(buff, Buffer.newBuffer(content)));
               testComplete();
             }
           });
@@ -1136,7 +1136,7 @@ public class FileSystemTest extends VertxTestBase {
                         fail(e.getMessage());
                         return;
                       }
-                      assertTrue(TestUtils.buffersEqual(new Buffer(content), new Buffer(readBytes)));
+                      assertTrue(TestUtils.buffersEqual(Buffer.newBuffer(content), Buffer.newBuffer(readBytes)));
                       testComplete();
                     }
                   });
