@@ -24,6 +24,9 @@ import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
 
   private final String uri;
@@ -62,6 +65,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   @Override
   public MultiMap headers() {
     return headers;
+  }
+
+  @Override
+  public X509Certificate[] peerCertificationChain() throws SSLPeerUnverifiedException {
+    return conn.getPeerCertificateChain();
   }
 
   @Override

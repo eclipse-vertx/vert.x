@@ -19,7 +19,6 @@ package io.vertx.ext.sockjs;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VoidHandler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.RouteMatcher;
 import io.vertx.core.http.ServerWebSocket;
@@ -48,8 +47,7 @@ class WebSocketTransport extends BaseTransport {
 
       public void handle(final WebSocketMatcher.Match match) {
         if (log.isTraceEnabled()) log.trace("WS, handler");
-        final Session session = new Session(vertx, sessions, config.getLong("heartbeat_period"), sockHandler);
-        session.setInfo(match.ws.localAddress(), match.ws.remoteAddress(), match.ws.uri(), match.ws.headers());
+        final Session session = new WebSocketSession(vertx, sessions, config.getLong("heartbeat_period"), sockHandler, match.ws);
         session.register(new WebSocketListener(match.ws, session));
       }
     });
@@ -81,19 +79,17 @@ class WebSocketTransport extends BaseTransport {
     WebSocketListener(final ServerWebSocket ws, final Session session) {
       this.ws = ws;
       this.session = session;
-      ws.dataHandler(new Handler<Buffer>() {
-        public void handle(Buffer data) {
-          if (!session.isClosed()) {
-            String msgs = data.toString();
-            if (msgs.equals("")) {
-              //Ignore empty frames
-            } else if ((msgs.startsWith("[\"") && msgs.endsWith("\"]")) ||
-                       (msgs.startsWith("\"") && msgs.endsWith("\""))) {
-              session.handleMessages(msgs);
-            } else {
-              //Invalid JSON - we close the connection
-              close();
-            }
+      ws.dataHandler(data -> {
+        if (!session.isClosed()) {
+          String msgs = data.toString();
+          if (msgs.equals("")) {
+            //Ignore empty frames
+          } else if ((msgs.startsWith("[\"") && msgs.endsWith("\"]")) ||
+                     (msgs.startsWith("\"") && msgs.endsWith("\""))) {
+            session.handleMessages(msgs);
+          } else {
+            //Invalid JSON - we close the connection
+            close();
           }
         }
       });

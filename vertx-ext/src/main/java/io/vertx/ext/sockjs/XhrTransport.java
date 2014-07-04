@@ -84,40 +84,35 @@ class XhrTransport extends BaseTransport {
 
   private void registerHandler(RouteMatcher rm, final Handler<SockJSSocket> sockHandler, String re,
                                final boolean streaming, final JsonObject config) {
-    rm.postWithRegEx(re, new Handler<HttpServerRequest>() {
-      public void handle(final HttpServerRequest req) {
-        if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri());
-        setNoCacheHeaders(req);
-        String sessionID = req.params().get("param0");
-        Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler);
-        session.setInfo(req.localAddress(), req.remoteAddress(), req.uri(), req.headers());
-        session.register(streaming? new XhrStreamingListener(config.getInteger("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
-      }
+    rm.postWithRegEx(re, req -> {
+      if (log.isTraceEnabled()) log.trace("XHR, post, " + req.uri());
+      setNoCacheHeaders(req);
+      String sessionID = req.params().get("param0");
+      Session session = getSession(config.getLong("session_timeout"), config.getLong("heartbeat_period"), sessionID, sockHandler, req);
+      session.register(streaming? new XhrStreamingListener(config.getInteger("max_bytes_streaming"), req, session) : new XhrPollingListener(req, session));
     });
   }
 
   private void handleSend(final HttpServerRequest req, final Session session) {
 
-    req.bodyHandler(new Handler<Buffer>() {
-      public void handle(Buffer buff) {
-        String msgs = buff.toString();
-        if (msgs.equals("")) {
-          req.response().setStatusCode(500);
-          req.response().end("Payload expected.");
-          return;
-        }
-        if (!session.handleMessages(msgs)) {
-          sendInvalidJSON(req.response());
-        } else {
-          req.response().headers().set("Content-Type", "text/plain; charset=UTF-8");
-          setNoCacheHeaders(req);
-          setJSESSIONID(config, req);
-          setCORS(req);
-          req.response().setStatusCode(204);
-          req.response().end();
-        }
-        if (log.isTraceEnabled()) log.trace("XHR send processed ok");
+    req.bodyHandler(buff -> {
+      String msgs = buff.toString();
+      if (msgs.equals("")) {
+        req.response().setStatusCode(500);
+        req.response().end("Payload expected.");
+        return;
       }
+      if (!session.handleMessages(msgs)) {
+        sendInvalidJSON(req.response());
+      } else {
+        req.response().headers().set("Content-Type", "text/plain; charset=UTF-8");
+        setNoCacheHeaders(req);
+        setJSESSIONID(config, req);
+        setCORS(req);
+        req.response().setStatusCode(204);
+        req.response().end();
+      }
+      if (log.isTraceEnabled()) log.trace("XHR send processed ok");
     });
   }
 

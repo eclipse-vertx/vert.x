@@ -23,6 +23,9 @@ import io.vertx.core.gen.VertxGen;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 /**
  * Represents a socket-like interface to a TCP/SSL connection on either the
  * client or the server side.<p>
@@ -106,5 +109,11 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * Returns {@code true} if this {@link NetSocket} is encrypted via SSL/TLS.
    */
   boolean isSsl();
+
+  /**
+   * @return an array of the peer certificates. Returns null if connection is not SSL.
+   * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 }
 

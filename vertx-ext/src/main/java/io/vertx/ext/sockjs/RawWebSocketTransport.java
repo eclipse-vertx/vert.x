@@ -20,13 +20,15 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.RouteMatcher;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.WebSocketMatcher;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -43,13 +45,7 @@ class RawWebSocketTransport {
     RawWSSockJSSocket(Vertx vertx, ServerWebSocket ws) {
       super(vertx);
       this.ws = ws;
-      ws.closeHandler(new Handler<Void>() {
-        @Override
-        public void handle(Void v) {
-          // Make sure the writeHandler gets unregistered
-          RawWSSockJSSocket.super.close();
-        }
-      });
+      ws.closeHandler(v -> RawWSSockJSSocket.super.close());
     }
 
     public SockJSSocket dataHandler(Handler<Buffer> handler) {
@@ -123,6 +119,11 @@ class RawWebSocketTransport {
     public String uri() {
       return ws.uri();
     }
+
+    @Override
+    public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+      return ws.peerCertificationChain();
+    }
   }
 
   RawWebSocketTransport(final Vertx vertx, WebSocketMatcher wsMatcher, RouteMatcher rm, String basePath,
@@ -130,27 +131,20 @@ class RawWebSocketTransport {
 
     String wsRE = basePath + "/websocket";
 
-    wsMatcher.addRegEx(wsRE, new Handler<WebSocketMatcher.Match>() {
-
-      public void handle(final WebSocketMatcher.Match match) {
+    wsMatcher.addRegEx(wsRE, match -> {
         SockJSSocket sock = new RawWSSockJSSocket(vertx, match.ws);
         sockHandler.handle(sock);
-      }
     });
 
-    rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest request) {
-        request.response().setStatusCode(400);
-        request.response().end("Can \"Upgrade\" only to \"WebSocket\".");
-      }
+    rm.getWithRegEx(wsRE, request -> {
+      request.response().setStatusCode(400);
+      request.response().end("Can \"Upgrade\" only to \"WebSocket\".");
     });
 
-    rm.allWithRegEx(wsRE, new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest request) {
-        request.response().headers().set("Allow", "GET");
-        request.response().setStatusCode(405);
-        request.response().end();
-      }
+    rm.allWithRegEx(wsRE, request -> {
+      request.response().headers().set("Allow", "GET");
+      request.response().setStatusCode(405);
+      request.response().end();
     });
   }
 

@@ -21,6 +21,9 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 /**
  *
  * You interact with SockJS clients through instances of SockJS socket.<p>
@@ -67,4 +70,10 @@ public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<Sock
    * Return the URI corresponding to the last request for this socket or the websocket handshake
    */
   String uri();
+
+  /**
+   * @return an array of the peer certificates. Returns null if connection is not SSL.
+   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 }
