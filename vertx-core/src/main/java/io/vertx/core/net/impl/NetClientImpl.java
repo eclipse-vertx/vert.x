@@ -85,13 +85,6 @@ public class NetClientImpl implements NetClient {
   }
 
   @Override
-  public NetClient connect(int port, final Handler<AsyncResult<NetSocket>> connectCallback) {
-    checkClosed();
-    connect(port, "localhost", connectCallback);
-    return this;
-  }
-
-  @Override
   public synchronized void close() {
     if (!closed) {
       for (NetSocket sock : socketMap.values()) {

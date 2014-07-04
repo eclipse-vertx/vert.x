@@ -18,7 +18,9 @@ package io.vertx.core.http;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.GenIgnore;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * An HTTP and WebSockets server<p>
@@ -31,6 +33,7 @@ import io.vertx.core.gen.GenIgnore;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface HttpServer {
 
   /**
@@ -39,6 +42,7 @@ public interface HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
+  @Fluent
   HttpServer requestHandler(Handler<HttpServerRequest> requestHandler);
 
   /**
@@ -54,18 +58,19 @@ public interface HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
-  @GenIgnore
   HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler);
 
   /**
    * Get the websocket handler
    * @return The websocket handler
    */
+  @GenIgnore
   Handler<ServerWebSocket> websocketHandler();
 
-
+  @Fluent
   HttpServer listen();
 
+  @Fluent
   HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler);
   
   /**

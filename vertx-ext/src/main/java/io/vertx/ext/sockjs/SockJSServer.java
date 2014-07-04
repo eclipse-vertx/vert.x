@@ -150,7 +150,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
       public void handle(HttpServerRequest req) {
         if (log.isTraceEnabled()) log.trace("Returning welcome response");
         req.response().headers().set("Content-Type", "text/plain; charset=UTF-8");
-        req.response().end("Welcome to SockJS!\n");
+        req.response().writeStringAndEnd("Welcome to SockJS!\n");
       }
     });
 
@@ -334,7 +334,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
             String expires = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz").format(new Date(System.currentTimeMillis() + oneYear));
             req.response().headers().set("Expires", expires);
             req.response().headers().set("ETag", etag);
-            req.response().end(iframeHTML);
+            req.response().writeStringAndEnd(iframeHTML);
           }
         } catch (Exception e) {
           log.error("Failed to server iframe", e);

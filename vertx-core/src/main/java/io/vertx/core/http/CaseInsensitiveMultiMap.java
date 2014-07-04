@@ -63,12 +63,12 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap set(MultiMap headers) {
+  public MultiMap setAll(MultiMap headers) {
     return set0(headers);
   }
 
   @Override
-  public MultiMap set(Map<String, String> headers) {
+  public MultiMap setAll(Map<String, String> headers) {
     return set0(headers.entrySet());
   }
 
@@ -131,7 +131,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap add(MultiMap headers) {
+  public MultiMap addAll(MultiMap headers) {
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -139,7 +139,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap add(Map<String, String> map) {
+  public MultiMap addAll(Map<String, String> map) {
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }

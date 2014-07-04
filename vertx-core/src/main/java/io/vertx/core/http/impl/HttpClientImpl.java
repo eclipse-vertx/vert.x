@@ -43,7 +43,6 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
@@ -312,7 +311,7 @@ public class HttpClientImpl implements HttpClient {
     checkClosed();
     HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, vertx);
     if (options.getHeaders() != null) {
-      req.headers().set(options.getHeaders());
+      req.headers().setAll(options.getHeaders());
     }
     return req;
   }
@@ -496,7 +495,7 @@ public class HttpClientImpl implements HttpClient {
             break;
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ctx.writeAndFlush(new WebSocketFrameImpl(WebSocketFrame.FrameType.PONG, frame.getBinaryData()));
+            ctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
             break;
           case CLOSE:
             if (!closeFrameSent) {

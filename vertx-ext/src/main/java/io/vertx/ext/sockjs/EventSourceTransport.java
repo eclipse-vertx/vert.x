@@ -72,7 +72,7 @@ class EventSourceTransport extends BaseTransport {
         setNoCacheHeaders(req);
         setJSESSIONID(config, req);
         req.response().setChunked(true);
-        req.response().write("\r\n");
+        req.response().writeString("\r\n");
         headersWritten = true;
       }
       StringBuilder sb = new StringBuilder();

@@ -20,7 +20,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
-import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.FrameType;
 
 /**
  * The default {@link WebSocketFrameInternal} implementation.
@@ -31,7 +32,8 @@ import io.vertx.core.http.WebSocketFrame;
  */
 public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
 
-  private final WebSocketFrame.FrameType type;
+
+  private final FrameType type;
   private final boolean isFinalFrame;
   private ByteBuf binaryData;
 
@@ -45,7 +47,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   /**
    * Creates a new empty text frame.
    */
-  public WebSocketFrameImpl(WebSocketFrame.FrameType frameType) {
+  public WebSocketFrameImpl(FrameType frameType) {
     this(frameType, Unpooled.EMPTY_BUFFER, true);
   }
 
@@ -60,7 +62,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * Creates a new text frame from with the specified string.
    */
   public WebSocketFrameImpl(String textData, boolean isFinalFrame) {
-    this.type = WebSocketFrame.FrameType.TEXT;
+    this.type = FrameType.TEXT;
     this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
   }
@@ -74,7 +76,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public WebSocketFrameImpl(WebSocketFrame.FrameType type, ByteBuf binaryData) {
+  public WebSocketFrameImpl(FrameType type, ByteBuf binaryData) {
     this(type, binaryData, true);
   }
 
@@ -88,22 +90,18 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public WebSocketFrameImpl(WebSocketFrame.FrameType type, ByteBuf binaryData, boolean isFinalFrame) {
+  public WebSocketFrameImpl(FrameType type, ByteBuf binaryData, boolean isFinalFrame) {
     this.type = type;
     this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.unreleasableBuffer(binaryData);
   }
 
-  public WebSocketFrame.FrameType type() {
-    return type;
-  }
-
   public boolean isText() {
-    return this.type == WebSocketFrame.FrameType.TEXT;
+    return this.type == FrameType.TEXT;
   }
 
   public boolean isBinary() {
-    return this.type == WebSocketFrame.FrameType.BINARY;
+    return this.type == FrameType.BINARY;
   }
 
   public ByteBuf getBinaryData() {
@@ -112,6 +110,10 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
 
   public String textData() {
     return getBinaryData().toString(CharsetUtil.UTF_8);
+  }
+
+  public Buffer binaryData() {
+    return Buffer.newBuffer(binaryData);
   }
 
   public void setBinaryData(ByteBuf binaryData) {
@@ -131,7 +133,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   @Override
   public String toString() {
     return getClass().getSimpleName() +
-        "(type: " + type() + ", " + "data: " + getBinaryData() + ')';
+        "(type: " + type + ", " + "data: " + getBinaryData() + ')';
   }
 
   @Override
@@ -162,5 +164,10 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   @Override
   public boolean isFinalFrame() {
     return isFinalFrame;
+  }
+
+  @Override
+  public FrameType type() {
+    return type;
   }
 }

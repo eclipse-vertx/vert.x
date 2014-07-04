@@ -46,7 +46,6 @@ import java.util.ServiceLoader;
 @VertxGen
 public interface Buffer {
 
-  @GenIgnore
   static Buffer newBuffer() {
     return factory.newBuffer();
   }
@@ -60,7 +59,6 @@ public interface Buffer {
     return factory.newBuffer(string);
   }
 
-  @GenIgnore
   static Buffer newBuffer(String string, String enc) {
     return factory.newBuffer(string, enc);
   }
@@ -78,8 +76,6 @@ public interface Buffer {
   /**
    * Returns a {@code String} representation of the Buffer with the encoding specified by {@code enc}
    */
-  @GenIgnore
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
   String toString(String enc);
 
   /**
@@ -285,8 +281,6 @@ public interface Buffer {
    * Sets the {@code short} at position {@code pos} in the Buffer to the value {@code s}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  @GenIgnore
   @Fluent
   Buffer setShort(int pos, short s);
 
@@ -294,8 +288,6 @@ public interface Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  @GenIgnore
   @Fluent
   Buffer setBuffer(int pos, Buffer b);
 
@@ -303,8 +295,6 @@ public interface Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b} on the given {@code offset} and {@code len}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  @GenIgnore
   @Fluent
   Buffer setBuffer(int pos, Buffer b, int offset, int len);
 
@@ -336,8 +326,6 @@ public interface Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in UTF-8.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  @GenIgnore
   @Fluent
   Buffer setString(int pos, String str);
 
@@ -345,8 +333,6 @@ public interface Buffer {
    * Sets the bytes at position {@code pos} in the Buffer to the value of {@code str} encoded in encoding {@code enc}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  @GenIgnore
   @Fluent
   Buffer setString(int pos, String str, String enc);
 
@@ -373,8 +359,6 @@ public interface Buffer {
    * of the returned buffer or this buffer affects each other's content
    * while they maintain separate indexes and marks.
    */
-  // FIXME - currently ignored as it causes a MVEL barf when run through codegen
-  @GenIgnore
   Buffer slice(int start, int end);
 
   /**

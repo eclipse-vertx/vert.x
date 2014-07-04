@@ -16,11 +16,14 @@
 
 package io.vertx.core;
 
+import io.vertx.core.gen.VertxGen;
+
 /**
  * Represents the execution context of a Verticle.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface Context {
 
   void runOnContext(Handler<Void> action);

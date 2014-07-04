@@ -141,7 +141,7 @@ class RawWebSocketTransport {
     rm.getWithRegEx(wsRE, new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest request) {
         request.response().setStatusCode(400);
-        request.response().end("Can \"Upgrade\" only to \"WebSocket\".");
+        request.response().writeStringAndEnd("Can \"Upgrade\" only to \"WebSocket\".");
       }
     });
 

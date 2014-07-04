@@ -99,19 +99,19 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     } else if (msg instanceof WebSocketFrame) {
       ByteBuf payload = safeBuffer((WebSocketFrame) msg, allocator);
       boolean isFinal = ((WebSocketFrame) msg).isFinalFragment();
-        io.vertx.core.http.WebSocketFrame.FrameType frameType;
+        FrameType frameType;
       if (msg instanceof BinaryWebSocketFrame) {
-        frameType = io.vertx.core.http.WebSocketFrame.FrameType.BINARY;
+        frameType = FrameType.BINARY;
       } else if (msg instanceof CloseWebSocketFrame) {
-        frameType = io.vertx.core.http.WebSocketFrame.FrameType.CLOSE;
+        frameType = FrameType.CLOSE;
       } else if (msg instanceof PingWebSocketFrame) {
-        frameType = io.vertx.core.http.WebSocketFrame.FrameType.PING;
+        frameType = FrameType.PING;
       } else if (msg instanceof PongWebSocketFrame) {
-        frameType = io.vertx.core.http.WebSocketFrame.FrameType.PONG;
+        frameType = FrameType.PONG;
       } else if (msg instanceof TextWebSocketFrame) {
-        frameType = io.vertx.core.http.WebSocketFrame.FrameType.TEXT;
+        frameType = FrameType.TEXT;
       } else if (msg instanceof ContinuationWebSocketFrame) {
-        frameType = io.vertx.core.http.WebSocketFrame.FrameType.CONTINUATION;
+        frameType = FrameType.CONTINUATION;
       } else {
         throw new IllegalStateException("Unsupported websocket msg " + msg);
       }

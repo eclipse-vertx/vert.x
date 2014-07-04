@@ -58,7 +58,7 @@ class WebSocketTransport extends BaseTransport {
       public void handle(HttpServerRequest request) {
         if (log.isTraceEnabled()) log.trace("WS, get: " + request.uri());
         request.response().setStatusCode(400);
-        request.response().end("Can \"Upgrade\" only to \"WebSocket\".");
+        request.response().writeStringAndEnd("Can \"Upgrade\" only to \"WebSocket\".");
       }
     });
 

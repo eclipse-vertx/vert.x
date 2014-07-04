@@ -16,6 +16,9 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.VertxGen;
+
 /**
  * A Web Socket frame that represents either text or binary data.
  *
@@ -23,21 +26,8 @@ package io.vertx.core.http;
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
+@VertxGen
 public interface WebSocketFrame {
-
-  /**
-   * List of all frame types.
-   */
-  enum FrameType {
-    CONTINUATION,
-    TEXT,
-    BINARY,
-    CLOSE,
-    PING,
-    PONG,
-  }
-
-  FrameType type();
 
   /**
    * Returns {@code true} if and only if the content of this frame is a string
@@ -56,6 +46,8 @@ public interface WebSocketFrame {
    * converted string.
    */
   String textData();
+
+  Buffer binaryData();
 
   /**
    * Returns the string representation of this frame.  Please note that this

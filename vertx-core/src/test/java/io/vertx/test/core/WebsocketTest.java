@@ -25,7 +25,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.impl.Base64;
 import io.vertx.core.net.NetSocket;
@@ -71,97 +70,97 @@ public class WebsocketTest extends VertxTestBase {
 
   @Test
   public void testRejectHybi00() throws Exception {
-    testReject(WebSocketVersion.HYBI_00);
+    testReject(0);
   }
 
   @Test
   public void testRejectHybi08() throws Exception {
-    testReject(WebSocketVersion.HYBI_08);
+    testReject(8);
   }
 
   @Test
   public void testWSBinaryHybi00() throws Exception {
-    testWS(true, WebSocketVersion.HYBI_00);
+    testWS(true, 0);
   }
 
   @Test
   public void testWSStringHybi00() throws Exception {
-    testWS(false, WebSocketVersion.HYBI_00);
+    testWS(false, 0);
   }
 
   @Test
   public void testWSBinaryHybi08() throws Exception {
-    testWS(true, WebSocketVersion.HYBI_08);
+    testWS(true, 8);
   }
 
   @Test
   public void testWSStringHybi08() throws Exception {
-    testWS(false, WebSocketVersion.HYBI_08);
+    testWS(false, 8);
   }
 
   @Test
   public void testWSBinaryHybi17() throws Exception {
-    testWS(true, WebSocketVersion.RFC6455);
+    testWS(true, 13);
   }
 
   @Test
   public void testWSStringHybi17() throws Exception {
-    testWS(false, WebSocketVersion.RFC6455);
+    testWS(false, 13);
   }
 
   @Test
   public void testWriteFromConnectHybi00() throws Exception {
-    testWriteFromConnectHandler(WebSocketVersion.HYBI_00);
+    testWriteFromConnectHandler(0);
   }
 
   @Test
   public void testWriteFromConnectHybi08() throws Exception {
-    testWriteFromConnectHandler(WebSocketVersion.HYBI_08);
+    testWriteFromConnectHandler(8);
   }
 
   @Test
   public void testWriteFromConnectHybi17() throws Exception {
-    testWriteFromConnectHandler(WebSocketVersion.RFC6455);
+    testWriteFromConnectHandler(13);
   }
 
   @Test
   public void testContinuationWriteFromConnectHybi08() throws Exception {
-    testContinuationWriteFromConnectHandler(WebSocketVersion.HYBI_08);
+    testContinuationWriteFromConnectHandler(8);
   }
 
   @Test
   public void testContinuationWriteFromConnectHybi17() throws Exception {
-    testContinuationWriteFromConnectHandler(WebSocketVersion.RFC6455);
+    testContinuationWriteFromConnectHandler(13);
   }
 
   @Test
   public void testValidSubProtocolHybi00() throws Exception {
-    testValidSubProtocol(WebSocketVersion.HYBI_00);
+    testValidSubProtocol(0);
   }
 
   @Test
   public void testValidSubProtocolHybi08() throws Exception {
-    testValidSubProtocol(WebSocketVersion.HYBI_08);
+    testValidSubProtocol(8);
   }
 
   @Test
   public void testValidSubProtocolHybi17() throws Exception {
-    testValidSubProtocol(WebSocketVersion.RFC6455);
+    testValidSubProtocol(13);
   }
 
   @Test
   public void testInvalidSubProtocolHybi00() throws Exception {
-    testInvalidSubProtocol(WebSocketVersion.HYBI_00);
+    testInvalidSubProtocol(0);
   }
 
   @Test
   public void testInvalidSubProtocolHybi08() throws Exception {
-    testInvalidSubProtocol(WebSocketVersion.HYBI_08);
+    testInvalidSubProtocol(8);
   }
 
   @Test
   public void testInvalidSubProtocolHybi17() throws Exception {
-    testInvalidSubProtocol(WebSocketVersion.RFC6455);
+    testInvalidSubProtocol(13);
   }
 
   // TODO close and exception tests
@@ -474,9 +473,9 @@ public class WebsocketTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       //OK
     }
-    assertEquals(WebSocketVersion.RFC6455, options.getVersion());
-    assertEquals(options, options.setVersion(WebSocketVersion.HYBI_00));
-    assertEquals(WebSocketVersion.HYBI_00, options.getVersion());
+    assertEquals(13, options.getVersion());
+    assertEquals(options, options.setVersion(0));
+    assertEquals(0, options.getVersion());
 
     assertNull(options.getSubProtocols());
     assertEquals(options, options.addSubProtocol("foo"));
@@ -513,7 +512,7 @@ public class WebsocketTest extends VertxTestBase {
     return sock;
   }
 
-  private void testWS(final boolean binary, final WebSocketVersion version) throws Exception {
+  private void testWS(final boolean binary, final int version) throws Exception {
 
     String path = "/some/path";
     String query = "foo=bar&wibble=eek";
@@ -558,7 +557,7 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
-  private void testContinuationWriteFromConnectHandler(final WebSocketVersion version) throws Exception {
+  private void testContinuationWriteFromConnectHandler(final int version) throws Exception {
     String path = "/some/path";
     String firstFrame = "AAA";
     String continuationFrame = "BBB";
@@ -600,7 +599,7 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
-  private void testWriteFromConnectHandler(final WebSocketVersion version) throws Exception {
+  private void testWriteFromConnectHandler(final int version) throws Exception {
 
     String path = "/some/path";
     Buffer buff = Buffer.newBuffer("AAA");
@@ -626,7 +625,7 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
-  private void testValidSubProtocol(final WebSocketVersion version) throws Exception {
+  private void testValidSubProtocol(final int version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
     Buffer buff = Buffer.newBuffer("AAA");
@@ -651,7 +650,7 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
-  private void testInvalidSubProtocol(final WebSocketVersion version) throws Exception {
+  private void testInvalidSubProtocol(final int version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
     Buffer buff = Buffer.newBuffer("AAA");
@@ -677,7 +676,7 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
-  private void testReject(final WebSocketVersion version) throws Exception {
+  private void testReject(int version) throws Exception {
 
     String path = "/some/path";
 

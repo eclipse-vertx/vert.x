@@ -19,6 +19,9 @@ package io.vertx.core.http;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.GenIgnore;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -39,12 +42,13 @@ import javax.security.cert.X509Certificate;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
 
   /**
    * The HTTP version of the request
    */
-  HttpVersion version();
+  String version();
 
   /**
    * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
@@ -101,6 +105,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    *         not SSL.
    * @throws SSLPeerUnverifiedException SSL peer's identity has not been verified.
   */
+  @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**
@@ -116,6 +121,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    *
    * @param bodyHandler This handler will be called after all the body has been received
    */
+  @Fluent
   HttpServerRequest bodyHandler(Handler<Buffer> bodyHandler);
 
   /**
@@ -130,18 +136,22 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * This must be called before the body of the request has been received
    * @param expect
    */
-  HttpServerRequest expectMultiPart(boolean expect);
+  @Fluent
+  HttpServerRequest setExpectMultipart(boolean expect);
+
+  boolean isExpectMultipart();
 
   /**
    * Set the upload handler. The handler will get notified once a new file upload was received and so allow to
    * get notified by the upload in progress.
    */
+  @Fluent
   HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> uploadHandler);
 
   /**
    * Returns a map of all form attributes which was found in the request. Be aware that this message should only get
    * called after the endHandler was notified as the map will be filled on-the-fly.
-   * {@link #expectMultiPart(boolean)} must be called first before trying to get the formAttributes
+   * {@link #setExpectMultipart(boolean)} must be called first before trying to get the formAttributes
    */
   MultiMap formAttributes();
 

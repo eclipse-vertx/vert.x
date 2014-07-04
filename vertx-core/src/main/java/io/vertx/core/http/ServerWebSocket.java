@@ -17,6 +17,8 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
@@ -24,6 +26,7 @@ import io.vertx.core.MultiMap;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
 
   /*
@@ -54,5 +57,6 @@ public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
    * You might use this method, if for example you only want to accept websockets
    * with a particular path.
    */
+  @Fluent
   ServerWebSocket reject();
 }

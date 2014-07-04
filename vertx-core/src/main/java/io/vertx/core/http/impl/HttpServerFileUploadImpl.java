@@ -86,8 +86,8 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public Charset charset() {
-    return charset;
+  public String charset() {
+    return charset.toString();
   }
 
   @Override
@@ -139,18 +139,16 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   @Override
   public HttpServerFileUpload streamToFileSystem(String filename) {
     pause();
-    vertx.fileSystem().open(filename, new AsyncResultHandler<AsyncFile>() {
-      public void handle(final AsyncResult<AsyncFile> ar) {
-        if (ar.succeeded()) {
-          file =  ar.result();
+    vertx.fileSystem().open(filename, ar -> {
+      if (ar.succeeded()) {
+        file =  ar.result();
 
-          Pump p = Pump.createPump(HttpServerFileUploadImpl.this, ar.result());
-          p.start();
+        Pump p = Pump.createPump(HttpServerFileUploadImpl.this, ar.result());
+        p.start();
 
-          resume();
-        } else {
-          notifyExceptionHandler(ar.cause());
-        }
+        resume();
+      } else {
+        notifyExceptionHandler(ar.cause());
       }
     });
     return this;

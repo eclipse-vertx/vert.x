@@ -19,6 +19,8 @@ package io.vertx.core.http;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 
@@ -36,6 +38,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
 
   /**
@@ -70,6 +73,7 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
    *
    * @param bodyHandler This handler will be called after all the body has been received
    */
+  @Fluent
   HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler);
 
   /**

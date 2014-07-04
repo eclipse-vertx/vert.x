@@ -17,8 +17,11 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -26,9 +29,30 @@ import java.util.Set;
  */
 public class WebSocketConnectOptions extends RequestOptions {
 
-  private int maxWebsocketFrameSize = 65536;
-  private WebSocketVersion version = WebSocketVersion.RFC6455;
+  private static final int DEFAULT_MAXWEBSOCKETFRAMESIZE = 65536;
+  private static final int DEFAULT_WEBSOCKETVERSION = 13;
+
+  private int maxWebsocketFrameSize;
+  private int version;
   private Set<String> subProtocols;
+
+  public WebSocketConnectOptions() {
+    this.maxWebsocketFrameSize = DEFAULT_MAXWEBSOCKETFRAMESIZE;
+    this.version = DEFAULT_WEBSOCKETVERSION;
+  }
+
+  public WebSocketConnectOptions(WebSocketConnectOptions other) {
+    this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
+    this.version = other.version;
+    this.subProtocols = other.subProtocols != null ? new HashSet<>(other.subProtocols) : null;
+  }
+
+  public WebSocketConnectOptions(JsonObject json) {
+    this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAXWEBSOCKETFRAMESIZE);
+    this.version = json.getInteger("version", DEFAULT_WEBSOCKETVERSION);
+    JsonArray arr = json.getArray("subProtocols");
+    this.subProtocols = arr == null ? null : new HashSet<String>(arr.toList());
+  }
 
   public int getMaxWebsocketFrameSize() {
     return maxWebsocketFrameSize;
@@ -42,11 +66,15 @@ public class WebSocketConnectOptions extends RequestOptions {
     return this;
   }
 
-  public WebSocketVersion getVersion() {
+  public int getVersion() {
     return version;
   }
 
-  public WebSocketConnectOptions setVersion(WebSocketVersion version) {
+  public WebSocketConnectOptions setVersion(int version) {
+    Objects.requireNonNull(version);
+    if (version != 0 && version != 8 && version != 13 ) {
+      throw new IllegalArgumentException("version must be 0 or 8 or 13");
+    }
     this.version = version;
     return this;
   }

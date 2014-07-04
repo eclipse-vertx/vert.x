@@ -20,6 +20,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.GenIgnore;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -39,6 +42,7 @@ import io.vertx.core.streams.WriteStream;
  * Instances of this class are not thread-safe<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
 
   /**
@@ -50,6 +54,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * Set the status code
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   HttpServerResponse setStatusCode(int statusCode);
 
   /**
@@ -62,6 +67,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * Set the status message
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   HttpServerResponse setStatusMessage(String statusMessage);
 
   /**
@@ -76,6 +82,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   HttpServerResponse setChunked(boolean chunked);
 
   /**
@@ -94,7 +101,10 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @param value The header value.
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   HttpServerResponse putHeader(String name, String value);
+
+  @GenIgnore
   HttpServerResponse putHeader(CharSequence name, CharSequence value);
 
   /**
@@ -103,7 +113,10 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @param values  The header values.
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @GenIgnore
   HttpServerResponse putHeader(String name, Iterable<String> values);
+
+  @GenIgnore
   HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values);
 
 
@@ -118,7 +131,10 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @param value The trailer value
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   HttpServerResponse putTrailer(String name, String value);
+
+  @GenIgnore
   HttpServerResponse putTrailer(CharSequence name, CharSequence value);
 
   /**
@@ -127,7 +143,10 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @param values  The trailer values
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @GenIgnore
   HttpServerResponse putTrailer(String name, Iterable<String> values);
+
+  @GenIgnore
   HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value);
 
   /**
@@ -135,6 +154,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * is complete.
    * @param handler
    */
+  @Fluent
   HttpServerResponse closeHandler(Handler<Void> handler);
 
   /**
@@ -142,6 +162,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
+  @Fluent
   HttpServerResponse writeBuffer(Buffer chunk);
 
   /**
@@ -149,30 +170,32 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse write(String chunk, String enc);
+  @Fluent
+  HttpServerResponse writeString(String chunk, String enc);
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
-  HttpServerResponse write(String chunk);
+  @Fluent
+  HttpServerResponse writeString(String chunk);
 
   /**
-   * Same as {@link #end(Buffer)} but writes a String with the default encoding before ending the response.
+   * Same as {@link #writeBufferAndEnd(Buffer)} but writes a String with the default encoding before ending the response.
    */
-  void end(String chunk);
+  void writeStringAndEnd(String chunk);
 
   /**
-   * Same as {@link #end(Buffer)} but writes a String with the specified encoding before ending the response.
+   * Same as {@link #writeBufferAndEnd(Buffer)} but writes a String with the specified encoding before ending the response.
    */
-  void end(String chunk, String enc);
+  void writeStringAndEnd(String chunk, String enc);
 
   /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
    */
-  void end(Buffer chunk);
+  void writeBufferAndEnd(Buffer chunk);
 
   /**
    * Ends the response. If no data has been written to the response body,
@@ -187,23 +210,20 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * (where supported by the underlying operating system.
    * This is a very efficient way to serve files.<p>
    */
+  @Fluent
   HttpServerResponse sendFile(String filename);
 
   /**
    * Same as {@link #sendFile(String)} but also takes the path to a resource to serve if the resource is not found
    */
+  @Fluent
   HttpServerResponse sendFile(String filename, String notFoundFile);
-
-  /**
-   * Same as {@link #sendFile(String)} but also takes a handler that will be called when the send has completed or
-   * a failure has occurred
-   */
-  HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Same as {@link #sendFile(String, String)} but also takes a handler that will be called when the send has completed or
    * a failure has occurred
    */
+  @Fluent
   HttpServerResponse sendFile(String filename, String notFoundFile, Handler<AsyncResult<Void>> resultHandler);
 
   /**

@@ -17,16 +17,49 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RequestOptions {
 
-  private int port = 80;
-  private String host = "localhost";
+  private static final int DEFAULT_PORT = 80;
+  private static final String DEFAULT_HOST = "localhost";
+  private static final String DEFAULT_REQUEST_URI = "/";
+
+  private int port ;
+  private String host;
   private MultiMap headers;
-  private String requestURI = "/";
+  private String requestURI;
+
+  public RequestOptions() {
+    this.port = DEFAULT_PORT;
+    this.host = DEFAULT_HOST;
+    this.requestURI = DEFAULT_REQUEST_URI;
+  }
+
+  public RequestOptions(RequestOptions other) {
+    this.port = other.port;
+    this.host = other.host;
+    this.requestURI = other.requestURI;
+    this.headers = other.headers;
+  }
+
+  public RequestOptions(JsonObject json) {
+    this.port = json.getInteger("port", DEFAULT_PORT);
+    this.host = json.getString("host", DEFAULT_HOST);
+    this.requestURI = json.getString("requestURI", DEFAULT_REQUEST_URI);
+    JsonObject obj = json.getObject("headers");
+    if (obj == null) {
+      headers = null;
+    } else {
+      headers = new CaseInsensitiveMultiMap();
+      obj.toMap().forEach((k, v) -> {
+        headers.set(k, (String)v);
+      });
+    }
+  }
 
   public int getPort() {
     return port;

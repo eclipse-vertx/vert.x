@@ -16,6 +16,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptions;
 
 /**
@@ -23,19 +24,24 @@ import io.vertx.core.net.ClientOptions;
  */
 public class HttpClientOptions extends ClientOptions {
 
+  private static final int DEFAULT_MAXPOOLSIZE = 5;
+  private static final boolean DEFAULT_KEEPALIVE = true;
+
   // Client specific SSL stuff
 
   private boolean verifyHost = true;
 
   // HTTP stuff
 
-  private int maxPoolSize = 5;
-  private boolean keepAlive = true;
+  private int maxPoolSize;
+  private boolean keepAlive;
   private boolean pipelining;
   private boolean tryUseCompression;
 
   public HttpClientOptions() {
     super();
+    this.maxPoolSize = DEFAULT_MAXPOOLSIZE;
+    this.keepAlive = DEFAULT_KEEPALIVE;
   }
 
   public HttpClientOptions(HttpClientOptions other) {
@@ -45,6 +51,14 @@ public class HttpClientOptions extends ClientOptions {
     this.keepAlive = other.keepAlive;
     this.pipelining = other.pipelining;
     this.tryUseCompression = other.tryUseCompression;
+  }
+
+  public HttpClientOptions(JsonObject json) {
+    super(json);
+    this.maxPoolSize = json.getInteger("maxPoolSize", DEFAULT_MAXPOOLSIZE);
+    this.keepAlive = json.getBoolean("keepAlive", DEFAULT_KEEPALIVE);
+    this.pipelining = json.getBoolean("pipelining", false);
+    this.tryUseCompression = json.getBoolean("tryUseCompression", false);
   }
 
   public int getMaxPoolSize() {

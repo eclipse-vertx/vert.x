@@ -64,7 +64,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private final HttpRequest request;
   private final HttpServerResponse response;
 
-  private io.vertx.core.http.HttpVersion version;
+  private String version;
   private String method;
   private String uri;
   private String path;
@@ -94,13 +94,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public io.vertx.core.http.HttpVersion version() {
+  public String version() {
     if (version == null) {
       io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
       if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
-        version = io.vertx.core.http.HttpVersion.HTTP_1_0;
+        version = "HTTP/1.0";
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-        version = io.vertx.core.http.HttpVersion.HTTP_1_1;
+        version = "HTTP/1.1";
       } else {
         throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
       }
@@ -257,8 +257,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest expectMultiPart(boolean expect) {
-    if (expect) {
+  public HttpServerRequest setExpectMultipart(boolean expect) {
+    if (expect && decoder == null) {
       String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
       if (contentType != null) {
         HttpMethod method = request.getMethod();
@@ -273,6 +273,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       decoder = null;
     }
     return this;
+  }
+
+  @Override
+  public boolean isExpectMultipart() {
+    return decoder != null;
   }
 
   void handleData(Buffer data) {

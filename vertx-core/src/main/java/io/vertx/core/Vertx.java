@@ -79,19 +79,16 @@ public interface Vertx {
   /**
    * Create a TCP/SSL client
    */
-  @GenIgnore
   NetClient createNetClient(NetClientOptions options);
 
   /**
    * Create an HTTP/HTTPS server
    */
-  @GenIgnore
   HttpServer createHttpServer(HttpServerOptions options);
 
   /**
    * Create a HTTP/HTTPS client
    */
-  @GenIgnore
   HttpClient createHttpClient(HttpClientOptions options);
 
   /**
@@ -133,7 +130,6 @@ public interface Vertx {
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  @GenIgnore
   long setTimer(long delay, Handler<Long> handler);
 
   /**
@@ -141,27 +137,23 @@ public interface Vertx {
    * the id of the timer.
    * @return the unique ID of the timer
    */
-  @GenIgnore
   long setPeriodic(long delay, Handler<Long> handler);
 
   /**
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or
    * {@code false} if the timer does not exist.
    */
-  @GenIgnore
   boolean cancelTimer(long id);
 
   /**
    * @return The current context
    */
-  @GenIgnore
   Context currentContext();
 
   /**
    * Put the handler on the event queue for the current loop (or worker context) so it will be run asynchronously ASAP after this event has
    * been processed
    */
-  @GenIgnore
   void runOnContext(Handler<Void> action);
 
   /**

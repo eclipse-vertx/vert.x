@@ -15,19 +15,21 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.streams.ReadStream;
-
-import java.nio.charset.Charset;
 
 /**
  * Represents an upload from an HTML form.<p>
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+@VertxGen
 public interface HttpServerFileUpload extends ReadStream<HttpServerFileUpload> {
   /**
    * Stream the content of this upload to the given filename.
    */
+  @Fluent
   HttpServerFileUpload streamToFileSystem(String filename);
 
   /**
@@ -53,7 +55,7 @@ public interface HttpServerFileUpload extends ReadStream<HttpServerFileUpload> {
   /**
    * Returns the charset for the upload
    */
-  Charset charset();
+  String charset();
 
   /**
    * Returns the size of the upload (in bytes)

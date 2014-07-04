@@ -321,7 +321,7 @@ public class HttpRouteMatcherTest extends HttpTestBase {
     final String noMatchResponseBody = "oranges";
 
     if (noMatchHandler) {
-      matcher.noMatch(req -> req.response().end(noMatchResponseBody));
+      matcher.noMatch(req -> req.response().writeStringAndEnd(noMatchResponseBody));
     }
 
     server.requestHandler(matcher).listen(onSuccess(s -> {

@@ -38,6 +38,13 @@ public class DeploymentOptions {
     this.isolationGroup = other.isolationGroup;
   }
 
+  public DeploymentOptions(JsonObject json) {
+    this.config = json.getObject("config");
+    this.worker = json.getBoolean("worker", false);
+    this.multiThreaded = json.getBoolean("multiThreaded", false);
+    this.isolationGroup = json.getString("isolationGroup", null);
+  }
+
   public JsonObject getConfig() {
     return config;
   }

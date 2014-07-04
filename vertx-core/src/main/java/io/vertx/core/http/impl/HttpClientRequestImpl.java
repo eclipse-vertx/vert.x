@@ -125,13 +125,13 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequestImpl write(String chunk) {
+  public HttpClientRequestImpl writeString(String chunk) {
     check();
     return writeBuffer(Buffer.newBuffer(chunk));
   }
 
   @Override
-  public HttpClientRequestImpl write(String chunk, String enc) {
+  public HttpClientRequestImpl writeString(String chunk, String enc) {
     check();
     return writeBuffer(Buffer.newBuffer(chunk, enc));
   }
@@ -199,17 +199,17 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public void end(String chunk) {
-    end(Buffer.newBuffer(chunk));
+  public void writeStringAndEnd(String chunk) {
+    writeBufferAndEnd(Buffer.newBuffer(chunk));
   }
 
   @Override
-  public void end(String chunk, String enc) {
-    end(Buffer.newBuffer(chunk, enc));
+  public void writeStringAndEnd(String chunk, String enc) {
+    writeBufferAndEnd(Buffer.newBuffer(chunk, enc));
   }
 
   @Override
-  public void end(Buffer chunk) {
+  public void writeBufferAndEnd(Buffer chunk) {
     check();
     if (!chunked && !contentLengthSet()) {
       headers().set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));

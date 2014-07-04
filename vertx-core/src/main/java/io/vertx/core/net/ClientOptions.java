@@ -16,14 +16,18 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.json.JsonObject;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ClientOptions extends TCPOptions {
 
+  private static final int DEFAULT_CONNECTTIMEOUT = 60000;
+
   // Client specific TCP stuff
 
-  private int connectTimeout = 60000;
+  private int connectTimeout;
 
   // Client specific SSL stuff
 
@@ -31,12 +35,19 @@ public class ClientOptions extends TCPOptions {
 
   public ClientOptions() {
     super();
+    this.connectTimeout = DEFAULT_CONNECTTIMEOUT;
   }
 
   public ClientOptions(ClientOptions other) {
     super(other);
     this.connectTimeout = other.connectTimeout;
     this.trustAll = other.trustAll;
+  }
+
+  public ClientOptions(JsonObject json) {
+    super(json);
+    this.connectTimeout = json.getInteger("connectTimeout", DEFAULT_CONNECTTIMEOUT);
+    this.trustAll = json.getBoolean("trustAll", false);
   }
 
   public boolean isTrustAll() {

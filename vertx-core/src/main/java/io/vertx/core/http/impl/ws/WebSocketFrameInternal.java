@@ -18,6 +18,7 @@ package io.vertx.core.http.impl.ws;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.impl.FrameType;
 
 /**
  * A Web Socket frame that represents either text or binary data.
@@ -48,4 +49,6 @@ public interface WebSocketFrameInternal extends WebSocketFrame {
    * @param textData the content of the frame. Must be valid UTF-8
    */
   void setTextData(String textData);
+
+  FrameType type();
 }

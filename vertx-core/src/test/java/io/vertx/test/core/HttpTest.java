@@ -34,7 +34,6 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.HttpHeadersAdapter;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -421,8 +420,8 @@ public class HttpTest extends HttpTestBase {
   public void testServerChaining() {
     server.requestHandler(req -> {
       assertTrue(req.response().setChunked(true) == req.response());
-      assertTrue(req.response().write("foo", "UTF-8") == req.response());
-      assertTrue(req.response().write("foo") == req.response());
+      assertTrue(req.response().writeString("foo", "UTF-8") == req.response());
+      assertTrue(req.response().writeString("foo") == req.response());
       testComplete();
     });
 
@@ -457,8 +456,8 @@ public class HttpTest extends HttpTestBase {
       HttpClientRequest req = client.put(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
       assertTrue(req.setChunked(true) == req);
       assertTrue(req.sendHead() == req);
-      assertTrue(req.write("foo", "UTF-8") == req);
-      assertTrue(req.write("foo") == req);
+      assertTrue(req.writeString("foo", "UTF-8") == req);
+      assertTrue(req.writeString("foo") == req);
       assertTrue(req.writeBuffer(Buffer.newBuffer("foo")) == req);
       testComplete();
     }));
@@ -797,7 +796,7 @@ public class HttpTest extends HttpTestBase {
           req.headers().add(header.getKey(), header.getValue());
         }
       } else {
-        req.headers().set(headers);
+        req.headers().setAll(headers);
       }
       req.end();
     }));
@@ -824,7 +823,7 @@ public class HttpTest extends HttpTestBase {
           req.response().headers().add(header.getKey(), header.getValue());
         }
       } else {
-        req.response().headers().set(headers);
+        req.response().headers().setAll(headers);
       }
       req.response().end();
     });
@@ -922,19 +921,19 @@ public class HttpTest extends HttpTestBase {
         //OK
       }
       try {
-        req.end("foo");
+        req.writeStringAndEnd("foo");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
       }
       try {
-        req.end(buff);
+        req.writeBufferAndEnd(buff);
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
       }
       try {
-        req.end("foo", "UTF-8");
+        req.writeStringAndEnd("foo", "UTF-8");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -970,13 +969,13 @@ public class HttpTest extends HttpTestBase {
         //OK
       }
       try {
-        req.write("foo");
+        req.writeString("foo");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
       }
       try {
-        req.write("foo", "UTF-8");
+        req.writeString("foo", "UTF-8");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1009,7 +1008,7 @@ public class HttpTest extends HttpTestBase {
     }));
 
     server.listen(onSuccess(server -> {
-      client.post(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete()).end(body);
+      client.post(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete()).writeBufferAndEnd(body);
     }));
 
     await();
@@ -1050,9 +1049,9 @@ public class HttpTest extends HttpTestBase {
     server.listen(onSuccess(server -> {
       HttpClientRequest req = client.post(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
       if (encoding == null) {
-        req.end(body);
+        req.writeStringAndEnd(body);
       } else {
-        req.end(body, encoding);
+        req.writeStringAndEnd(body, encoding);
       }
     }));
 
@@ -1157,9 +1156,9 @@ public class HttpTest extends HttpTestBase {
       }
 
       if (encoding == null) {
-        req.write(body);
+        req.writeString(body);
       } else {
-        req.write(body, encoding);
+        req.writeString(body, encoding);
       }
       req.end();
     }));
@@ -1262,7 +1261,7 @@ public class HttpTest extends HttpTestBase {
           req.response().trailers().add(header.getKey(), header.getValue());
         }
       } else {
-        req.response().trailers().set(trailers);
+        req.response().trailers().setAll(trailers);
       }
       req.response().end();
     });
@@ -1322,19 +1321,19 @@ public class HttpTest extends HttpTestBase {
         //OK
       }
       try {
-        resp.end("foo");
+        resp.writeStringAndEnd("foo");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
       }
       try {
-        resp.end(buff);
+        resp.writeBufferAndEnd(buff);
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
       }
       try {
-        resp.end("foo", "UTF-8");
+        resp.writeStringAndEnd("foo", "UTF-8");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1364,13 +1363,13 @@ public class HttpTest extends HttpTestBase {
         //OK
       }
       try {
-        resp.write("foo");
+        resp.writeString("foo");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
       }
       try {
-        resp.write("foo", "UTF-8");
+        resp.writeString("foo", "UTF-8");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1412,7 +1411,7 @@ public class HttpTest extends HttpTestBase {
     Buffer body = TestUtils.randomBuffer(1000);
 
     server.requestHandler(req -> {
-      req.response().end(body);
+      req.response().writeBufferAndEnd(body);
     });
 
     server.listen(onSuccess(s -> {
@@ -1454,9 +1453,9 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       if (encoding == null) {
-        req.response().end(body);
+        req.response().writeStringAndEnd(body);
       } else {
-        req.response().end(body, encoding);
+        req.response().writeStringAndEnd(body, encoding);
       }
     });
 
@@ -1476,7 +1475,7 @@ public class HttpTest extends HttpTestBase {
   public void testResponseBodyWriteStringNonChunked() {
     server.requestHandler(req -> {
       try {
-        req.response().write("foo");
+        req.response().writeString("foo");
         fail("Should throw exception");
       } catch (IllegalStateException e) {
         //OK
@@ -1581,9 +1580,9 @@ public class HttpTest extends HttpTestBase {
         req.response().headers().set("Content-Length", String.valueOf(bodyBuff.length()));
       }
       if (encoding == null) {
-        req.response().write(body);
+        req.response().writeString(body);
       } else {
-        req.response().write(body, encoding);
+        req.response().writeString(body, encoding);
       }
       req.response().end();
     });
@@ -1663,7 +1662,7 @@ public class HttpTest extends HttpTestBase {
           });
           req.setChunked(true);
           req.headers().set("count", String.valueOf(count));
-          req.write("This is content " + count);
+          req.writeString("This is content " + count);
           req.end();
         }
       });
@@ -1782,11 +1781,11 @@ public class HttpTest extends HttpTestBase {
       if (handler) {
         Handler<AsyncResult<Void>> doneHandler = onSuccess(v -> latch.countDown());
         if (sendFile != null) { // Send file with handler
-          req.response().sendFile(fileToDelete.getAbsolutePath(), doneHandler);
+          req.response().sendFile(fileToDelete.getAbsolutePath(), null, doneHandler);
         } else if (notFoundFile != null) { // File doesn't exist, send not found resource with handler
           req.response().sendFile("doesnotexist.html", fileToDelete.getAbsolutePath(), doneHandler);
         } else { // File doesn't exist, send default not found resource with handler
-          req.response().sendFile("doesnotexist.html", doneHandler);
+          req.response().sendFile("doesnotexist.html", null, doneHandler);
         }
       } else {
         if (sendFile != null) { // Send file
@@ -2082,7 +2081,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().setChunked(true);
       vertx.setPeriodic(interval, timerID -> {
-        req.response().write("foo");
+        req.response().writeString("foo");
         if (count.incrementAndGet() == numChunks) {
           req.response().end();
           vertx.cancelTimer(timerID);
@@ -2150,7 +2149,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       vertx.setTimer(500, id -> {
         req.response().setStatusCode(200);
-        req.response().end("OK");
+        req.response().writeStringAndEnd("OK");
       });
     });
 
@@ -2256,7 +2255,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.bodyHandler(buffer -> {
         assertEquals("foo", buffer.toString());
-        req.response().end("bar");
+        req.response().writeStringAndEnd("bar");
       });
     });
     server.listen(ar -> {
@@ -2273,7 +2272,7 @@ public class HttpTest extends HttpTestBase {
         response.bodyHandler(data -> assertEquals("bar", data.toString()));
         testComplete();
       });
-      req.end("foo");
+      req.writeStringAndEnd("foo");
     });
     await();
   }
@@ -2603,7 +2602,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testHttpVersion() {
     server.requestHandler(req -> {
-      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      assertEquals("HTTP/1.1", req.version());
       req.response().end();
     });
 
@@ -2623,7 +2622,7 @@ public class HttpTest extends HttpTestBase {
       if (req.method().equals("POST")) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
-        req.expectMultiPart(true);
+        req.setExpectMultipart(true);
         req.uploadHandler(upload -> {
           upload.dataHandler(buffer -> {
             assertEquals(content, buffer.toString("UTF-8"));
@@ -2680,7 +2679,7 @@ public class HttpTest extends HttpTestBase {
       if (req.method().equals("POST")) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
-        req.expectMultiPart(true);
+        req.setExpectMultipart(true);
         req.uploadHandler(upload -> upload.dataHandler(buffer -> {
           fail("Should get here");
         }));
@@ -2725,7 +2724,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       if (req.method().equals("POST")) {
         assertEquals(req.path(), "/form");
-        req.expectMultiPart(true);
+        req.setExpectMultipart(true);
         req.uploadHandler(event -> event.dataHandler(buffer -> {
           fail("Should not get here");
         }));
@@ -2809,7 +2808,7 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
-      req.response().write(body);
+      req.response().writeString(body);
       req.response().end();
     });
 
@@ -2833,7 +2832,7 @@ public class HttpTest extends HttpTestBase {
       socket.dataHandler(socket::writeBuffer);
     }).listen(onSuccess(netServer -> {
       server.requestHandler(req -> {
-        vertx.createNetClient(new NetClientOptions()).connect(netServer.actualPort(), onSuccess(socket -> {
+        vertx.createNetClient(new NetClientOptions()).connect(netServer.actualPort(), "localhost", onSuccess(socket -> {
           req.response().setStatusCode(200);
           req.response().setStatusMessage("Connection established");
           req.response().end();

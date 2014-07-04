@@ -77,7 +77,7 @@ public class HttpHeadersAdapter implements MultiMap {
   }
 
   @Override
-  public MultiMap add(MultiMap headers) {
+  public MultiMap addAll(MultiMap headers) {
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -85,7 +85,7 @@ public class HttpHeadersAdapter implements MultiMap {
   }
 
   @Override
-  public MultiMap add(Map<String, String> map) {
+  public MultiMap addAll(Map<String, String> map) {
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -105,7 +105,7 @@ public class HttpHeadersAdapter implements MultiMap {
   }
 
   @Override
-  public MultiMap set(MultiMap httpHeaders) {
+  public MultiMap setAll(MultiMap httpHeaders) {
     clear();
     for (Map.Entry<String, String> entry: httpHeaders) {
       add(entry.getKey(), entry.getValue());
@@ -136,7 +136,7 @@ public class HttpHeadersAdapter implements MultiMap {
   }
 
   @Override
-  public MultiMap set(Map<String, String> headers) {
+  public MultiMap setAll(Map<String, String> headers) {
     for (Map.Entry<String, String> entry: headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }

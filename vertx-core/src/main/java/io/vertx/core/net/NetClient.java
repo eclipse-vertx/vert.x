@@ -18,6 +18,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.VertxGen;
 
 /**
@@ -38,19 +39,12 @@ import io.vertx.core.gen.VertxGen;
 public interface NetClient {
 
   /**
-   * Attempt to open a connection to a server at the specific {@code port} and host {@code localhost}
-   * The connect is done asynchronously and on success, a
-   * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
-   * @return a reference to this so multiple method calls can be chained together
-   */
-  NetClient connect(int port, Handler<AsyncResult<NetSocket>> connectCallback);
-
-  /**
    * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
    * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
    * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    * @return a reference to this so multiple method calls can be chained together
    */
+  @Fluent
   NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**

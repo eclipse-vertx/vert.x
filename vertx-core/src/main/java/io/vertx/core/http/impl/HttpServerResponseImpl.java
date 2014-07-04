@@ -233,27 +233,27 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl write(String chunk, String enc) {
+  public HttpServerResponseImpl writeString(String chunk, String enc) {
     return write(Buffer.newBuffer(chunk, enc).getByteBuf(),  null);
   }
 
   @Override
-  public HttpServerResponseImpl write(String chunk) {
+  public HttpServerResponseImpl writeString(String chunk) {
     return write(Buffer.newBuffer(chunk).getByteBuf(), null);
   }
 
   @Override
-  public void end(String chunk) {
-    end(Buffer.newBuffer(chunk));
+  public void writeStringAndEnd(String chunk) {
+    writeBufferAndEnd(Buffer.newBuffer(chunk));
   }
 
   @Override
-  public void end(String chunk, String enc) {
-    end(Buffer.newBuffer(chunk, enc));
+  public void writeStringAndEnd(String chunk, String enc) {
+    writeBufferAndEnd(Buffer.newBuffer(chunk, enc));
   }
 
   @Override
-  public void end(Buffer chunk) {
+  public void writeBufferAndEnd(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
       headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
@@ -327,11 +327,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponseImpl sendFile(String filename, String notFoundResource) {
     doSendFile(filename, notFoundResource, null);
     return this;
-  }
-
-  @Override
-  public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
-    return sendFile(filename, null, resultHandler);
   }
 
   @Override
@@ -432,13 +427,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private void sendForbidden() {
     setStatusCode(HttpResponseStatus.FORBIDDEN.code());
     putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML);
-    end(FORBIDDEN);
+    writeBufferAndEnd(FORBIDDEN);
   }
 
   private void sendNotFound() {
     setStatusCode(HttpResponseStatus.NOT_FOUND.code());
     putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML);
-    end(NOT_FOUND);
+    writeBufferAndEnd(NOT_FOUND);
   }
 
   void handleDrained() {

@@ -38,7 +38,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -106,11 +105,11 @@ class ClientConnection extends ConnectionBase {
         wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + options.getRequestURI());
       }
       io.netty.handler.codec.http.websocketx.WebSocketVersion version;
-      if (options.getVersion() == WebSocketVersion.HYBI_00) {
+      if (options.getVersion() == 0) {
         version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
-      } else if (options.getVersion() == WebSocketVersion.HYBI_08) {
+      } else if (options.getVersion() == 8) {
         version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V08;
-      } else if (options.getVersion() == WebSocketVersion.RFC6455) {
+      } else if (options.getVersion() == 13) {
         version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V13;
       } else {
         throw new IllegalArgumentException("Invalid version");

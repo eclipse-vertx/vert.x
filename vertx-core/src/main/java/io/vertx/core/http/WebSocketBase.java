@@ -18,6 +18,8 @@ package io.vertx.core.http;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -33,6 +35,7 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
 
   /**
@@ -56,21 +59,25 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   /**
    * Write {@code data} to the websocket as a binary frame
    */
+  @Fluent
   T writeBinaryFrame(Buffer data);
 
   /**
    * Write {@code str} to the websocket as a text frame
    */
+  @Fluent
   T writeTextFrame(String str);
 
   /**
    * Set a closed handler on the connection
    */
+  @Fluent
   T closeHandler(Handler<Void> handler);
 
   /**
    * Set a frame handler on the connection
    */
+  @Fluent
   T frameHandler(Handler<WebSocketFrame> handler);
 
   /**

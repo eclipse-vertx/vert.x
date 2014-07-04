@@ -74,7 +74,7 @@ class HtmlFileTransport extends BaseTransport {
           callback = req.params().get("c");
           if (callback == null) {
             req.response().setStatusCode(500);
-            req.response().end("\"callback\" parameter required\n");
+            req.response().writeStringAndEnd("\"callback\" parameter required\n");
             return;
           }
         }
@@ -110,7 +110,7 @@ class HtmlFileTransport extends BaseTransport {
         setNoCacheHeaders(req);
         req.response().setChunked(true);
         setJSESSIONID(config, req);
-        req.response().write(htmlFile);
+        req.response().writeString(htmlFile);
         headersWritten = true;
       }
       body = escapeForJavaScript(body);

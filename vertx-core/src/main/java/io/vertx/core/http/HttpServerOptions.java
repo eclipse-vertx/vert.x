@@ -16,6 +16,8 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServerOptions;
 
 import java.util.HashSet;
@@ -28,13 +30,18 @@ public class HttpServerOptions extends NetServerOptions {
 
   // Server specific HTTP stuff
 
+  private static final int DEFAULT_MAXWEBSOCKETFRAMESIZE = 65536;
+  private static final int DEFAULT_PORT = 80;  // Default port is 80 for HTTP not 0 from NetServerOptions
+
   private boolean compressionSupported;
-  private int maxWebsocketFrameSize = 65536;
+  private int maxWebsocketFrameSize;
   private Set<String> websocketSubProtocols;
-  private int port = 80; // Default port is 80 for HTTP not 0 from NetServerOptions
+  private int port;
 
   public HttpServerOptions() {
     super();
+    this.maxWebsocketFrameSize = DEFAULT_MAXWEBSOCKETFRAMESIZE;
+    this.port = DEFAULT_PORT;
   }
 
   public HttpServerOptions(HttpServerOptions other) {
@@ -43,6 +50,15 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.websocketSubProtocols = other.websocketSubProtocols != null ? new HashSet<>(other.websocketSubProtocols) : null;
     this.port = other.port;
+  }
+
+  public HttpServerOptions(JsonObject json) {
+    super(json);
+    this.compressionSupported = json.getBoolean("compressionSupported", false);
+    this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAXWEBSOCKETFRAMESIZE);
+    JsonArray arr = json.getArray("websocketSubProtocols");
+    this.websocketSubProtocols = arr == null ? null : new HashSet<String>(arr.toList());
+    this.port = json.getInteger("port", DEFAULT_PORT);
   }
 
   public boolean isCompressionSupported() {

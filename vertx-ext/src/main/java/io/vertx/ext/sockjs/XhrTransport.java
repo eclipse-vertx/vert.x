@@ -103,7 +103,7 @@ class XhrTransport extends BaseTransport {
         String msgs = buff.toString();
         if (msgs.equals("")) {
           req.response().setStatusCode(500);
-          req.response().end("Payload expected.");
+          req.response().writeStringAndEnd("Payload expected.");
           return;
         }
         if (!session.handleMessages(msgs)) {
@@ -153,7 +153,7 @@ class XhrTransport extends BaseTransport {
 
     public void sendFrame(String body) {
       super.sendFrame(body);
-      req.response().write(body + "\n");
+      req.response().writeString(body + "\n");
       close();
     }
 
