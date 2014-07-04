@@ -20,7 +20,8 @@ package io.vertx.test.core;
  */
 enum KS {
   NONE,
-  JKS,
-  PKCS12,
-  PEM
+  JKS,    // Self signed
+  PKCS12, // Self signed
+  PEM,    // Self signed
+  PEM_CA  // Signed by CA
 }

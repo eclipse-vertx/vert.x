@@ -20,18 +20,14 @@ import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 import java.io.*;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
+import java.security.cert.*;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
@@ -97,13 +93,13 @@ public abstract class KeyStoreHelper {
       return create(vertx, (KeyStoreOptions) options);
     } else if (options instanceof CaOptions) {
       CaOptions caOptions = (CaOptions) options;
-      Stream<Buffer> values = caOptions.
+      Stream<Buffer> certValues = caOptions.
           getCertPaths().
           stream().
           map(path -> PathAdjuster.adjust(vertx, path)).
           map(vertx.fileSystem()::readFileSync);
-      values = Stream.concat(values, caOptions.getCertValues().stream());
-      return new CA(values);
+      certValues = Stream.concat(certValues, caOptions.getCertValues().stream());
+      return new CA(certValues);
     } else {
       return null;
     }

@@ -16,6 +16,8 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.buffer.Buffer;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -77,6 +79,18 @@ public class NetClientOptions extends ClientOptions {
 
   public NetClientOptions setTrustAll(boolean trustAll) {
     super.setTrustAll(trustAll);
+    return this;
+  }
+
+  @Override
+  public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
+    super.addCrlPath(crlPath);
+    return this;
+  }
+
+  @Override
+  public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    super.addCrlValue(crlValue);
     return this;
   }
 

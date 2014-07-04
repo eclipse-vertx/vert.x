@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.ClientOptions;
@@ -130,6 +131,18 @@ public class HttpClientOptions extends ClientOptions {
 
   public HttpClientOptions setTrustAll(boolean trustAll) {
     super.setTrustAll(trustAll);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
+    super.addCrlPath(crlPath);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    super.addCrlValue(crlValue);
     return this;
   }
 

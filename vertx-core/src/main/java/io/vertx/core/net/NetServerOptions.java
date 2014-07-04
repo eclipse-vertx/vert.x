@@ -17,8 +17,12 @@
 package io.vertx.core.net;
 
 import io.vertx.core.gen.Options;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.gen.VertxGen;
 import io.vertx.core.json.JsonObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -40,12 +44,16 @@ public class NetServerOptions extends TCPOptions {
   // Server specific SSL stuff
 
   private boolean clientAuthRequired;
+  private ArrayList<String> crlPaths;
+  private ArrayList<Buffer> crlValues;
 
   public NetServerOptions() {
     super();
     this.port = DEFAULT_PORT;
     this.host = DEFAULT_HOST;
     this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
+    this.crlPaths = new ArrayList<>();
+    this.crlValues = new ArrayList<>();
   }
 
   public NetServerOptions(JsonObject json) {
@@ -60,6 +68,8 @@ public class NetServerOptions extends TCPOptions {
     this.port = other.port;
     this.host = other.host;
     this.acceptBacklog = other.acceptBacklog;
+    this.crlPaths = new ArrayList<>(other.crlPaths);
+    this.crlValues = new ArrayList<>(other.crlValues);
   }
 
   public boolean isClientAuthRequired() {
@@ -68,6 +78,30 @@ public class NetServerOptions extends TCPOptions {
 
   public NetServerOptions setClientAuthRequired(boolean clientAuthRequired) {
     this.clientAuthRequired = clientAuthRequired;
+    return this;
+  }
+
+  public List<String> getCrlPaths() {
+    return crlPaths;
+  }
+
+  public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
+    if (crlPath == null) {
+      throw new NullPointerException("No null crl accepted");
+    }
+    crlPaths.add(crlPath);
+    return this;
+  }
+
+  public List<Buffer> getCrlValues() {
+    return crlValues;
+  }
+
+  public NetServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    if (crlValue == null) {
+      throw new NullPointerException("No null crl accepted");
+    }
+    crlValues.add(crlValue);
     return this;
   }
 

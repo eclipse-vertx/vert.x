@@ -22,5 +22,7 @@ enum TS {
   NONE,
   JKS,
   PKCS12,
-  PEM
+  PEM,   // Self signed
+  PEM_CA // Signed by CA
 }
+
