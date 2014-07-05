@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.streams.Pump;
@@ -139,7 +140,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   @Override
   public HttpServerFileUpload streamToFileSystem(String filename) {
     pause();
-    vertx.fileSystem().open(filename, ar -> {
+    vertx.fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
 

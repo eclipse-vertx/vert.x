@@ -16,7 +16,7 @@
 
 package io.vertx.core.file;
 
-import java.util.Date;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * Represents properties of a file on the file system<p>
@@ -24,22 +24,23 @@ import java.util.Date;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface FileProps {
 
   /**
    * The date the file was created
    */
-  Date creationTime();
+  long creationTime();
 
   /**
    * The date the file was last accessed
    */
-  Date lastAccessTime();
+  long lastAccessTime();
 
   /**
    * The date the file was last modified
    */
-  Date lastModifiedTime();
+  long lastModifiedTime();
 
   /**
    * Is the file a directory?

@@ -18,6 +18,8 @@ package io.vertx.core.dns;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -28,6 +30,7 @@ import java.util.List;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+@VertxGen
 public interface DnsClient {
 
   /**
@@ -40,6 +43,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient lookup(String name, Handler<AsyncResult<String>> handler);
 
   /**
@@ -52,6 +56,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient lookup4(String name, Handler<AsyncResult<String>> handler);
 
   /**
@@ -64,6 +69,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient lookup6(String name, Handler<AsyncResult<String>> handler);
 
   /**
@@ -78,6 +84,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -91,6 +98,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -103,6 +111,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -116,6 +125,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler);
 
   /**
@@ -128,6 +138,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -140,6 +151,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler);
 
   /**
@@ -152,6 +164,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -164,6 +177,7 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient resolveSRV(String name, Handler<AsyncResult<List<SrvRecord>>> handler);
 
   /**
@@ -177,5 +191,6 @@ public interface DnsClient {
    *                  If an error accours it will get failed.
    * @return          itself for method-chaining.
    */
+  @Fluent
   DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<String>> handler);
 }

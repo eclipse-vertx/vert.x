@@ -13,10 +13,10 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.datagram;
+package io.vertx.core.datagram.impl;
 
 /**
- * Internet Protocol (IP) families used by {@link DatagramSocket}.
+ * Internet Protocol (IP) families used by {@link io.vertx.core.datagram.DatagramSocket}.
  */
 public enum InternetProtocolFamily {
 

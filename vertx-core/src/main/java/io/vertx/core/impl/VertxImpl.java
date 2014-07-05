@@ -30,7 +30,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.datagram.InternetProtocolFamily;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.impl.DnsClientImpl;
@@ -143,8 +142,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public DatagramSocket createDatagramSocket(InternetProtocolFamily family, DatagramSocketOptions options) {
-    return new DatagramSocketImpl(this, family, options);
+  public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
+    return new DatagramSocketImpl(this, options);
   }
 
   public NetServer createNetServer(NetServerOptions options) {
@@ -370,7 +369,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle) {
+  public void deployVerticleInstance(Verticle verticle) {
     deploymentManager.deployVerticle(verticle, new DeploymentOptions(), null);
   }
 
@@ -380,7 +379,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, DeploymentOptions options) {
+  public void deployVerticleInstance(Verticle verticle, DeploymentOptions options) {
     deploymentManager.deployVerticle(verticle, options, null);
   }
 
@@ -390,7 +389,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler) {
+  public void deployVerticleInstance(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler) {
     deploymentManager.deployVerticle(verticle, options, doneHandler);
   }
 

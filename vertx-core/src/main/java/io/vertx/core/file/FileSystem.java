@@ -19,6 +19,9 @@ package io.vertx.core.file;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.VertxGen;
+
+import java.util.List;
 
 /**
  * Contains a broad set of operations for manipulating files.<p>
@@ -30,6 +33,7 @@ import io.vertx.core.buffer.Buffer;
  * Instances of FileSystem are thread-safe.<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface FileSystem {
 
   /**
@@ -49,12 +53,12 @@ public interface FileSystem {
    * will be copied recursively to the destination {@code to}.<p>
    * The copy will fail if the destination if the destination already exists.<p>
    */
-  FileSystem copy(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler);
+  FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #copy(String, String, boolean, Handler)}
+   * Synchronous version of {@link #copyRecursive(String, String, boolean, Handler)}
    */
-  FileSystem copySync(String from, String to, boolean recursive) ;
+  FileSystem copyRecursiveSync(String from, String to, boolean recursive) ;
 
   /**
    * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
@@ -97,12 +101,12 @@ public interface FileSystem {
    * If the file is directory then all contents will also have their permissions changed recursively. Any directory permissions will
    * be set to {@code dirPerms}, whilst any normal file permissions will be set to {@code perms}.<p>
    */
-  FileSystem chmod(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler);
+  FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #chmod(String, String, String, Handler)}
+   * Synchronous version of {@link #chmodRecursive(String, String, String, Handler)}
    */
-  FileSystem chmodSync(String path, String perms, String dirPerms) ;
+  FileSystem chmodRecursiveSync(String path, String perms, String dirPerms) ;
 
 
   /**
@@ -194,12 +198,12 @@ public interface FileSystem {
    * If the path represents a directory and {@code recursive = true} then the directory and its contents will be
    * deleted recursively.
    */
-  FileSystem delete(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
+  FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #delete(String, boolean, Handler)}
+   * Synchronous version of {@link #deleteRecursive(String, boolean, Handler)}
    */
-  FileSystem deleteSync(String path, boolean recursive) ;
+  FileSystem deleteSyncRecursive(String path, boolean recursive) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -214,30 +218,30 @@ public interface FileSystem {
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
-   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
-   * will also be created.<p>
-   * The operation will fail if the directory already exists.
-   */
-  FileSystem mkdir(String path, boolean createParents, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Synchronous version of {@link #mkdir(String, boolean, Handler)}
-   */
-  FileSystem mkdirSync(String path, boolean createParents) ;
-
-  /**
-   * Create the directory represented by {@code path}, asynchronously.<p>
    * The new directory will be created with permissions as specified by {@code perms}.
    * The permission String takes the form rwxr-x--- as specified
    * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * The operation will fail if the directory already exists.
    */
-  FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler);
+  FileSystem mkdirWithPermissions(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdir(String, String, Handler)}
+   * Synchronous version of {@link #mkdirWithPermissions(String, String, Handler)}
    */
-  FileSystem mkdirSync(String path, String perms) ;
+  FileSystem mkdirWithPermissionsSync(String path, String perms) ;
+
+  /**
+   * Create the directory represented by {@code path}, asynchronously.<p>
+   * If {@code createParents} is set to {@code true} then any non-existent parent directories of the directory
+   * will also be created.<p>
+   * The operation will fail if the directory already exists.
+   */
+  FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Synchronous version of {@link #mkdirs(String, Handler)}
+   */
+  FileSystem mkdirsSync(String path) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -248,23 +252,23 @@ public interface FileSystem {
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
    */
-  FileSystem mkdir(String path, String perms, boolean createParents, Handler<AsyncResult<Void>> handler);
+  FileSystem mkdirsWithPermissions(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdir(String, String, boolean, Handler)}
+   * Synchronous version of {@link #mkdirsWithPermissions(String, String, Handler)}
    */
-  FileSystem mkdirSync(String path, String perms, boolean createParents) ;
+  FileSystem mkdirsWithPermissionsSync(String path, String perms) ;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  FileSystem readDir(String path, Handler<AsyncResult<String[]>> handler);
+  FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler);
 
   /**
    * Synchronous version of {@link #readDir(String, Handler)}
    */
-  String[] readDirSync(String path) ;
+  List<String> readDirSync(String path) ;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
@@ -272,12 +276,12 @@ public interface FileSystem {
    * match  @{filter}will be returned.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  FileSystem readDir(String path, String filter, Handler<AsyncResult<String[]>> handler);
+  FileSystem readDirWithFilter(String path, String filter, Handler<AsyncResult<List<String>>> handler);
 
   /**
-   * Synchronous version of {@link #readDir(String, String, Handler)}
+   * Synchronous version of {@link #readDirWithFilter(String, String, Handler)}
    */
-  String[] readDirSync(String path, String filter) ;
+  List<String> readDirWithFilterSync(String path, String filter) ;
 
   /**
    * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
@@ -306,73 +310,12 @@ public interface FileSystem {
    * The file is opened for both reading and writing. If the file does not already exist it will be created.
    * Write operations will not automatically flush to storage.
    */
-  FileSystem open(String path, Handler<AsyncResult<AsyncFile>> handler);
+  FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler);
 
   /**
-   * Synchronous version of {@link #open(String, Handler)}
+   * Synchronous version of {@link #open(String, io.vertx.core.file.OpenOptions, Handler)}
    */
-  AsyncFile openSync(String path) ;
-
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * The file is opened for both reading and writing. If the file does not already exist it will be created with the
-   * permissions as specified by {@code perms}.
-   * Write operations will not automatically flush to storage.
-   */
-  FileSystem open(String path, String perms, Handler<AsyncResult<AsyncFile>> handler);
-
-  /**
-   * Synchronous version of {@link #open(String, String, Handler)}
-   */
-  AsyncFile openSync(String path, String perms) ;
-
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * The file is opened for both reading and writing. If the file does not already exist and
-   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
-   * the operation will fail.
-   * Write operations will not automatically flush to storage.
-   */
-  FileSystem open(String path, String perms, boolean createNew, Handler<AsyncResult<AsyncFile>> handler);
-
-  /**
-   * Synchronous version of {@link #open(String, String, boolean, Handler)}
-   */
-  AsyncFile openSync(String path, String perms, boolean createNew) ;
-
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
-   * will be opened for writing.<p>
-   * If the file does not already exist and
-   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
-   * the operation will fail.<p>
-   * Write operations will not automatically flush to storage.
-   */
-  FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew, Handler<AsyncResult<AsyncFile>> handler);
-
-  /**
-   * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, Handler)}
-   */
-  AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew) ;
-
-  /**
-   * Open the file represented by {@code path}, asynchronously.<p>
-   * If {@code read} is {@code true} the file will be opened for reading. If {@code write} is {@code true} the file
-   * will be opened for writing.<p>
-   * If the file does not already exist and
-   * {@code createNew} is {@code true} it will be created with the permissions as specified by {@code perms}, otherwise
-   * the operation will fail.<p>
-   * If {@code flush} is {@code true} then all writes will be automatically flushed through OS buffers to the underlying
-   * storage on each write.
-   */
-  FileSystem open(String path, String perms, boolean read, boolean write, boolean createNew,
-      boolean flush, Handler<AsyncResult<AsyncFile>> handler);
-
-  /**
-   * Synchronous version of {@link #open(String, String, boolean, boolean, boolean, boolean, Handler)}
-   */
-  AsyncFile openSync(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush) ;
+  AsyncFile openSync(String path, OpenOptions options);
 
   /**
    * Creates an empty file with the specified {@code path}, asynchronously.
@@ -387,12 +330,12 @@ public interface FileSystem {
   /**
    * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.
    */
-  FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler);
+  FileSystem createFileWithPerms(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #createFile(String, String, Handler)}
+   * Synchronous version of {@link #createFileWithPerms(String, String, Handler)}
    */
-  FileSystem createFileSync(String path, String perms) ;
+  FileSystem createFileWithPermsSync(String path, String perms) ;
 
   /**
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.

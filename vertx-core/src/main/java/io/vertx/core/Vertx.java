@@ -18,7 +18,6 @@ package io.vertx.core;
 
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.datagram.InternetProtocolFamily;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
@@ -91,20 +90,11 @@ public interface Vertx {
    */
   HttpClient createHttpClient(HttpClientOptions options);
 
-  /**
-   * Create a new {@link io.vertx.core.datagram.DatagramSocket}.
-   *
-   * @param family  use {@link InternetProtocolFamily} to use for multicast. If {@code null} is used it's up to the
-   *                operation system to detect it's default.
-   * @return socket the created {@link io.vertx.core.datagram.DatagramSocket}.
-   */
-  @GenIgnore
-  DatagramSocket createDatagramSocket(InternetProtocolFamily family, DatagramSocketOptions options);
+  DatagramSocket createDatagramSocket(DatagramSocketOptions options);
 
   /**
    * The File system object
    */
-  @GenIgnore
   FileSystem fileSystem();
 
   /**
@@ -116,7 +106,6 @@ public interface Vertx {
   /**
    * Return the {@link DnsClient}
    */
-  @GenIgnore
   DnsClient createDnsClient(int port, String host);
 
   /**
@@ -167,27 +156,22 @@ public interface Vertx {
   void close(Handler<AsyncResult<Void>> doneHandler);
 
   @GenIgnore
-  void deployVerticle(Verticle verticle);
+  void deployVerticleInstance(Verticle verticle);
 
   @GenIgnore
+  void deployVerticleInstance(Verticle verticle, DeploymentOptions options);
+
+  @GenIgnore
+  void deployVerticleInstance(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
+
   void deployVerticle(String verticleName);
 
-  @GenIgnore
-  void deployVerticle(Verticle verticle, DeploymentOptions options);
-
-  @GenIgnore
   void deployVerticle(String verticleName, DeploymentOptions options);
 
-  @GenIgnore
-  void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
-
-  @GenIgnore
   void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
 
-  @GenIgnore
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
 
-  @GenIgnore
   Set<String> deployments();
 
   @GenIgnore

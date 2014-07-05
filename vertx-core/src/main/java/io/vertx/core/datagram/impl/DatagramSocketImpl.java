@@ -46,9 +46,10 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
 
-  public DatagramSocketImpl(VertxInternal vertx, io.vertx.core.datagram.InternetProtocolFamily family,
+  public DatagramSocketImpl(VertxInternal vertx,
                             DatagramSocketOptions options) {
-    super(vertx, createChannel(family, new DatagramSocketOptions(options)), vertx.getOrCreateContext());
+    super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
+          new DatagramSocketOptions(options)), vertx.getOrCreateContext());
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultithreaded()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
@@ -70,7 +71,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket listenMulticastGroupUsingNetworkInterface(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -97,7 +98,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket unlistenMulticastGroupUsingNetworkInterface(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -114,7 +115,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket blockMulticastGroupUsingNetworkInterface(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       InetAddress sourceAddress;
       if (sourceToBlock == null) {
@@ -143,11 +144,6 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   @Override
   public DatagramSocket listen(int port, String address, Handler<AsyncResult<DatagramSocket>> handler) {
     return listen(new SocketAddressImpl(port, address), handler);
-  }
-
-  @Override
-  public DatagramSocket listen(int port, Handler<AsyncResult<DatagramSocket>> handler) {
-    return listen(new SocketAddressImpl(port, "0.0.0.0"), handler);
   }
 
   @Override
@@ -190,20 +186,20 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   @Override
   @SuppressWarnings("unchecked")
-  public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket sendBuffer(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
     return this;
   }
 
   @Override
-  public DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
-    return send(Buffer.newBuffer(str), port, host, handler);
+  public DatagramSocket sendString(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    return sendBuffer(Buffer.newBuffer(str), port, host, handler);
   }
 
   @Override
-  public DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
-    return send(Buffer.newBuffer(str, enc), port, host, handler);
+  public DatagramSocket sendStringWithEncoding(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    return sendBuffer(Buffer.newBuffer(str, enc), port, host, handler);
   }
 
   @Override
@@ -220,7 +216,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     return (DatagramChannel) channel;
   }
 
-  private static NioDatagramChannel createChannel(io.vertx.core.datagram.InternetProtocolFamily family,
+  private static NioDatagramChannel createChannel(io.vertx.core.datagram.impl.InternetProtocolFamily family,
                                                   DatagramSocketOptions options) {
     NioDatagramChannel channel;
     if (family == null) {

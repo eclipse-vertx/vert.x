@@ -28,6 +28,7 @@ public class DatagramSocketOptions extends NetworkOptions {
   private int multicastTimeToLive = -1;
   private String multicastNetworkInterface;
   private boolean reuseAddress = false; // We override this as default is different for DatagramSocket
+  private boolean ipV6;
 
   public DatagramSocketOptions(NetworkOptions other) {
     super(other);
@@ -114,5 +115,12 @@ public class DatagramSocketOptions extends NetworkOptions {
     return this;
   }
 
+  public boolean isIpV6() {
+    return ipV6;
+  }
 
+  public DatagramSocketOptions setIpV6(boolean ipV6) {
+    this.ipV6 = ipV6;
+    return this;
+  }
 }

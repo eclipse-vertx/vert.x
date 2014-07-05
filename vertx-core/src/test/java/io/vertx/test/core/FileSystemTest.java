@@ -25,6 +25,7 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Windows;
 import io.vertx.core.streams.Pump;
@@ -47,6 +48,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,7 +60,6 @@ public class FileSystemTest extends VertxTestBase {
   private static final String DEFAULT_DIR_PERMS = "rwxr-xr-x";
   private static final String DEFAULT_FILE_PERMS = "rw-r--r--";
 
-  //private Map<String, Object> params;
   private String pathSep;
   private String testDir;
 
@@ -180,7 +181,7 @@ public class FileSystemTest extends VertxTestBase {
   private void testCopy(String source, String target, boolean recursive,
                         boolean shouldPass, Handler<Void> afterOK) {
     if (recursive) {
-      vertx.fileSystem().copy(testDir + pathSep + source, testDir + pathSep + target, true, createHandler(shouldPass, afterOK));
+      vertx.fileSystem().copyRecursive(testDir + pathSep + source, testDir + pathSep + target, true, createHandler(shouldPass, afterOK));
     } else {
       vertx.fileSystem().copy(testDir + pathSep + source, testDir + pathSep + target, createHandler(shouldPass, afterOK));
     }
@@ -460,7 +461,7 @@ public class FileSystemTest extends VertxTestBase {
       azzertPerms(DEFAULT_FILE_PERMS, file);
     }
     if (dirPerms != null) {
-      vertx.fileSystem().chmod(testDir + pathSep + file, perms, dirPerms, createHandler(shouldPass, afterOK));
+      vertx.fileSystem().chmodRecursive(testDir + pathSep + file, perms, dirPerms, createHandler(shouldPass, afterOK));
     } else {
       vertx.fileSystem().chmod(testDir + pathSep + file, perms, createHandler(shouldPass, afterOK));
     }
@@ -478,9 +479,9 @@ public class FileSystemTest extends VertxTestBase {
     testProps(fileName, false, true, st -> {
       assertNotNull(st);
       assertEquals(fileSize, st.size());
-      assertTrue(st.creationTime().getTime() >= start);
-      assertTrue(st.lastAccessTime().getTime() >= start);
-      assertTrue(st.lastModifiedTime().getTime() >= start);
+      assertTrue(st.creationTime() >= start);
+      assertTrue(st.lastAccessTime() >= start);
+      assertTrue(st.lastModifiedTime() >= start);
       assertFalse(st.isDirectory());
       assertTrue(st.isRegularFile());
       assertFalse(st.isSymbolicLink());
@@ -511,12 +512,12 @@ public class FileSystemTest extends VertxTestBase {
     testProps(linkName, false, true, st -> {
       assertNotNull(st);
       assertEquals(fileSize, st.size());
-      assertTrue(st.creationTime().getTime() >= start);
-      assertTrue(st.creationTime().getTime() <= end);
-      assertTrue(st.lastAccessTime().getTime() >= start);
-      assertTrue(st.lastAccessTime().getTime() <= end);
-      assertTrue(st.lastModifiedTime().getTime() >= start);
-      assertTrue(st.lastModifiedTime().getTime() <= end);
+      assertTrue(st.creationTime() >= start);
+      assertTrue(st.creationTime() <= end);
+      assertTrue(st.lastAccessTime() >= start);
+      assertTrue(st.lastAccessTime() <= end);
+      assertTrue(st.lastModifiedTime() >= start);
+      assertTrue(st.lastModifiedTime() <= end);
       assertFalse(st.isDirectory());
       assertFalse(st.isOther());
       assertTrue(st.isRegularFile());
@@ -700,7 +701,7 @@ public class FileSystemTest extends VertxTestBase {
   private void testDelete(String fileName, boolean recursive, boolean shouldPass,
                           Handler<Void> afterOK) throws Exception {
     if (recursive) {
-      vertx.fileSystem().delete(testDir + pathSep + fileName, recursive, createHandler(shouldPass, afterOK));
+      vertx.fileSystem().deleteRecursive(testDir + pathSep + fileName, recursive, createHandler(shouldPass, afterOK));
     } else {
       vertx.fileSystem().delete(testDir + pathSep + fileName, createHandler(shouldPass, afterOK));
     }
@@ -762,13 +763,13 @@ public class FileSystemTest extends VertxTestBase {
     AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (createParents) {
       if (perms != null) {
-        vertx.fileSystem().mkdir(testDir + pathSep + dirName, perms, createParents, handler);
+        vertx.fileSystem().mkdirsWithPermissions(testDir + pathSep + dirName, perms, handler);
       } else {
-        vertx.fileSystem().mkdir(testDir + pathSep + dirName, createParents, handler);
+        vertx.fileSystem().mkdirs(testDir + pathSep + dirName, handler);
       }
     } else {
       if (perms != null) {
-        vertx.fileSystem().mkdir(testDir + pathSep + dirName, perms, handler);
+        vertx.fileSystem().mkdirWithPermissions(testDir + pathSep + dirName, perms, handler);
       } else {
         vertx.fileSystem().mkdir(testDir + pathSep + dirName, handler);
       }
@@ -784,10 +785,10 @@ public class FileSystemTest extends VertxTestBase {
       createFileWithJunk(dirName + pathSep + "file-" + i + ".dat", 100);
     }
     testReadDir(dirName, null, true, fileNames -> {
-      assertEquals(numFiles, fileNames.length);
+      assertEquals(numFiles, fileNames.size());
       Set<String> fset = new HashSet<String>();
-      for (int i = 0; i < numFiles; i++) {
-        fset.add(fileNames[i]);
+      for (String fileName: fileNames) {
+        fset.add(fileName);
       }
       File dir = new File(testDir + pathSep + dirName);
       String root;
@@ -816,10 +817,10 @@ public class FileSystemTest extends VertxTestBase {
       createFileWithJunk(dirName + pathSep + "bar-" + i + ".txt", 100);
     }
     testReadDir(dirName, "foo.+", true, fileNames -> {
-      assertEquals(numFiles, fileNames.length);
+      assertEquals(numFiles, fileNames.size());
       Set<String> fset = new HashSet<>();
-      for (int i = 0; i < numFiles; i++) {
-        fset.add(fileNames[i]);
+      for (String fileName: fileNames) {
+        fset.add(fileName);
       }
       File dir = new File(testDir + pathSep + dirName);
       String root;
@@ -837,8 +838,8 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void testReadDir(String dirName, String filter, boolean shouldPass,
-                           Handler<String[]> afterOK) throws Exception {
-    AsyncResultHandler<String[]> handler = ar -> {
+                           Handler<List<String>> afterOK) throws Exception {
+    AsyncResultHandler<List<String>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
           fail(ar.cause().getMessage());
@@ -863,7 +864,7 @@ public class FileSystemTest extends VertxTestBase {
     if (filter == null) {
       vertx.fileSystem().readDir(testDir + pathSep + dirName, handler);
     } else {
-      vertx.fileSystem().readDir(testDir + pathSep + dirName, filter, handler);
+      vertx.fileSystem().readDirWithFilter(testDir + pathSep + dirName, filter, handler);
     }
   }
 
@@ -917,7 +918,7 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.newBuffer(content);
     AtomicInteger count = new AtomicInteger();
-    vertx.fileSystem().open(testDir + pathSep + fileName, null, false, true, true, true, arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), arr -> {
       if (arr.succeeded()) {
         for (int i = 0; i < chunks; i++) {
           Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
@@ -964,7 +965,7 @@ public class FileSystemTest extends VertxTestBase {
     Buffer expected = Buffer.newBuffer(content);
     createFile(fileName, content);
     AtomicInteger reads = new AtomicInteger();
-    vertx.fileSystem().open(testDir + pathSep + fileName, null, true, false, false, arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), arr -> {
       if (arr.succeeded()) {
         Buffer buff = Buffer.newBuffer(chunks * chunkSize);
         for (int i = 0; i < chunks; i++) {
@@ -1000,7 +1001,7 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.newBuffer(content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, ar -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         WriteStream<AsyncFile> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
@@ -1041,7 +1042,7 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content2 = TestUtils.randomByteArray(chunkSize * (chunks / 2));
     ByteBuf byteBuf = Unpooled.wrappedBuffer(content1, content2);
     Buffer buff = Buffer.newBuffer(byteBuf);
-    vertx.fileSystem().open(testDir + pathSep + fileName, ar -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         WriteStream<AsyncFile> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
@@ -1077,7 +1078,7 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, null, true, false, false, ar -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         ReadStream<AsyncFile> rs = ar.result();
         Buffer buff = Buffer.newBuffer();
@@ -1110,11 +1111,11 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(fileSize);
     createFile(fileName1, content);
 
-    vertx.fileSystem().open(testDir + pathSep + fileName1, null, true, false, false, arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName1, new OpenOptions(), arr -> {
       if (arr.succeeded()) {
         ReadStream rs = arr.result();
         //Open file for writing
-        vertx.fileSystem().open(testDir + pathSep + fileName2, null, true, true, true, ar -> {
+        vertx.fileSystem().open(testDir + pathSep + fileName2, new OpenOptions(), ar -> {
           if (ar.succeeded()) {
             WriteStream ws = ar.result();
             Pump p = Pump.createPump(rs, ws);
@@ -1194,7 +1195,7 @@ public class FileSystemTest extends VertxTestBase {
       }
     };
     if (perms != null) {
-      vertx.fileSystem().createFile(testDir + pathSep + fileName, perms, handler);
+      vertx.fileSystem().createFileWithPerms(testDir + pathSep + fileName, perms, handler);
     } else {
       vertx.fileSystem().createFile(testDir + pathSep + fileName, handler);
     }

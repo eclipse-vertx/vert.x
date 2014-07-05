@@ -19,6 +19,8 @@ package io.vertx.core.file;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -32,6 +34,7 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile> {
 
   /**
@@ -53,6 +56,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * there are no guarantees as to order in which those writes actually occur.<p>
    * The handler will be called when the write is complete, or if an error occurs.
    */
+  @Fluent
   AsyncFile write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -62,6 +66,7 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.<p>
    * The handler will be called when the close is complete, or if an error occurs.
    */
+  @Fluent
   AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler);
 
   /**
@@ -69,11 +74,13 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.<p>
    * The actual flush will happen asynchronously.
    */
+  @Fluent
   AsyncFile flush();
 
   /**
    * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
    */
+  @Fluent
   AsyncFile flush(Handler<AsyncResult<Void>> handler);
 
 }

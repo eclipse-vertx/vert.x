@@ -22,6 +22,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystemException;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.BlockingAction;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.FutureResultImpl;
@@ -70,24 +71,28 @@ public class AsyncFileImpl implements AsyncFile {
   private long readPos;
   private boolean readInProgress;
 
-  AsyncFileImpl(VertxInternal vertx, String path, String perms, boolean read, boolean write, boolean createNew,
-                boolean flush, ContextImpl context) {
-    if (!read && !write) {
+  AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextImpl context) {
+    if (!options.isRead() && !options.isWrite()) {
       throw new FileSystemException("Cannot open file for neither reading nor writing");
     }
     this.vertx = vertx;
     Path file = Paths.get(path);
-    HashSet<OpenOption> options = new HashSet<>();
-    if (read) options.add(StandardOpenOption.READ);
-    if (write) options.add(StandardOpenOption.WRITE);
-    if (createNew) options.add(StandardOpenOption.CREATE);
-    if (flush) options.add(StandardOpenOption.DSYNC);
+    HashSet<OpenOption> opts = new HashSet<>();
+    if (options.isRead()) opts.add(StandardOpenOption.READ);
+    if (options.isWrite()) opts.add(StandardOpenOption.WRITE);
+    if (options.isCreate()) opts.add(StandardOpenOption.CREATE);
+    if (options.isCreateNew()) opts.add(StandardOpenOption.CREATE_NEW);
+    if (options.isSync()) opts.add(StandardOpenOption.SYNC);
+    if (options.isDSync()) opts.add(StandardOpenOption.DSYNC);
+    if (options.isDeleteOnClose()) opts.add(StandardOpenOption.DELETE_ON_CLOSE);
+    if (options.isSparse()) opts.add(StandardOpenOption.SPARSE);
+    if (options.isTruncateExisting()) opts.add(StandardOpenOption.TRUNCATE_EXISTING);
     try {
-      if (perms != null) {
-        FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-        ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool(), attrs);
+      if (options.getPerms() != null) {
+        FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(options.getPerms()));
+        ch = AsynchronousFileChannel.open(file, opts, vertx.getBackgroundPool(), attrs);
       } else {
-        ch = AsynchronousFileChannel.open(file, options, vertx.getBackgroundPool());
+        ch = AsynchronousFileChannel.open(file, opts, vertx.getBackgroundPool());
       }
     } catch (IOException e) {
       throw new FileSystemException(e);

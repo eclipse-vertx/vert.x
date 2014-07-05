@@ -18,6 +18,8 @@ package io.vertx.core.datagram;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -32,6 +34,7 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+@VertxGen
 public interface DatagramSocket {
 
   /**
@@ -45,7 +48,8 @@ public interface DatagramSocket {
    * @param handler   the {@link io.vertx.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
+  @Fluent
+  DatagramSocket sendBuffer(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
@@ -58,7 +62,8 @@ public interface DatagramSocket {
    * @param handler   the {@link io.vertx.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
+  @Fluent
+  DatagramSocket sendString(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using the given encoding. The {@link Handler} will be notified once the
@@ -72,7 +77,8 @@ public interface DatagramSocket {
    * @param handler   the {@link io.vertx.core.Handler} to notify once the write completes.
    * @return self     itself for method chaining
    */
-  DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
+  @Fluent
+  DatagramSocket sendStringWithEncoding(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Close the {@link DatagramSocket} implementation asynchronous and notifies the handler once done.
@@ -97,6 +103,7 @@ public interface DatagramSocket {
    * @param   handler           then handler to notify once the operation completes
    * @return  this              returns itself for method-chaining
    */
+  @Fluent
   DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
@@ -110,8 +117,9 @@ public interface DatagramSocket {
    * @param   handler           then handler to notify once the operation completes
    * @return  this              returns itself for method-chaining
    */
-  DatagramSocket listenMulticastGroup(
-          String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler);
+  @Fluent
+  DatagramSocket listenMulticastGroupUsingNetworkInterface(
+    String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Leaves a multicast group and so stop listen for packets send to it.
@@ -122,6 +130,7 @@ public interface DatagramSocket {
    * @param   handler           then handler to notify once the operation completes
    * @return  this              returns itself for method-chaining
    */
+  @Fluent
   DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler);
 
 
@@ -136,9 +145,10 @@ public interface DatagramSocket {
    * @param   handler           then handler to notify once the operation completes
    * @return  this              returns itself for method-chaining
    */
-  DatagramSocket unlistenMulticastGroup(
-          String multicastAddress, String networkInterface, String source,
-          Handler<AsyncResult<DatagramSocket>> handler);
+  @Fluent
+  DatagramSocket unlistenMulticastGroupUsingNetworkInterface(
+    String multicastAddress, String networkInterface, String source,
+    Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Block the given sourceToBlock address for the given multicastAddress and notifies the {@link Handler} once
@@ -151,6 +161,7 @@ public interface DatagramSocket {
    * @param   handler           then handler to notify once the operation completes
    * @return  this              returns itself for method-chaining
    */
+  @Fluent
   DatagramSocket blockMulticastGroup(
           String multicastAddress, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler);
 
@@ -166,16 +177,18 @@ public interface DatagramSocket {
    * @param   handler           then handler to notify once the operation completes
    * @return  this              returns itself for method-chaining
    */
-  DatagramSocket blockMulticastGroup(
-          String multicastAddress, String networkInterface,
-          String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler);
+  @Fluent
+  DatagramSocket blockMulticastGroupUsingNetworkInterface(
+    String multicastAddress, String networkInterface,
+    String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler);
 
+  @Fluent
   DatagramSocket listen(int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
-  DatagramSocket listen(int port, Handler<AsyncResult<DatagramSocket>> handler);
-
+  @Fluent
   DatagramSocket packetHandler(Handler<DatagramPacket> handler);
 
+  @Fluent
   DatagramSocket exceptionHandler(Handler<Throwable> handler);
 
 }

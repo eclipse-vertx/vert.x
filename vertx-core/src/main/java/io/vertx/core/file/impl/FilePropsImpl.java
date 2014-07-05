@@ -19,14 +19,13 @@ package io.vertx.core.file.impl;
 import io.vertx.core.file.FileProps;
 
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Date;
 
 
 public class FilePropsImpl implements FileProps {
   
-  private final Date creationTime;
-  private final Date lastAccessTime;
-  private final Date lastModifiedTime;
+  private final long creationTime;
+  private final long lastAccessTime;
+  private final long lastModifiedTime;
   private final boolean isDirectory;
   private final boolean isOther;
   private final boolean isRegularFile;
@@ -34,9 +33,9 @@ public class FilePropsImpl implements FileProps {
   private final long size;
 
   public FilePropsImpl(BasicFileAttributes attrs) {
-    creationTime = new Date(attrs.creationTime().toMillis());
-    lastModifiedTime = new Date(attrs.lastModifiedTime().toMillis());
-    lastAccessTime = new Date(attrs.lastAccessTime().toMillis());
+    creationTime = attrs.creationTime().toMillis();
+    lastModifiedTime = attrs.lastModifiedTime().toMillis();
+    lastAccessTime = attrs.lastAccessTime().toMillis();
     isDirectory = attrs.isDirectory();
     isOther = attrs.isOther();
     isRegularFile = attrs.isRegularFile();
@@ -45,17 +44,17 @@ public class FilePropsImpl implements FileProps {
   }
 
   @Override
-  public Date creationTime() {
+  public long creationTime() {
     return creationTime;
   }
 
   @Override
-  public Date lastAccessTime() {
+  public long lastAccessTime() {
     return lastAccessTime;
   }
 
   @Override
-  public Date lastModifiedTime() {
+  public long lastModifiedTime() {
     return lastModifiedTime;
   }
 

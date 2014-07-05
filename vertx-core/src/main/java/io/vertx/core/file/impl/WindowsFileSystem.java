@@ -19,6 +19,7 @@ package io.vertx.core.file.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.BlockingAction;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -64,10 +65,10 @@ public class WindowsFileSystem extends FileSystemImpl {
   }
 
   @Override
-  protected AsyncFile doOpen(String path, String perms, boolean read, boolean write, boolean createNew, boolean flush,
+  protected AsyncFile doOpen(String path, OpenOptions options,
                              ContextImpl context) {
-    logInternal(perms);
-    return new AsyncFileImpl(vertx, path, null, read, write, createNew, flush, context);
+    logInternal(options.getPerms());
+    return new AsyncFileImpl(vertx, path, options, context);
   }
 
   @Override

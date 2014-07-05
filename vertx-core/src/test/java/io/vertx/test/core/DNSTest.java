@@ -25,7 +25,6 @@ import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
-import io.vertx.test.fakedns.FakeDNSServer;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -276,7 +275,7 @@ public class DNSTest extends VertxTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticleInstance(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
   }
 

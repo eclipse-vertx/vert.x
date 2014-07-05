@@ -16,12 +16,15 @@
 
 package io.vertx.core.file;
 
+import io.vertx.core.gen.VertxGen;
+
 /**
  * Represents properties of the file system.<p>
  * Instances of FileSystemProps are thread-safe.<p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface FileSystemProps {
 
   /**

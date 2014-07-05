@@ -22,7 +22,6 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Copyable;
 import io.vertx.core.eventbus.EventBus;
@@ -693,7 +692,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded));
+    vertx.deployVerticleInstance(verticle, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded));
     await();
   }
 
