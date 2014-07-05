@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.spi.cluster;
+package io.vertx.core.shareddata;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -23,9 +23,6 @@ import io.vertx.core.Handler;
 /**
  *
  * An asynchronous map.
- *
- * The cluster implementation should ensure that any entries placed in the map from any node are available on any
- * node of the cluster.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
@@ -47,10 +44,20 @@ public interface AsyncMap<K, V> {
    */
   void put(K k, V v, Handler<AsyncResult<Void>> completionHandler);
 
+  void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler);
+
   /**
    * Remove a value from the map, asynchronously.
    * @param k The key
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
-  void remove(K k, Handler<AsyncResult<Boolean>> resultHandler);
+  void remove(K k, Handler<AsyncResult<V>> resultHandler);
+
+  void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler);
+
+  void replace(K k, V v, Handler<AsyncResult<V>> resultHandler);
+
+  void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler);
+
+  void clear(Handler<AsyncResult<Void>> resultHandler);
 }

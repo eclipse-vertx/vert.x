@@ -1,26 +1,7 @@
-/*
- * Copyright 2014 Red Hat, Inc.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
- *
- * The Eclipse Public License is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * The Apache License v2.0 is available at
- * http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
- */
-
 package io.vertx.test.core;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.SharedData;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,44 +9,35 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static org.junit.Assert.*;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SharedDataTest {
+public class LocalSharedDataTest extends VertxTestBase {
 
-  private Vertx vertx;
   private SharedData sharedData;
 
   @Before
-  public void setUp() {
-    vertx = Vertx.newVertx();
+  public void before() {    
     sharedData = vertx.sharedData();
-  }
-
-  @After
-  public void teardown() {
-    vertx.close();
   }
 
   @Test
   public void testMap() throws Exception {
 
-    Map<String, String> map = sharedData.getMap("foo");
-    Map<String, String> map2 = sharedData.getMap("foo");
+    Map<String, String> map = sharedData.getLocalMap("foo");
+    Map<String, String> map2 = sharedData.getLocalMap("foo");
     assertTrue(map == map2);
-    Map<String, String> map3 = sharedData.getMap("bar");
+    Map<String, String> map3 = sharedData.getLocalMap("bar");
     assertFalse(map3 == map2);
-    assertTrue(sharedData.removeMap("foo"));
-    Map<String, String> map4 = sharedData.getMap("foo");
+    assertTrue(sharedData.removeLocalMap("foo"));
+    Map<String, String> map4 = sharedData.getLocalMap("foo");
     assertFalse(map4 == map3);
   }
 
   @Test
   public void testMapTypes() throws Exception {
 
-    Map<String, Object> map = sharedData.getMap("foo");
+    Map map = sharedData.getLocalMap("foo");
 
     String key = "key";
 
@@ -135,7 +107,7 @@ public class SharedDataTest {
   @Test
   public void testSetTypes() throws Exception {
 
-    Set<Object> set = sharedData.getSet("foo");
+    Set set = sharedData.getLocalSet("foo");
 
     double d = new Random().nextDouble();
     set.add(d);
@@ -215,16 +187,17 @@ public class SharedDataTest {
   @Test
   public void testSet() throws Exception {
 
-    Set<String> set = sharedData.getSet("foo");
-    Set<String> set2 = sharedData.getSet("foo");
+    Set<String> set = sharedData.getLocalSet("foo");
+    Set<String> set2 = sharedData.getLocalSet("foo");
     assert (set == set2);
-    Set<String> set3 = sharedData.getSet("bar");
+    Set<String> set3 = sharedData.getLocalSet("bar");
     assert (set3 != set2);
-    assert (sharedData.removeSet("foo"));
-    Set<String> set4 = sharedData.getSet("foo");
+    assert (sharedData.removeLocalSet("foo"));
+    Set<String> set4 = sharedData.getLocalSet("foo");
     assert (set4 != set3);
   }
 
   class SomeOtherClass {
   }
+
 }

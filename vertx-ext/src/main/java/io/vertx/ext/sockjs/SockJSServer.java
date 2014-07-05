@@ -58,7 +58,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
 
   public SockJSServer(final Vertx vertx, final HttpServer httpServer) {
     this.vertx = vertx;
-    this.sessions = vertx.sharedData().getMap("_vertx.sockjssessions");
+    this.sessions = vertx.sharedData().getLocalMap("_vertx.sockjssessions");
     // Any previous request and websocket handlers will become default handlers
     // if nothing else matches
     rm.noMatch(httpServer.requestHandler());
@@ -464,7 +464,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
     installApp(new JsonObject().putString("prefix", "/broadcast")
                                .putNumber("max_bytes_streaming", 4096),
                new Handler<SockJSSocket>() {
-      final Set<String> connections = vertx.sharedData().getSet("conns");
+      final Set<String> connections = vertx.sharedData().getLocalSet("conns");
       public void handle(final SockJSSocket sock) {
         connections.add(sock.writeHandlerID());
         sock.dataHandler(new Handler<Buffer>() {

@@ -111,7 +111,6 @@ public interface Vertx {
   /**
    * The shared data object
    */
-  @GenIgnore
   SharedData sharedData();
 
   /**

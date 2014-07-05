@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.GenIgnore;
 import io.vertx.core.gen.VertxGen;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
@@ -44,7 +45,7 @@ import java.util.ServiceLoader;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface Buffer {
+public interface Buffer extends ClusterSerializable {
 
   static Buffer newBuffer() {
     return factory.newBuffer();
@@ -379,6 +380,5 @@ public interface Buffer {
       throw new IllegalStateException("Cannot find BufferFactory service");
     }
   }
-
 
 }

@@ -16,8 +16,6 @@
 
 package io.vertx.core.shareddata.impl;
 
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.shareddata.ConcurrentSharedMap;
 
 import java.util.ArrayList;
@@ -32,8 +30,6 @@ import java.util.concurrent.ConcurrentMap;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SharedMap<K, V> implements ConcurrentSharedMap<K, V> {
-
-  private static final Logger log = LoggerFactory.getLogger(SharedMap.class);
 
   private final ConcurrentMap<K, V> map = new ConcurrentHashMap<>();
 

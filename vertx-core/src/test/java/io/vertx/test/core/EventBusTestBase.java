@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class EventBusTestBase extends AsyncTestBase {
+public abstract class EventBusTestBase extends VertxTestBase {
 
   protected static final String ADDRESS1 = "some-address1";
   protected static final String ADDRESS2 = "some-address2";
