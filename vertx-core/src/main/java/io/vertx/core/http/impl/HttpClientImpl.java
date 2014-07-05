@@ -83,9 +83,9 @@ public class HttpClientImpl implements HttpClient {
     this.options = new HttpClientOptions(options);
     this.sslHelper = new SSLHelper(options);
     this.creatingContext = vertx.getContext();
-    closeHook = doneHandler -> {
+    closeHook = completionHandler -> {
       HttpClientImpl.this.close();
-      doneHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(new FutureResultImpl<>((Void)null));
     };
     if (creatingContext != null) {
       if (creatingContext.isMultithreaded()) {

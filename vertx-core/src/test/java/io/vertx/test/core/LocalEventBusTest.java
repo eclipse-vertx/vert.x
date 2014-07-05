@@ -110,7 +110,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       testComplete();
     });
-    reg.doneHandler(ar -> {
+    reg.completionHandler(ar -> {
       assertTrue(ar.succeeded());
       eb.send(ADDRESS1, str);
     });
@@ -674,7 +674,7 @@ public class LocalEventBusTest extends EventBusTestBase {
           }
           msg.reply("bar");
         });
-        reg.doneHandler(ar -> {
+        reg.completionHandler(ar -> {
           assertTrue(ar.succeeded());
           assertSame(ctx, vertx.currentContext());
           if (!worker) {

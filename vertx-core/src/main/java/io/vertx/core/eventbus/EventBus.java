@@ -53,9 +53,9 @@ public interface EventBus {
 	/**
 	 * Close the EventBus and release all resources. 
 	 * 
-	 * @param doneHandler
+	 * @param completionHandler
 	 */
-  void close(Handler<AsyncResult<Void>> doneHandler);
+  void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Send a message

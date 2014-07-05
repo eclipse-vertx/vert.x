@@ -90,7 +90,7 @@ public abstract class ContextImpl implements Context {
     }
   }
 
-  public void runCloseHooks(Handler<AsyncResult<Void>> doneHandler) {
+  public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
     if (closeHooks != null) {
       final int num = closeHooks.size();
       AtomicInteger count = new AtomicInteger();
@@ -102,11 +102,11 @@ public abstract class ContextImpl implements Context {
             if (ar.failed()) {
               if (failed.compareAndSet(false, true)) {
                 // Only report one failure
-                doneHandler.handle(new FutureResultImpl<>(ar.cause()));
+                completionHandler.handle(new FutureResultImpl<>(ar.cause()));
               }
             } else {
               if (count.incrementAndGet() == num) {
-                doneHandler.handle(new FutureResultImpl<>((Void)null));
+                completionHandler.handle(new FutureResultImpl<>((Void)null));
               }
             }
           });
@@ -115,7 +115,7 @@ public abstract class ContextImpl implements Context {
         }
       }
     } else {
-      doneHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(new FutureResultImpl<>((Void)null));
     }
   }
 

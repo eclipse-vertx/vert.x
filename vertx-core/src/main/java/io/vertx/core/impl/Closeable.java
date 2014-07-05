@@ -24,5 +24,5 @@ import io.vertx.core.Handler;
  */
 public interface Closeable {
 
-  void close(Handler<AsyncResult<Void>> doneHandler);
+  void close(Handler<AsyncResult<Void>> completionHandler);
 }

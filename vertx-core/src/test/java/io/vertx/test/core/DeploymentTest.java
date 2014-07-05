@@ -572,13 +572,13 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testCloseHooksCalled() throws Exception {
     AtomicInteger closedCount = new AtomicInteger();
-    Closeable myCloseable1 = doneHandler -> {
+    Closeable myCloseable1 = completionHandler -> {
       closedCount.incrementAndGet();
-      doneHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(new FutureResultImpl<>((Void)null));
     };
-    Closeable myCloseable2 = doneHandler -> {
+    Closeable myCloseable2 = completionHandler -> {
       closedCount.incrementAndGet();
-      doneHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(new FutureResultImpl<>((Void)null));
     };
     MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
       ContextImpl ctx = (ContextImpl)vertx.currentContext();

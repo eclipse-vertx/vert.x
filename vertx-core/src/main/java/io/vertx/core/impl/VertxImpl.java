@@ -319,7 +319,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> doneHandler) {
+  public void close(Handler<AsyncResult<Void>> completionHandler) {
 
     // TODO call deploymentManager.undeployAll
 
@@ -359,9 +359,9 @@ public class VertxImpl implements VertxInternal {
 
       setContext(null);
 
-      if (doneHandler != null) {
+      if (completionHandler != null) {
         // Call directly - we have no context
-        doneHandler.handle(new FutureResultImpl<>((Void)null));
+        completionHandler.handle(new FutureResultImpl<>((Void)null));
       }
     });
 
@@ -389,18 +389,18 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void deployVerticleInstance(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticle, options, doneHandler);
+  public void deployVerticleInstance(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+    deploymentManager.deployVerticle(verticle, options, completionHandler);
   }
 
   @Override
-  public void deployVerticle(String verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler) {
-    deploymentManager.deployVerticle(verticleClass, options, doneHandler);
+  public void deployVerticle(String verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+    deploymentManager.deployVerticle(verticleClass, options, completionHandler);
   }
 
   @Override
-  public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler) {
-    deploymentManager.undeployVerticle(deploymentID, doneHandler);
+  public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
+    deploymentManager.undeployVerticle(deploymentID, completionHandler);
   }
 
   @Override
@@ -490,10 +490,10 @@ public class VertxImpl implements VertxInternal {
     }
 
     // Called via Context close hook when Verticle is undeployed
-    public void close(Handler<AsyncResult<Void>> doneHandler) {
+    public void close(Handler<AsyncResult<Void>> completionHandler) {
       VertxImpl.this.timeouts.remove(timerID);
       cancel();
-      doneHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(new FutureResultImpl<>((Void)null));
     }
 
   }

@@ -73,14 +73,14 @@ public class DeploymentManager {
   }
 
   public void deployVerticle(Verticle verticle, DeploymentOptions options,
-                             Handler<AsyncResult<String>> doneHandler) {
+                             Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
-    doDeploy(verticle, options, currentContext, doneHandler);
+    doDeploy(verticle, options, currentContext, completionHandler);
   }
 
   public void deployVerticle(String verticleName,
                              DeploymentOptions options,
-                             Handler<AsyncResult<String>> doneHandler) {
+                             Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options.getIsolationGroup());
     try {
@@ -89,7 +89,7 @@ public class DeploymentManager {
         if (factory.matches(verticleName)) {
           if (verticleFactory != null) {
             reportFailure(new VertxException("Multiple VerticleFactory matches for verticleName: " + verticleName),
-                          currentContext, doneHandler);
+                          currentContext, completionHandler);
             return;
           }
           verticleFactory = factory;
@@ -101,22 +101,22 @@ public class DeploymentManager {
       }
       Verticle verticle = verticleFactory.createVerticle(verticleName, cl);
       if (verticle == null) {
-        reportFailure(new NullPointerException("VerticleFactory::createVerticle returned null"), currentContext, doneHandler);
+        reportFailure(new NullPointerException("VerticleFactory::createVerticle returned null"), currentContext, completionHandler);
       } else {
-        doDeploy(verticle, options, currentContext, doneHandler);
+        doDeploy(verticle, options, currentContext, completionHandler);
       }
     } catch (Exception e) {
-      reportFailure(e, currentContext, doneHandler);
+      reportFailure(e, currentContext, completionHandler);
     }
   }
 
-  public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler) {
+  public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
     Deployment deployment = deployments.get(deploymentID);
     Context currentContext = vertx.getOrCreateContext();
     if (deployment == null) {
-      reportFailure(new IllegalStateException("Unknown deployment"), currentContext, doneHandler);
+      reportFailure(new IllegalStateException("Unknown deployment"), currentContext, completionHandler);
     } else {
-      deployment.undeploy(doneHandler);
+      deployment.undeploy(completionHandler);
     }
   }
 
@@ -124,7 +124,7 @@ public class DeploymentManager {
     return Collections.unmodifiableSet(deployments.keySet());
   }
 
-  public void undeployAll(Handler<AsyncResult<Void>> doneHandler) {
+  public void undeployAll(Handler<AsyncResult<Void>> completionHandler) {
     Set<String> deploymentIDs = new HashSet<>(deployments.keySet());
     AtomicInteger count = new AtomicInteger(deploymentIDs.size());
     for (String deploymentID: deploymentIDs) {
@@ -133,7 +133,7 @@ public class DeploymentManager {
           log.error("Undeploy failed", ar.cause());
         }
         if (count.incrementAndGet() == deploymentIDs.size()) {
-          doneHandler.handle(new FutureResultImpl<>((Void)null));
+          completionHandler.handle(new FutureResultImpl<>((Void)null));
         }
       });
     }
@@ -188,24 +188,24 @@ public class DeploymentManager {
   }
 
 
-  private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> doneHandler) {
-    if (doneHandler != null) {
-      reportResult(context, doneHandler, new FutureResultImpl<>(t));
+  private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> completionHandler) {
+    if (completionHandler != null) {
+      reportResult(context, completionHandler, new FutureResultImpl<>(t));
     } else {
       log.error(t.getMessage(), t);
     }
   }
 
-  private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> doneHandler) {
-    if (doneHandler != null) {
-      reportResult(context, doneHandler, new FutureResultImpl<>(result));
+  private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> completionHandler) {
+    if (completionHandler != null) {
+      reportResult(context, completionHandler, new FutureResultImpl<>(result));
     }
   }
 
-  private <T> void reportResult(Context context, Handler<AsyncResult<T>> doneHandler, AsyncResult<T> result) {
+  private <T> void reportResult(Context context, Handler<AsyncResult<T>> completionHandler, AsyncResult<T> result) {
     context.runOnContext(v -> {
       try {
-        doneHandler.handle(result);
+        completionHandler.handle(result);
       } catch (Throwable t) {
         log.error("Failure in calling handler", t);
       }
@@ -214,7 +214,7 @@ public class DeploymentManager {
 
   private void doDeploy(Verticle verticle, DeploymentOptions options,
                         ContextImpl currentContext,
-                        Handler<AsyncResult<String>> doneHandler) {
+                        Handler<AsyncResult<String>> completionHandler) {
     if (options.isMultiThreaded() && !options.isWorker()) {
       throw new IllegalArgumentException("If multi-threaded then must be worker too");
     }
@@ -237,13 +237,13 @@ public class DeploymentManager {
         startFuture.setHandler(ar -> {
           if (ar.succeeded()) {
             deployments.put(deploymentID, deployment);
-            reportSuccess(deploymentID, currentContext, doneHandler);
+            reportSuccess(deploymentID, currentContext, completionHandler);
           } else {
-            reportFailure(ar.cause(), currentContext, doneHandler);
+            reportFailure(ar.cause(), currentContext, completionHandler);
           }
         });
       } catch (Throwable t) {
-        reportFailure(t, currentContext, doneHandler);
+        reportFailure(t, currentContext, completionHandler);
       }
     });
   }
@@ -263,16 +263,16 @@ public class DeploymentManager {
     }
 
     @Override
-    public void undeploy(Handler<AsyncResult<Void>> doneHandler) {
+    public void undeploy(Handler<AsyncResult<Void>> completionHandler) {
       ContextImpl currentContext = vertx.getOrCreateContext();
       if (!undeployed) {
-        doUndeploy(currentContext, doneHandler);
+        doUndeploy(currentContext, completionHandler);
       } else {
-        reportFailure(new IllegalStateException("Already undeployed"), currentContext, doneHandler);
+        reportFailure(new IllegalStateException("Already undeployed"), currentContext, completionHandler);
       }
     }
 
-    public void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> doneHandler) {
+    public void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
 
       if (!children.isEmpty()) {
         final int size = children.size();
@@ -281,10 +281,10 @@ public class DeploymentManager {
           childDeployment.doUndeploy(undeployingContext, ar -> {
             children.remove(childDeployment);
             if (ar.failed()) {
-              reportFailure(ar.cause(), undeployingContext, doneHandler);
+              reportFailure(ar.cause(), undeployingContext, completionHandler);
             } else if (childCount.incrementAndGet() == size) {
               // All children undeployed
-              doUndeploy(undeployingContext, doneHandler);
+              doUndeploy(undeployingContext, completionHandler);
             }
           });
         }
@@ -300,9 +300,9 @@ public class DeploymentManager {
                 log.error("Failed to run close hook", ar2.cause());
               }
               if (ar.succeeded()) {
-                reportSuccess(null, undeployingContext, doneHandler);
+                reportSuccess(null, undeployingContext, completionHandler);
               } else {
-                reportFailure(ar.cause(), undeployingContext, doneHandler);
+                reportFailure(ar.cause(), undeployingContext, completionHandler);
               }
             });
           });

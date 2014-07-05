@@ -153,7 +153,7 @@ public interface Vertx {
   /**
    * Stop the eventbus and any resource managed by the eventbus.
    */
-  void close(Handler<AsyncResult<Void>> doneHandler);
+  void close(Handler<AsyncResult<Void>> completionHandler);
 
   @GenIgnore
   void deployVerticleInstance(Verticle verticle);
@@ -162,15 +162,15 @@ public interface Vertx {
   void deployVerticleInstance(Verticle verticle, DeploymentOptions options);
 
   @GenIgnore
-  void deployVerticleInstance(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
+  void deployVerticleInstance(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   void deployVerticle(String verticleName);
 
   void deployVerticle(String verticleName, DeploymentOptions options);
 
-  void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> doneHandler);
+  void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
-  void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> doneHandler);
+  void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler);
 
   Set<String> deployments();
 

@@ -151,15 +151,15 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected void addFuture(final Handler<AsyncResult<Void>> doneHandler, final ChannelFuture future) {
+  protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
     if (future != null) {
       future.addListener(channelFuture -> {
-        if (doneHandler != null) {
+        if (completionHandler != null) {
           context.execute(() -> {
             if (channelFuture.isSuccess()) {
-              doneHandler.handle(new FutureResultImpl<>((Void)null));
+              completionHandler.handle(new FutureResultImpl<>((Void)null));
             } else {
-              doneHandler.handle(new FutureResultImpl<>(channelFuture.cause()));
+              completionHandler.handle(new FutureResultImpl<>(channelFuture.cause()));
             }
           }, true);
         } else if (!channelFuture.isSuccess()) {

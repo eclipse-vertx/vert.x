@@ -79,9 +79,9 @@ public interface HttpServer {
   void close();
 
   /**
-   * Close the server. Any open HTTP connections will be closed. The {@code doneHandler} will be called when the close
+   * Close the server. Any open HTTP connections will be closed. The {@code completionHandler} will be called when the close
    * is complete.
    */
-  void close(Handler<AsyncResult<Void>> doneHandler);
+  void close(Handler<AsyncResult<Void>> completionHandler);
 
 }

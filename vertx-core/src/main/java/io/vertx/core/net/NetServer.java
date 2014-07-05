@@ -66,7 +66,7 @@ public interface NetServer {
    * Close the server. This will close any currently open connections. The event handler {@code done} will be called
    * when the close is complete.
    */
-  void close(Handler<AsyncResult<Void>> doneHandler);
+  void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number

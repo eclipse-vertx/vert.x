@@ -256,8 +256,8 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  protected void addFuture(Handler<AsyncResult<Void>> doneHandler, ChannelFuture future) {
-    super.addFuture(doneHandler, future);
+  protected void addFuture(Handler<AsyncResult<Void>> completionHandler, ChannelFuture future) {
+    super.addFuture(completionHandler, future);
   }
 
   @Override

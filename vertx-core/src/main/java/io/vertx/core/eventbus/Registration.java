@@ -36,7 +36,7 @@ public interface Registration {
    *
    * @param completionHandler the completion handler
    */
-  void doneHandler(Handler<AsyncResult<Void>> completionHandler);
+  void completionHandler(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Unregisters the handler which created this registration
@@ -46,8 +46,8 @@ public interface Registration {
   /**
    * Unregisters the handler which created this registration
    *
-   * @param doneHandler the handler called when the unregister is done. For example in a cluster when all nodes of the
+   * @param completionHandler the handler called when the unregister is done. For example in a cluster when all nodes of the
    * event bus have been unregistered.
    */
-  void unregister(Handler<AsyncResult<Void>> doneHandler);
+  void unregister(Handler<AsyncResult<Void>> completionHandler);
 }

@@ -50,7 +50,7 @@ public interface AsyncMap<K, V> {
   /**
    * Remove a value from the map, asynchronously.
    * @param k The key
-   * @param completionHandler - this will be called some time later to signify the value has been removed
+   * @param resultHandler - this will be called some time later to signify the value has been removed
    */
-  void remove(K k, Handler<AsyncResult<Void>> completionHandler);
+  void remove(K k, Handler<AsyncResult<Boolean>> resultHandler);
 }

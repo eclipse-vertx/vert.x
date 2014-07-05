@@ -83,7 +83,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       }
       testComplete();
     });
-    reg.doneHandler(ar -> {
+    reg.completionHandler(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, val);
     });
@@ -99,7 +99,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       msg.reply(val);
     });
-    reg.doneHandler(ar -> {
+    reg.completionHandler(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().send(ADDRESS1, str, (Message<T> reply) -> {
         if (consumer == null) {
@@ -145,9 +145,9 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       }
     }
     Registration reg = vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler());
-    reg.doneHandler(new MyRegisterHandler());
+    reg.completionHandler(new MyRegisterHandler());
     reg = vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler());
-    reg.doneHandler(new MyRegisterHandler());
+    reg.completionHandler(new MyRegisterHandler());
     vertices[0].eventBus().publish(ADDRESS1, (T)val);
     await();
   }

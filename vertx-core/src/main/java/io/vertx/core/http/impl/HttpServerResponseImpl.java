@@ -472,7 +472,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
 
-  private HttpServerResponseImpl write(ByteBuf chunk, final Handler<AsyncResult<Void>> doneHandler) {
+  private HttpServerResponseImpl write(ByteBuf chunk, final Handler<AsyncResult<Void>> completionHandler) {
     checkWritten();
     if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
@@ -487,7 +487,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       channelFuture = conn.write(new DefaultHttpContent(chunk));
     }
 
-    conn.addFuture(doneHandler, channelFuture);
+    conn.addFuture(completionHandler, channelFuture);
     return this;
   }
 }

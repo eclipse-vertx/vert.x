@@ -26,7 +26,7 @@ public interface Deployment {
 
   void addChild(Deployment deployment);
 
-  void undeploy(Handler<AsyncResult<Void>> doneHandler);
+  void undeploy(Handler<AsyncResult<Void>> completionHandler);
 
-  void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> doneHandler);
+  void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler);
 }

@@ -1779,13 +1779,13 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       if (handler) {
-        Handler<AsyncResult<Void>> doneHandler = onSuccess(v -> latch.countDown());
+        Handler<AsyncResult<Void>> completionHandler = onSuccess(v -> latch.countDown());
         if (sendFile != null) { // Send file with handler
-          req.response().sendFile(fileToDelete.getAbsolutePath(), null, doneHandler);
+          req.response().sendFile(fileToDelete.getAbsolutePath(), null, completionHandler);
         } else if (notFoundFile != null) { // File doesn't exist, send not found resource with handler
-          req.response().sendFile("doesnotexist.html", fileToDelete.getAbsolutePath(), doneHandler);
+          req.response().sendFile("doesnotexist.html", fileToDelete.getAbsolutePath(), completionHandler);
         } else { // File doesn't exist, send default not found resource with handler
-          req.response().sendFile("doesnotexist.html", null, doneHandler);
+          req.response().sendFile("doesnotexist.html", null, completionHandler);
         }
       } else {
         if (sendFile != null) { // Send file

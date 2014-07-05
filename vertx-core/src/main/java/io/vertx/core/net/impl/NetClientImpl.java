@@ -64,9 +64,9 @@ public class NetClientImpl implements NetClient {
     this.vertx = vertx;
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options);
-    this.closeHook = doneHandler -> {
+    this.closeHook = completionHandler -> {
       NetClientImpl.this.close();
-      doneHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(new FutureResultImpl<>((Void)null));
     };
     creatingContext = vertx.getContext();
     if (creatingContext != null) {

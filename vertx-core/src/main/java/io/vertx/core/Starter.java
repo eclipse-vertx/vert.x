@@ -91,7 +91,7 @@ public class Starter {
     return munged.toArray(new String[munged.size()]);
   }
 
-  private static <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> doneHandler) {
+  private static <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
     return res -> {
       if (res.failed()) {
         Throwable cause = res.cause();
@@ -107,8 +107,8 @@ public class Starter {
       } else {
         log.info("Succeeded in " + message);
       }
-      if (doneHandler != null) {
-        doneHandler.handle(res);
+      if (completionHandler != null) {
+        completionHandler.handle(res);
       }
     };
   }

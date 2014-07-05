@@ -148,14 +148,14 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> doneHandler) {
+  public void close(Handler<AsyncResult<Void>> completionHandler) {
 		if (clusterMgr != null) {
 			clusterMgr.leave();
 		}
 		if (server != null) {
-			server.close(doneHandler);
-		} else if (doneHandler != null) {
-      vertx.runOnContext(v-> doneHandler.handle(new FutureResultImpl<>((Void)null)));
+			server.close(completionHandler);
+		} else if (completionHandler != null) {
+      vertx.runOnContext(v-> completionHandler.handle(new FutureResultImpl<>((Void)null)));
     }
   }
 
@@ -776,9 +776,9 @@ public class EventBusImpl implements EventBus {
     }
 
     // Called by context on undeploy
-    public void close(Handler<AsyncResult<Void>> doneHandler) {
+    public void close(Handler<AsyncResult<Void>> completionHandler) {
       unregisterHandler(this.address, this.handler, emptyHandler());
-      doneHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(new FutureResultImpl<>((Void)null));
     }
 
   }
@@ -809,7 +809,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public synchronized void doneHandler(Handler<AsyncResult<Void>> completionHandler) {
+    public synchronized void completionHandler(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
       if (result != null) {
         completionHandler.handle(result);
@@ -824,9 +824,9 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public void unregister(Handler<AsyncResult<Void>> doneHandler) {
-      Objects.requireNonNull(doneHandler);
-      unregisterHandler(address, handler, doneHandler);
+    public void unregister(Handler<AsyncResult<Void>> completionHandler) {
+      Objects.requireNonNull(completionHandler);
+      unregisterHandler(address, handler, completionHandler);
     }
 
     private synchronized void setResult(AsyncResult<Void> result) {
