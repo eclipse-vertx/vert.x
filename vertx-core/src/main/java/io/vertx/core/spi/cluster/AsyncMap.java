@@ -52,5 +52,5 @@ public interface AsyncMap<K, V> {
    * @param k The key
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
-  void remove(K k, Handler<AsyncResult<Boolean>> resultHandler);
+  void remove(K k, Handler<AsyncResult<Void>> resultHandler);
 }
