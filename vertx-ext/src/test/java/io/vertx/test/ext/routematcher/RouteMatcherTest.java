@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.test.core;
+package io.vertx.test.ext.routematcher;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
@@ -23,7 +23,8 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.RouteMatcher;
+import io.vertx.ext.routematcher.RouteMatcher;
+import io.vertx.test.core.HttpTestBase;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -32,7 +33,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class HttpRouteMatcherTest extends HttpTestBase {
+public class RouteMatcherTest extends HttpTestBase {
 
   @Test
   public void testRouteWithPattern1GET() {
@@ -242,7 +243,7 @@ public class HttpRouteMatcherTest extends HttpTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     client = vertx.createHttpClient(new HttpClientOptions());
 
-    RouteMatcher matcher = new RouteMatcher();
+    RouteMatcher matcher = RouteMatcher.newRouteMatcher();
 
     Handler<HttpServerRequest> handler = req -> {
       assertEquals(params.size(), req.params().size());
@@ -324,7 +325,7 @@ public class HttpRouteMatcherTest extends HttpTestBase {
       matcher.noMatch(req -> req.response().writeStringAndEnd(noMatchResponseBody));
     }
 
-    server.requestHandler(matcher).listen(onSuccess(s -> {
+    server.requestHandler(matcher.requestHandler()).listen(onSuccess(s -> {
       Handler<HttpClientResponse> respHandler = resp -> {
         if (shouldPass) {
           assertEquals(200, resp.statusCode());

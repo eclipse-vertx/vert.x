@@ -23,13 +23,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.RouteMatcher;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.WebSocketMatcher;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.ext.routematcher.RouteMatcher;
+import io.vertx.ext.routematcher.RouteMatcher;
 import io.vertx.ext.sockjs.SockJSServer;
 
 import java.security.MessageDigest;
@@ -51,7 +52,7 @@ public class SockJSServerImpl implements SockJSServer, Handler<HttpServerRequest
   private static final Logger log = LoggerFactory.getLogger(SockJSServerImpl.class);
 
   private final Vertx vertx;
-  private RouteMatcher rm = new RouteMatcher();
+  private RouteMatcher rm = RouteMatcher.newRouteMatcher();
   private WebSocketMatcher wsMatcher = new WebSocketMatcher();
   private final Map<String, Session> sessions;
   private EventBusBridgeHook hook;
@@ -98,7 +99,7 @@ public class SockJSServerImpl implements SockJSServer, Handler<HttpServerRequest
     if (log.isTraceEnabled()) {
       log.trace("Got request in sockjs server: " + req.uri());
     }
-    rm.handle(req);
+    rm.requestHandler().handle(req);
   }
 
   public void close() {

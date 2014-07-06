@@ -21,7 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.RouteMatcher;
+import io.vertx.ext.routematcher.RouteMatcher;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.WebSocketMatcher;
 import io.vertx.core.logging.Logger;
