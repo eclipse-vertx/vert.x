@@ -18,6 +18,9 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.GenIgnore;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * A distributed lightweight event bus which can encompass multiple vert.x instances.
@@ -48,6 +51,7 @@ import io.vertx.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface EventBus {
 
 	/**
@@ -62,6 +66,7 @@ public interface EventBus {
    * @param address The address to send it to
    * @param message The message
    */
+  @Fluent
   EventBus send(String address, Object message);
 
   /**
@@ -70,6 +75,7 @@ public interface EventBus {
    * @param message The message
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
+  @Fluent
   <T> EventBus send(String address, Object message, Handler<Message<T>> replyHandler);
 
   /**
@@ -79,6 +85,7 @@ public interface EventBus {
    * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
+  @Fluent
   <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
@@ -86,6 +93,7 @@ public interface EventBus {
    * @param address The address to publish it to
    * @param message The message
    */
+  @Fluent
   EventBus publish(String address, Object message);
 
   /**
@@ -105,10 +113,6 @@ public interface EventBus {
    */
   Registration registerLocalHandler(String address, Handler<? extends Message> handler);
 
-  <T> EventBus registerCodec(Class<T> type, MessageCodec<T> codec);
-
-  <T> EventBus unregisterCodec(Class<T> type);
-
   /**
    * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler
    * but without specifying a timeout, then the reply handler is timed out, i.e. it is automatically unregistered
@@ -116,6 +120,7 @@ public interface EventBus {
    * The default value for default send timeout is -1, which means "never timeout".
    * @param timeoutMs
    */
+  @Fluent
   EventBus setDefaultReplyTimeout(long timeoutMs);
 
   /**
@@ -123,5 +128,10 @@ public interface EventBus {
    */
   long getDefaultReplyTimeout();
 
+  @GenIgnore
+  <T> EventBus registerCodec(Class<T> type, MessageCodec<T> codec);
+
+  @GenIgnore
+  <T> EventBus unregisterCodec(Class<T> type);
 }
 

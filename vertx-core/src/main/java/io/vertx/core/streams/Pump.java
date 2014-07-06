@@ -18,6 +18,8 @@ package io.vertx.core.streams;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
@@ -37,6 +39,7 @@ import io.vertx.core.buffer.Buffer;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public class Pump {
 
   private final ReadStream<?> readStream;
@@ -61,6 +64,7 @@ public class Pump {
   /**
    * Set the write queue max size to {@code maxSize}
    */
+  @Fluent
   public Pump setWriteQueueMaxSize(int maxSize) {
     this.writeStream.setWriteQueueMaxSize(maxSize);
     return this;
@@ -69,6 +73,7 @@ public class Pump {
   /**
    * Start the Pump. The Pump can be started and stopped multiple times.
    */
+  @Fluent
   public Pump start() {
     readStream.dataHandler(dataHandler);
     return this;
@@ -77,6 +82,7 @@ public class Pump {
   /**
    * Stop the Pump. The Pump can be started and stopped multiple times.
    */
+  @Fluent
   public Pump stop() {
     writeStream.drainHandler(null);
     readStream.dataHandler(null);
