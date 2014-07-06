@@ -20,7 +20,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.impl.BlockingAction;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -49,9 +48,9 @@ public class WindowsFileSystem extends FileSystemImpl {
                                                Handler<AsyncResult<Void>> handler) {
     logInternal(perms);
     logInternal(dirPerms);
-    return new BlockingAction<Void>(vertx, handler) {
+    return new BlockingAction<Void>(handler) {
       @Override
-      public Void action() {
+      public Void perform() {
         return null;
       }
     };

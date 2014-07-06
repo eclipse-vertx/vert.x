@@ -23,13 +23,16 @@ import java.util.concurrent.Executor;
  */
 public class WorkerContext extends ContextImpl {
 
-  public WorkerContext(VertxInternal vertx, Executor orderedBgExec) {
-    super(vertx, orderedBgExec);
+  protected final Executor workerExec;
+
+  public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec) {
+    super(vertx, orderedInternalPoolExec);
+    this.workerExec = workerExec;
   }
 
   @Override
   public void doExecute(ContextTask task) {
-    orderedBgExec.execute(wrapTask(task, true));
+    workerExec.execute(wrapTask(task, true));
   }
 
   @Override

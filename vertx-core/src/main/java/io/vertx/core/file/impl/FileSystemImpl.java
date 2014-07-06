@@ -25,11 +25,11 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.impl.BlockingAction;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.cluster.Action;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -78,7 +78,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem copySync(String from, String to) {
-    copyInternal(from, to, null).action();
+    copyInternal(from, to, null).perform();
     return this;
   }
 
@@ -88,7 +88,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem copyRecursiveSync(String from, String to, boolean recursive) {
-    copyInternal(from, to, recursive, null).action();
+    copyInternal(from, to, recursive, null).perform();
     return this;
   }
 
@@ -98,7 +98,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem moveSync(String from, String to) {
-    moveInternal(from, to, null).action();
+    moveInternal(from, to, null).perform();
     return this;
   }
 
@@ -108,7 +108,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem truncateSync(String path, long len) {
-    truncateInternal(path, len, null).action();
+    truncateInternal(path, len, null).perform();
     return this;
   }
 
@@ -118,7 +118,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem chmodSync(String path, String perms) {
-    chmodInternal(path, perms, null).action();
+    chmodInternal(path, perms, null).perform();
     return this;
   }
 
@@ -128,7 +128,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem chmodRecursiveSync(String path, String perms, String dirPerms) {
-    chmodInternal(path, perms, dirPerms, null).action();
+    chmodInternal(path, perms, dirPerms, null).perform();
     return this;
   }
 
@@ -138,7 +138,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem chownSync(String path, String user, String group) {
-    chownInternal(path, user, group, null).action();
+    chownInternal(path, user, group, null).perform();
     return this;
   }
 
@@ -148,7 +148,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileProps propsSync(String path) {
-    return propsInternal(path, null).action();
+    return propsInternal(path, null).perform();
   }
 
   public FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler) {
@@ -157,7 +157,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileProps lpropsSync(String path) {
-    return lpropsInternal(path, null).action();
+    return lpropsInternal(path, null).perform();
   }
 
   public FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler) {
@@ -166,7 +166,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem linkSync(String link, String existing) {
-    linkInternal(link, existing, null).action();
+    linkInternal(link, existing, null).perform();
     return this;
   }
 
@@ -176,7 +176,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem symlinkSync(String link, String existing) {
-    symlinkInternal(link, existing, null).action();
+    symlinkInternal(link, existing, null).perform();
     return this;
   }
 
@@ -186,7 +186,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem unlinkSync(String link) {
-    unlinkInternal(link, null).action();
+    unlinkInternal(link, null).perform();
     return this;
   }
 
@@ -196,7 +196,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public String readSymlinkSync(String link) {
-    return readSymlinkInternal(link, null).action();
+    return readSymlinkInternal(link, null).perform();
   }
 
   public FileSystem delete(String path, Handler<AsyncResult<Void>> handler) {
@@ -205,7 +205,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem deleteSync(String path) {
-    deleteInternal(path, null).action();
+    deleteInternal(path, null).perform();
     return this;
   }
 
@@ -215,7 +215,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem deleteSyncRecursive(String path, boolean recursive) {
-    deleteInternal(path, recursive, null).action();
+    deleteInternal(path, recursive, null).perform();
     return this;
   }
 
@@ -225,7 +225,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdirSync(String path) {
-    mkdirInternal(path, null).action();
+    mkdirInternal(path, null).perform();
     return this;
   }
 
@@ -235,7 +235,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdirsSync(String path) {
-    mkdirInternal(path, true, null).action();
+    mkdirInternal(path, true, null).perform();
     return this;
   }
 
@@ -245,7 +245,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdirWithPermissionsSync(String path, String perms) {
-    mkdirInternal(path, perms, null).action();
+    mkdirInternal(path, perms, null).perform();
     return this;
   }
 
@@ -255,7 +255,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdirsWithPermissionsSync(String path, String perms) {
-    mkdirInternal(path, perms, true, null).action();
+    mkdirInternal(path, perms, true, null).perform();
     return this;
   }
 
@@ -265,7 +265,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public List<String> readDirSync(String path) {
-    return readDirInternal(path, null).action();
+    return readDirInternal(path, null).perform();
   }
 
   public FileSystem readDirWithFilter(String path, String filter, Handler<AsyncResult<List<String>>> handler) {
@@ -274,7 +274,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public List<String> readDirWithFilterSync(String path, String filter) {
-    return readDirInternal(path, filter, null).action();
+    return readDirInternal(path, filter, null).perform();
   }
 
   public FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler) {
@@ -283,7 +283,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public Buffer readFileSync(String path) {
-    return readFileInternal(path, null).action();
+    return readFileInternal(path, null).perform();
   }
 
   public FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
@@ -292,7 +292,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem writeFileSync(String path, Buffer data) {
-    writeFileInternal(path, data, null).action();
+    writeFileInternal(path, data, null).perform();
     return this;
   }
 
@@ -302,7 +302,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public AsyncFile openSync(String path, OpenOptions options) {
-    return openInternal(path, options, null).action();
+    return openInternal(path, options, null).perform();
   }
 
   public FileSystem createFile(String path, Handler<AsyncResult<Void>> handler) {
@@ -311,7 +311,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem createFileSync(String path) {
-    createFileInternal(path, null).action();
+    createFileInternal(path, null).perform();
     return this;
   }
 
@@ -321,7 +321,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem createFileWithPermsSync(String path, String perms) {
-    createFileInternal(path, perms, null).action();
+    createFileInternal(path, perms, null).perform();
     return this;
   }
 
@@ -331,7 +331,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public boolean existsSync(String path) {
-    return existsInternal(path, null).action();
+    return existsInternal(path, null).perform();
   }
 
   public FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler) {
@@ -340,7 +340,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystemProps fsPropsSync(String path) {
-    return fsPropsInternal(path, null).action();
+    return fsPropsInternal(path, null).perform();
   }
 
   private BlockingAction<Void> copyInternal(String from, String to, Handler<AsyncResult<Void>> handler) {
@@ -350,8 +350,8 @@ public class FileSystemImpl implements FileSystem {
   private BlockingAction<Void> copyInternal(String from, String to, final boolean recursive, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(from));
     final Path target = PathAdjuster.adjust(vertx, Paths.get(to));
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           if (recursive) {
             Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
@@ -390,8 +390,8 @@ public class FileSystemImpl implements FileSystem {
   private BlockingAction<Void> moveInternal(String from, String to, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(from));
     final Path target = PathAdjuster.adjust(vertx, Paths.get(to));
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           Files.move(source, target);
         } catch (IOException e) {
@@ -404,8 +404,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<Void> truncateInternal(String p, final long len, Handler<AsyncResult<Void>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         if (len < 0) {
           throw new FileSystemException("Cannot truncate file to size < 0");
         }
@@ -436,8 +436,8 @@ public class FileSystemImpl implements FileSystem {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     final Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     final Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           if (dirPermissions != null) {
             Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
@@ -469,8 +469,8 @@ public class FileSystemImpl implements FileSystem {
   protected BlockingAction<Void> chownInternal(String path, final String user, final String group, Handler<AsyncResult<Void>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     final UserPrincipalLookupService service = target.getFileSystem().getUserPrincipalLookupService();
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
 
         try {
           final UserPrincipal userPrincipal = user == null ? null : service.lookupPrincipalByName(user);
@@ -506,8 +506,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<FileProps> props(String path, final boolean followLinks, Handler<AsyncResult<FileProps>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
-    return new BlockingAction<FileProps>(vertx, handler) {
-      public FileProps action() {
+    return new BlockingAction<FileProps>(handler) {
+      public FileProps perform() {
         try {
           BasicFileAttributes attrs;
           if (followLinks) {
@@ -534,8 +534,8 @@ public class FileSystemImpl implements FileSystem {
   private BlockingAction<Void> link(String link, String existing, final boolean symbolic, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(link));
     final Path target = PathAdjuster.adjust(vertx, Paths.get(existing));
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           if (symbolic) {
             Files.createSymbolicLink(source, target);
@@ -556,8 +556,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<String> readSymlinkInternal(String link, Handler<AsyncResult<String>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(link));
-    return new BlockingAction<String>(vertx, handler) {
-      public String action() {
+    return new BlockingAction<String>(handler) {
+      public String perform() {
         try {
           return Files.readSymbolicLink(source).toString();
         } catch (IOException e) {
@@ -573,8 +573,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<Void> deleteInternal(String path, final boolean recursive, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(path));
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           if (recursive) {
             Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
@@ -617,8 +617,8 @@ public class FileSystemImpl implements FileSystem {
   protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents, Handler<AsyncResult<Void>> handler) {
     final Path source = PathAdjuster.adjust(vertx, Paths.get(path));
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           if (createParents) {
             if (attrs != null) {
@@ -647,8 +647,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<List<String>> readDirInternal(String p, final String filter, Handler<AsyncResult<List<String>>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
-    return new BlockingAction<List<String>>(vertx, handler) {
-      public List<String> action() {
+    return new BlockingAction<List<String>>(handler) {
+      public List<String> perform() {
         try {
           File file = new File(path);
           if (!file.exists()) {
@@ -674,7 +674,6 @@ public class FileSystemImpl implements FileSystem {
               files = file.listFiles(fnFilter);
             }
             List<String> ret = new ArrayList<>(files.length);
-            int i = 0;
             for (File f : files) {
               ret.add(f.getCanonicalPath());
             }
@@ -689,8 +688,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<Buffer> readFileInternal(String path, Handler<AsyncResult<Buffer>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
-    return new BlockingAction<Buffer>(vertx, handler) {
-      public Buffer action() {
+    return new BlockingAction<Buffer>(handler) {
+      public Buffer perform() {
         try {
           byte[] bytes = Files.readAllBytes(target);
           Buffer buff = Buffer.newBuffer(bytes);
@@ -704,8 +703,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<Void> writeFileInternal(String path, final Buffer data, Handler<AsyncResult<Void>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           Files.write(target, data.getBytes());
           return null;
@@ -718,8 +717,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<AsyncFile> openInternal(String p, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
-    return new BlockingAction<AsyncFile>(vertx, handler) {
-      public AsyncFile action() {
+    return new BlockingAction<AsyncFile>(handler) {
+      public AsyncFile perform() {
         return doOpen(path, options, context);
       }
     };
@@ -736,8 +735,8 @@ public class FileSystemImpl implements FileSystem {
   protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
     final String path = PathAdjuster.adjust(vertx, p);
     final FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
-    return new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
+    return new BlockingAction<Void>(handler) {
+      public Void perform() {
         try {
           Path target = Paths.get(path);
           if (attrs != null) {
@@ -755,8 +754,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<Boolean> existsInternal(String path, Handler<AsyncResult<Boolean>> handler) {
     final File file = new File(PathAdjuster.adjust(vertx, path));
-    return new BlockingAction<Boolean>(vertx, handler) {
-      public Boolean action() {
+    return new BlockingAction<Boolean>(handler) {
+      public Boolean perform() {
         return file.exists();
       }
     };
@@ -764,8 +763,8 @@ public class FileSystemImpl implements FileSystem {
 
   private BlockingAction<FileSystemProps> fsPropsInternal(String path, Handler<AsyncResult<FileSystemProps>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
-    return new BlockingAction<FileSystemProps>(vertx, handler) {
-      public FileSystemProps action() {
+    return new BlockingAction<FileSystemProps>(handler) {
+      public FileSystemProps perform() {
         try {
           FileStore fs = Files.getFileStore(target);
           return new FileSystemPropsImpl(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
@@ -774,5 +773,22 @@ public class FileSystemImpl implements FileSystem {
         }
       }
     };
+  }
+
+  protected abstract class BlockingAction<T> implements Action<T> {
+
+    private final Handler<AsyncResult<T>> handler;
+    protected final ContextImpl context;
+
+    public BlockingAction(Handler<AsyncResult<T>> handler) {
+      this.handler = handler;
+      this.context = vertx.getOrCreateContext();
+    }
+    /**
+     * Run the blocking action using a thread from the worker pool.
+     */
+    public void run() {
+      context.executeBlocking(this, handler);
+    }
   }
 }

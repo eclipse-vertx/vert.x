@@ -18,18 +18,18 @@ package io.vertx.core.impl;
 
 import java.util.concurrent.Executor;
 
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class MultiThreadedWorkerContext extends WorkerContext {
 
-  private final Executor bgExec;
-
-  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedBgExec, Executor bgExec) {
-    super(vertx, orderedBgExec);
-    this.bgExec = bgExec;
+  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedInternalExec, Executor workerExec) {
+    super(vertx, orderedInternalExec, workerExec);
   }
 
   @Override
   public void doExecute(ContextTask task) {
-    bgExec.execute(wrapTask(task, false));
+    workerExec.execute(wrapTask(task, false));
   }
 
   @Override

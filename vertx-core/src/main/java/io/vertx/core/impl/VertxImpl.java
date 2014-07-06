@@ -89,8 +89,10 @@ public class VertxImpl implements VertxInternal {
   private final EventBus eventBus;
   private final SharedData sharedData = new SharedData();
 
-  private ExecutorService backgroundPool;
-  private OrderedExecutorFactory orderedFact;
+  private ExecutorService workerPool;
+  private ExecutorService internalBlockingPool;
+  private OrderedExecutorFactory workerOrderedFact;
+  private OrderedExecutorFactory internalOrderedFact;
   private EventLoopGroup eventLoopGroup;
   private BlockedThreadChecker checker;
 
@@ -192,8 +194,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   // The background pool is used for making blocking calls to legacy synchronous APIs
-  public ExecutorService getBackgroundPool() {
-    return backgroundPool;
+  public ExecutorService getWorkerPool() {
+    return workerPool;
   }
 
   public EventLoopGroup getEventLoopGroup() {
@@ -228,7 +230,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   public EventLoopContext createEventLoopContext() {
-    return new EventLoopContext(this, orderedFact.getExecutor());
+    return new EventLoopContext(this, workerOrderedFact.getExecutor());
   }
 
   @Override
@@ -287,9 +289,9 @@ public class VertxImpl implements VertxInternal {
 
   public ContextImpl createWorkerContext(boolean multiThreaded) {
     if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, orderedFact.getExecutor(), backgroundPool);
+      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool);
     } else {
-      return new WorkerContext(this, orderedFact.getExecutor());
+      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor());
     }
   }
 
@@ -340,11 +342,11 @@ public class VertxImpl implements VertxInternal {
         sharedNetServers.clear();
       }
 
-      if (backgroundPool != null) {
-        backgroundPool.shutdown();
+      if (workerPool != null) {
+        workerPool.shutdown();
         try {
-          if (backgroundPool != null) {
-            backgroundPool.awaitTermination(20, TimeUnit.SECONDS);
+          if (workerPool != null) {
+            workerPool.awaitTermination(20, TimeUnit.SECONDS);
           }
         } catch (InterruptedException ex) {
           // ignore
@@ -426,18 +428,7 @@ public class VertxImpl implements VertxInternal {
   @Override
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
-    context.executeOnOrderedWorkerExec(() -> {
-      FutureResultImpl<T> res = new FutureResultImpl<>();
-      try {
-        T result = action.perform();
-        res.setResult(result);
-      } catch (Exception e) {
-        res.setFailure(e);
-      }
-      if (resultHandler != null) {
-        context.execute(() -> res.setHandler(resultHandler), false);
-      }
-    });
+    context.executeBlocking(action, resultHandler);
   }
 
   private void configurePools(VertxOptions options) {
@@ -445,9 +436,12 @@ public class VertxImpl implements VertxInternal {
                                        options.getMaxWorkerExecuteTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
                                            new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
-    backgroundPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
+    workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
       new VertxThreadFactory("vert.x-worker-thread-", checker, true));
-    orderedFact = new OrderedExecutorFactory(backgroundPool);
+    internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
+      new VertxThreadFactory("vert.x-internal-blocking-", checker, true));
+    workerOrderedFact = new OrderedExecutorFactory(workerPool);
+    internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
   }
 
   private class InternalTimerHandler implements ContextTask, Closeable {

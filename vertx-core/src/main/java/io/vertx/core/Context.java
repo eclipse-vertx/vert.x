@@ -27,4 +27,5 @@ import io.vertx.core.gen.VertxGen;
 public interface Context {
 
   void runOnContext(Handler<Void> action);
+
 }

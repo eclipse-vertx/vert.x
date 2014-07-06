@@ -24,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.file.impl.PathResolver;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.cluster.Action;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,12 +45,12 @@ public abstract class ContextImpl implements Context {
   private final ClassLoader tccl;
   private boolean closed;
   private final EventLoop eventLoop;
-  protected final Executor orderedBgExec;
+  protected final Executor orderedInternalPoolExec;
   protected VertxThread contextThread;
 
-  protected ContextImpl(VertxInternal vertx, Executor orderedBgExec) {
+  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec) {
     this.vertx = vertx;
-    this.orderedBgExec = orderedBgExec;
+    this.orderedInternalPoolExec = orderedInternalPoolExec;
     EventLoopGroup group = vertx.getEventLoopGroup();
     if (group != null) {
       this.eventLoop = group.next();
@@ -143,10 +144,20 @@ public abstract class ContextImpl implements Context {
     return eventLoop;
   }
 
-  // This executes the task in the worker pool using the ordered executor of the context
-  // It's used e.g. from BlockingActions
-  protected void executeOnOrderedWorkerExec(ContextTask task) {
-    orderedBgExec.execute(wrapTask(task, false));
+  // Execute an internal task on the internal blocking ordered executor
+  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
+    orderedInternalPoolExec.execute(() -> {
+      FutureResultImpl<T> res = new FutureResultImpl<>();
+      try {
+        T result = action.perform();
+        res.setResult(result);
+      } catch (Throwable e) {
+        res.setFailure(e);
+      }
+      if (resultHandler != null) {
+        execute(() -> res.setHandler(resultHandler), false);
+      }
+    });
   }
 
   public void close() {

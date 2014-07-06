@@ -49,6 +49,16 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
+    assertEquals(20, options.getInternalBlockingPoolSize());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setInternalBlockingPoolSize(rand));
+    assertEquals(rand, options.getInternalBlockingPoolSize());
+    try {
+      options.setInternalBlockingPoolSize(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
     assertFalse(options.isClustered());
     assertEquals(options, options.setClustered(true));
     assertTrue(options.isClustered());

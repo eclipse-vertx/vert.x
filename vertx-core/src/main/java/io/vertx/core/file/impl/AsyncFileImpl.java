@@ -23,7 +23,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.impl.BlockingAction;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -90,9 +89,9 @@ public class AsyncFileImpl implements AsyncFile {
     try {
       if (options.getPerms() != null) {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(options.getPerms()));
-        ch = AsynchronousFileChannel.open(file, opts, vertx.getBackgroundPool(), attrs);
+        ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool(), attrs);
       } else {
-        ch = AsynchronousFileChannel.open(file, opts, vertx.getBackgroundPool());
+        ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool());
       }
     } catch (IOException e) {
       throw new FileSystemException(e);
@@ -311,16 +310,14 @@ public class AsyncFileImpl implements AsyncFile {
   private void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
     checkContext();
-    new BlockingAction<Void>(vertx, handler) {
-      public Void action() {
-        try {
-          ch.force(false);
-          return null;
-        } catch (IOException e) {
-          throw new FileSystemException(e);
-        }
+    context.executeBlocking(() -> {
+      try {
+        ch.force(false);
+        return null;
+      } catch (IOException e) {
+        throw new FileSystemException(e);
       }
-    }.run();
+    }, handler);
   }
 
   private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {

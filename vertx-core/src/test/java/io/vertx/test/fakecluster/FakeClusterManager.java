@@ -19,12 +19,12 @@ package io.vertx.test.fakecluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.spi.cluster.Action;
-import io.vertx.core.spi.cluster.VertxSPI;
 import io.vertx.core.spi.cluster.AsyncMap;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
+import io.vertx.core.spi.cluster.VertxSPI;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -25,6 +25,7 @@ public class VertxOptions {
 
   private int eventLoopPoolSize = 2 * Runtime.getRuntime().availableProcessors();
   private int workerPoolSize = 20;
+  private int internalBlockingPoolSize = 20;
   private boolean clustered;
   private String clusterHost = "localhost";
   private int clusterPort = 0;
@@ -144,6 +145,18 @@ public class VertxOptions {
 
   public VertxOptions setClusterManager(ClusterManager clusterManager) {
     this.clusterManager = clusterManager;
+    return this;
+  }
+
+  public int getInternalBlockingPoolSize() {
+    return internalBlockingPoolSize;
+  }
+
+  public VertxOptions setInternalBlockingPoolSize(int internalBlockingPoolSize) {
+    if (internalBlockingPoolSize < 1) {
+      throw new IllegalArgumentException("internalBlockingPoolSize must be > 0");
+    }
+    this.internalBlockingPoolSize = internalBlockingPoolSize;
     return this;
   }
 }
