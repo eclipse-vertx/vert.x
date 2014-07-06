@@ -17,7 +17,12 @@ package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.*;
+import io.vertx.core.net.CaOptions;
+import io.vertx.core.net.JKSOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.PKCS12Options;
+import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import org.junit.Test;
 

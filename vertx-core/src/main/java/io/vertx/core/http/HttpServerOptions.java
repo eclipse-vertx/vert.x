@@ -16,11 +16,11 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.TrustStoreOptions;
 
 import java.util.HashSet;

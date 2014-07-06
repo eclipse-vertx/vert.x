@@ -17,7 +17,6 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.SharedData;
 import org.junit.After;

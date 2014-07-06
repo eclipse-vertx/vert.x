@@ -19,7 +19,6 @@ package io.vertx.test.core;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.parsetools.RecordParser;
-import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;

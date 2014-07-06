@@ -17,8 +17,6 @@
 package io.vertx.core.spi.cluster;
 
 
-import io.vertx.core.spi.cluster.VertxSPI;
-
 import java.util.List;
 import java.util.Map;
 

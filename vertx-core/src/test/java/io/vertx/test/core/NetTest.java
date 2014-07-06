@@ -30,6 +30,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -40,7 +41,6 @@ import io.vertx.core.net.impl.SocketDefaults;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import io.vertx.core.net.JKSOptions;
 
 import java.io.BufferedWriter;
 import java.io.File;

@@ -32,7 +32,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-
 import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
 import java.security.cert.CRL;

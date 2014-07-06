@@ -27,13 +27,16 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.impl.Base64;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetSocket;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

@@ -20,8 +20,8 @@ import com.hazelcast.core.IMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.spi.cluster.Action;
-import io.vertx.core.spi.cluster.VertxSPI;
 import io.vertx.core.spi.cluster.AsyncMap;
+import io.vertx.core.spi.cluster.VertxSPI;
 
 class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
 

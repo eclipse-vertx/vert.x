@@ -16,8 +16,8 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;

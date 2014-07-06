@@ -22,11 +22,11 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
-import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.VerticleFactory;
 
 import java.net.URL;
 import java.net.URLClassLoader;
