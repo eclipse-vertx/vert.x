@@ -16,7 +16,6 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.gen.VertxGen;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SocketDefaults;
@@ -27,7 +26,6 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
 public class TCPOptions extends NetworkOptions {
 
   // TCP stuff
