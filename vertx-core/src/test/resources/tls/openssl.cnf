@@ -1,0 +1,20 @@
+[ ca ]
+default_ca      = CA_default
+
+[ CA_default ]
+new_certs_dir    = ca
+database         = ca/index.txt
+default_md       = sha1
+policy           = policy_match
+serial           = ca/serial
+default_days     = 365
+crlnumber        = ca/crlnumber
+default_crl_days = 365
+
+[ policy_match ]
+countryName             = optional
+stateOrProvinceName     = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = optional
+emailAddress            = optional

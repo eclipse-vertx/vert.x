@@ -69,6 +69,7 @@ import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
+import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
@@ -125,7 +126,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       }
       creatingContext.addCloseHook(this);
     }
-    sslHelper = new SSLHelper(options);
+    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStore()), KeyStoreHelper.create(vertx, options.getTrustStore()));
   }
 
   @Override

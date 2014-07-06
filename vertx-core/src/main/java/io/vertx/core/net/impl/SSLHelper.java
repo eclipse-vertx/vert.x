@@ -17,30 +17,32 @@
 package io.vertx.core.net.impl;
 
 import io.netty.handler.ssl.SslHandler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 
 import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyStore;
+
+import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
+import java.security.cert.CRL;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -53,49 +55,47 @@ public class SSLHelper {
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
   private boolean ssl;
-  private String keyStorePath;
-  private String keyStorePassword;
-  private String trustStorePath;
-  private String trustStorePassword;
+  private KeyStoreHelper keyStoreHelper;
+  private KeyStoreHelper trustStoreHelper;
   private boolean trustAll;
+  private ArrayList<String> crlPaths;
+  private ArrayList<Buffer> crlValues;
   private ClientAuth clientAuth = ClientAuth.NONE;
   private Set<String> enabledCipherSuites;
 
   private SSLContext sslContext;
 
-  public SSLHelper(NetClientOptions options) {
+  public SSLHelper(NetClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+    this((ClientOptions) options, keyStoreHelper, trustStoreHelper);
+  }
+
+  public SSLHelper(HttpClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+    this((ClientOptions) options, keyStoreHelper, trustStoreHelper);
+  }
+
+  public SSLHelper(ClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
-    this.keyStorePath = options.getKeyStorePath();
-    this.keyStorePassword = options.getKeyStorePassword();
-    this.trustStorePath = options.getTrustStorePath();
-    this.trustStorePassword = options.getTrustStorePassword();
+    this.keyStoreHelper = keyStoreHelper;
+    this.trustStoreHelper = trustStoreHelper;
     this.trustAll = options.isTrustAll();
+    this.crlPaths = new ArrayList<>(options.getCrlPaths());
+    this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
-  public SSLHelper(HttpClientOptions options) {
+  public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
-    this.keyStorePath = options.getKeyStorePath();
-    this.keyStorePassword = options.getKeyStorePassword();
-    this.trustStorePath = options.getTrustStorePath();
-    this.trustStorePassword = options.getTrustStorePassword();
-    this.trustAll = options.isTrustAll();
-    this.enabledCipherSuites = options.getEnabledCipherSuites();
-  }
-
-  public SSLHelper(NetServerOptions options) {
-    this.ssl = options.isSsl();
-    this.keyStorePath = options.getKeyStorePath();
-    this.keyStorePassword = options.getKeyStorePassword();
-    this.trustStorePath = options.getTrustStorePath();
-    this.trustStorePassword = options.getTrustStorePassword();
+    this.keyStoreHelper = keyStoreHelper;
+    this.trustStoreHelper = trustStoreHelper;
     this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
+    this.crlPaths = new ArrayList<>(options.getCrlPaths());
+    this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
   public synchronized void checkSSL(VertxInternal vertx) {
     if (ssl && sslContext == null) {
-      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
+      sslContext = createContext(vertx);
     }
   }
 
@@ -119,19 +119,28 @@ public class SSLHelper {
   If you don't specify a key store, and don't specify a system property no key store will be used
   You can override this by specifying the javax.echo.ssl.keyStore system property
    */
-  public static SSLContext createContext(VertxInternal vertx, String ksPath,
-                                         String ksPassword,
-                                         String tsPath,
-                                         String tsPassword,
-                                         boolean trustAll) {
+  private SSLContext createContext(VertxInternal vertx) {
     try {
       SSLContext context = SSLContext.getInstance("TLS");
-      KeyManager[] keyMgrs = ksPath == null ? null : getKeyMgrs(vertx, ksPath, ksPassword);
+      KeyManager[] keyMgrs = keyStoreHelper == null ? null : keyStoreHelper.getKeyMgrs(vertx);
       TrustManager[] trustMgrs;
       if (trustAll) {
         trustMgrs = new TrustManager[]{createTrustAllTrustManager()};
       } else {
-        trustMgrs = tsPath == null ? null : getTrustMgrs(vertx, tsPath, tsPassword);
+        trustMgrs = trustStoreHelper == null ? null : trustStoreHelper.getTrustMgrs(vertx);
+      }
+      if (trustMgrs != null && crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
+        Stream<Buffer> tmp = crlPaths.
+            stream().
+            map(path -> PathAdjuster.adjust(vertx, path)).
+            map(vertx.fileSystem()::readFileSync);
+        tmp = Stream.concat(tmp, crlValues.stream());
+        CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
+        ArrayList<CRL> crls = new ArrayList<>();
+        for (Buffer crlValue : tmp.collect(Collectors.toList())) {
+          crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
+        }
+        trustMgrs = createUntrustRevokedCertTrustManager(trustMgrs, crls);
       }
       context.init(keyMgrs, trustMgrs, new SecureRandom());
       return context;
@@ -140,6 +149,46 @@ public class SSLHelper {
       log.error("Failed to create context", e);
       throw new RuntimeException(e.getMessage());
     }
+  }
+
+  /*
+  Proxy the specified trust managers with an implementation checking first the provided certificates
+  against the the Certificate Revocation List (crl) before delegating to the original trust managers.
+   */
+  private static TrustManager[] createUntrustRevokedCertTrustManager(TrustManager[] trustMgrs, ArrayList<CRL> crls) {
+    trustMgrs = trustMgrs.clone();
+    for (int i = 0;i < trustMgrs.length;i++) {
+      TrustManager trustMgr = trustMgrs[i];
+      if (trustMgr instanceof X509TrustManager) {
+        X509TrustManager x509TrustManager = (X509TrustManager) trustMgr;
+        trustMgrs[i] = new X509TrustManager() {
+          @Override
+          public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            checkRevocaked(x509Certificates);
+            x509TrustManager.checkClientTrusted(x509Certificates, s);
+          }
+          @Override
+          public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            checkRevocaked(x509Certificates);
+            x509TrustManager.checkServerTrusted(x509Certificates, s);
+          }
+          private void checkRevocaked(X509Certificate[] x509Certificates) throws CertificateException {
+            for (X509Certificate cert : x509Certificates) {
+              for (CRL crl : crls) {
+                if (crl.isRevoked(cert)) {
+                  throw new CertificateException("Certificate revoked");
+                }
+              }
+            }
+          }
+          @Override
+          public X509Certificate[] getAcceptedIssuers() {
+            return x509TrustManager.getAcceptedIssuers();
+          }
+        };
+      }
+    }
+    return trustMgrs;
   }
 
   // Create a TrustManager which trusts everything
@@ -160,42 +209,9 @@ public class SSLHelper {
     };
   }
 
-  private static TrustManager[] getTrustMgrs(VertxInternal vertx, String tsPath,
-                                             String tsPassword) throws Exception {
-    TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    KeyStore ts = loadStore(vertx, tsPath, tsPassword);
-    fact.init(ts);
-    return fact.getTrustManagers();
-  }
-
-  private static KeyManager[] getKeyMgrs(VertxInternal vertx, String ksPath, String ksPassword) throws Exception {
-    KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    KeyStore ks = loadStore(vertx, ksPath, ksPassword);
-    fact.init(ks, ksPassword != null ? ksPassword.toCharArray(): null);
-    return fact.getKeyManagers();
-  }
-
-  private static KeyStore loadStore(VertxInternal vertx, String path, String ksPassword) throws Exception {
-    String ksPath = PathAdjuster.adjust(vertx, path);
-    KeyStore ks = KeyStore.getInstance("JKS");
-    InputStream in = null;
-    try {
-      in = new FileInputStream(new File(ksPath));
-      ks.load(in, ksPassword != null ? ksPassword.toCharArray(): null);
-    } finally {
-      if (in != null) {
-        try {
-          in.close();
-        } catch (IOException ignore) {
-        }
-      }
-    }
-    return ks;
-  }
-
   public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
     if (sslContext == null) {
-      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
+      sslContext = createContext(vertx);
     }
     SSLEngine engine = sslContext.createSSLEngine();
     String[] current = engine.getSupportedCipherSuites();

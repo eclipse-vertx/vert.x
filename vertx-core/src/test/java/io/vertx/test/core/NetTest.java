@@ -40,6 +40,7 @@ import io.vertx.core.net.impl.SocketDefaults;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import io.vertx.core.net.JKSOptions;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -178,25 +179,15 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStorePath());
-    String randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setKeyStorePath(randString));
-    assertEquals(randString, options.getKeyStorePath());
+    assertNull(options.getKeyStore());
+    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertEquals(options, options.setKeyStore(keyStoreOptions));
+    assertEquals(keyStoreOptions, options.getKeyStore());
 
-    assertNull(options.getKeyStorePassword());
-    randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setKeyStorePassword(randString));
-    assertEquals(randString, options.getKeyStorePassword());
-
-    assertNull(options.getTrustStorePath());
-    randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setTrustStorePath(randString));
-    assertEquals(randString, options.getTrustStorePath());
-
-    assertNull(options.getTrustStorePassword());
-    randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setTrustStorePassword(randString));
-    assertEquals(randString, options.getTrustStorePassword());
+    assertNull(options.getTrustStore());
+    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertEquals(options, options.setTrustStore(trustStoreOptions));
+    assertEquals(trustStoreOptions, options.getTrustStore());
 
     assertFalse(options.isTrustAll());
     assertEquals(options, options.setTrustAll(true));
@@ -310,25 +301,15 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStorePath());
-    String randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setKeyStorePath(randString));
-    assertEquals(randString, options.getKeyStorePath());
+    assertNull(options.getKeyStore());
+    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertEquals(options, options.setKeyStore(keyStoreOptions));
+    assertEquals(keyStoreOptions, options.getKeyStore());
 
-    assertNull(options.getKeyStorePassword());
-    randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setKeyStorePassword(randString));
-    assertEquals(randString, options.getKeyStorePassword());
-
-    assertNull(options.getTrustStorePath());
-    randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setTrustStorePath(randString));
-    assertEquals(randString, options.getTrustStorePath());
-
-    assertNull(options.getTrustStorePassword());
-    randString = TestUtils.randomAlphaString(100);
-    assertEquals(options, options.setTrustStorePassword(randString));
-    assertEquals(randString, options.getTrustStorePassword());
+    assertNull(options.getTrustStore());
+    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertEquals(options, options.setTrustStore(trustStoreOptions));
+    assertEquals(trustStoreOptions, options.getTrustStore());
 
     assertEquals(1024, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
@@ -352,7 +333,7 @@ public class NetTest extends VertxTestBase {
     }
 
     assertEquals("0.0.0.0", options.getHost());
-    randString = TestUtils.randomUnicodeString(100);
+    String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
 
@@ -752,10 +733,10 @@ public class NetTest extends VertxTestBase {
       options.setSsl(true);
     }
     if (serverTrust) {
-      options.setTrustStorePath(findFileOnClasspath("tls/server-truststore.jks")).setTrustStorePassword("wibble");
+      options.setTrustStore(new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
     }
     if (serverCert) {
-      options.setKeyStorePath(findFileOnClasspath("tls/server-keystore.jks")).setKeyStorePassword("wibble");
+      options.setKeyStore(new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
     }
     if (requireClientAuth) {
       options.setClientAuthRequired(true);
@@ -788,10 +769,10 @@ public class NetTest extends VertxTestBase {
           clientOptions.setTrustAll(true);
         }
         if (clientTrust) {
-          clientOptions.setTrustStorePath(findFileOnClasspath("tls/client-truststore.jks")).setTrustStorePassword("wibble");
+          clientOptions.setTrustStore(new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
         }
         if (clientCert) {
-          clientOptions.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
+          clientOptions.setKeyStore(new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
         }
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);

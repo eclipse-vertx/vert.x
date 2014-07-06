@@ -18,7 +18,10 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.TrustStoreOptions;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -96,6 +99,18 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setClientAuthRequired(boolean clientAuthRequired) {
     super.setClientAuthRequired(clientAuthRequired);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
+    super.addCrlPath(crlPath);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    super.addCrlValue(crlValue);
     return this;
   }
 
@@ -180,26 +195,14 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setKeyStorePath(String keyStorePath) {
-    super.setKeyStorePath(keyStorePath);
+  public HttpServerOptions setKeyStore(KeyStoreOptions keyStore) {
+    super.setKeyStore(keyStore);
     return this;
   }
 
   @Override
-  public HttpServerOptions setKeyStorePassword(String keyStorePassword) {
-    super.setKeyStorePassword(keyStorePassword);
-    return this;
-  }
-
-  @Override
-  public HttpServerOptions setTrustStorePath(String trustStorePath) {
-    super.setTrustStorePath(trustStorePath);
-    return this;
-  }
-
-  @Override
-  public HttpServerOptions setTrustStorePassword(String trustStorePassword) {
-    super.setTrustStorePassword(trustStorePassword);
+  public HttpServerOptions setTrustStore(TrustStoreOptions trustStore) {
+    super.setTrustStore(trustStore);
     return this;
   }
 

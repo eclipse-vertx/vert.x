@@ -1,3 +1,5 @@
+# JKS (Java KeyStore)
+
 1) Create a private key + certificate for the server in a new key store:
 
 keytool -genkey -alias test-store -keyalg RSA -keystore server-keystore.jks -keysize 2048
@@ -9,3 +11,47 @@ keytool -export -alias test-store -file localhost.crt -keystore server-keystore.
 3) Import the cert into a new trust-store for the client
 
 keytool -import -trustcacerts -alias test-store -file localhost.crt -keystore client-truststore.jks
+
+
+# PKCS12
+
+1) Transform JKS to PKCS12
+
+keytool -importkeystore -srckeystore server-keystore.jks -destkeystore server-keystore.p12 -deststoretype PKCS12
+
+
+# PEM
+
+1) Extract the private key from the PCS12 store and convert it to PKCS8 format
+
+openssl pkcs12 -in server-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out server-key.pem -nocrypt
+
+2) Extract the X.509 certificate from the PCS12 store
+
+openssl pkcs12 -in server-keystore.p12 -nokeys -out server-cert.pem
+
+# PEM signed by CA with Certificate Revocation List
+
+1) Generate a Certificate Signing Request for the server cert
+
+keytool -certreq -alias test-store -file server-csr.pem -keystore server-keystore.jks
+
+2) Create a CA database
+
+mkdir ca
+openssl req -x509 -newkey rsa:2048 -keyout ca/ca-key.pem -out ca/ca-cert.pem
+touch ca/index.txt
+echo 01 > ca/serial
+echo 1000 > ca/crlnumber
+
+3) Sign the server cert with the CA and convert it to the X.509 format
+
+openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -in server-csr.pem | openssl x509 -out server-cert-ca.pem -outform PEM
+
+4) Revoke the cert
+
+openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -revoke ca/01.pem
+
+5) Generate the Certificate Revocation List
+
+openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -gencrl -out ca/crl.pem

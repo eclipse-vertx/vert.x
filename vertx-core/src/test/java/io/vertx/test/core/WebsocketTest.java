@@ -27,16 +27,13 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.impl.Base64;
-import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -169,81 +166,151 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, true);
+    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(false, true, true, false, false, false, true);
+    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCertPKCS12() throws Exception {
+    testTLS(KS.NONE, TS.JKS, KS.PKCS12, TS.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCertPEM() throws Exception {
+    testTLS(KS.NONE, TS.JKS, KS.PEM, TS.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEM_CA() throws Exception {
+    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustPKCS12ServerCert() throws Exception {
+    testTLS(KS.NONE, TS.PKCS12, KS.JKS, TS.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustPEMServerCert() throws Exception {
+    testTLS(KS.NONE, TS.PEM, KS.JKS, TS.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(false, false, true, false, false, false, false);
+    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, false, false, false);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(true, true, true, true, false, false, true);
+    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, false, false, false, false, true);
   }
 
   @Test
-  //Client specifies cert and it's not required
+  //Client specifies cert and it is required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(true, true, true, true, true, false, true);
+    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it is required
+  public void testTLSClientCertRequiredPKCS12() throws Exception {
+    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PKCS12, true, false, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it is required
+  public void testTLSClientCertRequiredPEM() throws Exception {
+    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PEM, true, false, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it is required
+  public void testTLSClientCertPKCS12Required() throws Exception {
+    testTLS(KS.PKCS12, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert and it is required
+  public void testTLSClientCertPEMRequired() throws Exception {
+    testTLS(KS.PEM, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+  }
+
+  @Test
+  //Client specifies cert signed by CA and it is required
+  public void testTLSClientCertPEM_CARequired() throws Exception {
+    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, false, false, false, true);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(false, true, true, true, true, false, false);
+    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, false);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(true, true, true, false, true, false, false);
+    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.NONE, true, false, false, false, false);
+  }
+
+  @Test
+  // Server specifies cert that the client does not trust via a revoked certificate of the CA
+  public void testTLSClientRevokedServerCert() throws Exception {
+    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, true, false);
+  }
+
+  @Test
+  //Client specifies cert that the server does not trust via a revoked certificate of the CA
+  public void testTLSRevokedClientCertServer() throws Exception {
+    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, true, false, false, false);
   }
 
   @Test
   // Test with cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(false, false, true, false, false, true, true, ENABLED_CIPHER_SUITES);
+    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true, ENABLED_CIPHER_SUITES);
   }
 
-  private void testTLS(boolean clientCert, boolean clientTrust,
-                       boolean serverCert, boolean serverTrust,
-                       boolean requireClientAuth, boolean clientTrustAll,
-                       boolean shouldPass,
+  private void testTLS(KS clientCert, TS clientTrust,
+                       KS serverCert, TS serverTrust,
+                       boolean requireClientAuth, boolean serverUsesCrl, boolean clientTrustAll,
+                       boolean clientUsesCrl, boolean shouldPass,
                        String... enabledCipherSuites) throws Exception {
     HttpClientOptions options = new HttpClientOptions();
     options.setSsl(true);
     if (clientTrustAll) {
       options.setTrustAll(true);
     }
-    if (clientTrust) {
-      options.setTrustStorePath(findFileOnClasspath("tls/client-truststore.jks")).setTrustStorePassword("wibble");
+    if (clientUsesCrl) {
+      options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
     }
-    if (clientCert) {
-      options.setKeyStorePath(findFileOnClasspath("tls/client-keystore.jks")).setKeyStorePassword("wibble");
-    }
+    options.setTrustStore(getClientTrustOptions(clientTrust));
+    options.setKeyStore(getClientCertOptions(clientCert));
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
-    if (serverTrust) {
-      serverOptions.setTrustStorePath(findFileOnClasspath("tls/server-truststore.jks")).setTrustStorePassword("wibble");
-    }
-    if (serverCert) {
-      serverOptions.setKeyStorePath(findFileOnClasspath("tls/server-keystore.jks")).setKeyStorePassword("wibble");
-    }
+    serverOptions.setTrustStore(getServerTrustOptions(serverTrust));
+    serverOptions.setKeyStore(getServerCertOptions(serverCert));
     if (requireClientAuth) {
       serverOptions.setClientAuthRequired(true);
+    }
+    if (serverUsesCrl) {
+      serverOptions.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
     }
     for (String suite: enabledCipherSuites) {
       serverOptions.addEnabledCipherSuite(suite);
@@ -279,7 +346,6 @@ public class WebsocketTest extends VertxTestBase {
     });
     await();
   }
-
 
   @Test
   // Let's manually handle the websocket handshake and write a frame to the client

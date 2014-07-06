@@ -54,6 +54,7 @@ import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
@@ -81,7 +82,7 @@ public class HttpClientImpl implements HttpClient {
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
     this.options = new HttpClientOptions(options);
-    this.sslHelper = new SSLHelper(options);
+    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStore()), KeyStoreHelper.create(vertx, options.getTrustStore()));
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();
