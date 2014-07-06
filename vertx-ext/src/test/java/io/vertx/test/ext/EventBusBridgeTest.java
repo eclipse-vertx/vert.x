@@ -46,7 +46,7 @@ public class EventBusBridgeTest extends VertxTestBase {
     JsonArray permitted = new JsonArray();
     permitted.add(new JsonObject()); // Let everything through
 
-    SockJSServer sockJSServer = new SockJSServer(vertx, server);
+    SockJSServer sockJSServer = SockJSServer.newSockJSServer(vertx, server);
     sockJSServer.bridge(new JsonObject().putString("prefix", "/eventbus"), permitted, permitted);
 
   }

@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.sockjs;
+package io.vertx.ext.sockjs.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;

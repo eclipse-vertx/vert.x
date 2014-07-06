@@ -14,13 +14,16 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.sockjs;
+package io.vertx.ext.sockjs.impl;
 
 /**
- * The available SockJS transports
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public enum Transport {
-  WEBSOCKET, EVENT_SOURCE, HTML_FILE, JSON_P, XHR
+interface TransportListener {
+
+  void sendFrame(String body);
+
+  void close();
+
+  void sessionClosed();
 }
