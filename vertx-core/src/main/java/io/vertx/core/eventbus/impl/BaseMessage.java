@@ -66,23 +66,13 @@ public abstract class BaseMessage<T> implements Message<T> {
   }
 
   @Override
-  public void reply() {
-    sendReply(bus.createMessage(true, replyAddress, null), null);
-  }
-
-  @Override
   public void reply(Object message) {
     reply(message, null);
   }
 
   @Override
-  public <R> void reply(Handler<Message<R>> replyHandler) {
-    sendReply(bus.createMessage(true, replyAddress, null), replyHandler);
-  }
-
-  @Override
-  public <R> void replyWithTimeout(long timeout, Handler<AsyncResult<Message<R>>> replyHandler) {
-    sendReplyWithTimeout(bus.createMessage(true, replyAddress, null), timeout, replyHandler);
+  public <R> void replyWithTimeout(Object message, long timeout) {
+    sendReplyWithTimeout(bus.createMessage(true, replyAddress, message), timeout, null);
   }
 
   @Override

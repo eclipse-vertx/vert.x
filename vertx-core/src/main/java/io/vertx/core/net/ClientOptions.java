@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -58,6 +59,8 @@ public class ClientOptions extends TCPOptions {
     super(json);
     this.connectTimeout = json.getInteger("connectTimeout", DEFAULT_CONNECTTIMEOUT);
     this.trustAll = json.getBoolean("trustAll", false);
+    JsonArray arr = json.getArray("crlPaths");
+    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.toList());
   }
 
   public boolean isTrustAll() {

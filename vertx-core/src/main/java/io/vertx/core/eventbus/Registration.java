@@ -18,12 +18,14 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * An event bus registration object which can be used to later unregister an event bus handler.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
+@VertxGen
 public interface Registration {
 
   /**

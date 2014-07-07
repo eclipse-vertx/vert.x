@@ -1256,6 +1256,42 @@ public class FileSystemTest extends VertxTestBase {
     });
   }
 
+  @Test
+  public void testOpenOptions() {
+    OpenOptions opts = new OpenOptions();
+    assertNull(opts.getPerms());
+    String perms = "rwxrwxrwx";
+    assertEquals(opts, opts.setPerms(perms));
+    assertEquals(perms, opts.getPerms());
+    assertTrue(opts.isCreate());
+    assertEquals(opts, opts.setCreate(false));
+    assertFalse(opts.isCreate());
+    assertFalse(opts.isCreateNew());
+    assertEquals(opts, opts.setCreateNew(true));
+    assertTrue(opts.isCreateNew());
+    assertTrue(opts.isRead());
+    assertEquals(opts, opts.setRead(false));
+    assertFalse(opts.isRead());
+    assertTrue(opts.isWrite());
+    assertEquals(opts, opts.setWrite(false));
+    assertFalse(opts.isWrite());
+    assertFalse(opts.isDSync());
+    assertEquals(opts, opts.setDSync(true));
+    assertTrue(opts.isDSync());
+    assertFalse(opts.isSync());
+    assertEquals(opts, opts.setSync(true));
+    assertTrue(opts.isSync());
+    assertFalse(opts.isDeleteOnClose());
+    assertEquals(opts, opts.setDeleteOnClose(true));
+    assertTrue(opts.isDeleteOnClose());
+    assertFalse(opts.isTruncateExisting());
+    assertEquals(opts, opts.setTruncateExisting(true));
+    assertTrue(opts.isTruncateExisting());
+    assertFalse(opts.isSparse());
+    assertEquals(opts, opts.setSparse(true));
+    assertTrue(opts.isSparse());
+  }
+
   private AsyncResultHandler<Void> createHandler(boolean shouldPass, Handler<Void> afterOK) {
     return ar -> {
       if (ar.failed()) {

@@ -17,23 +17,33 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetClientOptions extends ClientOptions {
 
+  private static final long DEFAULT_RECONNECTINTERVAL = 1000;
+
   private int reconnectAttempts;
-  private long reconnectInterval = 1000;
+  private long reconnectInterval;
 
   public NetClientOptions() {
     super();
+    this.reconnectInterval = DEFAULT_RECONNECTINTERVAL;
   }
 
   public NetClientOptions(NetClientOptions other) {
     super(other);
     this.reconnectAttempts = other.reconnectAttempts;
     this.reconnectInterval = other.reconnectInterval;
+  }
+
+  public NetClientOptions(JsonObject json) {
+    super(json);
+    this.reconnectAttempts = json.getInteger("reconnectAttempts", 0);
+    this.reconnectInterval = json.getLong("reconnectInterval", DEFAULT_RECONNECTINTERVAL);
   }
 
   public NetClientOptions setReconnectAttempts(int attempts) {

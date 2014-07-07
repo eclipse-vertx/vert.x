@@ -18,6 +18,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.VertxGen;
 
 /**
  * Represents a message on the event bus.<p>
@@ -26,6 +27,7 @@ import io.vertx.core.Handler;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface Message<T> {
 
   /**
@@ -44,11 +46,6 @@ public interface Message<T> {
   String replyAddress();
 
   /**
-   * Same as {@code reply(Object message)} but with a null body
-   */
-  void reply();
-
-  /**
    * Reply to this message. If the message was sent specifying a reply handler, that handler will be
    * called when it has received a reply. If the message wasn't sent specifying a receipt handler
    * this method does nothing.
@@ -56,21 +53,15 @@ public interface Message<T> {
   void reply(Object message);
 
   /**
-   * The same as {@code reply()} but you can specify handler for the reply - i.e.
-   * to receive the reply to the reply.
-   */
-  <R> void reply(Handler<Message<R>> replyHandler);
-
-  /**
-   * Reply to this message. Specifying a timeout and a reply handler
-   */
-  <R> void replyWithTimeout(long timeout, Handler<AsyncResult<Message<R>>> replyHandler);
-
-  /**
    * The same as {@code reply(R message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
   <R> void reply(Object message, Handler<Message<R>> replyHandler);
+
+  /**
+   * Reply to this message. Specifying a timeout
+   */
+  <R> void replyWithTimeout(Object message, long timeout);
 
   /**
    * Reply to this message. Specifying a timeout and a reply handler
