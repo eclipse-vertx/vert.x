@@ -20,12 +20,9 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
 import io.vertx.core.spi.VerticleFactory;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.function.Function;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -35,15 +32,14 @@ public class VerticleFactoryTest extends VertxTestBase {
   @Before
   public void before() {
     // Unregister the factory that's loaded from the classpath
-    VerticleFactory factory = vertx.verticleFactories().get(0);
+    VerticleFactory factory = vertx.verticleFactories().iterator().next();
     vertx.unregisterVerticleFactory(factory);
   }
-
 
   @Test
   public void testRegister() {
     assertTrue(vertx.verticleFactories().isEmpty());
-    VerticleFactory fact1 = new TestVerticleFactory();
+    VerticleFactory fact1 = new TestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     assertEquals(1, vertx.verticleFactories().size());
     assertTrue(vertx.verticleFactories().contains(fact1));
@@ -51,7 +47,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testUnregister() {
-    VerticleFactory fact1 = new TestVerticleFactory();
+    VerticleFactory fact1 = new TestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     assertEquals(1, vertx.verticleFactories().size());
     assertTrue(vertx.verticleFactories().contains(fact1));
@@ -62,7 +58,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testRegisterTwice() {
-    VerticleFactory fact1 = new TestVerticleFactory();
+    VerticleFactory fact1 = new TestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     try {
       vertx.registerVerticleFactory(fact1);
@@ -74,7 +70,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testUnregisterTwice() {
-    VerticleFactory fact1 = new TestVerticleFactory();
+    VerticleFactory fact1 = new TestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     vertx.unregisterVerticleFactory(fact1);
     try {
@@ -87,7 +83,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testUnregisterNoFact() {
-    VerticleFactory fact1 = new TestVerticleFactory();
+    VerticleFactory fact1 = new TestVerticleFactory("foo");
     try {
       vertx.unregisterVerticleFactory(fact1);
       fail("Should throw exception");
@@ -98,8 +94,8 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testRegisterUnregisterTwo() {
-    VerticleFactory fact1 = new TestVerticleFactory();
-    VerticleFactory fact2 = new TestVerticleFactory();
+    VerticleFactory fact1 = new TestVerticleFactory("foo");
+    VerticleFactory fact2 = new TestVerticleFactory("bar");
     vertx.registerVerticleFactory(fact1);
     assertEquals(1, vertx.verticleFactories().size());
     vertx.registerVerticleFactory(fact2);
@@ -121,9 +117,9 @@ public class VerticleFactoryTest extends VertxTestBase {
     TestVerticle verticle1 = new TestVerticle();
     TestVerticle verticle2 = new TestVerticle();
     TestVerticle verticle3 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory(verticleName -> verticleName.startsWith("aa:"), verticle1);
-    TestVerticleFactory fact2 = new TestVerticleFactory(verticleName -> verticleName.startsWith("bb:"), verticle2);
-    TestVerticleFactory fact3 = new TestVerticleFactory(verticleName -> verticleName.startsWith("cc:"), verticle3);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    TestVerticleFactory fact2 = new TestVerticleFactory("bb", verticle2);
+    TestVerticleFactory fact3 = new TestVerticleFactory("cc", verticle3);
     vertx.registerVerticleFactory(fact1);
     vertx.registerVerticleFactory(fact2);
     vertx.registerVerticleFactory(fact3);
@@ -132,7 +128,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     String name3 = "cc:myverticle3";
     vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
       assertTrue(ar.succeeded());
-      assertEquals(name1, fact1.verticleName);
+      assertEquals(name1.substring(3), fact1.verticleName);
       assertTrue(verticle1.startCalled);
       assertFalse(verticle2.startCalled);
       assertFalse(verticle3.startCalled);
@@ -140,13 +136,13 @@ public class VerticleFactoryTest extends VertxTestBase {
       assertNull(fact3.verticleName);
       vertx.deployVerticle(name2, new DeploymentOptions(), ar2 -> {
         assertTrue(ar2.succeeded());
-        assertEquals(name2, fact2.verticleName);
+        assertEquals(name2.substring(3), fact2.verticleName);
         assertTrue(verticle2.startCalled);
         assertFalse(verticle3.startCalled);
         assertNull(fact3.verticleName);
         vertx.deployVerticle(name3, new DeploymentOptions(), ar3 -> {
           assertTrue(ar3.succeeded());
-          assertEquals(name3, fact3.verticleName);
+          assertEquals(name3.substring(3), fact3.verticleName);
           assertTrue(verticle3.startCalled);
           testComplete();
         });
@@ -159,27 +155,23 @@ public class VerticleFactoryTest extends VertxTestBase {
   public void testMultipleMatch() {
     TestVerticle verticle1 = new TestVerticle();
     TestVerticle verticle2 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory(verticleName -> verticleName.startsWith("aa:"), verticle1);
-    TestVerticleFactory fact2 = new TestVerticleFactory(verticleName -> verticleName.startsWith("aa:"), verticle2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle2);
     vertx.registerVerticleFactory(fact1);
-    vertx.registerVerticleFactory(fact2);
-    String name1 = "aa:myverticle1";
-    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
-      assertFalse(ar.succeeded());
-      assertFalse(verticle1.startCalled);
-      assertFalse(verticle2.startCalled);
-      assertTrue(ar.cause() instanceof VertxException);
-      testComplete();
-    });
-    await();
+    try {
+      vertx.registerVerticleFactory(fact2);
+      fail("Should throw exception") ;
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
   }
 
   @Test
   public void testNoMatch() {
     TestVerticle verticle1 = new TestVerticle();
     TestVerticle verticle2 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory(verticleName -> verticleName.startsWith("aa:"), verticle1);
-    TestVerticleFactory fact2 = new TestVerticleFactory(verticleName -> verticleName.startsWith("bb:"), verticle2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    TestVerticleFactory fact2 = new TestVerticleFactory("bb", verticle2);
     vertx.registerVerticleFactory(fact1);
     vertx.registerVerticleFactory(fact2);
     String name1 = "cc:myverticle1";
@@ -196,15 +188,16 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   class TestVerticleFactory implements VerticleFactory {
 
-    Function<String, Boolean> matcher;
+    String prefix;
     Verticle verticle;
     String verticleName;
 
-    TestVerticleFactory() {
+    TestVerticleFactory(String prefix) {
+      this.prefix = prefix;
     }
 
-    TestVerticleFactory(Function<String, Boolean> matcher, Verticle verticle) {
-      this.matcher = matcher;
+    TestVerticleFactory(String prefix, Verticle verticle) {
+      this.prefix = prefix;
       this.verticle = verticle;
     }
 
@@ -215,9 +208,10 @@ public class VerticleFactoryTest extends VertxTestBase {
     }
 
     @Override
-    public boolean matches(String verticleName) {
-      return matcher == null ? false : matcher.apply(verticleName);
+    public String prefix() {
+      return prefix;
     }
+
 
     @Override
     public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {

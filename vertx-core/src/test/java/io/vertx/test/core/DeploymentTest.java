@@ -355,7 +355,7 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployUsingClassName() throws Exception {
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions(), ar -> {
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), new DeploymentOptions(), ar -> {
       assertTrue(ar.succeeded());
       testComplete();
     });
@@ -365,7 +365,7 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testDeployUsingClassAndConfig() throws Exception {
     JsonObject config = generateJSONObject();
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setConfig(config), ar -> {
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), new DeploymentOptions().setConfig(config), ar -> {
       assertTrue(ar.succeeded());
       testComplete();
     });
@@ -374,12 +374,23 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployUsingClassFails() throws Exception {
-    vertx.deployVerticle("uhqwuhiqwduhwd", new DeploymentOptions(), ar -> {
+    vertx.deployVerticle("java:uhqwuhiqwduhwd", new DeploymentOptions(), ar -> {
       assertFalse(ar.succeeded());
       assertTrue(ar.cause() instanceof ClassNotFoundException);
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testDeployWithNoPrefix() throws Exception {
+    try {
+      vertx.deployVerticle("uhqwuhiqwduhwd", new DeploymentOptions(), ar -> {
+      });
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
   }
 
   @Test
@@ -601,7 +612,7 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testIsolationGroup1() throws Exception {
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup"), ar -> {
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup"), ar -> {
       assertTrue(ar.succeeded());
       assertEquals(0, TestVerticle.instanceCount.get());
       testComplete();
@@ -611,7 +622,7 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testNullIsolationGroup() throws Exception {
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(null), ar -> {
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(null), ar -> {
       assertTrue(ar.succeeded());
       assertEquals(1, TestVerticle.instanceCount.get());
       testComplete();
@@ -642,11 +653,11 @@ public class DeploymentTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<String> deploymentID1 = new AtomicReference<>();
     AtomicReference<String> deploymentID2 = new AtomicReference<>();
-    vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(group1), ar -> {
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(group1), ar -> {
       assertTrue(ar.succeeded());
       deploymentID1.set(ar.result());
       assertEquals(0, TestVerticle.instanceCount.get());
-      vertx.deployVerticle(TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(group2), ar2 -> {
+      vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(group2), ar2 -> {
         assertTrue(ar2.succeeded());
         deploymentID2.set(ar2.result());
         assertEquals(0, TestVerticle.instanceCount.get());

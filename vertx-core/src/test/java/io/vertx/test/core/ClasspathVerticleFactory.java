@@ -27,12 +27,11 @@ public class ClasspathVerticleFactory implements VerticleFactory{
 
   @Override
   public void init(Vertx vertx) {
-
   }
 
   @Override
-  public boolean matches(String verticleName) {
-    return false;
+  public String prefix() {
+    return "wibble";
   }
 
   @Override

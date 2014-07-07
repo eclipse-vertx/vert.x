@@ -30,8 +30,8 @@ public class SimpleJavaVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public boolean matches(String verticleName) {
-    return true;
+  public String prefix() {
+    return "java";
   }
 
   @Override

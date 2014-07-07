@@ -22,7 +22,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
-import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -33,14 +32,12 @@ import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -54,7 +51,7 @@ public class DeploymentManager {
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
-  private List<VerticleFactory> verticleFactories = new CopyOnWriteArrayList<>();
+  private Map<String, VerticleFactory> verticleFactories = new ConcurrentHashMap<>();
   private static final VerticleFactory DEFAULT_VERTICLE_FACTORY = new SimpleJavaVerticleFactory();
 
   public DeploymentManager(VertxInternal vertx) {
@@ -68,7 +65,12 @@ public class DeploymentManager {
     while (iter.hasNext()) {
       VerticleFactory factory = iter.next();
       factory.init(vertx);
-      verticleFactories.add(factory);
+      String prefix = factory.prefix();
+      if (verticleFactories.containsKey(prefix)) {
+        log.warn("Not loading verticle factory: " + factory + " as prefix " + prefix + " is already in use");
+      } else {
+        verticleFactories.put(prefix, factory);
+      }
     }
   }
 
@@ -83,23 +85,22 @@ public class DeploymentManager {
                              Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options.getIsolationGroup());
+    int pos = verticleName.indexOf(':');
+    if (pos == -1) {
+      throw new IllegalArgumentException("verticleName must start with prefix");
+    }
+    String prefix = verticleName.substring(0, pos);
+    if (pos + 1 >= verticleName.length()) {
+      throw new IllegalArgumentException("Invalid name: " + verticleName);
+    }
+    String actualName = verticleName.substring(pos + 1);
+    VerticleFactory verticleFactory = verticleFactories.get(prefix);
+    if (verticleFactory == null) {
+      // Use default Java verticle factory
+      verticleFactory = DEFAULT_VERTICLE_FACTORY;
+    }
     try {
-      VerticleFactory verticleFactory = null;
-      for (VerticleFactory factory: verticleFactories) {
-        if (factory.matches(verticleName)) {
-          if (verticleFactory != null) {
-            reportFailure(new VertxException("Multiple VerticleFactory matches for verticleName: " + verticleName),
-                          currentContext, completionHandler);
-            return;
-          }
-          verticleFactory = factory;
-        }
-      }
-      if (verticleFactory == null) {
-        // Use default Java verticle factory
-        verticleFactory = DEFAULT_VERTICLE_FACTORY;
-      }
-      Verticle verticle = verticleFactory.createVerticle(verticleName, cl);
+      Verticle verticle = verticleFactory.createVerticle(actualName, cl);
       if (verticle == null) {
         reportFailure(new NullPointerException("VerticleFactory::createVerticle returned null"), currentContext, completionHandler);
       } else {
@@ -140,20 +141,23 @@ public class DeploymentManager {
   }
 
   public void registerVerticleFactory(VerticleFactory factory) {
-    if (verticleFactories.contains(factory)) {
-      throw new IllegalArgumentException("Factory " + factory + " is already registered");
+    if (factory.prefix() == null) {
+      throw new IllegalArgumentException("factory.prefix() cannot be null");
     }
-    verticleFactories.add(factory);
+    if (verticleFactories.containsKey(factory.prefix())) {
+      throw new IllegalArgumentException("There is already a registered verticle factory with prefix " + factory.prefix());
+    }
+    verticleFactories.put(factory.prefix(), factory);
   }
 
   public void unregisterVerticleFactory(VerticleFactory factory) {
-    if (!verticleFactories.remove(factory)) {
+    if (verticleFactories.remove(factory.prefix()) == null) {
       throw new IllegalArgumentException("Factory " + factory + " is not registered");
     }
   }
 
-  public List<VerticleFactory> verticleFactories() {
-    return Collections.unmodifiableList(verticleFactories);
+  public Set<VerticleFactory> verticleFactories() {
+    return new HashSet<>(verticleFactories.values());
   }
 
   private ClassLoader getClassLoader(String isolationGroup) {

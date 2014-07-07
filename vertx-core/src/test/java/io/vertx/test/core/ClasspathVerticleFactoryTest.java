@@ -27,7 +27,7 @@ public class ClasspathVerticleFactoryTest extends VertxTestBase{
   @Test
   public void testLoadedFromClasspath() {
     assertEquals(1, vertx.verticleFactories().size());
-    VerticleFactory fact = vertx.verticleFactories().get(0);
+    VerticleFactory fact = vertx.verticleFactories().iterator().next();
     assertTrue(fact instanceof  ClasspathVerticleFactory);
   }
 }

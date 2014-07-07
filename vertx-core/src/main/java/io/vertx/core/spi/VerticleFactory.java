@@ -26,7 +26,7 @@ public interface VerticleFactory {
 
   void init(Vertx vertx);
 
-  boolean matches(String verticleName);
+  String prefix();
 
   Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception;
 

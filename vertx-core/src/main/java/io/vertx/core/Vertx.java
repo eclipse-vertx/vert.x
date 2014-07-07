@@ -35,7 +35,6 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxFactory;
 
-import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -181,7 +180,7 @@ public interface Vertx {
   void unregisterVerticleFactory(VerticleFactory factory);
 
   @GenIgnore
-  List<VerticleFactory> verticleFactories();
+  Set<VerticleFactory> verticleFactories();
 
   static final VertxFactory factory = loadFactory();
 

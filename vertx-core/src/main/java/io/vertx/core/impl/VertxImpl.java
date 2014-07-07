@@ -59,7 +59,6 @@ import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -421,7 +420,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public List<VerticleFactory> verticleFactories() {
+  public Set<VerticleFactory> verticleFactories() {
     return deploymentManager.verticleFactories();
   }
 

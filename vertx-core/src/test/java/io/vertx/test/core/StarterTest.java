@@ -41,7 +41,7 @@ public class StarterTest extends VertxTestBase {
   @Test
   public void testRunVerticle() throws Exception {
     Thread t = new Thread(() -> {
-      String[] args = new String[] {"run", TestVerticle.class.getCanonicalName()};
+      String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
       Starter.main(args);
     });
     t.start();
