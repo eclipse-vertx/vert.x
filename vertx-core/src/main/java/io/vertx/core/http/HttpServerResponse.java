@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.GenIgnore;
 import io.vertx.core.gen.VertxGen;
@@ -93,6 +94,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
   /**
    * @return The HTTP headers
    */
+  @CacheReturn
   MultiMap headers();
 
   /**

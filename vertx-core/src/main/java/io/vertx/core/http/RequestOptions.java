@@ -17,11 +17,13 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.gen.Options;
 import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Options
 public class RequestOptions {
 
   private static final int DEFAULT_PORT = 80;

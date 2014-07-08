@@ -16,6 +16,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Options;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.<p>
@@ -37,6 +38,7 @@ import io.vertx.core.buffer.Buffer;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Options
 public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions {
 
   private String password;

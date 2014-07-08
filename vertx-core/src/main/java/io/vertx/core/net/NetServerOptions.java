@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Options;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Options
 public class NetServerOptions extends TCPOptions {
 
   // Server specific HTTP stuff

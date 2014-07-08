@@ -16,11 +16,13 @@
 
 package io.vertx.core;
 
+import io.vertx.core.gen.Options;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Options
 public class VertxOptions {
 
   private int eventLoopPoolSize = 2 * Runtime.getRuntime().availableProcessors();

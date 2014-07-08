@@ -16,10 +16,12 @@
 
 package io.vertx.core.file;
 
+import io.vertx.core.gen.Options;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-
+@Options
 public class OpenOptions {
 
   private String perms;

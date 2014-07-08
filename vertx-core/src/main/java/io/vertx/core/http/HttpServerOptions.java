@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Options;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyStoreOptions;
@@ -29,6 +30,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Options
 public class HttpServerOptions extends NetServerOptions {
 
   // Server specific HTTP stuff

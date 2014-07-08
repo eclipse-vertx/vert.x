@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.gen.Options;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -27,6 +28,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Options
 public class WebSocketConnectOptions extends RequestOptions {
 
   private static final int DEFAULT_MAXWEBSOCKETFRAMESIZE = 65536;

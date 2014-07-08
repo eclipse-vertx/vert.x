@@ -16,11 +16,13 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.gen.Options;
 import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Options
 public class NetworkOptions {
 
   private static final int DEFAULT_SENDBUFFERSIZE = -1;

@@ -16,6 +16,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Options;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,7 @@ import java.util.List;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Options
 public class CaOptions implements TrustStoreOptions {
 
   private ArrayList<String> certPaths;

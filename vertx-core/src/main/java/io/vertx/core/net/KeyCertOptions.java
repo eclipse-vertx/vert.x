@@ -16,6 +16,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.Options;
 
 /**
  * Key store options configuring a private key and its certificate based on
@@ -58,6 +59,7 @@ import io.vertx.core.buffer.Buffer;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Options
 public class KeyCertOptions implements KeyStoreOptions {
 
   private String keyPath;

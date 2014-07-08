@@ -15,11 +15,14 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.gen.Options;
+
 /**
  * An interface for key store configuration options.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Options
 public interface KeyStoreOptions {
 
   /**
