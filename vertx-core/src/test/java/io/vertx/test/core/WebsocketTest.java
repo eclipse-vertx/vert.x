@@ -18,25 +18,15 @@ package io.vertx.test.core;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveMultiMap;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.json.impl.Base64;
 import io.vertx.core.net.NetSocket;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -559,7 +549,7 @@ public class WebsocketTest extends VertxTestBase {
       MessageDigest md = MessageDigest.getInstance("SHA1");
       //Hash the data
       byte[] bytes = md.digest(s.getBytes("UTF-8"));
-      return Base64.encodeBytes(bytes);
+      return Base64.getEncoder().encodeToString(bytes);
     } catch (Exception e) {
       throw new InternalError("Failed to compute sha-1");
     }

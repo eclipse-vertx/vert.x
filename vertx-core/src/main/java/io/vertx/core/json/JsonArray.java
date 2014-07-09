@@ -19,11 +19,7 @@ package io.vertx.core.json;
 import io.vertx.core.VertxException;
 import io.vertx.core.json.impl.Json;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents a JSON array.<p>
@@ -92,7 +88,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray addBinary(byte[] value) {
-    String encoded = (value == null) ? null : io.vertx.core.json.impl.Base64.encodeBytes(value);
+    String encoded = (value == null) ? null : Base64.getEncoder().encodeToString(value);
     list.add(encoded);
     return this;
   }
