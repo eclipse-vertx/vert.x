@@ -103,15 +103,15 @@ public class VertxImpl implements VertxInternal {
   private final ClusterManager clusterManager;
   private final DeploymentManager deploymentManager = new DeploymentManager(this);
 
-  public VertxImpl() {
+  VertxImpl() {
     this(new VertxOptions());
   }
 
-  public VertxImpl(VertxOptions options) {
+  VertxImpl(VertxOptions options) {
     this(options, null);
   }
 
-  public VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+  VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     configurePools(options);
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);

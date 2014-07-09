@@ -31,27 +31,27 @@ public class BufferImpl implements Buffer {
 
   private final ByteBuf buffer;
 
-  public BufferImpl() {
+  BufferImpl() {
     this(0);
   }
 
-  public BufferImpl(int initialSizeHint) {
+  BufferImpl(int initialSizeHint) {
     buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
   }
 
-  public BufferImpl(byte[] bytes) {
+  BufferImpl(byte[] bytes) {
     buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
   }
 
-  public BufferImpl(String str, String enc) {
+  BufferImpl(String str, String enc) {
     this(str.getBytes(Charset.forName(enc)));
   }
 
-  public BufferImpl(String str) {
+  BufferImpl(String str) {
     this(str, "UTF-8");
   }
 
-  public BufferImpl(ByteBuf buffer) {
+  BufferImpl(ByteBuf buffer) {
     this.buffer = Unpooled.unreleasableBuffer(buffer);
   }
 

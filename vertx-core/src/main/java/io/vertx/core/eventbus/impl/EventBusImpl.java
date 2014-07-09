@@ -123,12 +123,12 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public Registration registerHandler(String address, Handler<? extends Message> handler) {
+  public <T> Registration registerHandler(String address, Handler<Message<T>> handler) {
     return registerHandler(address, handler, false, false, -1);
   }
 
   @Override
-  public Registration registerLocalHandler(String address, Handler<? extends Message> handler) {
+  public <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler) {
     return registerHandler(address, handler, false, true, -1);
   }
 

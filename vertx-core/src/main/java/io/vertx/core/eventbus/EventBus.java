@@ -102,7 +102,7 @@ public interface EventBus {
    * @param handler The handler
    * @return the event bus registration
    */
-  Registration registerHandler(String address, Handler<? extends Message> handler);
+  <T> Registration registerHandler(String address, Handler<Message<T>> handler);
 
   /**
    * Registers a local handler against the specified address. The handler info won't
@@ -111,7 +111,7 @@ public interface EventBus {
    * @param handler The handler
    * @return the event bus registration
    */
-  Registration registerLocalHandler(String address, Handler<? extends Message> handler);
+  <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler);
 
   /**
    * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler

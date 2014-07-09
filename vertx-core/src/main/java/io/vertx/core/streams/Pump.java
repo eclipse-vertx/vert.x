@@ -16,10 +16,12 @@
 
 package io.vertx.core.streams;
 
-import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.gen.Fluent;
+import io.vertx.core.gen.GenIgnore;
 import io.vertx.core.gen.VertxGen;
+import io.vertx.core.spi.PumpFactory;
+
+import java.util.ServiceLoader;
 
 /**
  * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
@@ -40,87 +42,57 @@ import io.vertx.core.gen.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public class Pump {
+public interface Pump {
 
-  private final ReadStream<?> readStream;
-  private final WriteStream<?> writeStream;
-  private int pumped;
 
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
    */
-  public static Pump createPump(ReadStream<?> rs, WriteStream<?> ws) {
-    return new Pump(rs, ws);
+  static Pump createPump(ReadStream<?> rs, WriteStream<?> ws) {
+    return factory.createPump(rs, ws);
   }
 
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream} and
    * {@code writeQueueMaxSize}
    */
-  public static Pump createPump(ReadStream<?> rs, WriteStream<?> ws, int writeQueueMaxSize) {
-    return new Pump(rs, ws, writeQueueMaxSize);
+  static Pump createPump(ReadStream<?> rs, WriteStream<?> ws, int writeQueueMaxSize) {
+    return factory.createPump(rs, ws, writeQueueMaxSize);
   }
 
   /**
    * Set the write queue max size to {@code maxSize}
    */
   @Fluent
-  public Pump setWriteQueueMaxSize(int maxSize) {
-    this.writeStream.setWriteQueueMaxSize(maxSize);
-    return this;
-  }
+  Pump setWriteQueueMaxSize(int maxSize);
 
   /**
    * Start the Pump. The Pump can be started and stopped multiple times.
    */
   @Fluent
-  public Pump start() {
-    readStream.dataHandler(dataHandler);
-    return this;
-  }
+  Pump start();
 
   /**
    * Stop the Pump. The Pump can be started and stopped multiple times.
    */
   @Fluent
-  public Pump stop() {
-    writeStream.drainHandler(null);
-    readStream.dataHandler(null);
-    return this;
-  }
+  Pump stop();
 
   /**
    * Return the total number of bytes pumped by this pump.
    */
-  public int bytesPumped() {
-    return pumped;
-  }
+  int bytesPumped();
 
-  private final Handler<Void> drainHandler;
+  static final PumpFactory factory = loadFactory();
 
-  private final Handler<Buffer> dataHandler;
-
-  /**
-   * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
-   * of the write stream to {@code maxWriteQueueSize}
-   */
-  private Pump(ReadStream<?> rs, WriteStream <?> ws, int maxWriteQueueSize) {
-    this(rs, ws);
-    this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
-  }
-
-  private Pump(ReadStream<?> rs, WriteStream<?> ws) {
-    this.readStream = rs;
-    this.writeStream = ws;
-    drainHandler = v-> readStream.resume();
-    dataHandler = buffer -> {
-      writeStream.writeBuffer(buffer);
-      pumped += buffer.length();
-      if (writeStream.writeQueueFull()) {
-        readStream.pause();
-        writeStream.drainHandler(drainHandler);
-      }
-    };
+  @GenIgnore
+  static PumpFactory loadFactory() {
+    ServiceLoader<PumpFactory> factories = ServiceLoader.load(PumpFactory.class);
+    if (factories.iterator().hasNext()) {
+      return factories.iterator().next();
+    } else {
+      throw new IllegalStateException("Cannot find PumpFactory service");
+    }
   }
 
 

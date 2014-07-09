@@ -212,7 +212,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
       final boolean debug = log.isDebugEnabled();
       Match match = checkMatches(false, address, message);
       if (match.doesMatch) {
-        Handler<Message> handler = msg -> {
+        Handler<Message<Object>> handler = msg -> {
           Match curMatch = checkMatches(false, address, msg.body());
           if (curMatch.doesMatch) {
             Set<String> sockAuths = info.sockAuths;

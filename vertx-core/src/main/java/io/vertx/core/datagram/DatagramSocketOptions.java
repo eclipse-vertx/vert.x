@@ -16,11 +16,13 @@
 
 package io.vertx.core.datagram;
 
+import io.vertx.core.gen.Options;
 import io.vertx.core.net.NetworkOptions;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Options
 public class DatagramSocketOptions extends NetworkOptions {
 
   private boolean broadcast;

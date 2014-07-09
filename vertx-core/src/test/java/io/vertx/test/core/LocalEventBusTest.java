@@ -75,7 +75,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testRegisterUnregister() {
     String str = TestUtils.randomUnicodeString(100);
-    Handler<Message> handler = msg -> fail("Should not receive message");
+    Handler<Message<String>> handler = msg -> fail("Should not receive message");
     Registration reg = eb.registerHandler(ADDRESS1, handler);
     reg.unregister();
     eb.send(ADDRESS1, str);
@@ -85,7 +85,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testUnregisterTwice() {
-    Handler<Message> handler = msg -> {};
+    Handler<Message<String>> handler = msg -> {};
     Registration reg = eb.registerHandler(ADDRESS1, handler);
     reg.unregister();
     reg.unregister(); // Ok to unregister twice
@@ -155,7 +155,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendRegisterSomeUnregisterOne() {
     String str = TestUtils.randomUnicodeString(100);
     AtomicInteger totalCount = new AtomicInteger();
-    Handler<Message> handler1 = msg -> fail("Should not receive message");
+    Handler<Message<String>> handler1 = msg -> fail("Should not receive message");
     Handler<Message<String>> handler2 = msg -> {
       assertEquals(str, msg.body());
       if (totalCount.incrementAndGet() == 2) {

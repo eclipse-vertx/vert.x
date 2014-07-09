@@ -30,7 +30,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.ext.routematcher.RouteMatcher;
-import io.vertx.ext.routematcher.RouteMatcher;
 import io.vertx.ext.sockjs.SockJSServer;
 
 import java.security.MessageDigest;
@@ -58,10 +57,7 @@ public class SockJSServerImpl implements SockJSServer, Handler<HttpServerRequest
   private EventBusBridgeHook hook;
   private long timerID;
 
-  /*
-  Do not call this directly. Use SockJSServer.newSockJSServer(...) instead
-   */
-  public SockJSServerImpl(Vertx vertx, HttpServer httpServer) {
+  SockJSServerImpl(Vertx vertx, HttpServer httpServer) {
     this.vertx = vertx;
     this.sessions = vertx.sharedData().getMap("_vertx.sockjssessions");
     // Any previous request and websocket handlers will become default handlers
