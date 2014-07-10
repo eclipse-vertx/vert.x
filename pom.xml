@@ -58,8 +58,8 @@
     <netty.version>4.0.21.Final</netty.version>
     <jackson.version>2.2.2</jackson.version>
     <hazelcast.version>3.2.1</hazelcast.version>
-    <log4j.version>1.2.16</log4j.version>
-    <slf4j.version>1.6.2</slf4j.version>
+    <log4j.version>1.2.17</log4j.version>
+    <slf4j.version>1.7.7</slf4j.version>
     <junit.version>4.11</junit.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
   </properties>
@@ -169,7 +169,7 @@
                 <exclude>**/HazelcastClusteredEventbusTest.java</exclude>
               </excludes>
             <systemPropertyVariables>
-              <java.util.logging.SimpleFormatter.format>%4$s: %2$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
+              <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
             </systemPropertyVariables>
           </configuration>
         </plugin>

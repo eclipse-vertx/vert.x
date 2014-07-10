@@ -19,11 +19,15 @@ package io.vertx.core.logging.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LocationAwareLogger;
+
+import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SLF4JLogDelegate implements LogDelegate{
+  private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
 
   private final Logger logger;
 
@@ -44,50 +48,83 @@ public class SLF4JLogDelegate implements LogDelegate{
   }
 
   public void fatal(final Object message) {
-    logger.error(message.toString());
+    log(ERROR_INT, message);
   }
 
   public void fatal(final Object message, final Throwable t) {
-    logger.error(message.toString(), t);
+    log(ERROR_INT, message, t);
   }
 
   public void error(final Object message) {
-    logger.error(message.toString());
+    log(ERROR_INT, message);
   }
 
   public void error(final Object message, final Throwable t) {
-    logger.error(message.toString(), t);
+    log(ERROR_INT, message, t);
   }
 
   public void warn(final Object message) {
-    logger.warn(message.toString());
+    log(WARN_INT, message);
   }
 
   public void warn(final Object message, final Throwable t) {
-    logger.warn(message.toString(), t);
+    log(WARN_INT, message, t);
   }
 
   public void info(final Object message) {
-    logger.info(message.toString());
+    log(INFO_INT, message);
   }
 
   public void info(final Object message, final Throwable t) {
-    logger.info(message.toString(), t);
+    log(INFO_INT, message, t);
   }
 
   public void debug(final Object message) {
-    logger.debug(message.toString());
+    log(DEBUG_INT, message);
   }
 
   public void debug(final Object message, final Throwable t) {
-    logger.debug(message.toString(), t);
+    log(DEBUG_INT, message, t);
   }
 
   public void trace(final Object message) {
-    logger.trace(message.toString());
+    log(TRACE_INT, message);
   }
 
   public void trace(final Object message, final Throwable t) {
-    logger.trace(message.toString(), t);
+    log(TRACE_INT, message, t);
+  }
+
+  private void log(int level, Object message) {
+    log(level, message, null);
+  }
+
+  private void log(int level, Object message, Throwable t) {
+    String msg = (message == null) ? "NULL" : message.toString();
+
+    if (logger instanceof LocationAwareLogger) {
+      LocationAwareLogger l = (LocationAwareLogger) logger;
+      l.log(null, FQCN, level, msg, null, t);
+    } else {
+      switch (level) {
+        case TRACE_INT:
+          logger.trace(msg, t);
+          break;
+        case DEBUG_INT:
+          logger.debug(msg, t);
+          break;
+        case INFO_INT:
+          logger.info(msg, t);
+          break;
+        case WARN_INT:
+          logger.warn(msg, t);
+          break;
+        case ERROR_INT:
+          logger.error(msg, t);
+          break;
+        default:
+          throw new IllegalArgumentException("Unknown log level " + level);
+      }
+    }
   }
 }
