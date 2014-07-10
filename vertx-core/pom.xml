@@ -68,25 +68,6 @@
 
   <build>
     <plugins>
-        <plugin>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertxcodegen-maven-plugin</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <executions>
-                <execution>
-                    <phase>compile</phase>
-                    <goals>
-                        <goal>validateAPI</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <fileExtension>.js</fileExtension>
-                <packageName>io.vertx.core</packageName>
-
-            </configuration>
-
-        </plugin>
       <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
