@@ -18,9 +18,9 @@ package io.vertx.core.http;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.GenIgnore;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * An HTTP and WebSockets server<p>

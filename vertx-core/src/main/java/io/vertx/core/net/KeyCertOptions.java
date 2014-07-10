@@ -16,7 +16,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.gen.Options;
+import io.vertx.codegen.annotations.Options;
 
 /**
  * Key store options configuring a private key and its certificate based on

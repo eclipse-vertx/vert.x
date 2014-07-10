@@ -16,9 +16,9 @@
 
 package io.vertx.core.streams;
 
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.GenIgnore;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.spi.PumpFactory;
 
 import java.util.ServiceLoader;

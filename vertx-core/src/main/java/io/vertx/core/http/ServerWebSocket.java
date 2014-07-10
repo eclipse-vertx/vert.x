@@ -17,9 +17,9 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.gen.CacheReturn;
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>

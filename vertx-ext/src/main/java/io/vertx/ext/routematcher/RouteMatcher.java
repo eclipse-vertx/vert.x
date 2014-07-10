@@ -17,7 +17,7 @@
 package io.vertx.ext.routematcher;
 
 import io.vertx.core.Handler;
-import io.vertx.core.gen.GenIgnore;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.routematcher.impl.RouteMatcherImpl;
 

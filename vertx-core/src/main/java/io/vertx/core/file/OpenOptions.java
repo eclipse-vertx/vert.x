@@ -16,7 +16,7 @@
 
 package io.vertx.core.file;
 
-import io.vertx.core.gen.Options;
+import io.vertx.codegen.annotations.Options;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

@@ -18,8 +18,8 @@ package io.vertx.core.streams;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents a stream of data that can be read from.<p>

@@ -16,7 +16,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.VertxGen;
 
 @VertxGen
 public interface WebSocket extends WebSocketBase<WebSocket> {

@@ -18,8 +18,8 @@ package io.vertx.core.dns;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;

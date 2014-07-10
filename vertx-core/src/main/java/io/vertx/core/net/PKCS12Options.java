@@ -16,7 +16,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.gen.Options;
+import io.vertx.codegen.annotations.Options;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.<p>

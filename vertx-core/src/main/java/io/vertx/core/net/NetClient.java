@@ -18,8 +18,8 @@ package io.vertx.core.net;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * A TCP/SSL client.<p>

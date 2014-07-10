@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.gen.Options;
+import io.vertx.codegen.annotations.Options;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyStoreOptions;

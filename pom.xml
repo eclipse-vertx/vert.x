@@ -134,7 +134,11 @@
         <version>${apacheds-protocol-dns.version}</version>
         <scope>test</scope>
       </dependency>
-
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>codegen</artifactId>
+        <version>1.0-SNAPSHOT</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

@@ -18,9 +18,9 @@ package io.vertx.core.datagram;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.gen.CacheReturn;
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
 /**

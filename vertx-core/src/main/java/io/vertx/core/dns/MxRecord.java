@@ -15,7 +15,7 @@
  */
 package io.vertx.core.dns;
 
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represent a Mail-Exchange-Record (MX) which was resolved for a domain.

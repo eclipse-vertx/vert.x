@@ -16,7 +16,7 @@
 
 package io.vertx.core.datagram;
 
-import io.vertx.core.gen.Options;
+import io.vertx.codegen.annotations.Options;
 import io.vertx.core.net.NetworkOptions;
 
 /**

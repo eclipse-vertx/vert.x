@@ -15,7 +15,7 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.core.gen.Options;
+import io.vertx.codegen.annotations.Options;
 
 /**
  * An interface for trust store configuration options.

@@ -15,7 +15,7 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.core.gen.Options;
+import io.vertx.codegen.annotations.Options;
 
 /**
  * An interface for key store configuration options.

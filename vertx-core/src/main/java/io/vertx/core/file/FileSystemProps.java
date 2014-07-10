@@ -16,7 +16,7 @@
 
 package io.vertx.core.file;
 
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents properties of the file system.<p>

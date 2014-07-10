@@ -18,8 +18,8 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.gen.CacheReturn;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents a message on the event bus.<p>

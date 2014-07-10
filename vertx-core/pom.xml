@@ -64,9 +64,34 @@
       <groupId>org.apache.directory.server</groupId>
       <artifactId>apacheds-protocol-dns</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>codegen</artifactId>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 
   <build>
+
+    <pluginManagement>
+      <plugins>
+        <!-- Configure the execution of the compiler to execute the codegen processor -->
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-compile</id>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
             <groupId>org.apache.maven.plugins</groupId>

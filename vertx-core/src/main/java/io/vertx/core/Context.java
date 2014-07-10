@@ -16,7 +16,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents the execution context of a Verticle.

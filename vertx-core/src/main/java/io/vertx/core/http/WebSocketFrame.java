@@ -17,8 +17,8 @@
 package io.vertx.core.http;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.gen.CacheReturn;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * A Web Socket frame that represents either text or binary data.

@@ -19,7 +19,7 @@ package io.vertx.core.file;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.VertxGen;
 
 import java.util.List;
 

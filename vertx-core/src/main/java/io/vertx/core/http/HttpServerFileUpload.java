@@ -15,8 +15,8 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.gen.Fluent;
-import io.vertx.core.gen.VertxGen;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
 
 /**

@@ -18,7 +18,7 @@ package io.vertx.ext.sockjs;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.gen.GenIgnore;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
