@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.VertxGen;
 
 /**
@@ -47,6 +48,7 @@ public interface WebSocketFrame {
    */
   String textData();
 
+  @CacheReturn
   Buffer binaryData();
 
   /**

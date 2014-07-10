@@ -18,6 +18,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.VertxGen;
 import io.vertx.core.streams.ReadStream;
@@ -78,11 +79,13 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
   /**
    * Return the remote address for this socket
    */
+  @CacheReturn
   SocketAddress remoteAddress();
 
   /**
    * Return the local address for this socket
    */
+  @CacheReturn
   SocketAddress localAddress();
 
   /**

@@ -21,6 +21,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.GenIgnore;
 import io.vertx.core.gen.VertxGen;
 import io.vertx.core.http.HttpClient;
@@ -94,12 +95,13 @@ public interface Vertx {
   /**
    * The File system object
    */
+  @CacheReturn
   FileSystem fileSystem();
 
   /**
    * The event bus
    */
-  @GenIgnore
+  @CacheReturn
   EventBus eventBus();
 
   /**
@@ -111,6 +113,7 @@ public interface Vertx {
    * The shared data object
    */
   @GenIgnore
+  @CacheReturn
   SharedData sharedData();
 
   /**

@@ -66,8 +66,8 @@ public class NetServerOptions extends TCPOptions {
     this.port = other.port;
     this.host = other.host;
     this.acceptBacklog = other.acceptBacklog;
-    this.crlPaths = new ArrayList<>(other.crlPaths);
-    this.crlValues = new ArrayList<>(other.crlValues);
+    this.crlPaths = other.crlPaths != null ? new ArrayList<>(other.crlPaths) : null;
+    this.crlValues = other.crlValues != null ? new ArrayList<>(other.crlValues) : null;
   }
 
   public boolean isClientAuthRequired() {

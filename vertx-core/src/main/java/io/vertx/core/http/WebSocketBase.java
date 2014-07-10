@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.VertxGen;
 import io.vertx.core.net.SocketAddress;
@@ -88,11 +89,13 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   /**
    * Return the remote address for this socket
    */
+  @CacheReturn
   SocketAddress remoteAddress();
 
   /**
    * Return the local address for this socket
    */
+  @CacheReturn
   SocketAddress localAddress();
 
 }

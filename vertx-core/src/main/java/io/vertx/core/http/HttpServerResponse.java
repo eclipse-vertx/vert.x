@@ -125,6 +125,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
   /**
    * @return The HTTP trailers
    */
+  @CacheReturn
   MultiMap trailers();
 
   /**

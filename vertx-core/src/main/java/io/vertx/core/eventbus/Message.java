@@ -18,6 +18,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.VertxGen;
 
 /**
@@ -38,6 +39,7 @@ public interface Message<T> {
   /**
    * The body of the message
    */
+  @CacheReturn
   T body();
 
   /**

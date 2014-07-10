@@ -19,6 +19,7 @@ package io.vertx.core.http;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.VertxGen;
 import io.vertx.core.net.NetSocket;
@@ -54,16 +55,19 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
   /**
    * @return The HTTP headers
    */
+  @CacheReturn
   MultiMap headers();
 
   /**
    * @return The HTTP trailers
    */
+  @CacheReturn
   MultiMap trailers();
 
   /**
    * @return The Set-Cookie headers (including trailers)
    */
+  @CacheReturn
   List<String> cookies();
 
   /**
@@ -85,6 +89,7 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
    *
    * @return the net socket
    */
+  @CacheReturn
   NetSocket netSocket();
 
 }

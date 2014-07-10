@@ -87,8 +87,8 @@ public class SSLHelper {
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
-    this.crlPaths = new ArrayList<>(options.getCrlPaths());
-    this.crlValues = new ArrayList<>(options.getCrlValues());
+    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
+    this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 

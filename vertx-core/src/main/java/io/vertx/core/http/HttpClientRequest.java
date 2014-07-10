@@ -19,6 +19,7 @@ package io.vertx.core.http;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.GenIgnore;
 import io.vertx.core.gen.VertxGen;
@@ -80,6 +81,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
   /**
    * @return The HTTP headers
    */
+  @CacheReturn
   MultiMap headers();
 
   /**

@@ -19,6 +19,7 @@ package io.vertx.core.http;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.gen.CacheReturn;
 import io.vertx.core.gen.Fluent;
 import io.vertx.core.gen.GenIgnore;
 import io.vertx.core.gen.VertxGen;
@@ -75,6 +76,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * The response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used
    * to send the response back to the client.
    */
+  @CacheReturn
   HttpServerResponse response();
 
   /**
@@ -83,21 +85,25 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * as specified <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
    * The headers will be automatically lower-cased when they reach the server
    */
+  @CacheReturn
   MultiMap headers();
 
   /**
    * Returns a map of all the parameters in the request
    */
+  @CacheReturn
   MultiMap params();
 
   /**
    * Return the remote (client side) address of the request
    */
+  @CacheReturn
   SocketAddress remoteAddress();
 
   /**
    * Return the local (server side) address of the server that handles the request
    */
+  @CacheReturn
   SocketAddress localAddress();
 
   /**
@@ -129,6 +135,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
    * @return the net socket
    */
+  @CacheReturn
   NetSocket netSocket();
 
   /**
@@ -153,6 +160,7 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * called after the endHandler was notified as the map will be filled on-the-fly.
    * {@link #setExpectMultipart(boolean)} must be called first before trying to get the formAttributes
    */
+  @CacheReturn
   MultiMap formAttributes();
 
 }
