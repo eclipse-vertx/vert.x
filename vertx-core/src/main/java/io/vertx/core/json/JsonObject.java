@@ -18,16 +18,11 @@ package io.vertx.core.json;
 
 
 import io.vertx.core.VertxException;
-import io.vertx.core.json.impl.Base64;
 import io.vertx.core.json.impl.Json;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
- * 
  * Represents a JSON object.<p>
  * Instances of this class are not thread-safe.<p>
  *
@@ -39,6 +34,7 @@ public class JsonObject extends JsonElement {
 
   /**
    * Create a JSON object based on the specified Map
+   *
    * @param map
    */
   public JsonObject(Map<String, Object> map) {
@@ -59,9 +55,8 @@ public class JsonObject extends JsonElement {
 
   /**
    * Create a JSON object from a string form of a JSON object
-   * 
-   * @param jsonString
-   *          The string form of a JSON object
+   *
+   * @param jsonString The string form of a JSON object
    */
   public JsonObject(String jsonString) {
     map = Json.decodeValue(jsonString, Map.class);
@@ -104,7 +99,7 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject putBinary(String fieldName, byte[] binary) {
-    map.put(fieldName, binary == null ? null : Base64.encodeBytes(binary));
+    map.put(fieldName, binary == null ? null : Base64.getEncoder().encodeToString(binary));
     return this;
   }
 
@@ -112,19 +107,19 @@ public class JsonObject extends JsonElement {
     if (value == null) {
       putObject(fieldName, null);
     } else if (value instanceof JsonObject) {
-      putObject(fieldName, (JsonObject)value);
+      putObject(fieldName, (JsonObject) value);
     } else if (value instanceof JsonArray) {
-      putArray(fieldName, (JsonArray)value);
+      putArray(fieldName, (JsonArray) value);
     } else if (value instanceof String) {
-      putString(fieldName, (String)value);
+      putString(fieldName, (String) value);
     } else if (value instanceof Number) {
-      putNumber(fieldName, (Number)value);
+      putNumber(fieldName, (Number) value);
     } else if (value instanceof Boolean) {
-      putBoolean(fieldName, (Boolean)value);
+      putBoolean(fieldName, (Boolean) value);
     } else if (value instanceof byte[]) {
-      putBinary(fieldName, (byte[])value);
+      putBinary(fieldName, (byte[]) value);
     } else {
-      throw new VertxException("Cannot put objects of class " + value.getClass() +" in JsonObject");
+      throw new VertxException("Cannot put objects of class " + value.getClass() + " in JsonObject");
     }
     return this;
   }
@@ -149,10 +144,10 @@ public class JsonObject extends JsonElement {
     Object element = map.get(fieldName);
     if (element == null) return null;
 
-    if (element instanceof Map<?,?>){
+    if (element instanceof Map<?, ?>) {
       return getObject(fieldName);
     }
-    if (element instanceof List<?>){
+    if (element instanceof List<?>) {
       return getArray(fieldName);
     }
     throw new ClassCastException();
@@ -178,7 +173,7 @@ public class JsonObject extends JsonElement {
 
   public byte[] getBinary(String fieldName) {
     String encoded = (String) map.get(fieldName);
-    return encoded == null ? null : Base64.decode(encoded);
+    return encoded == null ? null : Base64.getDecoder().decode(encoded);
   }
 
   public String getString(String fieldName, String def) {
@@ -239,11 +234,11 @@ public class JsonObject extends JsonElement {
   public <T> T getField(String fieldName) {
     Object obj = map.get(fieldName);
     if (obj instanceof Map) {
-      obj = new JsonObject((Map)obj, false);
+      obj = new JsonObject((Map) obj, false);
     } else if (obj instanceof List) {
-      obj = new JsonArray((List)obj, false);
+      obj = new JsonArray((List) obj, false);
     }
-    return (T)obj;
+    return (T) obj;
   }
 
   public Object removeField(String fieldName) {
@@ -251,10 +246,11 @@ public class JsonObject extends JsonElement {
   }
 
   /**
-    * The containsField() method returns a boolean indicating whether the object has the specified property.
-    * @param fieldName to lookup
-    * @return true if property exist (null value is also considered to exist).
-    */
+   * The containsField() method returns a boolean indicating whether the object has the specified property.
+   *
+   * @param fieldName to lookup
+   * @return true if property exist (null value is also considered to exist).
+   */
   public boolean containsField(String fieldName) {
     return map.containsKey(fieldName);
   }
@@ -318,7 +314,6 @@ public class JsonObject extends JsonElement {
   }
 
   /**
-   *
    * @return the underlying Map for this JsonObject
    */
   public Map<String, Object> toMap() {
