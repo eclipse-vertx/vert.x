@@ -61,6 +61,7 @@
     <log4j.version>1.2.16</log4j.version>
     <slf4j.version>1.6.2</slf4j.version>
     <junit.version>4.11</junit.version>
+    <asciidoclet.version>0.1.4</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
   </properties>
 
@@ -160,7 +161,13 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>2.9.1</version>
           <configuration>
-            <additionalparam>-Xdoclint:none</additionalparam>
+            <source>1.8</source>
+            <doclet>org.asciidoctor.Asciidoclet</doclet>
+            <docletArtifact>
+              <groupId>org.asciidoctor</groupId>
+              <artifactId>asciidoclet</artifactId>
+              <version>${asciidoclet.version}</version>
+            </docletArtifact>
           </configuration>
         </plugin>
         <plugin>
