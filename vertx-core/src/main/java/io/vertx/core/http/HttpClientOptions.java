@@ -221,4 +221,31 @@ public class HttpClientOptions extends ClientOptions {
   }
 
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof HttpClientOptions)) return false;
+    if (!super.equals(o)) return false;
+
+    HttpClientOptions that = (HttpClientOptions) o;
+
+    if (keepAlive != that.keepAlive) return false;
+    if (maxPoolSize != that.maxPoolSize) return false;
+    if (pipelining != that.pipelining) return false;
+    if (tryUseCompression != that.tryUseCompression) return false;
+    if (verifyHost != that.verifyHost) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (verifyHost ? 1 : 0);
+    result = 31 * result + maxPoolSize;
+    result = 31 * result + (keepAlive ? 1 : 0);
+    result = 31 * result + (pipelining ? 1 : 0);
+    result = 31 * result + (tryUseCompression ? 1 : 0);
+    return result;
+  }
 }

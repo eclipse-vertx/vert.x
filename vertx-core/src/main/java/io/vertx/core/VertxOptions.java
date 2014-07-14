@@ -161,4 +161,41 @@ public class VertxOptions {
     this.internalBlockingPoolSize = internalBlockingPoolSize;
     return this;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof VertxOptions)) return false;
+
+    VertxOptions that = (VertxOptions) o;
+
+    if (blockedThreadCheckPeriod != that.blockedThreadCheckPeriod) return false;
+    if (clusterPort != that.clusterPort) return false;
+    if (clustered != that.clustered) return false;
+    if (eventLoopPoolSize != that.eventLoopPoolSize) return false;
+    if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
+    if (maxEventLoopExecuteTime != that.maxEventLoopExecuteTime) return false;
+    if (maxWorkerExecuteTime != that.maxWorkerExecuteTime) return false;
+    if (workerPoolSize != that.workerPoolSize) return false;
+    if (clusterHost != null ? !clusterHost.equals(that.clusterHost) : that.clusterHost != null) return false;
+    if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
+      return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = eventLoopPoolSize;
+    result = 31 * result + workerPoolSize;
+    result = 31 * result + internalBlockingPoolSize;
+    result = 31 * result + (clustered ? 1 : 0);
+    result = 31 * result + (clusterHost != null ? clusterHost.hashCode() : 0);
+    result = 31 * result + clusterPort;
+    result = 31 * result + (int) (blockedThreadCheckPeriod ^ (blockedThreadCheckPeriod >>> 32));
+    result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
+    result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
+    result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
+    return result;
+  }
 }

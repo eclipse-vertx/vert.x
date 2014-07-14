@@ -109,4 +109,30 @@ public class ClientOptions extends TCPOptions {
     this.connectTimeout = connectTimeout;
     return this;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ClientOptions)) return false;
+    if (!super.equals(o)) return false;
+
+    ClientOptions that = (ClientOptions) o;
+
+    if (connectTimeout != that.connectTimeout) return false;
+    if (trustAll != that.trustAll) return false;
+    if (crlPaths != null ? !crlPaths.equals(that.crlPaths) : that.crlPaths != null) return false;
+    if (crlValues != null ? !crlValues.equals(that.crlValues) : that.crlValues != null) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + connectTimeout;
+    result = 31 * result + (trustAll ? 1 : 0);
+    result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
+    result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);
+    return result;
+  }
 }

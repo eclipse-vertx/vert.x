@@ -208,4 +208,33 @@ public class NetServerOptions extends TCPOptions {
   }
 
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof NetServerOptions)) return false;
+    if (!super.equals(o)) return false;
+
+    NetServerOptions that = (NetServerOptions) o;
+
+    if (acceptBacklog != that.acceptBacklog) return false;
+    if (clientAuthRequired != that.clientAuthRequired) return false;
+    if (port != that.port) return false;
+    if (crlPaths != null ? !crlPaths.equals(that.crlPaths) : that.crlPaths != null) return false;
+    if (crlValues != null ? !crlValues.equals(that.crlValues) : that.crlValues != null) return false;
+    if (host != null ? !host.equals(that.host) : that.host != null) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + port;
+    result = 31 * result + (host != null ? host.hashCode() : 0);
+    result = 31 * result + acceptBacklog;
+    result = 31 * result + (clientAuthRequired ? 1 : 0);
+    result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
+    result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);
+    return result;
+  }
 }

@@ -82,4 +82,29 @@ public class DeploymentOptions {
     this.isolationGroup = isolationGroup;
     return this;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof DeploymentOptions)) return false;
+
+    DeploymentOptions that = (DeploymentOptions) o;
+
+    if (multiThreaded != that.multiThreaded) return false;
+    if (worker != that.worker) return false;
+    if (config != null ? !config.equals(that.config) : that.config != null) return false;
+    if (isolationGroup != null ? !isolationGroup.equals(that.isolationGroup) : that.isolationGroup != null)
+      return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = config != null ? config.hashCode() : 0;
+    result = 31 * result + (worker ? 1 : 0);
+    result = 31 * result + (multiThreaded ? 1 : 0);
+    result = 31 * result + (isolationGroup != null ? isolationGroup.hashCode() : 0);
+    return result;
+  }
 }

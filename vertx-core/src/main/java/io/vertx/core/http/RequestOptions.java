@@ -115,4 +115,28 @@ public class RequestOptions {
     headers.add(name, value);
     return this;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof RequestOptions)) return false;
+
+    RequestOptions that = (RequestOptions) o;
+
+    if (port != that.port) return false;
+    if (headers != null ? !headers.equals(that.headers) : that.headers != null) return false;
+    if (host != null ? !host.equals(that.host) : that.host != null) return false;
+    if (requestURI != null ? !requestURI.equals(that.requestURI) : that.requestURI != null) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = port;
+    result = 31 * result + (host != null ? host.hashCode() : 0);
+    result = 31 * result + (headers != null ? headers.hashCode() : 0);
+    result = 31 * result + (requestURI != null ? requestURI.hashCode() : 0);
+    return result;
+  }
 }

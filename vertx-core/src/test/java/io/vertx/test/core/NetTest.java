@@ -213,6 +213,8 @@ public class NetTest extends VertxTestBase {
     testComplete();
   }
 
+
+
   @Test
   public void testServerOptions() {
     NetServerOptions options = new NetServerOptions();

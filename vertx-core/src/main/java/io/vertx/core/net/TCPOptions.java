@@ -198,4 +198,38 @@ public class TCPOptions extends NetworkOptions {
     return enabledCipherSuites;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TCPOptions)) return false;
+    if (!super.equals(o)) return false;
+
+    TCPOptions that = (TCPOptions) o;
+
+    if (soLinger != that.soLinger) return false;
+    if (ssl != that.ssl) return false;
+    if (tcpKeepAlive != that.tcpKeepAlive) return false;
+    if (tcpNoDelay != that.tcpNoDelay) return false;
+    if (usePooledBuffers != that.usePooledBuffers) return false;
+    if (enabledCipherSuites != null ? !enabledCipherSuites.equals(that.enabledCipherSuites) : that.enabledCipherSuites != null)
+      return false;
+    if (keyStore != null ? !keyStore.equals(that.keyStore) : that.keyStore != null) return false;
+    if (trustStore != null ? !trustStore.equals(that.trustStore) : that.trustStore != null) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (tcpNoDelay ? 1 : 0);
+    result = 31 * result + (tcpKeepAlive ? 1 : 0);
+    result = 31 * result + soLinger;
+    result = 31 * result + (usePooledBuffers ? 1 : 0);
+    result = 31 * result + (ssl ? 1 : 0);
+    result = 31 * result + (keyStore != null ? keyStore.hashCode() : 0);
+    result = 31 * result + (trustStore != null ? trustStore.hashCode() : 0);
+    result = 31 * result + (enabledCipherSuites != null ? enabledCipherSuites.hashCode() : 0);
+    return result;
+  }
 }

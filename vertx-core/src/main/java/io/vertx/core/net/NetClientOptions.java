@@ -177,4 +177,26 @@ public class NetClientOptions extends ClientOptions {
     super.addEnabledCipherSuite(suite);
     return this;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof NetClientOptions)) return false;
+    if (!super.equals(o)) return false;
+
+    NetClientOptions that = (NetClientOptions) o;
+
+    if (reconnectAttempts != that.reconnectAttempts) return false;
+    if (reconnectInterval != that.reconnectInterval) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + reconnectAttempts;
+    result = 31 * result + (int) (reconnectInterval ^ (reconnectInterval >>> 32));
+    return result;
+  }
 }
