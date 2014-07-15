@@ -63,7 +63,6 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
-    System.out.println("SIZE=" + size);
     if (size == 0) {
       lazyCalculateSize = true;
     }
