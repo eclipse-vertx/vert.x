@@ -47,7 +47,7 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
   private final String contentTransferEncoding;
   private final Charset charset;
   private long size;
-
+  private boolean lazyCalculateSize;
   private boolean paused;
   private Buffer pauseBuff;
   private boolean complete;
@@ -63,6 +63,10 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
+    System.out.println("SIZE=" + size);
+    if (size == 0) {
+      lazyCalculateSize = true;
+    }
   }
 
   @Override
@@ -156,9 +160,16 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
     return this;
   }
 
+  @Override
+  public boolean isSizeAvailable() {
+    return !lazyCalculateSize;
+  }
+
   void receiveData(Buffer data) {
-    if (!paused) {
+    if (lazyCalculateSize) {
       size += data.length();
+    }
+    if (!paused) {
       if (dataHandler != null) {
         dataHandler.handle(data);
       }
@@ -171,6 +182,7 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
   }
 
   void complete() {
+    lazyCalculateSize = false;
     if (paused) {
       complete = true;
     } else {

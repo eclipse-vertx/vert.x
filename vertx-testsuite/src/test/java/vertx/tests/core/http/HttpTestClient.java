@@ -2851,9 +2851,11 @@ public class HttpTestClient extends TestClientBase {
               tu.azzert(up.name().equals("file"));
               tu.azzert(up.filename().equals("tmp-0.txt"));
               tu.azzert(up.contentType().equals("image/gif"));
+
               up.endHandler(new Handler<Void>() {
                 @Override
                 public void handle(Void v) {
+                  tu.azzert(up.isSizeAvailable());
                   tu.azzert(up.size() == content.length());
                 }
               });
