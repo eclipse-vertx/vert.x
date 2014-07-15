@@ -2847,6 +2847,7 @@ public class HttpTest extends HttpTestBase {
           assertEquals("tmp-0.txt", upload.filename());
           assertEquals("image/gif", upload.contentType());
           upload.endHandler(v -> {
+            assertTrue(upload.isSizeAvailable());
             assertEquals(content.length(), upload.size());
           });
         });

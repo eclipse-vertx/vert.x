@@ -52,6 +52,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private boolean paused;
   private Buffer pauseBuff;
   private boolean complete;
+  private boolean lazyCalculateSize;
 
   HttpServerFileUploadImpl(Vertx vertx, HttpServerRequest req, String name, String filename, String contentType,
                            String contentTransferEncoding,
@@ -64,6 +65,9 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
+    if (size == 0) {
+      lazyCalculateSize = true;
+    }
   }
 
   @Override
@@ -155,9 +159,16 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     return this;
   }
 
+  @Override
+  public boolean isSizeAvailable() {
+    return !lazyCalculateSize;
+  }
+
   void receiveData(Buffer data) {
-    if (!paused) {
+    if (lazyCalculateSize) {
       size += data.length();
+    }
+    if (!paused) {
       if (dataHandler != null) {
         dataHandler.handle(data);
       }
@@ -170,6 +181,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   void complete() {
+    lazyCalculateSize = false;
     if (paused) {
       complete = true;
     } else {

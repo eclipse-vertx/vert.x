@@ -61,4 +61,9 @@ public interface HttpServerFileUpload extends ReadStream<HttpServerFileUpload> {
    * Returns the size of the upload (in bytes)
    */
   long size();
+
+  /**
+   * Returns {@code true} if the size of the upload can be retrieved via {@link #size()}.
+   */
+  boolean isSizeAvailable();
 }
