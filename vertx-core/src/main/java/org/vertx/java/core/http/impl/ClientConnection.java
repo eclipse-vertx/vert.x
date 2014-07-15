@@ -54,6 +54,7 @@ class ClientConnection extends ConnectionBase {
   private boolean keepAlive;
   private boolean pipelining;
   private boolean upgradedConnection;
+  private boolean forceClose;
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
@@ -80,6 +81,7 @@ class ClientConnection extends ConnectionBase {
     }
     this.keepAlive = keepAlive;
     this.pipelining = pipelining;
+    this.forceClose = false;
   }
 
 
@@ -246,7 +248,11 @@ class ClientConnection extends ConnectionBase {
 
   @Override
   public void close() {
-    if (upgradedConnection) {
+    if (forceClose) {
+      // Close it and reset forceClose to false
+      forceClose = false;
+      actualClose();
+    } else if (upgradedConnection) {
       // Close it
       actualClose();
     } else if (!keepAlive) {
@@ -325,11 +331,16 @@ class ClientConnection extends ConnectionBase {
   void handleResponseEnd(LastHttpContent trailer) {
     setContext();
     try {
+      // Check if the response includes the Connection header to close. If forceClose is already
+      // true, then it is not required to check it because the connection must be closed.
+      if (!forceClose && isConnectionCloseHeader(currentResponse.headers())) {
+        forceClose = true;
+      }
       currentResponse.handleEnd(trailer);
     } catch (Throwable t) {
       handleHandlerException(t);
     }
-    if (!keepAlive || !pipelining) {
+    if (forceClose || !keepAlive || !pipelining) {
       // If keepAlive is true and pipelining is true, then the connection was returned to the
       // pool in endRequest
       close();
@@ -376,6 +387,13 @@ class ClientConnection extends ConnectionBase {
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
     }
+
+    // If Connection header to close, then the socket cannot be returned to the pool
+    // but closed after receiving the response
+    if (isConnectionCloseHeader(currentRequest.headers())) {
+      forceClose = true;
+    }
+
     currentRequest = null;
 
     // If keepAlive is true and pipelining is true, then return the connection to the
@@ -383,7 +401,7 @@ class ClientConnection extends ConnectionBase {
     // the response of the current request (HTTP pipelining). Otherwise the connection
     // is closed (if keepAlive is false) or returned to the pool (if keepAlive is true)
     // after receiving the response
-    if (keepAlive && pipelining) {
+    if (!forceClose && keepAlive && pipelining) {
       //Close just returns connection to the pool
       close();
     }
@@ -433,4 +451,19 @@ class ClientConnection extends ConnectionBase {
     });
     return socket;
   }
+
+  private boolean isConnectionCloseHeader(MultiMap headers) {
+    if (headers != null) {
+      List<String> connectionHeaderValues = headers.getAll(HttpHeaders.Names.CONNECTION);
+      if (connectionHeaderValues != null) {
+        for (String connectionHeaderValue : connectionHeaderValues) {
+          if (HttpHeaders.Values.CLOSE.equals(connectionHeaderValue)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
 }
