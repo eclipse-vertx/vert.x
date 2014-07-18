@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -433,6 +434,27 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.TIMEOUT, re.failureType());
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testSendWithTimeouNoTimeoutAfterReply() {
+    String str = TestUtils.randomUnicodeString(1000);
+    long timeout = 1000;
+    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+      assertEquals(str, msg.body());
+      msg.reply("a reply");
+    });
+    AtomicBoolean received = new AtomicBoolean();
+    eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
+      assertTrue(ar.succeeded());
+      assertFalse(received.get());
+      received.set(true);
+      // Now wait longer than timeout and make sure we don't receive any other reply
+      vertx.setTimer(timeout * 2, tid -> {
+        testComplete();
+      });
     });
     await();
   }

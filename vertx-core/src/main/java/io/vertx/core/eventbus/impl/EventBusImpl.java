@@ -54,6 +54,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
@@ -343,17 +344,19 @@ public class EventBusImpl implements EventBus {
       long timeoutID = -1;
       if (replyHandler != null) {
         message.replyAddress = generateReplyAddress();
-        Registration registration = registerHandler(message.replyAddress, replyHandler, true, true, timeoutID);
+        AtomicReference<Registration> refReg = new AtomicReference<>();
         if (timeout != -1) {
           // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
           timeoutID = vertx.setTimer(timeout, timerID -> {
             log.warn("Message reply handler timed out as no reply was received - it will be removed");
-            registration.unregister();
+            refReg.get().unregister();
             if (asyncResultHandler != null) {
               asyncResultHandler.handle(new FutureResultImpl<>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
             }
           });
         }
+        Registration registration = registerHandler(message.replyAddress, replyHandler, true, true, timeoutID);
+        refReg.set(registration);
       }
       if (replyDest != null) {
         if (!replyDest.equals(this.serverID)) {
