@@ -415,7 +415,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           } else {
             ReplyException cause = (ReplyException) result.cause();
             JsonObject envelope =
-                new JsonObject().putString("address", address).putNumber("failureCode",
+                new JsonObject().putString("address", replyAddress).putNumber("failureCode",
                     cause.failureCode()).putString("failureType", cause.failureType().name())
                     .putString("message", cause.getMessage());
             sock.write(new Buffer(envelope.encode()));
