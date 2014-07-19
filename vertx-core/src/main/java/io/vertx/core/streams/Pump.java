@@ -17,11 +17,9 @@
 package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.spi.PumpFactory;
-
-import java.util.ServiceLoader;
 
 /**
  * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
@@ -83,17 +81,7 @@ public interface Pump {
    */
   int bytesPumped();
 
-  static final PumpFactory factory = loadFactory();
-
-  @GenIgnore
-  static PumpFactory loadFactory() {
-    ServiceLoader<PumpFactory> factories = ServiceLoader.load(PumpFactory.class);
-    if (factories.iterator().hasNext()) {
-      return factories.iterator().next();
-    } else {
-      throw new IllegalStateException("Cannot find PumpFactory service");
-    }
-  }
+  static final PumpFactory factory = ServiceHelper.loadFactory(PumpFactory.class);
 
 
 }

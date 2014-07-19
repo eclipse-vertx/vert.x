@@ -17,11 +17,9 @@
 package io.vertx.ext.routematcher;
 
 import io.vertx.core.Handler;
-import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.routematcher.impl.RouteMatcherImpl;
-
-import java.util.ServiceLoader;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -180,15 +178,5 @@ public interface RouteMatcher {
    */
   RouteMatcherImpl noMatch(Handler<HttpServerRequest> handler);
 
-  static final RouteMatcherFactory factory = loadFactory();
-
-  @GenIgnore
-  static RouteMatcherFactory loadFactory() {
-    ServiceLoader<RouteMatcherFactory> factories = ServiceLoader.load(RouteMatcherFactory.class);
-    if (factories.iterator().hasNext()) {
-      return factories.iterator().next();
-    } else {
-      throw new IllegalStateException("Cannot find RouteMatcherFactory service");
-    }
-  }
+  static final RouteMatcherFactory factory = ServiceHelper.loadFactory(RouteMatcherFactory.class);
 }

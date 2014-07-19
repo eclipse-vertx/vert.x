@@ -118,7 +118,7 @@ public class VertxImpl implements VertxInternal {
       this.clusterManager.setVertx(this);
       this.clusterManager.join();
       Vertx inst = this;
-      this.eventBus = new EventBusImpl(this, options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
+      this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout(), options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
         if (resultHandler != null) {
           if (res.succeeded()) {
             resultHandler.handle(new FutureResultImpl<>(inst));
@@ -131,7 +131,7 @@ public class VertxImpl implements VertxInternal {
       });
     } else {
       this.clusterManager = null;
-      this.eventBus = new EventBusImpl(this);
+      this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout());
     }
   }
 

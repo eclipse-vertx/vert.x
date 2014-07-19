@@ -113,6 +113,8 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
       addBoolean((Boolean)value);
     } else if (value instanceof byte[]) {
       addBinary((byte[])value);
+    } else if (value instanceof Character) {
+      addString(value.toString());
     } else {
       throw new VertxException("Cannot add objects of class " + value.getClass() +" to JsonArray");
     }

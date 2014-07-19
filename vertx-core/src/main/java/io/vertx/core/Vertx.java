@@ -16,14 +16,14 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
@@ -36,7 +36,6 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxFactory;
 
-import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -185,16 +184,6 @@ public interface Vertx {
   @GenIgnore
   Set<VerticleFactory> verticleFactories();
 
-  static final VertxFactory factory = loadFactory();
-
-  @GenIgnore
-  static VertxFactory loadFactory() {
-    ServiceLoader<VertxFactory> factories = ServiceLoader.load(VertxFactory.class);
-    if (factories.iterator().hasNext()) {
-      return factories.iterator().next();
-    } else {
-      throw new IllegalStateException("Cannot find BufferFactory service");
-    }
-  }
+  static final VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
 
 }

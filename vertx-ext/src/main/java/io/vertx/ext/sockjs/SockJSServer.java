@@ -17,16 +17,14 @@
 package io.vertx.ext.sockjs;
 
 import io.vertx.core.Handler;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.Vertx;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.sockjs.impl.EventBusBridgeHook;
 import io.vertx.ext.sockjs.impl.SockJSServerImpl;
 import io.vertx.ext.sockjs.impl.SockJSSocket;
-
-import java.util.ServiceLoader;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -60,16 +58,6 @@ public interface SockJSServer {
    */
   void installTestApplications();
 
-  static final SockJSServerFactory factory = loadFactory();
-
-  @GenIgnore
-  static SockJSServerFactory loadFactory() {
-    ServiceLoader<SockJSServerFactory> factories = ServiceLoader.load(SockJSServerFactory.class);
-    if (factories.iterator().hasNext()) {
-      return factories.iterator().next();
-    } else {
-      throw new IllegalStateException("Cannot find SockJSServerFactory service");
-    }
-  }
+  static final SockJSServerFactory factory = ServiceHelper.loadFactory(SockJSServerFactory.class);
 
 }

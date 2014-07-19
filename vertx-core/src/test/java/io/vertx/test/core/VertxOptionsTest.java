@@ -115,5 +115,15 @@ public class VertxOptionsTest extends VertxTestBase {
     assertNull(options.getClusterManager());
     assertEquals(options, options.setClusterManager(mgr));
     assertSame(mgr, options.getClusterManager());
+    assertEquals(10 * 1000, options.getProxyOperationTimeout());
+    rand  = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setProxyOperationTimeout(rand));
+    assertEquals(rand, options.getProxyOperationTimeout());
+    try {
+      options.setProxyOperationTimeout(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
   }
 }

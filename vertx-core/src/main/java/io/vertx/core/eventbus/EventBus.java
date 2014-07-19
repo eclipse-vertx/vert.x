@@ -133,5 +133,11 @@ public interface EventBus {
 
   @GenIgnore
   <T> EventBus unregisterCodec(Class<T> type);
+
+  @GenIgnore
+  <T> T createProxy(Class<T> clazz, String address);
+
+  @GenIgnore
+  <T> Registration registerService(T service, String address);
 }
 

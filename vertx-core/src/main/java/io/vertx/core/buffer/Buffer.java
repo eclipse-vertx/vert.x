@@ -20,10 +20,10 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
-import java.util.ServiceLoader;
 
 /**
  * A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands as
@@ -368,17 +368,6 @@ public interface Buffer {
   @GenIgnore
   ByteBuf getByteBuf();
 
-  static final BufferFactory factory = loadFactory();
-
-  @GenIgnore
-  static BufferFactory loadFactory() {
-    ServiceLoader<BufferFactory> factories = ServiceLoader.load(BufferFactory.class);
-    if (factories.iterator().hasNext()) {
-      return factories.iterator().next();
-    } else {
-      throw new IllegalStateException("Cannot find BufferFactory service");
-    }
-  }
-
+  static final BufferFactory factory = ServiceHelper.loadFactory(BufferFactory.class);
 
 }

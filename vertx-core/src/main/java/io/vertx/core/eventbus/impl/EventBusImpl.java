@@ -77,27 +77,29 @@ public class EventBusImpl implements EventBus {
   private final ConcurrentMap<String, MessageCodec<?>> codecMap = new ConcurrentHashMap<>();
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
-  private boolean closed;
+  private final ProxyFactory proxyFactory;
 
-  public EventBusImpl(VertxInternal vertx) {
+  public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout) {
     // Just some dummy server ID
     this.vertx = vertx;
     this.serverID = new ServerID(-1, "localhost");
     this.server = null;
     this.subs = null;
     this.clusterMgr = null;
+    this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
   }
 
-  public EventBusImpl(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
-    this(vertx, port, hostname, clusterManager, null);
+  public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout, int port, String hostname, ClusterManager clusterManager) {
+    this(vertx, proxyOperationTimeout, port, hostname, clusterManager, null);
   }
 
-  public EventBusImpl(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
+  public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout, int port, String hostname, ClusterManager clusterManager,
                       Handler<AsyncResult<Void>> listenHandler) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.subs = clusterMgr.getAsyncMultiMap("subs");
     this.server = setServer(port, hostname, listenHandler);
+    this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
   }
 
   @Override
@@ -146,6 +148,16 @@ public class EventBusImpl implements EventBus {
     Objects.requireNonNull(type);
     codecMap.remove(type.getName());
     return this;
+  }
+
+  @Override
+  public <T> T createProxy(Class<T> clazz, String address) {
+    return proxyFactory.createProxy(clazz, address);
+  }
+
+  @Override
+  public <T> Registration registerService(T service, String address) {
+    return proxyFactory.registerService(service, address);
   }
 
   @Override
@@ -841,5 +853,7 @@ public class EventBusImpl implements EventBus {
       }
     }
   }
+
+
 }
 

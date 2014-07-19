@@ -35,6 +35,7 @@ public class VertxOptions {
   private long maxEventLoopExecuteTime = 2000l * 1000000;
   private long maxWorkerExecuteTime = 1l * 60 * 1000 * 1000000;
   private ClusterManager clusterManager;
+  private long proxyOperationTimeout = 10 * 1000;
 
   public VertxOptions() {
   }
@@ -162,6 +163,18 @@ public class VertxOptions {
     return this;
   }
 
+  public long getProxyOperationTimeout() {
+    return proxyOperationTimeout;
+  }
+
+  public VertxOptions setProxyOperationTimeout(long proxyOperationTimeout) {
+    if (proxyOperationTimeout < 1) {
+      throw new IllegalArgumentException("proxyOperationTimeout must be > 0");
+    }
+    this.proxyOperationTimeout = proxyOperationTimeout;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -180,6 +193,7 @@ public class VertxOptions {
     if (clusterHost != null ? !clusterHost.equals(that.clusterHost) : that.clusterHost != null) return false;
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
+    if (proxyOperationTimeout != that.proxyOperationTimeout) return false;
 
     return true;
   }
@@ -196,6 +210,9 @@ public class VertxOptions {
     result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
     result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
+    result = 31 * result + (int) (proxyOperationTimeout ^ (proxyOperationTimeout >>> 32));
     return result;
   }
+
+
 }
