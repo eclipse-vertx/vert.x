@@ -24,6 +24,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.Registration;
@@ -2472,8 +2473,9 @@ public class HttpTest extends HttpTestBase {
     try {
       server.listen();
       fail("Was expecting a failure");
-    } catch (RuntimeException e) {
-      assertEquals(expectedMessage, e.getMessage());
+    } catch (VertxException e) {
+      assertNotNull(e.getCause());
+      assertEquals(expectedMessage, e.getCause().getMessage());
     }
   }
 
@@ -2488,8 +2490,9 @@ public class HttpTest extends HttpTestBase {
     try {
       req.end();
       fail("Was expecting a failure");
-    } catch (Exception e) {
-      assertEquals("java.nio.file.NoSuchFileException: /invalid.pem", e.getMessage());
+    } catch (VertxException e) {
+      assertNotNull(e.getCause());
+      assertEquals("java.nio.file.NoSuchFileException: /invalid.pem", e.getCause().getMessage());
     }
   }
 

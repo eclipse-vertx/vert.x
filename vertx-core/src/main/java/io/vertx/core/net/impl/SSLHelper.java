@@ -17,6 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.handler.ssl.SslHandler;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.http.HttpClientOptions;
@@ -144,9 +145,7 @@ public class SSLHelper {
       context.init(keyMgrs, trustMgrs, new SecureRandom());
       return context;
     } catch (Exception e) {
-      //TODO better logging
-      log.error("Failed to create context", e);
-      throw new RuntimeException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
