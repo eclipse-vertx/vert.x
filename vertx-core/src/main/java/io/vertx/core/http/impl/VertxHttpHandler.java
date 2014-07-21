@@ -91,7 +91,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
         ByteBuf newBuf = safeBuffer(content, allocator);
         if (msg instanceof LastHttpContent) {
           LastHttpContent last = (LastHttpContent) msg;
-          return new AssembledLastHttpContent(newBuf, last.trailingHeaders());
+          return new AssembledLastHttpContent(newBuf, last.trailingHeaders(), last.getDecoderResult());
         } else {
           return new DefaultHttpContent(newBuf);
         }

@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.DecoderResult;
 
 /**
  * Helper wrapper class which allows to assemble a LastHttpContent and a HttpResponse into one "packet" and so more
@@ -34,7 +35,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHttpResponse {
 
   public AssembledFullHttpResponse(HttpResponse response, LastHttpContent content) {
-    this(response, content.content(), content.trailingHeaders());
+    this(response, content.content(), content.trailingHeaders(), content.getDecoderResult());
   }
 
   public AssembledFullHttpResponse(HttpResponse response) {
@@ -42,25 +43,25 @@ class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHtt
   }
 
   public AssembledFullHttpResponse(HttpResponse response, ByteBuf buf) {
-    super(response, toLastContent(buf, null));
+    super(response, toLastContent(buf, null, DecoderResult.SUCCESS));
   }
 
-  public AssembledFullHttpResponse(HttpResponse response, ByteBuf buf, HttpHeaders trailingHeaders) {
-    super(response, toLastContent(buf, trailingHeaders));
+  public AssembledFullHttpResponse(HttpResponse response, ByteBuf buf, HttpHeaders trailingHeaders, DecoderResult result) {
+    super(response, toLastContent(buf, trailingHeaders, result));
   }
 
-  private static LastHttpContent toLastContent(ByteBuf buf, HttpHeaders trailingHeaders) {
+  private static LastHttpContent toLastContent(ByteBuf buf, HttpHeaders trailingHeaders, DecoderResult result) {
     if (buf.isReadable()) {
       if (trailingHeaders == null) {
         return new DefaultLastHttpContent(buf);
       } else {
-        return new AssembledLastHttpContent(buf, trailingHeaders);
+        return new AssembledLastHttpContent(buf, trailingHeaders, result);
       }
     } else {
       if (trailingHeaders == null) {
         return LastHttpContent.EMPTY_LAST_CONTENT;
       } else {
-        return new AssembledLastHttpContent(Unpooled.EMPTY_BUFFER, trailingHeaders);
+        return new AssembledLastHttpContent(Unpooled.EMPTY_BUFFER, trailingHeaders, result);
       }
     }
   }
