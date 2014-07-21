@@ -67,7 +67,6 @@
 
   <modules>
     <module>vertx-core</module>
-    <module>vertx-ext</module>
     <module>vertx-hazelcast</module>
     <module>vertx-dist</module>
   </modules>
