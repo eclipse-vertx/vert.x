@@ -295,6 +295,10 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testOpenAndWriteFileSynch() throws Exception{
+      startTest(getMethodName());
+  }
+  
   public void testWriteAsync() throws Exception {
     startTest(getMethodName());
   }

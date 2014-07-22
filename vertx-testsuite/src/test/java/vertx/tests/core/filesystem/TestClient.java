@@ -914,6 +914,50 @@ public class TestClient extends TestClientBase {
     };
     vertx.fileSystem().writeFile(TEST_DIR + pathSep + fileName, buff, handler);
   }
+  
+  public void testOpenAndWriteFileSynch() throws Exception{
+    final byte[] content = TestUtils.generateRandomByteArray(1000);
+    final Buffer buff = new Buffer(content);
+    final String fileName = "some-file.dat";
+    createFile(fileName, content);
+    final AsyncFile file = vertx.fileSystem().openSync(fileName);
+    try {
+        file.write(buff, 0, new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> event) {
+                tu.checkThread();
+                if(event.succeeded()){
+                    file.close(new AsyncResultHandler<Void>() {
+                      @Override
+                      public void handle(AsyncResult<Void> ar) {
+                        tu.checkThread();
+                        if (ar.failed()) {
+                          tu.exception(ar.cause(), "failed to close");
+                        } else {
+                          tu.azzert(fileExists(fileName));
+                          byte[] readBytes;
+                          try {
+                            readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                          } catch (IOException e) {
+                            tu.exception(e, "Failed to read file");
+                            return;
+                          }
+                          Buffer read = new Buffer(readBytes);
+                          tu.azzert(TestUtils.buffersEqual(buff, read));
+                          tu.testComplete();
+                        }
+                      }
+                    });
+                }else{
+                    tu.exception(event.cause(), "Failed to write");
+                }
+            }
+        });
+    }
+    catch(IllegalStateException e){
+        tu.exception(e.getCause(), "Failed to write");
+    }
+  }
 
   public void testWriteAsync() throws Exception {
     final String fileName = "some-file.dat";
