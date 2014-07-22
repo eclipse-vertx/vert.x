@@ -101,6 +101,9 @@ public class FutureResultImpl<T> implements Future<T> {
    * Set the result. Any handler will be called, if there is one
    */
   public FutureResultImpl<T> setResult(T result) {
+    if (this.result != null) {
+      throw new IllegalStateException("Result has already been set");
+    }
     this.result = result;
     succeeded = true;
     checkCallHandler();
@@ -111,6 +114,9 @@ public class FutureResultImpl<T> implements Future<T> {
    * Set the failure. Any handler will be called, if there is one
    */
   public FutureResultImpl<T> setFailure(Throwable throwable) {
+    if (this.throwable != null) {
+      throw new IllegalStateException("Failure has already been set");
+    }
     this.throwable = throwable;
     failed = true;
     checkCallHandler();
