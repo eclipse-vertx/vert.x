@@ -232,7 +232,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     class FooCodec implements MessageCodec<Foo> {
       @Override
       public Buffer encode(Foo object) {
-        return Buffer.newBuffer();
+        return Buffer.buffer();
       }
 
       @Override
@@ -266,8 +266,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      Vertx.newVertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0).setClustered(true)
-                            .setClusterManager(getClusterManager()), ar -> {
+      Vertx.vertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0).setClustered(true)
+        .setClusterManager(getClusterManager()), ar -> {
         assertTrue("Failed to start node", ar.succeeded());
         vertices[index] = ar.result();
         latch.countDown();

@@ -55,7 +55,7 @@ public class RecordParserTest {
 
     expected = lineList.toArray(expected);
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
-    Buffer inp = Buffer.newBuffer(totLength);
+    Buffer inp = Buffer.buffer(totLength);
     for (int i = 0; i < lines; i++) {
       inp.appendBuffer(expected[i]);
     }
@@ -103,7 +103,7 @@ public class RecordParserTest {
 
     MyHandler out = new MyHandler();
     Buffer[] expected = new Buffer[lines];
-    Buffer input = Buffer.newBuffer(100);
+    Buffer input = Buffer.buffer(100);
     expected[0] = TestUtils.randomBuffer(10);
     input.appendBuffer(expected[0]);
     types.add(expected[0].length());
@@ -114,24 +114,24 @@ public class RecordParserTest {
     expected[2] = TestUtils.randomBuffer(50, true, delim[0]);
     input.appendBuffer(expected[2]);
     types.add(delim);
-    input.appendBuffer(Buffer.newBuffer(delim));
+    input.appendBuffer(Buffer.buffer(delim));
     expected[3] = TestUtils.randomBuffer(1000);
     input.appendBuffer(expected[3]);
     types.add(expected[3].length());
     expected[4] = TestUtils.randomBuffer(230, true, delim[0]);
     input.appendBuffer(expected[4]);
     types.add(delim);
-    input.appendBuffer(Buffer.newBuffer(delim));
+    input.appendBuffer(Buffer.buffer(delim));
     delim = new byte[]{17};
     expected[5] = TestUtils.randomBuffer(341, true, delim[0]);
     input.appendBuffer(expected[5]);
     types.add(delim);
-    input.appendBuffer(Buffer.newBuffer(delim));
+    input.appendBuffer(Buffer.buffer(delim));
     delim = new byte[]{54, -32, 0};
     expected[6] = TestUtils.randomBuffer(1234, true, delim[0]);
     input.appendBuffer(expected[6]);
     types.add(delim);
-    input.appendBuffer(Buffer.newBuffer(delim));
+    input.appendBuffer(Buffer.buffer(delim));
     expected[7] = TestUtils.randomBuffer(100);
     input.appendBuffer(expected[7]);
     types.add(expected[7].length());
@@ -152,10 +152,10 @@ public class RecordParserTest {
 
     expected = lineList.toArray(expected);
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
-    Buffer inp = Buffer.newBuffer(totLength + lines * delim.length);
+    Buffer inp = Buffer.buffer(totLength + lines * delim.length);
     for (int i = 0; i < lines; i++) {
       inp.appendBuffer(expected[i]);
-      inp.appendBuffer(Buffer.newBuffer(delim));
+      inp.appendBuffer(Buffer.buffer(delim));
     }
 
     //We then try every combination of chunk size up to twice the input string length
@@ -255,11 +255,11 @@ public class RecordParserTest {
    * test issue-209
    */
   public void testSpreadDelimiter() {
-    doTestDelimited(Buffer.newBuffer("start-a-b-c-dddabc"), "abc".getBytes(),
-      new Integer[] { 18 }, Buffer.newBuffer("start-a-b-c-ddd"));
-    doTestDelimited(Buffer.newBuffer("start-abc-dddabc"), "abc".getBytes(),
-      new Integer[] { 18 }, Buffer.newBuffer("start-"), Buffer.newBuffer("-ddd"));
-    doTestDelimited(Buffer.newBuffer("start-ab-c-dddabc"), "abc".getBytes(),
-      new Integer[] { 18 }, Buffer.newBuffer("start-ab-c-ddd"));
+    doTestDelimited(Buffer.buffer("start-a-b-c-dddabc"), "abc".getBytes(),
+      new Integer[] { 18 }, Buffer.buffer("start-a-b-c-ddd"));
+    doTestDelimited(Buffer.buffer("start-abc-dddabc"), "abc".getBytes(),
+      new Integer[] { 18 }, Buffer.buffer("start-"), Buffer.buffer("-ddd"));
+    doTestDelimited(Buffer.buffer("start-ab-c-dddabc"), "abc".getBytes(),
+      new Integer[] { 18 }, Buffer.buffer("start-ab-c-ddd"));
   }
 }

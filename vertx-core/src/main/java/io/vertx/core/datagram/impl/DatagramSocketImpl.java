@@ -194,12 +194,12 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   @Override
   public DatagramSocket sendString(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
-    return sendBuffer(Buffer.newBuffer(str), port, host, handler);
+    return sendBuffer(Buffer.buffer(str), port, host, handler);
   }
 
   @Override
   public DatagramSocket sendStringWithEncoding(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
-    return sendBuffer(Buffer.newBuffer(str, enc), port, host, handler);
+    return sendBuffer(Buffer.buffer(str, enc), port, host, handler);
   }
 
   @Override

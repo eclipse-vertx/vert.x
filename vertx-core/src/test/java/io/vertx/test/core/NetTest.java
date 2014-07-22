@@ -203,7 +203,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setReconnectInterval(rand));
     assertEquals(rand, options.getReconnectInterval());
 
-    assertNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
     assertEquals(options, options.addEnabledCipherSuite("bar"));
     assertNotNull(options.getEnabledCipherSuites());
@@ -339,7 +339,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
 
-    assertNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
     assertEquals(options, options.addEnabledCipherSuite("bar"));
     assertNotNull(options.getEnabledCipherSuites());
@@ -358,7 +358,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testEchoString() {
     String sent = TestUtils.randomUnicodeString(100);
-    Buffer buffSent = Buffer.newBuffer(sent);
+    Buffer buffSent = Buffer.buffer(sent);
     testEcho(sock -> sock.writeString(sent), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
   }
 
@@ -374,7 +374,7 @@ public class NetTest extends VertxTestBase {
 
   void testEchoStringWithEncoding(String encoding) {
     String sent = TestUtils.randomUnicodeString(100);
-    Buffer buffSent = Buffer.newBuffer(sent, encoding);
+    Buffer buffSent = Buffer.buffer(sent, encoding);
     testEcho(sock -> sock.writeString(sent, encoding), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
   }
 
@@ -382,7 +382,7 @@ public class NetTest extends VertxTestBase {
     Handler<AsyncResult<NetSocket>> clientHandler = (asyncResult) -> {
       if (asyncResult.succeeded()) {
         NetSocket sock = asyncResult.result();
-        Buffer buff = Buffer.newBuffer();
+        Buffer buff = Buffer.buffer();
         sock.dataHandler((buffer) -> {
           buff.appendBuffer(buffer);
           if (buff.length() == length) {
@@ -789,8 +789,8 @@ public class NetTest extends VertxTestBase {
           }
           final int numChunks = 100;
           final int chunkSize = 100;
-          final Buffer received = Buffer.newBuffer();
-          final Buffer sent = Buffer.newBuffer();
+          final Buffer received = Buffer.buffer();
+          final Buffer sent = Buffer.buffer();
           final NetSocket socket = ar2.result();
 
           final AtomicBoolean upgradedClient = new AtomicBoolean();
@@ -1024,7 +1024,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testWriteSameBufferMoreThanOnce() throws Exception {
     server.connectHandler(socket -> {
-      Buffer received = Buffer.newBuffer();
+      Buffer received = Buffer.buffer();
       socket.dataHandler(buff -> {
         received.appendBuffer(buff);
         if (received.toString().equals("foofoo")) {
@@ -1035,7 +1035,7 @@ public class NetTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", result -> {
         NetSocket socket = result.result();
-        Buffer buff = Buffer.newBuffer("foo");
+        Buffer buff = Buffer.buffer("foo");
         socket.writeBuffer(buff);
         socket.writeBuffer(buff);
       });
@@ -1048,8 +1048,8 @@ public class NetTest extends VertxTestBase {
     File fDir = Files.createTempDirectory("vertx-test").toFile();
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile(fDir.toString(), "some-file.txt", content);
-    Buffer expected = Buffer.newBuffer(content);
-    Buffer received = Buffer.newBuffer();
+    Buffer expected = Buffer.buffer(content);
+    Buffer received = Buffer.buffer();
     server.connectHandler(sock -> {
       sock.dataHandler(buff -> {
         received.appendBuffer(buff);
@@ -1080,8 +1080,8 @@ public class NetTest extends VertxTestBase {
     File fDir = Files.createTempDirectory("vertx-test").toFile();
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile(fDir.toString(), "some-file.txt", content);
-    Buffer expected = Buffer.newBuffer(content);
-    Buffer received = Buffer.newBuffer();
+    Buffer expected = Buffer.buffer(content);
+    Buffer received = Buffer.buffer();
     server.connectHandler(sock -> {
       sock.dataHandler(buf -> {
         sock.sendFile(file.getAbsolutePath());
@@ -1289,7 +1289,7 @@ public class NetTest extends VertxTestBase {
               Buffer buff = TestUtils.randomBuffer(100000);
               NetSocket sock = result.result();
               sock.writeBuffer(buff);
-              Buffer received = Buffer.newBuffer();
+              Buffer received = Buffer.buffer();
               sock.dataHandler(rec -> {
                 received.appendBuffer(rec);
                 if (received.length() == buff.length()) {
@@ -1357,7 +1357,7 @@ public class NetTest extends VertxTestBase {
             NetSocket sock = ar2.result();
             Buffer buff = TestUtils.randomBuffer(10000);
             sock.writeBuffer(buff);
-            Buffer brec = Buffer.newBuffer();
+            Buffer brec = Buffer.buffer();
             sock.dataHandler(rec -> {
               assertSame(ctx, vertx.currentContext());
               if (!worker) {

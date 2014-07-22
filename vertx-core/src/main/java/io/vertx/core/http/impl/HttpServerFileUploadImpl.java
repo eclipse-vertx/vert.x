@@ -148,7 +148,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       if (ar.succeeded()) {
         file =  ar.result();
 
-        Pump p = Pump.createPump(HttpServerFileUploadImpl.this, ar.result());
+        Pump p = Pump.pump(HttpServerFileUploadImpl.this, ar.result());
         p.start();
 
         resume();
@@ -174,7 +174,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       }
     } else {
       if (pauseBuff == null) {
-        pauseBuff = Buffer.newBuffer();
+        pauseBuff = Buffer.buffer();
       }
       pauseBuff.appendBuffer(data);
     }

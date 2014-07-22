@@ -692,7 +692,7 @@ public class FileSystemImpl implements FileSystem {
       public Buffer perform() {
         try {
           byte[] bytes = Files.readAllBytes(target);
-          Buffer buff = Buffer.newBuffer(bytes);
+          Buffer buff = Buffer.buffer(bytes);
           return buff;
         } catch (IOException e) {
           throw new FileSystemException(e);

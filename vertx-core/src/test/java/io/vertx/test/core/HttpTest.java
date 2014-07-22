@@ -244,7 +244,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setTryUseCompression(true));
     assertEquals(true, options.isTryUseCompression());
 
-    assertNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
     assertEquals(options, options.addEnabledCipherSuite("bar"));
     assertNotNull(options.getEnabledCipherSuites());
@@ -388,14 +388,14 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
 
-    assertNull(options.getWebsocketSubProtocols());
+    assertTrue(options.getWebsocketSubProtocols().isEmpty());
     assertEquals(options, options.addWebsocketSubProtocol("foo"));
     assertEquals(options, options.addWebsocketSubProtocol("bar"));
     assertNotNull(options.getWebsocketSubProtocols());
     assertTrue(options.getWebsocketSubProtocols().contains("foo"));
     assertTrue(options.getWebsocketSubProtocols().contains("bar"));
 
-    assertNull(options.getEnabledCipherSuites());
+    assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
     assertEquals(options, options.addEnabledCipherSuite("bar"));
     assertNotNull(options.getEnabledCipherSuites());
@@ -448,7 +448,7 @@ public class HttpTest extends HttpTestBase {
       assertTrue(req.sendHead() == req);
       assertTrue(req.writeString("foo", "UTF-8") == req);
       assertTrue(req.writeString("foo") == req);
-      assertTrue(req.writeBuffer(Buffer.newBuffer("foo")) == req);
+      assertTrue(req.writeBuffer(Buffer.buffer("foo")) == req);
       testComplete();
     }));
 
@@ -891,7 +891,7 @@ public class HttpTest extends HttpTestBase {
       HttpClientRequest req = client.post(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
       req.end();
 
-      Buffer buff = Buffer.newBuffer();
+      Buffer buff = Buffer.buffer();
       try {
         req.end();
         fail("Should throw exception");
@@ -1024,9 +1024,9 @@ public class HttpTest extends HttpTestBase {
     Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.newBuffer(body);
+      bodyBuff = Buffer.buffer(body);
     } else {
-      bodyBuff = Buffer.newBuffer(body, encoding);
+      bodyBuff = Buffer.buffer(body, encoding);
     }
 
     server.requestHandler(req -> {
@@ -1059,7 +1059,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testRequestBodyWrite(boolean chunked) {
-    Buffer body = Buffer.newBuffer();
+    Buffer body = Buffer.buffer();
 
     server.requestHandler(req -> {
       req.bodyHandler(buffer -> {
@@ -1124,9 +1124,9 @@ public class HttpTest extends HttpTestBase {
     Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.newBuffer(body);
+      bodyBuff = Buffer.buffer(body);
     } else {
-      bodyBuff = Buffer.newBuffer(body, encoding);
+      bodyBuff = Buffer.buffer(body, encoding);
     }
 
     server.requestHandler(req -> {
@@ -1293,7 +1293,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testUseResponseAfterComplete() {
     server.requestHandler(req -> {
-      Buffer buff = Buffer.newBuffer();
+      Buffer buff = Buffer.buffer();
       HttpServerResponse resp = req.response();
       resp.end();
 
@@ -1436,9 +1436,9 @@ public class HttpTest extends HttpTestBase {
     Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.newBuffer(body);
+      bodyBuff = Buffer.buffer(body);
     } else {
-      bodyBuff = Buffer.newBuffer(body, encoding);
+      bodyBuff = Buffer.buffer(body, encoding);
     }
 
     server.requestHandler(req -> {
@@ -1491,7 +1491,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testResponseBodyWrite(boolean chunked) {
-    Buffer body = Buffer.newBuffer();
+    Buffer body = Buffer.buffer();
 
     int numWrites = 10;
     int chunkSize = 100;
@@ -1558,9 +1558,9 @@ public class HttpTest extends HttpTestBase {
     Buffer bodyBuff;
 
     if (encoding == null) {
-      bodyBuff = Buffer.newBuffer(body);
+      bodyBuff = Buffer.buffer(body);
     } else {
-      bodyBuff = Buffer.newBuffer(body, encoding);
+      bodyBuff = Buffer.buffer(body, encoding);
     }
 
     server.requestHandler(req -> {
@@ -2788,7 +2788,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     AtomicBoolean paused = new AtomicBoolean();
-    Buffer totBuff = Buffer.newBuffer();
+    Buffer totBuff = Buffer.buffer();
     HttpClientRequest clientRequest = client.get(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
       resp.pause();
       paused.set(true);
@@ -2874,7 +2874,7 @@ public class HttpTest extends HttpTestBase {
       });
 
       String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
-      Buffer buffer = Buffer.newBuffer();
+      Buffer buffer = Buffer.buffer();
       String body =
         "--" + boundary + "\r\n" +
           "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
@@ -2924,7 +2924,7 @@ public class HttpTest extends HttpTestBase {
         testComplete();
       });
       try {
-        Buffer buffer = Buffer.newBuffer();
+        Buffer buffer = Buffer.buffer();
         // Make sure we have one param that needs url encoding
         buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
         req.headers().set("content-length", String.valueOf(buffer.length()));
@@ -2969,7 +2969,7 @@ public class HttpTest extends HttpTestBase {
         assertEquals(3, attributeCount.get());
         testComplete();
       });
-      Buffer buffer = Buffer.newBuffer();
+      Buffer buffer = Buffer.buffer();
       buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
       req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "application/x-www-form-urlencoded");
@@ -3024,7 +3024,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testResponseBodyWriteFixedString() {
     String body = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-    Buffer bodyBuff = Buffer.newBuffer(body);
+    Buffer bodyBuff = Buffer.buffer(body);
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -3047,7 +3047,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testHttpConnect() {
     Buffer buffer = TestUtils.randomBuffer(128);
-    Buffer received = Buffer.newBuffer();
+    Buffer received = Buffer.buffer();
     vertx.createNetServer(new NetServerOptions().setPort(1235)).connectHandler(socket -> {
       socket.dataHandler(socket::writeBuffer);
     }).listen(onSuccess(netServer -> {
@@ -3058,8 +3058,8 @@ public class HttpTest extends HttpTestBase {
           req.response().end();
 
           // Create pumps which echo stuff
-          Pump.createPump(req.netSocket(), socket).start();
-          Pump.createPump(socket, req.netSocket()).start();
+          Pump.pump(req.netSocket(), socket).start();
+          Pump.pump(socket, req.netSocket()).start();
           req.netSocket().closeHandler(v -> socket.close());
         }));
       });

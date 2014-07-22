@@ -26,6 +26,10 @@ import java.util.concurrent.Executor;
  */
 public class EventLoopContext extends ContextImpl {
 
+  private static final String ANNOYING_MSG =
+    "******************* BLAH BLAH BLAH THIS IS SUPPOSED TO BE A DELIBERATELY ANNOYING MESSAGE SO WE DON'T FORGET TO REMOVE IT AND THROW AN EXCEPTION " +
+    "AS SOON AS THE UNDERLYING ISSUE IS FIXED IN THE NEXT NETTY RELEASE. *********************************";
+
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
   public EventLoopContext(VertxInternal vertx, Executor bgExec) {
@@ -52,9 +56,9 @@ public class EventLoopContext extends ContextImpl {
     boolean correct = current == contextThread;
     if (expectRightThread) {
       if (!(current instanceof VertxThread)) {
-        log.warn("Expected to be on Vert.x thread, but actually on: " + current);
+        log.warn(ANNOYING_MSG + " Expected to be on Vert.x thread, but actually on: " + current);
       } else if (!correct && contextThread != null) {
-        log.warn("Event delivered on unexpected thread " + current + " expected: " + contextThread);
+        log.warn(ANNOYING_MSG + " Event delivered on unexpected thread " + current + " expected: " + contextThread);
       }
     }
     return correct;

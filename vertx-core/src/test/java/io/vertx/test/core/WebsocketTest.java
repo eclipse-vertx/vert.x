@@ -335,7 +335,7 @@ public class WebsocketTest extends VertxTestBase {
       });
       client.connectWebsocket(new WebSocketConnectOptions().setPort(4043), ws -> {
         int size = 100;
-        Buffer received = Buffer.newBuffer();
+        Buffer received = Buffer.buffer();
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == size) {
@@ -343,7 +343,7 @@ public class WebsocketTest extends VertxTestBase {
             testComplete();
           }
         });
-        Buffer buff = Buffer.newBuffer(TestUtils.randomByteArray(size));
+        Buffer buff = Buffer.buffer(TestUtils.randomByteArray(size));
         ws.writeBinaryFrame(buff);
       });
     });
@@ -359,7 +359,7 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, path);
       // Let's write a Text frame raw
-      Buffer buff = Buffer.newBuffer();
+      Buffer buff = Buffer.buffer();
       buff.appendByte((byte)129); // Text frame
       buff.appendByte((byte)message.length());
       buff.appendString(message);
@@ -546,7 +546,7 @@ public class WebsocketTest extends VertxTestBase {
     assertEquals(options, options.setVersion(0));
     assertEquals(0, options.getVersion());
 
-    assertNull(options.getSubProtocols());
+    assertTrue(options.getSubProtocols().isEmpty());
     assertEquals(options, options.addSubProtocol("foo"));
     assertEquals(options, options.addSubProtocol("bar"));
     assertNotNull(options.getSubProtocols());
@@ -601,7 +601,7 @@ public class WebsocketTest extends VertxTestBase {
       int sends = 10;
 
       client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
-        final Buffer received = Buffer.newBuffer();
+        final Buffer received = Buffer.buffer();
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == bsize * sends) {
@@ -609,16 +609,16 @@ public class WebsocketTest extends VertxTestBase {
             testComplete();
           }
         });
-        final Buffer sent = Buffer.newBuffer();
+        final Buffer sent = Buffer.buffer();
         for (int i = 0; i < sends; i++) {
           if (binary) {
-            Buffer buff = Buffer.newBuffer(TestUtils.randomByteArray(bsize));
+            Buffer buff = Buffer.buffer(TestUtils.randomByteArray(bsize));
             ws.writeBinaryFrame(buff);
             sent.appendBuffer(buff);
           } else {
             String str = TestUtils.randomAlphaString(bsize);
             ws.writeTextFrame(str);
-            sent.appendBuffer(Buffer.newBuffer(str, "UTF-8"));
+            sent.appendBuffer(Buffer.buffer(str, "UTF-8"));
           }
         }
       });
@@ -635,13 +635,13 @@ public class WebsocketTest extends VertxTestBase {
       NetSocket sock = getUpgradedNetSocket(req, path);
 
       // Let's write a Text frame raw
-      Buffer buff = Buffer.newBuffer();
+      Buffer buff = Buffer.buffer();
       buff.appendByte((byte) 0x01); // Incomplete Text frame
       buff.appendByte((byte) firstFrame.length());
       buff.appendString(firstFrame);
       sock.writeBuffer(buff);
 
-      buff = Buffer.newBuffer();
+      buff = Buffer.buffer();
       buff.appendByte((byte) (0x00 | 0x80)); // Complete continuation frame
       buff.appendByte((byte) continuationFrame.length());
       buff.appendString(continuationFrame);
@@ -653,7 +653,7 @@ public class WebsocketTest extends VertxTestBase {
       client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
         AtomicBoolean receivedFirstFrame = new AtomicBoolean();
         ws.frameHandler(received -> {
-          Buffer receivedBuffer = Buffer.newBuffer(received.textData());
+          Buffer receivedBuffer = Buffer.buffer(received.textData());
           if (!received.isFinalFrame()) {
             assertEquals(firstFrame, receivedBuffer.toString());
             receivedFirstFrame.set(true);
@@ -671,7 +671,7 @@ public class WebsocketTest extends VertxTestBase {
   private void testWriteFromConnectHandler(final int version) throws Exception {
 
     String path = "/some/path";
-    Buffer buff = Buffer.newBuffer("AAA");
+    Buffer buff = Buffer.buffer("AAA");
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
@@ -680,7 +680,7 @@ public class WebsocketTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
-        Buffer received = Buffer.newBuffer();
+        Buffer received = Buffer.buffer();
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
@@ -697,7 +697,7 @@ public class WebsocketTest extends VertxTestBase {
   private void testValidSubProtocol(final int version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
-    Buffer buff = Buffer.newBuffer("AAA");
+    Buffer buff = Buffer.buffer("AAA");
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol(subProtocol)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
       ws.writeBinaryFrame(buff);
@@ -705,7 +705,7 @@ public class WebsocketTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
-        final Buffer received = Buffer.newBuffer();
+        final Buffer received = Buffer.buffer();
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
@@ -722,7 +722,7 @@ public class WebsocketTest extends VertxTestBase {
   private void testInvalidSubProtocol(final int version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
-    Buffer buff = Buffer.newBuffer("AAA");
+    Buffer buff = Buffer.buffer("AAA");
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
       assertEquals(path, ws.path());
@@ -731,7 +731,7 @@ public class WebsocketTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
-        final Buffer received = Buffer.newBuffer();
+        final Buffer received = Buffer.buffer();
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {

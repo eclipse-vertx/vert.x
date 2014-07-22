@@ -47,7 +47,7 @@ public class TCPOptions extends NetworkOptions {
   private boolean ssl;
   private KeyStoreOptions keyStore;
   private TrustStoreOptions trustStore;
-  private Set<String> enabledCipherSuites;
+  private Set<String> enabledCipherSuites = new HashSet<>();
 
   public TCPOptions(TCPOptions other) {
     super(other);
@@ -187,9 +187,6 @@ public class TCPOptions extends NetworkOptions {
   }
 
   public TCPOptions addEnabledCipherSuite(String suite) {
-    if (enabledCipherSuites == null) {
-      enabledCipherSuites = new HashSet<>();
-    }
     enabledCipherSuites.add(suite);
     return this;
   }

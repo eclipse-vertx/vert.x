@@ -127,13 +127,13 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public HttpClientRequestImpl writeString(String chunk) {
     check();
-    return writeBuffer(Buffer.newBuffer(chunk));
+    return writeBuffer(Buffer.buffer(chunk));
   }
 
   @Override
   public HttpClientRequestImpl writeString(String chunk, String enc) {
     check();
-    return writeBuffer(Buffer.newBuffer(chunk, enc));
+    return writeBuffer(Buffer.buffer(chunk, enc));
   }
 
   @Override
@@ -200,12 +200,12 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public void writeStringAndEnd(String chunk) {
-    writeBufferAndEnd(Buffer.newBuffer(chunk));
+    writeBufferAndEnd(Buffer.buffer(chunk));
   }
 
   @Override
   public void writeStringAndEnd(String chunk, String enc) {
-    writeBufferAndEnd(Buffer.newBuffer(chunk, enc));
+    writeBufferAndEnd(Buffer.buffer(chunk, enc));
   }
 
   @Override

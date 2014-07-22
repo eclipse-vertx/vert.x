@@ -223,7 +223,7 @@ public class AsyncFileImpl implements AsyncFile {
   private void doRead() {
     if (!readInProgress) {
       readInProgress = true;
-      Buffer buff = Buffer.newBuffer(BUFFER_SIZE);
+      Buffer buff = Buffer.buffer(BUFFER_SIZE);
       read(buff, 0, readPos, BUFFER_SIZE, ar -> {
         if (ar.succeeded()) {
           readInProgress = false;

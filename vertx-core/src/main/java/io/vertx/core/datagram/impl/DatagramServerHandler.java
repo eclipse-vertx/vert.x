@@ -58,7 +58,7 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
       if (content.isDirect())  {
         content = safeBuffer(content, allocator);
       }
-      return new DatagramPacketImpl(packet.sender(), Buffer.newBuffer(content));
+      return new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));
     }
     return msg;
   }

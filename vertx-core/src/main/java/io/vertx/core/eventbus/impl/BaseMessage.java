@@ -129,7 +129,7 @@ public abstract class BaseMessage<T> implements Message<T> {
     int length = 1 + 1 + 4 + address.length() + 1 + 4 * sender.host.length() +
         4 + (replyAddress == null ? 0 : replyAddress.length()) +
         getBodyLength();
-    Buffer totBuff = Buffer.newBuffer(length);
+    Buffer totBuff = Buffer.buffer(length);
     totBuff.appendInt(0);
     totBuff.appendByte(type());
     totBuff.appendByte(send ? (byte)0 : (byte)1);

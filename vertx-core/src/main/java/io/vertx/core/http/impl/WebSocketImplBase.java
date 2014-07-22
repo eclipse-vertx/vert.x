@@ -125,7 +125,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   void handleFrame(WebSocketFrameInternal frame) {
     if (dataHandler != null) {
-      Buffer buff = Buffer.newBuffer(frame.getBinaryData());
+      Buffer buff = Buffer.buffer(frame.getBinaryData());
       dataHandler.handle(buff);
     }
 

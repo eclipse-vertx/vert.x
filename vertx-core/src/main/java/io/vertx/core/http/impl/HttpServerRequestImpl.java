@@ -228,7 +228,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
-    final Buffer body = Buffer.newBuffer();
+    final Buffer body = Buffer.buffer();
     dataHandler(body::appendBuffer);
     endHandler(v -> bodyHandler.handle(body));
     return this;
@@ -365,13 +365,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     @Override
     public void setContent(ByteBuf channelBuffer) throws IOException {
       completed = true;
-      upload.receiveData(Buffer.newBuffer(channelBuffer));
+      upload.receiveData(Buffer.buffer(channelBuffer));
       upload.complete();
     }
 
     @Override
     public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
-      upload.receiveData(Buffer.newBuffer(channelBuffer));
+      upload.receiveData(Buffer.buffer(channelBuffer));
       if (last) {
         completed = true;
         upload.complete();

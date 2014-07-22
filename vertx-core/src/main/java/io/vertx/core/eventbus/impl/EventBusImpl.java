@@ -64,7 +64,7 @@ public class EventBusImpl implements EventBus {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
-  private static final Buffer PONG = Buffer.newBuffer(new byte[] { (byte)1 });
+  private static final Buffer PONG = Buffer.buffer(new byte[]{(byte) 1});
   private static final long PING_INTERVAL = 20000;
   private static final long PING_REPLY_INTERVAL = 20000;
   private final VertxInternal vertx;

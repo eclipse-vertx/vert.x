@@ -231,7 +231,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
     private Buffer body() {
       if (body == null) {
-        body = Buffer.newBuffer();
+        body = Buffer.buffer();
       }
       return body;
     }

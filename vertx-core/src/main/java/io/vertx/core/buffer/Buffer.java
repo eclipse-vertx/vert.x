@@ -46,30 +46,30 @@ import java.nio.ByteBuffer;
 @VertxGen
 public interface Buffer {
 
-  static Buffer newBuffer() {
+  static Buffer buffer() {
     return factory.newBuffer();
   }
 
   @GenIgnore
-  static Buffer newBuffer(int initialSizeHint) {
+  static Buffer buffer(int initialSizeHint) {
     return factory.newBuffer(initialSizeHint);
   }
 
-  static Buffer newBuffer(String string) {
+  static Buffer buffer(String string) {
     return factory.newBuffer(string);
   }
 
-  static Buffer newBuffer(String string, String enc) {
+  static Buffer buffer(String string, String enc) {
     return factory.newBuffer(string, enc);
   }
 
   @GenIgnore
-  static Buffer newBuffer(byte[] bytes) {
+  static Buffer buffer(byte[] bytes) {
     return factory.newBuffer(bytes);
   }
 
   @GenIgnore
-  static Buffer newBuffer(ByteBuf byteBuf) {
+  static Buffer buffer(ByteBuf byteBuf) {
     return factory.newBuffer(byteBuf);
   }
 

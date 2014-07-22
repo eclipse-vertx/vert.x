@@ -479,7 +479,7 @@ public class HttpClientImpl implements HttpClient {
       if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
         if (chunk.content().isReadable()) {
-          Buffer buff = Buffer.newBuffer(chunk.content().slice());
+          Buffer buff = Buffer.buffer(chunk.content().slice());
           conn.handleResponseChunk(buff);
         }
         if (chunk instanceof LastHttpContent) {

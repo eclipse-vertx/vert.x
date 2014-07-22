@@ -59,7 +59,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Before
   public void before() throws Exception {
-    vertx = Vertx.newVertx();
+    vertx = Vertx.vertx();
     eb = vertx.eventBus();
   }
 

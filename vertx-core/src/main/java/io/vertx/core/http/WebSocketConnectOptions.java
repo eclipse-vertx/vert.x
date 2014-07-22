@@ -36,7 +36,7 @@ public class WebSocketConnectOptions extends RequestOptions {
 
   private int maxWebsocketFrameSize;
   private int version;
-  private Set<String> subProtocols;
+  private Set<String> subProtocols = new HashSet<>();
 
   public WebSocketConnectOptions() {
     this.maxWebsocketFrameSize = DEFAULT_MAXWEBSOCKETFRAMESIZE;
@@ -82,9 +82,6 @@ public class WebSocketConnectOptions extends RequestOptions {
   }
 
   public WebSocketConnectOptions addSubProtocol(String subProtocol) {
-    if (subProtocols == null) {
-      subProtocols = new HashSet<>();
-    }
     subProtocols.add(subProtocol);
     return this;
   }

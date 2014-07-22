@@ -29,7 +29,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   @Before
   public void beforeVertxTestBase() throws Exception {
-    vertx = Vertx.newVertx();
+    vertx = Vertx.vertx();
   }
 
   @After

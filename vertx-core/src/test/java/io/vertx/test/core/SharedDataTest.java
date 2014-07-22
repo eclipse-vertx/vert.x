@@ -39,7 +39,7 @@ public class SharedDataTest {
 
   @Before
   public void setUp() {
-    vertx = Vertx.newVertx();
+    vertx = Vertx.vertx();
     sharedData = vertx.sharedData();
   }
 

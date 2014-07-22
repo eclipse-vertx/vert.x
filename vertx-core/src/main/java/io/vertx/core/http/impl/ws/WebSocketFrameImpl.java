@@ -113,7 +113,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   public Buffer binaryData() {
-    return Buffer.newBuffer(binaryData);
+    return Buffer.buffer(binaryData);
   }
 
   public void setBinaryData(ByteBuf binaryData) {
