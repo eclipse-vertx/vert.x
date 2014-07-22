@@ -36,14 +36,13 @@ public abstract class BlockingAction<T>  {
   public BlockingAction(VertxInternal vertx, Handler<AsyncResult<T>> handler) {
     this.vertx = vertx;
     this.handler = handler;
+    context = vertx.getOrCreateContext();
   }
 
   /**
    * Run the blocking action using a thread from the worker pool.
    */
   public void run() {
-    context = vertx.getOrCreateContext();
-
     Runnable runner = new Runnable() {
       public void run() {
         final DefaultFutureResult<T> res = new DefaultFutureResult<>();
