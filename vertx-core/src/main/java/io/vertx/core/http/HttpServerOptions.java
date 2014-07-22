@@ -40,7 +40,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
-  private Set<String> websocketSubProtocols;
+  private Set<String> websocketSubProtocols = new HashSet<>();
   private int port;
 
   public HttpServerOptions() {
@@ -85,9 +85,6 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   public HttpServerOptions addWebsocketSubProtocol(String subProtocol) {
-    if (websocketSubProtocols == null) {
-      websocketSubProtocols = new HashSet<>();
-    }
     websocketSubProtocols.add(subProtocol);
     return this;
   }
