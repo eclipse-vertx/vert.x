@@ -287,7 +287,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       prepareHeaders();
       FullHttpResponse resp;
       if (trailing != null) {
-        resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders());
+        resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders(), trailing.getDecoderResult());
       }  else {
         resp = new AssembledFullHttpResponse(response, data);
       }
@@ -303,7 +303,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         LastHttpContent content;
         if (trailing != null) {
-          content = new AssembledLastHttpContent(data, trailing.trailingHeaders());
+          content = new AssembledLastHttpContent(data, trailing.trailingHeaders(), trailing.getDecoderResult());
         } else {
           content = new DefaultLastHttpContent(data, false);
         }
