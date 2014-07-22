@@ -69,7 +69,8 @@ public class FatJarStarter implements Runnable {
   private void go(String[] args) throws Exception {
     URLClassLoader urlc = (URLClassLoader)FatJarStarter.class.getClassLoader();
 
-    String fileName = urlc.getURLs()[0].getFile();
+    final int totalUrlsCount = urlc.getURLs().length;
+    String fileName = urlc.getURLs()[totalUrlsCount - 1].getFile();
 
     // Look for -cp or -classpath parameter
     String classpath = null;
