@@ -36,7 +36,7 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
+@VertxGen(concrete = false)
 public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
 
   /**
