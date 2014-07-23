@@ -82,6 +82,8 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
       case "CONNECT":
         route(request, connectBindings);
         break;
+      default:
+        notFound(request);
     }
   }
 
@@ -356,6 +358,10 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
         return;
       }
     }
+    notFound(request);
+  }
+
+  private void notFound(HttpServerRequest request) {
     if (noMatchHandler != null) {
       noMatchHandler.handle(request);
     } else {
