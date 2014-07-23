@@ -1018,7 +1018,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     File modDir = new File(modRoot, modID.toString());
     if (modDir.exists()) {
       return modDir;
-    } else if (!systemModRoot.equals(modRoot)) {
+    }
+    // Try with the static modDir
+    modDir = new File(this.modRoot, modID.toString());
+    if (modDir.exists()) {
+      return modDir;
+    }
+    // Now try with system mod dir
+    if (!systemModRoot.equals(modRoot)) {
       modDir = new File(systemModRoot, modID.toString());
       if (modDir.exists()) {
         return modDir;
