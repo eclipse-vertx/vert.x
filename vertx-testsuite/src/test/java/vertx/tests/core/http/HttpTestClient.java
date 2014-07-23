@@ -32,6 +32,7 @@ import org.vertx.java.testframework.TestUtils;
 
 import java.io.*;
 import java.net.URLEncoder;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
@@ -398,7 +399,7 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(ar.succeeded());
         HttpClientRequest req = client.put("someurl", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
-
+              tu.testComplete();
           }
         });
         tu.azzert(req.setChunked(true) == req);
@@ -406,12 +407,11 @@ public class HttpTestClient extends TestClientBase {
         tu.azzert(req.write("foo", "UTF-8") == req);
         tu.azzert(req.write("foo") == req);
         tu.azzert(req.write(new Buffer("foo")) == req);
-        tu.testComplete();
       }
     };
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
-
+          req.response().end();
       }
     }, handler);
   }
@@ -1123,6 +1123,7 @@ public class HttpTestClient extends TestClientBase {
     startServer(new Handler<HttpServerRequest>() {
       public void handle(HttpServerRequest req) {
         tu.checkThread();
+        req.response().end();
       }
     }, handler);
   }
@@ -1145,12 +1146,12 @@ public class HttpTestClient extends TestClientBase {
       }
     };
     startServer(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
+      public void handle(final HttpServerRequest req) {
         tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
-            tu.testComplete();
+            req.response().end();
           }
         });
       }
@@ -1200,12 +1201,12 @@ public class HttpTestClient extends TestClientBase {
       }
     };
     startServer(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
+      public void handle(final HttpServerRequest req) {
         tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
-            tu.testComplete();
+            req.response().end();
           }
         });
       }
@@ -1264,6 +1265,7 @@ public class HttpTestClient extends TestClientBase {
         HttpClientRequest req = getRequest(true, "POST", "some-uri", new Handler<HttpClientResponse>() {
           public void handle(HttpClientResponse resp) {
             tu.checkThread();
+            tu.testComplete();
           }
         });
 
@@ -1285,12 +1287,12 @@ public class HttpTestClient extends TestClientBase {
     };
 
     startServer(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
+      public void handle(final HttpServerRequest req) {
         tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
-            tu.testComplete();
+            req.response().end();
           }
         });
       }
@@ -1359,12 +1361,12 @@ public class HttpTestClient extends TestClientBase {
       }
     };
     startServer(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
+      public void handle(final HttpServerRequest req) {
         tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(bodyBuff, buff));
-            tu.testComplete();
+            req.response().end();
           }
         });
       }
@@ -1391,12 +1393,12 @@ public class HttpTestClient extends TestClientBase {
       }
     };
     startServer(new Handler<HttpServerRequest>() {
-      public void handle(HttpServerRequest req) {
+      public void handle(final HttpServerRequest req) {
         tu.checkThread();
         req.bodyHandler(new Handler<Buffer>() {
           public void handle(Buffer buff) {
             tu.azzert(TestUtils.buffersEqual(body, buff));
-            tu.testComplete();
+            req.response().end();
           }
         });
       }
@@ -1883,6 +1885,7 @@ public class HttpTestClient extends TestClientBase {
           tu.azzert(false, "Should throw exception");
         } catch (IllegalStateException e) {
           //OK
+          req.response().end();
           tu.testComplete();
         }
       }
@@ -2500,13 +2503,60 @@ public class HttpTestClient extends TestClientBase {
     testPooling(true, true);
   }
 
+  public void testPoolingNoPipeliningWithConnectionClosingServer() throws Exception {
+    testPooling(true, false);
+  }
+
+  public void testPoolingWithConnectionClosingServer() throws Exception {
+    testChannelClosingException(true);
+  }
+
+  public void testPoolingNoPipeliningWithClosingServer() throws Exception {
+    testChannelClosingException(false);
+  }
+
+  public void testPoolingWithClosingServer() throws Exception {
+    testChannelClosingException(true);
+  }
+
+  private void testChannelClosingException(final boolean pipelining) throws Exception {
+    final String path = "foo.txt";
+    int maxPoolSize = 1;
+    client.setKeepAlive(true).setPipelining(pipelining).setMaxPoolSize(maxPoolSize);
+    HttpClientRequest req1 = client.get(path, new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(response.statusCode() == 200);
+      }
+    });
+
+    HttpClientRequest req2 = client.get(path, new Handler<HttpClientResponse>() {
+      public void handle(final HttpClientResponse response) {
+        tu.azzert(false, "Response not expected.");
+      }
+    });
+    req2.exceptionHandler(new Handler<Throwable>() {
+      @Override
+      public void handle(Throwable event) {
+        tu.azzert(event instanceof ClosedChannelException, "Expect to see a closed channel.");
+        tu.testComplete();
+      }
+    });
+    req1.headers().set("count", String.valueOf(0));
+    req2.headers().set("count", String.valueOf(1));
+    req1.end();
+    req2.end();
+  }
+
   public void testPoolingNoPipelining() throws Exception {
     testPooling(true, false);
   }
 
   public void testPoolingNoKeepAlive() throws Exception {
-    testPooling(false, false);
     testPooling(false, true);
+  }
+
+  public void testPoolingNoKeepAliveNoPipelining() throws Exception {
+      testPooling(false, false);
   }
 
   private void testPooling(final boolean keepAlive, final boolean pipelining) throws Exception {

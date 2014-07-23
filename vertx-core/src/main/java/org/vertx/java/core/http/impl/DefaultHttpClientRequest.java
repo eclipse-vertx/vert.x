@@ -270,6 +270,10 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
   }
 
+  boolean hasExceptionOccurred() {
+      return exceptionOccurred;
+  }
+
   void handleResponse(DefaultHttpClientResponse resp) {
     // If an exception occurred (e.g. a timeout fired) we won't receive the response.
     if (!exceptionOccurred) {
@@ -332,6 +336,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             // The connection has been closed - closed connections can be in the pool
             // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
             // that is done asynchronously in the connection closeHandler()
+            connecting = false;
             connect();
           }
         }
