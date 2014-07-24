@@ -38,6 +38,7 @@ import org.vertx.java.core.net.impl.DefaultNetSocket;
 import org.vertx.java.core.net.impl.VertxNetHandler;
 
 import java.net.URI;
+import java.nio.channels.ClosedChannelException;
 import java.util.*;
 
 /**
@@ -53,6 +54,7 @@ class ClientConnection extends ConnectionBase {
   private final int port;
   private boolean keepAlive;
   private boolean pipelining;
+  private boolean forcedClose;
   private boolean upgradedConnection;
   private WebSocketClientHandshaker handshaker;
   private volatile DefaultHttpClientRequest currentRequest;
@@ -240,8 +242,25 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  public void closeHandler(Handler<Void> handler) {
-    this.closeHandler = handler;
+  public void closeHandler(final Handler<Void> handler) {
+    this.closeHandler = new Handler<Void>() {
+        @Override
+        public void handle(Void event) {
+            if(getOutstandingRequestCount() > 0) {
+                // As soon as a response is handled for the request it's no longer in the requests queue so we should
+                // only be informing requests that haven't received a response.
+                for (DefaultHttpClientRequest request : requests) {
+                    // If the request has already received a timeout or other exception then don't inform it that the
+                    // connection was closed.
+                    if (!request.hasExceptionOccurred()) {
+                        request.handleException(new ClosedChannelException());
+                    }
+                }
+            }
+
+            handler.handle(event);
+        }
+    };
   }
 
   @Override
@@ -249,7 +268,7 @@ class ClientConnection extends ConnectionBase {
     if (upgradedConnection) {
       // Close it
       actualClose();
-    } else if (!keepAlive) {
+    } else if (!keepAlive || forcedClose) {
       // Close it
       actualClose();
     } else {
@@ -326,10 +345,11 @@ class ClientConnection extends ConnectionBase {
     setContext();
     try {
       currentResponse.handleEnd(trailer);
+      forcedClose = isConnectionCloseHeader(currentResponse);
     } catch (Throwable t) {
       handleHandlerException(t);
     }
-    if (!keepAlive || !pipelining) {
+    if (!keepAlive || !pipelining || forcedClose) {
       // If keepAlive is true and pipelining is true, then the connection was returned to the
       // pool in endRequest
       close();
@@ -432,5 +452,19 @@ class ClientConnection extends ConnectionBase {
       }
     });
     return socket;
+  }
+
+  private boolean isConnectionCloseHeader(DefaultHttpClientResponse response) {
+    if (response != null) {
+      List<String> connectionHeaderValues = response.headers().getAll(HttpHeaders.Names.CONNECTION);
+      if (connectionHeaderValues != null) {
+        for (String connectionHeaderValue : connectionHeaderValues) {
+          if (HttpHeaders.Values.CLOSE.equals(connectionHeaderValue)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 }

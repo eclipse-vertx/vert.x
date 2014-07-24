@@ -451,6 +451,31 @@ public class JavaHttpTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testPoolingNoKeepAliveNoPipelining() throws Exception {
+    startApp(CountServer.class.getName());
+    startTest(getMethodName());
+  }
+
+  public void testPoolingNoPipeliningWithConnectionClosingServer() throws Exception {
+    startApp(ConnectionCloseCountServer.class.getName());
+    startTest(getMethodName());
+  }
+
+  public void testPoolingWithConnectionClosingServer() throws Exception {
+    startApp(ConnectionCloseCountServer.class.getName());
+    startTest(getMethodName());
+  }
+
+  public void testPoolingNoPipeliningWithClosingServer() throws Exception {
+    startApp(ClosingServer.class.getName());
+    startTest(getMethodName());
+  }
+
+  public void testPoolingWithClosingServer() throws Exception {
+    startApp(ClosingServer.class.getName());
+    startTest(getMethodName());
+  }
+
   public void testConnectionErrorsGetReportedToRequest() {
     startTest(getMethodName());
   }
