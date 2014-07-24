@@ -17,6 +17,7 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -24,16 +25,44 @@ import io.vertx.codegen.annotations.Options;
 @Options
 public class OpenOptions {
 
-  private String perms;
-  private boolean read = true;
-  private boolean write = true;
-  private boolean create = true;
-  private boolean createNew = false;
-  private boolean dsync = false;
-  private boolean sync = false;
-  private boolean deleteOnClose = false;
-  private boolean truncateExisting = false;
-  private boolean sparse = false;
+  private static final String DEFAULT_PERMS = null;
+  private static final boolean DEFAULT_READ = true;
+  private static final boolean DEFAULT_WRITE = true;
+  private static final boolean DEFAULT_CREATE = true;
+  private static final boolean DEFAULT_CREATENEW = false;
+  private static final boolean DEFAULT_DSYNC = false;
+  private static final boolean DEFAULT_SYNC = false;
+  private static final boolean DEFAULT_DELETEONCLOSE = false;
+  private static final boolean DEFAULT_TRUNCATEEXISTING = false;
+  private static final boolean DEFAULT_SPARSE = false;
+
+  private String perms = DEFAULT_PERMS;
+  private boolean read = DEFAULT_READ;
+  private boolean write = DEFAULT_WRITE;
+  private boolean create = DEFAULT_CREATE;
+  private boolean createNew = DEFAULT_CREATENEW;
+  private boolean dsync = DEFAULT_DSYNC;
+  private boolean sync = DEFAULT_SYNC;
+  private boolean deleteOnClose = DEFAULT_DELETEONCLOSE;
+  private boolean truncateExisting = DEFAULT_TRUNCATEEXISTING;
+  private boolean sparse = DEFAULT_SPARSE;
+
+  public OpenOptions() {
+    super();
+  }
+
+  public OpenOptions(JsonObject json) {
+    this.perms = json.getString("perms", DEFAULT_PERMS);
+    this.read = json.getBoolean("read", DEFAULT_READ);
+    this.write = json.getBoolean("write", DEFAULT_WRITE);
+    this.create = json.getBoolean("create", DEFAULT_CREATE);
+    this.createNew = json.getBoolean("createNew", DEFAULT_CREATENEW);
+    this.dsync = json.getBoolean("dsync", DEFAULT_DSYNC);
+    this.sync = json.getBoolean("sync", DEFAULT_SYNC);
+    this.deleteOnClose = json.getBoolean("deleteOnClose", DEFAULT_DELETEONCLOSE);
+    this.truncateExisting = json.getBoolean("truncateExisting", DEFAULT_TRUNCATEEXISTING);
+    this.sparse = json.getBoolean("sparse", DEFAULT_SPARSE);
+  }
 
   public String getPerms() {
     return perms;
