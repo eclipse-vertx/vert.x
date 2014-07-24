@@ -17,6 +17,7 @@
 package io.vertx.core.datagram;
 
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 
 /**
@@ -25,12 +26,19 @@ import io.vertx.core.net.NetworkOptions;
 @Options
 public class DatagramSocketOptions extends NetworkOptions {
 
-  private boolean broadcast;
-  private boolean loopbackModeDisabled = true;
-  private int multicastTimeToLive = -1;
-  private String multicastNetworkInterface;
-  private boolean reuseAddress = false; // We override this as default is different for DatagramSocket
-  private boolean ipV6;
+  private static final boolean DEFAULT_BROADCAST = false;
+  private static final boolean DEFAULT_LOOPBACK_MODE_DISABLED = true;
+  private static final int DEFAULT_MULTICASTTIMETOLIVE = -1;
+  private static final String DEFAULT_MULTICASTNETWORKINTERFACE = null;
+  private static final boolean DEFAULT_REUSEADDRESS = false;
+  private static final boolean DEFAULT_IPV6 = false;
+
+  private boolean broadcast = DEFAULT_BROADCAST;
+  private boolean loopbackModeDisabled = DEFAULT_LOOPBACK_MODE_DISABLED;
+  private int multicastTimeToLive = DEFAULT_MULTICASTTIMETOLIVE;
+  private String multicastNetworkInterface = DEFAULT_MULTICASTNETWORKINTERFACE;
+  private boolean reuseAddress = DEFAULT_REUSEADDRESS; // We override this as default is different for DatagramSocket
+  private boolean ipV6 = DEFAULT_IPV6;
 
   public DatagramSocketOptions(NetworkOptions other) {
     super(other);
@@ -47,6 +55,16 @@ public class DatagramSocketOptions extends NetworkOptions {
     this.multicastTimeToLive = other.multicastTimeToLive;
     this.multicastNetworkInterface = other.multicastNetworkInterface;
     this.reuseAddress = other.reuseAddress;
+  }
+
+  public DatagramSocketOptions(JsonObject json) {
+    super(json);
+    this.broadcast = json.getBoolean("broadcast", DEFAULT_BROADCAST);
+    this.loopbackModeDisabled = json.getBoolean("loopbackModeDisabled", DEFAULT_LOOPBACK_MODE_DISABLED);
+    this.multicastTimeToLive = json.getInteger("multicastTimeToLive", DEFAULT_MULTICASTTIMETOLIVE);
+    this.multicastNetworkInterface = json.getString("multicastNetworkInterface", DEFAULT_MULTICASTNETWORKINTERFACE);
+    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSEADDRESS);
+    this.ipV6 = json.getBoolean("ipV6", DEFAULT_IPV6);
   }
 
   public boolean isBroadcast() {
