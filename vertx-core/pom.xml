@@ -110,7 +110,6 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
             <systemPropertyVariables>
-              <vertx.test.timeout>60</vertx.test.timeout>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
             </systemPropertyVariables>
             <argLine>-server -Xms128m -Xmx1024m -XX:NewRatio=2</argLine>

@@ -59,4 +59,25 @@
     </dependency>
   </dependencies>
 
+  <!--
+  Uncomment this once I can figure out how to get this not to run as part of main tests but only run on Cloudbees
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
+          </systemPropertyVariables>
+          <argLine>-server -Xms128m -Xmx1024m -XX:NewRatio=2</argLine>
+          <excludes>
+            <exclude>**/ScratchPad.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  -->
+
 </project>
