@@ -17,6 +17,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 /**
@@ -25,17 +26,28 @@ import io.vertx.core.spi.cluster.ClusterManager;
 @Options
 public class VertxOptions {
 
-  private int eventLoopPoolSize = 2 * Runtime.getRuntime().availableProcessors();
-  private int workerPoolSize = 20;
-  private int internalBlockingPoolSize = 20;
-  private boolean clustered;
-  private String clusterHost = "localhost";
-  private int clusterPort = 0;
-  private long blockedThreadCheckPeriod = 1000;
-  private long maxEventLoopExecuteTime = 2000l * 1000000;
-  private long maxWorkerExecuteTime = 1l * 60 * 1000 * 1000000;
+  public static final int DEFAULT_EVENTLOOPPOOLSIZE = 2 * Runtime.getRuntime().availableProcessors();
+  public static final int DEFAULT_WORKERPOOLSIZE = 20;
+  public static final int DEFAULT_INTERNALBLOCKINGPOOLSIZE = 20;
+  public static final boolean DEFAULT_CLUSTERED = false;
+  public static final String DEFAULT_CLUSTERHOST = "localhost";
+  public static final int DEFAULT_CLUSTERPORT = 0;
+  public static final int DEFAULT_BLOCKEDTHREADCHECKPERIOD = 1000;
+  public static final long DEFAULT_MAXEVENTLOOPEXECUTETIME = 2000l * 1000000;
+  public static final long DEFAULT_MAXWORKEREXECUTETIME = 1l * 60 * 1000 * 1000000;
+  public static final int DEFAULT_PROXYOPERATIONTIMEOUT = 10 * 1000;
+
+  private int eventLoopPoolSize = DEFAULT_EVENTLOOPPOOLSIZE;
+  private int workerPoolSize = DEFAULT_WORKERPOOLSIZE;
+  private int internalBlockingPoolSize = DEFAULT_INTERNALBLOCKINGPOOLSIZE;
+  private boolean clustered = DEFAULT_CLUSTERED;
+  private String clusterHost = DEFAULT_CLUSTERHOST;
+  private int clusterPort = DEFAULT_CLUSTERPORT;
+  private long blockedThreadCheckPeriod = DEFAULT_BLOCKEDTHREADCHECKPERIOD;
+  private long maxEventLoopExecuteTime = DEFAULT_MAXEVENTLOOPEXECUTETIME;
+  private long maxWorkerExecuteTime = DEFAULT_MAXWORKEREXECUTETIME;
   private ClusterManager clusterManager;
-  private long proxyOperationTimeout = 10 * 1000;
+  private long proxyOperationTimeout = DEFAULT_PROXYOPERATIONTIMEOUT;
 
   public VertxOptions() {
   }
@@ -50,6 +62,17 @@ public class VertxOptions {
     this.maxEventLoopExecuteTime = other.maxEventLoopExecuteTime;
     this.maxWorkerExecuteTime = other.maxWorkerExecuteTime;
     this.clusterManager = other.clusterManager;
+  }
+
+  public VertxOptions(JsonObject json) {
+    this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENTLOOPPOOLSIZE);
+    this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKERPOOLSIZE);
+    this.clustered = json.getBoolean("clustered", DEFAULT_CLUSTERED);
+    this.clusterHost = json.getString("clusterHost", DEFAULT_CLUSTERHOST);
+    this.clusterPort = json.getInteger("clusterPort", DEFAULT_CLUSTERPORT);
+    this.blockedThreadCheckPeriod = json.getLong("blockedThreadCheckPeriod", DEFAULT_BLOCKEDTHREADCHECKPERIOD);
+    this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAXEVENTLOOPEXECUTETIME);
+    this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAXWORKEREXECUTETIME);
   }
 
   public int getEventLoopPoolSize() {

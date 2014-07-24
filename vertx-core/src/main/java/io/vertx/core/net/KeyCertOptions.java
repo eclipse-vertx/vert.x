@@ -17,6 +17,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Key store options configuring a private key and its certificate based on
@@ -75,6 +76,16 @@ public class KeyCertOptions implements KeyStoreOptions {
     super();
     this.keyPath = other.keyPath;
     this.certPath = other.certPath;
+  }
+
+  public KeyCertOptions(JsonObject json) {
+    super();
+    keyPath = json.getString("keyPath");
+    byte[] keyValue = json.getBinary("keyValue");
+    this.keyValue = keyValue != null ? Buffer.buffer(keyValue) : null;
+    certPath = json.getString("certPath");
+    byte[] certValue = json.getBinary("certValue");
+    this.certValue = certValue != null ? Buffer.buffer(certValue) : null;
   }
 
   public String getKeyPath() {

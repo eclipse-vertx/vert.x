@@ -17,6 +17,8 @@ package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +70,18 @@ public class CaOptions implements TrustStoreOptions {
     super();
     this.certPaths = new ArrayList<>(other.certPaths);
     this.certValues = new ArrayList<>(other.certValues);
+  }
+
+  public CaOptions(JsonObject json) {
+    super();
+    this.certPaths = new ArrayList<>();
+    this.certValues = new ArrayList<>();
+    for (Object certPath : json.getArray("certPaths", new JsonArray())) {
+      certPaths.add((String) certPath);
+    }
+    for (Object certValue : json.getArray("certValues", new JsonArray())) {
+      certValues.add(Buffer.buffer((byte[]) certValue));
+    }
   }
 
   public List<String> getCertPaths() {
