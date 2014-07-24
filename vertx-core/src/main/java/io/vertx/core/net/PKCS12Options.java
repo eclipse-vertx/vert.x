@@ -17,6 +17,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.<p>
@@ -51,7 +52,17 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions {
 
   public PKCS12Options(PKCS12Options other) {
     super();
+    this.password = other.password;
     this.path = other.path;
+    this.value = other.value;
+  }
+
+  public PKCS12Options(JsonObject json) {
+    super();
+    this.password = json.getString("password");
+    this.path = json.getString("path");
+    byte[] value = json.getBinary("value");
+    this.value = value != null ? Buffer.buffer(value) : null;
   }
 
   public String getPassword() {

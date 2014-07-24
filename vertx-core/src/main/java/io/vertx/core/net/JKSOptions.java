@@ -17,6 +17,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on Java Keystore files.<p>
@@ -55,6 +56,14 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions {
     this.password = other.password;
     this.path = other.path;
     this.value = other.value;
+  }
+
+  public JKSOptions(JsonObject json) {
+    super();
+    this.password = json.getString("json");
+    this.path = json.getString("path");
+    byte[] value = json.getBinary("value");
+    this.value = value != null ? Buffer.buffer(value) : null;
   }
 
   public String getPassword() {
