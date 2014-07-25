@@ -19,6 +19,8 @@ package io.vertx.core.json;
 import io.vertx.core.VertxException;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,6 +57,10 @@ public abstract class JsonElement implements Serializable {
         converted.put(entry.getKey(), convertList(list));
       } else if (obj instanceof CharSequence) {
         converted.put(entry.getKey(), obj.toString());
+      } else if (obj instanceof BigDecimal) {
+        converted.put(entry.getKey(), ((BigDecimal) obj).doubleValue());
+      } else if (obj instanceof BigInteger) {
+        converted.put(entry.getKey(), ((BigInteger )obj).longValue());
       } else if (obj == null || obj instanceof Number || obj instanceof Boolean) {
         // OK
         converted.put(entry.getKey(), obj);
@@ -75,6 +81,10 @@ public abstract class JsonElement implements Serializable {
         arr.add(convertList((List<?>)obj));
       } else if (obj instanceof CharSequence) {
         arr.add(obj.toString());
+      } else if (obj instanceof BigDecimal) {
+        arr.add(((BigDecimal) obj).doubleValue());
+      } else if (obj instanceof BigInteger) {
+        arr.add(((BigInteger) obj).longValue());
       } else if (obj == null || obj instanceof Number || obj instanceof Boolean) {
         arr.add(obj);
       } else {
