@@ -16,7 +16,6 @@
 
 package io.vertx.core.shareddata;
 
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
@@ -28,7 +27,6 @@ import io.vertx.core.Handler;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-@VertxGen
 public interface AsyncMap<K, V> {
 
   /**
