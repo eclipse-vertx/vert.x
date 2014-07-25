@@ -25,6 +25,8 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
+import io.vertx.core.shareddata.impl.SharedDataImpl;
+import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
@@ -86,7 +88,7 @@ public class VertxImpl implements VertxInternal {
 
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
-  private final SharedData sharedData = new SharedData();
+  private final SharedData sharedData;
 
   private ExecutorService workerPool;
   private ExecutorService internalBlockingPool;
@@ -133,6 +135,7 @@ public class VertxImpl implements VertxInternal {
       this.clusterManager = null;
       this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout());
     }
+    this.sharedData = new SharedDataImpl(this, clusterManager);
   }
 
   /**

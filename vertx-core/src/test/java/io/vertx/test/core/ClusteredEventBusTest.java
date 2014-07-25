@@ -19,7 +19,6 @@ package io.vertx.test.core;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -28,12 +27,9 @@ import io.vertx.core.eventbus.Registration;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import org.junit.After;
 import org.junit.Test;
 
 import java.util.HashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -43,31 +39,11 @@ import java.util.function.Consumer;
  */
 public class ClusteredEventBusTest extends EventBusTestBase {
 
-  private Vertx[] vertices;
   private static final String ADDRESS1 = "some-address1";
 
   protected ClusterManager getClusterManager() {
     return new FakeClusterManager();
   }
-
-  @After
-  public void after() throws Exception {
-    if (vertices != null) {
-      CountDownLatch latch = new CountDownLatch(vertices.length);
-      for (Vertx vertx: vertices) {
-        if (vertx != null) {
-          vertx.close(ar -> {
-            assertTrue(ar.succeeded());
-            latch.countDown();
-          });
-        }
-      }
-      assertTrue(latch.await(30, TimeUnit.SECONDS));
-    }
-
-    FakeClusterManager.reset(); // Bit ugly
-  }
-
 
   @Override
   protected <T> void testSend(T val, Consumer <T> consumer) {
@@ -259,25 +235,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     eb.send("foo", new Foo());
 
     await();
-  }
-
-  private void startNodes(int numNodes) {
-    CountDownLatch latch = new CountDownLatch(numNodes);
-    vertices = new Vertx[numNodes];
-    for (int i = 0; i < numNodes; i++) {
-      int index = i;
-      Vertx.vertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0).setClustered(true)
-        .setClusterManager(getClusterManager()), ar -> {
-        assertTrue("Failed to start node", ar.succeeded());
-        vertices[index] = ar.result();
-        latch.countDown();
-      });
-    }
-    try {
-      assertTrue(latch.await(30, TimeUnit.SECONDS));
-    } catch (InterruptedException e) {
-      fail(e.getMessage());
-    }
   }
 
   private void registerCodecs() {

@@ -19,12 +19,10 @@ package io.vertx.spi.cluster.impl.hazelcast;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.VertxSPI;
@@ -64,26 +62,22 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
 
   @Override
   public void removeAllForValue(final V val, final Handler<AsyncResult<Void>> completionHandler) {
-    vertx.executeBlocking(new Action<Void>() {
-      public Void perform() {
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-          V v = entry.getValue();
-          if (val.equals(v)) {
-            map.remove(entry.getKey(), v);
-          }
+    vertx.executeBlocking(() -> {
+      for (Map.Entry<K, V> entry : map.entrySet()) {
+        V v = entry.getValue();
+        if (val.equals(v)) {
+          map.remove(entry.getKey(), v);
         }
-        return null;
       }
+      return null;
     }, completionHandler);
   }
 
   @Override
   public void add(final K k, final V v, final Handler<AsyncResult<Void>> completionHandler) {
-    vertx.executeBlocking(new Action<Void>() {
-      public Void perform() {
-        map.put(k, HazelcastServerID.convertServerID(v));
-        return null;
-      }
+    vertx.executeBlocking(() -> {
+      map.put(k, HazelcastServerID.convertServerID(v));
+      return null;
     }, completionHandler);
   }
 
@@ -94,51 +88,38 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
     if (entries != null && entries.isInitialised()) {
       result.setResult(entries).setHandler(resultHandler);
     } else {
-      vertx.executeBlocking(new Action<Collection<V>>() {
-          public Collection<V> perform() {
-            return map.get(k);
-          }
-        }, new AsyncResultHandler<Collection<V>>() {
-          public void handle(AsyncResult<Collection<V>> result) {
-            FutureResultImpl<ChoosableIterable<V>> sresult = new FutureResultImpl<>();
-            if (result.succeeded()) {
-              Collection<V> entries = result.result();
-              ChoosableSet<V> sids;
-              if (entries != null) {
-                sids = new ChoosableSet<>(entries.size());
-                for (V hid : entries) {
-                  sids.add(hid);
-                }
-              } else {
-                sids = new ChoosableSet<>(0);
-              }
-              ChoosableSet<V> prev = cache.putIfAbsent(k, sids);
-              if (prev != null) {
-                // Merge them
-                prev.merge(sids);
-                sids = prev;
-              }
-              sids.setInitialised();
-              sresult.setResult(sids);
-            } else {
-              sresult.setFailure(result.cause());
+      vertx.executeBlocking(() -> map.get(k), (AsyncResult<Collection<V>> res2) -> {
+        FutureResultImpl<ChoosableIterable<V>> sresult = new FutureResultImpl<>();
+        if (res2.succeeded()) {
+          Collection<V> entries2 = res2.result();
+          ChoosableSet<V> sids;
+          if (entries2 != null) {
+            sids = new ChoosableSet<>(entries2.size());
+            for (V hid : entries2) {
+              sids.add(hid);
             }
-            sresult.setHandler(resultHandler);
+          } else {
+            sids = new ChoosableSet<>(0);
           }
+          ChoosableSet<V> prev = cache.putIfAbsent(k, sids);
+          if (prev != null) {
+            // Merge them
+            prev.merge(sids);
+            sids = prev;
+          }
+          sids.setInitialised();
+          sresult.setResult(sids);
+        } else {
+          sresult.setFailure(result.cause());
         }
-      );
+        sresult.setHandler(resultHandler);
+      });
     }
   }
 
   @Override
-  public void remove(final K k, final V v, final Handler<AsyncResult<Void>> completionHandler) {
-
-    vertx.executeBlocking(new Action<Void>() {
-      public Void perform() {
-        map.remove(k, v);
-        return null;
-      }
-    }, completionHandler);
+  public void remove(final K k, final V v, final Handler<AsyncResult<Boolean>> completionHandler) {
+    vertx.executeBlocking(() -> map.remove(k, v), completionHandler);
   }
 
   @Override

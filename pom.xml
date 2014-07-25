@@ -176,7 +176,7 @@
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
               <excludes>
-                <exclude>**/HazelcastClusteredEventbusTest.java</exclude>
+                <exclude>**/Hazelcast*.java</exclude>
               </excludes>
             <systemPropertyVariables>
               <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>

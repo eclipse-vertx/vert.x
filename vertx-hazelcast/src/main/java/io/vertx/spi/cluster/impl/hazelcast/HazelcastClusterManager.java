@@ -20,14 +20,24 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
+import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.cluster.AsyncMap;
+
+import io.vertx.core.shareddata.AsyncMap;
+import io.vertx.core.shareddata.Counter;
+import io.vertx.core.shareddata.Lock;
+import io.vertx.core.shareddata.MapOptions;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
@@ -38,8 +48,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A cluster manager that uses Hazelcast
@@ -49,6 +59,8 @@ import java.util.Set;
 public class HazelcastClusterManager implements ClusterManager, MembershipListener {
 
   private static final Logger log = LoggerFactory.getLogger(HazelcastClusterManager.class);
+
+  private static final String LOCK_SEMAPHORE_PREFIX = "__vertx.";
 
   // Hazelcast config file
   private static final String DEFAULT_CONFIG_FILE = "default-cluster.xml";
@@ -113,9 +125,18 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
 	 *     additional MultiMap config parameters.
 	 * @return subscription map
 	 */
-  public <K, V> AsyncMultiMap<K, V> getAsyncMultiMap(String name) {
-    com.hazelcast.core.MultiMap map = hazelcast.getMultiMap(name);
-    return new HazelcastAsyncMultiMap(vertx, map);
+  @Override
+  public <K, V> void getAsyncMultiMap(String name, MapOptions options, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler) {
+    vertx.executeBlocking(() -> {
+      com.hazelcast.core.MultiMap<K, V> multiMap = hazelcast.getMultiMap(name);
+      return multiMap;
+    }, ar -> {
+      if (ar.succeeded()) {
+        resultHandler.handle(new FutureResultImpl<>(new HazelcastAsyncMultiMap<>(vertx, ar.result())));
+      } else {
+        resultHandler.handle(new FutureResultImpl<>(ar.cause()));
+      }
+    });
   }
 
   @Override
@@ -139,15 +160,42 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
   }
 
   @Override
-  public <K, V> AsyncMap<K, V> getAsyncMap(String name) {
-    IMap<K, V> map = hazelcast.getMap(name);
-    return new HazelcastAsyncMap(vertx, map);
+  public <K, V> void getAsyncMap(String name, MapOptions options, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+    vertx.executeBlocking(() -> {
+      IMap<K, V> map = hazelcast.getMap(name);
+      return map;
+    }, ar -> {
+      if (ar.succeeded()) {
+        resultHandler.handle(new FutureResultImpl<>(new HazelcastAsyncMap<>(vertx, ar.result())));
+      } else {
+        resultHandler.handle(new FutureResultImpl<>(ar.cause()));
+      }
+    });
+  }
+
+
+
+  @Override
+  public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
+    vertx.executeBlocking(() -> {
+      ISemaphore iSemaphore = hazelcast.getSemaphore(LOCK_SEMAPHORE_PREFIX + name);
+      boolean locked = false;
+      try {
+        locked = iSemaphore.tryAcquire(timeout, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException e) {
+        // OK continue
+      }
+      if (locked) {
+        return new HazelcastLock(iSemaphore);
+      } else {
+        throw new VertxException("Timed out waiting to get lock " + name);
+      }
+    }, resultHandler);
   }
 
   @Override
-  public <K, V> Map<K, V> getSyncMap(String name) {
-    IMap<K, V> map = hazelcast.getMap(name);
-    return map;
+  public void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
+    vertx.executeBlocking(() ->  new HazelcastCounter(hazelcast.getAtomicLong(name)), resultHandler);
   }
 
   public synchronized void leave() {
@@ -231,6 +279,64 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
       log.error("Failed to read config", ex);
     }
     return cfg;
+  }
+
+  private class HazelcastCounter implements Counter {
+    private IAtomicLong atomicLong;
+
+
+    private HazelcastCounter(IAtomicLong atomicLong) {
+      this.atomicLong = atomicLong;
+    }
+
+    @Override
+    public void get(Handler<AsyncResult<Long>> resultHandler) {
+      vertx.executeBlocking(atomicLong::get, resultHandler);
+    }
+
+    @Override
+    public void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+      vertx.executeBlocking(atomicLong::incrementAndGet, resultHandler);
+    }
+
+    @Override
+    public void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
+      vertx.executeBlocking(atomicLong::getAndIncrement, resultHandler);
+    }
+
+    @Override
+    public void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+      vertx.executeBlocking(atomicLong::decrementAndGet, resultHandler);
+    }
+
+    @Override
+    public void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
+      vertx.executeBlocking(() ->  atomicLong.addAndGet(value), resultHandler);
+    }
+
+    @Override
+    public void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
+      vertx.executeBlocking(() ->  atomicLong.getAndAdd(value), resultHandler);
+    }
+
+    @Override
+    public void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
+      vertx.executeBlocking(() ->  atomicLong.compareAndSet(expected, value), resultHandler);
+    }
+  }
+
+  private class HazelcastLock implements Lock {
+
+    private ISemaphore semaphore;
+
+    private HazelcastLock(ISemaphore semaphore) {
+      this.semaphore = semaphore;
+    }
+
+    @Override
+    public void release() {
+      semaphore.release();
+    }
   }
 
 }

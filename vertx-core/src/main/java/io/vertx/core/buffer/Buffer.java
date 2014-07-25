@@ -21,6 +21,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.ServiceHelper;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
@@ -44,7 +45,7 @@ import java.nio.ByteBuffer;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface Buffer {
+public interface Buffer extends ClusterSerializable {
 
   static Buffer buffer() {
     return factory.newBuffer();

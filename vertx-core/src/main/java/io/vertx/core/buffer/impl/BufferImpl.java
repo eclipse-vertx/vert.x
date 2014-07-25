@@ -29,7 +29,7 @@ import java.nio.charset.Charset;
  */
 public class BufferImpl implements Buffer {
 
-  private final ByteBuf buffer;
+  private ByteBuf buffer;
 
   BufferImpl() {
     this(0);
@@ -304,5 +304,15 @@ public class BufferImpl implements Buffer {
     if (o == null || getClass() != o.getClass()) return false;
     BufferImpl buffer1 = (BufferImpl) o;
     return buffer.equals(buffer1.buffer);
+  }
+
+  @Override
+  public Buffer writeToBuffer() {
+    return this;
+  }
+
+  @Override
+  public void readFromBuffer(Buffer buffer) {
+    this.buffer = buffer.getByteBuf();
   }
 }

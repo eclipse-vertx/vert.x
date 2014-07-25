@@ -3,6 +3,7 @@ package io.vertx.test.core;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.file.impl.ClasspathPathResolver;
 import io.vertx.core.net.CaOptions;
 import io.vertx.core.net.JKSOptions;
@@ -10,6 +11,8 @@ import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.After;
 import org.junit.Before;
 
@@ -27,6 +30,8 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected Vertx vertx;
 
+  protected Vertx[] vertices;
+
   @Before
   public void beforeVertxTestBase() throws Exception {
     vertx = Vertx.vertx();
@@ -34,13 +39,52 @@ public class VertxTestBase extends AsyncTestBase {
 
   @After
   public void afterVertxTestBase() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    vertx.close(ar -> {
-      assertTrue(ar.succeeded());
-      latch.countDown();
-    });
-    awaitLatch(latch);
+    if (vertx != null) {
+      CountDownLatch latch = new CountDownLatch(1);
+      vertx.close(ar -> {
+        assertTrue(ar.succeeded());
+        latch.countDown();
+      });
+      awaitLatch(latch);
+    }
+    if (vertices != null) {
+      CountDownLatch latch = new CountDownLatch(vertices.length);
+      for (Vertx vertx: vertices) {
+        if (vertx != null) {
+          vertx.close(ar -> {
+            assertTrue(ar.succeeded());
+            latch.countDown();
+          });
+        }
+      }
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
+    }
+    FakeClusterManager.reset(); // Bit ugly
   }
+
+  protected ClusterManager getClusterManager() {
+    return null;
+  }
+
+  protected void startNodes(int numNodes) {
+    CountDownLatch latch = new CountDownLatch(numNodes);
+    vertices = new Vertx[numNodes];
+    for (int i = 0; i < numNodes; i++) {
+      int index = i;
+      Vertx.vertx(new VertxOptions().setClusterHost("localhost").setClusterPort(0).setClustered(true)
+        .setClusterManager(getClusterManager()), ar -> {
+        assertTrue("Failed to start node", ar.succeeded());
+        vertices[index] = ar.result();
+        latch.countDown();
+      });
+    }
+    try {
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
+    } catch (InterruptedException e) {
+      fail(e.getMessage());
+    }
+  }
+
 
   protected String findFileOnClasspath(String fileName) {
     URL url = getClass().getClassLoader().getResource(fileName);

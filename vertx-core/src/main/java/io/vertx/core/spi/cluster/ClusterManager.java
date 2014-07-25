@@ -17,8 +17,15 @@
 package io.vertx.core.spi.cluster;
 
 
+import io.vertx.core.shareddata.AsyncMap;
+
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.shareddata.Counter;
+import io.vertx.core.shareddata.Lock;
+import io.vertx.core.shareddata.MapOptions;
+
 import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -46,17 +53,21 @@ public interface ClusterManager {
   /**
    * Return an async multi-map for the given name
    */
-  <K, V> AsyncMultiMap<K, V> getAsyncMultiMap(String name);
+  <K, V> void getAsyncMultiMap(String name, MapOptions options, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler);
 
   /**
    * Return an async map for the given name
    */
-  <K, V> AsyncMap<K, V> getAsyncMap(String name);
+  <K, V> void getAsyncMap(String name, MapOptions options, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
-  /**
-   * Return a synchronous map for the given name
-   */
-  <K, V> Map<K, V> getSyncMap(String name);
+//  /**
+//   * Return a synchronous map for the given name
+//   */
+//  <K, V> Map<K, V> getSyncMap(String name);
+
+  void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
+
+  void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
 
   /**
    * Return the unique node ID for this node

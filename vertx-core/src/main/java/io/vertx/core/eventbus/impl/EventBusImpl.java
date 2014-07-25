@@ -40,6 +40,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.core.shareddata.MapOptions;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -97,9 +98,19 @@ public class EventBusImpl implements EventBus {
                       Handler<AsyncResult<Void>> listenHandler) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
-    this.subs = clusterMgr.getAsyncMultiMap("subs");
-    this.server = setServer(port, hostname, listenHandler);
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
+    clusterMgr.<String, ServerID>getAsyncMultiMap("subs", new MapOptions(), ar -> {
+      if (ar.succeeded()) {
+        subs = ar.result();
+        this.server = setServer(port, hostname, listenHandler);
+      } else {
+        if (listenHandler != null) {
+          listenHandler.handle(new FutureResultImpl<>(ar.cause()));
+        } else {
+          log.error(ar.cause());
+        }
+      }
+    });
   }
 
   @Override
@@ -576,7 +587,13 @@ public class EventBusImpl implements EventBus {
   }
 
   private void removeSub(String subName, ServerID theServerID, Handler<AsyncResult<Void>> completionHandler) {
-    subs.remove(subName, theServerID, completionHandler);
+    subs.remove(subName, theServerID, ar -> {
+      if (!ar.succeeded()) {
+        log.error("Couldn't find sub to remove");
+      } else {
+        completionHandler.handle(new FutureResultImpl<>((Void)null));
+      }
+    });
   }
 
   // Called when a message is incoming

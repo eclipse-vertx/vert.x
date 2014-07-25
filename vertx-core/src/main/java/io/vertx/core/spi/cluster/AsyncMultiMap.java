@@ -55,7 +55,7 @@ public interface AsyncMultiMap<K, V> {
    * @param v The value
    * @param completionHandler This will be called when the remove is complete
    */
-  void remove(K k, V v, Handler<AsyncResult<Void>> completionHandler);
+  void remove(K k, V v, Handler<AsyncResult<Boolean>> completionHandler);
 
   /**
    * Remove all the specified values from all keys in the map
