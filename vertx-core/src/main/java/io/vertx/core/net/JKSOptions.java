@@ -60,7 +60,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions {
 
   public JKSOptions(JsonObject json) {
     super();
-    this.password = json.getString("json");
+    this.password = json.getString("password");
     this.path = json.getString("path");
     byte[] value = json.getBinary("value");
     this.value = value != null ? Buffer.buffer(value) : null;

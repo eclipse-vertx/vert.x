@@ -71,41 +71,30 @@ public class TCPOptions extends NetworkOptions {
     JsonObject keyStoreJson = json.getObject("keyStore");
     if (keyStoreJson != null) {
       String type = keyStoreJson.getString("type", null);
-      String path = keyStoreJson.getString("path", null);
-      String password = keyStoreJson.getString("password", null);
-      String key = keyStoreJson.getString("key", null);
-      String cert = keyStoreJson.getString("cert", null);
       switch (type != null ? type.toLowerCase() : "jks") {
         case "jks":
-          keyStore = new JKSOptions().setPath(path).setPassword(password);
+          keyStore = new JKSOptions(keyStoreJson);
           break;
         case "pkcs12":
-          keyStore = new PKCS12Options().setPath(path).setPassword(password);
+          keyStore = new PKCS12Options(keyStoreJson);
           break;
         case "keycert":
-          keyStore = new KeyCertOptions().setKeyPath(key).setCertPath(cert);
+          keyStore = new KeyCertOptions(keyStoreJson);
           break;
       }
     }
     JsonObject trustStoreJson = json.getObject("trustStore");
     if (trustStoreJson != null) {
       String type = trustStoreJson.getString("type", null);
-      String path = trustStoreJson.getString("path", null);
-      String password = trustStoreJson.getString("password", null);
-      JsonArray caJson = trustStoreJson.getArray("ca", null);
       switch (type != null ? type.toLowerCase() : "jks") {
         case "jks":
-          trustStore = new JKSOptions().setPath(path).setPassword(password);
+          trustStore = new JKSOptions(json);
           break;
         case "pkcs12":
-          trustStore = new PKCS12Options().setPath(path).setPassword(password);
+          trustStore = new PKCS12Options(json);
           break;
         case "ca":
-          CaOptions ca = new CaOptions();
-          if (caJson != null) {
-            caJson.forEach(caElt -> ca.addCertPath(caElt.toString()));
-          }
-          trustStore = ca;
+          trustStore = new CaOptions(json);
           break;
       }
     }

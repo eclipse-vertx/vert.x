@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -80,7 +81,7 @@ public class CaOptions implements TrustStoreOptions {
       certPaths.add((String) certPath);
     }
     for (Object certValue : json.getArray("certValues", new JsonArray())) {
-      certValues.add(Buffer.buffer((byte[]) certValue));
+      certValues.add(Buffer.buffer(Base64.getDecoder().decode((String) certValue)));
     }
   }
 
