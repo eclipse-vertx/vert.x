@@ -61,15 +61,19 @@ public class VertxOptions {
     this.blockedThreadCheckPeriod = other.blockedThreadCheckPeriod;
     this.maxEventLoopExecuteTime = other.maxEventLoopExecuteTime;
     this.maxWorkerExecuteTime = other.maxWorkerExecuteTime;
+    this.internalBlockingPoolSize = other.internalBlockingPoolSize;
+    this.proxyOperationTimeout = other.proxyOperationTimeout;
     this.clusterManager = other.clusterManager;
   }
 
   public VertxOptions(JsonObject json) {
+    this.proxyOperationTimeout = json.getInteger("proxyOperationTimeout", DEFAULT_PROXYOPERATIONTIMEOUT);
     this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENTLOOPPOOLSIZE);
     this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKERPOOLSIZE);
     this.clustered = json.getBoolean("clustered", DEFAULT_CLUSTERED);
     this.clusterHost = json.getString("clusterHost", DEFAULT_CLUSTERHOST);
     this.clusterPort = json.getInteger("clusterPort", DEFAULT_CLUSTERPORT);
+    this.internalBlockingPoolSize = json.getInteger("internalBlockingPoolSize", DEFAULT_INTERNALBLOCKINGPOOLSIZE);
     this.blockedThreadCheckPeriod = json.getLong("blockedThreadCheckPeriod", DEFAULT_BLOCKEDTHREADCHECKPERIOD);
     this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAXEVENTLOOPEXECUTETIME);
     this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAXWORKEREXECUTETIME);

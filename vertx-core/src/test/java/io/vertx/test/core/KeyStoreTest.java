@@ -17,6 +17,8 @@ package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -28,6 +30,7 @@ import org.junit.Test;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
+import java.util.Collections;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -50,6 +53,40 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
+  public void testJsonJKSOptions() throws Exception {
+    JKSOptions options = new JKSOptions(new JsonObject());
+    assertEquals(null, options.getPassword());
+    assertEquals(null, options.getPath());
+    assertEquals(null, options.getValue());
+
+    String password = TestUtils.randomAlphaString(100);
+    String path = TestUtils.randomAlphaString(100);
+    String value = TestUtils.randomAlphaString(100);
+    options = new JKSOptions(new JsonObject().
+        putString("password", password).
+        putString("path", path).
+        putBinary("value", value.getBytes()));
+    assertEquals(password, options.getPassword());
+    assertEquals(path, options.getPath());
+    assertEquals(Buffer.buffer(value), options.getValue());
+  }
+
+  @Test
+  public void testCopyJKSOptions() throws Exception {
+    JKSOptions options = new JKSOptions();
+    String password = TestUtils.randomAlphaString(100);
+    String path = TestUtils.randomAlphaString(100);
+    Buffer value = Buffer.buffer(TestUtils.randomAlphaString(100));
+    options.setPassword(password);
+    options.setPath(path);
+    options.setValue(value);
+    options = new JKSOptions(options);
+    assertEquals(password, options.getPassword());
+    assertEquals(path, options.getPath());
+    assertEquals(value, options.getValue());
+  }
+
+  @Test
   public void testPKCS12Options() throws Exception {
     PKCS12Options options = new PKCS12Options();
 
@@ -65,6 +102,40 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
+  public void testJsonPKCS12Options() throws Exception {
+    PKCS12Options options = new PKCS12Options(new JsonObject());
+    assertEquals(null, options.getPassword());
+    assertEquals(null, options.getPath());
+    assertEquals(null, options.getValue());
+
+    String password = TestUtils.randomAlphaString(100);
+    String path = TestUtils.randomAlphaString(100);
+    String value = TestUtils.randomAlphaString(100);
+    options = new PKCS12Options(new JsonObject().
+        putString("password", password).
+        putString("path", path).
+        putBinary("value", value.getBytes()));
+    assertEquals(password, options.getPassword());
+    assertEquals(path, options.getPath());
+    assertEquals(Buffer.buffer(value), options.getValue());
+  }
+
+  @Test
+  public void testCopyPKCS12Options() throws Exception {
+    PKCS12Options options = new PKCS12Options();
+    String password = TestUtils.randomAlphaString(100);
+    String path = TestUtils.randomAlphaString(100);
+    Buffer value = Buffer.buffer(TestUtils.randomAlphaString(100));
+    options.setPassword(password);
+    options.setPath(path);
+    options.setValue(value);
+    options = new PKCS12Options(options);
+    assertEquals(password, options.getPassword());
+    assertEquals(path, options.getPath());
+    assertEquals(value, options.getValue());
+  }
+
+  @Test
   public void testKeyCertOptions() throws Exception {
     KeyCertOptions options = new KeyCertOptions();
 
@@ -77,6 +148,91 @@ public class KeyStoreTest extends VertxTestBase {
     randString = TestUtils.randomAlphaString(100);
     assertEquals(options, options.setCertPath(randString));
     assertEquals(randString, options.getCertPath());
+  }
+
+  @Test
+  public void testJsonKeyCertOptions() throws Exception {
+    KeyCertOptions options = new KeyCertOptions(new JsonObject());
+    assertEquals(null, options.getKeyPath());
+    assertEquals(null, options.getKeyValue());
+    assertEquals(null, options.getCertPath());
+    assertEquals(null, options.getCertValue());
+
+    String keyPath = TestUtils.randomAlphaString(100);
+    String keyValue = TestUtils.randomAlphaString(100);
+    String certPath = TestUtils.randomAlphaString(100);
+    String certValue = TestUtils.randomAlphaString(100);
+    options = new KeyCertOptions(new JsonObject().
+        putString("keyPath", keyPath).
+        putBinary("keyValue", keyValue.getBytes()).
+        putString("certPath", certPath).
+        putBinary("certValue", certValue.getBytes()));
+    assertEquals(keyPath, options.getKeyPath());
+    assertEquals(Buffer.buffer(keyValue), options.getKeyValue());
+    assertEquals(certPath, options.getCertPath());
+    assertEquals(Buffer.buffer(certValue), options.getCertValue());
+  }
+
+  @Test
+  public void testCopyKeyCertOptions() throws Exception {
+    KeyCertOptions options = new KeyCertOptions(new JsonObject());
+    String keyPath = TestUtils.randomAlphaString(100);
+    Buffer keyValue = Buffer.buffer(TestUtils.randomAlphaString(100));
+    String certPath = TestUtils.randomAlphaString(100);
+    Buffer certValue = Buffer.buffer(TestUtils.randomAlphaString(100));
+    options.setKeyPath(keyPath);
+    options.setKeyValue(keyValue);
+    options.setCertPath(certPath);
+    options.setCertValue(certValue);
+    options = new KeyCertOptions(options);
+    assertEquals(keyPath, options.getKeyPath());
+    assertEquals(keyValue, options.getKeyValue());
+    assertEquals(certPath, options.getCertPath());
+    assertEquals(certValue, options.getCertValue());
+  }
+
+  @Test
+  public void testCaOptions() throws Exception {
+    CaOptions options = new CaOptions();
+
+    assertEquals(Collections.emptyList(), options.getCertPaths());
+    String randString = TestUtils.randomAlphaString(100);
+    options.addCertPath(randString);
+    assertEquals(Collections.singletonList(randString), options.getCertPaths());
+
+    assertEquals(Collections.emptyList(), options.getCertValues());
+    randString = TestUtils.randomAlphaString(100);
+    options.addCertValue(Buffer.buffer(randString));
+    assertEquals(Collections.singletonList(Buffer.buffer(randString)), options.getCertValues());
+  }
+
+  @Test
+  public void testJsonCaOptions() throws Exception {
+    CaOptions options = new CaOptions(new JsonObject());
+
+    assertEquals(Collections.emptyList(), options.getCertPaths());
+    assertEquals(Collections.emptyList(), options.getCertValues());
+
+    String certPath = TestUtils.randomAlphaString(100);
+    String certValue = TestUtils.randomAlphaString(100);
+    JsonObject json = new JsonObject().
+        putArray("certPaths", new JsonArray().addString(certPath)).
+        putArray("certValues", new JsonArray().addBinary(certValue.getBytes()));
+    options = new CaOptions(json);
+    assertEquals(Collections.singletonList(certPath), options.getCertPaths());
+    assertEquals(Collections.singletonList(Buffer.buffer(certValue)), options.getCertValues());
+  }
+
+  @Test
+  public void testCopyCaOptions() throws Exception {
+    CaOptions options = new CaOptions(new JsonObject());
+    String certPath = TestUtils.randomAlphaString(100);
+    Buffer certValue = Buffer.buffer(TestUtils.randomAlphaString(100));
+    options.addCertPath(certPath);
+    options.addCertValue(certValue);
+    options = new CaOptions(options);
+    assertEquals(Collections.singletonList(certPath), options.getCertPaths());
+    assertEquals(Collections.singletonList(certValue), options.getCertValues());
   }
 
   @Test
