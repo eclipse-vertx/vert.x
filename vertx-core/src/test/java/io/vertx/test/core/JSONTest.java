@@ -16,14 +16,22 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonElement;
 import io.vertx.core.json.JsonObject;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Locale;
+import java.util.function.BiFunction;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -320,5 +328,43 @@ public class JSONTest {
       "}";
     JsonObject json = new JsonObject(jsonWithComments);
     assertEquals("{\"foo\":\"bar\"}", json.encode());
+  }
+
+  @Test
+  public void testCollectionsConstructor() {
+    checktestCollectionsConstructor("bar", "bar");
+    checktestCollectionsConstructor((byte) 3, (byte) 3);
+    checktestCollectionsConstructor((short) 3, (short) 3);
+    checktestCollectionsConstructor(3, 3);
+    checktestCollectionsConstructor((long) 3, (long) 3);
+    checktestCollectionsConstructor(new BigInteger("3"), (long) 3);
+    checktestCollectionsConstructor((double) 3, (double) 3);
+    checktestCollectionsConstructor((float) 3, (float) 3);
+    checktestCollectionsConstructor(new BigDecimal(3), (double) 3);
+    checktestCollectionsConstructor(true, true);
+    checktestCollectionsConstructor(Collections.singletonMap("bar", "juu"), Collections.singletonMap("bar", "juu"));
+    checktestCollectionsConstructor(new StringBuilder("some").append("thing"), "something");
+    checkInvalid(Locale.CANADA);
+  }
+
+  private <T> void checktestCollectionsConstructor(T value, T expected) {
+    JsonObject obj = new JsonObject(Collections.singletonMap("foo", value));
+    Object actual = obj.toMap().get("foo");
+    assertEquals(expected, actual);
+    JsonArray array = new JsonArray(Collections.singletonList(value));
+    assertEquals(Collections.singletonList(expected), array.toList());
+  }
+
+  private void checkInvalid(Object invalid) {
+    try {
+      new JsonObject(Collections.singletonMap("foo", invalid));
+      fail();
+    } catch (VertxException ignore) {
+    }
+    try {
+      new JsonArray(Collections.singletonList(invalid));
+      fail();
+    } catch (VertxException ignore) {
+    }
   }
 }
