@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -125,5 +126,86 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
+  }
+
+  @Test
+  public void testCopyOptions() {
+    VertxOptions options = new VertxOptions();
+
+    int clusterPort = TestUtils.randomPortInt();
+    int eventLoopPoolSize = TestUtils.randomPositiveInt();
+    int internalBlockingPoolSize = TestUtils.randomPositiveInt();
+    int workerPoolSize = TestUtils.randomPositiveInt();
+    int blockedThreadCheckPeriod = TestUtils.randomPositiveInt();
+    String clusterHost = TestUtils.randomAlphaString(100);
+    int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
+    int maxWorkerExecuteTime = TestUtils.randomPositiveInt();
+    int proxyOperationTimeout = TestUtils.randomPositiveInt();
+    options.setClusterPort(clusterPort);
+    options.setEventLoopPoolSize(eventLoopPoolSize);
+    options.setInternalBlockingPoolSize(internalBlockingPoolSize);
+    options.setWorkerPoolSize(workerPoolSize);
+    options.setBlockedThreadCheckPeriod(blockedThreadCheckPeriod);
+    options.setClusterHost(clusterHost);
+    options.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
+    options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
+    options.setProxyOperationTimeout(proxyOperationTimeout);
+    options = new VertxOptions(options);
+    assertEquals(clusterPort, options.getClusterPort());
+    assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
+    assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
+    assertEquals(workerPoolSize, options.getWorkerPoolSize());
+    assertEquals(blockedThreadCheckPeriod, options.getBlockedThreadCheckPeriod());
+    assertEquals(clusterHost, options.getClusterHost());
+    assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
+    assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
+    assertEquals(proxyOperationTimeout, options.getProxyOperationTimeout());
+  }
+
+  @Test
+  public void testJsonOptions() {
+    VertxOptions options = new VertxOptions(new JsonObject());
+
+    assertEquals(VertxOptions.DEFAULT_CLUSTERPORT, options.getClusterPort());
+    assertEquals(VertxOptions.DEFAULT_EVENTLOOPPOOLSIZE, options.getEventLoopPoolSize());
+    assertEquals(VertxOptions.DEFAULT_INTERNALBLOCKINGPOOLSIZE, options.getInternalBlockingPoolSize());
+    assertEquals(VertxOptions.DEFAULT_WORKERPOOLSIZE, options.getWorkerPoolSize());
+    assertEquals(VertxOptions.DEFAULT_BLOCKEDTHREADCHECKPERIOD, options.getBlockedThreadCheckPeriod());
+    assertEquals(VertxOptions.DEFAULT_CLUSTERHOST, options.getClusterHost());
+    assertEquals(null, options.getClusterManager());
+    assertEquals(VertxOptions.DEFAULT_MAXEVENTLOOPEXECUTETIME, options.getMaxEventLoopExecuteTime());
+    assertEquals(VertxOptions.DEFAULT_MAXWORKEREXECUTETIME, options.getMaxWorkerExecuteTime());
+    assertEquals(VertxOptions.DEFAULT_PROXYOPERATIONTIMEOUT, options.getProxyOperationTimeout());
+
+    int clusterPort = TestUtils.randomPortInt();
+    int eventLoopPoolSize = TestUtils.randomPositiveInt();
+    int internalBlockingPoolSize = TestUtils.randomPositiveInt();
+    int workerPoolSize = TestUtils.randomPositiveInt();
+    int blockedThreadCheckPeriod = TestUtils.randomPositiveInt();
+    String clusterHost = TestUtils.randomAlphaString(100);
+    int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
+    int maxWorkerExecuteTime = TestUtils.randomPositiveInt();
+    int proxyOperationTimeout = TestUtils.randomPositiveInt();
+    options = new VertxOptions(new JsonObject().
+        putNumber("clusterPort", clusterPort).
+        putNumber("eventLoopPoolSize", eventLoopPoolSize).
+        putNumber("internalBlockingPoolSize", internalBlockingPoolSize).
+        putNumber("workerPoolSize", workerPoolSize).
+        putNumber("blockedThreadCheckPeriod", blockedThreadCheckPeriod).
+        putString("clusterHost", clusterHost).
+        putNumber("maxEventLoopExecuteTime", maxEventLoopExecuteTime).
+        putNumber("maxWorkerExecuteTime", maxWorkerExecuteTime).
+        putNumber("proxyOperationTimeout", proxyOperationTimeout)
+    );
+    assertEquals(clusterPort, options.getClusterPort());
+    assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
+    assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
+    assertEquals(workerPoolSize, options.getWorkerPoolSize());
+    assertEquals(blockedThreadCheckPeriod, options.getBlockedThreadCheckPeriod());
+    assertEquals(clusterHost, options.getClusterHost());
+    assertEquals(null, options.getClusterManager());
+    assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
+    assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
+    assertEquals(proxyOperationTimeout, options.getProxyOperationTimeout());
   }
 }

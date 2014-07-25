@@ -75,7 +75,9 @@ public class KeyCertOptions implements KeyStoreOptions {
   public KeyCertOptions(KeyCertOptions other) {
     super();
     this.keyPath = other.keyPath;
+    this.keyValue = other.keyValue;
     this.certPath = other.certPath;
+    this.certValue = other.certValue;
   }
 
   public KeyCertOptions(JsonObject json) {

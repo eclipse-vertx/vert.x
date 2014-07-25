@@ -95,6 +95,13 @@ public class TestUtils {
   }
 
   /**
+   * @return a random port
+   */
+  public static int randomPortInt() {
+    return random.nextInt(65536);
+  }
+
+  /**
    * @return a random positive int
    */
   public static int randomPositiveInt() {
