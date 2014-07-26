@@ -109,7 +109,6 @@ public interface Vertx {
    * The shared data object
    */
   @CacheReturn
-  @GenIgnore
   SharedData sharedData();
 
   /**
