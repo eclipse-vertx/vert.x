@@ -1,15 +1,12 @@
 package io.vertx.test.core;
 
-import io.vertx.core.Vertx;
-
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.SharedData;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -26,20 +23,20 @@ public class LocalSharedDataTest extends VertxTestBase {
   @Test
   public void testMap() throws Exception {
 
-    Map<String, String> map = sharedData.getLocalMap("foo");
-    Map<String, String> map2 = sharedData.getLocalMap("foo");
+    LocalMap<String, String> map = sharedData.getLocalMap("foo");
+    LocalMap<String, String> map2 = sharedData.getLocalMap("foo");
     assertTrue(map == map2);
-    Map<String, String> map3 = sharedData.getLocalMap("bar");
+    LocalMap<String, String> map3 = sharedData.getLocalMap("bar");
     assertFalse(map3 == map2);
-    assertTrue(sharedData.removeLocalMap("foo"));
-    Map<String, String> map4 = sharedData.getLocalMap("foo");
+    map.close();
+    LocalMap<String, String> map4 = sharedData.getLocalMap("foo");
     assertFalse(map4 == map3);
   }
 
   @Test
   public void testMapTypes() throws Exception {
 
-    Map map = sharedData.getLocalMap("foo");
+    LocalMap map = sharedData.getLocalMap("foo");
 
     String key = "key";
 
@@ -106,98 +103,7 @@ public class LocalSharedDataTest extends VertxTestBase {
     }
   }
 
-  @Test
-  public void testSetTypes() throws Exception {
 
-    Set set = sharedData.getLocalSet("foo");
-
-    double d = new Random().nextDouble();
-    set.add(d);
-    assertEquals(d, set.iterator().next());
-    set.clear();
-
-    float f = new Random().nextFloat();
-    set.add(f);
-    assertEquals(f, set.iterator().next());
-    set.clear();
-
-    byte b = (byte)new Random().nextInt();
-    set.add(b);
-    assertEquals(b, set.iterator().next());
-    set.clear();
-
-    short s = (short)new Random().nextInt();
-    set.add(s);
-    assertEquals(s, set.iterator().next());
-    set.clear();
-
-    int i = new Random().nextInt();
-    set.add(i);
-    assertEquals(i, set.iterator().next());
-    set.clear();
-
-    long l = new Random().nextLong();
-    set.add(l);
-    assertEquals(l, set.iterator().next());
-    set.clear();
-
-    set.add(true);
-    assertTrue((Boolean)set.iterator().next());
-    set.clear();
-
-    set.add(false);
-    assertFalse((Boolean) set.iterator().next());
-    set.clear();
-
-    char c = (char)new Random().nextLong();
-    set.add(c);
-    assertEquals(c, set.iterator().next());
-    set.clear();
-
-    Buffer buff = TestUtils.randomBuffer(100);
-    set.add(buff);
-    Buffer got1 = (Buffer)set.iterator().next();
-    assertTrue(got1 != buff); // Make sure it's copied
-    assertEquals(buff, set.iterator().next());
-    Buffer got2 = (Buffer)set.iterator().next();
-    assertTrue(got1 != got2); // Should be copied on each get
-    assertTrue(got2 != buff);
-    assertEquals(buff, set.iterator().next());
-    set.clear();
-
-
-    byte[] bytes = TestUtils.randomByteArray(100);
-    set.add(bytes);
-    byte[] bgot1 = (byte[]) set.iterator().next();
-    assertTrue(bgot1 != bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
-    byte[] bgot2 = (byte[]) set.iterator().next();
-    assertTrue(bgot2 != bytes);
-    assertTrue(bgot1 != bgot2);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
-    set.clear();
-
-    try {
-      set.add(new SomeOtherClass());
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
-  }
-
-
-  @Test
-  public void testSet() throws Exception {
-
-    Set<String> set = sharedData.getLocalSet("foo");
-    Set<String> set2 = sharedData.getLocalSet("foo");
-    assert (set == set2);
-    Set<String> set3 = sharedData.getLocalSet("bar");
-    assert (set3 != set2);
-    assert (sharedData.removeLocalSet("foo"));
-    Set<String> set4 = sharedData.getLocalSet("foo");
-    assert (set4 != set3);
-  }
 
   class SomeOtherClass {
   }

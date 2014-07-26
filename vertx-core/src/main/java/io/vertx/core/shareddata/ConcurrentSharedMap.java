@@ -15,6 +15,8 @@
  */
 package io.vertx.core.shareddata;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -26,5 +28,7 @@ import java.util.concurrent.ConcurrentMap;
  * concurrently by more than one thread, which could lead to race conditions.<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public interface ConcurrentSharedMap<K, V> extends ConcurrentMap<K, V> {
+  void foo();
 }

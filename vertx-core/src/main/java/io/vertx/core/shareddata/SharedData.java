@@ -16,12 +16,9 @@
 
 package io.vertx.core.shareddata;
 
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-
-import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -41,26 +38,7 @@ public interface SharedData {
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
    */
-  @GenIgnore
-  <K, V> ConcurrentSharedMap<K, V> getLocalMap(String name);
+  <K, V> LocalMap<K, V> getLocalMap(String name);
 
-  /**
-   * Return a {@code Set} with the specific {@code name}. All invocations of this method with the same value of {@code name}
-   * are guaranteed to return the same {@code Set} instance. <p>
-   */
-  @GenIgnore
-  <E> Set<E> getLocalSet(String name);
-
-  /**
-   * Remove the {@code Map} with the specific {@code name}.
-   */
-  @GenIgnore
-  boolean removeLocalMap(Object name);
-
-  /**
-   * Remove the {@code Set} with the specific {@code name}.
-   */
-  @GenIgnore
-  boolean removeLocalSet(Object name);
 
 }

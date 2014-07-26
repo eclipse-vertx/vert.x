@@ -22,15 +22,14 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.shareddata.ConcurrentSharedMap;
 import io.vertx.core.shareddata.Counter;
+import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.MapOptions;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.io.Serializable;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -43,9 +42,9 @@ public class SharedDataImpl implements SharedData {
 
   private final VertxInternal vertx;
   private final ClusterManager clusterManager;
-  private final ConcurrentMap<String, AsyncMap<?, ?>> localMaps = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, AsynchronousLock> localLocks = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Counter> localCounters = new ConcurrentHashMap<>();
+  private ConcurrentMap<Object, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
 
   public SharedDataImpl(VertxInternal vertx, ClusterManager clusterManager) {
     this.vertx = vertx;
@@ -66,20 +65,6 @@ public class SharedDataImpl implements SharedData {
       }
     });
   }
-
-//  @Override
-//  public <K, V> void getLocalMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
-//    AsyncMap<K, V> map = (AsyncMap<K, V>)localMaps.get(name);
-//    if (map == null) {
-//      map = new LocalAsyncMap<>();
-//      AsyncMap<K, V> prev = (AsyncMap<K, V>)localMaps.putIfAbsent(name, map);
-//      if (prev != null) {
-//        map = prev;
-//      }
-//    }
-//    AsyncMap<K, V> theMap = map;
-//    vertx.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(theMap)));
-//  }
 
   @Override
   public void getLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
@@ -103,6 +88,23 @@ public class SharedDataImpl implements SharedData {
       clusterManager.getCounter(name, resultHandler);
     }
   }
+
+  /**
+   * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
+   * are guaranteed to return the same {@code Map} instance. <p>
+   */
+  public <K, V> LocalMap<K, V> getLocalMap(String name) {
+    LocalMap<K, V> map = (LocalMap<K, V>) localMaps.get(name);
+    if (map == null) {
+      map = new LocalMapImpl<>(name, localMaps);
+      LocalMap prev = localMaps.putIfAbsent(name, map);
+      if (prev != null) {
+        map = prev;
+      }
+    }
+    return map;
+  }
+
 
   private void getLocalLock(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
     AsynchronousLock lock = new AsynchronousLock(vertx);
@@ -203,55 +205,5 @@ public class SharedDataImpl implements SharedData {
     }
   }
 
-  // Old stuff
-
-  private ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
-  private ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
-
-  /**
-   * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
-   * are guaranteed to return the same {@code Map} instance. <p>
-   */
-  public <K, V> ConcurrentSharedMap<K, V> getLocalMap(String name) {
-    SharedMap<K, V> map = (SharedMap<K, V>) maps.get(name);
-    if (map == null) {
-      map = new SharedMap<>();
-      SharedMap prev = maps.putIfAbsent(name, map);
-      if (prev != null) {
-        map = prev;
-      }
-    }
-    return map;
-  }
-
-  /**
-   * Return a {@code Set} with the specific {@code name}. All invocations of this method with the same value of {@code name}
-   * are guaranteed to return the same {@code Set} instance. <p>
-   */
-  public <E> Set<E> getLocalSet(String name) {
-    SharedSet<E> set = (SharedSet<E>) sets.get(name);
-    if (set == null) {
-      set = new SharedSet<>();
-      SharedSet prev = sets.putIfAbsent(name, set);
-      if (prev != null) {
-        set = prev;
-      }
-    }
-    return set;
-  }
-
-  /**
-   * Remove the {@code Map} with the specific {@code name}.
-   */
-  public boolean removeLocalMap(Object name) {
-    return maps.remove(name) != null;
-  }
-
-  /**
-   * Remove the {@code Set} with the specific {@code name}.
-   */
-  public boolean removeLocalSet(Object name) {
-    return sets.remove(name) != null;
-  }
 
 }
