@@ -25,8 +25,6 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
-import io.vertx.core.shareddata.impl.SharedDataImpl;
-import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
@@ -55,6 +53,7 @@ import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
+import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -104,6 +103,7 @@ public class VertxImpl implements VertxInternal {
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
   private final DeploymentManager deploymentManager = new DeploymentManager(this);
+  private boolean closed;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -323,53 +323,54 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-
-    // TODO call deploymentManager.undeployAll
-
-    eventBus.close(ar -> {
-      if (sharedHttpServers != null) {
-        // Copy set to prevent ConcurrentModificationException
-        for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
-          server.close();
-        }
-        sharedHttpServers.clear();
-      }
-
-      if (sharedNetServers != null) {
-        // Copy set to prevent ConcurrentModificationException
-        for (NetServer server : new HashSet<>(sharedNetServers.values())) {
-          server.close();
-        }
-        sharedNetServers.clear();
-      }
-
-      if (workerPool != null) {
-        workerPool.shutdown();
-        try {
-          if (workerPool != null) {
-            workerPool.awaitTermination(20, TimeUnit.SECONDS);
+  public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
+    if (closed) {
+      throw new IllegalStateException("Already closed");
+    }
+    closed = true;
+    deploymentManager.undeployAll(ar -> {
+      eventBus.close(ar2 -> {
+        if (sharedHttpServers != null) {
+          // Copy set to prevent ConcurrentModificationException
+          for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
+            server.close();
           }
-        } catch (InterruptedException ex) {
-          // ignore
+          sharedHttpServers.clear();
         }
-      }
 
-      if (eventLoopGroup != null) {
-        eventLoopGroup.shutdownNow();
-      }
+        if (sharedNetServers != null) {
+          // Copy set to prevent ConcurrentModificationException
+          for (NetServer server : new HashSet<>(sharedNetServers.values())) {
+            server.close();
+          }
+          sharedNetServers.clear();
+        }
 
-      checker.close();
+        if (workerPool != null) {
+          workerPool.shutdown();
+          try {
+            if (workerPool != null) {
+              workerPool.awaitTermination(20, TimeUnit.SECONDS);
+            }
+          } catch (InterruptedException ex) {
+            // ignore
+          }
+        }
 
-      setContext(null);
+        if (eventLoopGroup != null) {
+          eventLoopGroup.shutdownNow();
+        }
 
-      if (completionHandler != null) {
-        // Call directly - we have no context
-        completionHandler.handle(new FutureResultImpl<>((Void)null));
-      }
+        checker.close();
+
+        setContext(null);
+
+        if (completionHandler != null) {
+          // Call directly - we have no context
+          completionHandler.handle(new FutureResultImpl<>((Void)null));
+        }
+      });
     });
-
-
   }
 
   @Override

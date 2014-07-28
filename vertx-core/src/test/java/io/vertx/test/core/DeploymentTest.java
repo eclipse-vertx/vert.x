@@ -32,6 +32,8 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -640,10 +642,70 @@ public class DeploymentTest extends VertxTestBase {
     testIsolationGroup("somegroup", "someothergroup", 1, 1);
   }
 
+  @Test
+  public void testUndeployAll() throws Exception {
+    int numVerticles = 10;
+    List<MyVerticle> verticles = new ArrayList<>();
+    CountDownLatch latch = new CountDownLatch(numVerticles);
+    for (int i = 0; i < numVerticles; i++) {
+      MyVerticle verticle = new MyVerticle();
+      verticles.add(verticle);
+      vertx.deployVerticleInstance(verticle, new DeploymentOptions(), ar2 -> {
+        assertTrue(ar2.succeeded());
+        latch.countDown();
+      });
+    }
+    awaitLatch(latch);
+    vertx.close(ar -> {
+      assertTrue(ar.succeeded());
+      for (MyVerticle verticle: verticles) {
+        assertTrue(verticle.stopCalled);
+      }
+      testComplete();
+    });
+    await();
+    vertx = null;
+  }
+
+  @Test
+  public void testUndeployAllFailureInUndeploy() throws Exception {
+    int numVerticles = 10;
+    List<MyVerticle> verticles = new ArrayList<>();
+    CountDownLatch latch = new CountDownLatch(numVerticles);
+    for (int i = 0; i < numVerticles; i++) {
+      MyVerticle verticle = new MyVerticle(MyVerticle.NOOP, MyVerticle.THROW_EXCEPTION);
+      verticles.add(verticle);
+      vertx.deployVerticleInstance(verticle, new DeploymentOptions(), ar2 -> {
+        assertTrue(ar2.succeeded());
+        latch.countDown();
+      });
+    }
+    awaitLatch(latch);
+    vertx.close(ar -> {
+      assertTrue(ar.succeeded());
+      for (MyVerticle verticle: verticles) {
+        assertFalse(verticle.stopCalled);
+      }
+      testComplete();
+    });
+    await();
+    vertx = null;
+  }
+
+  @Test
+  public void testUndeployAllNoDeployments() throws Exception {
+    vertx.close(ar -> {
+      assertTrue(ar.succeeded());
+      testComplete();
+    });
+    await();
+    vertx = null;
+  }
+
   // TODO
 
   // Multi-threaded workers
-  // undeploy all
+
 
   private void testIsolationGroup(String group1, String group2, int count1, int count2) throws Exception {
     Map<String, Integer> countMap = new ConcurrentHashMap<>();
