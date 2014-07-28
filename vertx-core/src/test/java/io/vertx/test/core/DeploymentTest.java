@@ -35,6 +35,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +72,46 @@ public class DeploymentTest extends VertxTestBase {
     String rand = TestUtils.randomUnicodeString(1000);
     assertEquals(options, options.setIsolationGroup(rand));
     assertEquals(rand, options.getIsolationGroup());
+  }
+
+  @Test
+  public void testCopyOptions() {
+    DeploymentOptions options = new DeploymentOptions();
+    JsonObject config = new JsonObject().putString("foo", "bar");
+    Random rand = new Random();
+    boolean worker = rand.nextBoolean();
+    boolean multiThreaded = rand.nextBoolean();
+    String isolationGroup = TestUtils.randomAlphaString(100);
+    options.setConfig(config);
+    options.setWorker(worker);
+    options.setMultiThreaded(multiThreaded);
+    options.setIsolationGroup(isolationGroup);
+    DeploymentOptions copy = new DeploymentOptions(options);
+    assertEquals(worker, copy.isWorker());
+    assertEquals(multiThreaded, copy.isMultiThreaded());
+    assertEquals(isolationGroup, copy.getIsolationGroup());
+    assertNotSame(config, copy.getConfig());
+    assertEquals("bar", copy.getConfig().getString("foo"));
+  }
+
+  @Test
+  public void testJsonOptions() {
+    JsonObject config = new JsonObject().putString("foo", "bar");
+    Random rand = new Random();
+    boolean worker = rand.nextBoolean();
+    boolean multiThreaded = rand.nextBoolean();
+    String isolationGroup = TestUtils.randomAlphaString(100);
+    JsonObject json = new JsonObject();
+    json.putObject("config", config);
+    json.putBoolean("worker", worker);
+    json.putBoolean("multiThreaded", multiThreaded);
+    json.putString("isolationGroup", isolationGroup);
+    DeploymentOptions copy = new DeploymentOptions(json);
+    assertEquals(worker, copy.isWorker());
+    assertEquals(multiThreaded, copy.isMultiThreaded());
+    assertEquals(isolationGroup, copy.getIsolationGroup());
+    assertNotSame(config, copy.getConfig());
+    assertEquals("bar", copy.getConfig().getString("foo"));
   }
 
   @Test

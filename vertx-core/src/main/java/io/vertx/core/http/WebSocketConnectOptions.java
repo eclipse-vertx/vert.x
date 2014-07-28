@@ -44,12 +44,14 @@ public class WebSocketConnectOptions extends RequestOptions {
   }
 
   public WebSocketConnectOptions(WebSocketConnectOptions other) {
+    super(other);
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.version = other.version;
     this.subProtocols = other.subProtocols != null ? new HashSet<>(other.subProtocols) : null;
   }
 
   public WebSocketConnectOptions(JsonObject json) {
+    super(json);
     this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAXWEBSOCKETFRAMESIZE);
     this.version = json.getInteger("version", DEFAULT_WEBSOCKETVERSION);
     JsonArray arr = json.getArray("subProtocols");

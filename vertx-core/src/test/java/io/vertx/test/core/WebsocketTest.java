@@ -26,6 +26,8 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
 import org.junit.After;
 import org.junit.Before;
@@ -552,6 +554,61 @@ public class WebsocketTest extends VertxTestBase {
     assertNotNull(options.getSubProtocols());
     assertTrue(options.getSubProtocols().contains("foo"));
     assertTrue(options.getSubProtocols().contains("bar"));
+  }
+
+  @Test
+  public void testCopyOptions() {
+    int port = 4523;
+    String host = TestUtils.randomAlphaString(100);
+    MultiMap headers = new CaseInsensitiveMultiMap();
+    headers.add("foo", "bar");
+    String uri = TestUtils.randomAlphaString(100);
+    int websocketFrameSize = TestUtils.randomPositiveInt();
+    int version = 13;
+    String subProtocol = TestUtils.randomAlphaString(100);
+    WebSocketConnectOptions options = new WebSocketConnectOptions().setPort(port).setHost(host).setHeaders(headers).setRequestURI(uri)
+      .setMaxWebsocketFrameSize(websocketFrameSize).setVersion(version).addSubProtocol(subProtocol);
+    WebSocketConnectOptions copy = new WebSocketConnectOptions(options);
+    assertEquals(port, copy.getPort());
+    assertEquals(host, copy.getHost());
+    assertEquals(uri, copy.getRequestURI());
+    assertSame(headers, copy.getHeaders());
+    assertEquals("bar", copy.getHeaders().get("foo"));
+    assertEquals(websocketFrameSize, options.getMaxWebsocketFrameSize());
+    assertEquals(version, options.getVersion());
+    assertTrue(options.getSubProtocols().contains(subProtocol));
+    testComplete();
+  }
+
+  @Test
+  public void testCopyOptionsJson() {
+    int port = 4523;
+    String host = TestUtils.randomAlphaString(100);
+    MultiMap headers = new CaseInsensitiveMultiMap();
+    headers.add("foo", "bar");
+    String uri = TestUtils.randomAlphaString(100);
+    int websocketFrameSize = TestUtils.randomPositiveInt();
+    int version = 13;
+    String subProtocol = TestUtils.randomAlphaString(100);
+    JsonObject json = new JsonObject();
+    json.putNumber("port", port);
+    json.putString("host", host);
+    json.putString("requestURI", uri);
+    json.putNumber("maxWebsocketFrameSize", websocketFrameSize);
+    json.putNumber("version", version);
+    json.putArray("subProtocols", new JsonArray().addString(subProtocol));
+    JsonObject jheaders = new JsonObject();
+    jheaders.putString("foo", "bar");
+    json.putObject("headers", jheaders);
+    WebSocketConnectOptions copy = new WebSocketConnectOptions(json);
+    assertEquals(port, copy.getPort());
+    assertEquals(host, copy.getHost());
+    assertEquals(uri, copy.getRequestURI());
+    assertEquals("bar", copy.getHeaders().get("foo"));
+    assertEquals(websocketFrameSize, copy.getMaxWebsocketFrameSize());
+    assertEquals(version, copy.getVersion());
+    assertTrue(copy.getSubProtocols().contains(subProtocol));
+    testComplete();
   }
 
   private String sha1(String s) {

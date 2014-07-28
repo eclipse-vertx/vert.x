@@ -3603,6 +3603,45 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testCopyRequestOptions() {
+    int port = 4523;
+    String host = TestUtils.randomAlphaString(100);
+    MultiMap headers = new CaseInsensitiveMultiMap();
+    headers.add("foo", "bar");
+    String uri = TestUtils.randomAlphaString(100);
+    RequestOptions options = new RequestOptions().setPort(port).setHost(host).setHeaders(headers).setRequestURI(uri);
+    RequestOptions copy = new RequestOptions(options);
+    assertEquals(port, copy.getPort());
+    assertEquals(host, copy.getHost());
+    assertEquals(uri, copy.getRequestURI());
+    assertSame(headers, copy.getHeaders());
+    assertEquals("bar", copy.getHeaders().get("foo"));
+    testComplete();
+  }
+
+  @Test
+  public void testCopyRequestOptionsJson() {
+    int port = 4523;
+    String host = TestUtils.randomAlphaString(100);
+    MultiMap headers = new CaseInsensitiveMultiMap();
+    headers.add("foo", "bar");
+    String uri = TestUtils.randomAlphaString(100);
+    JsonObject json = new JsonObject();
+    json.putNumber("port", port);
+    json.putString("host", host);
+    json.putString("requestURI", uri);
+    JsonObject jheaders = new JsonObject();
+    jheaders.putString("foo", "bar");
+    json.putObject("headers", jheaders);
+    RequestOptions copy = new RequestOptions(json);
+    assertEquals(port, copy.getPort());
+    assertEquals(host, copy.getHost());
+    assertEquals(uri, copy.getRequestURI());
+    assertEquals("bar", copy.getHeaders().get("foo"));
+    testComplete();
+  }
+
+  @Test
   public void testClientMultiThreaded() throws Exception {
     int numThreads = 10;
     Thread[] threads = new Thread[numThreads];

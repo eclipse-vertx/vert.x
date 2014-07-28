@@ -34,7 +34,7 @@ public class DeploymentOptions {
   }
 
   public DeploymentOptions(DeploymentOptions other) {
-    this.config = other.config;
+    this.config = other.config == null ? null : other.config.copy();
     this.worker = other.worker;
     this.multiThreaded = other.multiThreaded;
     this.isolationGroup = other.isolationGroup;
