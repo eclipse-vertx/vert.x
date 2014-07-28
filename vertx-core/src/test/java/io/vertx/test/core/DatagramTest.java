@@ -21,11 +21,13 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.json.JsonObject;
 import org.junit.After;
 import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -328,6 +330,51 @@ public class DatagramTest extends VertxTestBase {
     assertEquals(options, options.setMulticastNetworkInterface(randString));
     assertEquals(randString, options.getMulticastNetworkInterface());
 
+    testComplete();
+  }
+
+  @Test
+  public void testCopyOptions() {
+    DatagramSocketOptions options = new DatagramSocketOptions();
+    Random rand = new Random();
+    boolean broadcast = rand.nextBoolean();
+    boolean loopbackModeDisabled = rand.nextBoolean();
+    int multicastTimeToLive = TestUtils.randomPositiveInt();
+    String multicastNetworkInterface = TestUtils.randomAlphaString(100);
+    boolean reuseAddress = rand.nextBoolean();
+    options.setBroadcast(broadcast);
+    options.setLoopbackModeDisabled(loopbackModeDisabled);
+    options.setMulticastTimeToLive(multicastTimeToLive);
+    options.setMulticastNetworkInterface(multicastNetworkInterface);
+    options.setReuseAddress(reuseAddress);
+    DatagramSocketOptions copy = new DatagramSocketOptions(options);
+    assertEquals(broadcast, copy.isBroadcast());
+    assertEquals(loopbackModeDisabled, copy.isLoopbackModeDisabled());
+    assertEquals(multicastTimeToLive, copy.getMulticastTimeToLive());
+    assertEquals(multicastNetworkInterface, copy.getMulticastNetworkInterface());
+    assertEquals(reuseAddress, copy.isReuseAddress());
+    testComplete();
+  }
+
+  @Test
+  public void testCopyOptionsJson() {
+    Random rand = new Random();
+    boolean broadcast = rand.nextBoolean();
+    boolean loopbackModeDisabled = rand.nextBoolean();
+    int multicastTimeToLive = TestUtils.randomPositiveInt();
+    String multicastNetworkInterface = TestUtils.randomAlphaString(100);
+    boolean reuseAddress = rand.nextBoolean();
+    JsonObject json = new JsonObject().putBoolean("broadcast", broadcast)
+      .putBoolean("loopbackModeDisabled", loopbackModeDisabled)
+      .putNumber("multicastTimeToLive", multicastTimeToLive)
+      .putString("multicastNetworkInterface", multicastNetworkInterface)
+      .putBoolean("reuseAddress", reuseAddress);
+    DatagramSocketOptions copy = new DatagramSocketOptions(json);
+    assertEquals(broadcast, copy.isBroadcast());
+    assertEquals(loopbackModeDisabled, copy.isLoopbackModeDisabled());
+    assertEquals(multicastTimeToLive, copy.getMulticastTimeToLive());
+    assertEquals(multicastNetworkInterface, copy.getMulticastNetworkInterface());
+    assertEquals(reuseAddress, copy.isReuseAddress());
     testComplete();
   }
 
