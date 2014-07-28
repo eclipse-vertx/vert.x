@@ -40,5 +40,4 @@ public interface SharedData {
    */
   <K, V> LocalMap<K, V> getLocalMap(String name);
 
-
 }

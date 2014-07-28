@@ -92,7 +92,7 @@ public abstract class ContextImpl implements Context {
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
-    if (closeHooks != null) {
+    if (closeHooks != null && !closeHooks.isEmpty()) {
       final int num = closeHooks.size();
       AtomicInteger count = new AtomicInteger();
       AtomicBoolean failed = new AtomicBoolean();

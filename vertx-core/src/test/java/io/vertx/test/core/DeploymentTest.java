@@ -404,12 +404,12 @@ public class DeploymentTest extends VertxTestBase {
         assertNotSame(parentContext, childContext);
         f2.setResult(null);
         testComplete();
-      }, null);
+      }, f2 -> f2.setResult(null));
       vertx.deployVerticleInstance(child1, new DeploymentOptions(), ar -> {
         assertTrue(ar.succeeded());
       });
       f.setResult(null);
-    }, null);
+    }, f -> f.setResult(null));
     vertx.deployVerticleInstance(verticle, new DeploymentOptions(), ar -> {
       assertTrue(ar.succeeded());
     });
@@ -464,7 +464,7 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testAsyncDeployCalledSynchronously() throws Exception {
-    MyAsyncVerticle verticle = new MyAsyncVerticle(f -> f.setResult(null), null);
+    MyAsyncVerticle verticle = new MyAsyncVerticle(f -> f.setResult(null), f -> f.setResult(null));
     vertx.deployVerticleInstance(verticle, new DeploymentOptions(), ar -> {
       assertTrue(ar.succeeded());
       testComplete();
@@ -487,7 +487,11 @@ public class DeploymentTest extends VertxTestBase {
   public void testAsyncDeploy() throws Exception {
     long start = System.currentTimeMillis();
     long delay = 1000;
-    MyAsyncVerticle verticle = new MyAsyncVerticle(f -> vertx.setTimer(delay, id -> f.setResult(null)), null);
+    MyAsyncVerticle verticle = new MyAsyncVerticle(f -> {
+      vertx.setTimer(delay, id -> {
+        f.setResult(null);
+      });
+    }, f -> f.setResult(null));
     vertx.deployVerticleInstance(verticle, new DeploymentOptions(), ar -> {
       assertTrue(ar.succeeded());
       long now = System.currentTimeMillis();

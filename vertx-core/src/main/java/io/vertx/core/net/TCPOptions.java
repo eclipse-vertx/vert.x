@@ -68,7 +68,7 @@ public class TCPOptions extends NetworkOptions {
     this.soLinger = json.getInteger("soLinger", DEFAULT_SOLINGER);
     this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
     this.ssl = json.getBoolean("ssl", false);
-    JsonObject keyStoreJson = json.getObject("keyStore");
+    JsonObject keyStoreJson = json.getObject("keyStoreOptions");
     if (keyStoreJson != null) {
       String type = keyStoreJson.getString("type", null);
       switch (type != null ? type.toLowerCase() : "jks") {
@@ -81,21 +81,25 @@ public class TCPOptions extends NetworkOptions {
         case "keycert":
           keyStore = new KeyCertOptions(keyStoreJson);
           break;
+        default:
+          throw new IllegalArgumentException("Invalid key store type: " + type);
       }
     }
-    JsonObject trustStoreJson = json.getObject("trustStore");
+    JsonObject trustStoreJson = json.getObject("trustStoreOptions");
     if (trustStoreJson != null) {
       String type = trustStoreJson.getString("type", null);
       switch (type != null ? type.toLowerCase() : "jks") {
         case "jks":
-          trustStore = new JKSOptions(json);
+          trustStore = new JKSOptions(trustStoreJson);
           break;
         case "pkcs12":
-          trustStore = new PKCS12Options(json);
+          trustStore = new PKCS12Options(trustStoreJson);
           break;
         case "ca":
-          trustStore = new CaOptions(json);
+          trustStore = new CaOptions(trustStoreJson);
           break;
+        default:
+          throw new IllegalArgumentException("Invalid trust store type: " + type);
       }
     }
     JsonArray arr = json.getArray("enabledCipherSuites");
@@ -157,20 +161,20 @@ public class TCPOptions extends NetworkOptions {
     return this;
   }
 
-  public KeyStoreOptions getKeyStore() {
+  public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
-  public TCPOptions setKeyStore(KeyStoreOptions keyStore) {
+  public TCPOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
-  public TrustStoreOptions getTrustStore() {
+  public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
-  public TCPOptions setTrustStore(TrustStoreOptions trustStore) {
+  public TCPOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }

@@ -18,6 +18,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -59,6 +60,8 @@ public class NetServerOptions extends TCPOptions {
     this.port = json.getInteger("port", DEFAULT_PORT);
     this.host = json.getString("host", DEFAULT_HOST);
     this.acceptBacklog = json.getInteger("acceptBacklog", DEFAULT_ACCEPT_BACKLOG);
+    JsonArray arr = json.getArray("crlPaths");
+    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.toList());
   }
 
   public NetServerOptions(NetServerOptions other) {
@@ -190,14 +193,14 @@ public class NetServerOptions extends TCPOptions {
   }
 
   @Override
-  public NetServerOptions setKeyStore(KeyStoreOptions keyStore) {
-    super.setKeyStore(keyStore);
+  public NetServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
+    super.setKeyStoreOptions(keyStore);
     return this;
   }
 
   @Override
-  public NetServerOptions setTrustStore(TrustStoreOptions trustStore) {
-    super.setTrustStore(trustStore);
+  public NetServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
+    super.setTrustStoreOptions(trustStore);
     return this;
   }
 

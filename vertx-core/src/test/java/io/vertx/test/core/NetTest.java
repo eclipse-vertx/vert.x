@@ -30,12 +30,18 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.CaOptions;
+import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.JKSOptions;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketDefaults;
 import org.junit.After;
@@ -50,6 +56,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -179,15 +186,15 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStore());
+    assertNull(options.getKeyStoreOptions());
     JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setKeyStore(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStore());
+    assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
+    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
-    assertNull(options.getTrustStore());
+    assertNull(options.getTrustStoreOptions());
     JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setTrustStore(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStore());
+    assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
+    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
     assertFalse(options.isTrustAll());
     assertEquals(options, options.setTrustAll(true));
@@ -303,15 +310,15 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStore());
+    assertNull(options.getKeyStoreOptions());
     JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setKeyStore(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStore());
+    assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
+    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
-    assertNull(options.getTrustStore());
+    assertNull(options.getTrustStoreOptions());
     JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setTrustStore(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStore());
+    assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
+    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
     assertEquals(1024, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
@@ -347,6 +354,347 @@ public class NetTest extends VertxTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
     testComplete();
+  }
+
+  @Test
+  public void testCopyClientOptions() {
+    NetClientOptions options = new NetClientOptions();
+    int sendBufferSize = TestUtils.randomPositiveInt();
+    int receiverBufferSize = TestUtils.randomPortInt();
+    Random rand = new Random();
+    boolean reuseAddress = rand.nextBoolean();
+    int trafficClass = TestUtils.randomByte() + 127;
+    boolean tcpNoDelay = rand.nextBoolean();
+    boolean tcpKeepAlive = rand.nextBoolean();
+    int soLinger = TestUtils.randomPositiveInt();
+    boolean usePooledBuffers = rand.nextBoolean();
+    boolean ssl = rand.nextBoolean();
+    JKSOptions keyStoreOptions = new JKSOptions();
+    String ksPassword = TestUtils.randomAlphaString(100);
+    keyStoreOptions.setPassword(ksPassword);
+    JKSOptions trustStoreOptions = new JKSOptions();
+    String tsPassword = TestUtils.randomAlphaString(100);
+    trustStoreOptions.setPassword(tsPassword);
+    String enabledCipher = TestUtils.randomAlphaString(100);
+    int connectTimeout = TestUtils.randomPositiveInt();
+    boolean trustAll = rand.nextBoolean();
+    String crlPath = TestUtils.randomUnicodeString(100);
+    Buffer crlValue = TestUtils.randomBuffer(100);
+    int reconnectAttempts = TestUtils.randomPositiveInt();
+    long reconnectInterval = TestUtils.randomPositiveInt();
+    options.setSendBufferSize(sendBufferSize);
+    options.setReceiveBufferSize(receiverBufferSize);
+    options.setReuseAddress(reuseAddress);
+    options.setTrafficClass(trafficClass);
+    options.setSsl(ssl);
+    options.setTcpNoDelay(tcpNoDelay);
+    options.setTcpKeepAlive(tcpKeepAlive);
+    options.setSoLinger(soLinger);
+    options.setUsePooledBuffers(usePooledBuffers);
+    options.setKeyStoreOptions(keyStoreOptions);
+    options.setTrustStoreOptions(trustStoreOptions);
+    options.addEnabledCipherSuite(enabledCipher);
+    options.setConnectTimeout(connectTimeout);
+    options.setTrustAll(trustAll);
+    options.addCrlPath(crlPath);
+    options.addCrlValue(crlValue);
+    options.setReconnectAttempts(reconnectAttempts);
+    options.setReconnectInterval(reconnectInterval);
+    NetClientOptions copy = new NetClientOptions(options);
+    assertEquals(sendBufferSize, copy.getSendBufferSize());
+    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
+    assertEquals(reuseAddress, copy.isReuseAddress());
+    assertEquals(trafficClass, copy.getTrafficClass());
+    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
+    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
+    assertEquals(soLinger, copy.getSoLinger());
+    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(ssl, copy.isSsl());
+    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
+    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
+    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertEquals(1, copy.getEnabledCipherSuites().size());
+    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
+    assertEquals(connectTimeout, copy.getConnectTimeout());
+    assertEquals(trustAll, copy.isTrustAll());
+    assertEquals(1, copy.getCrlPaths().size());
+    assertEquals(crlPath, copy.getCrlPaths().get(0));
+    assertEquals(1, copy.getCrlValues().size());
+    assertEquals(crlValue, copy.getCrlValues().get(0));
+    assertEquals(reconnectAttempts, copy.getReconnectAttempts());
+    assertEquals(reconnectInterval, copy.getReconnectInterval());
+  }
+
+  @Test
+  public void testClientOptionsJson() {
+    int sendBufferSize = TestUtils.randomPositiveInt();
+    int receiverBufferSize = TestUtils.randomPortInt();
+    Random rand = new Random();
+    boolean reuseAddress = rand.nextBoolean();
+    int trafficClass = TestUtils.randomByte() + 127;
+    boolean tcpNoDelay = rand.nextBoolean();
+    boolean tcpKeepAlive = rand.nextBoolean();
+    int soLinger = TestUtils.randomPositiveInt();
+    boolean usePooledBuffers = rand.nextBoolean();
+    boolean ssl = rand.nextBoolean();
+    JKSOptions keyStoreOptions = new JKSOptions();
+    String ksPassword = TestUtils.randomAlphaString(100);
+    keyStoreOptions.setPassword(ksPassword);
+    String ksPath = TestUtils.randomAlphaString(100);
+    keyStoreOptions.setPath(ksPath);
+    JKSOptions trustStoreOptions = new JKSOptions();
+    String tsPassword = TestUtils.randomAlphaString(100);
+    trustStoreOptions.setPassword(tsPassword);
+    String tsPath = TestUtils.randomAlphaString(100);
+    trustStoreOptions.setPath(tsPath);
+    String enabledCipher = TestUtils.randomAlphaString(100);
+    int connectTimeout = TestUtils.randomPositiveInt();
+    boolean trustAll = rand.nextBoolean();
+    String crlPath = TestUtils.randomUnicodeString(100);
+    int reconnectAttempts = TestUtils.randomPositiveInt();
+    long reconnectInterval = TestUtils.randomPositiveInt();
+
+    JsonObject json = new JsonObject();
+    json.putNumber("sendBufferSize", sendBufferSize)
+        .putNumber("receiveBufferSize", receiverBufferSize)
+        .putBoolean("reuseAddress", reuseAddress)
+        .putNumber("trafficClass", trafficClass)
+        .putBoolean("tcpNoDelay", tcpNoDelay)
+        .putBoolean("tcpKeepAlive", tcpKeepAlive)
+        .putNumber("soLinger", soLinger)
+        .putBoolean("usePooledBuffers", usePooledBuffers)
+        .putBoolean("ssl", ssl)
+        .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
+        .putNumber("connectTimeout", connectTimeout)
+        .putBoolean("trustAll", trustAll)
+        .putArray("crlPaths", new JsonArray().addString(crlPath))
+        .putObject("keyStoreOptions", new JsonObject().putString("type", "jks").putString("password", ksPassword).putString("path", ksPath))
+        .putObject("trustStoreOptions", new JsonObject().putString("type", "jks").putString("password", tsPassword).putString("path", tsPath))
+        .putNumber("reconnectAttempts", reconnectAttempts)
+        .putNumber("reconnectInterval", reconnectInterval);
+
+    NetClientOptions options = new NetClientOptions(json);
+    assertEquals(sendBufferSize, options.getSendBufferSize());
+    assertEquals(receiverBufferSize, options.getReceiveBufferSize());
+    assertEquals(reuseAddress, options.isReuseAddress());
+    assertEquals(trafficClass, options.getTrafficClass());
+    assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
+    assertEquals(tcpNoDelay, options.isTcpNoDelay());
+    assertEquals(soLinger, options.getSoLinger());
+    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
+    assertEquals(ssl, options.isSsl());
+    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
+    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
+    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertEquals(1, options.getEnabledCipherSuites().size());
+    assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
+    assertEquals(connectTimeout, options.getConnectTimeout());
+    assertEquals(trustAll, options.isTrustAll());
+    assertEquals(1, options.getCrlPaths().size());
+    assertEquals(crlPath, options.getCrlPaths().get(0));
+    assertEquals(reconnectAttempts, options.getReconnectAttempts());
+    assertEquals(reconnectInterval, options.getReconnectInterval());
+
+    // Test other keystore/truststore types
+    json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
+      .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
+    options = new NetClientOptions(json);
+    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+
+    json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
+      .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
+    options = new NetClientOptions(json);
+    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
+    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
+
+
+    // Invalid types
+    json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
+    try {
+      new ClientOptions(json);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
+    try {
+      new ClientOptions(json);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testCopyServerOptions() {
+    NetServerOptions options = new NetServerOptions();
+    int sendBufferSize = TestUtils.randomPositiveInt();
+    int receiverBufferSize = TestUtils.randomPortInt();
+    Random rand = new Random();
+    boolean reuseAddress = rand.nextBoolean();
+    int trafficClass = TestUtils.randomByte() + 127;boolean tcpNoDelay = rand.nextBoolean();
+    boolean tcpKeepAlive = rand.nextBoolean();
+    int soLinger = TestUtils.randomPositiveInt();
+    boolean usePooledBuffers = rand.nextBoolean();
+    boolean ssl = rand.nextBoolean();
+    JKSOptions keyStoreOptions = new JKSOptions();
+    String ksPassword = TestUtils.randomAlphaString(100);
+    keyStoreOptions.setPassword(ksPassword);
+    JKSOptions trustStoreOptions = new JKSOptions();
+    String tsPassword = TestUtils.randomAlphaString(100);
+    trustStoreOptions.setPassword(tsPassword);
+    String enabledCipher = TestUtils.randomAlphaString(100);
+    String crlPath = TestUtils.randomUnicodeString(100);
+    Buffer crlValue = TestUtils.randomBuffer(100);
+    int port = 1234;
+    String host = TestUtils.randomAlphaString(100);
+    int acceptBacklog = TestUtils.randomPortInt();
+    options.setSendBufferSize(sendBufferSize);
+    options.setReceiveBufferSize(receiverBufferSize);
+    options.setReuseAddress(reuseAddress);
+    options.setTrafficClass(trafficClass);
+    options.setTcpNoDelay(tcpNoDelay);
+    options.setTcpKeepAlive(tcpKeepAlive);
+    options.setSoLinger(soLinger);
+    options.setUsePooledBuffers(usePooledBuffers);
+    options.setSsl(ssl);
+    options.setKeyStoreOptions(keyStoreOptions);
+    options.setTrustStoreOptions(trustStoreOptions);
+    options.addEnabledCipherSuite(enabledCipher);
+    options.addCrlPath(crlPath);
+    options.addCrlValue(crlValue);
+    options.setPort(port);
+    options.setHost(host);
+    options.setAcceptBacklog(acceptBacklog);
+    NetServerOptions copy = new NetServerOptions(options);
+    assertEquals(sendBufferSize, copy.getSendBufferSize());
+    assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
+    assertEquals(reuseAddress, copy.isReuseAddress());
+    assertEquals(trafficClass, copy.getTrafficClass());
+    assertEquals(tcpNoDelay, copy.isTcpNoDelay());
+    assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
+    assertEquals(soLinger, copy.getSoLinger());
+    assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(ssl, copy.isSsl());
+    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
+    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
+    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertEquals(1, copy.getEnabledCipherSuites().size());
+    assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
+    assertEquals(1, copy.getCrlPaths().size());
+    assertEquals(crlPath, copy.getCrlPaths().get(0));
+    assertEquals(1, copy.getCrlValues().size());
+    assertEquals(crlValue, copy.getCrlValues().get(0));
+    assertEquals(port, copy.getPort());
+    assertEquals(host, copy.getHost());
+    assertEquals(acceptBacklog, copy.getAcceptBacklog());
+  }
+
+  @Test
+  public void testServerOptionsJson() {
+    int sendBufferSize = TestUtils.randomPositiveInt();
+    int receiverBufferSize = TestUtils.randomPortInt();
+    Random rand = new Random();
+    boolean reuseAddress = rand.nextBoolean();
+    int trafficClass = TestUtils.randomByte() + 127;
+    boolean tcpNoDelay = rand.nextBoolean();
+    boolean tcpKeepAlive = rand.nextBoolean();
+    int soLinger = TestUtils.randomPositiveInt();
+    boolean usePooledBuffers = rand.nextBoolean();
+    boolean ssl = rand.nextBoolean();
+    JKSOptions keyStoreOptions = new JKSOptions();
+    String ksPassword = TestUtils.randomAlphaString(100);
+    keyStoreOptions.setPassword(ksPassword);
+    String ksPath = TestUtils.randomAlphaString(100);
+    keyStoreOptions.setPath(ksPath);
+    JKSOptions trustStoreOptions = new JKSOptions();
+    String tsPassword = TestUtils.randomAlphaString(100);
+    trustStoreOptions.setPassword(tsPassword);
+    String tsPath = TestUtils.randomAlphaString(100);
+    trustStoreOptions.setPath(tsPath);
+    String enabledCipher = TestUtils.randomAlphaString(100);
+    String crlPath = TestUtils.randomUnicodeString(100);
+    int port = 1234;
+    String host = TestUtils.randomAlphaString(100);
+    int acceptBacklog = TestUtils.randomPortInt();
+
+    JsonObject json = new JsonObject();
+    json.putNumber("sendBufferSize", sendBufferSize)
+      .putNumber("receiveBufferSize", receiverBufferSize)
+      .putBoolean("reuseAddress", reuseAddress)
+      .putNumber("trafficClass", trafficClass)
+      .putBoolean("tcpNoDelay", tcpNoDelay)
+      .putBoolean("tcpKeepAlive", tcpKeepAlive)
+      .putNumber("soLinger", soLinger)
+      .putBoolean("usePooledBuffers", usePooledBuffers)
+      .putBoolean("ssl", ssl)
+      .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
+      .putArray("crlPaths", new JsonArray().addString(crlPath))
+      .putObject("keyStoreOptions", new JsonObject().putString("type", "jks").putString("password", ksPassword).putString("path", ksPath))
+      .putObject("trustStoreOptions", new JsonObject().putString("type", "jks").putString("password", tsPassword).putString("path", tsPath))
+      .putNumber("port", port)
+      .putString("host", host)
+      .putNumber("acceptBacklog", acceptBacklog);
+
+    NetServerOptions options = new NetServerOptions(json);
+    assertEquals(sendBufferSize, options.getSendBufferSize());
+    assertEquals(receiverBufferSize, options.getReceiveBufferSize());
+    assertEquals(reuseAddress, options.isReuseAddress());
+    assertEquals(trafficClass, options.getTrafficClass());
+    assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
+    assertEquals(tcpNoDelay, options.isTcpNoDelay());
+    assertEquals(soLinger, options.getSoLinger());
+    assertEquals(usePooledBuffers, options.isUsePooledBuffers());
+    assertEquals(ssl, options.isSsl());
+    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
+    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
+    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertEquals(1, options.getEnabledCipherSuites().size());
+    assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
+    assertEquals(1, options.getCrlPaths().size());
+    assertEquals(crlPath, options.getCrlPaths().get(0));
+    assertEquals(port, options.getPort());
+    assertEquals(host, options.getHost());
+    assertEquals(acceptBacklog, options.getAcceptBacklog());
+
+    // Test other keystore/truststore types
+    json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
+      .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
+    options = new NetServerOptions(json);
+    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+
+    json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
+      .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
+    options = new NetServerOptions(json);
+    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
+    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
+
+
+    // Invalid types
+    json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
+    try {
+      new ClientOptions(json);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
+    try {
+      new ClientOptions(json);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
   }
 
   @Test
@@ -735,10 +1083,10 @@ public class NetTest extends VertxTestBase {
       options.setSsl(true);
     }
     if (serverTrust) {
-      options.setTrustStore(new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
+      options.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
     }
     if (serverCert) {
-      options.setKeyStore(new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
+      options.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
     }
     if (requireClientAuth) {
       options.setClientAuthRequired(true);
@@ -771,10 +1119,10 @@ public class NetTest extends VertxTestBase {
           clientOptions.setTrustAll(true);
         }
         if (clientTrust) {
-          clientOptions.setTrustStore(new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
+          clientOptions.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
         }
         if (clientCert) {
-          clientOptions.setKeyStore(new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
+          clientOptions.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
         }
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);
@@ -1335,7 +1683,9 @@ public class NetTest extends VertxTestBase {
         Thread thr = Thread.currentThread();
         server = vertx.createNetServer(new NetServerOptions().setPort(1234));
         server.connectHandler(sock -> {
-          sock.dataHandler(sock::writeBuffer);
+          sock.dataHandler(buff -> {
+            sock.writeBuffer(buff);
+          });
           assertSame(ctx, vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());

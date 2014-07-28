@@ -136,7 +136,6 @@ public abstract class ConnectionManager {
 
     private void createNewConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
       connCount++;
-      //System.out.println("Creating new connection!");
       connect(address.host, address.port, conn -> {
         allConnections.add(conn);
         handler.handle(conn);

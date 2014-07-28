@@ -60,6 +60,7 @@ public class HttpClientOptions extends ClientOptions {
 
   public HttpClientOptions(JsonObject json) {
     super(json);
+    this.verifyHost = json.getBoolean("verifyHost", true);
     this.maxPoolSize = json.getInteger("maxPoolSize", DEFAULT_MAXPOOLSIZE);
     this.keepAlive = json.getBoolean("keepAlive", DEFAULT_KEEPALIVE);
     this.pipelining = json.getBoolean("pipelining", false);
@@ -203,14 +204,14 @@ public class HttpClientOptions extends ClientOptions {
   }
 
   @Override
-  public HttpClientOptions setKeyStore(KeyStoreOptions keyStore) {
-    super.setKeyStore(keyStore);
+  public HttpClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
+    super.setKeyStoreOptions(keyStore);
     return this;
   }
 
   @Override
-  public HttpClientOptions setTrustStore(TrustStoreOptions trustStore) {
-    super.setTrustStore(trustStore);
+  public HttpClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
+    super.setTrustStoreOptions(trustStore);
     return this;
   }
 

@@ -194,14 +194,14 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setKeyStore(KeyStoreOptions keyStore) {
-    super.setKeyStore(keyStore);
+  public HttpServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
+    super.setKeyStoreOptions(keyStore);
     return this;
   }
 
   @Override
-  public HttpServerOptions setTrustStore(TrustStoreOptions trustStore) {
-    super.setTrustStore(trustStore);
+  public HttpServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
+    super.setTrustStoreOptions(trustStore);
     return this;
   }
 

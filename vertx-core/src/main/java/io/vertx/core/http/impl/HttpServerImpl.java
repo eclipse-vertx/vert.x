@@ -126,7 +126,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       }
       creatingContext.addCloseHook(this);
     }
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStore()), KeyStoreHelper.create(vertx, options.getTrustStore()));
+    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
   }
 
   @Override

@@ -161,14 +161,14 @@ public class NetClientOptions extends ClientOptions {
   }
 
   @Override
-  public NetClientOptions setKeyStore(KeyStoreOptions keyStore) {
-    super.setKeyStore(keyStore);
+  public NetClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
+    super.setKeyStoreOptions(keyStore);
     return this;
   }
 
   @Override
-  public NetClientOptions setTrustStore(TrustStoreOptions trustStore) {
-    super.setTrustStore(trustStore);
+  public NetClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
+    super.setTrustStoreOptions(trustStore);
     return this;
   }
 

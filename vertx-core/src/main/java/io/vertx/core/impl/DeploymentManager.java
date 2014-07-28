@@ -126,6 +126,7 @@ public class DeploymentManager {
   }
 
   public void undeployAll(Handler<AsyncResult<Void>> completionHandler) {
+    // TODO timeout if it takes too long - e.g. async stop verticle fails to call future
     Set<String> deploymentIDs = new HashSet<>(deployments.keySet());
     if (!deploymentIDs.isEmpty()) {
       AtomicInteger count = new AtomicInteger(0);
@@ -283,7 +284,6 @@ public class DeploymentManager {
     }
 
     public void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
-
       if (!children.isEmpty()) {
         final int size = children.size();
         AtomicInteger childCount = new AtomicInteger();
