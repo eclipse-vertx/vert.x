@@ -44,7 +44,7 @@ public class HttpCompressionTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(new RequestOptions().setRequestURI("some-uri").setPort(DEFAULT_HTTP_PORT), resp -> testComplete());
+      client.getNow(RequestOptions.options().setRequestURI("some-uri").setPort(DEFAULT_HTTP_PORT), resp -> testComplete());
     }));
 
     await();

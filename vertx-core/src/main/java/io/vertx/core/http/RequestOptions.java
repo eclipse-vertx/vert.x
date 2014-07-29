@@ -16,127 +16,29 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.MultiMap;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.RequestOptionsFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class RequestOptions {
+public interface RequestOptions extends RequestOptionsBase<RequestOptions> {
 
-  private static final int DEFAULT_PORT = 80;
-  private static final String DEFAULT_HOST = "localhost";
-  private static final String DEFAULT_REQUEST_URI = "/";
-
-  private int port ;
-  private String host;
-  private MultiMap headers;
-  private String requestURI;
-
-  public RequestOptions() {
-    this.port = DEFAULT_PORT;
-    this.host = DEFAULT_HOST;
-    this.requestURI = DEFAULT_REQUEST_URI;
+  static RequestOptions options() {
+    return factory.newOptions();
   }
 
-  public RequestOptions(RequestOptions other) {
-    this.port = other.port;
-    this.host = other.host;
-    this.requestURI = other.requestURI;
-    this.headers = other.headers;
+  static RequestOptions copiedOptions(RequestOptions other) {
+    return factory.copiedOptions(other);
   }
 
-  public RequestOptions(JsonObject json) {
-    this.port = json.getInteger("port", DEFAULT_PORT);
-    this.host = json.getString("host", DEFAULT_HOST);
-    this.requestURI = json.getString("requestURI", DEFAULT_REQUEST_URI);
-    JsonObject obj = json.getObject("headers");
-    if (obj == null) {
-      headers = null;
-    } else {
-      headers = new CaseInsensitiveMultiMap();
-      obj.toMap().forEach((k, v) -> {
-        headers.set(k, (String)v);
-      });
-    }
+  static RequestOptions optionsFromJson(JsonObject json) {
+    return factory.optionsFromJson(json);
   }
 
-  public int getPort() {
-    return port;
-  }
+  static final RequestOptionsFactory factory = ServiceHelper.loadFactory(RequestOptionsFactory.class);
 
-  public RequestOptions setPort(int port) {
-    if (port < 1|| port > 65535) {
-      throw new IllegalArgumentException("port p must be in range 1 <=p <= 65535");
-    }
-    this.port = port;
-    return this;
-  }
-
-  public String getHost() {
-    return host;
-  }
-
-  public RequestOptions setHost(String host) {
-    this.host = host;
-    return this;
-  }
-
-  public MultiMap getHeaders() {
-    return headers;
-  }
-
-  public RequestOptions setHeaders(MultiMap headers) {
-    this.headers = headers;
-    return this;
-  }
-
-  public String getRequestURI() {
-    return requestURI;
-  }
-
-  public RequestOptions setRequestURI(String requestURI) {
-    this.requestURI = requestURI;
-    return this;
-  }
-
-  public RequestOptions putHeader(CharSequence name, CharSequence value) {
-    if (name == null) {
-      throw new NullPointerException("name");
-    }
-    if (value == null) {
-      throw new NullPointerException("value");
-    }
-    if (headers == null) {
-      headers = new CaseInsensitiveMultiMap();
-    }
-    headers.add(name, value);
-    return this;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof RequestOptions)) return false;
-
-    RequestOptions that = (RequestOptions) o;
-
-    if (port != that.port) return false;
-    if (headers != null ? !headers.equals(that.headers) : that.headers != null) return false;
-    if (host != null ? !host.equals(that.host) : that.host != null) return false;
-    if (requestURI != null ? !requestURI.equals(that.requestURI) : that.requestURI != null) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = port;
-    result = 31 * result + (host != null ? host.hashCode() : 0);
-    result = 31 * result + (headers != null ? headers.hashCode() : 0);
-    result = 31 * result + (requestURI != null ? requestURI.hashCode() : 0);
-    return result;
-  }
 }
