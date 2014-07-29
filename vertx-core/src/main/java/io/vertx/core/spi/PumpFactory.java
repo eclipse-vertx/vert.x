@@ -25,7 +25,7 @@ import io.vertx.core.streams.WriteStream;
  */
 public interface PumpFactory {
 
-  Pump createPump(ReadStream<?> rs, WriteStream<?> ws);
+  Pump pump(ReadStream<?> rs, WriteStream<?> ws);
 
-  Pump createPump(ReadStream<?> rs, WriteStream<?> ws, int writeQueueMaxSize);
+  Pump pump(ReadStream<?> rs, WriteStream<?> ws, int writeQueueMaxSize);
 }

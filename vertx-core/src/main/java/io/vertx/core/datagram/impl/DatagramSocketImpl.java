@@ -49,7 +49,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocketImpl(VertxInternal vertx,
                             DatagramSocketOptions options) {
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-          new DatagramSocketOptions(options)), vertx.getOrCreateContext());
+          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext());
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultithreaded()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");

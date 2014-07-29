@@ -15,9 +15,11 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.JKSOptionsFactory;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on Java Keystore files.<p>
@@ -27,74 +29,49 @@ import io.vertx.core.json.JsonObject;
  *
  * The store can either be loaded by Vert.x from the filesystem:<p>
  * <pre>
- * HttpServerOptions options = new HttpServerOptions();
- * options.setKeyStore(new JKSOptions().setPath("/mykeystore.jks").setPassword("foo"));
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setKeyStore(JKSOptions.options().setPath("/mykeystore.jks").setPassword("foo"));
  * </pre>
  *
  * Or directly provided as a buffer:<p>
  *
  * <pre>
  * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.jks");
- * options.setKeyStore(new JKSOptions().setValue(store).setPassword("foo"));
+ * options.setKeyStore(JKSOptions.options().setValue(store).setPassword("foo"));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @Options
-public class JKSOptions implements KeyStoreOptions, TrustStoreOptions {
+public interface JKSOptions extends KeyStoreOptions, TrustStoreOptions {
 
-  private String password;
-  private String path;
-  private Buffer value;
-
-  public JKSOptions() {
-    super();
+  static JKSOptions options() {
+    return factory.newOptions();
   }
 
-  public JKSOptions(JKSOptions other) {
-    super();
-    this.password = other.password;
-    this.path = other.path;
-    this.value = other.value;
+  static JKSOptions copiedOptions(JKSOptions other) {
+    return factory.copiedOptions(other);
   }
 
-  public JKSOptions(JsonObject json) {
-    super();
-    this.password = json.getString("password");
-    this.path = json.getString("path");
-    byte[] value = json.getBinary("value");
-    this.value = value != null ? Buffer.buffer(value) : null;
+  static JKSOptions optionsFromJson(JsonObject json) {
+    return factory.optionsFromJson(json);
   }
 
-  public String getPassword() {
-    return password;
-  }
+  String getPassword();
 
-  public JKSOptions setPassword(String password) {
-    this.password = password;
-    return this;
-  }
+  JKSOptions setPassword(String password);
 
-  public String getPath() {
-    return path;
-  }
+  String getPath();
 
-  public JKSOptions setPath(String path) {
-    this.path = path;
-    return this;
-  }
+  JKSOptions setPath(String path);
 
-  public Buffer getValue() {
-    return value;
-  }
+  Buffer getValue();
 
-  public JKSOptions setValue(Buffer value) {
-    this.value = value;
-    return this;
-  }
+  JKSOptions setValue(Buffer value);
 
   @Override
-  public JKSOptions clone() {
-    return new JKSOptions(this);
-  }
+  JKSOptions clone();
+
+  static final JKSOptionsFactory factory = ServiceHelper.loadFactory(JKSOptionsFactory.class);
+
 }

@@ -40,7 +40,6 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
-import io.vertx.core.shareddata.MapOptions;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -99,7 +98,7 @@ public class EventBusImpl implements EventBus {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-    clusterMgr.<String, ServerID>getAsyncMultiMap("subs", new MapOptions(), ar -> {
+    clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
       if (ar.succeeded()) {
         subs = ar.result();
         this.server = setServer(port, hostname, listenHandler);
@@ -258,10 +257,11 @@ public class EventBusImpl implements EventBus {
   }
 
   private NetServer setServer(int port, String hostName, Handler<AsyncResult<Void>> listenHandler) {
-    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(port).setHost(hostName)).connectHandler(socket -> {
+    NetServer server = vertx.createNetServer(NetServerOptions.options().setPort(port).setHost(hostName)).connectHandler(socket -> {
       RecordParser parser = RecordParser.newFixed(4, null);
       Handler<Buffer> handler = new Handler<Buffer>() {
         int size = -1;
+
         public void handle(Buffer buff) {
           if (size == -1) {
             size = buff.getInt(0);
@@ -558,7 +558,7 @@ public class EventBusImpl implements EventBus {
     // tricky
     ConnectionHolder holder = connections.get(theServerID);
     if (holder == null) {
-      NetClient client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(60 * 1000));
+      NetClient client = vertx.createNetClient(NetClientOptions.options().setConnectTimeout(60 * 1000));
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
       holder = new ConnectionHolder(client);

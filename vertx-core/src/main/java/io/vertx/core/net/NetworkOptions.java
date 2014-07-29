@@ -16,112 +16,24 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.Options;
-import io.vertx.core.json.JsonObject;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
-public class NetworkOptions {
+public interface NetworkOptions<T extends NetworkOptions> {
 
-  private static final int DEFAULT_SENDBUFFERSIZE = -1;
-  private static final int DEFAULT_RECEIVEBUFFERSIZE = -1;
-  private static final boolean DEFAULT_REUSEADDRESS = true;
-  private static final int DEFAULT_TRAFFICCLASS = -1;
+  int getSendBufferSize();
 
-  private int sendBufferSize = DEFAULT_SENDBUFFERSIZE;
-  private int receiveBufferSize = DEFAULT_RECEIVEBUFFERSIZE;
-  private boolean reuseAddress = DEFAULT_REUSEADDRESS;
-  private int trafficClass = DEFAULT_TRAFFICCLASS;
+  T setSendBufferSize(int sendBufferSize);
 
-  public NetworkOptions(NetworkOptions other) {
-    this.sendBufferSize = other.sendBufferSize;
-    this.receiveBufferSize = other.receiveBufferSize;
-    this.reuseAddress = other.reuseAddress;
-    this.trafficClass = other.trafficClass;
-  }
+  int getReceiveBufferSize();
 
-  public NetworkOptions(JsonObject json) {
-    this.sendBufferSize = json.getInteger("sendBufferSize", DEFAULT_SENDBUFFERSIZE);
-    this.receiveBufferSize = json.getInteger("receiveBufferSize", DEFAULT_RECEIVEBUFFERSIZE);
-    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSEADDRESS);
-    this.trafficClass = json.getInteger("trafficClass", DEFAULT_TRAFFICCLASS);
-  }
+  T setReceiveBufferSize(int receiveBufferSize);
 
-  public NetworkOptions() {
-    sendBufferSize = DEFAULT_SENDBUFFERSIZE;
-    receiveBufferSize = DEFAULT_RECEIVEBUFFERSIZE;
-    reuseAddress = DEFAULT_REUSEADDRESS;
-    trafficClass = DEFAULT_TRAFFICCLASS;
-  }
+  boolean isReuseAddress();
 
-  public int getSendBufferSize() {
-    return sendBufferSize;
-  }
+  T setReuseAddress(boolean reuseAddress);
 
-  public NetworkOptions setSendBufferSize(int sendBufferSize) {
-    if (sendBufferSize < 1) {
-      throw new IllegalArgumentException("sendBufferSize must be > 0");
-    }
-    this.sendBufferSize = sendBufferSize;
-    return this;
-  }
+  int getTrafficClass();
 
-  public int getReceiveBufferSize() {
-    return receiveBufferSize;
-  }
-
-  public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
-    if (receiveBufferSize < 1) {
-      throw new IllegalArgumentException("receiveBufferSize must be > 0");
-    }
-    this.receiveBufferSize = receiveBufferSize;
-    return this;
-  }
-
-  public boolean isReuseAddress() {
-    return reuseAddress;
-  }
-
-  public NetworkOptions setReuseAddress(boolean reuseAddress) {
-    this.reuseAddress = reuseAddress;
-    return this;
-  }
-
-  public int getTrafficClass() {
-    return trafficClass;
-  }
-
-  public NetworkOptions setTrafficClass(int trafficClass) {
-    if (trafficClass < 0 || trafficClass > 255) {
-      throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
-    }
-    this.trafficClass = trafficClass;
-    return this;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof NetworkOptions)) return false;
-
-    NetworkOptions that = (NetworkOptions) o;
-
-    if (receiveBufferSize != that.receiveBufferSize) return false;
-    if (reuseAddress != that.reuseAddress) return false;
-    if (sendBufferSize != that.sendBufferSize) return false;
-    if (trafficClass != that.trafficClass) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = sendBufferSize;
-    result = 31 * result + receiveBufferSize;
-    result = 31 * result + (reuseAddress ? 1 : 0);
-    result = 31 * result + trafficClass;
-    return result;
-  }
+  T setTrafficClass(int trafficClass);
 }

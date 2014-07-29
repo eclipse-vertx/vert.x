@@ -714,7 +714,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded));
+    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(worker).setMultiThreaded(multiThreaded));
     await();
   }
 

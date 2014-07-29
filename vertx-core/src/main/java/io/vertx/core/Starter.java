@@ -131,7 +131,7 @@ public class Starter {
           log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
-      vertx = Vertx.vertx(new VertxOptions().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true));
+      vertx = Vertx.vertx(VertxOptions.options().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true));
     } else {
       vertx = Vertx.vertx();
     }
@@ -184,7 +184,7 @@ public class Starter {
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     for (int i = 0; i < instances; i++) {
-      vertx.deployVerticle(main, new DeploymentOptions().setConfig(conf).setWorker(worker), createLoggingHandler(message, res -> {
+      vertx.deployVerticle(main, DeploymentOptions.options().setConfig(conf).setWorker(worker), createLoggingHandler(message, res -> {
         if (res.failed()) {
           // Failed to deploy
           unblock();

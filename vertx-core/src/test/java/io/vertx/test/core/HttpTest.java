@@ -46,7 +46,6 @@ import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
@@ -98,13 +97,13 @@ public class HttpTest extends HttpTestBase {
   public void before() throws Exception {
     testDir = Files.createTempDirectory("vertx-test").toFile();
     testDir.deleteOnExit();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
-    client = vertx.createHttpClient(new HttpClientOptions());
+    server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    client = vertx.createHttpClient(HttpClientOptions.options());
   }
 
   @Test
   public void testClientOptions() {
-    HttpClientOptions options = new HttpClientOptions();
+    HttpClientOptions options = HttpClientOptions.options();
 
     assertEquals(-1, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
@@ -191,12 +190,12 @@ public class HttpTest extends HttpTestBase {
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -261,7 +260,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerOptions() {
-    HttpServerOptions options = new HttpServerOptions();
+    HttpServerOptions options = HttpServerOptions.options();
 
     assertEquals(-1, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
@@ -348,12 +347,12 @@ public class HttpTest extends HttpTestBase {
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -412,7 +411,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testCopyClientOptions() {
-    HttpClientOptions options = new HttpClientOptions();
+    HttpClientOptions options = HttpClientOptions.options();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -423,10 +422,10 @@ public class HttpTest extends HttpTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -462,7 +461,7 @@ public class HttpTest extends HttpTestBase {
     options.setKeepAlive(keepAlive);
     options.setPipelining(pipelining);
     options.setTryUseCompression(tryUseCompression);
-    HttpClientOptions copy = new HttpClientOptions(options);
+    HttpClientOptions copy = HttpClientOptions.copiedOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -503,12 +502,12 @@ public class HttpTest extends HttpTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -545,7 +544,7 @@ public class HttpTest extends HttpTestBase {
       .putBoolean("pipelining", pipelining)
       .putBoolean("tryUseCompression", tryUseCompression);
 
-    HttpClientOptions options = new HttpClientOptions(json);
+    HttpClientOptions options = HttpClientOptions.optionsFromJson(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -576,13 +575,13 @@ public class HttpTest extends HttpTestBase {
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = new HttpClientOptions(json);
+    options = HttpClientOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = new HttpClientOptions(json);
+    options = HttpClientOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
@@ -590,14 +589,14 @@ public class HttpTest extends HttpTestBase {
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      HttpClientOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      HttpClientOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -606,7 +605,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testCopyServerOptions() {
-    HttpServerOptions options = new HttpServerOptions();
+    HttpServerOptions options = HttpServerOptions.options();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -616,10 +615,10 @@ public class HttpTest extends HttpTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -651,7 +650,7 @@ public class HttpTest extends HttpTestBase {
     options.setCompressionSupported(compressionSupported);
     options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
     options.addWebsocketSubProtocol(wsSubProtocol);
-    HttpServerOptions copy = new HttpServerOptions(options);
+    HttpServerOptions copy = HttpServerOptions.copiedOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -691,12 +690,12 @@ public class HttpTest extends HttpTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -731,7 +730,7 @@ public class HttpTest extends HttpTestBase {
       .putNumber("maxWebsocketFrameSize", maxWebsocketFrameSize)
       .putArray("websocketSubProtocols", new JsonArray().addString(wsSubProtocol));
 
-    HttpServerOptions options = new HttpServerOptions(json);
+    HttpServerOptions options = HttpServerOptions.optionsFromJson(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -761,13 +760,13 @@ public class HttpTest extends HttpTestBase {
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = new HttpServerOptions(json);
+    options = HttpServerOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = new HttpServerOptions(json);
+    options = HttpServerOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
@@ -775,14 +774,14 @@ public class HttpTest extends HttpTestBase {
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      HttpServerOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      HttpServerOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -1997,7 +1996,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testPipeliningOrder() throws Exception {
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
+    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
     int requests = 100;
 
     AtomicInteger reqCount = new AtomicInteger(0);
@@ -2059,7 +2058,7 @@ public class HttpTest extends HttpTestBase {
   private void testKeepAlive(boolean keepAlive, int poolSize, int numServers, int expectedConnectedServers) throws Exception {
     client.close();
     server.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(false).setMaxPoolSize(poolSize));
+    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(keepAlive).setPipelining(false).setMaxPoolSize(poolSize));
     int requests = 100;
 
     // Start the servers
@@ -2067,7 +2066,7 @@ public class HttpTest extends HttpTestBase {
     CountDownLatch startServerLatch = new CountDownLatch(numServers);
     Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
     for (int i = 0; i < numServers; i++) {
-      HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+      HttpServer server = vertx.createHttpServer(HttpServerOptions.options().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
       server.requestHandler(req -> {
         connectedServers.add(server);
         req.response().end();
@@ -2339,7 +2338,7 @@ public class HttpTest extends HttpTestBase {
     int numGets = 100;
     int maxPoolSize = 10;
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(pipelining).setMaxPoolSize(maxPoolSize));
+    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(keepAlive).setPipelining(pipelining).setMaxPoolSize(maxPoolSize));
 
     server.requestHandler(req -> {
       String cnt = req.headers().get("count");
@@ -2679,7 +2678,7 @@ public class HttpTest extends HttpTestBase {
                        String... enabledCipherSuites) throws Exception {
     client.close();
     server.close();
-    HttpClientOptions options = new HttpClientOptions();
+    HttpClientOptions options = HttpClientOptions.options();
     options.setSsl(true);
     if (clientTrustAll) {
       options.setTrustAll(true);
@@ -2693,7 +2692,7 @@ public class HttpTest extends HttpTestBase {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
-    HttpServerOptions serverOptions = new HttpServerOptions();
+    HttpServerOptions serverOptions = HttpServerOptions.options();
     serverOptions.setSsl(true);
     serverOptions.setTrustStoreOptions(getServerTrustOptions(serverTrust));
     serverOptions.setKeyStoreOptions(getServerCertOptions(serverCert));
@@ -2807,7 +2806,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(new CaOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidTrustStore(CaOptions.options().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
@@ -2829,12 +2828,12 @@ public class HttpTest extends HttpTestBase {
       file.toFile().deleteOnExit();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidTrustStore(new CaOptions().addCertPath(file.toString()), expectedMessage);
+      testInvalidTrustStore(CaOptions.options().addCertPath(file.toString()), expectedMessage);
     }
   }
 
   private void testInvalidKeyStore(KeyStoreOptions ksOptions, String expectedMessage) {
-    HttpServerOptions serverOptions = new HttpServerOptions();
+    HttpServerOptions serverOptions = HttpServerOptions.options();
     serverOptions.setKeyStoreOptions(ksOptions);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
@@ -2842,7 +2841,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testInvalidTrustStore(TrustStoreOptions tsOptions, String expectedMessage) {
-    HttpServerOptions serverOptions = new HttpServerOptions();
+    HttpServerOptions serverOptions = HttpServerOptions.options();
     serverOptions.setTrustStoreOptions(tsOptions);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
@@ -2864,7 +2863,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testCrlInvalidPath() throws Exception {
-    HttpClientOptions clientOptions = new HttpClientOptions();
+    HttpClientOptions clientOptions = HttpClientOptions.options();
     clientOptions.setTrustStoreOptions(getClientTrustOptions(TS.PEM_CA));
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
@@ -2990,7 +2989,7 @@ public class HttpTest extends HttpTestBase {
   public void testSharedServersRoundRobin() throws Exception {
     client.close();
     server.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false));
+    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(false));
     int numServers = 5;
     int numRequests = numServers * 100;
 
@@ -3002,7 +3001,7 @@ public class HttpTest extends HttpTestBase {
     CountDownLatch latchConns = new CountDownLatch(numRequests);
     Set<Context> contexts = new ConcurrentHashSet<>();
     for (int i = 0; i < numServers; i++) {
-      HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+      HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT));
       servers.add(theServer);
       final AtomicReference<Context> context = new AtomicReference<>();
       theServer.requestHandler(req -> {
@@ -3062,7 +3061,7 @@ public class HttpTest extends HttpTestBase {
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
     // Have a server running on a different port to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
+    HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(8081));
     theServer.requestHandler(req -> {
       fail("Should not process request");
     }).listen(onSuccess(s -> latch.countDown()));
@@ -3075,7 +3074,7 @@ public class HttpTest extends HttpTestBase {
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT));
     theServer.requestHandler(req -> {
       fail("Should not process request");
     }).listen(onSuccess(s -> latch.countDown()));
@@ -3142,7 +3141,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidPort() {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(7));
+    server = vertx.createHttpServer(HttpServerOptions.options().setPort(7));
     server.requestHandler(noOpHandler()).listen(onFailure(server -> {
       testComplete();
     }));
@@ -3152,7 +3151,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidHost() {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
+    server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
     server.requestHandler(noOpHandler());
     server.listen(onFailure(s -> testComplete()));
   }
@@ -3431,11 +3430,11 @@ public class HttpTest extends HttpTestBase {
   public void testHttpConnect() {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
-    vertx.createNetServer(new NetServerOptions().setPort(1235)).connectHandler(socket -> {
+    vertx.createNetServer(NetServerOptions.options().setPort(1235)).connectHandler(socket -> {
       socket.dataHandler(socket::writeBuffer);
     }).listen(onSuccess(netServer -> {
       server.requestHandler(req -> {
-        vertx.createNetClient(new NetClientOptions()).connect(netServer.actualPort(), "localhost", onSuccess(socket -> {
+        vertx.createNetClient(NetClientOptions.options()).connect(netServer.actualPort(), "localhost", onSuccess(socket -> {
           req.response().setStatusCode(200);
           req.response().setStatusMessage("Connection established");
           req.response().end();
@@ -3476,7 +3475,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setMaxPoolSize(1));
+    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(false).setMaxPoolSize(1));
 
     server.listen(onSuccess(s -> {
       // Add a few requests that should all timeout
@@ -3523,7 +3522,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testServerOptionsCopiedBeforeUse() {
     server.close();
-    HttpServerOptions options = new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT);
+    HttpServerOptions options = HttpServerOptions.options().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT);
     HttpServer server = vertx.createHttpServer(options);
     // Now change something - but server should still listen at previous port
     options.setPort(DEFAULT_HTTP_PORT + 1);
@@ -3548,7 +3547,7 @@ public class HttpTest extends HttpTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      HttpClientOptions options = new HttpClientOptions();
+      HttpClientOptions options = HttpClientOptions.options();
       client = vertx.createHttpClient(options);
       // Now change something - but server should ignore this
       options.setSsl(true);
@@ -3695,7 +3694,7 @@ public class HttpTest extends HttpTestBase {
           assertTrue(ctx instanceof EventLoopContext);
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+        server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
           assertSame(ctx, vertx.currentContext());
@@ -3709,7 +3708,7 @@ public class HttpTest extends HttpTestBase {
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          client = vertx.createHttpClient(new HttpClientOptions());
+          client = vertx.createHttpClient(HttpClientOptions.options());
           client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT), res -> {
             assertSame(ctx, vertx.currentContext());
             if (!worker) {
@@ -3722,7 +3721,7 @@ public class HttpTest extends HttpTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, new DeploymentOptions().setWorker(worker));
+    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(worker));
     await();
   }
 
@@ -3732,13 +3731,13 @@ public class HttpTest extends HttpTestBase {
       @Override
       public void start() {
         try {
-          server = vertx.createHttpServer(new HttpServerOptions());
+          server = vertx.createHttpServer(HttpServerOptions.options());
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK
         }
         try {
-          client = vertx.createHttpClient(new HttpClientOptions());
+          client = vertx.createHttpClient(HttpClientOptions.options());
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK
@@ -3747,7 +3746,7 @@ public class HttpTest extends HttpTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
     await();
   }
 
@@ -3779,7 +3778,7 @@ public class HttpTest extends HttpTestBase {
     int numConns = 8;
     // There should be a context per *connection*
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(numConns));
+    client = vertx.createHttpClient(HttpClientOptions.options().setMaxPoolSize(numConns));
     for (int i = 0; i < numReqs; i++) {
       client.getNow(new RequestOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT), resp -> {
         assertEquals(200, resp.statusCode());
@@ -3813,7 +3812,7 @@ public class HttpTest extends HttpTestBase {
       fail();
     });
     server.listen(onSuccess(s -> {
-      vertx.createNetClient(new NetClientOptions()).connect(8080, "127.0.0.1", result -> {
+      vertx.createNetClient(NetClientOptions.options()).connect(8080, "127.0.0.1", result -> {
         NetSocket socket = result.result();
         socket.closeHandler(r -> {
           testComplete();

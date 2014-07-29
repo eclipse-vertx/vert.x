@@ -183,7 +183,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   * @param name The name  of the value to remove
   * @return {@code this}
   */
- @Fluent
+  @Fluent
   MultiMap remove(String name);
 
   @GenIgnore

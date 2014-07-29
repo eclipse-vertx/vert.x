@@ -1,252 +1,64 @@
 /*
  * Copyright 2014 Red Hat, Inc.
  *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ *   Red Hat licenses this file to you under the Apache License, version 2.0
+ *   (the "License"); you may not use this file except in compliance with the
+ *   License.  You may obtain a copy of the License at:
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ *   License for the specific language governing permissions and limitations
+ *   under the License.
  */
 
 package io.vertx.core.http;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.spi.HttpClientOptionsFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptions;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.TrustStoreOptions;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class HttpClientOptions extends ClientOptions {
+public interface HttpClientOptions extends ClientOptions<HttpClientOptions> {
 
-  private static final int DEFAULT_MAXPOOLSIZE = 5;
-  private static final boolean DEFAULT_KEEPALIVE = true;
-
-  // Client specific SSL stuff
-
-  private boolean verifyHost = true;
-
-  // HTTP stuff
-
-  private int maxPoolSize;
-  private boolean keepAlive;
-  private boolean pipelining;
-  private boolean tryUseCompression;
-
-  public HttpClientOptions() {
-    super();
-    this.maxPoolSize = DEFAULT_MAXPOOLSIZE;
-    this.keepAlive = DEFAULT_KEEPALIVE;
+  static HttpClientOptions options() {
+    return factory.newOptions();
   }
 
-  public HttpClientOptions(HttpClientOptions other) {
-    super(other);
-    this.verifyHost = other.verifyHost;
-    this.maxPoolSize = other.maxPoolSize;
-    this.keepAlive = other.keepAlive;
-    this.pipelining = other.pipelining;
-    this.tryUseCompression = other.tryUseCompression;
+  static HttpClientOptions copiedOptions(HttpClientOptions other) {
+    return factory.copiedOptions(other);
   }
 
-  public HttpClientOptions(JsonObject json) {
-    super(json);
-    this.verifyHost = json.getBoolean("verifyHost", true);
-    this.maxPoolSize = json.getInteger("maxPoolSize", DEFAULT_MAXPOOLSIZE);
-    this.keepAlive = json.getBoolean("keepAlive", DEFAULT_KEEPALIVE);
-    this.pipelining = json.getBoolean("pipelining", false);
-    this.tryUseCompression = json.getBoolean("tryUseCompression", false);
+  static HttpClientOptions optionsFromJson(JsonObject json) {
+    return factory.fromJson(json);
   }
 
-  public int getMaxPoolSize() {
-    return maxPoolSize;
-  }
+  int getMaxPoolSize();
 
-  public HttpClientOptions setMaxPoolSize(int maxPoolSize) {
-    if (maxPoolSize < 1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0");
-    }
-    this.maxPoolSize = maxPoolSize;
-    return this;
-  }
+  HttpClientOptions setMaxPoolSize(int maxPoolSize);
 
-  public boolean isKeepAlive() {
-    return keepAlive;
-  }
+  boolean isKeepAlive();
 
-  public HttpClientOptions setKeepAlive(boolean keepAlive) {
-    this.keepAlive = keepAlive;
-    return this;
-  }
+  HttpClientOptions setKeepAlive(boolean keepAlive);
 
-  public boolean isPipelining() {
-    return pipelining;
-  }
+  boolean isPipelining();
 
-  public HttpClientOptions setPipelining(boolean pipelining) {
-    this.pipelining = pipelining;
-    return this;
-  }
+  HttpClientOptions setPipelining(boolean pipelining);
 
-  public boolean isVerifyHost() {
-    return verifyHost;
-  }
+  boolean isVerifyHost();
 
-  public HttpClientOptions setVerifyHost(boolean verifyHost) {
-    this.verifyHost = verifyHost;
-    return this;
-  }
+  HttpClientOptions setVerifyHost(boolean verifyHost);
 
-  public boolean isTryUseCompression() {
-    return tryUseCompression;
-  }
+  boolean isTryUseCompression();
 
-  public HttpClientOptions setTryUseCompression(boolean tryUseCompression) {
-    this.tryUseCompression = tryUseCompression;
-    return this;
-  }
+  HttpClientOptions setTryUseCompression(boolean tryUseCompression);
 
-  // Override common implementation
-
-  @Override
-  public int getConnectTimeout() {
-    return super.getConnectTimeout();
-  }
-
-  @Override
-  public HttpClientOptions setConnectTimeout(int connectTimeout) {
-    super.setConnectTimeout(connectTimeout);
-    return this;
-  }
-
-  public boolean isTrustAll() {
-    return super.isTrustAll();
-  }
-
-  public HttpClientOptions setTrustAll(boolean trustAll) {
-    super.setTrustAll(trustAll);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
-    super.addCrlPath(crlPath);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
-    super.addCrlValue(crlValue);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setSendBufferSize(int sendBufferSize) {
-    super.setSendBufferSize(sendBufferSize);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setReceiveBufferSize(int receiveBufferSize) {
-    super.setReceiveBufferSize(receiveBufferSize);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setReuseAddress(boolean reuseAddress) {
-    super.setReuseAddress(reuseAddress);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setTrafficClass(int trafficClass) {
-    super.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setTcpNoDelay(boolean tcpNoDelay) {
-    super.setTcpNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setTcpKeepAlive(boolean tcpKeepAlive) {
-    super.setTcpKeepAlive(tcpKeepAlive);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setSoLinger(int soLinger) {
-    super.setSoLinger(soLinger);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
-    super.setUsePooledBuffers(usePooledBuffers);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setSsl(boolean ssl) {
-    super.setSsl(ssl);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions addEnabledCipherSuite(String suite) {
-    super.addEnabledCipherSuite(suite);
-    return this;
-  }
-
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof HttpClientOptions)) return false;
-    if (!super.equals(o)) return false;
-
-    HttpClientOptions that = (HttpClientOptions) o;
-
-    if (keepAlive != that.keepAlive) return false;
-    if (maxPoolSize != that.maxPoolSize) return false;
-    if (pipelining != that.pipelining) return false;
-    if (tryUseCompression != that.tryUseCompression) return false;
-    if (verifyHost != that.verifyHost) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + (verifyHost ? 1 : 0);
-    result = 31 * result + maxPoolSize;
-    result = 31 * result + (keepAlive ? 1 : 0);
-    result = 31 * result + (pipelining ? 1 : 0);
-    result = 31 * result + (tryUseCompression ? 1 : 0);
-    return result;
-  }
+  static final HttpClientOptionsFactory factory = ServiceHelper.loadFactory(HttpClientOptionsFactory.class);
 }

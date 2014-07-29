@@ -26,12 +26,12 @@ import io.vertx.core.streams.WriteStream;
  */
 public class PumpFactoryImpl implements PumpFactory{
   @Override
-  public Pump createPump(ReadStream<?> rs, WriteStream<?> ws) {
+  public Pump pump(ReadStream<?> rs, WriteStream<?> ws) {
     return new PumpImpl(rs, ws);
   }
 
   @Override
-  public Pump createPump(ReadStream<?> rs, WriteStream<?> ws, int writeQueueMaxSize) {
+  public Pump pump(ReadStream<?> rs, WriteStream<?> ws, int writeQueueMaxSize) {
     return new PumpImpl(rs, ws, writeQueueMaxSize);
   }
 }

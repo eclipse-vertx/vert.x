@@ -15,9 +15,11 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.KeyCertOptionsFactory;
 
 /**
  * Key store options configuring a private key and its certificate based on
@@ -46,8 +48,8 @@ import io.vertx.core.json.JsonObject;
  *
  * The key and certificate can either be loaded by Vert.x from the filesystem:<p>
  * <pre>
- * HttpServerOptions options = new HttpServerOptions();
- * options.setKeyStore(new KeyCertOptions().setKeyPath("/mykey.pem").setCertPath("/mycert.pem"));
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setKeyStore(KeyCertOptions.options().setKeyPath("/mykey.pem").setCertPath("/mycert.pem"));
  * </pre>
  *
  * Or directly provided as a buffer:<p>
@@ -55,79 +57,46 @@ import io.vertx.core.json.JsonObject;
  * <pre>
  * Buffer key = vertx.fileSystem().readFileSync("/mykey.pem");
  * Buffer cert = vertx.fileSystem().readFileSync("/mycert.pem");
- * options.setKeyStore(new KeyCertOptions().setKeyValue(key).setCertValue(cert));
+ * options.setKeyStore(KeyCertOptions.options().setKeyValue(key).setCertValue(cert));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @Options
-public class KeyCertOptions implements KeyStoreOptions {
+public interface KeyCertOptions extends KeyStoreOptions {
 
-  private String keyPath;
-  private Buffer keyValue;
-  private String certPath;
-  private Buffer certValue;
-
-  public KeyCertOptions() {
-    super();
+  static KeyCertOptions options() {
+    return factory.newOptions();
   }
 
-  public KeyCertOptions(KeyCertOptions other) {
-    super();
-    this.keyPath = other.keyPath;
-    this.keyValue = other.keyValue;
-    this.certPath = other.certPath;
-    this.certValue = other.certValue;
+  static KeyCertOptions copiedOptions(KeyCertOptions other) {
+    return factory.copiedOptions(other);
   }
 
-  public KeyCertOptions(JsonObject json) {
-    super();
-    keyPath = json.getString("keyPath");
-    byte[] keyValue = json.getBinary("keyValue");
-    this.keyValue = keyValue != null ? Buffer.buffer(keyValue) : null;
-    certPath = json.getString("certPath");
-    byte[] certValue = json.getBinary("certValue");
-    this.certValue = certValue != null ? Buffer.buffer(certValue) : null;
+  static KeyCertOptions optionsFromJson(JsonObject json) {
+    return factory.optionsFromJson(json);
   }
 
-  public String getKeyPath() {
-    return keyPath;
-  }
 
-  public KeyCertOptions setKeyPath(String keyPath) {
-    this.keyPath = keyPath;
-    return this;
-  }
+  String getKeyPath();
 
-  public String getCertPath() {
-    return certPath;
-  }
+  KeyCertOptions setKeyPath(String keyPath);
 
-  public Buffer getKeyValue() {
-    return keyValue;
-  }
+  String getCertPath();
 
-  public KeyCertOptions setKeyValue(Buffer keyValue) {
-    this.keyValue = keyValue;
-    return this;
-  }
+  Buffer getKeyValue();
 
-  public KeyCertOptions setCertPath(String certPath) {
-    this.certPath = certPath;
-    return this;
-  }
+  KeyCertOptions setKeyValue(Buffer keyValue);
 
-  public Buffer getCertValue() {
-    return certValue;
-  }
+  KeyCertOptions setCertPath(String certPath);
 
-  public KeyCertOptions setCertValue(Buffer certValue) {
-    this.certValue = certValue;
-    return this;
-  }
+  Buffer getCertValue();
+
+  KeyCertOptions setCertValue(Buffer certValue);
 
   @Override
-  public KeyCertOptions clone() {
-    return new KeyCertOptions(this);
-  }
+  KeyCertOptions clone();
+
+  static final KeyCertOptionsFactory factory = ServiceHelper.loadFactory(KeyCertOptionsFactory.class);
+
 }

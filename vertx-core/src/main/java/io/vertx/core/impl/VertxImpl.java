@@ -106,7 +106,7 @@ public class VertxImpl implements VertxInternal {
   private boolean closed;
 
   VertxImpl() {
-    this(new VertxOptions());
+    this(VertxOptions.options());
   }
 
   VertxImpl(VertxOptions options) {
@@ -375,12 +375,12 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticleInstance(Verticle verticle) {
-    deploymentManager.deployVerticle(verticle, new DeploymentOptions(), null);
+    deploymentManager.deployVerticle(verticle, DeploymentOptions.options(), null);
   }
 
   @Override
   public void deployVerticle(String verticleClass) {
-    deploymentManager.deployVerticle(verticleClass, new DeploymentOptions(), null);
+    deploymentManager.deployVerticle(verticleClass, DeploymentOptions.options(), null);
   }
 
   @Override

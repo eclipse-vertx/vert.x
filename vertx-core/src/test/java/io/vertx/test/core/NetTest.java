@@ -33,7 +33,6 @@ import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClient;
@@ -76,8 +75,8 @@ public class NetTest extends VertxTestBase {
 
   @Before
   public void before() throws Exception {
-    client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
-    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost"));
+    client = vertx.createNetClient(NetClientOptions.options().setConnectTimeout(1000));
+    server = vertx.createNetServer(NetServerOptions.options().setPort(1234).setHost("localhost"));
   }
 
   protected void awaitClose(NetServer server) throws InterruptedException {
@@ -100,7 +99,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testClientOptions() {
-    NetClientOptions options = new NetClientOptions();
+    NetClientOptions options = NetClientOptions.options();
 
     assertEquals(-1, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
@@ -187,12 +186,12 @@ public class NetTest extends VertxTestBase {
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -224,7 +223,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testServerOptions() {
-    NetServerOptions options = new NetServerOptions();
+    NetServerOptions options = NetServerOptions.options();
 
     assertEquals(-1, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
@@ -311,12 +310,12 @@ public class NetTest extends VertxTestBase {
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -358,7 +357,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testCopyClientOptions() {
-    NetClientOptions options = new NetClientOptions();
+    NetClientOptions options = NetClientOptions.options();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -369,10 +368,10 @@ public class NetTest extends VertxTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -400,7 +399,7 @@ public class NetTest extends VertxTestBase {
     options.addCrlValue(crlValue);
     options.setReconnectAttempts(reconnectAttempts);
     options.setReconnectInterval(reconnectInterval);
-    NetClientOptions copy = new NetClientOptions(options);
+    NetClientOptions copy = NetClientOptions.copiedOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -438,12 +437,12 @@ public class NetTest extends VertxTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -474,7 +473,7 @@ public class NetTest extends VertxTestBase {
         .putNumber("reconnectAttempts", reconnectAttempts)
         .putNumber("reconnectInterval", reconnectInterval);
 
-    NetClientOptions options = new NetClientOptions(json);
+    NetClientOptions options = NetClientOptions.optionsFromJson(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -502,13 +501,13 @@ public class NetTest extends VertxTestBase {
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = new NetClientOptions(json);
+    options = NetClientOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = new NetClientOptions(json);
+    options = NetClientOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
@@ -516,14 +515,14 @@ public class NetTest extends VertxTestBase {
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      NetClientOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      NetClientOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -532,7 +531,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testCopyServerOptions() {
-    NetServerOptions options = new NetServerOptions();
+    NetServerOptions options = NetServerOptions.options();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -542,10 +541,10 @@ public class NetTest extends VertxTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -571,7 +570,7 @@ public class NetTest extends VertxTestBase {
     options.setPort(port);
     options.setHost(host);
     options.setAcceptBacklog(acceptBacklog);
-    NetServerOptions copy = new NetServerOptions(options);
+    NetServerOptions copy = NetServerOptions.copiedOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -608,12 +607,12 @@ public class NetTest extends VertxTestBase {
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JKSOptions trustStoreOptions = JKSOptions.options();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -642,7 +641,7 @@ public class NetTest extends VertxTestBase {
       .putString("host", host)
       .putNumber("acceptBacklog", acceptBacklog);
 
-    NetServerOptions options = new NetServerOptions(json);
+    NetServerOptions options = NetServerOptions.optionsFromJson(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -669,13 +668,13 @@ public class NetTest extends VertxTestBase {
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = new NetServerOptions(json);
+    options = NetServerOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = new NetServerOptions(json);
+    options = NetServerOptions.optionsFromJson(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
@@ -683,14 +682,14 @@ public class NetTest extends VertxTestBase {
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      NetServerOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
     try {
-      new ClientOptions(json);
+      NetServerOptions.optionsFromJson(json);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -804,7 +803,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListenInvalidPort() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setPort(80));
+    server = vertx.createNetServer(NetServerOptions.options().setPort(80));
     server.connectHandler((netSocket) -> {
     }).listen(ar -> {
       assertTrue(ar.failed());
@@ -818,7 +817,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListenInvalidHost() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("uhqwduhqwudhqwuidhqwiudhqwudqwiuhd"));
+    server = vertx.createNetServer(NetServerOptions.options().setPort(1234).setHost("uhqwduhqwudhqwuidhqwiudhqwudqwiuhd"));
     server.connectHandler(netSocket -> {
     }).listen(ar -> {
       assertTrue(ar.failed());
@@ -832,7 +831,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListenOnWildcardPort() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setPort(0));
+    server = vertx.createNetServer(NetServerOptions.options().setPort(0));
     server.connectHandler((netSocket) -> {
     }).listen(ar -> {
       assertFalse(ar.failed());
@@ -988,7 +987,7 @@ public class NetTest extends VertxTestBase {
 
   void reconnectAttempts(int attempts) {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(attempts).setReconnectInterval(10));
+    client = vertx.createNetClient(NetClientOptions.options().setReconnectAttempts(attempts).setReconnectInterval(10));
 
     //The server delays starting for a a few seconds, but it should still connect
     client.connect(1234, "localhost", (res) -> {
@@ -1007,7 +1006,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testReconnectAttemptsNotEnough() {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(100).setReconnectInterval(10));
+    client = vertx.createNetClient(NetClientOptions.options().setReconnectAttempts(100).setReconnectInterval(10));
 
     client.connect(1234, "localhost", (res) -> {
       assertFalse(res.succeeded());
@@ -1078,15 +1077,15 @@ public class NetTest extends VertxTestBase {
                boolean shouldPass, boolean startTLS,
                String... enabledCipherSuites) throws Exception {
     server.close();
-    NetServerOptions options = new NetServerOptions();
+    NetServerOptions options = NetServerOptions.options();
     if (!startTLS) {
       options.setSsl(true);
     }
     if (serverTrust) {
-      options.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
+      options.setTrustStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
     }
     if (serverCert) {
-      options.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
+      options.setKeyStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
     }
     if (requireClientAuth) {
       options.setClientAuthRequired(true);
@@ -1112,17 +1111,17 @@ public class NetTest extends VertxTestBase {
     };
     server.connectHandler(serverHandler).listen(ar -> {
       client.close();
-      NetClientOptions clientOptions = new NetClientOptions();
+      NetClientOptions clientOptions = NetClientOptions.options();
       if (!startTLS) {
         clientOptions.setSsl(true);
         if (clientTrustAll) {
           clientOptions.setTrustAll(true);
         }
         if (clientTrust) {
-          clientOptions.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
+          clientOptions.setTrustStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
         }
         if (clientCert) {
-          clientOptions.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
+          clientOptions.setKeyStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
         }
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);
@@ -1198,7 +1197,7 @@ public class NetTest extends VertxTestBase {
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numConnections);
     for (int i = 0; i < numServers; i++) {
-      NetServer theServer = vertx.createNetServer(new NetServerOptions().setHost("localhost").setPort(1234));
+      NetServer theServer = vertx.createNetServer(NetServerOptions.options().setHost("localhost").setPort(1234));
       servers.add(theServer);
       theServer.connectHandler(sock -> {
         connectedServers.add(theServer);
@@ -1219,7 +1218,7 @@ public class NetTest extends VertxTestBase {
 
     // Create a bunch of connections
     client.close();
-    client = vertx.createNetClient(new NetClientOptions());
+    client = vertx.createNetClient(NetClientOptions.options());
     CountDownLatch latchClient = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", res -> {
@@ -1266,7 +1265,7 @@ public class NetTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     // Have a server running on a different port to make sure it doesn't interact
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setPort(4321));
+    server = vertx.createNetServer(NetServerOptions.options().setPort(4321));
     server.connectHandler(sock -> {
       fail("Should not connect");
     }).listen(ar2 -> {
@@ -1285,7 +1284,7 @@ public class NetTest extends VertxTestBase {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
     server.close();
     CountDownLatch latch = new CountDownLatch(1);
-    server = vertx.createNetServer(new NetServerOptions().setPort(1234));
+    server = vertx.createNetServer(NetServerOptions.options().setPort(1234));
     server.connectHandler(sock -> {
       fail("Should not connect");
     }).listen(ar -> {
@@ -1358,7 +1357,7 @@ public class NetTest extends VertxTestBase {
       assertEquals("127.0.0.1", addr.hostAddress());
     }).listen(ar -> {
       assertTrue(ar.succeeded());
-      vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", result -> {
+      vertx.createNetClient(NetClientOptions.options()).connect(1234, "localhost", result -> {
         NetSocket socket = result.result();
         SocketAddress addr = socket.remoteAddress();
         assertEquals("127.0.0.1", addr.hostAddress());
@@ -1481,7 +1480,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testServerOptionsCopiedBeforeUse() {
     server.close();
-    NetServerOptions options = new NetServerOptions().setPort(1234);
+    NetServerOptions options = NetServerOptions.options().setPort(1234);
     NetServer server = vertx.createNetServer(options);
     // Now change something - but server should still listen at previous port
     options.setPort(1235);
@@ -1500,7 +1499,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testClientOptionsCopiedBeforeUse() {
     client.close();
-    NetClientOptions options = new NetClientOptions();
+    NetClientOptions options = NetClientOptions.options();
     client = vertx.createNetClient(options);
     options.setSsl(true);
     // Now change something - but server should ignore this
@@ -1681,7 +1680,7 @@ public class NetTest extends VertxTestBase {
           assertTrue(ctx instanceof EventLoopContext);
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createNetServer(new NetServerOptions().setPort(1234));
+        server = vertx.createNetServer(NetServerOptions.options().setPort(1234));
         server.connectHandler(sock -> {
           sock.dataHandler(buff -> {
             sock.writeBuffer(buff);
@@ -1697,7 +1696,7 @@ public class NetTest extends VertxTestBase {
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          client = vertx.createNetClient(new NetClientOptions());
+          client = vertx.createNetClient(NetClientOptions.options());
           client.connect(1234, "localhost", ar2 -> {
             assertSame(ctx, vertx.currentContext());
             if (!worker) {
@@ -1723,7 +1722,7 @@ public class NetTest extends VertxTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, new DeploymentOptions().setWorker(worker));
+    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(worker));
     await();
   }
 
@@ -1733,13 +1732,13 @@ public class NetTest extends VertxTestBase {
       @Override
       public void start() {
         try {
-          server = vertx.createNetServer(new NetServerOptions());
+          server = vertx.createNetServer(NetServerOptions.options());
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK
         }
         try {
-          client = vertx.createNetClient(new NetClientOptions());
+          client = vertx.createNetClient(NetClientOptions.options());
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK
@@ -1748,7 +1747,7 @@ public class NetTest extends VertxTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
     await();
   }
 

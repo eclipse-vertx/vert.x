@@ -1,202 +1,53 @@
 /*
  * Copyright 2014 Red Hat, Inc.
  *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ *   Red Hat licenses this file to you under the Apache License, version 2.0
+ *   (the "License"); you may not use this file except in compliance with the
+ *   License.  You may obtain a copy of the License at:
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ *   License for the specific language governing permissions and limitations
+ *   under the License.
  */
 
 package io.vertx.core.net;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.NetClientOptionsFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class NetClientOptions extends ClientOptions {
+public interface NetClientOptions extends ClientOptions<NetClientOptions> {
 
-  private static final long DEFAULT_RECONNECTINTERVAL = 1000;
-
-  private int reconnectAttempts;
-  private long reconnectInterval;
-
-  public NetClientOptions() {
-    super();
-    this.reconnectInterval = DEFAULT_RECONNECTINTERVAL;
+  static NetClientOptions options() {
+    return factory.newOptions();
   }
 
-  public NetClientOptions(NetClientOptions other) {
-    super(other);
-    this.reconnectAttempts = other.reconnectAttempts;
-    this.reconnectInterval = other.reconnectInterval;
+  static NetClientOptions copiedOptions(NetClientOptions other) {
+    return factory.copiedOptions(other);
   }
 
-  public NetClientOptions(JsonObject json) {
-    super(json);
-    this.reconnectAttempts = json.getInteger("reconnectAttempts", 0);
-    this.reconnectInterval = json.getLong("reconnectInterval", DEFAULT_RECONNECTINTERVAL);
+  static NetClientOptions optionsFromJson(JsonObject json) {
+    return factory.fromJson(json);
   }
 
-  public NetClientOptions setReconnectAttempts(int attempts) {
-    if (attempts < -1) {
-      throw new IllegalArgumentException("reconnect attempts must be >= -1");
-    }
-    this.reconnectAttempts = attempts;
-    return this;
-  }
 
-  public int getReconnectAttempts() {
-    return reconnectAttempts;
-  }
+  NetClientOptions setReconnectAttempts(int attempts);
 
-  public NetClientOptions setReconnectInterval(long interval) {
-    if (interval < 1) {
-      throw new IllegalArgumentException("reconnect interval nust be >= 1");
-    }
-    this.reconnectInterval = interval;
-    return this;
-  }
+  int getReconnectAttempts();
 
-  public long getReconnectInterval() {
-    return reconnectInterval;
-  }
+  NetClientOptions setReconnectInterval(long interval);
 
-  // Override common implementation
+  long getReconnectInterval();
 
-  @Override
-  public int getConnectTimeout() {
-    return super.getConnectTimeout();
-  }
+  static final NetClientOptionsFactory factory = ServiceHelper.loadFactory(NetClientOptionsFactory.class);
 
-  @Override
-  public NetClientOptions setConnectTimeout(int connectTimeout) {
-    super.setConnectTimeout(connectTimeout);
-    return this;
-  }
-
-  public boolean isTrustAll() {
-    return super.isTrustAll();
-  }
-
-  public NetClientOptions setTrustAll(boolean trustAll) {
-    super.setTrustAll(trustAll);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
-    super.addCrlPath(crlPath);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
-    super.addCrlValue(crlValue);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setSendBufferSize(int sendBufferSize) {
-    super.setSendBufferSize(sendBufferSize);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setReceiveBufferSize(int receiveBufferSize) {
-    super.setReceiveBufferSize(receiveBufferSize);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setReuseAddress(boolean reuseAddress) {
-    super.setReuseAddress(reuseAddress);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTrafficClass(int trafficClass) {
-    super.setTrafficClass(trafficClass);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTcpNoDelay(boolean tcpNoDelay) {
-    super.setTcpNoDelay(tcpNoDelay);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTcpKeepAlive(boolean tcpKeepAlive) {
-    super.setTcpKeepAlive(tcpKeepAlive);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setSoLinger(int soLinger) {
-    super.setSoLinger(soLinger);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
-    super.setUsePooledBuffers(usePooledBuffers);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setSsl(boolean ssl) {
-    super.setSsl(ssl);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions addEnabledCipherSuite(String suite) {
-    super.addEnabledCipherSuite(suite);
-    return this;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof NetClientOptions)) return false;
-    if (!super.equals(o)) return false;
-
-    NetClientOptions that = (NetClientOptions) o;
-
-    if (reconnectAttempts != that.reconnectAttempts) return false;
-    if (reconnectInterval != that.reconnectInterval) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = super.hashCode();
-    result = 31 * result + reconnectAttempts;
-    result = 31 * result + (int) (reconnectInterval ^ (reconnectInterval >>> 32));
-    return result;
-  }
 }

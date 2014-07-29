@@ -15,13 +15,12 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
-import io.vertx.core.json.JsonArray;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.CaOptionsFactory;
 
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -41,76 +40,45 @@ import java.util.List;
  *
  * The certificates can either be loaded by Vert.x from the filesystem:<p>
  * <pre>
- * HttpServerOptions options = new HttpServerOptions();
- * options.setTrustStore(new CaOptions().addCertPath("/cert.pem"));
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setTrustStore(CaOptions.options().addCertPath("/cert.pem"));
  * </pre>
  *
  * Or directly provided as a buffer:<p>
  *
  * <pre>
  * Buffer cert = vertx.fileSystem().readFileSync("/cert.pem");
- * HttpServerOptions options = new HttpServerOptions();
- * options.setTrustStore(new CaOptions().addCertValue(cert));
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setTrustStore(CaOptions.options().addCertValue(cert));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @Options
-public class CaOptions implements TrustStoreOptions {
+public interface CaOptions extends TrustStoreOptions {
 
-  private ArrayList<String> certPaths;
-  private ArrayList<Buffer> certValues;
-
-  public CaOptions() {
-    super();
-    this.certPaths = new ArrayList<>();
-    this.certValues = new ArrayList<>();
+  static CaOptions options() {
+    return factory.newOptions();
   }
 
-  public CaOptions(CaOptions other) {
-    super();
-    this.certPaths = new ArrayList<>(other.certPaths);
-    this.certValues = new ArrayList<>(other.certValues);
+  static CaOptions copiedOptions(CaOptions other) {
+    return factory.copiedOptions(other);
   }
 
-  public CaOptions(JsonObject json) {
-    super();
-    this.certPaths = new ArrayList<>();
-    this.certValues = new ArrayList<>();
-    for (Object certPath : json.getArray("certPaths", new JsonArray())) {
-      certPaths.add((String) certPath);
-    }
-    for (Object certValue : json.getArray("certValues", new JsonArray())) {
-      certValues.add(Buffer.buffer(Base64.getDecoder().decode((String) certValue)));
-    }
+  static CaOptions optionsFromJson(JsonObject json) {
+    return factory.optionsFromJson(json);
   }
 
-  public List<String> getCertPaths() {
-    return certPaths;
-  }
+  List<String> getCertPaths();
 
-  public CaOptions addCertPath(String certPath) throws NullPointerException {
-    if (certPath == null) {
-      throw new NullPointerException("No null certificate accepted");
-    }
-    certPaths.add(certPath);
-    return this;
-  }
+  CaOptions addCertPath(String certPath);
 
-  public List<Buffer> getCertValues() {
-    return certValues;
-  }
+  List<Buffer> getCertValues();
 
-  public CaOptions addCertValue(Buffer certValue) throws NullPointerException {
-    if (certValue == null) {
-      throw new NullPointerException("No null certificate accepted");
-    }
-    certValues.add(certValue);
-    return this;
-  }
+  CaOptions addCertValue(Buffer certValue);
 
-  @Override
-  public CaOptions clone() {
-    return new CaOptions(this);
-  }
+  CaOptions clone();
+
+  static final CaOptionsFactory factory = ServiceHelper.loadFactory(CaOptionsFactory.class);
+
 }

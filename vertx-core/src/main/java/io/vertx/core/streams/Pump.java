@@ -47,7 +47,7 @@ public interface Pump {
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}
    */
   static Pump pump(ReadStream<?> rs, WriteStream<?> ws) {
-    return factory.createPump(rs, ws);
+    return factory.pump(rs, ws);
   }
 
   /**
@@ -55,7 +55,7 @@ public interface Pump {
    * {@code writeQueueMaxSize}
    */
   static Pump pump(ReadStream<?> rs, WriteStream<?> ws, int writeQueueMaxSize) {
-    return factory.createPump(rs, ws, writeQueueMaxSize);
+    return factory.pump(rs, ws, writeQueueMaxSize);
   }
 
   /**

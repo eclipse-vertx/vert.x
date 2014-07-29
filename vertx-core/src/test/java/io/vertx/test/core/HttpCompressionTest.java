@@ -30,8 +30,8 @@ public class HttpCompressionTest extends HttpTestBase {
 
   @Before
   public void before() {
-    client = vertx.createHttpClient(new HttpClientOptions().setTryUseCompression(true));
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setCompressionSupported(true));
+    client = vertx.createHttpClient(HttpClientOptions.options().setTryUseCompression(true));
+    server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setCompressionSupported(true));
   }
 
   @Test

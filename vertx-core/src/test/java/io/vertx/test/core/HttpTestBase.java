@@ -40,7 +40,7 @@ public class HttpTestBase extends VertxTestBase {
 
   @Before
   public void beforeHttpTestBase() throws Exception {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
   }
 
   @After

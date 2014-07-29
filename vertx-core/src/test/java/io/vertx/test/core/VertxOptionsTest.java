@@ -29,7 +29,7 @@ public class VertxOptionsTest extends VertxTestBase {
 
   @Test
   public void testOptions() {
-    VertxOptions options = new VertxOptions();
+    VertxOptions options = VertxOptions.options();
     assertEquals(2 * Runtime.getRuntime().availableProcessors(), options.getEventLoopPoolSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setEventLoopPoolSize(rand));
@@ -130,7 +130,7 @@ public class VertxOptionsTest extends VertxTestBase {
 
   @Test
   public void testCopyOptions() {
-    VertxOptions options = new VertxOptions();
+    VertxOptions options = VertxOptions.options();
 
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
@@ -150,7 +150,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     options.setProxyOperationTimeout(proxyOperationTimeout);
-    options = new VertxOptions(options);
+    options = VertxOptions.copiedOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
     assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
@@ -164,18 +164,18 @@ public class VertxOptionsTest extends VertxTestBase {
 
   @Test
   public void testJsonOptions() {
-    VertxOptions options = new VertxOptions(new JsonObject());
+    VertxOptions options = VertxOptions.optionsFromJson(new JsonObject());
 
-    assertEquals(VertxOptions.DEFAULT_CLUSTERPORT, options.getClusterPort());
-    assertEquals(VertxOptions.DEFAULT_EVENTLOOPPOOLSIZE, options.getEventLoopPoolSize());
-    assertEquals(VertxOptions.DEFAULT_INTERNALBLOCKINGPOOLSIZE, options.getInternalBlockingPoolSize());
-    assertEquals(VertxOptions.DEFAULT_WORKERPOOLSIZE, options.getWorkerPoolSize());
-    assertEquals(VertxOptions.DEFAULT_BLOCKEDTHREADCHECKPERIOD, options.getBlockedThreadCheckPeriod());
-    assertEquals(VertxOptions.DEFAULT_CLUSTERHOST, options.getClusterHost());
+    assertEquals(0, options.getClusterPort());
+    assertEquals(2 * Runtime.getRuntime().availableProcessors(), options.getEventLoopPoolSize());
+    assertEquals(20, options.getInternalBlockingPoolSize());
+    assertEquals(20, options.getWorkerPoolSize());
+    assertEquals(1000, options.getBlockedThreadCheckPeriod());
+    assertEquals("localhost", options.getClusterHost());
     assertEquals(null, options.getClusterManager());
-    assertEquals(VertxOptions.DEFAULT_MAXEVENTLOOPEXECUTETIME, options.getMaxEventLoopExecuteTime());
-    assertEquals(VertxOptions.DEFAULT_MAXWORKEREXECUTETIME, options.getMaxWorkerExecuteTime());
-    assertEquals(VertxOptions.DEFAULT_PROXYOPERATIONTIMEOUT, options.getProxyOperationTimeout());
+    assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime());
+    assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime());
+    assertEquals(10 * 1000, options.getProxyOperationTimeout());
 
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
@@ -186,7 +186,7 @@ public class VertxOptionsTest extends VertxTestBase {
     int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
     int maxWorkerExecuteTime = TestUtils.randomPositiveInt();
     int proxyOperationTimeout = TestUtils.randomPositiveInt();
-    options = new VertxOptions(new JsonObject().
+    options = VertxOptions.optionsFromJson(new JsonObject().
         putNumber("clusterPort", clusterPort).
         putNumber("eventLoopPoolSize", eventLoopPoolSize).
         putNumber("internalBlockingPoolSize", internalBlockingPoolSize).

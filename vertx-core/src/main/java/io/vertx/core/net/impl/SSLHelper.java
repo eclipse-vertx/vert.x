@@ -26,7 +26,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetServerOptionsBase;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -78,18 +78,18 @@ public class SSLHelper {
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.trustAll = options.isTrustAll();
-    this.crlPaths = new ArrayList<>(options.getCrlPaths());
-    this.crlValues = new ArrayList<>(options.getCrlValues());
+    this.crlPaths = new ArrayList<String>(options.getCrlPaths());
+    this.crlValues = new ArrayList<Buffer>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
-  public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+  public SSLHelper(NetServerOptionsBase options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
-    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
-    this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
+    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<String>(options.getCrlPaths()) : null;
+    this.crlValues = options.getCrlValues() != null ? new ArrayList<Buffer>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 

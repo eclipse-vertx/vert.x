@@ -381,7 +381,7 @@ public class SockJSServer implements Handler<HttpServerRequest> {
   // For debug only
 //  public static void main(String[] args) throws Exception {
 //    Vertx vertx = Vertx.newVertx();
-//    HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
+//    HttpServer httpServer = vertx.createHttpServer(HttpServerOptions.httpServerOptions().setPort(8081));
 //    SockJSServerImpl sjsServer = (SockJSServerImpl)vertx.createSockJSServer(httpServer);
 //    sjsServer.installTestApplications();
 //    httpServer.listen();

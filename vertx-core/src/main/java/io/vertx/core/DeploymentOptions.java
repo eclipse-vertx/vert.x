@@ -18,93 +18,42 @@ package io.vertx.core;
 
 import io.vertx.codegen.annotations.Options;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.DeploymentOptionsFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class DeploymentOptions {
+public interface DeploymentOptions {
 
-  private JsonObject config;
-  private boolean worker;
-  private boolean multiThreaded;
-  private String isolationGroup;
-
-  public DeploymentOptions() {
+  static DeploymentOptions options() {
+    return factory.newOptions();
   }
 
-  public DeploymentOptions(DeploymentOptions other) {
-    this.config = other.config == null ? null : other.config.copy();
-    this.worker = other.worker;
-    this.multiThreaded = other.multiThreaded;
-    this.isolationGroup = other.isolationGroup;
+  static DeploymentOptions copiedOptions(DeploymentOptions other) {
+    return factory.copiedOptions(other);
   }
 
-  public DeploymentOptions(JsonObject json) {
-    this.config = json.getObject("config");
-    this.worker = json.getBoolean("worker", false);
-    this.multiThreaded = json.getBoolean("multiThreaded", false);
-    this.isolationGroup = json.getString("isolationGroup", null);
+  static DeploymentOptions optionsFromJson(JsonObject json) {
+    return factory.optionsFromJson(json);
   }
 
-  public JsonObject getConfig() {
-    return config;
-  }
+  JsonObject getConfig();
 
-  public DeploymentOptions setConfig(JsonObject config) {
-    this.config = config;
-    return this;
-  }
+  DeploymentOptions setConfig(JsonObject config);
 
-  public boolean isWorker() {
-    return worker;
-  }
+  boolean isWorker();
 
-  public DeploymentOptions setWorker(boolean worker) {
-    this.worker = worker;
-    return this;
-  }
+  DeploymentOptions setWorker(boolean worker);
 
-  public boolean isMultiThreaded() {
-    return multiThreaded;
-  }
+  boolean isMultiThreaded();
 
-  public DeploymentOptions setMultiThreaded(boolean multiThreaded) {
-    this.multiThreaded = multiThreaded;
-    return this;
-  }
+  DeploymentOptions setMultiThreaded(boolean multiThreaded);
 
-  public String getIsolationGroup() {
-    return isolationGroup;
-  }
+  String getIsolationGroup();
 
-  public DeploymentOptions setIsolationGroup(String isolationGroup) {
-    this.isolationGroup = isolationGroup;
-    return this;
-  }
+  DeploymentOptions setIsolationGroup(String isolationGroup);
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof DeploymentOptions)) return false;
+  static final DeploymentOptionsFactory factory = ServiceHelper.loadFactory(DeploymentOptionsFactory.class);
 
-    DeploymentOptions that = (DeploymentOptions) o;
-
-    if (multiThreaded != that.multiThreaded) return false;
-    if (worker != that.worker) return false;
-    if (config != null ? !config.equals(that.config) : that.config != null) return false;
-    if (isolationGroup != null ? !isolationGroup.equals(that.isolationGroup) : that.isolationGroup != null)
-      return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = config != null ? config.hashCode() : 0;
-    result = 31 * result + (worker ? 1 : 0);
-    result = 31 * result + (multiThreaded ? 1 : 0);
-    result = 31 * result + (isolationGroup != null ? isolationGroup.hashCode() : 0);
-    return result;
-  }
 }

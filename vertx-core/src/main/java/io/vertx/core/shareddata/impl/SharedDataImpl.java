@@ -25,7 +25,6 @@ import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Lock;
-import io.vertx.core.shareddata.MapOptions;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.ClusterManager;
 
@@ -56,7 +55,7 @@ public class SharedDataImpl implements SharedData {
     if (clusterManager == null) {
       throw new IllegalStateException("Can't get cluster wide map if not clustered");
     }
-    clusterManager.<K, V>getAsyncMap(name, new MapOptions(), ar -> {
+    clusterManager.<K, V>getAsyncMap(name, null, ar -> {
       if (ar.succeeded()) {
         // Wrap it
         resultHandler.handle(new FutureResultImpl<>(new WrappedAsyncMap<K, V>(ar.result())));

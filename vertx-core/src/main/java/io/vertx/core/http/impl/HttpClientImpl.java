@@ -81,7 +81,7 @@ public class HttpClientImpl implements HttpClient {
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
-    this.options = new HttpClientOptions(options);
+    this.options = HttpClientOptions.copiedOptions(options);
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {

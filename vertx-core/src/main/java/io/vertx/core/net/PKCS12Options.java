@@ -15,9 +15,11 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.PKCS12OptionsFactory;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.<p>
@@ -26,74 +28,49 @@ import io.vertx.core.json.JsonObject;
  *
  * The store can either be loaded by Vert.x from the filesystem:<p>
  * <pre>
- * HttpServerOptions options = new HttpServerOptions();
- * options.setKeyStore(new PKCS12Options().setPath("/mykeystore.p12").setPassword("foo"));
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setKeyStore(PKCS12Options.options().setPath("/mykeystore.p12").setPassword("foo"));
  * </pre>
  *
  * Or directly provided as a buffer:<p>
  *
  * <pre>
  * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
- * options.setKeyStore(new PKCS12Options().setValue(store).setPassword("foo"));
+ * options.setKeyStore(PKCS12Options.options().setValue(store).setPassword("foo"));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @Options
-public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions {
+public interface PKCS12Options extends KeyStoreOptions, TrustStoreOptions {
 
-  private String password;
-  private String path;
-  private Buffer value;
-
-  public PKCS12Options() {
-    super();
+  static PKCS12Options options() {
+    return factory.newOptions();
   }
 
-  public PKCS12Options(PKCS12Options other) {
-    super();
-    this.password = other.password;
-    this.path = other.path;
-    this.value = other.value;
+  static PKCS12Options copiedOptions(PKCS12Options other) {
+    return factory.copiedOptions(other);
   }
 
-  public PKCS12Options(JsonObject json) {
-    super();
-    this.password = json.getString("password");
-    this.path = json.getString("path");
-    byte[] value = json.getBinary("value");
-    this.value = value != null ? Buffer.buffer(value) : null;
+  static PKCS12Options optionsFromJson(JsonObject json) {
+    return factory.optionsFromJson(json);
   }
 
-  public String getPassword() {
-    return password;
-  }
+  String getPassword();
 
-  public PKCS12Options setPassword(String password) {
-    this.password = password;
-    return this;
-  }
+  PKCS12Options setPassword(String password);
 
-  public String getPath() {
-    return path;
-  }
+  String getPath();
 
-  public PKCS12Options setPath(String path) {
-    this.path = path;
-    return this;
-  }
+  PKCS12Options setPath(String path);
 
-  public Buffer getValue() {
-    return value;
-  }
+  Buffer getValue();
 
-  public PKCS12Options setValue(Buffer value) {
-    this.value = value;
-    return this;
-  }
+  PKCS12Options setValue(Buffer value);
 
   @Override
-  public PKCS12Options clone() {
-    return new PKCS12Options(this);
-  }
+  PKCS12Options clone();
+
+  static final PKCS12OptionsFactory factory = ServiceHelper.loadFactory(PKCS12OptionsFactory.class);
+
 }

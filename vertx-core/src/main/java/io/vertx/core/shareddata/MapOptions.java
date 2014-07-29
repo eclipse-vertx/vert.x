@@ -19,6 +19,6 @@ package io.vertx.core.shareddata;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class MapOptions {
+public interface MapOptions {
   // TODO
 }
