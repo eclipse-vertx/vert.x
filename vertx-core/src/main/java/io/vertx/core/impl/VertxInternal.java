@@ -18,6 +18,7 @@ package io.vertx.core.impl;
 
 
 import io.netty.channel.EventLoopGroup;
+import io.vertx.core.Handler;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
@@ -65,4 +66,16 @@ public interface VertxInternal extends VertxSPI {
    * @return worker loop context
    */
   ContextImpl createWorkerContext(boolean multiThreaded);
+
+  void simulateKill();
+
+  Deployment getDeployment(String deploymentID);
+
+  void failoverCompleteHandler(Handler<Boolean> failoverCompleteHandler);
+
+  boolean isKilled();
+
+  void failDuringFailover(boolean fail);
+
+  String getNodeID();
 }

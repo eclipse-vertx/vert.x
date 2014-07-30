@@ -35,6 +35,7 @@ public class VertxOptionsImpl implements VertxOptions{
   public static final long DEFAULT_MAXEVENTLOOPEXECUTETIME = 2000l * 1000000;
   public static final long DEFAULT_MAXWORKEREXECUTETIME = 1l * 60 * 1000 * 1000000;
   public static final int DEFAULT_PROXYOPERATIONTIMEOUT = 10 * 1000;
+  public static final int DEFAULT_QUORUMSIZE = 1;
 
   private int eventLoopPoolSize = DEFAULT_EVENTLOOPPOOLSIZE;
   private int workerPoolSize = DEFAULT_WORKERPOOLSIZE;
@@ -47,6 +48,9 @@ public class VertxOptionsImpl implements VertxOptions{
   private long maxWorkerExecuteTime = DEFAULT_MAXWORKEREXECUTETIME;
   private ClusterManager clusterManager;
   private long proxyOperationTimeout = DEFAULT_PROXYOPERATIONTIMEOUT;
+  private boolean haEnabled;
+  private int quorumSize = DEFAULT_QUORUMSIZE;
+  private String haGroup;
 
   VertxOptionsImpl() {
   }
@@ -63,6 +67,9 @@ public class VertxOptionsImpl implements VertxOptions{
     this.internalBlockingPoolSize = other.getInternalBlockingPoolSize();
     this.proxyOperationTimeout = other.getProxyOperationTimeout();
     this.clusterManager = other.getClusterManager();
+    this.haEnabled = other.isHAEnabled();
+    this.quorumSize = other.getQuorumSize();
+    this.haGroup = other.getHAGroup();
   }
 
   VertxOptionsImpl(JsonObject json) {
@@ -76,6 +83,9 @@ public class VertxOptionsImpl implements VertxOptions{
     this.blockedThreadCheckPeriod = json.getLong("blockedThreadCheckPeriod", DEFAULT_BLOCKEDTHREADCHECKPERIOD);
     this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAXEVENTLOOPEXECUTETIME);
     this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAXWORKEREXECUTETIME);
+    this.haEnabled = json.getBoolean("haEnabled", false);
+    this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUMSIZE);
+    this.haGroup = json.getString("haGroup", null);
   }
 
   public int getEventLoopPoolSize() {
@@ -202,24 +212,63 @@ public class VertxOptionsImpl implements VertxOptions{
   }
 
   @Override
+  public boolean isHAEnabled() {
+    return haEnabled;
+  }
+
+  @Override
+  public VertxOptions setHAEnabled(boolean haEnabled) {
+    this.haEnabled = haEnabled;
+    return this;
+  }
+
+  @Override
+  public int getQuorumSize() {
+    return quorumSize;
+  }
+
+  @Override
+  public VertxOptions setQuorumSize(int quorumSize) {
+    if (quorumSize < 1) {
+      throw new IllegalArgumentException("quorumSize should be >= 1");
+    }
+    this.quorumSize = quorumSize;
+    return this;
+  }
+
+  @Override
+  public String getHAGroup() {
+    return haGroup;
+  }
+
+  @Override
+  public VertxOptions setHAGroup(String haGroup) {
+    this.haGroup = haGroup;
+    return this;
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof VertxOptions)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
 
-    VertxOptions that = (VertxOptions) o;
+    VertxOptionsImpl that = (VertxOptionsImpl) o;
 
-    if (blockedThreadCheckPeriod != that.getBlockedThreadCheckPeriod()) return false;
-    if (clusterPort != that.getClusterPort()) return false;
-    if (clustered != that.isClustered()) return false;
-    if (eventLoopPoolSize != that.getEventLoopPoolSize()) return false;
-    if (internalBlockingPoolSize != that.getInternalBlockingPoolSize()) return false;
-    if (maxEventLoopExecuteTime != that.getMaxEventLoopExecuteTime()) return false;
-    if (maxWorkerExecuteTime != that.getMaxWorkerExecuteTime()) return false;
-    if (workerPoolSize != that.getWorkerPoolSize()) return false;
-    if (clusterHost != null ? !clusterHost.equals(that.isClustered()) : that.getClusterHost() != null) return false;
-    if (clusterManager != null ? !clusterManager.equals(that.getClusterManager()) : that.getClusterManager() != null)
+    if (blockedThreadCheckPeriod != that.blockedThreadCheckPeriod) return false;
+    if (clusterPort != that.clusterPort) return false;
+    if (clustered != that.clustered) return false;
+    if (eventLoopPoolSize != that.eventLoopPoolSize) return false;
+    if (haEnabled != that.haEnabled) return false;
+    if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
+    if (maxEventLoopExecuteTime != that.maxEventLoopExecuteTime) return false;
+    if (maxWorkerExecuteTime != that.maxWorkerExecuteTime) return false;
+    if (proxyOperationTimeout != that.proxyOperationTimeout) return false;
+    if (quorumSize != that.quorumSize) return false;
+    if (workerPoolSize != that.workerPoolSize) return false;
+    if (clusterHost != null ? !clusterHost.equals(that.clusterHost) : that.clusterHost != null) return false;
+    if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
-    if (proxyOperationTimeout != that.getProxyOperationTimeout()) return false;
+    if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
 
     return true;
   }
@@ -237,8 +286,9 @@ public class VertxOptionsImpl implements VertxOptions{
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
     result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
     result = 31 * result + (int) (proxyOperationTimeout ^ (proxyOperationTimeout >>> 32));
+    result = 31 * result + (haEnabled ? 1 : 0);
+    result = 31 * result + quorumSize;
+    result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
     return result;
   }
-
-
 }

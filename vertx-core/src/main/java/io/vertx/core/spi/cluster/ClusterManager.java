@@ -17,15 +17,15 @@
 package io.vertx.core.spi.cluster;
 
 
-import io.vertx.core.shareddata.AsyncMap;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.MapOptions;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -60,10 +60,10 @@ public interface ClusterManager {
    */
   <K, V> void getAsyncMap(String name, MapOptions options, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
-//  /**
-//   * Return a synchronous map for the given name
-//   */
-//  <K, V> Map<K, V> getSyncMap(String name);
+  /**
+   * Return a synchronous map for the given name
+   */
+  <K, V> Map<K, V> getSyncMap(String name);
 
   void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
 
@@ -96,4 +96,6 @@ public interface ClusterManager {
    * Leave the cluster
    */
   void leave();
+
+  boolean isActive();
 }

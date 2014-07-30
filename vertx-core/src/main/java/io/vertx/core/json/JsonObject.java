@@ -293,28 +293,15 @@ public class JsonObject extends JsonElement {
   public boolean equals(Object o) {
     if (this == o)
       return true;
-
     if (o == null || getClass() != o.getClass())
       return false;
-
     JsonObject that = (JsonObject) o;
+    return map.equals(that.map);
+  }
 
-    if (this.map.size() != that.map.size())
-      return false;
-
-    for (Map.Entry<String, Object> entry : this.map.entrySet()) {
-      Object val = entry.getValue();
-      if (val == null) {
-        if (that.map.get(entry.getKey()) != null) {
-          return false;
-        }
-      } else {
-        if (!entry.getValue().equals(that.map.get(entry.getKey()))) {
-          return false;
-        }
-      }
-    }
-    return true;
+  @Override
+  public int hashCode() {
+    return map.hashCode();
   }
 
   /**

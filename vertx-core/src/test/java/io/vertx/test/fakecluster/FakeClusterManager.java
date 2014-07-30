@@ -50,11 +50,12 @@ public class FakeClusterManager implements ClusterManager {
   private static List<NodeListener> nodeListeners = new ArrayList<>();
   private static ConcurrentMap<String, AsyncMap> asyncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AsyncMultiMap> asyncMultiMaps = new ConcurrentHashMap<>();
+  private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AsynchronousLock> locks = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, Counter> counters = new ConcurrentHashMap<>();
 
-  private String nodeID;
-  private NodeListener nodeListener;
+  private volatile String nodeID;
+  private volatile NodeListener nodeListener;
   private VertxInternal vertx;
 
   public void setVertx(VertxSPI vertx) {
@@ -66,7 +67,7 @@ public class FakeClusterManager implements ClusterManager {
       throw new IllegalStateException("Node has already joined!");
     }
     nodes.put(nodeID, node);
-    for (NodeListener listener: nodeListeners) {
+    for (NodeListener listener: new ArrayList<>(nodeListeners)) {
       listener.nodeAdded(nodeID);
     }
   }
@@ -76,7 +77,7 @@ public class FakeClusterManager implements ClusterManager {
       throw new IllegalStateException("Node hasn't joined!");
     }
     nodes.remove(nodeID);
-    for (NodeListener listener: nodeListeners) {
+    for (NodeListener listener: new ArrayList<>(nodeListeners)) {
       listener.nodeLeft(nodeID);
     }
 
@@ -90,9 +91,6 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   private static void doRemoveNodeListener(NodeListener listener) {
-    if (!nodeListeners.contains(listener)) {
-      throw new IllegalStateException("Listener not registered!");
-    }
     nodeListeners.remove(listener);
   }
 
@@ -122,6 +120,19 @@ public class FakeClusterManager implements ClusterManager {
     }
     AsyncMap<K, V> theMap = map;
     vertx.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(theMap)));
+  }
+
+  @Override
+  public <K, V> Map<K, V> getSyncMap(String name) {
+    Map<K, V> map = (Map<K, V>)syncMaps.get(name);
+    if (map == null) {
+      map = new ConcurrentHashMap<>();
+      Map<K, V> prevMap = (Map<K, V>)syncMaps.putIfAbsent(name, map);
+      if (prevMap != null) {
+        map = prevMap;
+      }
+    }
+    return map;
   }
 
   @Override
@@ -182,6 +193,11 @@ public class FakeClusterManager implements ClusterManager {
     this.nodeID = null;
   }
 
+  @Override
+  public boolean isActive() {
+    return nodeID != null;
+  }
+
   public static void reset() {
     nodes.clear();
     nodeListeners.clear();
@@ -189,6 +205,7 @@ public class FakeClusterManager implements ClusterManager {
     asyncMultiMaps.clear();
     locks.clear();
     counters.clear();
+    syncMaps.clear();
   }
 
   private class FakeLock implements Lock {

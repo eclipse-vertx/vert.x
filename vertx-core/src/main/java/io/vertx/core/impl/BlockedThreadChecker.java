@@ -46,6 +46,12 @@ public class BlockedThreadChecker {
           long dur = now - execStart;
           if (execStart != 0 && dur > (thread.isWorker() ? maxWorkerExecTime : maxEventLoopExecTime)) {
             log.warn("Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms" + " time " + maxEventLoopExecTime);
+            if (dur/1000000 > 5000) {
+              StackTraceElement[] stack = thread.getStackTrace();
+              for (StackTraceElement elem: stack) {
+                System.out.println(elem);
+              }
+            }
           }
         }
       }

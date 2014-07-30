@@ -28,6 +28,7 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
   private boolean worker;
   private boolean multiThreaded;
   private String isolationGroup;
+  private boolean ha;
 
   DeploymentOptionsImpl() {
   }
@@ -37,6 +38,7 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
     this.worker = other.isWorker();
     this.multiThreaded = other.isMultiThreaded();
     this.isolationGroup = other.getIsolationGroup();
+    this.ha = other.isHA();
   }
 
   DeploymentOptionsImpl(JsonObject json) {
@@ -44,6 +46,7 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
     this.worker = json.getBoolean("worker", false);
     this.multiThreaded = json.getBoolean("multiThreaded", false);
     this.isolationGroup = json.getString("isolationGroup", null);
+    this.ha = json.getBoolean("ha", false);
   }
 
   public JsonObject getConfig() {
@@ -83,6 +86,26 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
   }
 
   @Override
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    if (worker) json.putBoolean("worker", true);
+    if (multiThreaded) json.putBoolean("multiThreaded", true);
+    if (isolationGroup != null) json.putString("isolationGroup", isolationGroup);
+    if (ha) json.putBoolean("ha", true);
+    if (config != null) json.putObject("config", config);
+    return json;
+  }
+
+  public boolean isHA() {
+    return ha;
+  }
+
+  public DeploymentOptions setHA(boolean ha) {
+    this.ha = ha;
+    return this;
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof DeploymentOptions)) return false;
@@ -106,4 +129,16 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
     result = 31 * result + (isolationGroup != null ? isolationGroup.hashCode() : 0);
     return result;
   }
+
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("worker: " + worker + "\n");
+    builder.append("multiThreaded: " + multiThreaded + "\n");
+    builder.append("isolationGroup: " + isolationGroup + "\n");
+    builder.append("ha: " + ha + "\n");
+    builder.append("config: " + config + "\n");
+    return builder.toString();
+  }
+
+
 }

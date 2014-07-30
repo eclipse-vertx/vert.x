@@ -181,27 +181,15 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   public boolean equals(Object o) {
     if (this == o)
       return true;
-
     if (o == null || getClass() != o.getClass())
       return false;
-
     JsonArray that = (JsonArray) o;
+    return list.equals(that.list);
+  }
 
-    if (this.list.size() != that.list.size())
-      return false;
-
-    Iterator<?> iter = that.list.iterator();
-    for (Object entry : this.list) {
-      Object other = iter.next();
-      if (entry == null) {
-        if (other != null) {
-          return false;
-        }
-      } else if (!entry.equals(other)) {
-        return false;
-      }
-    }
-    return true;
+  @Override
+  public int hashCode() {
+    return list.hashCode();
   }
 
   public Object[] toArray() {

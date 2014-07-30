@@ -83,6 +83,18 @@ public interface VertxOptions {
 
   VertxOptions setProxyOperationTimeout(long proxyOperationTimeout);
 
+  boolean isHAEnabled();
+
+  VertxOptions setHAEnabled(boolean haEnabled);
+
+  int getQuorumSize();
+
+  VertxOptions setQuorumSize(int quorumSize);
+
+  String getHAGroup();
+
+  VertxOptions setHAGroup(String haGroup);
+
   static final VertxOptionsFactory factory = ServiceHelper.loadFactory(VertxOptionsFactory.class);
 
 }

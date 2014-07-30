@@ -29,6 +29,7 @@ import io.vertx.core.spi.cluster.Action;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -137,7 +138,11 @@ public abstract class ContextImpl implements Context {
   protected abstract boolean isOnCorrectContextThread(boolean expectRightThread);
 
   public void runOnContext(final Handler<Void> task) {
-    execute(() -> task.handle(null), false);
+    try {
+      execute(() -> task.handle(null), false);
+    } catch (RejectedExecutionException ignore) {
+      // Pool is already shut down
+    }
   }
 
   public EventLoop getEventLoop() {
@@ -146,18 +151,22 @@ public abstract class ContextImpl implements Context {
 
   // Execute an internal task on the internal blocking ordered executor
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    orderedInternalPoolExec.execute(() -> {
-      FutureResultImpl<T> res = new FutureResultImpl<>();
-      try {
-        T result = action.perform();
-        res.setResult(result);
-      } catch (Throwable e) {
-        res.setFailure(e);
-      }
-      if (resultHandler != null) {
-        execute(() -> res.setHandler(resultHandler), false);
-      }
-    });
+    try {
+      orderedInternalPoolExec.execute(() -> {
+        FutureResultImpl<T> res = new FutureResultImpl<>();
+        try {
+          T result = action.perform();
+          res.setResult(result);
+        } catch (Throwable e) {
+          res.setFailure(e);
+        }
+        if (resultHandler != null) {
+          execute(() -> res.setHandler(resultHandler), false);
+        }
+      });
+    } catch (RejectedExecutionException ignore) {
+      // Pool is already shut down
+    }
   }
 
   public void close() {

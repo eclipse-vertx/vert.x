@@ -22,6 +22,8 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
+import java.util.Random;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -126,6 +128,29 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
+    assertFalse(options.isHAEnabled());
+    assertEquals(options, options.setHAEnabled(true));
+    assertTrue(options.isHAEnabled());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(1, options.getQuorumSize());
+    assertEquals(options, options.setQuorumSize(rand));
+    assertEquals(rand, options.getQuorumSize());
+    try {
+      options.setQuorumSize(0);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setQuorumSize(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    assertNull(options.getHAGroup());
+    randString = TestUtils.randomUnicodeString(100);
+    assertEquals(options, options.setHAGroup(randString));
+    assertEquals(randString, options.getHAGroup());
   }
 
   @Test
@@ -141,6 +166,10 @@ public class VertxOptionsTest extends VertxTestBase {
     int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
     int maxWorkerExecuteTime = TestUtils.randomPositiveInt();
     int proxyOperationTimeout = TestUtils.randomPositiveInt();
+    Random rand = new Random();
+    boolean haEnabled = rand.nextBoolean();
+    int quorumSize = 51214;
+    String haGroup = TestUtils.randomAlphaString(100);
     options.setClusterPort(clusterPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
     options.setInternalBlockingPoolSize(internalBlockingPoolSize);
@@ -150,6 +179,9 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     options.setProxyOperationTimeout(proxyOperationTimeout);
+    options.setHAEnabled(haEnabled);
+    options.setQuorumSize(quorumSize);
+    options.setHAGroup(haGroup);
     options = VertxOptions.copiedOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
@@ -160,6 +192,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(proxyOperationTimeout, options.getProxyOperationTimeout());
+    assertEquals(haEnabled, options.isHAEnabled());
+    assertEquals(quorumSize, options.getQuorumSize());
+    assertEquals(haGroup, options.getHAGroup());
   }
 
   @Test
@@ -176,6 +211,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime());
     assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime());
     assertEquals(10 * 1000, options.getProxyOperationTimeout());
+    assertFalse(options.isHAEnabled());
+    assertEquals(1, options.getQuorumSize());
+    assertNull(options.getHAGroup());
 
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
@@ -186,6 +224,10 @@ public class VertxOptionsTest extends VertxTestBase {
     int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
     int maxWorkerExecuteTime = TestUtils.randomPositiveInt();
     int proxyOperationTimeout = TestUtils.randomPositiveInt();
+    Random rand = new Random();
+    boolean haEnabled = rand.nextBoolean();
+    int quorumSize = TestUtils.randomShort() + 1;
+    String haGroup = TestUtils.randomAlphaString(100);
     options = VertxOptions.optionsFromJson(new JsonObject().
         putNumber("clusterPort", clusterPort).
         putNumber("eventLoopPoolSize", eventLoopPoolSize).
@@ -195,7 +237,10 @@ public class VertxOptionsTest extends VertxTestBase {
         putString("clusterHost", clusterHost).
         putNumber("maxEventLoopExecuteTime", maxEventLoopExecuteTime).
         putNumber("maxWorkerExecuteTime", maxWorkerExecuteTime).
-        putNumber("proxyOperationTimeout", proxyOperationTimeout)
+        putNumber("proxyOperationTimeout", proxyOperationTimeout).
+        putBoolean("haEnabled", haEnabled).
+        putNumber("quorumSize", quorumSize).
+        putString("haGroup", haGroup)
     );
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
@@ -207,5 +252,8 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(proxyOperationTimeout, options.getProxyOperationTimeout());
+    assertEquals(haEnabled, options.isHAEnabled());
+    assertEquals(quorumSize, options.getQuorumSize());
+    assertEquals(haGroup, options.getHAGroup());
   }
 }

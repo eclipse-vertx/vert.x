@@ -32,8 +32,14 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected Vertx[] vertices;
 
+  private void init() {
+    vertx = null;
+    vertices = null;
+  }
+
   @Before
   public void beforeVertxTestBase() throws Exception {
+    init();
     vertx = Vertx.vertx();
   }
 
@@ -52,7 +58,6 @@ public class VertxTestBase extends AsyncTestBase {
       for (Vertx vertx: vertices) {
         if (vertx != null) {
           vertx.close(ar -> {
-            assertTrue(ar.succeeded());
             latch.countDown();
           });
         }
@@ -67,11 +72,15 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void startNodes(int numNodes) {
+    startNodes(numNodes, VertxOptions.options());
+  }
+
+  protected void startNodes(int numNodes, VertxOptions options) {
     CountDownLatch latch = new CountDownLatch(numNodes);
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      Vertx.vertx(VertxOptions.options().setClusterHost("localhost").setClusterPort(0).setClustered(true)
+      Vertx.vertx(options.setClusterHost("localhost").setClusterPort(0).setClustered(true)
         .setClusterManager(getClusterManager()), ar -> {
         if (ar.failed()) {
           ar.cause().printStackTrace();
@@ -119,14 +128,17 @@ public class VertxTestBase extends AsyncTestBase {
     assertTrue(latch.await(10, TimeUnit.SECONDS));
   }
 
-  protected void waitUntil(BooleanSupplier supplier) throws Exception {
+  protected void waitUntil(BooleanSupplier supplier) {
     long start = System.currentTimeMillis();
     long timeout = 10000;
     while (true) {
       if (supplier.getAsBoolean()) {
         break;
       }
-      Thread.sleep(10);
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException ignore) {
+      }
       long now = System.currentTimeMillis();
       if (now - start > timeout) {
         throw new IllegalStateException("Timed out");

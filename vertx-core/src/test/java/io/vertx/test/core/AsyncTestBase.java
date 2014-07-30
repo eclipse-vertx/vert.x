@@ -20,6 +20,7 @@ package io.vertx.test.core;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.internal.ArrayComparisonFailure;
 
 import java.util.Map;
@@ -32,13 +33,27 @@ import java.util.concurrent.TimeUnit;
  */
 public class AsyncTestBase {
 
-  private CountDownLatch latch = new CountDownLatch(1);
+  private CountDownLatch latch;
   private volatile Throwable throwable;
   private volatile boolean testCompleteCalled;
   private volatile boolean awaitCalled;
   private volatile boolean timedOut;
   private boolean threadChecksEnabled = true;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
+
+  private void init() {
+    latch = new CountDownLatch(1);
+    throwable = null;
+    testCompleteCalled = false;
+    awaitCalled = false;
+    timedOut = false;
+    threadNames.clear();
+  }
+
+  @Before
+  public void beforeAsyncTestBase() {
+    init();
+  }
 
   protected void testComplete() {
     checkThread();

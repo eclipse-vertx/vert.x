@@ -72,6 +72,9 @@ public class DeploymentTest extends VertxTestBase {
     String rand = TestUtils.randomUnicodeString(1000);
     assertEquals(options, options.setIsolationGroup(rand));
     assertEquals(rand, options.getIsolationGroup());
+    assertFalse(options.isHA());
+    assertEquals(options, options.setHA(true));
+    assertTrue(options.isHA());
   }
 
   @Test
@@ -82,16 +85,19 @@ public class DeploymentTest extends VertxTestBase {
     boolean worker = rand.nextBoolean();
     boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
+    boolean ha = rand.nextBoolean();
     options.setConfig(config);
     options.setWorker(worker);
     options.setMultiThreaded(multiThreaded);
     options.setIsolationGroup(isolationGroup);
+    options.setHA(ha);
     DeploymentOptions copy = DeploymentOptions.copiedOptions(options);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
     assertEquals(isolationGroup, copy.getIsolationGroup());
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
+    assertEquals(ha, copy.isHA());
   }
 
   @Test
@@ -101,17 +107,44 @@ public class DeploymentTest extends VertxTestBase {
     boolean worker = rand.nextBoolean();
     boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
+    boolean ha = rand.nextBoolean();
     JsonObject json = new JsonObject();
     json.putObject("config", config);
     json.putBoolean("worker", worker);
     json.putBoolean("multiThreaded", multiThreaded);
     json.putString("isolationGroup", isolationGroup);
+    json.putBoolean("ha", ha);
     DeploymentOptions copy = DeploymentOptions.optionsFromJson(json);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
     assertEquals(isolationGroup, copy.getIsolationGroup());
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
+    assertEquals(ha, copy.isHA());
+  }
+
+  @Test
+  public void testToJson() {
+    DeploymentOptions options = DeploymentOptions.options();
+    JsonObject config = new JsonObject().putString("foo", "bar");
+    Random rand = new Random();
+    boolean worker = rand.nextBoolean();
+    boolean multiThreaded = rand.nextBoolean();
+    String isolationGroup = TestUtils.randomAlphaString(100);
+    boolean ha = rand.nextBoolean();
+    options.setConfig(config);
+    options.setWorker(worker);
+    options.setMultiThreaded(multiThreaded);
+    options.setIsolationGroup(isolationGroup);
+    options.setHA(ha);
+    JsonObject json = options.toJson();
+    DeploymentOptions copy = DeploymentOptions.optionsFromJson(json);
+    assertEquals(worker, copy.isWorker());
+    assertEquals(multiThreaded, copy.isMultiThreaded());
+    assertEquals(isolationGroup, copy.getIsolationGroup());
+    assertNotSame(config, copy.getConfig());
+    assertEquals("bar", copy.getConfig().getString("foo"));
+    assertEquals(ha, copy.isHA());
   }
 
   @Test

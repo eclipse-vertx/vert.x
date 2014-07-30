@@ -54,6 +54,12 @@ public interface DeploymentOptions {
 
   DeploymentOptions setIsolationGroup(String isolationGroup);
 
+  JsonObject toJson();
+
+  boolean isHA();
+
+  DeploymentOptions setHA(boolean HA);
+
   static final DeploymentOptionsFactory factory = ServiceHelper.loadFactory(DeploymentOptionsFactory.class);
 
 }

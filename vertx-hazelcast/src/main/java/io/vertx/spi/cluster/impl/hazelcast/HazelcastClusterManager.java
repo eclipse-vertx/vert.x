@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -108,7 +109,6 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
     hazelcast = Hazelcast.newHazelcastInstance(cfg);
 
     nodeID = hazelcast.getCluster().getLocalMember().getUuid();
-
 
     membershipListenerId = hazelcast.getCluster().addMembershipListener(this);
 
@@ -173,7 +173,11 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
     });
   }
 
-
+  @Override
+  public <K, V> Map<K, V> getSyncMap(String name) {
+    IMap<K, V> map = hazelcast.getMap(name);
+    return map;
+  }
 
   @Override
   public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
@@ -208,7 +212,7 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
         log.warn("Unable to remove membership listener");
     }
 
- 	hazelcast.getLifecycleService().shutdown();
+ 	  hazelcast.getLifecycleService().shutdown();
     active = false;
   }
 
@@ -240,6 +244,11 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
     } catch (Throwable t) {
       log.error("Failed to handle memberRemoved", t);
     }
+  }
+
+  @Override
+  public synchronized boolean isActive() {
+    return active;
   }
 
   @Override
