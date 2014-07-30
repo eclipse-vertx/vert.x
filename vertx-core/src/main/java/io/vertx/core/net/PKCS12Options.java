@@ -45,15 +45,15 @@ import io.vertx.core.spi.PKCS12OptionsFactory;
 public interface PKCS12Options extends KeyStoreOptions, TrustStoreOptions {
 
   static PKCS12Options options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static PKCS12Options copiedOptions(PKCS12Options other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static PKCS12Options optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   String getPassword();

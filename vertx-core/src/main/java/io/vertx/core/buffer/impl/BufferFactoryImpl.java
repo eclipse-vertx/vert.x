@@ -26,32 +26,32 @@ import io.vertx.core.spi.BufferFactory;
 public class BufferFactoryImpl implements BufferFactory {
 
   @Override
-  public Buffer newBuffer(int initialSizeHint) {
+  public Buffer buffer(int initialSizeHint) {
     return new BufferImpl(initialSizeHint);
   }
 
   @Override
-  public Buffer newBuffer() {
+  public Buffer buffer() {
     return new BufferImpl();
   }
 
   @Override
-  public Buffer newBuffer(String str) {
+  public Buffer buffer(String str) {
     return new BufferImpl(str);
   }
 
   @Override
-  public Buffer newBuffer(String str, String enc) {
+  public Buffer buffer(String str, String enc) {
     return new BufferImpl(str, enc);
   }
 
   @Override
-  public Buffer newBuffer(byte[] bytes) {
+  public Buffer buffer(byte[] bytes) {
     return new BufferImpl(bytes);
   }
 
   @Override
-  public Buffer newBuffer(ByteBuf byteBuffer) {
+  public Buffer buffer(ByteBuf byteBuffer) {
     return new BufferImpl(byteBuffer);
   }
 }

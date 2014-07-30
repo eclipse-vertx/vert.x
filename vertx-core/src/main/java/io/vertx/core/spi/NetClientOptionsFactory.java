@@ -24,9 +24,9 @@ import io.vertx.core.net.NetClientOptions;
  */
 public interface NetClientOptionsFactory {
 
-  NetClientOptions newOptions();
+  NetClientOptions options();
 
-  NetClientOptions copiedOptions(NetClientOptions other);
+  NetClientOptions options(NetClientOptions other);
 
-  NetClientOptions fromJson(JsonObject json);
+  NetClientOptions options(JsonObject json);
 }

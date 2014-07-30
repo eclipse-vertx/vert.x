@@ -48,30 +48,30 @@ import java.nio.ByteBuffer;
 public interface Buffer extends ClusterSerializable {
 
   static Buffer buffer() {
-    return factory.newBuffer();
+    return factory.buffer();
   }
 
   @GenIgnore
   static Buffer buffer(int initialSizeHint) {
-    return factory.newBuffer(initialSizeHint);
+    return factory.buffer(initialSizeHint);
   }
 
   static Buffer buffer(String string) {
-    return factory.newBuffer(string);
+    return factory.buffer(string);
   }
 
   static Buffer buffer(String string, String enc) {
-    return factory.newBuffer(string, enc);
+    return factory.buffer(string, enc);
   }
 
   @GenIgnore
   static Buffer buffer(byte[] bytes) {
-    return factory.newBuffer(bytes);
+    return factory.buffer(bytes);
   }
 
   @GenIgnore
   static Buffer buffer(ByteBuf byteBuf) {
-    return factory.newBuffer(byteBuf);
+    return factory.buffer(byteBuf);
   }
 
   /**

@@ -24,9 +24,9 @@ import io.vertx.core.net.JKSOptions;
  */
 public interface JKSOptionsFactory {
 
-  JKSOptions newOptions();
+  JKSOptions options();
 
-  JKSOptions copiedOptions(JKSOptions other);
+  JKSOptions options(JKSOptions other);
 
-  JKSOptions optionsFromJson(JsonObject json);
+  JKSOptions options(JsonObject json);
 }

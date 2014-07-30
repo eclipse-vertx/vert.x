@@ -2,6 +2,10 @@ package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.shareddata.LocalMap;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 

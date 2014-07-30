@@ -58,15 +58,15 @@ import java.util.List;
 public interface CaOptions extends TrustStoreOptions {
 
   static CaOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static CaOptions copiedOptions(CaOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static CaOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   List<String> getCertPaths();

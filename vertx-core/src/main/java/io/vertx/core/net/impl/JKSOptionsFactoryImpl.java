@@ -26,17 +26,17 @@ import io.vertx.core.spi.JKSOptionsFactory;
 public class JKSOptionsFactoryImpl implements JKSOptionsFactory {
 
   @Override
-  public JKSOptions newOptions() {
+  public JKSOptions options() {
     return new JKSOptionsImpl();
   }
 
   @Override
-  public JKSOptions copiedOptions(JKSOptions other) {
+  public JKSOptions options(JKSOptions other) {
     return new JKSOptionsImpl(other);
   }
 
   @Override
-  public JKSOptions optionsFromJson(JsonObject json) {
+  public JKSOptions options(JsonObject json) {
     return new JKSOptionsImpl(json);
   }
 }

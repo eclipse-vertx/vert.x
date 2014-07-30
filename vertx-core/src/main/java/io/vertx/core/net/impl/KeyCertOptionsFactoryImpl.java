@@ -26,17 +26,17 @@ import io.vertx.core.spi.KeyCertOptionsFactory;
 public class KeyCertOptionsFactoryImpl implements KeyCertOptionsFactory {
 
   @Override
-  public KeyCertOptions newOptions() {
+  public KeyCertOptions options() {
     return new KeyCertOptionsImpl();
   }
 
   @Override
-  public KeyCertOptions copiedOptions(KeyCertOptions other) {
+  public KeyCertOptions options(KeyCertOptions other) {
     return new KeyCertOptionsImpl(other);
   }
 
   @Override
-  public KeyCertOptions optionsFromJson(JsonObject json) {
+  public KeyCertOptions options(JsonObject json) {
     return new KeyCertOptionsImpl(json);
   }
 }

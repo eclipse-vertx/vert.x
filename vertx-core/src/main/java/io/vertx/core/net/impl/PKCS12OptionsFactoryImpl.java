@@ -26,17 +26,17 @@ import io.vertx.core.spi.PKCS12OptionsFactory;
 public class PKCS12OptionsFactoryImpl implements PKCS12OptionsFactory {
 
   @Override
-  public PKCS12Options newOptions() {
+  public PKCS12Options options() {
     return new PCKS12OptionsImpl();
   }
 
   @Override
-  public PKCS12Options copiedOptions(PKCS12Options other) {
+  public PKCS12Options options(PKCS12Options other) {
     return new PCKS12OptionsImpl(other);
   }
 
   @Override
-  public PKCS12Options optionsFromJson(JsonObject json) {
+  public PKCS12Options options(JsonObject json) {
     return new PCKS12OptionsImpl(json);
   }
 }

@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonObject;
  */
 public interface VertxOptionsFactory {
 
-  VertxOptions newOptions();
+  VertxOptions options();
 
-  VertxOptions copiedOptions(VertxOptions other);
+  VertxOptions options(VertxOptions other);
 
-  VertxOptions optionsFromJson(JsonObject json);
+  VertxOptions options(JsonObject json);
 }

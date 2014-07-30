@@ -24,7 +24,7 @@ import io.vertx.core.json.JsonObject;
  */
 public interface OpenOptionsFactory {
 
-  OpenOptions newOptions();
+  OpenOptions options();
 
-  OpenOptions optionsFromJson(JsonObject json);
+  OpenOptions options(JsonObject json);
 }

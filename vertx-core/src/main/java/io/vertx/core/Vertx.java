@@ -55,15 +55,15 @@ import java.util.Set;
 public interface Vertx {
 
   static Vertx vertx() {
-    return factory.createVertx();
+    return factory.vertx();
   }
 
   static Vertx vertx(VertxOptions options) {
-    return factory.createVertx(options);
+    return factory.vertx(options);
   }
 
   static void vertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    factory.createVertx(options, resultHandler);
+    factory.vertx(options, resultHandler);
   }
 
   /**

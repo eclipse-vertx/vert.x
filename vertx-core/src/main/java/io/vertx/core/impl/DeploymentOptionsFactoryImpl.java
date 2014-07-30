@@ -26,17 +26,17 @@ import io.vertx.core.spi.DeploymentOptionsFactory;
 public class DeploymentOptionsFactoryImpl implements DeploymentOptionsFactory {
 
   @Override
-  public DeploymentOptions newOptions() {
+  public DeploymentOptions options() {
     return new DeploymentOptionsImpl();
   }
 
   @Override
-  public DeploymentOptions copiedOptions(DeploymentOptions other) {
+  public DeploymentOptions options(DeploymentOptions other) {
     return new DeploymentOptionsImpl(other);
   }
 
   @Override
-  public DeploymentOptions optionsFromJson(JsonObject json) {
+  public DeploymentOptions options(JsonObject json) {
     return new DeploymentOptionsImpl(json);
   }
 }

@@ -31,15 +31,15 @@ import io.vertx.core.net.NetworkOptions;
 public interface DatagramSocketOptions extends NetworkOptions<DatagramSocketOptions> {
 
   static DatagramSocketOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static DatagramSocketOptions copiedOptions(DatagramSocketOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static DatagramSocketOptions optionsFromJson(JsonObject json) {
-    return factory.fromJson(json);
+    return factory.options(json);
   }
 
   boolean isBroadcast();

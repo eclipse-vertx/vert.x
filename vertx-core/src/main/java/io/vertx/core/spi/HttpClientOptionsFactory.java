@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonObject;
  */
 public interface HttpClientOptionsFactory {
 
-  HttpClientOptions newOptions();
+  HttpClientOptions options();
 
-  HttpClientOptions copiedOptions(HttpClientOptions other);
+  HttpClientOptions options(HttpClientOptions other);
 
-  HttpClientOptions fromJson(JsonObject json);
+  HttpClientOptions options(JsonObject json);
 }

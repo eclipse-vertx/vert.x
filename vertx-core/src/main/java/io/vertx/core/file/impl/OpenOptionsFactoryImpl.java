@@ -26,12 +26,12 @@ import io.vertx.core.spi.OpenOptionsFactory;
 public class OpenOptionsFactoryImpl implements OpenOptionsFactory {
 
   @Override
-  public OpenOptions newOptions() {
+  public OpenOptions options() {
     return new OpenOptionsImpl();
   }
 
   @Override
-  public OpenOptions optionsFromJson(JsonObject json) {
+  public OpenOptions options(JsonObject json) {
     return new OpenOptionsImpl(json);
   }
 }

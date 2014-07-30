@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonObject;
  */
 public interface DatagramSocketOptionsFactory {
 
-  DatagramSocketOptions newOptions();
+  DatagramSocketOptions options();
 
-  DatagramSocketOptions copiedOptions(DatagramSocketOptions other);
+  DatagramSocketOptions options(DatagramSocketOptions other);
 
-  DatagramSocketOptions fromJson(JsonObject json);
+  DatagramSocketOptions options(JsonObject json);
 }

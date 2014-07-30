@@ -31,15 +31,15 @@ import java.util.List;
 public interface NetServerOptions extends NetServerOptionsBase<NetServerOptions> {
 
   static NetServerOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static NetServerOptions copiedOptions(NetServerOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static NetServerOptions optionsFromJson(JsonObject json) {
-    return factory.fromJson(json);
+    return factory.options(json);
   }
 
 

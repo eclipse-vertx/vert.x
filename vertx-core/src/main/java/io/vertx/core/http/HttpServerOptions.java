@@ -31,15 +31,15 @@ import java.util.Set;
 public interface HttpServerOptions extends NetServerOptionsBase<HttpServerOptions> {
 
   static HttpServerOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static HttpServerOptions copiedOptions(HttpServerOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static HttpServerOptions optionsFromJson(JsonObject json) {
-    return factory.fromJson(json);
+    return factory.options(json);
   }
 
   boolean isCompressionSupported();

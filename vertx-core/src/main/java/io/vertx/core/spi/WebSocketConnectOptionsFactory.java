@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonObject;
  */
 public interface WebSocketConnectOptionsFactory {
 
-  WebSocketConnectOptions newOptions();
+  WebSocketConnectOptions options();
 
-  WebSocketConnectOptions copiedOptions(WebSocketConnectOptions other);
+  WebSocketConnectOptions options(WebSocketConnectOptions other);
 
-  WebSocketConnectOptions optionsFromJson(JsonObject json);
+  WebSocketConnectOptions options(JsonObject json);
 }

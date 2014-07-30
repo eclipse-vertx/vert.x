@@ -24,9 +24,9 @@ import io.vertx.core.net.CaOptions;
  */
 public interface CaOptionsFactory {
 
-  CaOptions newOptions();
+  CaOptions options();
 
-  CaOptions copiedOptions(CaOptions other);
+  CaOptions options(CaOptions other);
 
-  CaOptions optionsFromJson(JsonObject json);
+  CaOptions options(JsonObject json);
 }

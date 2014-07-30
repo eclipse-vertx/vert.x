@@ -26,17 +26,17 @@ import io.vertx.core.spi.DatagramSocketOptionsFactory;
 public class DatagramSocketOptionsFactoryImpl implements DatagramSocketOptionsFactory {
 
   @Override
-  public DatagramSocketOptions newOptions() {
+  public DatagramSocketOptions options() {
     return new DatagramSocketOptionsImpl();
   }
 
   @Override
-  public DatagramSocketOptions copiedOptions(DatagramSocketOptions other) {
+  public DatagramSocketOptions options(DatagramSocketOptions other) {
     return new DatagramSocketOptionsImpl(other);
   }
 
   @Override
-  public DatagramSocketOptions fromJson(JsonObject json) {
+  public DatagramSocketOptions options(JsonObject json) {
     return new DatagramSocketOptionsImpl(json);
   }
 }

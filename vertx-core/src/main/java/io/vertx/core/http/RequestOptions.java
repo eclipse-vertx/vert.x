@@ -28,15 +28,15 @@ import io.vertx.core.spi.RequestOptionsFactory;
 public interface RequestOptions extends RequestOptionsBase<RequestOptions> {
 
   static RequestOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static RequestOptions copiedOptions(RequestOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static RequestOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   static final RequestOptionsFactory factory = ServiceHelper.loadFactory(RequestOptionsFactory.class);

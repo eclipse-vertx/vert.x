@@ -27,15 +27,15 @@ import io.vertx.core.spi.DeploymentOptionsFactory;
 public interface DeploymentOptions {
 
   static DeploymentOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static DeploymentOptions copiedOptions(DeploymentOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static DeploymentOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   JsonObject getConfig();

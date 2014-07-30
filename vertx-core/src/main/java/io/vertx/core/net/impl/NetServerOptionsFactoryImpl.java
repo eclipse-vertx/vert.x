@@ -25,17 +25,17 @@ import io.vertx.core.spi.NetServerOptionsFactory;
  */
 public class NetServerOptionsFactoryImpl implements NetServerOptionsFactory {
   @Override
-  public NetServerOptions newOptions() {
+  public NetServerOptions options() {
     return new NetServerOptionsImpl();
   }
 
   @Override
-  public NetServerOptions copiedOptions(NetServerOptions other) {
+  public NetServerOptions options(NetServerOptions other) {
     return new NetServerOptionsImpl(other);
   }
 
   @Override
-  public NetServerOptions fromJson(JsonObject json) {
+  public NetServerOptions options(JsonObject json) {
     return new NetServerOptionsImpl(json);
   }
 }

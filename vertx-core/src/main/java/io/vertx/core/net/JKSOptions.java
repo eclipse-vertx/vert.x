@@ -46,15 +46,15 @@ import io.vertx.core.spi.JKSOptionsFactory;
 public interface JKSOptions extends KeyStoreOptions, TrustStoreOptions {
 
   static JKSOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static JKSOptions copiedOptions(JKSOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static JKSOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   String getPassword();

@@ -29,10 +29,10 @@ import io.vertx.core.VertxOptions;
  */
 public interface VertxFactory {
 
-  Vertx createVertx();
+  Vertx vertx();
 
-  Vertx createVertx(VertxOptions options);
+  Vertx vertx(VertxOptions options);
 
-  void createVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
+  void vertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
 
 }

@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonObject;
  */
 public interface DeploymentOptionsFactory {
 
-  DeploymentOptions newOptions();
+  DeploymentOptions options();
 
-  DeploymentOptions copiedOptions(DeploymentOptions other);
+  DeploymentOptions options(DeploymentOptions other);
 
-  DeploymentOptions optionsFromJson(JsonObject json);
+  DeploymentOptions options(JsonObject json);
 }

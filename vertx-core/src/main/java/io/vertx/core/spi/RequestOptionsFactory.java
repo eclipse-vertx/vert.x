@@ -24,9 +24,9 @@ import io.vertx.core.json.JsonObject;
  */
 public interface RequestOptionsFactory {
 
-  RequestOptions newOptions();
+  RequestOptions options();
 
-  RequestOptions copiedOptions(RequestOptions other);
+  RequestOptions options(RequestOptions other);
 
-  RequestOptions optionsFromJson(JsonObject json);
+  RequestOptions options(JsonObject json);
 }

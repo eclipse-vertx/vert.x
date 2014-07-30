@@ -26,17 +26,17 @@ import io.vertx.core.spi.NetClientOptionsFactory;
 public class NetClientOptionsFactoryImpl implements NetClientOptionsFactory {
 
   @Override
-  public NetClientOptions newOptions() {
+  public NetClientOptions options() {
     return new NetClientOptionsImpl();
   }
 
   @Override
-  public NetClientOptions copiedOptions(NetClientOptions other) {
+  public NetClientOptions options(NetClientOptions other) {
     return new NetClientOptionsImpl(other);
   }
 
   @Override
-  public NetClientOptions fromJson(JsonObject json) {
+  public NetClientOptions options(JsonObject json) {
     return new NetClientOptionsImpl(json);
   }
 }

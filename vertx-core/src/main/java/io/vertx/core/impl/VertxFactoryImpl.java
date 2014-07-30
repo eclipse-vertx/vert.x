@@ -29,17 +29,17 @@ import io.vertx.core.spi.VertxFactory;
 public class VertxFactoryImpl implements VertxFactory {
 
   @Override
-  public Vertx createVertx() {
+  public Vertx vertx() {
     return new VertxImpl();
   }
 
   @Override
-  public Vertx createVertx(VertxOptions options) {
+  public Vertx vertx(VertxOptions options) {
     return new VertxImpl(options);
   }
 
   @Override
-  public void createVertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
+  public void vertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
     new VertxImpl(options, resultHandler);
   }
 

@@ -26,17 +26,17 @@ import io.vertx.core.spi.RequestOptionsFactory;
 public class RequestOptionsFactoryImpl implements RequestOptionsFactory {
 
   @Override
-  public RequestOptions newOptions() {
+  public RequestOptions options() {
     return new RequestOptionsImpl();
   }
 
   @Override
-  public RequestOptions copiedOptions(RequestOptions other) {
+  public RequestOptions options(RequestOptions other) {
     return new RequestOptionsImpl(other);
   }
 
   @Override
-  public RequestOptions optionsFromJson(JsonObject json) {
+  public RequestOptions options(JsonObject json) {
     return new RequestOptionsImpl(json);
   }
 }

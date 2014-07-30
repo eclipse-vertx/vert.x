@@ -30,15 +30,15 @@ import java.util.Set;
 public interface WebSocketConnectOptions extends RequestOptionsBase<WebSocketConnectOptions> {
 
   static WebSocketConnectOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static WebSocketConnectOptions copiedOptions(WebSocketConnectOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static WebSocketConnectOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   int getMaxWebsocketFrameSize();

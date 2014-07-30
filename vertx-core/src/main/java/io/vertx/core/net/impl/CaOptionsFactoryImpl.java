@@ -26,17 +26,17 @@ import io.vertx.core.spi.CaOptionsFactory;
 public class CaOptionsFactoryImpl implements CaOptionsFactory {
 
   @Override
-  public CaOptions newOptions() {
+  public CaOptions options() {
     return new CaOptionsImpl();
   }
 
   @Override
-  public CaOptions copiedOptions(CaOptions other) {
+  public CaOptions options(CaOptions other) {
     return new CaOptionsImpl(other);
   }
 
   @Override
-  public CaOptions optionsFromJson(JsonObject json) {
+  public CaOptions options(JsonObject json) {
     return new CaOptionsImpl(json);
   }
 }

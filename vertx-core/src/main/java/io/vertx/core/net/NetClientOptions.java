@@ -28,15 +28,15 @@ import io.vertx.core.spi.NetClientOptionsFactory;
 public interface NetClientOptions extends ClientOptions<NetClientOptions> {
 
   static NetClientOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static NetClientOptions copiedOptions(NetClientOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static NetClientOptions optionsFromJson(JsonObject json) {
-    return factory.fromJson(json);
+    return factory.options(json);
   }
 
 

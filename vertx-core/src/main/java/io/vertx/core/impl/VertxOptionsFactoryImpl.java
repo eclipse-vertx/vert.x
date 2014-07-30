@@ -26,17 +26,17 @@ import io.vertx.core.spi.VertxOptionsFactory;
 public class VertxOptionsFactoryImpl implements VertxOptionsFactory {
 
   @Override
-  public VertxOptions newOptions() {
+  public VertxOptions options() {
     return new VertxOptionsImpl();
   }
 
   @Override
-  public VertxOptions copiedOptions(VertxOptions other) {
+  public VertxOptions options(VertxOptions other) {
     return new VertxOptionsImpl(other);
   }
 
   @Override
-  public VertxOptions optionsFromJson(JsonObject json) {
+  public VertxOptions options(JsonObject json) {
     return new VertxOptionsImpl(json);
   }
 }

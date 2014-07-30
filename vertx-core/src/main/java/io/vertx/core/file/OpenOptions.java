@@ -28,11 +28,11 @@ import io.vertx.core.spi.OpenOptionsFactory;
 public interface OpenOptions {
 
   static OpenOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static OpenOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   String getPerms();

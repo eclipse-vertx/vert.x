@@ -24,9 +24,9 @@ import io.vertx.core.net.KeyCertOptions;
  */
 public interface KeyCertOptionsFactory {
 
-  KeyCertOptions newOptions();
+  KeyCertOptions options();
 
-  KeyCertOptions copiedOptions(KeyCertOptions other);
+  KeyCertOptions options(KeyCertOptions other);
 
-  KeyCertOptions optionsFromJson(JsonObject json);
+  KeyCertOptions options(JsonObject json);
 }

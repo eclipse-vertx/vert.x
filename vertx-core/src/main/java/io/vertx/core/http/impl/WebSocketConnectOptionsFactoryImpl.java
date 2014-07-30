@@ -26,17 +26,17 @@ import io.vertx.core.spi.WebSocketConnectOptionsFactory;
 public class WebSocketConnectOptionsFactoryImpl implements WebSocketConnectOptionsFactory {
 
   @Override
-  public WebSocketConnectOptions newOptions() {
+  public WebSocketConnectOptions options() {
     return new WebSocketConnectOptionsImpl();
   }
 
   @Override
-  public WebSocketConnectOptions copiedOptions(WebSocketConnectOptions other) {
+  public WebSocketConnectOptions options(WebSocketConnectOptions other) {
     return new WebSocketConnectOptionsImpl(other);
   }
 
   @Override
-  public WebSocketConnectOptions optionsFromJson(JsonObject json) {
+  public WebSocketConnectOptions options(JsonObject json) {
     return new WebSocketConnectOptionsImpl(json);
   }
 }

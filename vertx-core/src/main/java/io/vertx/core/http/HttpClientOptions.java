@@ -29,15 +29,15 @@ import io.vertx.core.net.ClientOptions;
 public interface HttpClientOptions extends ClientOptions<HttpClientOptions> {
 
   static HttpClientOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static HttpClientOptions copiedOptions(HttpClientOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static HttpClientOptions optionsFromJson(JsonObject json) {
-    return factory.fromJson(json);
+    return factory.options(json);
   }
 
   int getMaxPoolSize();

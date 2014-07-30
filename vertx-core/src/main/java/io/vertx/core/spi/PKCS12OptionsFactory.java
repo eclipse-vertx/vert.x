@@ -24,9 +24,9 @@ import io.vertx.core.net.PKCS12Options;
  */
 public interface PKCS12OptionsFactory {
 
-  PKCS12Options newOptions();
+  PKCS12Options options();
 
-  PKCS12Options copiedOptions(PKCS12Options other);
+  PKCS12Options options(PKCS12Options other);
 
-  PKCS12Options optionsFromJson(JsonObject json);
+  PKCS12Options options(JsonObject json);
 }

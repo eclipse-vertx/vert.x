@@ -24,10 +24,10 @@ import io.vertx.core.json.JsonObject;
  */
 public interface HttpServerOptionsFactory {
 
-  HttpServerOptions newOptions();
+  HttpServerOptions options();
 
-  HttpServerOptions copiedOptions(HttpServerOptions other);
+  HttpServerOptions options(HttpServerOptions other);
 
-  HttpServerOptions fromJson(JsonObject json);
+  HttpServerOptions options(JsonObject json);
 
 }

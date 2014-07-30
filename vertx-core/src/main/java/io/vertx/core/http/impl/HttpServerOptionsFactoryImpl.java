@@ -26,17 +26,17 @@ import io.vertx.core.spi.HttpServerOptionsFactory;
 public class HttpServerOptionsFactoryImpl implements HttpServerOptionsFactory {
 
   @Override
-  public HttpServerOptions newOptions() {
+  public HttpServerOptions options() {
     return new HttpServerOptionsImpl();
   }
 
   @Override
-  public HttpServerOptions copiedOptions(HttpServerOptions other) {
+  public HttpServerOptions options(HttpServerOptions other) {
     return new HttpServerOptionsImpl(other);
   }
 
   @Override
-  public HttpServerOptions fromJson(JsonObject json) {
+  public HttpServerOptions options(JsonObject json) {
     return new HttpServerOptionsImpl(json);
   }
 }

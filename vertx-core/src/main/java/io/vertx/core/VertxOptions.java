@@ -28,15 +28,15 @@ import io.vertx.core.spi.cluster.ClusterManager;
 public interface VertxOptions {
 
   static VertxOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static VertxOptions copiedOptions(VertxOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static VertxOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
   int getEventLoopPoolSize();

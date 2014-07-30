@@ -24,9 +24,9 @@ import io.vertx.core.net.NetServerOptions;
  */
 public interface NetServerOptionsFactory {
 
-  NetServerOptions newOptions();
+  NetServerOptions options();
 
-  NetServerOptions copiedOptions(NetServerOptions other);
+  NetServerOptions options(NetServerOptions other);
 
-  NetServerOptions fromJson(JsonObject json);
+  NetServerOptions options(JsonObject json);
 }

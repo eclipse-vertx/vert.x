@@ -66,15 +66,15 @@ import io.vertx.core.spi.KeyCertOptionsFactory;
 public interface KeyCertOptions extends KeyStoreOptions {
 
   static KeyCertOptions options() {
-    return factory.newOptions();
+    return factory.options();
   }
 
   static KeyCertOptions copiedOptions(KeyCertOptions other) {
-    return factory.copiedOptions(other);
+    return factory.options(other);
   }
 
   static KeyCertOptions optionsFromJson(JsonObject json) {
-    return factory.optionsFromJson(json);
+    return factory.options(json);
   }
 
 
