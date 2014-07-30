@@ -112,9 +112,9 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public AsyncFile write(Buffer buffer, long position,  Handler<AsyncResult<Void>> handler) {
     check();
-     ByteBuf buf = buffer.getByteBuf();
+    ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
-       Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
+      Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
       doWrite(buffers, position, handler);
     } else {
       ByteBuffer bb = buf.nioBuffer();
@@ -124,8 +124,8 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doWrite( Iterator<ByteBuffer> buffers, long position, Handler<AsyncResult<Void>> handler) {
-     ByteBuffer b = buffers.next();
-     int limit = b.limit();
+    ByteBuffer b = buffers.next();
+    int limit = b.limit();
     doWrite(b, position, limit, ar -> {
       if (ar.failed()) {
         handler.handle(ar);
