@@ -28,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -42,21 +43,22 @@ public class HATest extends VertxTestBase {
   }
 
   @Test
-  public void testSimpleFailover() {
+  public void testSimpleFailover() throws Exception {
     startNodes(2, VertxOptions.options().setHAEnabled(true));
     DeploymentOptions options = DeploymentOptions.options().setHA(true);
     JsonObject config = new JsonObject().putString("foo", "bar");
     options.setConfig(config);
+    CountDownLatch latch = new CountDownLatch(1);
     vertices[0].deployVerticle("java:" + HAVerticle1.class.getName(), options, ar -> {
       assertTrue(ar.succeeded());
       assertEquals(1, vertices[0].deployments().size());
       assertEquals(0, vertices[1].deployments().size());
-      kill(0);
-      waitUntil(() -> vertices[1].deployments().size() == 1);
-      checkDeploymentExists(1, "java:" + HAVerticle1.class.getName(), options);
-      testComplete();
+      latch.countDown();
     });
-    await();
+    awaitLatch(latch);
+    kill(0);
+    waitUntil(() -> vertices[1].deployments().size() == 1);
+    checkDeploymentExists(1, "java:" + HAVerticle1.class.getName(), options);
   }
 
   @Test
@@ -176,7 +178,7 @@ public class HATest extends VertxTestBase {
     });
     ((VertxInternal)vertx3).simulateKill();
     awaitLatch(latch3);
-    assertTrue(vertx2.deployments().size() == 1);
+    waitUntil(() -> vertx2.deployments().size() == 1);
     closeVertices(vertx1, vertx2, vertx3);
   }
 
@@ -272,7 +274,6 @@ public class HATest extends VertxTestBase {
     awaitLatch(latch1);
     CountDownLatch latch2 = new CountDownLatch(1);
     // Close vertx2 - this should not then participate in failover
-    System.out.println("Closing vertx2");
     vertx2.close(ar -> {
       ((VertxInternal) vertx1).failoverCompleteHandler(succeeded -> {
         assertTrue(succeeded);
@@ -286,7 +287,6 @@ public class HATest extends VertxTestBase {
     assertTrue(vertx1.deployments().size() == 1);
     String depID = vertx1.deployments().iterator().next();
     assertTrue(((VertxInternal) vertx1).getDeployment(depID).verticleName().equals("java:" + HAVerticle1.class.getName()));
-    System.out.println("Got to end!");
     closeVertices(vertx1, vertx3);
   }
 
@@ -358,12 +358,11 @@ public class HATest extends VertxTestBase {
       setClusterHost("localhost").setClusterManager(getClusterManager());
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Vertx> vertxRef = new AtomicReference<>();
-    Vertx.vertx(options, ar -> {
-      assertTrue(ar.succeeded());
-      vertxRef.set(ar.result());
+    Vertx.vertx(options, onSuccess(vertx -> {
+      vertxRef.set(vertx);
       latch.countDown();
-    });
-    awaitLatch(latch);
+    }));
+    latch.await(2, TimeUnit.MINUTES);
     return vertxRef.get();
   }
 
@@ -387,11 +386,11 @@ public class HATest extends VertxTestBase {
   protected void closeVertices(Vertx... vertices) throws Exception {
     CountDownLatch latch = new CountDownLatch(vertices.length);
     for (int i = 0; i < vertices.length; i++) {
-      vertices[i].close(ar -> {
+      vertices[i].close(onSuccess(res -> {
         latch.countDown();
-      });
+      }));
     }
-    awaitLatch(latch);
+    latch.await(2, TimeUnit.SECONDS);
   }
 
 

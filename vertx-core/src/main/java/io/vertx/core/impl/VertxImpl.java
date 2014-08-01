@@ -86,7 +86,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   private final FileSystem fileSystem = getFileSystem();
-  private final EventBus eventBus;
+  private EventBus eventBus;
   private final SharedData sharedData;
 
   private ExecutorService workerPool;
@@ -119,21 +119,25 @@ public class VertxImpl implements VertxInternal {
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
       this.clusterManager.setVertx(this);
-      this.clusterManager.join();
-      if (options.isHAEnabled()) {
-        haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
-      }
-      Vertx inst = this;
-      this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout(), options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
-        if (resultHandler != null) {
-          if (res.succeeded()) {
-            resultHandler.handle(new FutureResultImpl<>(inst));
-          } else {
-            resultHandler.handle(new FutureResultImpl<>(res.cause()));
-          }
-        } else if (res.failed()) {
-          log.error("Failed to start event bus", res.cause());
+      this.clusterManager.join(ar -> {
+        if (ar.failed()) {
+          log.error("Failed to join cluster", ar.cause());
         }
+        if (options.isHAEnabled()) {
+          haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
+        }
+        Vertx inst = this;
+        eventBus = new EventBusImpl(this, options.getProxyOperationTimeout(), options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
+          if (resultHandler != null) {
+            if (res.succeeded()) {
+              resultHandler.handle(new FutureResultImpl<>(inst));
+            } else {
+              resultHandler.handle(new FutureResultImpl<>(res.cause()));
+            }
+          } else if (res.failed()) {
+            log.error("Failed to start event bus", res.cause());
+          }
+        });
       });
     } else {
       this.clusterManager = null;
@@ -330,7 +334,9 @@ public class VertxImpl implements VertxInternal {
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (closed) {
-      throw new IllegalStateException("Already closed");
+      runOnContext(v -> {
+        completionHandler.handle(new FutureResultImpl<>((Void)null));
+      });
     }
     closed = true;
     deploymentManager.undeployAll(ar -> {

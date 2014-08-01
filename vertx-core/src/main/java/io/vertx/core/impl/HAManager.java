@@ -227,7 +227,11 @@ public class HAManager {
   public void simulateKill() {
     if (!stopped) {
       killed = true;
-      clusterManager.leave();
+      clusterManager.leave(ar -> {
+        if (ar.failed()) {
+          log.error("Failed to leave cluster", ar.cause());
+        }
+      });
       vertx.cancelTimer(quorumTimerID);
       stopped = true;
     }

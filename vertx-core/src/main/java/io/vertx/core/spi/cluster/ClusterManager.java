@@ -90,12 +90,12 @@ public interface ClusterManager {
   /**
    * Join the cluster
    */
-  void join();
+  void join(Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Leave the cluster
    */
-  void leave();
+  void leave(Handler<AsyncResult<Void>> resultHandler);
 
   boolean isActive();
 }

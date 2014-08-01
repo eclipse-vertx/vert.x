@@ -73,14 +73,12 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   private static void doLeave(String nodeID) {
-    if (!nodes.containsKey(nodeID)) {
-      throw new IllegalStateException("Node hasn't joined!");
-    }
     nodes.remove(nodeID);
     for (NodeListener listener: new ArrayList<>(nodeListeners)) {
-      listener.nodeLeft(nodeID);
+      if (listener != null) {
+        listener.nodeLeft(nodeID);
+      }
     }
-
   }
 
   private static void doAddNodeListener(NodeListener listener) {
@@ -174,23 +172,25 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void join() {
+  public void join(Handler<AsyncResult<Void>> resultHandler) {
     this.nodeID = UUID.randomUUID().toString();
     doJoin(nodeID, this);
+    Context context = vertx.getOrCreateContext();
+    context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>((Void)null)));
   }
 
   @Override
-  public void leave() {
-    if (nodeID == null) {
-      // Not joined
-      return;
+  public void leave(Handler<AsyncResult<Void>> resultHandler) {
+    if (nodeID != null) {
+      if (nodeListener != null) {
+        doRemoveNodeListener(nodeListener);
+        nodeListener = null;
+      }
+      doLeave(nodeID);
+      this.nodeID = null;
     }
-    if (nodeListener != null) {
-      doRemoveNodeListener(nodeListener);
-      nodeListener = null;
-    }
-    doLeave(nodeID);
-    this.nodeID = null;
+    Context context = vertx.getOrCreateContext();
+    context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>((Void)null)));
   }
 
   @Override

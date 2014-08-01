@@ -172,13 +172,30 @@ public class EventBusImpl implements EventBus {
 
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
-		if (clusterMgr != null) {
-			clusterMgr.leave();
-		}
-		if (server != null) {
-			server.close(completionHandler);
-		} else if (completionHandler != null) {
-      vertx.runOnContext(v-> completionHandler.handle(new FutureResultImpl<>((Void)null)));
+    if (server != null) {
+      server.close(ar -> {
+        if (ar.failed()) {
+          log.error("Failed to close server", ar.cause());
+        }
+        closeClusterManager(completionHandler);
+      });
+    } else {
+      closeClusterManager(completionHandler);
+    }
+  }
+
+  private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
+    if (clusterMgr != null) {
+      clusterMgr.leave(ar -> {
+        if (ar.failed()) {
+          log.error("Failed to leave cluster", ar.cause());
+        }
+        if (completionHandler != null) {
+          vertx.runOnContext(v -> completionHandler.handle(new FutureResultImpl<>((Void) null)));
+        }
+      });
+    } else if (completionHandler != null) {
+      vertx.runOnContext(v -> completionHandler.handle(new FutureResultImpl<>((Void) null)));
     }
   }
 

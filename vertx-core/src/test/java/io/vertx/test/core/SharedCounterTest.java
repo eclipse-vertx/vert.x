@@ -166,9 +166,7 @@ public class SharedCounterTest extends VertxTestBase {
     getVertx().sharedData().getCounter("foo", ar -> {
       assertTrue(ar.succeeded());
       Counter counter = ar.result();
-      counter.compareAndSet(0l, 2l, ar2 -> {
-        assertTrue(ar2.succeeded());
-        assertTrue(ar2.result());
+      counter.compareAndSet(0l, 2l, onSuccess(result -> {
         getVertx().sharedData().getCounter("foo", ar3 -> {
           assertTrue(ar3.succeeded());
           Counter counter2 = ar3.result();
@@ -182,8 +180,9 @@ public class SharedCounterTest extends VertxTestBase {
             });
           });
         });
-      });
+      }));
     });
+    await();
   }
 
   @Test
@@ -191,8 +190,8 @@ public class SharedCounterTest extends VertxTestBase {
     getVertx().sharedData().getCounter("foo", ar -> {
       assertTrue(ar.succeeded());
       Counter counter = ar.result();
-      counter.incrementAndGet(ar2 -> {
-        assertEquals(1l, ar2.result().longValue());
+      counter.incrementAndGet(onSuccess(res -> {
+        assertEquals(1l, res.longValue());
         getVertx().sharedData().getCounter("bar", ar3 -> {
           assertTrue(ar3.succeeded());
           Counter counter2 = ar3.result();
@@ -204,8 +203,9 @@ public class SharedCounterTest extends VertxTestBase {
             });
           });
         });
-      });
+      }));
     });
+    await();
   }
 
 }

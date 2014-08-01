@@ -48,7 +48,6 @@ public class VertxTestBase extends AsyncTestBase {
     if (vertx != null) {
       CountDownLatch latch = new CountDownLatch(1);
       vertx.close(ar -> {
-        assertTrue(ar.succeeded());
         latch.countDown();
       });
       awaitLatch(latch);
@@ -62,7 +61,7 @@ public class VertxTestBase extends AsyncTestBase {
           });
         }
       }
-      assertTrue(latch.await(30, TimeUnit.SECONDS));
+      assertTrue(latch.await(180, TimeUnit.SECONDS));
     }
     FakeClusterManager.reset(); // Bit ugly
   }

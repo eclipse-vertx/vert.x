@@ -74,7 +74,7 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
   private String membershipListenerId;
 
   private NodeListener nodeListener;
-  private boolean active;
+  private volatile boolean active;
 
   private Config conf;
 
@@ -98,21 +98,22 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
     this.vertx = vertx;
   }
 
-  public synchronized void join() {
-    if (active) {
-      return;
-    }
-    Config cfg = getConfig();
-    if (cfg == null) {
-      log.warn("Cannot find cluster configuration on classpath. Using default hazelcast configuration");
-    }
-    hazelcast = Hazelcast.newHazelcastInstance(cfg);
-
-    nodeID = hazelcast.getCluster().getLocalMember().getUuid();
-
-    membershipListenerId = hazelcast.getCluster().addMembershipListener(this);
-
-    active = true;
+  public synchronized void join(Handler<AsyncResult<Void>> resultHandler) {
+    vertx.executeBlocking(() -> {
+      if (active) {
+        return null;
+      } else {
+        active = true;
+        Config cfg = getConfig();
+        if (cfg == null) {
+          log.warn("Cannot find cluster configuration on classpath. Using default hazelcast configuration");
+        }
+        hazelcast = Hazelcast.newHazelcastInstance(cfg);
+        nodeID = hazelcast.getCluster().getLocalMember().getUuid();
+        membershipListenerId = hazelcast.getCluster().addMembershipListener(this);
+        return null;
+      }
+    }, resultHandler);
   }
 
 	/**
@@ -202,18 +203,20 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
     vertx.executeBlocking(() ->  new HazelcastCounter(hazelcast.getAtomicLong(name)), resultHandler);
   }
 
-  public synchronized void leave() {
-    if (!active) {
-      return;
-    }
-    boolean left = hazelcast.getCluster().removeMembershipListener(membershipListenerId);
-
-    if (!left) {
-        log.warn("Unable to remove membership listener");
-    }
-
- 	  hazelcast.getLifecycleService().shutdown();
-    active = false;
+  public synchronized void leave(Handler<AsyncResult<Void>> resultHandler) {
+    vertx.executeBlocking(() -> {
+      if (!active) {
+        return null;
+      } else {
+        active = false;
+        boolean left = hazelcast.getCluster().removeMembershipListener(membershipListenerId);
+        if (!left) {
+          log.warn("No membership listener");
+        }
+        hazelcast.getLifecycleService().shutdown();
+        return null;
+      }
+    }, resultHandler);
   }
 
   @Override
