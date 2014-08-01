@@ -25,6 +25,10 @@ import org.junit.Test;
  */
 public class HazelcastClusteredEventbusTest extends ClusteredEventBusTest {
 
+  static {
+    System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+  }
+
   @Override
   protected ClusterManager getClusterManager() {
     return new HazelcastClusterManager();

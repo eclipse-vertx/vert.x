@@ -54,13 +54,9 @@ public class AsynchronousLockTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       long start = System.currentTimeMillis();
       Lock lock = ar.result();
-      vertx.setTimer(1000, tid -> {
-        lock.release();
-      });
       getVertx().sharedData().getLock("bar", ar2 -> {
         assertTrue(ar2.succeeded());
-        // Should be delayed
-        assertTrue(System.currentTimeMillis() - start < 500);
+        assertTrue(System.currentTimeMillis() - start < 2000);
         testComplete();
       });
     });
