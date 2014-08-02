@@ -69,12 +69,17 @@ public class ComplexHATest extends VertxTestBase {
   @Test
   @Repeat(times = 10)
   public void testComplexFailover() {
-    int numNodes = 8;
-    createNodes(numNodes);
-    deployRandomVerticles(() -> {
-      killRandom();
-    });
-    await(10, TimeUnit.MINUTES);
+    try {
+      int numNodes = 8;
+      createNodes(numNodes);
+      deployRandomVerticles(() -> {
+        killRandom();
+      });
+      await(10, TimeUnit.MINUTES);
+    } catch (Throwable t) {
+      // Need to explicitly catch throwables in repeats or they will be swallowed
+      t.printStackTrace();
+    }
   }
 
   protected void deployRandomVerticles(Runnable runner) {

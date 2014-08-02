@@ -380,7 +380,12 @@ public class HATest extends VertxTestBase {
 
   protected void kill(int pos) {
     VertxInternal v = (VertxInternal)vertices[pos];
-    v.simulateKill();
+    v.executeBlocking(() -> {
+      v.simulateKill();
+      return null;
+    }, ar -> {
+      assertTrue(ar.succeeded());
+    });
   }
 
   protected void closeVertices(Vertx... vertices) throws Exception {

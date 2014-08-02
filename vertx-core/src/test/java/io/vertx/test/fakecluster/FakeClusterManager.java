@@ -42,12 +42,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class FakeClusterManager implements ClusterManager {
 
   private static Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
 
-  private static List<NodeListener> nodeListeners = new ArrayList<>();
+  private static List<NodeListener> nodeListeners = new CopyOnWriteArrayList<>();
   private static ConcurrentMap<String, AsyncMap> asyncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, AsyncMultiMap> asyncMultiMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
@@ -68,7 +69,9 @@ public class FakeClusterManager implements ClusterManager {
     }
     nodes.put(nodeID, node);
     for (NodeListener listener: new ArrayList<>(nodeListeners)) {
-      listener.nodeAdded(nodeID);
+      if (listener != null) {
+        listener.nodeAdded(nodeID);
+      }
     }
   }
 
@@ -176,7 +179,9 @@ public class FakeClusterManager implements ClusterManager {
     this.nodeID = UUID.randomUUID().toString();
     doJoin(nodeID, this);
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>((Void)null)));
+    context.runOnContext(v -> {
+      resultHandler.handle(new FutureResultImpl<>((Void)null));
+    });
   }
 
   @Override
