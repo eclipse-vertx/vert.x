@@ -59,33 +59,4 @@
     </dependency>
   </dependencies>
 
-  <profiles>
-    <profile>
-      <id>HazelcastTests</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <excludes>
-                <!-- We need to add a dummy exclude to override the inherited excludes from the parent pom.xml-->
-                <exclude>wibblefoobar</exclude>
-              </excludes>
-              <includes>
-                <include>**/Hazelcast*.java</include>
-              </includes>
-            </configuration>
-            <executions>
-              <execution>
-                <id>execution2</id>
-                <phase>test</phase>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
-
 </project>
