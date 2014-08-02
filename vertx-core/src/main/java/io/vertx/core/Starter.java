@@ -219,7 +219,7 @@ public class Starter {
           latch.countDown();
         });
         try {
-          if (!latch.await(30, TimeUnit.SECONDS)) {
+          if (!latch.await(2, TimeUnit.MINUTES)) {
             log.error("Timed out waiting to undeploy all");
           }
         } catch (InterruptedException e) {

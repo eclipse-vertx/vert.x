@@ -90,7 +90,7 @@ public class VertxTestBase extends AsyncTestBase {
       });
     }
     try {
-      assertTrue(latch.await(30, TimeUnit.SECONDS));
+      assertTrue(latch.await(2, TimeUnit.MINUTES));
     } catch (InterruptedException e) {
       fail(e.getMessage());
     }

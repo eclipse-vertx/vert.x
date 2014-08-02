@@ -395,7 +395,7 @@ public class HATest extends VertxTestBase {
         latch.countDown();
       }));
     }
-    latch.await(2, TimeUnit.SECONDS);
+    latch.await(2, TimeUnit.MINUTES);
   }
 
 
