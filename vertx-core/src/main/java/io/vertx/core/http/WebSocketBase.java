@@ -69,6 +69,17 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   @Fluent
   T writeTextFrame(String str);
 
+  /*
+  OK - get rid of above writeBinaryFrame/writeTextFrame and replace with writeFrame which takes a websocket frame
+  allow websocket frame to be instantiated
+
+  Also provide a method to write a single complete websocket message
+
+  For reading provide a method to read a single websocket message, like a body handler
+   */
+
+
+
   /**
    * Set a closed handler on the connection
    */
