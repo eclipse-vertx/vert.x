@@ -65,7 +65,7 @@ public class AsyncTestBase {
   }
 
   protected void await() {
-    await(10, TimeUnit.SECONDS);
+    await(2, TimeUnit.MINUTES);
   }
 
   public void await(long delay, TimeUnit timeUnit) {
