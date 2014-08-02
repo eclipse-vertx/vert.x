@@ -109,10 +109,6 @@
         <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-            <systemPropertyVariables>
-              <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
-            </systemPropertyVariables>
-            <argLine>-server -Xms128m -Xmx1024m -XX:NewRatio=2</argLine>
             <excludes>
               <exclude>**/ScratchPad.java</exclude>
             </excludes>

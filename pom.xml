@@ -179,8 +179,12 @@
                 <exclude>**/Hazelcast*.java</exclude>
               </excludes>
             <systemPropertyVariables>
+              <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
               <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
             </systemPropertyVariables>
+            <argLine>-Xmx2G</argLine>
+            <forkCount>1</forkCount>
+            <reuseForks>true</reuseForks>
           </configuration>
         </plugin>
           <plugin>
