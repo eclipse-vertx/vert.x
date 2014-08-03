@@ -135,20 +135,21 @@ public class AsyncTestBaseTest extends AsyncTestBase {
     }
   }
 
-  @Test
-  public void testTimeoutDefault() {
-    long start = System.currentTimeMillis();
-    try {
-      await();
-    } catch (IllegalStateException error) {
-      long now = System.currentTimeMillis();
-      assertTrue(error.getMessage().startsWith("Timed out in waiting for test complete"));
-      long delay = now - start;
-      long defaultTimeout = 10000;
-      assertTrue(delay >= defaultTimeout);
-      assertTrue(delay < defaultTimeout * 1.5);
-    }
-  }
+// Removed this test as default timeout is now too large
+//  @Test
+//  public void testTimeoutDefault() {
+//    long start = System.currentTimeMillis();
+//    try {
+//      await();
+//    } catch (IllegalStateException error) {
+//      long now = System.currentTimeMillis();
+//      assertTrue(error.getMessage().startsWith("Timed out in waiting for test complete"));
+//      long delay = now - start;
+//      long defaultTimeout = 10000;
+//      assertTrue(delay >= defaultTimeout);
+//      assertTrue(delay < defaultTimeout * 1.5);
+//    }
+//  }
 
   @Test
   public void testFailFromOtherThread() {

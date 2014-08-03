@@ -721,17 +721,19 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testContextsSend() throws Exception {
     Set<ContextImpl> contexts = new ConcurrentHashSet<>();
+    CountDownLatch latch = new CountDownLatch(2);
     vertx.eventBus().registerHandler(ADDRESS1, msg -> {
       msg.reply("bar");
       contexts.add(((VertxInternal) vertx).getContext());
+      latch.countDown();
     });
     vertx.eventBus().send(ADDRESS1, "foo", reply -> {
       assertEquals("bar", reply.body());
       contexts.add(((VertxInternal) vertx).getContext());
-      assertEquals(2, contexts.size());
-      testComplete();
+      latch.countDown();
     });
-    await();
+    awaitLatch(latch);
+    assertEquals(2, contexts.size());
   }
   
   @Test
