@@ -162,7 +162,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   @Override
-  public boolean isFinalFrame() {
+  public boolean isFinal() {
     return isFinalFrame;
   }
 

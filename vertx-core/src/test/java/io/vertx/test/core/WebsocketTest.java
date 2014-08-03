@@ -711,10 +711,10 @@ public class WebsocketTest extends VertxTestBase {
         AtomicBoolean receivedFirstFrame = new AtomicBoolean();
         ws.frameHandler(received -> {
           Buffer receivedBuffer = Buffer.buffer(received.textData());
-          if (!received.isFinalFrame()) {
+          if (!received.isFinal()) {
             assertEquals(firstFrame, receivedBuffer.toString());
             receivedFirstFrame.set(true);
-          } else if (receivedFirstFrame.get() && received.isFinalFrame()) {
+          } else if (receivedFirstFrame.get() && received.isFinal()) {
             assertEquals(continuationFrame, receivedBuffer.toString());
             ws.close();
             testComplete();

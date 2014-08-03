@@ -156,7 +156,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
 
   @Override
   public ServerWebSocket writeBuffer(Buffer data) {
-    writeBinaryFrame(data);
+    writeFrame(WebSocketFrame.binaryFrame(data, true));
     return this;
   }
 
@@ -168,19 +168,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public ServerWebSocket writeBinaryFrame(Buffer data) {
-    super.writeBinaryFrameInternal(data);
-    return this;
-  }
-
-  @Override
-  public ServerWebSocket writeTextFrame(String str) {
-    super.writeTextFrameInternal(str);
-    return this;
-  }
-
-  @Override
-  protected void writeFrame(WebSocketFrame frame) {
+  public ServerWebSocket writeFrame(WebSocketFrame frame) {
     if (connectRunnable != null) {
       if (rejected) {
         throw new IllegalStateException("Cannot write to websocket, it has been rejected");
@@ -189,7 +177,15 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
         connect();
       }
     }
-    super.writeFrame(frame);
+    super.writeFrameInternal(frame);
+    return this;
+  }
+
+  @Override
+  public ServerWebSocket writeMessage(Buffer data) {
+    checkClosed();
+    writeMessageInternal(data);
+    return this;
   }
 
   private void connect() {

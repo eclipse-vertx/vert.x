@@ -51,14 +51,14 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
   }
 
   @Override
-  public WebSocket writeBinaryFrame(Buffer data) {
-    super.writeBinaryFrameInternal(data);
+  public WebSocket writeFrame(WebSocketFrame frame) {
+    writeFrameInternal(frame);
     return this;
   }
 
   @Override
-  public WebSocket writeTextFrame(String str) {
-    super.writeTextFrameInternal(str);
+  public WebSocket writeMessage(Buffer data) {
+    writeMessageInternal(data);
     return this;
   }
 
@@ -99,7 +99,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
 
   @Override
   public WebSocket writeBuffer(Buffer data) {
-    writeBinaryFrame(data);
+    writeFrame(WebSocketFrame.binaryFrame(data, true));
     return this;
   }
 
