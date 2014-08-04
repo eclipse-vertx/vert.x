@@ -294,6 +294,7 @@ class ServerConnection extends ConnectionBase {
       }
     } else if (msg instanceof WebSocketFrameInternal) {
       WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      //System.out.println("got ws frame, final? " + frame.isFinal() + " size: " + frame.binaryData().length());
       handleWsFrame(frame);
     }
 

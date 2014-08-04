@@ -25,6 +25,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -43,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -346,7 +348,7 @@ public class WebsocketTest extends VertxTestBase {
           }
         });
         Buffer buff = Buffer.buffer(TestUtils.randomByteArray(size));
-        ws.writeBinaryFrame(buff);
+        ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
       });
     });
     await();
@@ -649,33 +651,60 @@ public class WebsocketTest extends VertxTestBase {
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
       assertEquals("Upgrade", ws.headers().get("Connection"));
-      ws.dataHandler(data -> ws.writeBuffer(data));
+      ws.frameHandler(frame -> {
+        ws.writeFrame(frame);
+        System.out.println("wrote frame server " + frame.isFinal());
+      });
     });
 
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       int bsize = 100;
-      int sends = 10;
+
+      int msgs = 10;
+      int frames = 10;
 
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
-        final Buffer received = Buffer.buffer();
-        ws.dataHandler(data -> {
-          received.appendBuffer(data);
-          if (received.length() == bsize * sends) {
-            ws.close();
+        final List<Buffer> sent = new ArrayList<>();
+        final List<Buffer> received = new ArrayList<>();
+
+        AtomicReference<Buffer> currentReceived = new AtomicReference<>(Buffer.buffer());
+        ws.frameHandler(frame -> {
+          //received.appendBuffer(frame.binaryData());
+          currentReceived.get().appendBuffer(frame.binaryData());
+          if (frame.isFinal()) {
+            received.add(currentReceived.get());
+            currentReceived.set(Buffer.buffer());
+          }
+          if (received.size() == msgs) {
+            int pos = 0;
+            for (Buffer rec: received) {
+              TestUtils.buffersEqual(rec, sent.get(pos++));
+            }
             testComplete();
           }
         });
-        final Buffer sent = Buffer.buffer();
-        for (int i = 0; i < sends; i++) {
-          if (binary) {
-            Buffer buff = Buffer.buffer(TestUtils.randomByteArray(bsize));
-            ws.writeBinaryFrame(buff);
-            sent.appendBuffer(buff);
-          } else {
-            String str = TestUtils.randomAlphaString(bsize);
-            ws.writeTextFrame(str);
-            sent.appendBuffer(Buffer.buffer(str, "UTF-8"));
+
+        AtomicReference<Buffer> currentSent = new AtomicReference<>(Buffer.buffer());
+        for (int i = 0; i < msgs; i++) {
+          for (int j = 0; j < frames; j++) {
+            Buffer buff;
+            WebSocketFrame frame;
+            if (binary) {
+              buff = Buffer.buffer(TestUtils.randomByteArray(bsize));
+              frame = WebSocketFrame.binaryFrame(buff, j == frames - 1);
+            } else {
+              String str = TestUtils.randomAlphaString(bsize);
+              buff = Buffer.buffer(str);
+              frame = WebSocketFrame.textFrame(str, j == frames - 1);
+            }
+            currentSent.get().appendBuffer(buff);
+            ws.writeFrame(frame);
+            System.out.println("Wrote frame from client: " + frame.isFinal());
+            if (j == frames - 1) {
+              sent.add(currentSent.get());
+              currentSent.set(Buffer.buffer());
+            }
           }
         }
       });
@@ -732,7 +761,7 @@ public class WebsocketTest extends VertxTestBase {
 
     server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
-      ws.writeBinaryFrame(buff);
+      ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -757,7 +786,7 @@ public class WebsocketTest extends VertxTestBase {
     Buffer buff = Buffer.buffer("AAA");
     server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol(subProtocol)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
-      ws.writeBinaryFrame(buff);
+      ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -783,7 +812,7 @@ public class WebsocketTest extends VertxTestBase {
 
     server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
       assertEquals(path, ws.path());
-      ws.writeBinaryFrame(buff);
+      ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
