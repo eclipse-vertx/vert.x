@@ -25,7 +25,7 @@ public class SocketDefaults {
 
   private static final Logger log = LoggerFactory.getLogger(SocketDefaults.class);
 
-  public static SocketDefaults instance = new SocketDefaults();
+  public static final SocketDefaults instance = new SocketDefaults();
 
   private boolean tcpNoDelay = true;
   private int tcpSendBufferSize;

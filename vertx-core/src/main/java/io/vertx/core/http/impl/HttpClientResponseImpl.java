@@ -221,7 +221,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
 
-  private final class BodyHandler implements Handler<Buffer> {
+  private static final class BodyHandler implements Handler<Buffer> {
     private Buffer body;
 
     @Override

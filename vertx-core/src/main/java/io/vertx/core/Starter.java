@@ -44,7 +44,7 @@ public class Starter {
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
-  public static Starter instance = new Starter();
+  public static final Starter instance = new Starter();
 
   public static void main(String[] args) {
     instance.run(args);

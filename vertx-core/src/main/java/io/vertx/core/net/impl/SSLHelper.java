@@ -212,7 +212,7 @@ public class SSLHelper {
       sslContext = createContext(vertx);
     }
     SSLEngine engine = sslContext.createSSLEngine();
-    String[] current = engine.getSupportedCipherSuites();
+//    String[] current = engine.getSupportedCipherSuites();
 //    System.out.println("Enabled cipher suites:");
 //    for (String str: current) {
 //      System.out.println("\"" + str+ "\",");
