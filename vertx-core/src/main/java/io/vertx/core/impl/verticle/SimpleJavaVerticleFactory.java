@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.impl;
+package io.vertx.core.impl.verticle;
 
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
@@ -36,7 +36,14 @@ public class SimpleJavaVerticleFactory implements VerticleFactory {
 
   @Override
   public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
-    Class clazz = classLoader.loadClass(verticleName);
+    Class clazz;
+    if (verticleName.endsWith(".java")) {
+      CompilingClassLoader compilingLoader = new CompilingClassLoader(classLoader, verticleName);
+      String className = compilingLoader.resolveMainClassName();
+      clazz = compilingLoader.loadClass(className);
+    } else {
+      clazz = classLoader.loadClass(verticleName);
+    }
     return (Verticle) clazz.newInstance();
   }
 

@@ -37,4 +37,6 @@ public interface Deployment {
   DeploymentOptions deploymentOptions();
 
   Verticle getVerticle();
+
+  boolean isChild();
 }

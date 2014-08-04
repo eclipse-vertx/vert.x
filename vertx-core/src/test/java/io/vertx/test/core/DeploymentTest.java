@@ -32,6 +32,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.test.core.sourceverticle.SourceVerticle;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -491,6 +492,16 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testDeployAsSource() throws Exception {
+    String sourceFile = SourceVerticle.class.getName().replace('.', '/');
+    sourceFile += ".java";
+    vertx.deployVerticle("java:" + sourceFile, DeploymentOptions.options(), onSuccess(res -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
   public void testSimpleChildDeployment() throws Exception {
     Verticle verticle = new MyAsyncVerticle(f -> {
       Context parentContext = vertx.currentContext();
@@ -760,6 +771,23 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  public static class ParentVerticle extends AbstractVerticle {
+
+    @Override
+    public void start(Future<Void> startFuture) throws Exception {
+      vertx.deployVerticle("java:" + ChildVerticle.class.getName(), DeploymentOptions.options(), ar -> {
+        if (ar.succeeded()) {
+          startFuture.setResult(null);
+        } else {
+          ar.cause().printStackTrace();
+        }
+      });
+    }
+  }
+
+  public static class ChildVerticle extends AbstractVerticle {
+  }
+
   @Test
   public void testUndeployAll() throws Exception {
     int numVerticles = 10;
@@ -768,17 +796,15 @@ public class DeploymentTest extends VertxTestBase {
     for (int i = 0; i < numVerticles; i++) {
       MyVerticle verticle = new MyVerticle();
       verticles.add(verticle);
-      vertx.deployVerticleInstance(verticle, DeploymentOptions.options(), ar2 -> {
-        assertTrue(ar2.succeeded());
+      vertx.deployVerticle("java:" + ParentVerticle.class.getName(), DeploymentOptions.options(), onSuccess(res -> {
         latch.countDown();
-      });
+      }));
     }
     awaitLatch(latch);
+    assertEquals(2 * numVerticles, vertx.deployments().size());
     vertx.close(ar -> {
       assertTrue(ar.succeeded());
-      for (MyVerticle verticle: verticles) {
-        assertTrue(verticle.stopCalled);
-      }
+      assertEquals(0, vertx.deployments().size());
       testComplete();
     });
     await();

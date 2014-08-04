@@ -22,6 +22,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
+import io.vertx.core.impl.verticle.SimpleJavaVerticleFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -136,7 +137,14 @@ public class DeploymentManager {
 
   public void undeployAll(Handler<AsyncResult<Void>> completionHandler) {
     // TODO timeout if it takes too long - e.g. async stop verticle fails to call future
-    Set<String> deploymentIDs = new HashSet<>(deployments.keySet());
+
+    // We only deploy the top level verticles as the children will be undeployed when the parent is
+    Set<String> deploymentIDs = new HashSet<>();
+    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
+      if (!entry.getValue().isChild()) {
+        deploymentIDs.add(entry.getKey());
+      }
+    }
     if (!deploymentIDs.isEmpty()) {
       AtomicInteger count = new AtomicInteger(0);
       for (String deploymentID : deploymentIDs) {
@@ -260,6 +268,7 @@ public class DeploymentManager {
     Deployment parent = currentContext.getDeployment();
     if (parent != null) {
       parent.addChild(deployment);
+      deployment.child = true;
     }
     JsonObject conf = options.getConfig() == null ? null : options.getConfig().copy(); // Copy it
     context.runOnContext(v -> {
@@ -292,6 +301,7 @@ public class DeploymentManager {
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private final DeploymentOptions options;
     private boolean undeployed;
+    private volatile boolean child;
 
     private DeploymentImpl(String id, ContextImpl context, String verticleName, Verticle verticle, DeploymentOptions options) {
       this.id = id;
@@ -364,13 +374,18 @@ public class DeploymentManager {
     }
 
     @Override
-    public void addChild(Deployment deployment) {
+    public synchronized void addChild(Deployment deployment) {
       children.add(deployment);
     }
 
     @Override
     public Verticle getVerticle() {
       return verticle;
+    }
+
+    @Override
+    public boolean isChild() {
+      return child;
     }
 
   }

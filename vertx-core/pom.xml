@@ -112,6 +112,9 @@
             <excludes>
               <exclude>**/ScratchPad.java</exclude>
             </excludes>
+            <additionalClasspathElements>
+              <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+            </additionalClasspathElements>
           </configuration>
         </plugin>
     </plugins>
