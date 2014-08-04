@@ -706,15 +706,16 @@ public class EventBusImpl implements EventBus {
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
       HandlerHolder that = (HandlerHolder) o;
-      return handler.equals(that.handler);
+      if (handler != null ? !handler.equals(that.handler) : that.handler != null) return false;
+      return true;
     }
 
     @Override
     public int hashCode() {
-      return handler.hashCode();
+      return handler != null ? handler.hashCode() : 0;
     }
-
   }
 
   private class ConnectionHolder {

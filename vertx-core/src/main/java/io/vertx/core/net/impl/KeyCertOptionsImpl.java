@@ -24,7 +24,7 @@ import io.vertx.core.net.KeyCertOptions;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class KeyCertOptionsImpl implements KeyCertOptions {
+public class KeyCertOptionsImpl implements KeyCertOptions, Cloneable {
 
   private String keyPath;
   private Buffer keyValue;

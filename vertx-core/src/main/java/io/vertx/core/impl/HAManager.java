@@ -447,8 +447,8 @@ public class HAManager {
       String group = theHAInfo.getString("group");
       String chosen = chooseHashedNode(group, failedNodeID.hashCode());
       if (chosen != null && chosen.equals(this.nodeID)) {
-        log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deployments from that node.");
         if (deployments != null) {
+          log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deployments from that node.");
           for (Object obj: deployments) {
             JsonObject app = (JsonObject)obj;
             processFailover(app);

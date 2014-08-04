@@ -75,7 +75,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       // We execute this directly as we don't have a context yet, the context will have to be set manually
       // inside doMessageReceived();
       try {
-        doMessageReceived(connection, chctx, msg);
+        doMessageReceived(null, chctx, msg);
       } catch (Throwable t) {
         chctx.pipeline().fireExceptionCaught(t);
       }

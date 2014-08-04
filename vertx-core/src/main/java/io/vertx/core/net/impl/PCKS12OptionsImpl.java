@@ -24,7 +24,7 @@ import io.vertx.core.net.PKCS12Options;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class PCKS12OptionsImpl implements PKCS12Options {
+public class PCKS12OptionsImpl implements PKCS12Options, Cloneable {
 
   private String password;
   private String path;

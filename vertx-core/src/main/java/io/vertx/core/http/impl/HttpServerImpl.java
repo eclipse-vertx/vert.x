@@ -562,13 +562,16 @@ public class HttpServerImpl implements HttpServer, Closeable {
       }
       HandlerHolder<ServerWebSocket> firstHandler = null;
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
-      // Set context manually
-      vertx.setContext(wsHandler.context);
+
       while (true) {
-        if (wsHandler == null || firstHandler == wsHandler) {
+        if (wsHandler == null) {
           break;
         }
-
+        // Set context manually
+        vertx.setContext(wsHandler.context);
+        if (firstHandler == wsHandler) {
+          break;
+        }
         URI theURI;
         try {
           theURI = new URI(request.getUri());

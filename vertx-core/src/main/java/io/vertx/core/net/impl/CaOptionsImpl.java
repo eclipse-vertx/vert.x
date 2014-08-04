@@ -29,7 +29,7 @@ import java.util.List;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class CaOptionsImpl implements CaOptions {
+public class CaOptionsImpl implements CaOptions, Cloneable {
 
   private ArrayList<String> certPaths;
   private ArrayList<Buffer> certValues;

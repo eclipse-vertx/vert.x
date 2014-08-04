@@ -24,7 +24,7 @@ import io.vertx.core.net.JKSOptions;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JKSOptionsImpl implements JKSOptions {
+public class JKSOptionsImpl implements JKSOptions, Cloneable {
 
   private String password;
   private String path;

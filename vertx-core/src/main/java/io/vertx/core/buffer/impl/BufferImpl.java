@@ -303,7 +303,13 @@ public class BufferImpl implements Buffer {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     BufferImpl buffer1 = (BufferImpl) o;
-    return buffer.equals(buffer1.buffer);
+    if (buffer != null ? !buffer.equals(buffer1.buffer) : buffer1.buffer != null) return false;
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return buffer != null ? buffer.hashCode() : 0;
   }
 
   @Override
