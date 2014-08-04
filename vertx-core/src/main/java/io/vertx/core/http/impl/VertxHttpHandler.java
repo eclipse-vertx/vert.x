@@ -131,16 +131,16 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       }
       switch (frame.type()) {
         case BINARY:
-          msg = new BinaryWebSocketFrame(buf);
+          msg = new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
           break;
         case TEXT:
-          msg = new TextWebSocketFrame(buf);
+          msg = new TextWebSocketFrame(frame.isFinal(), 0, buf);
           break;
         case CLOSE:
           msg = new CloseWebSocketFrame(true, 0, buf);
           break;
         case CONTINUATION:
-          msg = new ContinuationWebSocketFrame(buf);
+          msg = new ContinuationWebSocketFrame(frame.isFinal(), 0, buf);
           break;
         case PONG:
           msg = new PongWebSocketFrame(buf);

@@ -30,6 +30,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -330,6 +331,18 @@ class ClientConnection extends ConnectionBase {
     }
     currentRequest = null;
     listener.requestEnded(this);
+  }
+
+  @Override
+  public void close() {
+    if (handshaker == null) {
+      super.close();
+    } else {
+      // make sure everything is flushed out on close
+      endReadAndFlush();
+      // close the websocket connection by sending a close frame.
+      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
+    }
   }
 
   NetSocket createNetSocket() {

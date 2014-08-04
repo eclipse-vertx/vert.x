@@ -467,7 +467,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
             if (reqHandler != null) {
               // We need to set the context manually as this is executed directly, not via context.execute()
               vertx.setContext(reqHandler.context);
-              conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin);
+              conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, null);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);
@@ -576,7 +576,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
           throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
         }
 
-        final ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context, serverOrigin);
+        final ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
+                                                             serverOrigin, shake);
         wsConn.wsHandler(wsHandler.handler);
 
         Runnable connectRunnable = () -> {
