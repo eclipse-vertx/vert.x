@@ -506,6 +506,8 @@ public class HttpClientImpl implements HttpClient {
               closeFrameSent = true;
             }
             break;
+          default:
+            throw new IllegalStateException("Invalid type: " + frame.type());
         }
         valid = true;
       }

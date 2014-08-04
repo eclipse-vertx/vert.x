@@ -499,6 +499,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
               closeFrameSent = true;
             }
             break;
+          default:
+            throw new IllegalStateException("Invalid type: " + wsFrame.type());
         }
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {

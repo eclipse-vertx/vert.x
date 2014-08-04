@@ -810,6 +810,7 @@ public class EventBusImpl implements EventBus {
 
     @Override
     public boolean equals(Object o) {
+      if (o == null) return false;
       if (this == o) return true;
       if (getClass() != o.getClass()) return false;
       HandlerEntry entry = (HandlerEntry) o;

@@ -38,15 +38,16 @@ public class HandlerManager<T> {
   private final VertxEventLoopGroup availableWorkers;
   private final ConcurrentMap<EventLoop, Handlers<T>> handlerMap = new ConcurrentHashMap<>();
 
-  // We maintain a separate handler count so we can implement hasHandlers() efficiently
-  private volatile int handlerCount;
+  // We maintain a separate hasHandlers variable so we can implement hasHandlers() efficiently
+  // As it is called for every HTTP message received
+  private volatile boolean hasHandlers;
 
   public HandlerManager(VertxEventLoopGroup availableWorkers) {
     this.availableWorkers = availableWorkers;
   }
 
   public boolean hasHandlers() {
-    return handlerCount != 0;
+    return hasHandlers;
   }
 
   public HandlerHolder<T> chooseHandler(EventLoop worker) {
@@ -63,10 +64,10 @@ public class HandlerManager<T> {
       handlers = prev;
     }
     handlers.addHandler(new HandlerHolder<>(context, handler));
-    handlerCount++;
+    hasHandlers = true;
   }
 
-  public synchronized  void removeHandler(Handler<T> handler, ContextImpl context) {
+  public synchronized void removeHandler(Handler<T> handler, ContextImpl context) {
     EventLoop worker = context.getEventLoop();
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
@@ -75,7 +76,9 @@ public class HandlerManager<T> {
     if (handlers.isEmpty()) {
       handlerMap.remove(worker);
     }
-    handlerCount--;
+    if (handlers.isEmpty()) {
+      hasHandlers = false;
+    }
     //Available workers does it's own reference counting -since workers can be shared across different Handlers
     availableWorkers.removeWorker(worker);
   }
