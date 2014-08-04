@@ -60,14 +60,14 @@ public class DefaultAsyncFile implements AsyncFile {
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> drainHandler;
 
-  private int writePos;
+  private long writePos;
   private int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
   private int lwm = maxWrites / 2;
 
   private boolean paused;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private int readPos;
+  private long readPos;
   private boolean readInProgress;
 
   DefaultAsyncFile(final VertxInternal vertx, final String path, String perms, final boolean read, final boolean write, final boolean createNew,
