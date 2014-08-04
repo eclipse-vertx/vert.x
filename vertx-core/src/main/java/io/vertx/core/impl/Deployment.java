@@ -19,6 +19,7 @@ package io.vertx.core.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
+import io.vertx.core.Verticle;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -34,4 +35,6 @@ public interface Deployment {
   String verticleName();
 
   DeploymentOptions deploymentOptions();
+
+  Verticle getVerticle();
 }

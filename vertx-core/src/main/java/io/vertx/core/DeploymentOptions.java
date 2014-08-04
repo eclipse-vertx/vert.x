@@ -20,6 +20,8 @@ import io.vertx.codegen.annotations.Options;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.DeploymentOptionsFactory;
 
+import java.util.List;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -59,6 +61,10 @@ public interface DeploymentOptions {
   boolean isHA();
 
   DeploymentOptions setHA(boolean HA);
+
+  List<String> getExtraClasspath();
+
+  DeploymentOptions setExtraClasspath(List<String> extraClasspath);
 
   static final DeploymentOptionsFactory factory = ServiceHelper.loadFactory(DeploymentOptionsFactory.class);
 

@@ -27,11 +27,16 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.spi.VerticleFactory;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -84,7 +89,7 @@ public class DeploymentManager {
                              DeploymentOptions options,
                              Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(options.getIsolationGroup());
+    ClassLoader cl = getClassLoader(options.getIsolationGroup(), options);
     int pos = verticleName.indexOf(':');
     if (pos == -1) {
       throw new IllegalArgumentException("verticleName must start with prefix");
@@ -171,7 +176,7 @@ public class DeploymentManager {
     return new HashSet<>(verticleFactories.values());
   }
 
-  private ClassLoader getClassLoader(String isolationGroup) {
+  private ClassLoader getClassLoader(String isolationGroup, DeploymentOptions options) {
     ClassLoader cl;
     if (isolationGroup == null) {
       cl = getCurrentClassLoader();
@@ -184,9 +189,24 @@ public class DeploymentManager {
             throw new IllegalStateException("Current classloader must be URLClassLoader");
           }
           URLClassLoader urlc = (URLClassLoader)current;
-          URL[] urls = urlc.getURLs();
+          List<URL> urls = new ArrayList<>();
+          // Add any extra URLs to the beginning of the classpath
+          List<String> extraClasspath = options.getExtraClasspath();
+          if (extraClasspath != null) {
+            for (String pathElement: extraClasspath) {
+              File file = new File(pathElement);
+              try {
+                URL url = file.toURI().toURL();
+                urls.add(url);
+              } catch (MalformedURLException e) {
+                throw new IllegalStateException(e);
+              }
+            }
+          }
+          // And add the URLs of the Vert.x classloader
+          urls.addAll(Arrays.asList(urlc.getURLs()));
           // Copy the URLS into the isolating classloader
-          cl = new IsolatingClassLoader(urls, getCurrentClassLoader());
+          cl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader());
           classloaders.put(isolationGroup, cl);
         }
       }
@@ -273,8 +293,6 @@ public class DeploymentManager {
     private final DeploymentOptions options;
     private boolean undeployed;
 
-
-
     private DeploymentImpl(String id, ContextImpl context, String verticleName, Verticle verticle, DeploymentOptions options) {
       this.id = id;
       this.context = context;
@@ -348,6 +366,11 @@ public class DeploymentManager {
     @Override
     public void addChild(Deployment deployment) {
       children.add(deployment);
+    }
+
+    @Override
+    public Verticle getVerticle() {
+      return verticle;
     }
 
   }

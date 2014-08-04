@@ -17,7 +17,11 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -29,6 +33,7 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
   private boolean multiThreaded;
   private String isolationGroup;
   private boolean ha;
+  private List<String> extraClasspath;
 
   DeploymentOptionsImpl() {
   }
@@ -39,6 +44,7 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
     this.multiThreaded = other.isMultiThreaded();
     this.isolationGroup = other.getIsolationGroup();
     this.ha = other.isHA();
+    this.extraClasspath = other.getExtraClasspath() == null ? null : new ArrayList<>(other.getExtraClasspath());
   }
 
   DeploymentOptionsImpl(JsonObject json) {
@@ -47,6 +53,10 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
     this.multiThreaded = json.getBoolean("multiThreaded", false);
     this.isolationGroup = json.getString("isolationGroup", null);
     this.ha = json.getBoolean("ha", false);
+    JsonArray arr = json.getArray("extraClasspath", null);
+    if (arr != null) {
+      this.extraClasspath = arr.toList();
+    }
   }
 
   public JsonObject getConfig() {
@@ -93,6 +103,7 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
     if (isolationGroup != null) json.putString("isolationGroup", isolationGroup);
     if (ha) json.putBoolean("ha", true);
     if (config != null) json.putObject("config", config);
+    if (extraClasspath != null) json.putArray("extraClasspath", new JsonArray(extraClasspath));
     return json;
   }
 
@@ -106,16 +117,30 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
   }
 
   @Override
+  public List<String> getExtraClasspath() {
+    return extraClasspath;
+  }
+
+  @Override
+  public DeploymentOptions setExtraClasspath(List<String> extraClasspath) {
+    this.extraClasspath = extraClasspath;
+    return this;
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof DeploymentOptions)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
 
-    DeploymentOptions that = (DeploymentOptions) o;
+    DeploymentOptionsImpl that = (DeploymentOptionsImpl) o;
 
-    if (multiThreaded != that.isMultiThreaded()) return false;
-    if (worker != that.isWorker()) return false;
-    if (config != null ? !config.equals(that.getConfig()) : that.getConfig() != null) return false;
-    if (isolationGroup != null ? !isolationGroup.equals(that.getIsolationGroup()) : that.getIsolationGroup() != null)
+    if (ha != that.ha) return false;
+    if (multiThreaded != that.multiThreaded) return false;
+    if (worker != that.worker) return false;
+    if (config != null ? !config.equals(that.config) : that.config != null) return false;
+    if (extraClasspath != null ? !extraClasspath.equals(that.extraClasspath) : that.extraClasspath != null)
+      return false;
+    if (isolationGroup != null ? !isolationGroup.equals(that.isolationGroup) : that.isolationGroup != null)
       return false;
 
     return true;
@@ -127,18 +152,8 @@ public class DeploymentOptionsImpl implements DeploymentOptions {
     result = 31 * result + (worker ? 1 : 0);
     result = 31 * result + (multiThreaded ? 1 : 0);
     result = 31 * result + (isolationGroup != null ? isolationGroup.hashCode() : 0);
+    result = 31 * result + (ha ? 1 : 0);
+    result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);
     return result;
   }
-
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("worker: " + worker + "\n");
-    builder.append("multiThreaded: " + multiThreaded + "\n");
-    builder.append("isolationGroup: " + isolationGroup + "\n");
-    builder.append("ha: " + ha + "\n");
-    builder.append("config: " + config + "\n");
-    return builder.toString();
-  }
-
-
 }

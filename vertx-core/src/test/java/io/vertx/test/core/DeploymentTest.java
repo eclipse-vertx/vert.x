@@ -25,14 +25,19 @@ import io.vertx.core.Verticle;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.MultiThreadedWorkerContext;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -75,6 +80,10 @@ public class DeploymentTest extends VertxTestBase {
     assertFalse(options.isHA());
     assertEquals(options, options.setHA(true));
     assertTrue(options.isHA());
+    assertNull(options.getExtraClasspath());
+    List<String> cp = Arrays.asList("foo", "bar");
+    assertEquals(options, options.setExtraClasspath(cp));
+    assertSame(cp, options.getExtraClasspath());
   }
 
   @Test
@@ -86,11 +95,13 @@ public class DeploymentTest extends VertxTestBase {
     boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
     boolean ha = rand.nextBoolean();
+    List<String> cp = Arrays.asList("foo", "bar");
     options.setConfig(config);
     options.setWorker(worker);
     options.setMultiThreaded(multiThreaded);
     options.setIsolationGroup(isolationGroup);
     options.setHA(ha);
+    options.setExtraClasspath(cp);
     DeploymentOptions copy = DeploymentOptions.copiedOptions(options);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
@@ -98,6 +109,8 @@ public class DeploymentTest extends VertxTestBase {
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHA());
+    assertEquals(cp, copy.getExtraClasspath());
+    assertNotSame(cp, copy.getExtraClasspath());
   }
 
   @Test
@@ -108,12 +121,14 @@ public class DeploymentTest extends VertxTestBase {
     boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
     boolean ha = rand.nextBoolean();
+    List<String> cp = Arrays.asList("foo", "bar");
     JsonObject json = new JsonObject();
     json.putObject("config", config);
     json.putBoolean("worker", worker);
     json.putBoolean("multiThreaded", multiThreaded);
     json.putString("isolationGroup", isolationGroup);
     json.putBoolean("ha", ha);
+    json.putArray("extraClasspath", new JsonArray(cp));
     DeploymentOptions copy = DeploymentOptions.optionsFromJson(json);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
@@ -121,6 +136,8 @@ public class DeploymentTest extends VertxTestBase {
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHA());
+    assertEquals(cp, copy.getExtraClasspath());
+    assertNotSame(cp, copy.getExtraClasspath());
   }
 
   @Test
@@ -132,11 +149,13 @@ public class DeploymentTest extends VertxTestBase {
     boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
     boolean ha = rand.nextBoolean();
+    List<String> cp = Arrays.asList("foo", "bar");
     options.setConfig(config);
     options.setWorker(worker);
     options.setMultiThreaded(multiThreaded);
     options.setIsolationGroup(isolationGroup);
     options.setHA(ha);
+    options.setExtraClasspath(cp);
     JsonObject json = options.toJson();
     DeploymentOptions copy = DeploymentOptions.optionsFromJson(json);
     assertEquals(worker, copy.isWorker());
@@ -145,6 +164,8 @@ public class DeploymentTest extends VertxTestBase {
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHA());
+    assertEquals(cp, copy.getExtraClasspath());
+    assertNotSame(cp, copy.getExtraClasspath());
   }
 
   @Test
@@ -718,6 +739,25 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testIsolationGroupDifferentGroup() throws Exception {
     testIsolationGroup("somegroup", "someothergroup", 1, 1);
+  }
+
+  @Test
+  public void testExtraClasspath() throws Exception {
+    String cp1 = "foo/bar/wibble";
+    String cp2 = "blah/socks/mice";
+    List<String> extraClasspath = Arrays.asList(cp1, cp2);
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), DeploymentOptions.options().setIsolationGroup("somegroup").
+                         setExtraClasspath(extraClasspath), ar -> {
+      assertTrue(ar.succeeded());
+      Deployment deployment = ((VertxInternal)vertx).getDeployment(ar.result());
+      Verticle verticle = deployment.getVerticle();
+      ClassLoader cl = verticle.getClass().getClassLoader();
+      URLClassLoader urlc = (URLClassLoader)cl;
+      assertTrue(urlc.getURLs()[0].toString().endsWith(cp1));
+      assertTrue(urlc.getURLs()[1].toString().endsWith(cp2));
+      testComplete();
+    });
+    await();
   }
 
   @Test
