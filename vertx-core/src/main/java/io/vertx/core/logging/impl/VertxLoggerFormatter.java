@@ -50,6 +50,7 @@ public class VertxLoggerFormatter extends java.util.logging.Formatter {
         pw.close();
         sb.append(sw.toString());
       } catch (Exception ex) {
+        ex.printStackTrace();
       }
     }
     return sb.toString();
