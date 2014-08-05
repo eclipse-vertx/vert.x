@@ -104,6 +104,10 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
     return this.type == FrameType.BINARY;
   }
 
+  public boolean isContinuation() {
+    return this.type == FrameType.CONTINUATION;
+  }
+
   public ByteBuf getBinaryData() {
     return binaryData;
   }

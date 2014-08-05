@@ -41,6 +41,10 @@ public interface WebSocketFrame {
     return factory.textFrame(str, isFinal);
   }
 
+  static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
+    return factory.continuationFrame(data, isFinal);
+  }
+
   /**
    * Returns {@code true} if and only if the content of this frame is a string
    * encoded in UTF-8.
@@ -52,6 +56,8 @@ public interface WebSocketFrame {
    * arbitrary binary data.
    */
   boolean isBinary();
+
+  boolean isContinuation();
 
   /**
    * Converts the content of this frame into a UTF-8 string and returns the

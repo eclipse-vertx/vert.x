@@ -36,4 +36,10 @@ public class WebSocketFrameFactoryImpl implements WebSocketFrameFactory {
   public WebSocketFrame textFrame(String str, boolean isFinal) {
     return new WebSocketFrameImpl(str, isFinal);
   }
+
+  @Override
+  public WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
+    return new WebSocketFrameImpl(FrameType.CONTINUATION, data.getByteBuf(), isFinal);
+  }
+
 }
