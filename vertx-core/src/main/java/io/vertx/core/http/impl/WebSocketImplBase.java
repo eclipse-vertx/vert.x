@@ -52,6 +52,8 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   protected Registration textHandlerRegistration;
   protected boolean closed;
 
+  private int maxWebSocketFrameSize = 65536;
+
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn) {
     this.vertx = vertx;
     this.textHandlerID = UUID.randomUUID().toString();
@@ -92,6 +94,31 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
     return conn.remoteAddress();
   }
 
+  protected void writeMessageInternal(Buffer data) {
+    checkClosed();
+    writePartialMessage(data, 0);
+  }
+
+  protected void writePartialMessage(Buffer data, int offset) {
+    int end = offset = maxWebSocketFrameSize;
+    boolean isFinal;
+    if (end >= data.length()) {
+      end  = data.length() - 1;
+      isFinal = true;
+    } else {
+      isFinal = false;
+    }
+    Buffer slice = data.slice(offset, end);
+    WebSocketFrame frame = WebSocketFrame.binaryFrame(slice, isFinal);
+    writeFrame(frame);
+    int newOffset = offset + maxWebSocketFrameSize;
+    if (!isFinal) {
+      vertx.runOnContext(v -> {
+        writePartialMessage(data, newOffset);
+      });
+    }
+  }
+
   protected void writeBinaryFrameInternal(Buffer data) {
     ByteBuf buf = data.getByteBuf();
     WebSocketFrame frame = new WebSocketFrameImpl(FrameType.BINARY, buf);
@@ -112,7 +139,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
     }
   }
 
-  protected void writeFrame(WebSocketFrame frame) {
+  protected void writeFrameInternal(WebSocketFrame frame) {
     checkClosed();
     conn.write(frame);
   }

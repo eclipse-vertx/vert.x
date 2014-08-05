@@ -25,6 +25,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -65,12 +67,14 @@ class ServerConnection extends ConnectionBase {
   private final Queue<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final HttpServerImpl server;
+  private final WebSocketServerHandshaker handshaker;
   private ChannelFuture lastWriteFuture;
 
-  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin) {
+  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, WebSocketServerHandshaker handshaker) {
     super(vertx, channel, context);
     this.serverOrigin = serverOrigin;
     this.server = server;
+    this.handshaker = handshaker;
   }
 
   public void pause() {
@@ -269,6 +273,16 @@ class ServerConnection extends ConnectionBase {
     return super.sendFile(file);
   }
 
+  @Override
+  public void close() {
+    if (handshaker == null) {
+      super.close();
+    } else {
+      endReadAndFlush();
+      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
+    }
+  }
+
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
@@ -294,6 +308,7 @@ class ServerConnection extends ConnectionBase {
       }
     } else if (msg instanceof WebSocketFrameInternal) {
       WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      //System.out.println("got ws frame, final? " + frame.isFinal() + " size: " + frame.binaryData().length());
       handleWsFrame(frame);
     }
 

@@ -16,11 +16,11 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -57,17 +57,28 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
    */
   String textHandlerID();
 
-  /**
-   * Write {@code data} to the websocket as a binary frame
-   */
   @Fluent
-  T writeBinaryFrame(Buffer data);
+  T writeFrame(WebSocketFrame frame);
+
+
+  /*
+  OK - get rid of above writeBinaryFrame/writeTextFrame and replace with writeFrame which takes a websocket frame
+  allow websocket frame to be instantiated
+
+  Also provide a method to write a single complete websocket message
+
+  For reading provide a method to read a single websocket message, like a body handler
+   */
 
   /**
-   * Write {@code str} to the websocket as a text frame
+   * Writes a (potentially large) piece of data as a websocket message - this may be split into multiple frames
+   * if it is large.
+   * @param data
+   * @return
    */
-  @Fluent
-  T writeTextFrame(String str);
+  T writeMessage(Buffer data);
+
+
 
   /**
    * Set a closed handler on the connection
