@@ -23,49 +23,44 @@ package io.vertx.core.dns.impl.netty;
  */
 public class DnsQuestion extends DnsEntry {
 
-    /**
-     * Constructs a question with the default class IN (Internet).
-     *
-     * @param name
-     *            the domain name being queried i.e. "www.example.com"
-     * @param type
-     *            the question type, which represents the type of
-     *            {@link DnsResource} record that should be returned
-     */
-    public DnsQuestion(String name, int type) {
-        this(name, type, CLASS_IN);
-    }
+  /**
+   * Constructs a question with the default class IN (Internet).
+   *
+   * @param name the domain name being queried i.e. "www.example.com"
+   * @param type the question type, which represents the type of
+   *             {@link DnsResource} record that should be returned
+   */
+  public DnsQuestion(String name, int type) {
+    this(name, type, CLASS_IN);
+  }
 
-    /**
-     * Constructs a question with the given class.
-     *
-     * @param name
-     *            the domain name being queried i.e. "www.example.com"
-     * @param type
-     *            the question type, which represents the type of
-     *            {@link DnsResource} record that should be returned
-     * @param qClass
-     *            the class of a DNS record
-     */
-    public DnsQuestion(String name, int type, int qClass) {
-        super(name, type, qClass);
-    }
+  /**
+   * Constructs a question with the given class.
+   *
+   * @param name   the domain name being queried i.e. "www.example.com"
+   * @param type   the question type, which represents the type of
+   *               {@link DnsResource} record that should be returned
+   * @param qClass the class of a DNS record
+   */
+  public DnsQuestion(String name, int type, int qClass) {
+    super(name, type, qClass);
+  }
 
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (other instanceof DnsQuestion) {
-            DnsQuestion question = (DnsQuestion) other;
-            return question.name().equals(name()) && question.type() == type() && question.dnsClass() == dnsClass();
-        }
-        return false;
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
     }
+    if (other instanceof DnsQuestion) {
+      DnsQuestion question = (DnsQuestion) other;
+      return question.name().equals(name()) && question.type() == type() && question.dnsClass() == dnsClass();
+    }
+    return false;
+  }
 
-    @Override
-    public int hashCode() {
-        return ((name().hashCode() + type()) * 7 + dnsClass()) * 7;
-    }
+  @Override
+  public int hashCode() {
+    return ((name().hashCode() + type()) * 7 + dnsClass()) * 7;
+  }
 
 }
