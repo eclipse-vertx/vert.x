@@ -53,8 +53,6 @@ public interface NetServerOptions extends NetServerOptionsBase<NetServerOptions>
 
   List<Buffer> getCrlValues();
 
-  NetServerOptions addCrlValue(Buffer crlValue);
-
   int getAcceptBacklog();
 
   NetServerOptions setAcceptBacklog(int acceptBacklog);

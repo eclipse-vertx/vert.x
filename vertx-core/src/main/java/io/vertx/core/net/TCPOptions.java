@@ -54,4 +54,8 @@ public interface TCPOptions<T extends TCPOptions> extends NetworkOptions<T> {
   T addEnabledCipherSuite(String suite);
 
   Set<String> getEnabledCipherSuites();
+
+  T setIdleTimeout(int idleTimeout);
+
+  int getIdleTimeout();
 }

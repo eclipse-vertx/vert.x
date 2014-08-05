@@ -59,6 +59,7 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
   private boolean tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
   private int soLinger = DEFAULT_SOLINGER;
   private boolean usePooledBuffers;
+  private int idleTimeout;
 
   // SSL stuff
 
@@ -100,6 +101,7 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     this.tcpKeepAlive = other.isTcpKeepAlive();
     this.soLinger = other.getSoLinger();
     this.usePooledBuffers = other.isUsePooledBuffers();
+    this.idleTimeout = other.getIdleTimeout();
     this.ssl = other.isSsl();
     this.keyStore = other.getKeyStoreOptions() != null ? other.getKeyStoreOptions().clone() : null;
     this.trustStore = other.getTrustStoreOptions() != null ? other.getTrustStoreOptions().clone() : null;
@@ -124,6 +126,7 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     this.tcpKeepAlive = json.getBoolean("tcpKeepAlive", DEFAULT_TCPKEEPALIVE);
     this.soLinger = json.getInteger("soLinger", DEFAULT_SOLINGER);
     this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
+    this.idleTimeout = json.getInteger("idleTimeout", 0);
     this.ssl = json.getBoolean("ssl", false);
     JsonObject keyStoreJson = json.getObject("keyStoreOptions");
     if (keyStoreJson != null) {
@@ -181,19 +184,21 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     tcpNoDelay = DEFAULT_TCPNODELAY;
     tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
     soLinger = DEFAULT_SOLINGER;
-    this.port = DEFAULT_PORT;
-    this.host = DEFAULT_HOST;
-    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
-    this.crlPaths = new ArrayList<>();
-    this.crlValues = new ArrayList<>();
-    this.maxWebsocketFrameSize = DEFAULT_MAXWEBSOCKETFRAMESIZE;
-    this.port = DEFAULT_PORT;
+    port = DEFAULT_PORT;
+    host = DEFAULT_HOST;
+    acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
+    crlPaths = new ArrayList<>();
+    crlValues = new ArrayList<>();
+    maxWebsocketFrameSize = DEFAULT_MAXWEBSOCKETFRAMESIZE;
+    port = DEFAULT_PORT;
   }
 
+  @Override
   public int getSendBufferSize() {
     return sendBufferSize;
   }
 
+  @Override
   public HttpServerOptions setSendBufferSize(int sendBufferSize) {
     if (sendBufferSize < 1) {
       throw new IllegalArgumentException("sendBufferSize must be > 0");
@@ -202,10 +207,12 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     return this;
   }
 
+  @Override
   public int getReceiveBufferSize() {
     return receiveBufferSize;
   }
 
+  @Override
   public HttpServerOptions setReceiveBufferSize(int receiveBufferSize) {
     if (receiveBufferSize < 1) {
       throw new IllegalArgumentException("receiveBufferSize must be > 0");
@@ -214,19 +221,23 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     return this;
   }
 
+  @Override
   public boolean isReuseAddress() {
     return reuseAddress;
   }
 
+  @Override
   public HttpServerOptions setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
     return this;
   }
 
+  @Override
   public int getTrafficClass() {
     return trafficClass;
   }
 
+  @Override
   public HttpServerOptions setTrafficClass(int trafficClass) {
     if (trafficClass < 0 || trafficClass > 255) {
       throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
@@ -235,28 +246,34 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     return this;
   }
 
+  @Override
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
+  @Override
   public HttpServerOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
+  @Override
   public boolean isTcpKeepAlive() {
     return tcpKeepAlive;
   }
 
+  @Override
   public HttpServerOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
 
+  @Override
   public int getSoLinger() {
     return soLinger;
   }
 
+  @Override
   public HttpServerOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
@@ -265,64 +282,93 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     return this;
   }
 
+  @Override
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
 
+  @Override
   public HttpServerOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
   }
 
+  @Override
+  public HttpServerOptions setIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("idleTimeout must be >= 0");
+    }
+    this.idleTimeout = idleTimeout;
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  @Override
   public boolean isSsl() {
     return ssl;
   }
 
+  @Override
   public HttpServerOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
+  @Override
   public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
+  @Override
   public HttpServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
+  @Override
   public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
+  @Override
   public HttpServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }
 
+  @Override
   public HttpServerOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
   }
 
+  @Override
   public Set<String> getEnabledCipherSuites() {
     return enabledCipherSuites;
   }
 
+
+  @Override
   public boolean isClientAuthRequired() {
     return clientAuthRequired;
   }
 
+  @Override
   public HttpServerOptions setClientAuthRequired(boolean clientAuthRequired) {
     this.clientAuthRequired = clientAuthRequired;
     return this;
   }
 
+  @Override
   public List<String> getCrlPaths() {
     return crlPaths;
   }
 
+  @Override
   public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
     if (crlPath == null) {
       throw new NullPointerException("No null crl accepted");
@@ -331,10 +377,12 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     return this;
   }
 
+  @Override
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
 
+  @Override
   public HttpServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     if (crlValue == null) {
       throw new NullPointerException("No null crl accepted");
@@ -343,19 +391,23 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     return this;
   }
 
+  @Override
   public int getAcceptBacklog() {
     return acceptBacklog;
   }
 
+  @Override
   public HttpServerOptions setAcceptBacklog(int acceptBacklog) {
     this.acceptBacklog = acceptBacklog;
     return this;
   }
 
+  @Override
   public int getPort() {
     return port;
   }
 
+  @Override
   public HttpServerOptions setPort(int port) {
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port p must be in range 0 <= p <= 65535");
@@ -364,38 +416,46 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     return this;
   }
 
+  @Override
   public String getHost() {
     return host;
   }
 
+  @Override
   public HttpServerOptions setHost(String host) {
     this.host = host;
     return this;
   }
 
+  @Override
   public boolean isCompressionSupported() {
     return compressionSupported;
   }
 
+  @Override
   public HttpServerOptions setCompressionSupported(boolean compressionSupported) {
     this.compressionSupported = compressionSupported;
     return this;
   }
 
+  @Override
   public int getMaxWebsocketFrameSize() {
     return maxWebsocketFrameSize;
   }
 
+  @Override
   public HttpServerOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
     this.maxWebsocketFrameSize = maxWebsocketFrameSize;
     return this;
   }
 
+  @Override
   public HttpServerOptions addWebsocketSubProtocol(String subProtocol) {
     websocketSubProtocols.add(subProtocol);
     return this;
   }
 
+  @Override
   public Set<String> getWebsocketSubProtocols() {
     return websocketSubProtocols;
   }
@@ -410,6 +470,7 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     if (acceptBacklog != that.acceptBacklog) return false;
     if (clientAuthRequired != that.clientAuthRequired) return false;
     if (compressionSupported != that.compressionSupported) return false;
+    if (idleTimeout != that.idleTimeout) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
     if (port != that.port) return false;
     if (receiveBufferSize != that.receiveBufferSize) return false;
@@ -444,6 +505,7 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     result = 31 * result + (tcpKeepAlive ? 1 : 0);
     result = 31 * result + soLinger;
     result = 31 * result + (usePooledBuffers ? 1 : 0);
+    result = 31 * result + idleTimeout;
     result = 31 * result + (ssl ? 1 : 0);
     result = 31 * result + (keyStore != null ? keyStore.hashCode() : 0);
     result = 31 * result + (trustStore != null ? trustStore.hashCode() : 0);

@@ -37,6 +37,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.impl.HttpHeadersAdapter;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -184,6 +185,16 @@ public class HttpTest extends HttpTestBase {
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
+
+    assertEquals(0, options.getIdleTimeout());
+    assertEquals(options, options.setIdleTimeout(10));
+    assertEquals(10, options.getIdleTimeout());
+    try {
+      options.setIdleTimeout(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
 
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
@@ -342,6 +353,16 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
 
+    assertEquals(0, options.getIdleTimeout());
+    assertEquals(options, options.setIdleTimeout(10));
+    assertEquals(10, options.getIdleTimeout());
+    try {
+      options.setIdleTimeout(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
@@ -421,6 +442,7 @@ public class HttpTest extends HttpTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -449,6 +471,7 @@ public class HttpTest extends HttpTestBase {
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
     options.setUsePooledBuffers(usePooledBuffers);
+    options.setIdleTimeout(idleTimeout);
     options.setKeyStoreOptions(keyStoreOptions);
     options.setTrustStoreOptions(trustStoreOptions);
     options.addEnabledCipherSuite(enabledCipher);
@@ -470,6 +493,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
     assertEquals(soLinger, copy.getSoLinger());
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
@@ -501,6 +525,7 @@ public class HttpTest extends HttpTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -531,6 +556,7 @@ public class HttpTest extends HttpTestBase {
       .putBoolean("tcpKeepAlive", tcpKeepAlive)
       .putNumber("soLinger", soLinger)
       .putBoolean("usePooledBuffers", usePooledBuffers)
+      .putNumber("idleTimeout", idleTimeout)
       .putBoolean("ssl", ssl)
       .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
       .putNumber("connectTimeout", connectTimeout)
@@ -553,6 +579,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
+    assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
@@ -614,6 +641,7 @@ public class HttpTest extends HttpTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -638,6 +666,7 @@ public class HttpTest extends HttpTestBase {
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
     options.setUsePooledBuffers(usePooledBuffers);
+    options.setIdleTimeout(idleTimeout);
     options.setSsl(ssl);
     options.setKeyStoreOptions(keyStoreOptions);
     options.setTrustStoreOptions(trustStoreOptions);
@@ -659,6 +688,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
     assertEquals(soLinger, copy.getSoLinger());
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
@@ -689,6 +719,7 @@ public class HttpTest extends HttpTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -718,6 +749,7 @@ public class HttpTest extends HttpTestBase {
       .putBoolean("tcpKeepAlive", tcpKeepAlive)
       .putNumber("soLinger", soLinger)
       .putBoolean("usePooledBuffers", usePooledBuffers)
+      .putNumber("idleTimeout", idleTimeout)
       .putBoolean("ssl", ssl)
       .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
       .putArray("crlPaths", new JsonArray().addString(crlPath))
@@ -739,6 +771,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
+    assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
@@ -2535,6 +2568,33 @@ public class HttpTest extends HttpTestBase {
       req.setTimeout(100);
       req.end();
     }));
+
+    await();
+  }
+
+  @Test
+  public void testServerWebsocketIdleTimeout() {
+    server.close();
+    server = vertx.createHttpServer(HttpServerOptions.options().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server.websocketHandler(ws -> {}).listen();
+
+    client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
+      ws.closeHandler(v -> testComplete());
+    });
+
+    await();
+  }
+
+
+  @Test
+  public void testClientWebsocketIdleTimeout() {
+    client.close();
+    client = vertx.createHttpClient(HttpClientOptions.options().setIdleTimeout(1));
+    server.websocketHandler(ws -> {}).listen();
+
+    client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
+      ws.closeHandler(v -> testComplete());
+    });
 
     await();
   }

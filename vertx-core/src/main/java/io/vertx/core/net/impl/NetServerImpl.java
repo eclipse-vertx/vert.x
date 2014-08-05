@@ -33,6 +33,7 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -147,6 +148,9 @@ public class NetServerImpl implements NetServer, Closeable {
             if (sslHelper.isSSL()) {
               // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
               pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+            }
+            if (options.getIdleTimeout() > 0) {
+              pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
             }
             pipeline.addLast("handler", new ServerHandler());
           }

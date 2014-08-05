@@ -39,7 +39,6 @@ public interface NetClientOptions extends ClientOptions<NetClientOptions> {
     return factory.options(json);
   }
 
-
   NetClientOptions setReconnectAttempts(int attempts);
 
   int getReconnectAttempts();

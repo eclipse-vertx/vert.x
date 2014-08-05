@@ -20,10 +20,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.TrustStoreOptions;
 
@@ -58,6 +58,7 @@ public class NetClientOptionsImpl implements NetClientOptions {
   private boolean tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
   private int soLinger = DEFAULT_SOLINGER;
   private boolean usePooledBuffers;
+  private int idleTimeout;
 
   // SSL stuff
 
@@ -102,6 +103,7 @@ public class NetClientOptionsImpl implements NetClientOptions {
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.reconnectAttempts = other.getReconnectAttempts();
     this.reconnectInterval = other.getReconnectInterval();
+    this.idleTimeout = other.getIdleTimeout();
   }
 
   NetClientOptionsImpl(JsonObject json) {
@@ -113,6 +115,7 @@ public class NetClientOptionsImpl implements NetClientOptions {
     this.tcpKeepAlive = json.getBoolean("tcpKeepAlive", DEFAULT_TCPKEEPALIVE);
     this.soLinger = json.getInteger("soLinger", DEFAULT_SOLINGER);
     this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
+    this.idleTimeout = json.getInteger("idleTimeout", 0);
     this.ssl = json.getBoolean("ssl", false);
     JsonObject keyStoreJson = json.getObject("keyStoreOptions");
     if (keyStoreJson != null) {
@@ -172,10 +175,12 @@ public class NetClientOptionsImpl implements NetClientOptions {
     this.reconnectInterval = DEFAULT_RECONNECTINTERVAL;
   }
 
+  @Override
   public int getSendBufferSize() {
     return sendBufferSize;
   }
 
+  @Override
   public NetClientOptions setSendBufferSize(int sendBufferSize) {
     if (sendBufferSize < 1) {
       throw new IllegalArgumentException("sendBufferSize must be > 0");
@@ -184,10 +189,12 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public int getReceiveBufferSize() {
     return receiveBufferSize;
   }
 
+  @Override
   public NetClientOptions setReceiveBufferSize(int receiveBufferSize) {
     if (receiveBufferSize < 1) {
       throw new IllegalArgumentException("receiveBufferSize must be > 0");
@@ -196,19 +203,23 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public boolean isReuseAddress() {
     return reuseAddress;
   }
 
+  @Override
   public NetClientOptions setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
     return this;
   }
 
+  @Override
   public int getTrafficClass() {
     return trafficClass;
   }
 
+  @Override
   public NetClientOptions setTrafficClass(int trafficClass) {
     if (trafficClass < 0 || trafficClass > 255) {
       throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
@@ -217,28 +228,34 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
+  @Override
   public NetClientOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
+  @Override
   public boolean isTcpKeepAlive() {
     return tcpKeepAlive;
   }
 
+  @Override
   public NetClientOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
 
+  @Override
   public int getSoLinger() {
     return soLinger;
   }
 
+  @Override
   public NetClientOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
@@ -247,64 +264,92 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
 
+  @Override
   public NetClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
   }
 
+  @Override
+  public NetClientOptions setIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("idleTimeout must be >= 0");
+    }
+    this.idleTimeout = idleTimeout;
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  @Override
   public boolean isSsl() {
     return ssl;
   }
 
+  @Override
   public NetClientOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
+  @Override
   public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
+  @Override
   public NetClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
+  @Override
   public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
+  @Override
   public NetClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }
 
+  @Override
   public NetClientOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
   }
 
+  @Override
   public Set<String> getEnabledCipherSuites() {
     return enabledCipherSuites;
   }
 
+  @Override
   public boolean isTrustAll() {
     return trustAll;
   }
 
+  @Override
   public NetClientOptions setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }
 
+  @Override
   public List<String> getCrlPaths() {
     return crlPaths;
   }
 
+  @Override
   public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
     if (crlPath == null) {
       throw new NullPointerException("No null crl accepted");
@@ -313,10 +358,12 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
 
+  @Override
   public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     if (crlValue == null) {
       throw new NullPointerException("No null crl accepted");
@@ -325,10 +372,12 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public int getConnectTimeout() {
     return connectTimeout;
   }
 
+  @Override
   public NetClientOptions setConnectTimeout(int connectTimeout) {
     if (connectTimeout < 0) {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
@@ -337,6 +386,7 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public NetClientOptions setReconnectAttempts(int attempts) {
     if (attempts < -1) {
       throw new IllegalArgumentException("reconnect attempts must be >= -1");
@@ -345,10 +395,12 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public int getReconnectAttempts() {
     return reconnectAttempts;
   }
 
+  @Override
   public NetClientOptions setReconnectInterval(long interval) {
     if (interval < 1) {
       throw new IllegalArgumentException("reconnect interval nust be >= 1");
@@ -357,6 +409,7 @@ public class NetClientOptionsImpl implements NetClientOptions {
     return this;
   }
 
+  @Override
   public long getReconnectInterval() {
     return reconnectInterval;
   }
@@ -369,6 +422,7 @@ public class NetClientOptionsImpl implements NetClientOptions {
     NetClientOptionsImpl that = (NetClientOptionsImpl) o;
 
     if (connectTimeout != that.connectTimeout) return false;
+    if (idleTimeout != that.idleTimeout) return false;
     if (receiveBufferSize != that.receiveBufferSize) return false;
     if (reconnectAttempts != that.reconnectAttempts) return false;
     if (reconnectInterval != that.reconnectInterval) return false;
@@ -401,6 +455,7 @@ public class NetClientOptionsImpl implements NetClientOptions {
     result = 31 * result + (tcpKeepAlive ? 1 : 0);
     result = 31 * result + soLinger;
     result = 31 * result + (usePooledBuffers ? 1 : 0);
+    result = 31 * result + idleTimeout;
     result = 31 * result + (ssl ? 1 : 0);
     result = 31 * result + (keyStore != null ? keyStore.hashCode() : 0);
     result = 31 * result + (trustStore != null ? trustStore.hashCode() : 0);

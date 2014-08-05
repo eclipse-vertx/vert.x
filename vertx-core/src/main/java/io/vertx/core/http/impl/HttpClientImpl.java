@@ -32,6 +32,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -274,6 +275,9 @@ public class HttpClientImpl implements HttpClient {
         pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
         if (options.isTryUseCompression()) {
           pipeline.addLast("inflater", new HttpContentDecompressor(true));
+        }
+        if (options.getIdleTimeout() > 0) {
+          pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
         }
         pipeline.addLast("handler", new ClientHandler(context));
       }

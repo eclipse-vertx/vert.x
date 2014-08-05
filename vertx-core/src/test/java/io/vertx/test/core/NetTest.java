@@ -181,6 +181,11 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
 
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(0, options.getIdleTimeout());
+    assertEquals(options, options.setIdleTimeout(rand));
+    assertEquals(rand, options.getIdleTimeout());
+
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
@@ -305,6 +310,18 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
 
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(0, options.getIdleTimeout());
+    assertEquals(options, options.setIdleTimeout(rand));
+    assertEquals(rand, options.getIdleTimeout());
+
+    try {
+      options.setIdleTimeout(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
@@ -367,6 +384,7 @@ public class NetTest extends VertxTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -390,6 +408,7 @@ public class NetTest extends VertxTestBase {
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
     options.setUsePooledBuffers(usePooledBuffers);
+    options.setIdleTimeout(idleTimeout);
     options.setKeyStoreOptions(keyStoreOptions);
     options.setTrustStoreOptions(trustStoreOptions);
     options.addEnabledCipherSuite(enabledCipher);
@@ -408,6 +427,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
     assertEquals(soLinger, copy.getSoLinger());
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
@@ -436,6 +456,7 @@ public class NetTest extends VertxTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -463,6 +484,7 @@ public class NetTest extends VertxTestBase {
         .putBoolean("tcpKeepAlive", tcpKeepAlive)
         .putNumber("soLinger", soLinger)
         .putBoolean("usePooledBuffers", usePooledBuffers)
+        .putNumber("idleTimeout", idleTimeout)
         .putBoolean("ssl", ssl)
         .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
         .putNumber("connectTimeout", connectTimeout)
@@ -482,6 +504,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
+    assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
@@ -540,6 +563,7 @@ public class NetTest extends VertxTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -561,6 +585,7 @@ public class NetTest extends VertxTestBase {
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
     options.setUsePooledBuffers(usePooledBuffers);
+    options.setIdleTimeout(idleTimeout);
     options.setSsl(ssl);
     options.setKeyStoreOptions(keyStoreOptions);
     options.setTrustStoreOptions(trustStoreOptions);
@@ -579,6 +604,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpKeepAlive, copy.isTcpKeepAlive());
     assertEquals(soLinger, copy.getSoLinger());
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
+    assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
@@ -606,6 +632,7 @@ public class NetTest extends VertxTestBase {
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
+    int idleTimeout = TestUtils.randomInt();
     boolean ssl = rand.nextBoolean();
     JKSOptions keyStoreOptions = JKSOptions.options();
     String ksPassword = TestUtils.randomAlphaString(100);
@@ -632,6 +659,7 @@ public class NetTest extends VertxTestBase {
       .putBoolean("tcpKeepAlive", tcpKeepAlive)
       .putNumber("soLinger", soLinger)
       .putBoolean("usePooledBuffers", usePooledBuffers)
+      .putNumber("idleTimeout", idleTimeout)
       .putBoolean("ssl", ssl)
       .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
       .putArray("crlPaths", new JsonArray().addString(crlPath))
@@ -650,6 +678,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
+    assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
     assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
@@ -1012,6 +1041,37 @@ public class NetTest extends VertxTestBase {
       assertFalse(res.succeeded());
       assertTrue(res.failed());
       testComplete();
+    });
+
+    await();
+  }
+
+  @Test
+  public void testServerIdleTimeout() {
+    server.close();
+    server = vertx.createNetServer(NetServerOptions.options().setPort(1234).setHost("localhost").setIdleTimeout(1));
+    server.connectHandler(s -> {}).listen();
+
+    client.connect(1234, "localhost", res -> {
+      assertTrue(res.succeeded());
+      NetSocket socket = res.result();
+      socket.closeHandler(v -> testComplete());
+    });
+
+    await();
+  }
+
+  @Test
+  public void testClientIdleTimeout() {
+    client.close();
+    client = vertx.createNetClient(NetClientOptions.options().setIdleTimeout(1));
+
+    server.connectHandler(s -> {}).listen();
+
+    client.connect(1234, "localhost", res -> {
+      assertTrue(res.succeeded());
+      NetSocket socket = res.result();
+      socket.closeHandler(v -> testComplete());
     });
 
     await();

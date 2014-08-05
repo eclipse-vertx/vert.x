@@ -59,6 +59,7 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
   private boolean tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
   private int soLinger = DEFAULT_SOLINGER;
   private boolean usePooledBuffers;
+  private int idleTimeout;
 
   // SSL stuff
 
@@ -102,6 +103,7 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     this.tcpKeepAlive = other.isTcpKeepAlive();
     this.soLinger = other.getSoLinger();
     this.usePooledBuffers = other.isUsePooledBuffers();
+    this.idleTimeout = other.getIdleTimeout();
     this.ssl = other.isSsl();
     this.keyStore = other.getKeyStoreOptions() != null ? other.getKeyStoreOptions().clone() : null;
     this.trustStore = other.getTrustStoreOptions() != null ? other.getTrustStoreOptions().clone() : null;
@@ -126,6 +128,7 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     this.tcpKeepAlive = json.getBoolean("tcpKeepAlive", DEFAULT_TCPKEEPALIVE);
     this.soLinger = json.getInteger("soLinger", DEFAULT_SOLINGER);
     this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
+    this.idleTimeout = json.getInteger("idleTimeout", 0);
     this.ssl = json.getBoolean("ssl", false);
     JsonObject keyStoreJson = json.getObject("keyStoreOptions");
     if (keyStoreJson != null) {
@@ -182,17 +185,19 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     tcpNoDelay = DEFAULT_TCPNODELAY;
     tcpKeepAlive = DEFAULT_TCPKEEPALIVE;
     soLinger = DEFAULT_SOLINGER;
-    this.connectTimeout = DEFAULT_CONNECTTIMEOUT;
-    this.crlPaths = new ArrayList<>();
-    this.crlValues = new ArrayList<>();
-    this.maxPoolSize = DEFAULT_MAXPOOLSIZE;
-    this.keepAlive = DEFAULT_KEEPALIVE;
+    connectTimeout = DEFAULT_CONNECTTIMEOUT;
+    crlPaths = new ArrayList<>();
+    crlValues = new ArrayList<>();
+    maxPoolSize = DEFAULT_MAXPOOLSIZE;
+    keepAlive = DEFAULT_KEEPALIVE;
   }
 
+  @Override
   public int getSendBufferSize() {
     return sendBufferSize;
   }
 
+  @Override
   public HttpClientOptions setSendBufferSize(int sendBufferSize) {
     if (sendBufferSize < 1) {
       throw new IllegalArgumentException("sendBufferSize must be > 0");
@@ -201,10 +206,12 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public int getReceiveBufferSize() {
     return receiveBufferSize;
   }
 
+  @Override
   public HttpClientOptions setReceiveBufferSize(int receiveBufferSize) {
     if (receiveBufferSize < 1) {
       throw new IllegalArgumentException("receiveBufferSize must be > 0");
@@ -213,19 +220,23 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public boolean isReuseAddress() {
     return reuseAddress;
   }
 
+  @Override
   public HttpClientOptions setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
     return this;
   }
 
+  @Override
   public int getTrafficClass() {
     return trafficClass;
   }
 
+  @Override
   public HttpClientOptions setTrafficClass(int trafficClass) {
     if (trafficClass < 0 || trafficClass > 255) {
       throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
@@ -234,28 +245,34 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
+  @Override
   public HttpClientOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
+  @Override
   public boolean isTcpKeepAlive() {
     return tcpKeepAlive;
   }
 
+  @Override
   public HttpClientOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
 
+  @Override
   public int getSoLinger() {
     return soLinger;
   }
 
+  @Override
   public HttpClientOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
@@ -264,64 +281,92 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
 
+  @Override
   public HttpClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
   }
 
+  @Override
+  public HttpClientOptions setIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("idleTimeout must be >= 0");
+    }
+    this.idleTimeout = idleTimeout;
+    return this;
+  }
+
+  @Override
+  public int getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  @Override
   public boolean isSsl() {
     return ssl;
   }
 
+  @Override
   public HttpClientOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
+  @Override
   public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
+  @Override
   public HttpClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
+  @Override
   public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
+  @Override
   public HttpClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }
 
+  @Override
   public HttpClientOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
   }
 
+  @Override
   public Set<String> getEnabledCipherSuites() {
     return enabledCipherSuites;
   }
 
+  @Override
   public boolean isTrustAll() {
     return trustAll;
   }
 
+  @Override
   public HttpClientOptions setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }
 
+  @Override
   public List<String> getCrlPaths() {
     return crlPaths;
   }
 
+  @Override
   public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
     if (crlPath == null) {
       throw new NullPointerException("No null crl accepted");
@@ -330,10 +375,12 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
 
+  @Override
   public HttpClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     if (crlValue == null) {
       throw new NullPointerException("No null crl accepted");
@@ -342,10 +389,12 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public int getConnectTimeout() {
     return connectTimeout;
   }
 
+  @Override
   public HttpClientOptions setConnectTimeout(int connectTimeout) {
     if (connectTimeout < 0) {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
@@ -354,10 +403,12 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public int getMaxPoolSize() {
     return maxPoolSize;
   }
 
+  @Override
   public HttpClientOptions setMaxPoolSize(int maxPoolSize) {
     if (maxPoolSize < 1) {
       throw new IllegalArgumentException("maxPoolSize must be > 0");
@@ -366,37 +417,45 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     return this;
   }
 
+  @Override
   public boolean isKeepAlive() {
     return keepAlive;
   }
 
+  @Override
   public HttpClientOptions setKeepAlive(boolean keepAlive) {
     this.keepAlive = keepAlive;
     return this;
   }
 
+  @Override
   public boolean isPipelining() {
     return pipelining;
   }
 
+  @Override
   public HttpClientOptions setPipelining(boolean pipelining) {
     this.pipelining = pipelining;
     return this;
   }
 
+  @Override
   public boolean isVerifyHost() {
     return verifyHost;
   }
 
+  @Override
   public HttpClientOptions setVerifyHost(boolean verifyHost) {
     this.verifyHost = verifyHost;
     return this;
   }
 
+  @Override
   public boolean isTryUseCompression() {
     return tryUseCompression;
   }
 
+  @Override
   public HttpClientOptions setTryUseCompression(boolean tryUseCompression) {
     this.tryUseCompression = tryUseCompression;
     return this;
@@ -410,6 +469,7 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     HttpClientOptionsImpl that = (HttpClientOptionsImpl) o;
 
     if (connectTimeout != that.connectTimeout) return false;
+    if (idleTimeout != that.idleTimeout) return false;
     if (keepAlive != that.keepAlive) return false;
     if (maxPoolSize != that.maxPoolSize) return false;
     if (pipelining != that.pipelining) return false;
@@ -445,6 +505,7 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     result = 31 * result + (tcpKeepAlive ? 1 : 0);
     result = 31 * result + soLinger;
     result = 31 * result + (usePooledBuffers ? 1 : 0);
+    result = 31 * result + idleTimeout;
     result = 31 * result + (ssl ? 1 : 0);
     result = 31 * result + (keyStore != null ? keyStore.hashCode() : 0);
     result = 31 * result + (trustStore != null ? trustStore.hashCode() : 0);
