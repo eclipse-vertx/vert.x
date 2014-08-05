@@ -33,22 +33,39 @@ public class StarterTest extends VertxTestBase {
   @Test
   public void testVersion() throws Exception {
     String[] args = new String[] {"version"};
-    Starter.main(args);
+    Starter starter = new Starter();
+    starter.run(args);
     // TODO some way of getting this from the version in pom.xml
-    assertEquals("3.0.0-SNAPSHOT", Starter.instance.getVersion());
+    assertEquals("3.0.0-SNAPSHOT", starter.getVersion());
   }
 
   @Test
   public void testRunVerticle() throws Exception {
+    Starter starter = new Starter();
     Thread t = new Thread(() -> {
       String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
-      Starter.main(args);
+      starter.run(args);
     });
     t.start();
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertTrue(t.isAlive()); // It's blocked
     // Now unblock it
-    Starter.instance.unblock();
+    starter.unblock();
+    waitUntil(() -> !t.isAlive());
+  }
+
+  @Test
+  public void testRunVerticleClustered() throws Exception {
+    Starter starter = new Starter();
+    Thread t = new Thread(() -> {
+      String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
+      starter.run(args);
+    });
+    t.start();
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertTrue(t.isAlive()); // It's blocked
+    // Now unblock it
+    starter.unblock();
     waitUntil(() -> !t.isAlive());
   }
 }

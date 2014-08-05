@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -44,10 +45,8 @@ public class Starter {
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
-  public static final Starter instance = new Starter();
-
   public static void main(String[] args) {
-    instance.run(args);
+    new Starter().run(args);
   }
 
   public void run(String[] sargs) {
@@ -131,7 +130,27 @@ public class Starter {
           log.info("No cluster-host specified so using address " + clusterHost);
         }
       }
-      vertx = Vertx.vertx(VertxOptions.options().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true));
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
+      Vertx.vertx(VertxOptions.options().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true), ar -> {
+        result.set(ar);
+        latch.countDown();
+      });
+      try {
+        if (!latch.await(2, TimeUnit.MINUTES)) {
+          log.error("Timed out in forming cluster");
+          return null;
+        }
+      } catch (InterruptedException e) {
+        log.error("Thread interrupted in forming cluster");
+        return null;
+      }
+      if (result.get().failed()) {
+        log.error("Failed to form cluster");
+        result.get().cause().printStackTrace();
+        return null;
+      }
+      vertx = result.get().result();
     } else {
       vertx = Vertx.vertx();
     }
