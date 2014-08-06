@@ -2576,10 +2576,11 @@ public class HttpTest extends HttpTestBase {
   public void testServerWebsocketIdleTimeout() {
     server.close();
     server = vertx.createHttpServer(HttpServerOptions.options().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
-    server.websocketHandler(ws -> {}).listen();
-
-    client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
-      ws.closeHandler(v -> testComplete());
+    server.websocketHandler(ws -> {}).listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
+        ws.closeHandler(v -> testComplete());
+      });
     });
 
     await();
@@ -2590,10 +2591,11 @@ public class HttpTest extends HttpTestBase {
   public void testClientWebsocketIdleTimeout() {
     client.close();
     client = vertx.createHttpClient(HttpClientOptions.options().setIdleTimeout(1));
-    server.websocketHandler(ws -> {}).listen();
+    server.websocketHandler(ws -> {}).listen(ar -> {
+      client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
+        ws.closeHandler(v -> testComplete());
+      });
 
-    client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
-      ws.closeHandler(v -> testComplete());
     });
 
     await();
