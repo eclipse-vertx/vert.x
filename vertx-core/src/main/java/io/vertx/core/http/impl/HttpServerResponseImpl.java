@@ -30,13 +30,13 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 
 import java.io.File;
@@ -378,9 +378,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           public void operationComplete(ChannelFuture future) throws Exception {
             final AsyncResult<Void> res;
             if (future.isSuccess()) {
-              res = new FutureResultImpl<>((Void)null);
+              res = Future.completedFuture();
             } else {
-              res = new FutureResultImpl<>(future.cause());
+              res = Future.completedFuture(future.cause());
             }
             vertx.runOnContext(new Handler<Void>() {
               @Override

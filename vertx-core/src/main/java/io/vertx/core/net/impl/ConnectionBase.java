@@ -25,9 +25,10 @@ import io.netty.channel.FileRegion;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
+
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -157,9 +158,9 @@ public abstract class ConnectionBase {
         if (completionHandler != null) {
           context.execute(() -> {
             if (channelFuture.isSuccess()) {
-              completionHandler.handle(new FutureResultImpl<>((Void)null));
+              completionHandler.handle(Future.completedFuture());
             } else {
-              completionHandler.handle(new FutureResultImpl<>(channelFuture.cause()));
+              completionHandler.handle(Future.completedFuture(channelFuture.cause()));
             }
           }, true);
         } else if (!channelFuture.isSuccess()) {

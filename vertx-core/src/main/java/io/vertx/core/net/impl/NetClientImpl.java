@@ -28,13 +28,12 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -67,7 +66,7 @@ public class NetClientImpl implements NetClient {
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
     this.closeHook = completionHandler -> {
       NetClientImpl.this.close();
-      completionHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(Future.completedFuture());
     };
     creatingContext = vertx.getContext();
     if (creatingContext != null) {
@@ -161,10 +160,10 @@ public class NetClientImpl implements NetClient {
 
             SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
-            Future<Channel> fut = sslHandler.handshakeFuture();
-            fut.addListener(new GenericFutureListener<Future<Channel>>() {
+            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
+            fut.addListener(new GenericFutureListener<io.netty.util.concurrent.Future<Channel>>() {
               @Override
-              public void operationComplete(Future<Channel> future) throws Exception {
+              public void operationComplete(io.netty.util.concurrent.Future<Channel> future) throws Exception {
                 if (future.isSuccess()) {
                   connected(context, ch, connectHandler);
                 } else {
@@ -200,7 +199,7 @@ public class NetClientImpl implements NetClient {
   private void doConnected(ContextImpl context, Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true);
     socketMap.put(ch, sock);
-    connectHandler.handle(new FutureResultImpl<NetSocket>(sock));
+    connectHandler.handle(Future.completedFuture(sock));
   }
 
   private void failed(ContextImpl context, Channel ch, Throwable t, Handler<AsyncResult<NetSocket>> connectHandler) {
@@ -209,7 +208,7 @@ public class NetClientImpl implements NetClient {
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
-    connectHandler.handle(new FutureResultImpl<>(t));
+    connectHandler.handle(Future.completedFuture(t));
   }
 
   @Override

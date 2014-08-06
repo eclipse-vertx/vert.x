@@ -18,13 +18,13 @@ package io.vertx.core.file.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -342,14 +342,14 @@ public class AsyncFileImpl implements AsyncFile {
           // It's been fully written
           context.execute(() -> {
             writesOutstanding -= buff.limit();
-            handler.handle(new FutureResultImpl<Void>().setResult(null));
+            handler.handle(Future.completedFuture());
           }, false);
         }
       }
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          context.execute(() -> handler.handle(new FutureResultImpl<Void>().setResult(null)), false);
+          context.execute(() -> handler.handle(Future.completedFuture()), false);
         } else {
           log.error("Error occurred", exc);
         }
@@ -363,7 +363,7 @@ public class AsyncFileImpl implements AsyncFile {
 
       long pos = position;
 
-      FutureResultImpl<Buffer> result = new FutureResultImpl<>();
+      Future<Buffer> result = Future.future();
 
       private void done() {
         context.execute(() -> {
@@ -413,7 +413,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    FutureResultImpl<Void> res = new FutureResultImpl<>();
+    Future<Void> res = Future.future();
     try {
       ch.close();
       res.setResult(null);

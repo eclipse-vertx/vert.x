@@ -33,7 +33,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.Future;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -48,7 +48,6 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -87,7 +86,7 @@ public class HttpClientImpl implements HttpClient {
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();
-      completionHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(Future.completedFuture());
     };
     if (creatingContext != null) {
       if (creatingContext.isMultithreaded()) {
@@ -293,7 +292,7 @@ public class HttpClientImpl implements HttpClient {
 
             SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
-            Future<Channel> fut = sslHandler.handshakeFuture();
+            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
             fut.addListener(future -> {
               if (future.isSuccess()) {
                 connected(context, port, host, ch, connectHandler, listener);

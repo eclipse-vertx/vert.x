@@ -17,12 +17,12 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.Registration;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -153,7 +153,7 @@ public class ProxyFactory {
           if (ar.failed()) {
             fHandler.handle(ar);
           } else {
-            fHandler.handle(new FutureResultImpl<>(ar.result().body()));
+            fHandler.handle(Future.completedFuture(ar.result().body()));
           }
         }
       });

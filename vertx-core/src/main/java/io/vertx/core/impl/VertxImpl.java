@@ -23,6 +23,7 @@ import io.netty.util.ResourceLeakDetector;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
@@ -67,7 +68,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -130,9 +130,9 @@ public class VertxImpl implements VertxInternal {
         eventBus = new EventBusImpl(this, options.getProxyOperationTimeout(), options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
           if (resultHandler != null) {
             if (res.succeeded()) {
-              resultHandler.handle(new FutureResultImpl<>(inst));
+              resultHandler.handle(Future.completedFuture(inst));
             } else {
-              resultHandler.handle(new FutureResultImpl<>(res.cause()));
+              resultHandler.handle(Future.completedFuture(res.cause()));
             }
           } else if (res.failed()) {
             log.error("Failed to start event bus", res.cause());
@@ -286,7 +286,7 @@ public class VertxImpl implements VertxInternal {
     InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
     Runnable toRun = () -> context.execute(task, false);
     EventLoop el = context.getEventLoop();
-    Future<?> future;
+    java.util.concurrent.Future<?> future;
     if (periodic) {
       future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
     } else {
@@ -335,7 +335,7 @@ public class VertxImpl implements VertxInternal {
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (closed) {
       runOnContext(v -> {
-        completionHandler.handle(new FutureResultImpl<>((Void)null));
+        completionHandler.handle(Future.completedFuture());
       });
     }
     closed = true;
@@ -382,7 +382,7 @@ public class VertxImpl implements VertxInternal {
 
         if (completionHandler != null) {
           // Call directly - we have no context
-          completionHandler.handle(new FutureResultImpl<>((Void)null));
+          completionHandler.handle(Future.completedFuture());
         }
       });
     });
@@ -510,7 +510,7 @@ public class VertxImpl implements VertxInternal {
     final boolean periodic;
     final long timerID;
     final ContextImpl context;
-    volatile Future<?> future;
+    volatile java.util.concurrent.Future<?> future;
     boolean cancelled;
 
     boolean cancel() {
@@ -548,7 +548,7 @@ public class VertxImpl implements VertxInternal {
     public void close(Handler<AsyncResult<Void>> completionHandler) {
       VertxImpl.this.timeouts.remove(timerID);
       cancel();
-      completionHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(Future.completedFuture());
     }
 
   }

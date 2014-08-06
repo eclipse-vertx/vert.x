@@ -17,10 +17,10 @@
 package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Before;
@@ -342,7 +342,7 @@ public class EventBusProxyTest extends VertxTestBase {
       assertEquals("foobar", str);
       assertEquals("bar", object.getString("foo"));
       assertEquals("socks", array.get(0));
-      resultHandler.handle(new FutureResultImpl<>("foobar"));
+      resultHandler.handle(Future.completedFuture("foobar"));
     }
 
     @Override
@@ -355,57 +355,57 @@ public class EventBusProxyTest extends VertxTestBase {
       assertEquals(Float.valueOf(1.23f), f, 0);
       assertEquals(Double.valueOf(34.45d), d, 0);
       assertTrue(bool);
-      resultHandler.handle(new FutureResultImpl<>("foobar"));
+      resultHandler.handle(Future.completedFuture("foobar"));
     }
 
     @Override
     public void methodWithJustHandler(Handler<AsyncResult<String>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>("foobar"));
+      resultHandler.handle(Future.completedFuture("foobar"));
     }
 
     @Override
     public void methodWithByteHandler(String str, Handler<AsyncResult<Byte>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>((byte)123));
+      resultHandler.handle(Future.completedFuture((byte)123));
     }
 
     @Override
     public void methodWithShortHandler(String str, Handler<AsyncResult<Short>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>((short)123456));
+      resultHandler.handle(Future.completedFuture((short)123456));
     }
 
     @Override
     public void methodWithIntHandler(String str, Handler<AsyncResult<Integer>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(124351423));
+      resultHandler.handle(Future.completedFuture(124351423));
     }
 
     @Override
     public void methodWithLongHandler(String str, Handler<AsyncResult<Long>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(125312653l));
+      resultHandler.handle(Future.completedFuture(125312653l));
     }
 
     @Override
     public void methodWithFloatHandler(String str, Handler<AsyncResult<Float>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(1.23f));
+      resultHandler.handle(Future.completedFuture(1.23f));
     }
 
     @Override
     public void methodWithDoubleHandler(String str, Handler<AsyncResult<Double>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(34.45d));
+      resultHandler.handle(Future.completedFuture(34.45d));
     }
 
     @Override
     public void methodWithBooleanHandler(String str, Handler<AsyncResult<Boolean>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(true));
+      resultHandler.handle(Future.completedFuture(true));
     }
 
     @Override
     public void methodWithJsonObjectHandler(String str, Handler<AsyncResult<JsonObject>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(new JsonObject().putString("foo", "bar")));
+      resultHandler.handle(Future.completedFuture(new JsonObject().putString("foo", "bar")));
     }
 
     @Override
     public void methodWithJsonArrayHandler(String str, Handler<AsyncResult<JsonArray>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(new JsonArray().add("socks")));
+      resultHandler.handle(Future.completedFuture(new JsonArray().add("socks")));
     }
 
     @Override
@@ -435,7 +435,7 @@ public class EventBusProxyTest extends VertxTestBase {
 
     @Override
     public void handlerFailure(String str, Handler<AsyncResult<String>> resultHandler) {
-      resultHandler.handle(new FutureResultImpl<>(new VertxException("foo")));
+      resultHandler.handle(Future.completedFuture(new VertxException("foo")));
     }
   }
 

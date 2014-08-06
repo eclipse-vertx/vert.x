@@ -26,7 +26,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.FutureResultImpl;
+
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
@@ -697,11 +697,11 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(Future.completedFuture());
     };
     Closeable myCloseable2 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(Future.completedFuture());
     };
     MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
       ContextImpl ctx = (ContextImpl)vertx.currentContext();

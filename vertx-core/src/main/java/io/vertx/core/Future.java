@@ -16,7 +16,26 @@
 
 package io.vertx.core;
 
+import io.vertx.core.spi.FutureFactory;
+
 public interface Future<T> extends AsyncResult<T> {
+
+  static <T> Future<T> future() {
+    return factory.future();
+  }
+
+  static <T> Future<T> completedFuture() {
+    return factory.completedFuture();
+  }
+
+  static <T> Future<T> completedFuture(T result) {
+    return factory.completedFuture(result);
+  }
+
+  static <T> Future<T> completedFuture(Throwable t) {
+    return factory.completedFuture(t);
+  }
+
   /**
    * Has it completed?
    */
@@ -36,5 +55,7 @@ public interface Future<T> extends AsyncResult<T> {
    * Set the failure. Any handler will be called, if there is one
    */
   Future<T> setFailure(Throwable throwable);
+
+  static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
 }

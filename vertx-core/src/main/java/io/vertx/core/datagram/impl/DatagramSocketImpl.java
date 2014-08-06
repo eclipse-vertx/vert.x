@@ -22,12 +22,13 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
+
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -260,7 +261,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
-    context.execute(() -> handler.handle(new FutureResultImpl<>(cause)), true);
+    context.execute(() -> handler.handle(Future.completedFuture(cause)), true);
   }
 
   @Override

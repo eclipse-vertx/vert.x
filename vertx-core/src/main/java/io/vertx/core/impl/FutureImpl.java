@@ -20,7 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
-public class FutureResultImpl<T> implements Future<T> {
+class FutureImpl<T> implements Future<T> {
   private boolean failed;
   private boolean succeeded;
   private Handler<AsyncResult<T>> handler;
@@ -30,14 +30,14 @@ public class FutureResultImpl<T> implements Future<T> {
   /**
    * Create a FutureResult that hasn't completed yet
    */
-  public FutureResultImpl() {
+  FutureImpl() {
   }
 
   /**
    * Create a VoidResult that has already completed
    * @param t The Throwable or null if succeeded
    */
-  public FutureResultImpl(Throwable t) {
+  FutureImpl(Throwable t) {
     if (t == null) {
       setResult(null);
     } else {
@@ -49,7 +49,7 @@ public class FutureResultImpl<T> implements Future<T> {
    * Create a FutureResult that has already succeeded
    * @param result The result
    */
-  public FutureResultImpl(T result) {
+  FutureImpl(T result) {
     setResult(result);
   }
 
@@ -91,7 +91,7 @@ public class FutureResultImpl<T> implements Future<T> {
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  public FutureResultImpl<T> setHandler(Handler<AsyncResult<T>> handler) {
+  public FutureImpl<T> setHandler(Handler<AsyncResult<T>> handler) {
     this.handler = handler;
     checkCallHandler();
     return this;
@@ -100,7 +100,7 @@ public class FutureResultImpl<T> implements Future<T> {
   /**
    * Set the result. Any handler will be called, if there is one
    */
-  public FutureResultImpl<T> setResult(T result) {
+  public FutureImpl<T> setResult(T result) {
     if (this.result != null) {
       throw new IllegalStateException("Result has already been set");
     }
@@ -113,7 +113,7 @@ public class FutureResultImpl<T> implements Future<T> {
   /**
    * Set the failure. Any handler will be called, if there is one
    */
-  public FutureResultImpl<T> setFailure(Throwable throwable) {
+  public FutureImpl<T> setFailure(Throwable throwable) {
     if (this.throwable != null) {
       throw new IllegalStateException("Failure has already been set");
     }

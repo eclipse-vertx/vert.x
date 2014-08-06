@@ -28,12 +28,11 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
@@ -133,9 +132,9 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
       return multiMap;
     }, ar -> {
       if (ar.succeeded()) {
-        resultHandler.handle(new FutureResultImpl<>(new HazelcastAsyncMultiMap<>(vertx, ar.result())));
+        resultHandler.handle(Future.completedFuture(new HazelcastAsyncMultiMap<>(vertx, ar.result())));
       } else {
-        resultHandler.handle(new FutureResultImpl<>(ar.cause()));
+        resultHandler.handle(Future.completedFuture(ar.cause()));
       }
     });
   }
@@ -167,9 +166,9 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
       return map;
     }, ar -> {
       if (ar.succeeded()) {
-        resultHandler.handle(new FutureResultImpl<>(new HazelcastAsyncMap<>(vertx, ar.result())));
+        resultHandler.handle(Future.completedFuture(new HazelcastAsyncMap<>(vertx, ar.result())));
       } else {
-        resultHandler.handle(new FutureResultImpl<>(ar.cause()));
+        resultHandler.handle(Future.completedFuture(ar.cause()));
       }
     });
   }

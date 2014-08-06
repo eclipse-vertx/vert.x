@@ -18,8 +18,8 @@ package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -58,9 +58,9 @@ public class SharedDataImpl implements SharedData {
     clusterManager.<K, V>getAsyncMap(name, null, ar -> {
       if (ar.succeeded()) {
         // Wrap it
-        resultHandler.handle(new FutureResultImpl<>(new WrappedAsyncMap<K, V>(ar.result())));
+        resultHandler.handle(Future.completedFuture(new WrappedAsyncMap<K, V>(ar.result())));
       } else {
-        resultHandler.handle(new FutureResultImpl<>(ar.cause()));
+        resultHandler.handle(Future.completedFuture(ar.cause()));
       }
     });
   }
@@ -122,7 +122,7 @@ public class SharedDataImpl implements SharedData {
     }
     Counter theCounter = counter;
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(theCounter)));
+    context.runOnContext(v -> resultHandler.handle(Future.completedFuture(theCounter)));
   }
 
   private static void checkType(Object obj) {

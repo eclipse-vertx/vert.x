@@ -18,9 +18,10 @@ package io.vertx.core.datagram.impl;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
+
 import io.vertx.core.impl.VertxInternal;
 
 /**
@@ -46,9 +47,9 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
 
   private void notifyHandler(ChannelFuture future) {
     if (future.isSuccess()) {
-      handler.handle(new FutureResultImpl<>(result));
+      handler.handle(Future.completedFuture(result));
     } else {
-      handler.handle(new FutureResultImpl<>(future.cause()));
+      handler.handle(Future.completedFuture(future.cause()));
     }
   }
 }

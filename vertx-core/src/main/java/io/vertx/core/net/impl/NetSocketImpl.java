@@ -23,9 +23,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
@@ -33,7 +33,6 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.Registration;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -182,9 +181,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
         public void operationComplete(ChannelFuture future) throws Exception {
           final AsyncResult<Void> res;
           if (future.isSuccess()) {
-            res = new FutureResultImpl<>((Void)null);
+            res = Future.completedFuture();
           } else {
-            res = new FutureResultImpl<>(future.cause());
+            res = Future.completedFuture(future.cause());
           }
           vertx.runOnContext(new Handler<Void>() {
             @Override
@@ -243,9 +242,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       sslHandler = helper.createSslHandler(vertx, client);
       channel.pipeline().addFirst(sslHandler);
     }
-    sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+    sslHandler.handshakeFuture().addListener(new GenericFutureListener<io.netty.util.concurrent.Future<Channel>>() {
       @Override
-      public void operationComplete(final Future<Channel> future) throws Exception {
+      public void operationComplete(final io.netty.util.concurrent.Future<Channel> future) throws Exception {
         context.execute(() -> {
           if (future.isSuccess()) {
             handler.handle(null);

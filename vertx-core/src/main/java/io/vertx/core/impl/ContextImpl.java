@@ -20,6 +20,7 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.file.impl.PathResolver;
 import io.vertx.core.logging.Logger;
@@ -104,11 +105,11 @@ public abstract class ContextImpl implements Context {
             if (ar.failed()) {
               if (failed.compareAndSet(false, true)) {
                 // Only report one failure
-                completionHandler.handle(new FutureResultImpl<>(ar.cause()));
+                completionHandler.handle(Future.completedFuture(ar.cause()));
               }
             } else {
               if (count.incrementAndGet() == num) {
-                completionHandler.handle(new FutureResultImpl<>((Void)null));
+                completionHandler.handle(Future.completedFuture());
               }
             }
           });
@@ -117,7 +118,7 @@ public abstract class ContextImpl implements Context {
         }
       }
     } else {
-      completionHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(Future.completedFuture());
     }
   }
 
@@ -153,7 +154,7 @@ public abstract class ContextImpl implements Context {
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     try {
       orderedInternalPoolExec.execute(() -> {
-        FutureResultImpl<T> res = new FutureResultImpl<>();
+        Future<T> res = Future.future();
         try {
           T result = action.perform();
           res.setResult(result);

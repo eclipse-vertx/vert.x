@@ -154,13 +154,13 @@ public class DeploymentManager {
             log.error("Undeploy failed", ar.cause());
           }
           if (count.incrementAndGet() == deploymentIDs.size()) {
-            completionHandler.handle(new FutureResultImpl<>((Void) null));
+            completionHandler.handle(Future.completedFuture());
           }
         });
       }
     } else {
       Context context = vertx.getOrCreateContext();
-      context.runOnContext(v -> completionHandler.handle(new FutureResultImpl<>((Void)null)));
+      context.runOnContext(v -> completionHandler.handle(Future.completedFuture()));
     }
   }
 
@@ -233,7 +233,7 @@ public class DeploymentManager {
 
   private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> completionHandler) {
     if (completionHandler != null) {
-      reportResult(context, completionHandler, new FutureResultImpl<>(t));
+      reportResult(context, completionHandler, Future.completedFuture(t));
     } else {
       log.error(t.getMessage(), t);
     }
@@ -241,7 +241,7 @@ public class DeploymentManager {
 
   private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> completionHandler) {
     if (completionHandler != null) {
-      reportResult(context, completionHandler, new FutureResultImpl<>(result));
+      reportResult(context, completionHandler, Future.completedFuture(result));
     }
   }
 
@@ -276,7 +276,7 @@ public class DeploymentManager {
         verticle.setVertx(vertx);
         verticle.setConfig(conf);
         verticle.setDeploymentID(deploymentID);
-        Future<Void> startFuture = new FutureResultImpl<>();
+        Future<Void> startFuture = Future.future();
         verticle.start(startFuture);
         startFuture.setHandler(ar -> {
           if (ar.succeeded()) {
@@ -339,7 +339,7 @@ public class DeploymentManager {
       } else {
         undeployed = true;
         context.runOnContext(v -> {
-          Future<Void> stopFuture = new FutureResultImpl<>();
+          Future<Void> stopFuture = Future.future();
           stopFuture.setHandler(ar -> {
             deployments.remove(id);
             context.runCloseHooks(ar2 -> {

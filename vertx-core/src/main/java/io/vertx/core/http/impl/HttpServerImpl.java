@@ -50,6 +50,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -60,7 +61,6 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -241,7 +241,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(v -> listenHandler.handle(new FutureResultImpl<>(t)));
+            vertx.runOnContext(v -> listenHandler.handle(Future.completedFuture(t)));
           } else {
             // No handler - log so user can see failure
             log.error(t);
@@ -262,9 +262,9 @@ public class HttpServerImpl implements HttpServer, Closeable {
           if (listenHandler != null) {
             final AsyncResult<HttpServer> res;
             if (future.isSuccess()) {
-              res = new FutureResultImpl<HttpServer>(HttpServerImpl.this);
+              res = Future.completedFuture(HttpServerImpl.this);
             } else {
-              res = new FutureResultImpl<>(future.cause());
+              res = Future.completedFuture(future.cause());
               listening = false;
             }
             listenContext.execute(() -> listenHandler.handle(res), true);
@@ -393,7 +393,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)), false);
+      closeContext.execute(() -> done.handle(Future.completedFuture(e)), false);
     }
   }
 

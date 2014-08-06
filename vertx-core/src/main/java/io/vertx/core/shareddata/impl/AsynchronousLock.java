@@ -18,9 +18,9 @@ package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.Lock;
 
@@ -64,7 +64,7 @@ public class AsynchronousLock implements Lock {
   }
 
   private void lockAquired(Context context, Handler<AsyncResult<Lock>> resultHandler) {
-    context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(this)));
+    context.runOnContext(v -> resultHandler.handle(Future.completedFuture(this)));
   }
 
   private LockWaiter pollWaiters() {
@@ -98,7 +98,7 @@ public class AsynchronousLock implements Lock {
       synchronized (lock) {
         if (!acquired) {
           timedOut = true;
-          context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(new VertxException("Timed out waiting to get lock"))));
+          context.runOnContext(v -> resultHandler.handle(Future.completedFuture(new VertxException("Timed out waiting to get lock"))));
         }
       }
     }

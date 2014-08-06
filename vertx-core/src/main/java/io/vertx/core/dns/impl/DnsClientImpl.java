@@ -27,6 +27,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsException;
@@ -44,7 +45,7 @@ import io.vertx.core.dns.impl.netty.decoder.RecordDecoderFactory;
 import io.vertx.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import io.vertx.core.dns.impl.netty.decoder.record.ServiceRecord;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
+
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
@@ -147,7 +148,7 @@ public final class DnsClientImpl implements DnsClient {
           for (List<String> txt: records) {
             txts.addAll(txt);
           }
-          handler.handle(new FutureResultImpl(txts));
+          handler.handle(Future.completedFuture(txts));
         }
       }
     }, DnsEntry.TYPE_TXT);
@@ -214,29 +215,29 @@ public final class DnsClientImpl implements DnsClient {
 
       return resolvePTR(reverseName.toString(), ar -> {
           if (ar.failed()) {
-            handler.handle(new FutureResultImpl<>(ar.cause()));
+            handler.handle(Future.completedFuture(ar.cause()));
           } else {
             String result = ar.result();
-            handler.handle(new FutureResultImpl<>(result));
+            handler.handle(Future.completedFuture(result));
           }
         });
     } catch (UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
-      actualCtx.execute(() -> handler.handle(new FutureResultImpl<>(e)), false);
+      actualCtx.execute(() -> handler.handle(Future.completedFuture(e)), false);
     }
     return this;
   }
 
   @SuppressWarnings("unchecked")
   private void lookup(String name, Handler handler, int... types) {
-    FutureResultImpl result = new FutureResultImpl<>();
+    Future result = Future.future();
     result.setHandler(handler);
     lookup(name, result, types);
   }
 
   @SuppressWarnings("unchecked")
-  private void lookup(String name, FutureResultImpl result, int... types) {
+  private void lookup(String name, Future result, int... types) {
     bootstrap.connect(dnsServer).addListener(new RetryChannelFutureListener(result) {
       @Override
       public void onSuccess(ChannelFuture future) throws Exception {
@@ -283,7 +284,7 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @SuppressWarnings("unchecked")
-  private void setResult(FutureResultImpl r, EventLoop loop, Object result) {
+  private void setResult(Future r, EventLoop loop, Object result) {
     if (r.complete()) {
       return;
     }
@@ -311,9 +312,9 @@ public final class DnsClientImpl implements DnsClient {
       } else {
         List<T> result = event.result();
         if (result.isEmpty()) {
-          handler.handle(new FutureResultImpl<>((T)null));
+          handler.handle(Future.completedFuture());
         } else {
-          handler.handle(new FutureResultImpl<>(result.get(0)));
+          handler.handle(Future.completedFuture(result.get(0)));
         }
       }
     }
@@ -341,7 +342,7 @@ public final class DnsClientImpl implements DnsClient {
         }
 
         Collections.sort(records, comparator);
-        handler.handle(new FutureResultImpl(records));
+        handler.handle(Future.completedFuture(records));
       }
     }
 
@@ -349,9 +350,9 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   private abstract class RetryChannelFutureListener implements ChannelFutureListener {
-    private final FutureResultImpl result;
+    private final Future result;
 
-    RetryChannelFutureListener(final FutureResultImpl result) {
+    RetryChannelFutureListener(final Future result) {
       this.result = result;
     }
 

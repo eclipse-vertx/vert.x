@@ -34,14 +34,13 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -185,7 +184,7 @@ public class NetServerImpl implements NetServer, Closeable {
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(v ->  listenHandler.handle(new FutureResultImpl<>(t)));
+            vertx.runOnContext(v ->  listenHandler.handle(Future.completedFuture(t)));
           } else {
             // No handler - log so user can see failure
             log.error(t);
@@ -211,10 +210,10 @@ public class NetServerImpl implements NetServer, Closeable {
         if (listenHandler != null) {
           final AsyncResult<NetServer> res;
           if (actualServer.bindFuture.isSuccess()) {
-            res = new FutureResultImpl<>(NetServerImpl.this);
+            res = Future.completedFuture(NetServerImpl.this);
           } else {
             listening = false;
-            res = new FutureResultImpl<>(actualServer.bindFuture.cause());
+            res = Future.completedFuture(actualServer.bindFuture.cause());
           }
           listenContext.execute(() -> listenHandler.handle(res), true);
         } else if (!actualServer.bindFuture.isSuccess()) {
@@ -328,7 +327,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(new FutureResultImpl<>(e)), false);
+      closeContext.execute(() -> done.handle(Future.completedFuture(e)), false);
     }
   }
 
@@ -352,10 +351,10 @@ public class NetServerImpl implements NetServer, Closeable {
       if (sslHelper.isSSL()) {
         SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
-        Future<Channel> fut = sslHandler.handshakeFuture();
-        fut.addListener(new GenericFutureListener<Future<Channel>>() {
+        io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
+        fut.addListener(new GenericFutureListener<io.netty.util.concurrent.Future<Channel>>() {
           @Override
-          public void operationComplete(Future<Channel> future) throws Exception {
+          public void operationComplete(io.netty.util.concurrent.Future<Channel> future) throws Exception {
             if (future.isSuccess()) {
               connected(ch, handler);
             } else {

@@ -18,8 +18,8 @@ package io.vertx.test.fakecluster;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -106,7 +106,7 @@ public class FakeClusterManager implements ClusterManager {
       }
     }
     AsyncMultiMap<K, V> theMap = map;
-    vertx.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(theMap)));
+    vertx.runOnContext(v -> resultHandler.handle(Future.completedFuture(theMap)));
   }
 
   @Override
@@ -120,7 +120,7 @@ public class FakeClusterManager implements ClusterManager {
       }
     }
     AsyncMap<K, V> theMap = map;
-    vertx.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(theMap)));
+    vertx.runOnContext(v -> resultHandler.handle(Future.completedFuture(theMap)));
   }
 
   @Override
@@ -155,7 +155,7 @@ public class FakeClusterManager implements ClusterManager {
     }
     Counter theCounter = counter;
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>(theCounter)));
+    context.runOnContext(v -> resultHandler.handle(Future.completedFuture(theCounter)));
   }
 
   @Override
@@ -180,7 +180,7 @@ public class FakeClusterManager implements ClusterManager {
     doJoin(nodeID, this);
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> {
-      resultHandler.handle(new FutureResultImpl<>((Void)null));
+      resultHandler.handle(Future.completedFuture());
     });
   }
 
@@ -195,7 +195,7 @@ public class FakeClusterManager implements ClusterManager {
       this.nodeID = null;
     }
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(new FutureResultImpl<>((Void)null)));
+    context.runOnContext(v -> resultHandler.handle(Future.completedFuture()));
   }
 
   @Override

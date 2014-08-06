@@ -17,6 +17,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
@@ -27,7 +28,6 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.FutureResultImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -104,7 +104,7 @@ public class EventBusImpl implements EventBus {
         this.server = setServer(port, hostname, listenHandler);
       } else {
         if (listenHandler != null) {
-          listenHandler.handle(new FutureResultImpl<>(ar.cause()));
+          listenHandler.handle(Future.completedFuture(ar.cause()));
         } else {
           log.error(ar.cause());
         }
@@ -191,11 +191,11 @@ public class EventBusImpl implements EventBus {
           log.error("Failed to leave cluster", ar.cause());
         }
         if (completionHandler != null) {
-          vertx.runOnContext(v -> completionHandler.handle(new FutureResultImpl<>((Void) null)));
+          vertx.runOnContext(v -> completionHandler.handle(Future.completedFuture()));
         }
       });
     } else if (completionHandler != null) {
-      vertx.runOnContext(v -> completionHandler.handle(new FutureResultImpl<>((Void) null)));
+      vertx.runOnContext(v -> completionHandler.handle(Future.completedFuture()));
     }
   }
 
@@ -313,9 +313,9 @@ public class EventBusImpl implements EventBus {
       }
       if (listenHandler != null) {
         if (asyncResult.succeeded()) {
-          listenHandler.handle(new FutureResultImpl<>((Void)null));
+          listenHandler.handle(Future.completedFuture());
         } else {
-          listenHandler.handle(new FutureResultImpl<>(asyncResult.cause()));
+          listenHandler.handle(Future.completedFuture(asyncResult.cause()));
         }
       } else if (asyncResult.failed()) {
         log.error("Failed to listen", asyncResult.cause());
@@ -391,7 +391,7 @@ public class EventBusImpl implements EventBus {
             log.warn("Message reply handler timed out as no reply was received - it will be removed");
             refReg.get().unregister();
             if (asyncResultHandler != null) {
-              asyncResultHandler.handle(new FutureResultImpl<>(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
+              asyncResultHandler.handle(Future.completedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
             }
           });
         }
@@ -436,12 +436,12 @@ public class EventBusImpl implements EventBus {
 
   private <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
     return reply -> {
-      FutureResultImpl<Message<T>> result;
+      Future<Message<T>> result;
       if (reply.body() instanceof ReplyException) {
         // This is kind of clunky - but hey-ho
-        result = new FutureResultImpl<>((ReplyException)reply.body());
+        result = Future.completedFuture((ReplyException)reply.body());
       } else {
-        result = new FutureResultImpl<>(reply);
+        result = Future.completedFuture(reply);
       }
       handler.handle(result);
     };
@@ -476,10 +476,10 @@ public class EventBusImpl implements EventBus {
         // Propagate the information
         subs.add(address, serverID, registration::setResult);
       } else {
-        registration.result = new FutureResultImpl<>((Void) null);
+        registration.result = Future.completedFuture();
       }
     } else {
-      registration.result = new FutureResultImpl<>((Void) null);
+      registration.result = Future.completedFuture();
     }
 
     handlers.list.add(holder);
@@ -531,7 +531,7 @@ public class EventBusImpl implements EventBus {
   }
 
   private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
-    completionHandler.handle(new FutureResultImpl<>((Void) null));
+    completionHandler.handle(Future.completedFuture());
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -608,7 +608,7 @@ public class EventBusImpl implements EventBus {
       if (!ar.succeeded()) {
         log.error("Couldn't find sub to remove");
       } else {
-        completionHandler.handle(new FutureResultImpl<>((Void)null));
+        completionHandler.handle(Future.completedFuture());
       }
     });
   }
@@ -649,7 +649,7 @@ public class EventBusImpl implements EventBus {
     vertx.runOnContext(new Handler<Void>() {
       @Override
       public void handle(Void v) {
-        handler.handle(new FutureResultImpl<>(new ReplyException(ReplyFailure.NO_HANDLERS)));
+        handler.handle(Future.completedFuture(new ReplyException(ReplyFailure.NO_HANDLERS)));
       }
     });
   }
@@ -829,7 +829,7 @@ public class EventBusImpl implements EventBus {
     // Called by context on undeploy
     public void close(Handler<AsyncResult<Void>> completionHandler) {
       unregisterHandler(this.address, this.handler, emptyHandler());
-      completionHandler.handle(new FutureResultImpl<>((Void)null));
+      completionHandler.handle(Future.completedFuture());
     }
 
   }

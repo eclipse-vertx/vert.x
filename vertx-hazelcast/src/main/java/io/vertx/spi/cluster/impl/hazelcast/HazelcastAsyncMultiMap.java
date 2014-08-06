@@ -19,8 +19,9 @@ package io.vertx.spi.cluster.impl.hazelcast;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.FutureResultImpl;
+
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
@@ -84,12 +85,12 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
   @Override
   public void get(final K k, final Handler<AsyncResult<ChoosableIterable<V>>> resultHandler) {
     ChoosableSet<V> entries = cache.get(k);
-    FutureResultImpl<ChoosableIterable<V>> result = new FutureResultImpl<>();
+    Future<ChoosableIterable<V>> result = Future.future();
     if (entries != null && entries.isInitialised()) {
       result.setResult(entries).setHandler(resultHandler);
     } else {
       vertx.executeBlocking(() -> map.get(k), (AsyncResult<Collection<V>> res2) -> {
-        FutureResultImpl<ChoosableIterable<V>> sresult = new FutureResultImpl<>();
+        Future<ChoosableIterable<V>> sresult = Future.future();
         if (res2.succeeded()) {
           Collection<V> entries2 = res2.result();
           ChoosableSet<V> sids;
