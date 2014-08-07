@@ -21,6 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -36,7 +37,7 @@ import io.vertx.core.net.SocketAddress;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @VertxGen
-public interface DatagramSocket {
+public interface DatagramSocket extends Measured {
 
   /**
    * Write the given {@link io.vertx.core.buffer.Buffer} to the {@link io.vertx.core.net.SocketAddress}. The {@link io.vertx.core.Handler} will be notified once the

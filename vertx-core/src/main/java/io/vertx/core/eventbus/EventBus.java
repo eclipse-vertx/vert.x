@@ -21,6 +21,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.metrics.Measured;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -53,9 +54,9 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface EventBus {
+public interface EventBus extends Measured {
 
-	/**
+  /**
 	 * Close the EventBus and release all resources. 
 	 * 
 	 * @param completionHandler

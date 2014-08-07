@@ -16,17 +16,20 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -35,9 +38,13 @@ import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.spi.HttpServerMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
@@ -54,6 +61,8 @@ import java.util.Queue;
  */
 class ServerConnection extends ConnectionBase {
 
+  private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
+
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
   private Handler<HttpServerRequest> requestHandler;
@@ -69,12 +78,16 @@ class ServerConnection extends ConnectionBase {
   private final HttpServerImpl server;
   private final WebSocketServerHandshaker handshaker;
   private ChannelFuture lastWriteFuture;
+  private final HttpServerMetrics metrics;
+  private long bytesRead;
+  private long bytesWritten;
 
-  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, WebSocketServerHandshaker handshaker) {
-    super(vertx, channel, context);
+  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
+    super(vertx, channel, context, metrics);
     this.serverOrigin = serverOrigin;
     this.server = server;
     this.handshaker = handshaker;
+    this.metrics = metrics;
   }
 
   public void pause() {
@@ -106,6 +119,11 @@ class ServerConnection extends ConnectionBase {
   }
 
   void responseComplete() {
+    if (metrics.isEnabled()) {
+      metrics.bytesWritten(remoteAddress(), bytesWritten);
+      bytesWritten = 0;
+      metrics.responseEnd(pendingResponse);
+    }
     pendingResponse = null;
     checkNextTick();
   }
@@ -129,11 +147,19 @@ class ServerConnection extends ConnectionBase {
 
   @Override
   public ChannelFuture writeToChannel(Object obj) {
+    if (metrics.isEnabled()) {
+      long bytes = getBytes(obj);
+      if (bytes == -1) {
+        log.warn("Metrics could not be updated to include bytes written because of unknown object " + obj.getClass() + " being written.");
+      } else {
+        bytesWritten += bytes;
+      }
+    }
     return lastWriteFuture = super.writeToChannel(obj);
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<Channel, NetSocketImpl>(1);
     connectionMap.put(channel, socket);
 
@@ -194,18 +220,27 @@ class ServerConnection extends ConnectionBase {
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     this.currentRequest = req;
     pendingResponse = resp;
+    metrics.requestBegin(req, resp);
     if (requestHandler != null) {
       requestHandler.handle(req);
     }
   }
 
   private void handleChunk(Buffer chunk) {
+    if (metrics.isEnabled()) {
+      bytesRead += chunk.length();
+    }
     currentRequest.handleData(chunk);
   }
 
   private void handleEnd() {
     currentRequest.handleEnd();
+    if (metrics.isEnabled()) {
+      metrics.bytesRead(remoteAddress(), bytesRead);
+    }
+
     currentRequest = null;
+    bytesRead = 0;
   }
 
   @Override
@@ -334,6 +369,27 @@ class ServerConnection extends ConnectionBase {
           }
         }
       });
+    }
+  }
+
+  private long getBytes(Object obj) {
+    if (obj == null) return 0;
+
+    if (obj instanceof Buffer) {
+      return ((Buffer) obj).length();
+    } else if (obj instanceof ByteBuf) {
+      return ((ByteBuf) obj).readableBytes();
+    } else if (obj instanceof HttpContent) {
+      return ((HttpContent) obj).content().readableBytes();
+    } else if (obj instanceof WebSocketFrame) {
+      return ((WebSocketFrame) obj).binaryData().length();
+    } else if (obj instanceof FileRegion) {
+      return ((FileRegion) obj).count();
+    } else if (obj instanceof ChunkedFile) {
+      ChunkedFile file = (ChunkedFile) obj;
+      return file.endOffset() - file.startOffset();
+    } else {
+      return -1;
     }
   }
 }

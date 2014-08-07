@@ -21,6 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.metrics.Measured;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -35,7 +36,7 @@ import io.vertx.core.streams.ReadStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetServer {
+public interface NetServer extends Measured {
 
   /**
    * Return the connect stream for this server. The server can only have at most one handler at any one time.
