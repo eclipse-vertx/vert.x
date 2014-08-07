@@ -30,6 +30,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.ContextImpl;
 
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.metrics.DatagramMetrics;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
@@ -50,7 +51,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocketImpl(VertxInternal vertx,
                             DatagramSocketOptions options) {
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext());
+          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext(), new DatagramMetrics(vertx));
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultithreaded()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");

@@ -258,6 +258,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   void handleException(Throwable t) {
+    //TODO: Cancel metric request timings, report errors
     cancelOutstandingTimeoutTimer();
     exceptionOccurred = true;
     getExceptionHandler().handle(t);
@@ -267,6 +268,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     // If an exception occurred (e.g. a timeout fired) we won't receive the response.
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();
+      client.metrics.beginResponse(this, resp);
       try {
         if (resp.statusCode() == 100) {
           if (continueHandler != null) {
@@ -422,15 +424,17 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       return;
     }
 
-    if (end) {
-      completed = true;
-    }
     if (!end && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
               + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
 
-    written += buff.readableBytes();
+    written += readableBytes;
+    if (end) {
+      completed = true;
+      client.metrics.bytesWritten(written);
+    }
+
     if (conn == null) {
       if (pendingChunks == null) {
         pendingChunks = buff;

@@ -36,6 +36,8 @@ public class VertxOptionsImpl implements VertxOptions{
   public static final long DEFAULT_MAXWORKEREXECUTETIME = 1l * 60 * 1000 * 1000000;
   public static final int DEFAULT_PROXYOPERATIONTIMEOUT = 10 * 1000;
   public static final int DEFAULT_QUORUMSIZE = 1;
+  public static final boolean DEFAULT_METRICS_ENABLED = false;
+  public static final boolean DEFAULT_JMX_ENABLED = false;
 
   private int eventLoopPoolSize = DEFAULT_EVENTLOOPPOOLSIZE;
   private int workerPoolSize = DEFAULT_WORKERPOOLSIZE;
@@ -51,6 +53,9 @@ public class VertxOptionsImpl implements VertxOptions{
   private boolean haEnabled;
   private int quorumSize = DEFAULT_QUORUMSIZE;
   private String haGroup;
+  private boolean metricsEnabled = DEFAULT_METRICS_ENABLED;
+  private boolean jmxEnabled = DEFAULT_JMX_ENABLED;
+  private String jmxDomain;
 
   VertxOptionsImpl() {
   }
@@ -70,6 +75,9 @@ public class VertxOptionsImpl implements VertxOptions{
     this.haEnabled = other.isHAEnabled();
     this.quorumSize = other.getQuorumSize();
     this.haGroup = other.getHAGroup();
+    this.metricsEnabled = other.isMetricsEnabled();
+    this.jmxEnabled = other.isJmxEnabled();
+    this.jmxDomain = other.getJmxDomain();
   }
 
   VertxOptionsImpl(JsonObject json) {
@@ -86,6 +94,9 @@ public class VertxOptionsImpl implements VertxOptions{
     this.haEnabled = json.getBoolean("haEnabled", false);
     this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUMSIZE);
     this.haGroup = json.getString("haGroup", null);
+    this.metricsEnabled = json.getBoolean("metricsEnabled", DEFAULT_METRICS_ENABLED);
+    this.jmxEnabled = json.getBoolean("jmxEnabled", DEFAULT_METRICS_ENABLED);
+    this.jmxDomain = json.getString("jmxDomain");
   }
 
   public int getEventLoopPoolSize() {
@@ -247,6 +258,35 @@ public class VertxOptionsImpl implements VertxOptions{
     return this;
   }
 
+  public VertxOptions setMetricsEnabled(boolean enable) {
+    this.metricsEnabled = enable;
+    return this;
+  }
+
+  @Override
+  public boolean isMetricsEnabled() {
+    return metricsEnabled;
+  }
+
+  public boolean isJmxEnabled() {
+    return jmxEnabled;
+  }
+
+  public VertxOptions setJmxEnabled(boolean jmxEnabled) {
+    this.jmxEnabled = jmxEnabled;
+    if (jmxEnabled) metricsEnabled = true;
+    return this;
+  }
+
+  public String getJmxDomain() {
+    return jmxDomain;
+  }
+
+  public VertxOptions setJmxDomain(String jmxDomain) {
+    this.jmxDomain = jmxDomain;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -269,6 +309,10 @@ public class VertxOptionsImpl implements VertxOptions{
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
+    if (proxyOperationTimeout != that.getProxyOperationTimeout()) return false;
+    if (metricsEnabled != that.isMetricsEnabled()) return false;
+    if (jmxEnabled != that.isJmxEnabled()) return false;
+    if (jmxDomain != null ? !jmxDomain.equals(that.getJmxDomain()) : that.getJmxDomain() != null) return false;
 
     return true;
   }
@@ -289,6 +333,9 @@ public class VertxOptionsImpl implements VertxOptions{
     result = 31 * result + (haEnabled ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
+    result = 31 * result + (metricsEnabled ? 1 : 0);
+    result = 31 * result + (jmxEnabled ? 1 : 0);
+    result = 31 * result + (jmxDomain != null ? jmxDomain.hashCode() : 0);
     return result;
   }
 }

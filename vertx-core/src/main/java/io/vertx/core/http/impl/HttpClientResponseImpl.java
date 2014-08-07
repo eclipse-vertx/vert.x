@@ -56,6 +56,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private LastHttpContent pausedTrailer;
   private NetSocket netSocket;
 
+  // Track for metrics
+  private long bytesRead;
+
   // Cache these for performance
   private Headers headers;
   private Headers trailers;
@@ -180,6 +183,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleChunk(Buffer data) {
+    this.bytesRead += data.length();
     if (paused) {
       if (pausedChunks == null) {
         pausedChunks = new ArrayDeque<>();
@@ -194,6 +198,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleEnd(LastHttpContent trailer) {
+    conn.metrics.bytesRead(bytesRead);
+    conn.metrics.endResponse(this);
     if (paused) {
       hasPausedEnd = true;
       pausedTrailer = trailer;

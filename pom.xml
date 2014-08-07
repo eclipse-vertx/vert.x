@@ -58,6 +58,7 @@
     <netty.version>4.0.23.Final</netty.version>
     <jackson.version>2.4.0</jackson.version>
     <hazelcast.version>3.2.5</hazelcast.version>
+    <metrics.version>3.0.2</metrics.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.7</slf4j.version>
     <junit.version>4.11</junit.version>
@@ -110,6 +111,11 @@
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast</artifactId>
         <version>${hazelcast.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.codahale.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${metrics.version}</version>
       </dependency>
       <dependency>
         <groupId>log4j</groupId>
