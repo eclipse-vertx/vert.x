@@ -16,14 +16,13 @@
 
 package io.vertx.core.metrics.reporters;
 
-import com.codahale.metrics.JmxReporter;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.metrics.reporters.codahale.JmxReporter;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class JmxMetricReporter {
-  //TODO: Fork JmxReporter (it relies on slf4j and we may want to add more info)
   private JmxReporter reporter;
 
   public JmxMetricReporter(VertxInternal vertx, String jmxDomain) {
