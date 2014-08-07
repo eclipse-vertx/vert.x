@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2011-2013 The original author or authors
  * ------------------------------------------------------
@@ -44,6 +43,8 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.NetServerMetrics;
+import io.vertx.core.metrics.NetworkMetrics;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
@@ -66,6 +67,7 @@ public class NetServerImpl implements NetServer, Closeable {
   private final NetServerOptions options;
   private final ContextImpl creatingContext;
   private final SSLHelper sslHelper;
+  private final NetworkMetrics metrics;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
@@ -91,6 +93,7 @@ public class NetServerImpl implements NetServer, Closeable {
       }
       creatingContext.addCloseHook(this);
     }
+    this.metrics = new NetServerMetrics(vertx, options);
   }
 
   @Override
@@ -375,7 +378,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
-      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false);
+      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics);
       socketMap.put(ch, sock);
       handler.handler.handle(sock);
     }

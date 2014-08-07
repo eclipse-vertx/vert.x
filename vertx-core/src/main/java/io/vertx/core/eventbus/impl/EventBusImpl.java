@@ -50,6 +50,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.EventBusMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -113,6 +114,7 @@ public class EventBusImpl implements EventBus {
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
   private final ProxyFactory proxyFactory;
+  private final EventBusMetrics metrics;
   private Registration pingRegistration;
   private MessageCodec[] systemCodecs;
 
@@ -124,6 +126,7 @@ public class EventBusImpl implements EventBus {
     this.subs = null;
     this.clusterMgr = null;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
+    this.metrics = new EventBusMetrics(vertx);
     setPingHandler();
     putStandardCodecs();
   }
@@ -133,6 +136,7 @@ public class EventBusImpl implements EventBus {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
+    this.metrics = new EventBusMetrics(vertx);
     clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
       if (ar.succeeded()) {
         subs = ar.result();
@@ -444,6 +448,7 @@ public class EventBusImpl implements EventBus {
   private <T> void sendOrPub(ServerID replyDest, MessageImpl message, DeliveryOptions options,
                              Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
+    metrics.send(message.address());
     ContextImpl context = vertx.getOrCreateContext();
     Handler<Message<T>> simpleReplyHandler = null;
     try {
@@ -539,10 +544,10 @@ public class EventBusImpl implements EventBus {
         // Propagate the information
         subs.add(address, serverID, registration::setResult);
       } else {
-        registration.result = Future.completedFuture();
+        registration.setResult(Future.completedFuture());
       }
     } else {
-      registration.result = Future.completedFuture();
+      registration.setResult(Future.completedFuture());
     }
 
     handlers.list.add(holder);
@@ -729,6 +734,7 @@ public class EventBusImpl implements EventBus {
       // before it was received
       try {
         if (!holder.removed) {
+          metrics.receive(msg.address());
           holder.handler.handle(copied);
         }
       } finally {
@@ -942,15 +948,23 @@ public class EventBusImpl implements EventBus {
     @Override
     public void unregister(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
-      unregisterHandler(address, handler, completionHandler);
+      unregisterHandler(address, handler, ar -> {
+        metrics.unregister(address);
+        completionHandler.handle(ar);
+      });
     }
 
     private synchronized void setResult(AsyncResult<Void> result) {
       this.result = result;
       if (completionHandler != null) {
+        if (result.succeeded()) {
+          metrics.register(address);
+        }
         completionHandler.handle(result);
       } else if (result.failed()) {
         log.error("Failed to propagate registration for handler " + handler + " and address " + address);
+      } else {
+        metrics.register(address);
       }
     }
   }

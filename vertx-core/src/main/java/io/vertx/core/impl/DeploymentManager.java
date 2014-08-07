@@ -26,6 +26,7 @@ import io.vertx.core.impl.verticle.SimpleJavaVerticleFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.VerticleMetrics;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.io.File;
@@ -55,6 +56,7 @@ public class DeploymentManager {
   private static final Logger log = LoggerFactory.getLogger(DeploymentManager.class);
 
   private final VertxInternal vertx;
+  private final VerticleMetrics metrics;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
   private Map<String, VerticleFactory> verticleFactories = new ConcurrentHashMap<>();
@@ -62,6 +64,7 @@ public class DeploymentManager {
 
   public DeploymentManager(VertxInternal vertx) {
     this.vertx = vertx;
+    this.metrics = new VerticleMetrics(vertx);
     loadVerticleFactories();
   }
 
@@ -280,6 +283,7 @@ public class DeploymentManager {
         verticle.start(startFuture);
         startFuture.setHandler(ar -> {
           if (ar.succeeded()) {
+            metrics.deployed(verticle);
             deployments.put(deploymentID, deployment);
             reportSuccess(deploymentID, currentContext, completionHandler);
           } else {
@@ -342,6 +346,7 @@ public class DeploymentManager {
           Future<Void> stopFuture = Future.future();
           stopFuture.setHandler(ar -> {
             deployments.remove(id);
+            metrics.undeployed(verticle);
             context.runCloseHooks(ar2 -> {
               if (ar2.failed()) {
                 // Log error but we report success anyway

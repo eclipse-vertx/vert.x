@@ -17,6 +17,7 @@
 package io.vertx.core.impl;
 
 
+import com.codahale.metrics.MetricRegistry;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.Handler;
 import io.vertx.core.http.impl.HttpServerImpl;
@@ -46,6 +47,8 @@ public interface VertxInternal extends VertxSPI {
   Map<ServerID, HttpServerImpl> sharedHttpServers();
 
   Map<ServerID, NetServerImpl> sharedNetServers();
+
+  MetricRegistry metricRegistry();
 
 	/**
 	 * Get the current context

@@ -32,6 +32,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.NetworkMetrics;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -50,15 +51,18 @@ public abstract class ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
+    this.metrics = metrics;
+    metrics.connectionOpened(this);
   }
 
   protected final VertxInternal vertx;
   protected final Channel channel;
   protected final ContextImpl context;
+  protected final NetworkMetrics metrics;
 
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
@@ -147,6 +151,7 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
+    metrics.connectionClosed(this);
     if (closeHandler != null) {
       closeHandler.handle(null);
     }
@@ -219,12 +224,12 @@ public abstract class ConnectionBase {
   }
 
   public SocketAddress remoteAddress() {
-    InetSocketAddress addr = (InetSocketAddress)channel.remoteAddress();
+    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
   public SocketAddress localAddress() {
-    InetSocketAddress addr = (InetSocketAddress)channel.localAddress();
+    InetSocketAddress addr = (InetSocketAddress) channel.localAddress();
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
