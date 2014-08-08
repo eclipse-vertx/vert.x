@@ -483,7 +483,7 @@ container.undeployVerticle(deploymentID);
 
 Handler&lt;Message&gt; myHandler = new Handler&lt;Message&gt;() {
     public void handle(Message message) {
-        System.out.println("I received a message " + message.body);
+        System.out.println("I received a message " + message.body());
     }
 };
 
@@ -494,7 +494,7 @@ eb.registerHandler("test.address", myHandler);
 <p>If you know you'll always be receiving messages of a particular type you can use the specific type in your handler, e.g:</p>
 <pre class="prettyprint">Handler&lt;Message&lt;String&gt;&gt; myHandler = new Handler&lt;Message&lt;String&gt;() {
     public void handle(Message&lt;String&gt; message) {
-        String body = message.body;
+        String body = message.body();
     }
 };
 </pre>
@@ -534,7 +534,7 @@ eb.registerHandler("test.address", myHandler);
 <p>The receiver:</p>
 <pre class="prettyprint">Handler&lt;Message&lt;String&gt;&gt; myHandler = new Handler&lt;Message&lt;String&gt;&gt;() {
     public void handle(Message&lt;String&gt; message) {
-        System.out.println("I received a message " + message.body);
+        System.out.println("I received a message " + message.body());
 
         // Do some stuff
 
@@ -549,7 +549,7 @@ eb.registerHandler("test.address", myHandler);
 <p>The sender:</p>
 <pre class="prettyprint">eb.send("test.address", "This is a message", new Handler&lt;Message&lt;String&gt;&gt;() {
     public void handle(Message&lt;String&gt; message) {
-        System.out.println("I received a reply " + message.body);            
+        System.out.println("I received a reply " + message.body());            
     }
 });
 </pre>
@@ -688,8 +688,8 @@ eb.send("some-address", obj);
 // And in a handler somewhere:
 
 public void handle(Message&lt;JsonObject&gt; message) {
-    System.out.println("foo is " + message.body.getString("foo");
-    System.out.println("age is " + message.body.getNumber("age");
+    System.out.println("foo is " + message.body().getString("foo");
+    System.out.println("age is " + message.body().getNumber("age");
 }
 </pre>
 <p>Methods also existing for converting this objects to and from their JSON serialized forms.  </p>
