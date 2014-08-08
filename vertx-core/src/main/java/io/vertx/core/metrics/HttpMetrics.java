@@ -48,17 +48,22 @@ public abstract class HttpMetrics extends NetworkMetrics {
   }
 
   protected class TimedContext {
-    private final String method;
-    private final String uri;
-    private final long start;
+    private String method;
+    private String uri;
+    private long start;
 
     private TimedContext(String method, String uri) {
-      this.method = (method == null) ? null : method.toLowerCase();
-      this.uri = uri;
-      start = System.nanoTime();
+      if (isEnabled()) {
+        this.method = (method == null) ? null : method.toLowerCase();
+        this.uri = uri;
+        start = System.nanoTime();
+      }
     }
 
     protected void stop() {
+      if (!isEnabled()) {
+        return;
+      }
       long duration = System.nanoTime() - start;
       requests.update(duration, TimeUnit.NANOSECONDS);
 
