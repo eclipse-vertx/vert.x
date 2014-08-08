@@ -64,15 +64,20 @@ public class HttpClientMetrics extends HttpMetrics {
 
   // This maps the response to a request so we can later complete our timing
   public void beginResponse(HttpClientRequest request, HttpClientResponse response) {
+    if (!isEnabled()) return;
+
     requestsToResponses.put(response, request);
   }
 
   public void cancel(HttpClientRequest request) {
+    if (!isEnabled()) return;
+
     timings.remove(request);
   }
 
   public void endResponse(HttpClientResponse response) {
     if (!isEnabled()) return;
+
     HttpClientRequest req = requestsToResponses.remove(response);
     TimedContext ctx = (req == null) ? null : timings.remove(req);
     if (ctx != null) {
