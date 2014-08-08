@@ -448,7 +448,7 @@ public class EventBusImpl implements EventBus {
   private <T> void sendOrPub(ServerID replyDest, MessageImpl message, DeliveryOptions options,
                              Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
-    metrics.send(message.address());
+    metrics.sent(message.address());
     ContextImpl context = vertx.getOrCreateContext();
     Handler<Message<T>> simpleReplyHandler = null;
     try {

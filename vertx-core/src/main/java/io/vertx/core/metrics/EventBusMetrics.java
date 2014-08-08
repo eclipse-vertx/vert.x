@@ -27,17 +27,17 @@ public class EventBusMetrics extends AbstractMetrics {
 
   //TODO: Do we want to provide metrics for every address ? i.e. inbound/outbound, handlers, etc. This could get overwhelming.
   private Counter handlerCount;
-  private Meter messageMeter;
-  private Meter inboundMessageMeter;
-  private Meter outboundMessageMeter;
+  private Meter messages;
+  private Meter receivedMessages;
+  private Meter sentMessages;
 
   public EventBusMetrics(VertxInternal vertx) {
     super(vertx, "io.vertx.eventbus");
     if (isEnabled()) {
       this.handlerCount = counter("handlers");
-      this.messageMeter = meter("messages");
-      this.inboundMessageMeter = meter("messages.inbound");
-      this.outboundMessageMeter = meter("messages.outbound");
+      this.messages = meter("messages");
+      this.receivedMessages = meter("messages-received");
+      this.sentMessages = meter("messages-sent");
     }
   }
 
@@ -55,38 +55,21 @@ public class EventBusMetrics extends AbstractMetrics {
     addressHandlerCounter(address).dec();
   }
 
-  public void send(String address) {
+  public void sent(String address) {
     if (!isEnabled()) return;
 
-    markOutbound(address);
+    messages.mark();
+    sentMessages.mark();
   }
 
   public void receive(String address) {
     if (!isEnabled()) return;
 
-    markInbound(address);
+    messages.mark();
+    receivedMessages.mark();
   }
 
   private Counter addressHandlerCounter(String address) {
     return counter("handlers", address);
-  }
-
-  private void markInbound(String address) {
-    markMessage(address);
-
-    inboundMessageMeter.mark();
-//    meter("messages", "inbound", address).mark();
-  }
-
-  private void markOutbound(String address) {
-    markMessage(address);
-
-    outboundMessageMeter.mark();
-//    meter("messages", "outbound", address).mark();
-  }
-
-  private void markMessage(String address) {
-    messageMeter.mark();
-//    meter("messages", address).mark();
   }
 }
