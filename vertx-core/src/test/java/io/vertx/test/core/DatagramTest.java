@@ -364,6 +364,17 @@ public class DatagramTest extends VertxTestBase {
   }
 
   @Test
+  public void testDefaultJsonOptions() {
+    DatagramSocketOptions def = DatagramSocketOptions.options();
+    DatagramSocketOptions json = DatagramSocketOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.isBroadcast(), json.isBroadcast());
+    assertEquals(def.isLoopbackModeDisabled(), json.isLoopbackModeDisabled());
+    assertEquals(def.getMulticastTimeToLive(), json.getMulticastTimeToLive());
+    assertEquals(def.getMulticastNetworkInterface(), json.getMulticastNetworkInterface());
+    assertEquals(def.isIpV6(), json.isIpV6());
+  }
+
+  @Test
   public void testCopyOptionsJson() {
     Random rand = new Random();
     boolean broadcast = rand.nextBoolean();

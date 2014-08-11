@@ -68,7 +68,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetTest extends VertxTestBase {
+public class NetTest extends NetTestBase {
 
   private NetServer server;
   private NetClient client;
@@ -446,6 +446,15 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testDefaultClientOptionsJson() {
+    NetClientOptions def = NetClientOptions.options();
+    NetClientOptions json = NetClientOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getReconnectAttempts(), json.getReconnectAttempts());
+    assertEquals(def.getReconnectInterval(), json.getReconnectInterval());
+    testDefaultClientOptions(def, json);
+  }
+
+  @Test
   public void testClientOptionsJson() {
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
@@ -619,6 +628,19 @@ public class NetTest extends VertxTestBase {
     assertEquals(port, copy.getPort());
     assertEquals(host, copy.getHost());
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
+  }
+
+  @Test
+  public void testDefaultServerOptionsJson() {
+    NetServerOptions def = NetServerOptions.options();
+    NetServerOptions json = NetServerOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
+    assertEquals(def.getPort(), json.getPort());
+    assertEquals(def.getHost(), json.getHost());
+    testDefaultNetServerOptionsBase(def, json);
   }
 
   @Test

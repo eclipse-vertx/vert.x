@@ -79,7 +79,10 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
     this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAXWEBSOCKETFRAMESIZE);
     this.version = json.getInteger("version", DEFAULT_WEBSOCKETVERSION);
     JsonArray arr = json.getArray("subProtocols");
-    this.subProtocols = arr == null ? null : new HashSet<String>(arr.toList());
+    this.subProtocols = new HashSet<>();
+    if (arr != null) {
+      subProtocols.addAll(arr.toList());
+    }
   }
 
   @Override

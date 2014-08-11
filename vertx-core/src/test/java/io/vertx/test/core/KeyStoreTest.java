@@ -53,7 +53,16 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
-  public void testJsonJKSOptions() throws Exception {
+  public void testDefaultJKSOptionsJson() {
+    JKSOptions def = JKSOptions.options();
+    JKSOptions json = JKSOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getPassword(), json.getPassword());
+    assertEquals(def.getPath(), json.getPath());
+    assertEquals(def.getValue(), json.getValue());
+  }
+
+  @Test
+  public void testJKSOptionsJson() throws Exception {
     JKSOptions options = JKSOptions.optionsFromJson(new JsonObject());
     assertEquals(null, options.getPassword());
     assertEquals(null, options.getPath());
@@ -102,7 +111,16 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
-  public void testJsonPKCS12Options() throws Exception {
+  public void testDefaultPKCS12OptionsJson() {
+    PKCS12Options def = PKCS12Options.options();
+    PKCS12Options json = PKCS12Options.optionsFromJson(new JsonObject());
+    assertEquals(def.getPassword(), json.getPassword());
+    assertEquals(def.getPath(), json.getPath());
+    assertEquals(def.getValue(), json.getValue());
+  }
+
+  @Test
+  public void testPKCS12OptionsJson() throws Exception {
     PKCS12Options options = PKCS12Options.optionsFromJson(new JsonObject());
     assertEquals(null, options.getPassword());
     assertEquals(null, options.getPath());
@@ -151,7 +169,17 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
-  public void testJsonKeyCertOptions() throws Exception {
+  public void testDefaultKeyCertOptionsJson() throws Exception {
+    KeyCertOptions def = KeyCertOptions.options();
+    KeyCertOptions json = KeyCertOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getKeyPath(), json.getKeyPath());
+    assertEquals(def.getCertPath(), json.getCertPath());
+    assertEquals(def.getKeyValue(), json.getKeyValue());
+    assertEquals(def.getCertValue(), json.getCertValue());
+  }
+
+  @Test
+  public void testKeyCertOptionsJson() throws Exception {
     KeyCertOptions options = KeyCertOptions.optionsFromJson(new JsonObject());
     assertEquals(null, options.getKeyPath());
     assertEquals(null, options.getKeyValue());
@@ -207,7 +235,7 @@ public class KeyStoreTest extends VertxTestBase {
   }
 
   @Test
-  public void testJsonCaOptions() throws Exception {
+  public void testCaOptionsJson() throws Exception {
     CaOptions options = CaOptions.optionsFromJson(new JsonObject());
 
     assertEquals(Collections.emptyList(), options.getCertPaths());
@@ -221,6 +249,14 @@ public class KeyStoreTest extends VertxTestBase {
     options = CaOptions.optionsFromJson(json);
     assertEquals(Collections.singletonList(certPath), options.getCertPaths());
     assertEquals(Collections.singletonList(Buffer.buffer(certValue)), options.getCertValues());
+  }
+
+  @Test
+  public void testDefaultCaOptionsJson() {
+    CaOptions def = CaOptions.options();
+    CaOptions json = CaOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getCertPaths(), json.getCertPaths());
+    assertEquals(def.getCertValues(), json.getCertValues());
   }
 
   @Test
