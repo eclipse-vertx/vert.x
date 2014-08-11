@@ -116,10 +116,10 @@ public class VertxTestBase extends AsyncTestBase {
     };
   }
 
-  protected <T> Handler<AsyncResult<T>> onFailure(Consumer<T> consumer) {
+  protected <T> Handler<AsyncResult<T>> onFailure(Consumer<Throwable> consumer) {
     return result -> {
       assertFalse(result.succeeded());
-      consumer.accept(result.result());
+      consumer.accept(result.cause());
     };
   }
 

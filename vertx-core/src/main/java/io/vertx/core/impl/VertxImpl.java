@@ -201,7 +201,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   public Context currentContext() {
-    return getContext();
+    return getOrCreateContext();
   }
 
   // The background pool is used for making blocking calls to legacy synchronous APIs
