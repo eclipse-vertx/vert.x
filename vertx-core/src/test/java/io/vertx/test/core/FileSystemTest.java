@@ -28,6 +28,7 @@ import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Windows;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -1290,6 +1291,22 @@ public class FileSystemTest extends VertxTestBase {
     assertFalse(opts.isSparse());
     assertEquals(opts, opts.setSparse(true));
     assertTrue(opts.isSparse());
+  }
+
+  @Test
+  public void testDefaultOptionOptions() {
+    OpenOptions def = OpenOptions.options();
+    OpenOptions json = OpenOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getPerms(), json.getPerms());
+    assertEquals(def.isRead(), json.isRead());
+    assertEquals(def.isWrite(), json.isWrite());
+    assertEquals(def.isCreate(), json.isCreate());
+    assertEquals(def.isCreateNew(), json.isCreateNew());
+    assertEquals(def.isDeleteOnClose(), json.isDeleteOnClose());
+    assertEquals(def.isTruncateExisting(), json.isTruncateExisting());
+    assertEquals(def.isSparse(), json.isSparse());
+    assertEquals(def.isSync(), json.isSync());
+    assertEquals(def.isDSync(), json.isDSync());
   }
 
   private AsyncResultHandler<Void> createHandler(boolean shouldPass, Handler<Void> afterOK) {

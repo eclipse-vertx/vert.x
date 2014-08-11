@@ -169,10 +169,18 @@ public class HttpServerOptionsImpl implements HttpServerOptions {
     this.acceptBacklog = json.getInteger("acceptBacklog", DEFAULT_ACCEPT_BACKLOG);
     arr = json.getArray("crlPaths");
     this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.toList());
+    this.crlValues = new ArrayList<>();
+    arr = json.getArray("crlValues");
+    if (arr != null) {
+      ((List<byte[]>) arr.toList()).stream().map(Buffer::buffer).forEach(crlValues::add);
+    }
     this.compressionSupported = json.getBoolean("compressionSupported", false);
     this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAXWEBSOCKETFRAMESIZE);
     arr = json.getArray("websocketSubProtocols");
-    this.websocketSubProtocols = arr == null ? null : new HashSet<String>(arr.toList());
+    this.websocketSubProtocols = new HashSet<>();
+    if (arr != null) {
+      websocketSubProtocols.addAll(arr.toList());
+    }
     this.port = json.getInteger("port", DEFAULT_PORT);
   }
 

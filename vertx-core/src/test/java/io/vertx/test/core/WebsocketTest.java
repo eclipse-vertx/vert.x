@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WebsocketTest extends VertxTestBase {
+public class WebsocketTest extends NetTestBase {
 
   private HttpClient client;
   private HttpServer server;
@@ -597,6 +597,16 @@ public class WebsocketTest extends VertxTestBase {
     assertEquals(version, options.getVersion());
     assertTrue(options.getSubProtocols().contains(subProtocol));
     testComplete();
+  }
+
+  @Test
+  public void testDefaultWebSocketConnectOptionsJson() {
+    WebSocketConnectOptions def = WebSocketConnectOptions.options();
+    WebSocketConnectOptions json = WebSocketConnectOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
+    assertEquals(def.getVersion(), json.getVersion());
+    assertEquals(def.getSubProtocols(), json.getSubProtocols());
+    testDefaultRequestOptionsBaseJson(def, json);
   }
 
   @Test

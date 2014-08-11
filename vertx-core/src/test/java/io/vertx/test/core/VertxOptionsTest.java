@@ -198,6 +198,24 @@ public class VertxOptionsTest extends VertxTestBase {
   }
 
   @Test
+  public void testDefaultJsonOptions() {
+    VertxOptions def = VertxOptions.options();
+    VertxOptions json = VertxOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getEventLoopPoolSize(), json.getEventLoopPoolSize());
+    assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
+    assertEquals(def.isClustered(), json.isClustered());
+    assertEquals(def.getClusterHost(), json.getClusterHost());
+    assertEquals(def.getBlockedThreadCheckPeriod(), json.getBlockedThreadCheckPeriod());
+    assertEquals(def.getMaxEventLoopExecuteTime(), json.getMaxEventLoopExecuteTime());
+    assertEquals(def.getMaxWorkerExecuteTime(), json.getMaxWorkerExecuteTime());
+    assertEquals(def.getInternalBlockingPoolSize(), json.getInternalBlockingPoolSize());
+    assertEquals(def.getProxyOperationTimeout(), json.getProxyOperationTimeout());
+    assertEquals(def.isHAEnabled(), json.isHAEnabled());
+    assertEquals(def.getQuorumSize(), json.getQuorumSize());
+    assertEquals(def.getHAGroup(), json.getHAGroup());
+  }
+
+  @Test
   public void testJsonOptions() {
     VertxOptions options = VertxOptions.optionsFromJson(new JsonObject());
 

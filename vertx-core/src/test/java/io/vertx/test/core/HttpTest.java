@@ -37,6 +37,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.RequestOptionsBase;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.impl.HttpHeadersAdapter;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -47,13 +48,16 @@ import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
+import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetServerOptionsBase;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.PKCS12Options;
+import io.vertx.core.net.TCPOptions;
 import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
@@ -515,6 +519,18 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testDefaultClientOptionsJson() {
+    HttpClientOptions def = HttpClientOptions.options();
+    HttpClientOptions json = HttpClientOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getMaxPoolSize(), json.getMaxPoolSize());
+    assertEquals(def.isKeepAlive(), json.isKeepAlive());
+    assertEquals(def.isPipelining(), json.isPipelining());
+    assertEquals(def.isVerifyHost(), json.isVerifyHost());
+    assertEquals(def.isTryUseCompression(), json.isTryUseCompression());
+    testDefaultClientOptions(def, json);
+  }
+
+  @Test
   public void testClientOptionsJson() {
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
@@ -706,6 +722,16 @@ public class HttpTest extends HttpTestBase {
     assertEquals(compressionSupported, copy.isCompressionSupported());
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
     assertTrue(options.getWebsocketSubProtocols().contains(wsSubProtocol));
+  }
+
+  @Test
+  public void testDefaultServerOptionsJson() {
+    HttpServerOptions def = HttpServerOptions.options();
+    HttpServerOptions json = HttpServerOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
+    assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
+    assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
+    testDefaultNetServerOptionsBase(def, json);
   }
 
   @Test
@@ -3678,6 +3704,13 @@ public class HttpTest extends HttpTestBase {
     assertSame(headers, copy.getHeaders());
     assertEquals("bar", copy.getHeaders().get("foo"));
     testComplete();
+  }
+
+  @Test
+  public void testDefaultRequestOptionsJson() {
+    RequestOptions def = RequestOptions.options();
+    RequestOptions json = RequestOptions.optionsFromJson(new JsonObject());
+    testDefaultRequestOptionsBaseJson(def, json);
   }
 
   @Test
