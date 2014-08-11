@@ -19,6 +19,9 @@ package io.vertx.test.core;
 import io.vertx.core.Context;
 import org.junit.Test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -31,7 +34,11 @@ public class ContextTest extends VertxTestBase {
       Context ctx = vertx.currentContext();
       ctx.runOnContext(v2 -> {
         assertEquals(th, Thread.currentThread());
-        assertEquals(ctx, vertx.currentContext());
+        // Execute it a few times to make sure it returns same context
+        for (int i = 0; i < 10; i++) {
+          Context c = vertx.currentContext();
+          assertEquals(ctx, c);
+        }
         // And simulate a third party thread - e.g. a 3rd party async library wishing to return a result on the
         // correct context
         new Thread() {
@@ -50,7 +57,14 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testNoContext() throws Exception {
-    assertNull(vertx.currentContext());
+    System.out.println("Thread is: " + Thread.currentThread());
+    Set<Context> ctxts = new HashSet<>();
+    // We are not on a context when we call this so we should be given a new context each time
+    for (int i = 0; i < 10; i++) {
+      Context ctx = vertx.currentContext();
+      assertFalse(ctxts.contains(ctx));
+      ctxts.add(ctx);
+    }
     testComplete();
   }
 }
