@@ -35,8 +35,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private final MultiMap headers;
 
   public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
-                             ConnectionBase conn, Runnable connectRunnable) {
-    super(vertx, conn);
+                             ConnectionBase conn, boolean supportsContinuation, Runnable connectRunnable) {
+    super(vertx, conn, supportsContinuation);
     this.uri = uri;
     this.path = path;
     this.query = query;

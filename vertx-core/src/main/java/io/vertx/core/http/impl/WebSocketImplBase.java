@@ -37,6 +37,7 @@ import java.util.UUID;
  */
 public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
+  private final boolean supportsContinuation;
   private final String textHandlerID;
   private final String binaryHandlerID;
   private final VertxInternal vertx;
@@ -54,7 +55,8 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   private int maxWebSocketFrameSize = 65536;
 
-  protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn) {
+  protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation) {
+    this.supportsContinuation = supportsContinuation;
     this.vertx = vertx;
     this.textHandlerID = UUID.randomUUID().toString();
     this.binaryHandlerID = UUID.randomUUID().toString();
@@ -100,16 +102,21 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   }
 
   protected void writePartialMessage(Buffer data, int offset) {
-    int end = offset = maxWebSocketFrameSize;
+    int end = offset + maxWebSocketFrameSize;
     boolean isFinal;
     if (end >= data.length()) {
-      end  = data.length() - 1;
+      end  = data.length();
       isFinal = true;
     } else {
       isFinal = false;
     }
     Buffer slice = data.slice(offset, end);
-    WebSocketFrame frame = WebSocketFrame.binaryFrame(slice, isFinal);
+    WebSocketFrame frame;
+    if (offset == 0 || !supportsContinuation) {
+      frame = WebSocketFrame.binaryFrame(slice, isFinal);
+    } else {
+      frame = WebSocketFrame.continuationFrame(slice, isFinal);
+    }
     writeFrame(frame);
     int newOffset = offset + maxWebSocketFrameSize;
     if (!isFinal) {

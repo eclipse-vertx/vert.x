@@ -140,7 +140,7 @@ class ClientConnection extends ConnectionBase {
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, wsSubProtocols, false,
                                                                   nettyHeaders, maxWebSocketFrameSize);
       final ChannelPipeline p = channel.pipeline();
-      p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect));
+      p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, options.getVersion() > 0));
       handshaker.handshake(channel).addListener(future -> {
         if (!future.isSuccess()) {
           client.handleException((Exception) future.cause());
@@ -152,12 +152,14 @@ class ClientConnection extends ConnectionBase {
   }
 
   private final class HandshakeInboundHandler extends ChannelInboundHandlerAdapter {
+    private final boolean supportsContinuation;
     private final Handler<WebSocket> wsConnect;
     private final ContextImpl context;
     private FullHttpResponse response;
     private boolean handshaking = true;
     private final Queue<Object> buffered = new ArrayDeque<>();
-    public HandshakeInboundHandler(final Handler<WebSocket> wsConnect) {
+    public HandshakeInboundHandler(final Handler<WebSocket> wsConnect, boolean supportsContinuation) {
+      this.supportsContinuation = supportsContinuation;
       this.wsConnect = wsConnect;
       this.context = vertx.getContext();
     }
@@ -229,7 +231,7 @@ class ClientConnection extends ConnectionBase {
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      ws = new WebSocketImpl(vertx, ClientConnection.this);
+      ws = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation);
       handshaker.finishHandshake(channel, response);
       log.debug("WebSocket handshake complete");
       wsConnect.handle(ws);

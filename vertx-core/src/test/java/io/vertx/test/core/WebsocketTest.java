@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveMultiMap;
@@ -650,10 +651,10 @@ public class WebsocketTest extends VertxTestBase {
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
     sock.writeString("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-      "Upgrade: WebSocket\r\n" +
-      "Connection: Upgrade\r\n" +
-      "Sec-WebSocket-Accept: " + encoded + "\r\n" +
-      "\r\n");
+        "Upgrade: WebSocket\r\n" +
+        "Connection: Upgrade\r\n" +
+        "Sec-WebSocket-Accept: " + encoded + "\r\n" +
+        "\r\n");
     return sock;
   }
 
@@ -931,6 +932,76 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       client.exceptionHandler(t -> testComplete());
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> fail("Should not be called"));
+    });
+    await();
+  }
+
+/*
+  // Those 3 tests hang for some reason in the ws close
+
+  @Test
+  public void testWriteMessageHybi00() {
+    testWriteMessage(256, 0);
+  }
+
+  @Test
+  public void testWriteFragmentedMessage2Hybi00() {
+    testWriteMessage(65536 + 256, 0);
+  }
+
+  @Test
+  public void testWriteFragmentedMessage2Hybi00() {
+    testWriteMessage(65536 + 65536 + 256, 0);
+  }
+*/
+
+  @Test
+  public void testWriteMessageHybi08() {
+    testWriteMessage(256, 8);
+  }
+
+  @Test
+  public void testWriteFragmentedMessage1Hybi08() {
+    testWriteMessage(65536 + 256, 8);
+  }
+
+  @Test
+  public void testWriteFragmentedMessage2Hybi08() {
+    testWriteMessage(65536 + 65536 + 256, 8);
+  }
+
+  @Test
+  public void testWriteMessageHybi17() {
+    testWriteMessage(256, 13);
+  }
+
+  @Test
+  public void testWriteFragmentedMessage1Hybi17() {
+    testWriteMessage(65536 + 256, 13);
+  }
+
+  @Test
+  public void testWriteFragmentedMessage2Hybi17() {
+    testWriteMessage(65536 + 65536 + 256, 13);
+  }
+
+  private void testWriteMessage(int size, int version) {
+    String path = "/some/path";
+    byte[] expected = TestUtils.randomByteArray(size);
+    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      ws.writeMessage(Buffer.buffer(expected));
+      ws.close();
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
+        Buffer actual = Buffer.buffer();
+        ws.dataHandler(actual::appendBuffer);
+        ws.closeHandler(v -> {
+          assertArrayEquals(expected, actual.getBytes());
+          testComplete();
+        });
+      });
     });
     await();
   }
