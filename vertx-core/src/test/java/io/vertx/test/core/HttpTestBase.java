@@ -20,8 +20,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.RequestOptionsBase;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -29,7 +31,7 @@ import java.util.concurrent.CountDownLatch;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class HttpTestBase extends VertxTestBase {
+public class HttpTestBase extends NetTestBase {
 
   public static final String DEFAULT_HTTP_HOST = "localhost";
   public static final int DEFAULT_HTTP_PORT = 8080;

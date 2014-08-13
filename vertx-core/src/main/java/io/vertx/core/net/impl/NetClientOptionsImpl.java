@@ -157,6 +157,11 @@ public class NetClientOptionsImpl implements NetClientOptions {
     this.trustAll = json.getBoolean("trustAll", false);
     arr = json.getArray("crlPaths");
     this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.toList());
+    this.crlValues = new ArrayList<>();
+    arr = json.getArray("crlValues");
+    if (arr != null) {
+      ((List<byte[]>) arr.toList()).stream().map(Buffer::buffer).forEach(crlValues::add);
+    }
     this.reconnectAttempts = json.getInteger("reconnectAttempts", 0);
     this.reconnectInterval = json.getLong("reconnectInterval", DEFAULT_RECONNECTINTERVAL);
   }
