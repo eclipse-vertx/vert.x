@@ -759,7 +759,7 @@ public class WebsocketTest extends VertxTestBase {
           if (received.size() == msgs) {
             int pos = 0;
             for (Buffer rec: received) {
-              TestUtils.buffersEqual(rec, sent.get(pos++));
+              assertEquals(rec, sent.get(pos++));
             }
             testComplete();
           }
@@ -857,7 +857,7 @@ public class WebsocketTest extends VertxTestBase {
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
-            assertTrue(TestUtils.buffersEqual(buff, received));
+            assertEquals(buff, received);
             ws.close();
             testComplete();
           }
@@ -882,7 +882,7 @@ public class WebsocketTest extends VertxTestBase {
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
-            assertTrue(TestUtils.buffersEqual(buff, received));
+            assertEquals(buff, received);
             ws.close();
             testComplete();
           }
@@ -908,7 +908,7 @@ public class WebsocketTest extends VertxTestBase {
         ws.dataHandler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
-            assertTrue(TestUtils.buffersEqual(buff, received));
+            assertEquals(buff, received);
             ws.close();
             testComplete();
           }

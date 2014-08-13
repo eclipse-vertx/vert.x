@@ -45,7 +45,7 @@ public class PumpTest {
         inp.appendBuffer(b);
         rs.addData(b);
       }
-      TestUtils.buffersEqual(inp, ws.received);
+      assertEquals(inp, ws.received);
       assertFalse(rs.paused);
       assertEquals(0, rs.pauseCount);
       assertEquals(0, rs.resumeCount);
@@ -82,7 +82,7 @@ public class PumpTest {
       assertEquals(i + 1, rs.pauseCount);
       assertEquals(i, rs.resumeCount);
 
-      TestUtils.buffersEqual(inp, ws.received);
+      assertEquals(inp, ws.received);
       ws.clearReceived();
       inp = Buffer.buffer();
       assertFalse(rs.paused);

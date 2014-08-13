@@ -2258,7 +2258,7 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.bodyHandler(data -> {
-        assertTrue(TestUtils.buffersEqual(toSend, data));
+        assertEquals(toSend, data);
         req.response().end();
       });
     });
@@ -2285,7 +2285,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().headers().set("HTTP/1.1", "100 Continue");
       req.bodyHandler(data -> {
-        assertTrue(TestUtils.buffersEqual(toSend, data));
+        assertEquals(toSend, data);
         req.response().end();
       });
     });
@@ -3430,7 +3430,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().headers().set("HTTP/1.1", "101 Upgrade");
       req.bodyHandler(data -> {
-        assertTrue(TestUtils.buffersEqual(toSend, data));
+        assertEquals(toSend, data);
         req.response().end();
       });
     });
@@ -3479,7 +3479,7 @@ public class HttpTest extends HttpTestBase {
     server.listen(onSuccess(s -> {
       client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
         resp.bodyHandler(buff -> {
-          assertTrue(TestUtils.buffersEqual(bodyBuff, buff));
+          assertEquals(bodyBuff, buff);
           testComplete();
         });
       }).end();
@@ -3515,7 +3515,7 @@ public class HttpTest extends HttpTestBase {
             received.appendBuffer(buff);
             if (received.length() == buffer.length()) {
               netServer.close();
-              assertTrue(TestUtils.buffersEqual(buffer, received));
+              assertEquals(buffer, received);
               testComplete();
             }
           });

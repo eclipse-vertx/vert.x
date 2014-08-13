@@ -50,7 +50,7 @@ public class BufferTest {
     b.appendBuffer(toAppend);
     assertEquals(b.length(), bytes.length);
 
-    assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
+    assertArrayEquals(bytes, b.getBytes());
     b.appendBuffer(toAppend);
     assertEquals(b.length(), 2 * bytes.length);
   }
@@ -64,7 +64,7 @@ public class BufferTest {
     Buffer b = Buffer.buffer();
     b.appendBytes(bytes);
     assertEquals(b.length(), bytes.length);
-    assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
+    assertArrayEquals(bytes, b.getBytes());
 
     b.appendBytes(bytes);
     assertEquals(b.length(), 2 * bytes.length);
@@ -81,7 +81,7 @@ public class BufferTest {
     assertEquals(b.length(), len);
     byte[] copy = new byte[len];
     System.arraycopy(bytes, 1, copy, 0, len);
-    assertTrue(TestUtils.byteArraysEqual(copy, b.getBytes()));
+    assertArrayEquals(copy, b.getBytes());
 
     b.appendBytes(bytes, 1, len);
     assertEquals(b.length(), 2 * len);
@@ -99,7 +99,7 @@ public class BufferTest {
     assertEquals(b.length(), len);
     byte[] copy = new byte[len];
     System.arraycopy(bytes, 1, copy, 0, len);
-    assertTrue(TestUtils.byteArraysEqual(copy, b.getBytes()));
+    assertArrayEquals(copy, b.getBytes());
 
     b.appendBuffer(src, 1, len);
     assertEquals(b.length(), 2 * len);
@@ -115,7 +115,7 @@ public class BufferTest {
       b.appendByte(bytes[i]);
     }
     assertEquals(b.length(), bytes.length);
-    assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
+    assertArrayEquals(bytes, b.getBytes());
 
     for (int i = 0; i < bytesLen; i++) {
       b.appendByte(bytes[i]);
@@ -460,7 +460,7 @@ public class BufferTest {
     byte[] bytes = TestUtils.randomByteArray(100);
     Buffer b = Buffer.buffer(bytes);
 
-    assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
+    assertArrayEquals(bytes, b.getBytes());
   }
 
   @Test
@@ -470,7 +470,7 @@ public class BufferTest {
 
     byte[] sub = new byte[bytes.length / 2];
     System.arraycopy(bytes, bytes.length / 4, sub, 0, bytes.length / 2);
-    assertTrue(TestUtils.byteArraysEqual(sub, b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2)));
+    assertArrayEquals(sub, b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2));
   }
 
   private final int numSets = 100;
@@ -606,12 +606,12 @@ public class BufferTest {
     Buffer b = TestUtils.randomBuffer(100);
     buff.setBuffer(50, b);
     byte[] b2 = buff.getBytes(50, 150);
-    assertTrue(TestUtils.buffersEqual(b, Buffer.buffer(b2)));
+    assertEquals(b, Buffer.buffer(b2));
 
     byte[] b3 = TestUtils.randomByteArray(100);
     buff.setBytes(50, b3);
     byte[] b4 = buff.getBytes(50, 150);
-    assertTrue(TestUtils.buffersEqual(Buffer.buffer(b3), Buffer.buffer(b4)));
+    assertEquals(Buffer.buffer(b3), Buffer.buffer(b4));
   }
 
   @Test
@@ -627,7 +627,7 @@ public class BufferTest {
     byte[] copy = new byte[len];
     System.arraycopy(bytes, 1, copy, 0, len);
 
-    assertTrue(TestUtils.byteArraysEqual(copy, b.getBytes(1, b.length())));
+    assertArrayEquals(copy, b.getBytes(1, b.length()));
 
     b.setBytes(b.length(), bytes, 1, len);
     assertEquals(b.length(), 2 * len + 1);
@@ -648,7 +648,7 @@ public class BufferTest {
     byte[] copy = new byte[len];
     System.arraycopy(bytes, 1, copy, 0, len);
 
-    assertTrue(TestUtils.byteArraysEqual(copy, b.getBytes(1, b.length())));
+    assertArrayEquals(copy, b.getBytes(1, b.length()));
 
     b.setBuffer(b.length(), src, 1, len);
     assertEquals(b.length(), 2 * len + 1);
@@ -741,5 +741,19 @@ public class BufferTest {
     assertEquals(rand, buff.getLong(10));
     buff.appendString(TestUtils.randomUnicodeString(100));
     assertEquals(10, sliced.length());
+  }
+
+  @Test
+  public void testEquals() throws Exception {
+    Buffer b1 = TestUtils.randomBuffer(100);
+    Buffer b2 = null;
+    assertFalse(b1.equals(b2));
+    b2 = TestUtils.randomBuffer(100);
+    assertFalse(b1.equals(b2));
+    b1 = Buffer.buffer("123");
+    b2 = Buffer.buffer("123");
+    assertTrue(b1.equals(b2));
+    b2.appendString("4");
+    assertFalse(b1.equals(b2));
   }
 }

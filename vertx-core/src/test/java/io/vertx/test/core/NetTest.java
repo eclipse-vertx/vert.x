@@ -728,14 +728,14 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
-    testEcho(sock -> sock.writeBuffer(sent), buff -> TestUtils.buffersEqual(sent, buff), sent.length());
+    testEcho(sock -> sock.writeBuffer(sent), buff -> assertEquals(sent, buff), sent.length());
   }
 
   @Test
   public void testEchoString() {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = Buffer.buffer(sent);
-    testEcho(sock -> sock.writeString(sent), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.writeString(sent), buff -> assertEquals(buffSent, buff), buffSent.length());
   }
 
   @Test
@@ -751,7 +751,7 @@ public class NetTest extends VertxTestBase {
   void testEchoStringWithEncoding(String encoding) {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = Buffer.buffer(sent, encoding);
-    testEcho(sock -> sock.writeString(sent, encoding), buff -> TestUtils.buffersEqual(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.writeString(sent, encoding), buff -> assertEquals(buffSent, buff), buffSent.length());
   }
 
   void testEcho(Consumer<NetSocket> writer, Consumer<Buffer> dataChecker, int length) {
@@ -1206,7 +1206,7 @@ public class NetTest extends VertxTestBase {
           socket.dataHandler(buffer -> {
             received.appendBuffer(buffer);
             if (received.length() == sent.length()) {
-              TestUtils.buffersEqual(sent, received);
+              assertEquals(sent, received);
               testComplete();
             }
             if (startTLS && !upgradedClient.get()) {
@@ -1463,7 +1463,7 @@ public class NetTest extends VertxTestBase {
       sock.dataHandler(buff -> {
         received.appendBuffer(buff);
         if (received.length() == expected.length()) {
-          assertTrue(TestUtils.buffersEqual(expected, received));
+          assertEquals(expected, received);
           testComplete();
         }
       });
@@ -1504,7 +1504,7 @@ public class NetTest extends VertxTestBase {
         sock.dataHandler(buff -> {
           received.appendBuffer(buff);
           if (received.length() == expected.length()) {
-            assertTrue(TestUtils.buffersEqual(expected, received));
+            assertEquals(expected, received);
             testComplete();
           }
         });
@@ -1702,7 +1702,7 @@ public class NetTest extends VertxTestBase {
               sock.dataHandler(rec -> {
                 received.appendBuffer(rec);
                 if (received.length() == buff.length()) {
-                  assertTrue(TestUtils.buffersEqual(buff, received));
+                  assertEquals(buff, received);
                   latch.countDown();
                 }
               });

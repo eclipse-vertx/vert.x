@@ -17,6 +17,7 @@ package io.vertx.test.core;
  *
  */
 
+import io.vertx.core.buffer.Buffer;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
@@ -135,6 +136,21 @@ public class AsyncTestBase {
 
   protected void checkThread() {
     threadNames.put(Thread.currentThread().getName(), new Exception());
+  }
+
+  protected void assertEquals(Buffer expected, Buffer actual) {
+    assertEquals("Buffer's not equal", expected, actual);
+  }
+
+  protected void assertEquals(String message, Buffer expected, Buffer actual) {
+    checkThread();
+    try {
+      Assert.assertEquals(message, expected, actual);
+    } catch (AssertionError e) {
+      // We don't want to print junit's 'expected <buffer> but was: <buffer>' message for Buffer's, as
+      // these can be long and contain garbage (random bytes)
+      handleThrowable(new AssertionError(message));
+    }
   }
 
   protected void assertTrue(String message, boolean condition) {
