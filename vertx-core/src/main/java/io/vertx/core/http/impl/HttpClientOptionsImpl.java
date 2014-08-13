@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -170,6 +171,11 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
     this.trustAll = json.getBoolean("trustAll", false);
     arr = json.getArray("crlPaths");
     this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.toList());
+    arr = json.getArray("crlValues");
+    this.crlValues = new ArrayList<>();
+    if (arr != null) {
+      ((List<byte[]>)arr.toList()).stream().map(Buffer::buffer).forEach(crlValues::add);
+    }
     this.verifyHost = json.getBoolean("verifyHost", true);
     this.maxPoolSize = json.getInteger("maxPoolSize", DEFAULT_MAXPOOLSIZE);
     this.keepAlive = json.getBoolean("keepAlive", DEFAULT_KEEPALIVE);

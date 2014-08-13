@@ -115,6 +115,18 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testDefaultJsonOptions() {
+    DeploymentOptions def = DeploymentOptions.options();
+    DeploymentOptions json = DeploymentOptions.optionsFromJson(new JsonObject());
+    assertEquals(def.getConfig(), json.getConfig());
+    assertEquals(def.isWorker(), json.isWorker());
+    assertEquals(def.isMultiThreaded(), json.isMultiThreaded());
+    assertEquals(def.getIsolationGroup(), json.getIsolationGroup());
+    assertEquals(def.isHA(), json.isHA());
+    assertEquals(def.getExtraClasspath(), json.getExtraClasspath());
+  }
+
+  @Test
   public void testJsonOptions() {
     JsonObject config = new JsonObject().putString("foo", "bar");
     Random rand = new Random();
