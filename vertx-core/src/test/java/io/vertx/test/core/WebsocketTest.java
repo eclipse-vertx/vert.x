@@ -937,7 +937,8 @@ public class WebsocketTest extends VertxTestBase {
   }
 
 /*
-  // Those 3 tests hang for some reason in the ws close
+  Those 3 tests cannot pass for the moment due to a bug in Netty for websocket version 0:
+  https://github.com/netty/netty/issues/2768
 
   @Test
   public void testWriteMessageHybi00() {
