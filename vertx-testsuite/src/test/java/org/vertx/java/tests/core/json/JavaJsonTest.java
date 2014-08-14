@@ -17,6 +17,7 @@
 package org.vertx.java.tests.core.json;
 
 import org.junit.Test;
+import org.vertx.java.core.VertxException;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
@@ -24,6 +25,7 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.testframework.TestBase;
 
+import java.util.Date;
 import java.util.Iterator;
 
 /**
@@ -246,7 +248,43 @@ public class JavaJsonTest extends TestBase {
     
     assertEquals(objElement.getString("foo"), testElement.asObject().getString("foo"));
   }
-  
+
+  @Test
+  public void testAddObjectToJsonArray() {
+
+    JsonObject testObject = new JsonObject().putString("test", "ok");
+    JsonArray testArray = new JsonArray().addString("test");
+    Integer testInt = 1;
+    Long testLong = 2L;
+    Double testDouble = 3.0;
+    Boolean testBool = true;
+    byte[] testBytes = "test".getBytes();
+    String testString = "test";
+
+    assertEquals(testObject, new JsonArray().add(testObject).get(0));
+    assertEquals(testArray,  new JsonArray().add(testArray).get(0));
+    assertEquals(testInt,    new JsonArray().add(testInt).get(0));
+    assertEquals(testLong,   new JsonArray().add(testLong).get(0));
+    assertEquals(testDouble, new JsonArray().add(testDouble).get(0));
+    assertEquals(testBool,   new JsonArray().add(testBool).get(0));
+    assertEquals("test",     new String(new JsonArray().add(testBytes).getBinary(0)));
+    assertEquals(testString, new JsonArray().add(testString).get(0));
+    assertEquals(TestEnum.TEST.toString(), new JsonArray().add(TestEnum.TEST).get(0));
+  }
+
+  @Test
+  public void testAddInvalidObjectToJsonArray() {
+    try {
+      new JsonArray().add(new Date());
+    } catch (VertxException e) {
+      assertEquals("Cannot add objects of class " + Date.class + " to JsonArray", e.getMessage());
+    }
+  }
+
+  private enum TestEnum {
+    TEST
+  }
+
   @Test
   public void testRetrieveJsonElementFromJsonObject2(){
     JsonArray arrayElement = new JsonArray().addString("foo");
