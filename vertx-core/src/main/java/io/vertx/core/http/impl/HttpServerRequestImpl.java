@@ -30,9 +30,9 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveMultiMap;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -74,14 +74,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private Handler<Throwable> exceptionHandler;
 
   //Cache this for performance
-  private MultiMap params;
-  private MultiMap headers;
+  private Headers params;
+  private Headers headers;
   private String absoluteURI;
 
   private NetSocket netSocket;
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
-  private MultiMap attributes;
+  private Headers attributes;
   private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
 
@@ -146,19 +146,19 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public MultiMap headers() {
+  public Headers headers() {
     if (headers == null) {
-      headers = new HttpHeadersAdapter(request.headers());
+      headers = new HeadersAdaptor(request.headers());
     }
     return headers;
   }
 
   @Override
-  public MultiMap params() {
+  public Headers params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
       Map<String, List<String>> prms = queryStringDecoder.parameters();
-      params = new CaseInsensitiveMultiMap();
+      params = new CaseInsensitiveHeaders();
       if (!prms.isEmpty()) {
         for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
           params.add(entry.getKey(), entry.getValue());
@@ -249,7 +249,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public MultiMap formAttributes() {
+  public Headers formAttributes() {
     if (decoder == null) {
       throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
     }
@@ -333,10 +333,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  private MultiMap attributes() {
+  private Headers attributes() {
     // Create it lazily
     if (attributes == null) {
-      attributes = new CaseInsensitiveMultiMap();
+      attributes = new CaseInsensitiveHeaders();
     }
     return attributes;
   }

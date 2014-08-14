@@ -1,31 +1,28 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright 2014 Red Hat, Inc.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ *   Red Hat licenses this file to you under the Apache License, version 2.0
+ *   (the "License"); you may not use this file except in compliance with the
+ *   License.  You may obtain a copy of the License at:
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * You may elect to redistribute this code under either of these licenses.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ *   License for the specific language governing permissions and limitations
+ *   under the License.
  */
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.Headers;
 
 /**
- * Represents a message on the event bus.<p>
- *
- * Instances of this class are not thread-safe<p>
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
@@ -35,6 +32,8 @@ public interface Message<T> {
    * The address the message was sent to
    */
   String address();
+
+  Headers headers();
 
   /**
    * The body of the message
@@ -58,17 +57,15 @@ public interface Message<T> {
    * The same as {@code reply(R message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  <R> void reply(Object message, Handler<Message<R>> replyHandler);
+  <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler);
+
+  void replyWithOptions(Object message, DeliveryOptions options);
 
   /**
-   * Reply to this message. Specifying a timeout
+   * The same as {@code reply(R message)} but you can specify handler for the reply - i.e.
+   * to receive the reply to the reply.
    */
-  <R> void replyWithTimeout(Object message, long timeout);
-
-  /**
-   * Reply to this message. Specifying a timeout and a reply handler
-   */
-  <R> void replyWithTimeout(Object message, long timeout, Handler<AsyncResult<Message<R>>> replyHandler);
+  <R> void replyWithOptions(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
 
   /**
    * Signal that processing of this message failed. If the message was sent specifying a result handler
@@ -78,4 +75,7 @@ public interface Message<T> {
    */
   void fail(int failureCode, String message);
 
+  void forward(String address);
+
+  void forwardWithOptions(String address, DeliveryOptions options);
 }

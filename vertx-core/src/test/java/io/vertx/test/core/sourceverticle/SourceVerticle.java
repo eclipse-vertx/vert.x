@@ -29,9 +29,9 @@ public class SourceVerticle extends AbstractVerticle {
 
   @Override
   public void start(Future<Void> startFuture) throws Exception {
-    vertx.deployVerticle("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", DeploymentOptions.options(), ar -> {
+    vertx.deployVerticleWithOptions("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", DeploymentOptions.options(), ar -> {
       if (ar.succeeded()) {
-        startFuture.setResult((Void)null);
+        startFuture.setResult((Void) null);
       } else {
         ar.cause().printStackTrace();
       }

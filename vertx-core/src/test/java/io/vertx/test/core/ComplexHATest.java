@@ -95,7 +95,7 @@ public class ComplexHATest extends VertxTestBase {
         DeploymentOptions options = DeploymentOptions.options().setHA(true).setConfig(config);
         String verticleName = "java:io.vertx.test.core.HAVerticle" + (random.nextInt(3) + 1);
         toDeploy++;
-        v.deployVerticle(verticleName, options, ar -> {
+        v.deployVerticleWithOptions(verticleName, options, ar -> {
           assertTrue(ar.succeeded());
           deployCount.incrementAndGet();
         });

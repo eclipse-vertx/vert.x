@@ -16,7 +16,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -31,14 +31,14 @@ public interface RequestOptionsBase<T extends RequestOptionsBase> {
 
   T setHost(String host);
 
-  MultiMap getHeaders();
+  Headers getHeaders();
 
-  T setHeaders(MultiMap headers);
+  T setHeaders(Headers headers);
 
   String getRequestURI();
 
   T setRequestURI(String requestURI);
 
-  T putHeader(CharSequence name, CharSequence value);
+  T addHeader(CharSequence name, CharSequence value);
 
 }

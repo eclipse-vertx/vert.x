@@ -20,7 +20,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 import io.vertx.core.Vertx;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
@@ -57,8 +57,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private NetSocket netSocket;
 
   // Cache these for performance
-  private MultiMap headers;
-  private MultiMap trailers;
+  private Headers headers;
+  private Headers trailers;
   private List<String> cookies;
 
   HttpClientResponseImpl(Vertx vertx, HttpClientRequestImpl request, ClientConnection conn, HttpResponse response) {
@@ -81,17 +81,17 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public MultiMap headers() {
+  public Headers headers() {
     if (headers == null) {
-      headers = new HttpHeadersAdapter(response.headers());
+      headers = new HeadersAdaptor(response.headers());
     }
     return headers;
   }
 
   @Override
-  public MultiMap trailers() {
+  public Headers trailers() {
     if (trailers == null) {
-      trailers = new HttpHeadersAdapter(new DefaultHttpHeaders());
+      trailers = new HeadersAdaptor(new DefaultHttpHeaders());
     }
     return trailers;
   }
@@ -199,7 +199,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       pausedTrailer = trailer;
     } else {
       this.trailer = trailer;
-      trailers = new HttpHeadersAdapter(trailer.trailingHeaders());
+      trailers = new HeadersAdaptor(trailer.trailingHeaders());
       if (endHandler != null) {
         endHandler.handle(null);
       }

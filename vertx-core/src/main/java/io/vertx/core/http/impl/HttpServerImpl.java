@@ -601,7 +601,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         };
 
         final ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-            theURI.getQuery(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
+            theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, connectRunnable);
         wsConn.handleWebsocketConnect(ws);
         if (ws.isRejected()) {
           if (firstHandler == null) {

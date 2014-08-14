@@ -16,8 +16,8 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.MultiMap;
-import io.vertx.core.http.CaseInsensitiveMultiMap;
+import io.vertx.core.Headers;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.RequestOptionsBase;
 import io.vertx.core.json.JsonObject;
@@ -33,7 +33,7 @@ public class RequestOptionsImpl implements RequestOptions {
 
   private int port ;
   private String host;
-  private MultiMap headers;
+  private Headers headers;
   private String requestURI;
 
   RequestOptionsImpl() {
@@ -57,7 +57,7 @@ public class RequestOptionsImpl implements RequestOptions {
     if (obj == null) {
       headers = null;
     } else {
-      headers = new CaseInsensitiveMultiMap();
+      headers = new CaseInsensitiveHeaders();
       obj.toMap().forEach((k, v) -> {
         headers.set(k, (String)v);
       });
@@ -90,12 +90,12 @@ public class RequestOptionsImpl implements RequestOptions {
   }
 
   @Override
-  public MultiMap getHeaders() {
+  public Headers getHeaders() {
     return headers;
   }
 
   @Override
-  public RequestOptions setHeaders(MultiMap headers) {
+  public RequestOptions setHeaders(Headers headers) {
     this.headers = headers;
     return this;
   }
@@ -112,7 +112,7 @@ public class RequestOptionsImpl implements RequestOptions {
   }
 
   @Override
-  public RequestOptions putHeader(CharSequence name, CharSequence value) {
+  public RequestOptions addHeader(CharSequence name, CharSequence value) {
     if (name == null) {
       throw new NullPointerException("name");
     }
@@ -120,7 +120,7 @@ public class RequestOptionsImpl implements RequestOptions {
       throw new NullPointerException("value");
     }
     if (headers == null) {
-      headers = new CaseInsensitiveMultiMap();
+      headers = new CaseInsensitiveHeaders();
     }
     headers.add(name, value);
     return this;

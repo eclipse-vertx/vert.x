@@ -14,29 +14,39 @@
  *   under the License.
  */
 
-package io.vertx.core.eventbus;
+package io.vertx.core.eventbus.impl.codecs;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.MessageCodec;
 
 /**
- *
- * Instances of this class must be stateless as they will be used concurrently.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface MessageCodec<S, R> {
+public class FloatMessageCodec implements MessageCodec<Float, Float> {
 
-  // Called when object is encoded to wire
-  void encodeToWire(Buffer buffer, S s);
+  @Override
+  public void encodeToWire(Buffer buffer, Float f) {
+    buffer.appendFloat(f);
+  }
 
-  // Called when object is decoded from wire
-  R decodeFromWire(int pos, Buffer buffer);
+  @Override
+  public Float decodeFromWire(int pos, Buffer buffer) {
+    return buffer.getFloat(pos);
+  }
 
-  // Used when sending locally and no wire involved
-  // Must, at least, make a copy of the message if it is not immutable
-  R transform(S s);
+  @Override
+  public Float transform(Float f) {
+    // Floats are immutable so just return it
+    return f;
+  }
 
-  String name();
+  @Override
+  public String name() {
+    return "float";
+  }
 
-  byte systemCodecID();
+  @Override
+  public byte systemCodecID() {
+    return 5;
+  }
 }

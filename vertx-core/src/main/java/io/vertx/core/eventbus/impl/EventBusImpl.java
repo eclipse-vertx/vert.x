@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright 2014 Red Hat, Inc.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ *   Red Hat licenses this file to you under the Apache License, version 2.0
+ *   (the "License"); you may not use this file except in compliance with the
+ *   License.  You may obtain a copy of the License at:
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * You may elect to redistribute this code under either of these licenses.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ *   License for the specific language governing permissions and limitations
+ *   under the License.
  */
 
 package io.vertx.core.eventbus.impl;
@@ -19,13 +19,30 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Headers;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.eventbus.impl.codecs.BooleanMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.BufferMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.ByteArrayMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.ByteMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.CharMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.DoubleMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.FloatMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.IntMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.JsonArrayMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.JsonObjectMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.LongMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.NullMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.ShortMessageCodec;
+import io.vertx.core.eventbus.impl.codecs.StringMessageCodec;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -58,26 +75,46 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="http://tfox.org">Tim Fox</a>                                                                                        T
  */
 public class EventBusImpl implements EventBus {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
-  private static final Buffer PONG = Buffer.buffer(new byte[]{(byte) 1});
+  // The standard message codecs
+  private static final MessageCodec<String, String> STRING_MESSAGE_CODEC = new StringMessageCodec();
+  private static final MessageCodec<Buffer, Buffer> BUFFER_MESSAGE_CODEC = new BufferMessageCodec();
+  private static final MessageCodec<JsonObject, JsonObject> JSON_OBJECT_MESSAGE_CODEC = new JsonObjectMessageCodec();
+  private static final MessageCodec<JsonArray, JsonArray> JSON_ARRAY_MESSAGE_CODEC = new JsonArrayMessageCodec();
+  private static final MessageCodec<byte[], byte[]> BYTE_ARRAY_MESSAGE_CODEC = new ByteArrayMessageCodec();
+  private static final MessageCodec<Integer, Integer> INT_MESSAGE_CODEC = new IntMessageCodec();
+  private static final MessageCodec<Long, Long> LONG_MESSAGE_CODEC = new LongMessageCodec();
+  private static final MessageCodec<Float, Float> FLOAT_MESSAGE_CODEC = new FloatMessageCodec();
+  private static final MessageCodec<Double, Double> DOUBLE_MESSAGE_CODEC = new DoubleMessageCodec();
+  private static final MessageCodec<Boolean, Boolean> BOOLEAN_MESSAGE_CODEC = new BooleanMessageCodec();
+  private static final MessageCodec<Short, Short> SHORT_MESSAGE_CODEC = new ShortMessageCodec();
+  private static final MessageCodec<Character, Character> CHAR_MESSAGE_CODEC = new CharMessageCodec();
+  private static final MessageCodec<Byte, Byte> BYTE_MESSAGE_CODEC = new ByteMessageCodec();
+  private static final MessageCodec<ReplyException, ReplyException> REPLY_EXCEPTION_MESSAGE_CODEC = new ReplyExceptionMessageCodec();
+  private static final MessageCodec<String, String> NULL_MESSAGE_CODEC = new NullMessageCodec();
+
+  private static final String PING_ADDRESS = "__vertx.ping";
   private static final long PING_INTERVAL = 20000;
   private static final long PING_REPLY_INTERVAL = 20000;
+
   private final VertxInternal vertx;
   private ServerID serverID;
   private NetServer server;
   private AsyncMultiMap<String, ServerID> subs;
-  private long defaultReplyTimeout = -1;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, MessageCodec<?>> codecMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Class, MessageCodec> defaultCodecMap = new ConcurrentHashMap<>();
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
   private final ProxyFactory proxyFactory;
+  private Registration pingRegistration;
+  private MessageCodec[] systemCodecs;
 
   public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout) {
     // Just some dummy server ID
@@ -87,10 +124,8 @@ public class EventBusImpl implements EventBus {
     this.subs = null;
     this.clusterMgr = null;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-  }
-
-  public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout, int port, String hostname, ClusterManager clusterManager) {
-    this(vertx, proxyOperationTimeout, port, hostname, clusterManager, null);
+    setPingHandler();
+    putStandardCodecs();
   }
 
   public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout, int port, String hostname, ClusterManager clusterManager,
@@ -110,28 +145,38 @@ public class EventBusImpl implements EventBus {
         }
       }
     });
+    putStandardCodecs();
   }
 
   @Override
   public EventBus send(String address, Object message) {
-    return send(address, message, null);
+    return sendWithOptions(address, message, DeliveryOptions.options(), null);
   }
 
   @Override
-  public <T> EventBus send(String address, Object message, Handler<Message<T>> replyHandler) {
-    sendOrPub(createMessage(true, address, message), replyHandler);
-    return this;
+  public <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
+    return sendWithOptions(address, message, DeliveryOptions.options(), replyHandler);
   }
 
   @Override
-  public <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+  public <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options) {
+    return sendWithOptions(address, message, options, null);
+  }
+
+  @Override
+  public <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
+    sendOrPub(null, createMessage(true, address, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Object message) {
-    sendOrPub(createMessage(false, address, message), null);
+    return publishWithOptions(address, message, DeliveryOptions.options());
+  }
+
+  @Override
+  public EventBus publishWithOptions(String address, Object message, DeliveryOptions options) {
+    sendOrPub(null, createMessage(false, address, options.getHeaders(), message, options.getCodecName()), options, null);
     return this;
   }
 
@@ -146,17 +191,48 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public <T> EventBus registerCodec(Class<T> type, MessageCodec<T> codec) {
-    Objects.requireNonNull(type);
-    Objects.requireNonNull(codec);
-    codecMap.put(type.getName(), codec);
+  public EventBus registerCodec(MessageCodec codec) {
+    Objects.requireNonNull(codec, "codec");
+    Objects.requireNonNull(codec.name(), "code.name()");
+    checkSystemCodec(codec);
+    if (userCodecMap.containsKey(codec.name())) {
+      throw new IllegalStateException("Already a codec registered with name " + codec.name());
+    }
+    userCodecMap.put(codec.name(), codec);
     return this;
   }
 
   @Override
-  public <T> EventBus unregisterCodec(Class<T> type) {
-    Objects.requireNonNull(type);
-    codecMap.remove(type.getName());
+  public EventBus unregisterCodec(String name) {
+    Objects.requireNonNull(name);
+    userCodecMap.remove(name);
+    return this;
+  }
+
+  @Override
+  public <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec) {
+    Objects.requireNonNull(clazz);
+    Objects.requireNonNull(codec, "codec");
+    Objects.requireNonNull(codec.name(), "code.name()");
+    checkSystemCodec(codec);
+    if (defaultCodecMap.containsKey(clazz)) {
+      throw new IllegalStateException("Already a default codec registered for class " + clazz);
+    }
+    if (userCodecMap.containsKey(codec.name())) {
+      throw new IllegalStateException("Already a codec registered with name " + codec.name());
+    }
+    defaultCodecMap.put(clazz, codec);
+    userCodecMap.put(codec.name(), codec);
+    return this;
+  }
+
+  @Override
+  public EventBus unregisterDefaultCodec(Class clazz) {
+    Objects.requireNonNull(clazz);
+    MessageCodec codec = defaultCodecMap.remove(clazz);
+    if (codec != null) {
+      userCodecMap.remove(codec.name());
+    }
     return this;
   }
 
@@ -178,9 +254,73 @@ public class EventBusImpl implements EventBus {
           log.error("Failed to close server", ar.cause());
         }
         closeClusterManager(completionHandler);
+        pingRegistration.unregister();
       });
     } else {
       closeClusterManager(completionHandler);
+      pingRegistration.unregister();
+    }
+  }
+
+  <T> void sendReply(ServerID dest, MessageImpl message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
+    if (message.address() == null) {
+      sendNoHandlersFailure(replyHandler);
+    } else {
+      sendOrPub(dest, message, options, replyHandler);
+    }
+  }
+
+  MessageImpl createMessage(boolean send, String address, Headers headers, Object body, String codecName) {
+    MessageCodec codec;
+    if (codecName != null) {
+      codec = userCodecMap.get(codecName);
+      if (codec == null) {
+        throw new IllegalArgumentException("No message codec for name: " + codecName);
+      }
+    } else if (body == null) {
+      codec = NULL_MESSAGE_CODEC;
+    } else if (body instanceof String) {
+      codec = STRING_MESSAGE_CODEC;
+    } else if (body instanceof Buffer) {
+      codec = BUFFER_MESSAGE_CODEC;
+    } else if (body instanceof JsonObject) {
+      codec = JSON_OBJECT_MESSAGE_CODEC;
+    } else if (body instanceof JsonArray) {
+      codec = JSON_ARRAY_MESSAGE_CODEC;
+    } else if (body instanceof byte[]) {
+      codec = BYTE_ARRAY_MESSAGE_CODEC;
+    } else if (body instanceof Integer) {
+      codec = INT_MESSAGE_CODEC;
+    } else if (body instanceof Long) {
+      codec = LONG_MESSAGE_CODEC;
+    } else if (body instanceof Float) {
+      codec = FLOAT_MESSAGE_CODEC;
+    } else if (body instanceof Double) {
+      codec = DOUBLE_MESSAGE_CODEC;
+    } else if (body instanceof Boolean) {
+      codec = BOOLEAN_MESSAGE_CODEC;
+    } else if (body instanceof Short) {
+      codec = SHORT_MESSAGE_CODEC;
+    } else if (body instanceof Character) {
+      codec = CHAR_MESSAGE_CODEC;
+    } else if (body instanceof Byte) {
+      codec = BYTE_MESSAGE_CODEC;
+    } else if (body instanceof ReplyException) {
+      codec = REPLY_EXCEPTION_MESSAGE_CODEC;
+    } else {
+      codec = defaultCodecMap.get(body.getClass());
+      if (codec == null) {
+        throw new IllegalArgumentException("No message codec for type: " + body.getClass());
+      }
+    }
+    @SuppressWarnings("unchecked")
+    MessageImpl msg = new MessageImpl(serverID, address, null, headers, body, codec, send);
+    return msg;
+  }
+
+  private void checkSystemCodec(MessageCodec codec) {
+    if (codec.systemCodecID() != -1) {
+      throw new IllegalArgumentException("Can't register a system codec");
     }
   }
 
@@ -199,78 +339,10 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  @Override
-  public EventBus setDefaultReplyTimeout(long timeoutMs) {
-    this.defaultReplyTimeout = timeoutMs;
-    return this;
-  }
-
-  @Override
-  public long getDefaultReplyTimeout() {
-    return defaultReplyTimeout;
-  }
-
-  <T, U> void sendReply(ServerID dest, BaseMessage<U> message, Handler<Message<T>> replyHandler) {
-    sendOrPub(dest, message, replyHandler, -1);
-  }
-
-  <T, U> void sendReplyWithTimeout(ServerID dest, BaseMessage<U> message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    if (message.address == null) {
-      sendNoHandlersFailure(replyHandler);
-    } else {
-      Handler<Message<T>> handler = convertHandler(replyHandler);
-      sendOrPub(dest, message, handler, replyHandler, timeout);
-    }
-  }
-
-  <U> BaseMessage<U> createMessage(boolean send, String address, U message) {
-    BaseMessage bm;
-    if (message instanceof String) {
-      bm = new StringMessage(send, address, (String)message);
-    } else if (message instanceof Buffer) {
-      bm = new BufferMessage(send, address, (Buffer)message);
-    } else if (message instanceof JsonObject) {
-      bm = new JsonObjectMessage(send, address, (JsonObject)message);
-    } else if (message instanceof JsonArray) {
-      bm = new JsonArrayMessage(send, address, (JsonArray)message);
-    } else if (message instanceof byte[]) {
-      bm = new ByteArrayMessage(send, address, (byte[])message);
-    } else if (message instanceof Integer) {
-      bm = new IntMessage(send, address, (Integer)message);
-    } else if (message instanceof Long) {
-      bm = new LongMessage(send, address, (Long)message);
-    } else if (message instanceof Float) {
-      bm = new FloatMessage(send, address, (Float)message);
-    } else if (message instanceof Double) {
-      bm = new DoubleMessage(send, address, (Double)message);
-    } else if (message instanceof Boolean) {
-      bm = new BooleanMessage(send, address, (Boolean)message);
-    } else if (message instanceof Short) {
-      bm = new ShortMessage(send, address, (Short)message);
-    } else if (message instanceof Character) {
-      bm = new CharacterMessage(send, address, (Character)message);
-    } else if (message instanceof Byte) {
-      bm = new ByteMessage(send, address, (Byte)message);
-    } else if (message == null) {
-      bm = new StringMessage(send, address, null);
-    } else {
-      String typeName = message.getClass().getName();
-      MessageCodec<?>  codec;
-      if (clusterMgr != null) {
-        codec = codecMap.get(typeName);
-        if (codec == null) {
-          throw new IllegalArgumentException("No codec registered for " + message.getClass() + " on the event bus: " + message);
-        }
-      } else {
-        codec = null;
-      }
-      @SuppressWarnings("unchecked")
-      ObjectMessage<?> om = new ObjectMessage(send, address, message, typeName, codec);
-      bm = om;
-    }
-    bm.bus = this;
-
-    return bm;
+  private void setPingHandler() {
+    pingRegistration = registerHandler(PING_ADDRESS, msg -> {
+      msg.reply(null);
+    });
   }
 
   private NetServer setServer(int port, String hostName, Handler<AsyncResult<Void>> listenHandler) {
@@ -284,13 +356,9 @@ public class EventBusImpl implements EventBus {
             size = buff.getInt(0);
             parser.fixedSizeMode(size);
           } else {
-            BaseMessage received = MessageFactory.read(buff, codecMap);
-            if (received.type() == MessageFactory.TYPE_PING) {
-              // Send back a pong - a byte will do
-              socket.writeBuffer(PONG);
-            } else {
-              receiveMessage(received, -1, null, null);
-            }
+            MessageImpl received = new MessageImpl();
+            received.readFromWire(buff, userCodecMap, systemCodecs);
+            receiveMessage(received, -1, null, null);
             parser.fixedSizeMode(4);
             size = -1;
           }
@@ -310,6 +378,7 @@ public class EventBusImpl implements EventBus {
         int serverPort = (publicPort == -1) ? server.actualPort() : publicPort;
         String serverHost = (publicHost == null) ? hostName : publicHost;
         EventBusImpl.this.serverID = new ServerID(serverPort, serverHost);
+        setPingHandler();
       }
       if (listenHandler != null) {
         if (asyncResult.succeeded()) {
@@ -324,11 +393,11 @@ public class EventBusImpl implements EventBus {
     return server;
   }
 
-  private <T> void sendToSubs(ChoosableIterable<ServerID> subs, BaseMessage message,
+  private <T> void sendToSubs(ChoosableIterable<ServerID> subs, MessageImpl message,
                               long timeoutID,
                               Handler<AsyncResult<Message<T>>> asyncResultHandler,
                               Handler<Message<T>> replyHandler) {
-    if (message.send) {
+    if (message.send()) {
       // Choose one
       ServerID sid = subs.choose();
       if (!sid.equals(serverID)) {  //We don't send to this node
@@ -348,18 +417,18 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private <T, U> void sendOrPubWithTimeout(BaseMessage<U> message,
-                                           Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
-    Handler<Message<T>> handler = convertHandler(asyncResultHandler);
-    sendOrPub(null, message, handler, asyncResultHandler, timeout);
+  private void putStandardCodecs() {
+    putCodecs(STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
+      BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
+      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC,
+      NULL_MESSAGE_CODEC);
   }
 
-  private <T, U> void sendOrPub(BaseMessage<U> message, Handler<Message<T>> replyHandler) {
-    sendOrPub(null, message, replyHandler, -1);
-  }
-
-  private <T, U> void sendOrPub(ServerID replyDest, BaseMessage<U> message, Handler<Message<T>> replyHandler, long timeout) {
-    sendOrPub(replyDest, message, replyHandler, null, timeout);
+  private void putCodecs(MessageCodec... codecs) {
+    systemCodecs = new MessageCodec[codecs.length];
+    for (MessageCodec codec: codecs) {
+      systemCodecs[codec.systemCodecID()] = codec;
+    }
   }
 
   private String generateReplyAddress() {
@@ -372,48 +441,43 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private <T, U> void sendOrPub(ServerID replyDest, BaseMessage<U> message, Handler<Message<T>> replyHandler,
-                                Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+  private <T> void sendOrPub(ServerID replyDest, MessageImpl message, DeliveryOptions options,
+                             Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
     ContextImpl context = vertx.getOrCreateContext();
-    if (timeout == -1) {
-      timeout = defaultReplyTimeout;
-    }
+    Handler<Message<T>> simpleReplyHandler = null;
     try {
-      message.sender = serverID;
       long timeoutID = -1;
       if (replyHandler != null) {
-        message.replyAddress = generateReplyAddress();
+        message.setReplyAddress(generateReplyAddress());
         AtomicReference<Registration> refReg = new AtomicReference<>();
-        if (timeout != -1) {
-          // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
-          timeoutID = vertx.setTimer(timeout, timerID -> {
-            log.warn("Message reply handler timed out as no reply was received - it will be removed");
-            refReg.get().unregister();
-            if (asyncResultHandler != null) {
-              asyncResultHandler.handle(Future.completedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
-            }
-          });
-        }
-        Registration registration = registerHandler(message.replyAddress, replyHandler, true, true, timeoutID);
+        // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
+        timeoutID = vertx.setTimer(options.getSendTimeout(), timerID -> {
+          log.warn("Message reply handler timed out as no reply was received - it will be removed");
+          refReg.get().unregister();
+          replyHandler.handle(Future.completedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
+        });
+        simpleReplyHandler = convertHandler(replyHandler);
+        Registration registration = registerHandler(message.replyAddress(), simpleReplyHandler, true, true, timeoutID);
         refReg.set(registration);
       }
       if (replyDest != null) {
         if (!replyDest.equals(this.serverID)) {
           sendRemote(replyDest, message);
         } else {
-          receiveMessage(message, timeoutID, asyncResultHandler, replyHandler);
+          receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
         }
       } else {
         if (subs != null) {
           long fTimeoutID = timeoutID;
-          subs.get(message.address, asyncResult -> {
+          Handler<Message<T>> fSimpleReplyHandler = simpleReplyHandler;
+          subs.get(message.address(), asyncResult -> {
             if (asyncResult.succeeded()) {
               ChoosableIterable<ServerID> serverIDs = asyncResult.result();
               if (serverIDs != null && !serverIDs.isEmpty()) {
-                sendToSubs(serverIDs, message, fTimeoutID, asyncResultHandler, replyHandler);
+                sendToSubs(serverIDs, message, fTimeoutID, replyHandler, fSimpleReplyHandler);
               } else {
-                receiveMessage(message, fTimeoutID, asyncResultHandler, replyHandler);
+                receiveMessage(message, fTimeoutID, replyHandler, fSimpleReplyHandler);
               }
             } else {
               log.error("Failed to send message", asyncResult.cause());
@@ -421,10 +485,9 @@ public class EventBusImpl implements EventBus {
           });
         } else {
           // Not clustered
-          receiveMessage(message, timeoutID, asyncResultHandler, replyHandler);
+          receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
         }
       }
-
     } finally {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
       // of the current thread can change
@@ -439,7 +502,7 @@ public class EventBusImpl implements EventBus {
       Future<Message<T>> result;
       if (reply.body() instanceof ReplyException) {
         // This is kind of clunky - but hey-ho
-        result = Future.completedFuture((ReplyException)reply.body());
+        result = Future.completedFuture((ReplyException) reply.body());
       } else {
         result = Future.completedFuture(reply);
       }
@@ -447,7 +510,7 @@ public class EventBusImpl implements EventBus {
     };
   }
 
-  private Registration registerHandler(String address, Handler<? extends Message> handler,
+  private <T> Registration registerHandler(String address, Handler<Message<T>> handler,
                                        boolean replyHandler, boolean localOnly, long timeoutID) {
     checkStarted();
     if (address == null) {
@@ -461,9 +524,8 @@ public class EventBusImpl implements EventBus {
     if (!hasContext) {
       context = vertx.createEventLoopContext();
     }
-    @SuppressWarnings("unchecked")
-    HandlerHolder<?> holder = new HandlerHolder<>((Handler<Message<Object>>) handler, replyHandler, localOnly, context, timeoutID);
-    HandlerRegistration registration = new HandlerRegistration(address, handler);
+    HandlerHolder holder = new HandlerHolder<T>(handler, replyHandler, localOnly, context, timeoutID);
+    HandlerRegistration registration = new HandlerRegistration<T>(address, handler);
 
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
@@ -485,14 +547,14 @@ public class EventBusImpl implements EventBus {
     handlers.list.add(holder);
 
     if (hasContext) {
-      HandlerEntry entry = new HandlerEntry(address, handler);
+      HandlerEntry entry = new HandlerEntry<T>(address, handler);
       context.addCloseHook(entry);
     }
 
     return registration;
   }
 
-  private void unregisterHandler(String address, Handler<? extends Message> handler, Handler<AsyncResult<Void>> completionHandler) {
+  private <T> void unregisterHandler(String address, Handler<Message<T>> handler, Handler<AsyncResult<Void>> completionHandler) {
     checkStarted();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
@@ -518,7 +580,7 @@ public class EventBusImpl implements EventBus {
             } else if (completionHandler != null) {
               callCompletionHandler(completionHandler);
             }
-            holder.context.removeCloseHook(new HandlerEntry(address, handler));
+            holder.context.removeCloseHook(new HandlerEntry<T>(address, handler));
             break;
           }
         }
@@ -526,7 +588,7 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private void unregisterHandler(String address, Handler<? extends Message> handler) {
+  private <T> void unregisterHandler(String address, Handler<Message<T>> handler) {
     unregisterHandler(address, handler, emptyHandler());
   }
 
@@ -567,7 +629,7 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private void sendRemote(ServerID theServerID, BaseMessage message) {
+  private void sendRemote(ServerID theServerID, MessageImpl message) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
@@ -599,7 +661,8 @@ public class EventBusImpl implements EventBus {
         log.warn("No pong from server " + serverID + " - will consider it dead, timerID: " + id2 + " holder " + holder);
         cleanupConnection(holder.theServerID, holder, true);
       });
-      new PingMessage(serverID).write(holder.socket);
+      MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new NullMessageCodec(), true);
+      holder.socket.writeBuffer(pingMessage.encodeToWire());
     });
   }
 
@@ -614,12 +677,12 @@ public class EventBusImpl implements EventBus {
   }
 
   // Called when a message is incoming
-  private <T> void receiveMessage(BaseMessage msg, long timeoutID, Handler<AsyncResult<Message<T>>> asyncResultHandler,
-                                  Handler<Message<T>> replyHandler) {
-    msg.bus = this;
-    Handlers handlers = handlerMap.get(msg.address);
+  private <T> void receiveMessage(MessageImpl msg, long timeoutID, Handler<AsyncResult<Message<T>>> replyHandler,
+                                  Handler<Message<T>> simpleReplyHandler) {
+    msg.setBus(this);
+    Handlers handlers = handlerMap.get(msg.address());
     if (handlers != null) {
-      if (msg.send) {
+      if (msg.send()) {
         //Choose one
         HandlerHolder holder = handlers.choose();
         if (holder != null) {
@@ -633,13 +696,13 @@ public class EventBusImpl implements EventBus {
       }
     } else {
       // no handlers
-      if (asyncResultHandler != null) {
-        sendNoHandlersFailure(asyncResultHandler);
+      if (replyHandler != null) {
+        sendNoHandlersFailure(replyHandler);
         if (timeoutID != -1) {
           vertx.cancelTimer(timeoutID);
         }
-        if (replyHandler != null) {
-          unregisterHandler(msg.replyAddress, replyHandler);
+        if (simpleReplyHandler != null) {
+          unregisterHandler(msg.replyAddress(), simpleReplyHandler);
         }
       }
     }
@@ -655,9 +718,10 @@ public class EventBusImpl implements EventBus {
   }
 
 
-  private <T> void doReceive(BaseMessage<T> msg, HandlerHolder<T> holder) {
+  private <T> void doReceive(MessageImpl msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
-    Message<T> copied = msg.copy();
+    @SuppressWarnings("unchecked")
+    Message<T> copied = msg.copyBeforeReceive();
 
     holder.context.execute(() -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
@@ -668,7 +732,7 @@ public class EventBusImpl implements EventBus {
         }
       } finally {
         if (holder.replyHandler) {
-          unregisterHandler(msg.address, holder.handler);
+          unregisterHandler(msg.address(), holder.handler);
         }
       }
     }, false);
@@ -721,7 +785,7 @@ public class EventBusImpl implements EventBus {
   private class ConnectionHolder {
     final NetClient client;
     volatile NetSocket socket;
-    final Queue<BaseMessage> pending = new ConcurrentLinkedQueue<>();
+    final Queue<MessageImpl> pending = new ConcurrentLinkedQueue<>();
     volatile boolean connected;
     long timeoutID = -1;
     long pingTimeoutID = -1;
@@ -731,13 +795,13 @@ public class EventBusImpl implements EventBus {
       this.client = client;
     }
 
-    void writeMessage(BaseMessage message) {
+    void writeMessage(MessageImpl message) {
       if (connected) {
-        message.write(socket);
+        socket.writeBuffer(message.encodeToWire());
       } else {
         synchronized (this) {
           if (connected) {
-            message.write(socket);
+            socket.writeBuffer(message.encodeToWire());
           } else {
             pending.add(message);
           }
@@ -758,8 +822,8 @@ public class EventBusImpl implements EventBus {
       });
       // Start a pinger
       schedulePing(ConnectionHolder.this);
-      for (BaseMessage message : pending) {
-        message.write(socket);
+      for (MessageImpl message : pending) {
+        socket.writeBuffer(message.encodeToWire());
       }
       pending.clear();
     }
@@ -799,11 +863,11 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private class HandlerEntry implements Closeable {
+  private class HandlerEntry<T> implements Closeable {
     final String address;
-    final Handler<? extends Message> handler;
+    final Handler<Message<T>> handler;
 
-    private HandlerEntry(String address, Handler<? extends Message> handler) {
+    private HandlerEntry(String address, Handler<Message<T>> handler) {
       this.address = address;
       this.handler = handler;
     }
@@ -843,13 +907,13 @@ public class EventBusImpl implements EventBus {
     super.finalize();
   }
 
-  private class HandlerRegistration implements Registration {
+  private class HandlerRegistration<T> implements Registration {
     private final String address;
-    private final Handler<? extends Message> handler;
+    private final Handler<Message<T>> handler;
     private AsyncResult<Void> result;
     private Handler<AsyncResult<Void>> completionHandler;
 
-    public HandlerRegistration(String address, Handler<? extends Message> handler) {
+    public HandlerRegistration(String address, Handler<Message<T>> handler) {
       this.address = address;
       this.handler = handler;
     }

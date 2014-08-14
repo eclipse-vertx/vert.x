@@ -35,7 +35,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -388,12 +388,12 @@ public class HttpClientImpl implements HttpClient {
           }
 
           @Override
-          public MultiMap headers() {
+          public Headers headers() {
             return resp.headers();
           }
 
           @Override
-          public MultiMap trailers() {
+          public Headers trailers() {
             return resp.trailers();
           }
 

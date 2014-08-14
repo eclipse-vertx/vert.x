@@ -1,31 +1,34 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
- * ------------------------------------------------------
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ * Copyright 2014 Red Hat, Inc.
  *
- *     The Eclipse Public License is available at
- *     http://www.eclipse.org/legal/epl-v10.html
+ *   Red Hat licenses this file to you under the Apache License, version 2.0
+ *   (the "License"); you may not use this file except in compliance with the
+ *   License.  You may obtain a copy of the License at:
  *
- *     The Apache License v2.0 is available at
- *     http://www.opensource.org/licenses/apache2.0.php
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * You may elect to redistribute this code under either of these licenses.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ *   License for the specific language governing permissions and limitations
+ *   under the License.
  */
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.eventbus.impl.EventBusImpl;
+
+import java.util.Objects;
 
 /**
  * A distributed lightweight event bus which can encompass multiple vert.x instances.
  * The event bus implements publish / subscribe, point to point messaging and request-response messaging.<p>
- * Messages sent over the event bus are represented by instances of the {@link Message} class.<p>
+ * Messages sent over the event bus are represented by instances of the {@link io.vertx.core.eventbus.impl.old.Message} class.<p>
  * For publish / subscribe, messages can be published to an address using one of the {@link #publish} methods. An
  * address is a simple {@code String} instance.<p>
  * Handlers are registered against an address. There can be multiple handlers registered against each address, and a particular handler can
@@ -76,17 +79,13 @@ public interface EventBus {
    * @param replyHandler Reply handler will be called when any reply from the recipient is received
    */
   @Fluent
-  <T> EventBus send(String address, Object message, Handler<Message<T>> replyHandler);
+  <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
 
-  /**
-   * Send an object as a message
-   * @param address The address to send it to
-   * @param message The message
-   * @param timeout - Timeout in ms. If no reply received within the timeout then the reply handler will be unregistered
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
-   */
   @Fluent
-  <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler);
+  <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options);
+
+  @Fluent
+  <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Publish a message
@@ -95,6 +94,9 @@ public interface EventBus {
    */
   @Fluent
   EventBus publish(String address, Object message);
+
+  @Fluent
+  EventBus publishWithOptions(String address, Object message, DeliveryOptions options);
 
   /**
    * Registers a handler against the specified address
@@ -113,31 +115,23 @@ public interface EventBus {
    */
   <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler);
 
-  /**
-   * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler
-   * but without specifying a timeout, then the reply handler is timed out, i.e. it is automatically unregistered
-   * if a message hasn't been received before timeout.
-   * The default value for default send timeout is -1, which means "never timeout".
-   * @param timeoutMs
-   */
-  @Fluent
-  EventBus setDefaultReplyTimeout(long timeoutMs);
-
-  /**
-   * Return the value for default send timeout
-   */
-  long getDefaultReplyTimeout();
+  @GenIgnore
+  EventBus registerCodec(MessageCodec codec);
 
   @GenIgnore
-  <T> EventBus registerCodec(Class<T> type, MessageCodec<T> codec);
+  EventBus unregisterCodec(String name);
 
   @GenIgnore
-  <T> EventBus unregisterCodec(Class<T> type);
+  <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec);
+
+  @GenIgnore
+  EventBus unregisterDefaultCodec(Class clazz);
 
   @GenIgnore
   <T> T createProxy(Class<T> clazz, String address);
 
   @GenIgnore
   <T> Registration registerService(T service, String address);
+
 }
 

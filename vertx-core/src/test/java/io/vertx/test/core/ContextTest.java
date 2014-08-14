@@ -57,7 +57,6 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testNoContext() throws Exception {
-    System.out.println("Thread is: " + Thread.currentThread());
     Set<Context> ctxts = new HashSet<>();
     // We are not on a context when we call this so we should be given a new context each time
     for (int i = 0; i < 10; i++) {

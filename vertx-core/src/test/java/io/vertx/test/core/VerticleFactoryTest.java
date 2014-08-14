@@ -126,7 +126,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     String name1 = "aa:myverticle1";
     String name2 = "bb:myverticle2";
     String name3 = "cc:myverticle3";
-    vertx.deployVerticle(name1, DeploymentOptions.options(), ar -> {
+    vertx.deployVerticleWithOptions(name1, DeploymentOptions.options(), ar -> {
       assertTrue(ar.succeeded());
       assertEquals(name1.substring(3), fact1.verticleName);
       assertTrue(verticle1.startCalled);
@@ -134,13 +134,13 @@ public class VerticleFactoryTest extends VertxTestBase {
       assertFalse(verticle3.startCalled);
       assertNull(fact2.verticleName);
       assertNull(fact3.verticleName);
-      vertx.deployVerticle(name2, DeploymentOptions.options(), ar2 -> {
+      vertx.deployVerticleWithOptions(name2, DeploymentOptions.options(), ar2 -> {
         assertTrue(ar2.succeeded());
         assertEquals(name2.substring(3), fact2.verticleName);
         assertTrue(verticle2.startCalled);
         assertFalse(verticle3.startCalled);
         assertNull(fact3.verticleName);
-        vertx.deployVerticle(name3, DeploymentOptions.options(), ar3 -> {
+        vertx.deployVerticleWithOptions(name3, DeploymentOptions.options(), ar3 -> {
           assertTrue(ar3.succeeded());
           assertEquals(name3.substring(3), fact3.verticleName);
           assertTrue(verticle3.startCalled);
@@ -176,7 +176,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     vertx.registerVerticleFactory(fact2);
     String name1 = "cc:myverticle1";
     // If no match it will default to the simple Java verticle factory and then fail with ClassNotFoundException
-    vertx.deployVerticle(name1, DeploymentOptions.options(), ar -> {
+    vertx.deployVerticleWithOptions(name1, DeploymentOptions.options(), ar -> {
       assertFalse(ar.succeeded());
       assertFalse(verticle1.startCalled);
       assertFalse(verticle2.startCalled);
