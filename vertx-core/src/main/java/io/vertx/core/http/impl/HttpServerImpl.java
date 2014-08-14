@@ -44,6 +44,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -601,7 +602,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
         };
 
         final ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-            theURI.getQuery(), new HttpHeadersAdapter(request.headers()), wsConn, connectRunnable);
+            theURI.getQuery(), new HttpHeadersAdapter(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
+            connectRunnable);
         wsConn.handleWebsocketConnect(ws);
         if (ws.isRejected()) {
           if (firstHandler == null) {

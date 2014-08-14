@@ -25,8 +25,8 @@ import io.vertx.core.net.impl.ConnectionBase;
 
 public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
 
-  public WebSocketImpl(VertxInternal vertx, ConnectionBase conn) {
-    super(vertx, conn);
+  public WebSocketImpl(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation) {
+    super(vertx, conn, supportsContinuation);
   }
 
   @Override
