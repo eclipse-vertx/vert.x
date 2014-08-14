@@ -29,9 +29,9 @@ import java.util.*;
  */
 public class JsonArray extends JsonElement implements Iterable<Object> {
 
-  protected List<Object> list;
+  protected List list;
 
-  public JsonArray(List<Object> list) {
+  public JsonArray(List list) {
     this(list, true);
   }
 
@@ -39,7 +39,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     this(new ArrayList<>(Arrays.asList(array)), true);
   }
 
-  protected JsonArray(List<Object> list, boolean copy) {
+  protected JsonArray(List list, boolean copy) {
     this.list = copy ? convertList(list): list;
   }
 

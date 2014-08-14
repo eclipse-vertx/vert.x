@@ -24,7 +24,9 @@ import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.testframework.TestBase;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  *
@@ -52,6 +54,28 @@ public class JavaJsonTest extends TestBase {
     String str = obj.encode();
     JsonObject obj2 = new JsonObject(str);
     assertEquals("bar", obj2.getString("foo"));
+  }
+
+  @Test
+  public void testJsonArrayFromJsonString() {
+    String json = "[1, 2]";
+    assertEquals(new JsonArray().add(1).add(2), new JsonArray(json));
+  }
+
+  @Test
+  public void testJsonArrayFromList() {
+
+    List<Integer> intList = new ArrayList<>();
+    intList.add(1);
+    intList.add(2);
+
+    assertEquals(new JsonArray().add(1).add(2), new JsonArray(intList));
+
+    List<String> stringList = new ArrayList<>();
+    stringList.add("one");
+    stringList.add("two");
+
+    assertEquals(new JsonArray().add("one").add("two"), new JsonArray(stringList));
   }
 
   @Test
