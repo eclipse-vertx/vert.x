@@ -25,8 +25,10 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.BiFunction;
 
@@ -44,6 +46,29 @@ public class JSONTest {
     String str = obj.encode();
     JsonObject obj2 = new JsonObject(str);
     assertEquals("bar", obj2.getString("foo"));
+  }
+
+  @Test
+  public void testJsonArrayFromJsonString() {
+      String json = "[1, 2]";
+
+      assertEquals(new JsonArray().add(1).add(2), new JsonArray(json));
+  }
+
+  @Test
+  public void testJsonArrayFromList() {
+
+      List<Integer> intList = new ArrayList<>();
+      intList.add(1);
+      intList.add(2);
+
+      assertEquals(new JsonArray().add(1).add(2), new JsonArray(intList));
+
+      List<String> stringList = new ArrayList<>();
+      stringList.add("one");
+      stringList.add("two");
+
+      assertEquals(new JsonArray().add("one").add("two"), new JsonArray(stringList));
   }
 
   @Test
@@ -231,6 +256,40 @@ public class JSONTest {
     JsonElement testElement = tester.get(0);
 
     assertEquals(objElement.getString("foo"), testElement.asObject().getString("foo"));
+  }
+
+  @Test
+  public void testAddObjectToJsonArray() {
+
+      JsonObject testObject = new JsonObject().putString("test", "ok");
+      JsonArray testArray = new JsonArray().addString("test");
+      Integer testInt = 1;
+      Long testLong = 2L;
+      Double testDouble = 3.0;
+      Boolean testBool = true;
+      byte[] testBytes = "test".getBytes();
+      Character testChar = 't';
+      String testString = "test";
+
+      assertEquals(testObject, new JsonArray().add(testObject).get(0));
+      assertEquals(testArray,  new JsonArray().add(testArray).get(0));
+      assertEquals(testInt,    new JsonArray().add(testInt).get(0));
+      assertEquals(testLong,   new JsonArray().add(testLong).get(0));
+      assertEquals(testDouble, new JsonArray().add(testDouble).get(0));
+      assertEquals(testBool,   new JsonArray().add(testBool).get(0));
+      assertEquals("test",     new String(new JsonArray().add(testBytes).getBinary(0)));
+      assertEquals(String.valueOf(testChar),   new JsonArray().add(testChar).get(0));
+      assertEquals(testString, new JsonArray().add(testString).get(0));
+      assertEquals(TestEnum.TEST.toString(), new JsonArray().add(TestEnum.TEST).get(0));
+  }
+
+  @Test(expected = VertxException.class)
+  public void testAddInvalidObjectToJsonArray() {
+      new JsonArray().add(new Object());
+  }
+
+  private enum TestEnum {
+      TEST
   }
 
   @Test
