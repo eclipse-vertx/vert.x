@@ -18,8 +18,12 @@ package io.vertx.core.metrics;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Timer;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
+
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import static com.codahale.metrics.MetricRegistry.*;
 
@@ -28,16 +32,20 @@ import static com.codahale.metrics.MetricRegistry.*;
  */
 public abstract class NetworkMetrics extends AbstractMetrics {
   private Counter connections;
+  private Timer connectionLifetime;
   private Histogram bytesRead;
   private Histogram bytesWritten;
+  private Map<ConnectionBase, Timer.Context> connectionLifetimes;
 
   public NetworkMetrics(VertxInternal vertx, String baseName) {
     super(vertx, baseName);
     if (isEnabled()) {
       this.connections = counter("connections");
+      this.connectionLifetime = timer("connection-lifetime");
 
       this.bytesRead = histogram("bytes-read");
       this.bytesWritten = histogram("bytes-written");
+      this.connectionLifetimes = new WeakHashMap<>();
     }
   }
 
@@ -45,6 +53,7 @@ public abstract class NetworkMetrics extends AbstractMetrics {
     if (!isEnabled()) return;
 
     connections.inc();
+    connectionLifetimes.put(connection, connectionLifetime.time());
     remoteAddressCounter(connection).inc();
   }
 
@@ -52,6 +61,10 @@ public abstract class NetworkMetrics extends AbstractMetrics {
     if (!isEnabled()) return;
 
     connections.dec();
+    Timer.Context ctx = connectionLifetimes.remove(connection);
+    if (ctx != null) {
+      ctx.stop();
+    }
     remoteAddressCounter(connection).dec();
   }
 
