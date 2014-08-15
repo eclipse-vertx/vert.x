@@ -16,13 +16,12 @@
 
 package io.vertx.test.core;
 
+import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Copyable;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.shareddata.Shareable;
 import org.junit.Test;
 
 import java.util.function.Consumer;
@@ -318,35 +317,20 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendPojo() {
-    SomePojo pojo = new SomePojo("foo", 100);
-    testSend(pojo, received -> {
-      assertEquals(pojo, received);
-      assertFalse(pojo == received); // Make sure it's copied
-    });
+  public void testSendWithHeaders() {
+    testSend("foo", "foo", null, DeliveryOptions.options().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
 
   @Test
-  public void testPublishPojo() {
-    SomePojo pojo = new SomePojo("foo", 100);
-    testPublish(pojo, received -> {
-      assertEquals(pojo, received);
-      assertFalse(pojo == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testReplyPojo() {
-    SomePojo pojo = new SomePojo("foo", 100);
-    testReply(pojo, received -> {
-      assertEquals(pojo, received);
-      assertFalse(pojo == received); // Make sure it's copied
-    });
+  public void testReplyWithHeaders() {
+    testReply("foo", "foo", null, DeliveryOptions.options().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
 
   protected <T> void testSend(T val) {
     testSend(val, null);
   }
+
+  protected abstract <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options);
 
   protected abstract <T> void testSend(T val, Consumer<T> consumer);
 
@@ -356,117 +340,161 @@ public abstract class EventBusTestBase extends VertxTestBase {
 
   protected abstract <T> void testReply(T val, Consumer<T> consumer);
 
+  protected abstract <T, R> void testReply(T val, R received, Consumer<R> consumer, DeliveryOptions options);
+
   protected <T> void testPublish(T val) {
     testPublish(val, null);
   }
 
   protected abstract <T> void testPublish(T val, Consumer<T> consumer);
 
-  protected void registerCodecs(EventBus bus) {
-    bus.registerCodec(SomePojo.class, new SomePojoCodec());
-    bus.registerCodec(ShareablePojo.class, new ShareablePojoCodec());
-  }
+  public static class MySystemDecoder implements MessageCodec<MyPOJO, String> {
 
-  protected static class SomePojo implements Copyable {
-    private final String string;
-    private final int number;
-    boolean badCopy;
-
-    protected SomePojo(String string, int number, boolean badCopy) {
-      this.string = string;
-      this.number = number;
-      this.badCopy = badCopy;
-    }
-
-    protected SomePojo(String string, int number) {
-      this.string = string;
-      this.number = number;
-    }
-
-    public String string() {
-      return string;
-    }
-
-    public int number() {
-      return number;
+    @Override
+    public void encodeToWire(Buffer buffer, MyPOJO s) {
     }
 
     @Override
-    public Object copy() {
-      if (badCopy) {
-        return this;
-      } else {
-        return new SomePojo(this.string, this.number);
-      }
+    public String decodeFromWire(int pos, Buffer buffer) {
+      return null;
+    }
+
+    @Override
+    public String transform(MyPOJO s) {
+      return null;
+    }
+
+    @Override
+    public String name() {
+      return "mysystemdecoder";
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return 0;
+    }
+  }
+
+  public static class NullNameCodec implements MessageCodec<String, String> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, String s) {
+
+    }
+
+    @Override
+    public String decodeFromWire(int pos, Buffer buffer) {
+      return null;
+    }
+
+    @Override
+    public String transform(String s) {
+      return null;
+    }
+
+    @Override
+    public String name() {
+      return null;
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return 0;
+    }
+  }
+
+  public static class MyPOJOEncoder1 implements MessageCodec<MyPOJO, String> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, MyPOJO myPOJO) {
+      byte[] bytes = myPOJO.getStr().getBytes(CharsetUtil.UTF_8);
+      buffer.appendInt(bytes.length);
+      buffer.appendBytes(bytes);
+    }
+
+    @Override
+    public String decodeFromWire(int pos, Buffer buffer) {
+      int length = buffer.getInt(pos);
+      pos += 4;
+      byte[] bytes = buffer.getBytes(pos, pos + length);
+      return new String(bytes, CharsetUtil.UTF_8);
+    }
+
+    @Override
+    public String transform(MyPOJO myPOJO) {
+      return myPOJO.getStr();
+    }
+
+    @Override
+    public String name() {
+      return "mypojoencoder1";
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return -1;
+    }
+  }
+
+  public static class MyPOJOEncoder2 implements MessageCodec<MyPOJO, MyPOJO> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, MyPOJO myPOJO) {
+      byte[] bytes = myPOJO.getStr().getBytes(CharsetUtil.UTF_8);
+      buffer.appendInt(bytes.length);
+      buffer.appendBytes(bytes);
+    }
+
+    @Override
+    public MyPOJO decodeFromWire(int pos, Buffer buffer) {
+      int length = buffer.getInt(pos);
+      pos += 4;
+      byte[] bytes = buffer.getBytes(pos, pos + length);
+      String str = new String(bytes, CharsetUtil.UTF_8);
+      return new MyPOJO(str);
+    }
+
+    @Override
+    public MyPOJO transform(MyPOJO myPOJO) {
+      return new MyPOJO(myPOJO.getStr());
+    }
+
+    @Override
+    public String name() {
+      return "mypojoencoder2";
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return -1;
+    }
+  }
+
+
+  public static class MyPOJO {
+    private String str;
+
+    public MyPOJO(String str) {
+      this.str = str;
+    }
+
+    public String getStr() {
+      return str;
     }
 
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
-
-      SomePojo pojo = (SomePojo) o;
-
-      if (number != pojo.number) return false;
-      if (!string.equals(pojo.string)) return false;
-
+      MyPOJO myPOJO = (MyPOJO) o;
+      if (str != null ? !str.equals(myPOJO.str) : myPOJO.str != null) return false;
       return true;
     }
 
     @Override
     public int hashCode() {
-      int result = string.hashCode();
-      result = 31 * result + number;
-      return result;
+      return str != null ? str.hashCode() : 0;
     }
   }
 
-  protected static class SomePojoCodec implements MessageCodec<SomePojo> {
-    @Override
-    public Buffer encode(SomePojo pojo) {
-      return Buffer.buffer().appendInt(pojo.number).appendString(pojo.string);
-    }
-
-    @Override
-    public SomePojo decode(Buffer buffer) {
-      return new SomePojo(buffer.getString(4, buffer.length()), buffer.getInt(0));
-    }
-  }
-
-  protected static class ShareablePojo implements Shareable {
-    private final String string;
-
-    public ShareablePojo(String string) {
-      this.string = string;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      ShareablePojo that = (ShareablePojo) o;
-
-      if (!string.equals(that.string)) return false;
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      return string.hashCode();
-    }
-  }
-
-  protected static class ShareablePojoCodec implements MessageCodec<ShareablePojo> {
-    @Override
-    public Buffer encode(ShareablePojo object) {
-      return Buffer.buffer().appendString(object.string);
-    }
-
-    @Override
-    public ShareablePojo decode(Buffer buffer) {
-      return new ShareablePojo(buffer.getString(0, buffer.length()));
-    }
-  }
 }

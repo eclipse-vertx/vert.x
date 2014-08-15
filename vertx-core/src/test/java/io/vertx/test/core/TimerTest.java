@@ -78,7 +78,7 @@ public class TimerTest extends VertxTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle);
+    vertx.deployVerticle(verticle);
     await();
   }
 

@@ -16,10 +16,11 @@
 
 package io.vertx.test.core;
 
+
 import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveMultiMap;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
@@ -537,7 +538,7 @@ public class WebsocketTest extends NetTestBase {
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
-    MultiMap headers = new CaseInsensitiveMultiMap();
+    Headers headers = new CaseInsensitiveHeaders();
     assertNull(options.getHeaders());
     assertEquals(options, options.setHeaders(headers));
     assertSame(headers, options.getHeaders());
@@ -545,7 +546,7 @@ public class WebsocketTest extends NetTestBase {
     assertEquals("/", options.getRequestURI());
     assertEquals(options, options.setRequestURI(randString));
     assertEquals(randString, options.getRequestURI());
-    options.putHeader("foo", "bar");
+    options.addHeader("foo", "bar");
     assertNotNull(options.getHeaders());
     assertEquals("bar", options.getHeaders().get("foo"));
     assertEquals(65536, options.getMaxWebsocketFrameSize());
@@ -580,7 +581,7 @@ public class WebsocketTest extends NetTestBase {
   public void testCopyOptions() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    MultiMap headers = new CaseInsensitiveMultiMap();
+    Headers headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     int websocketFrameSize = TestUtils.randomPositiveInt();
@@ -614,7 +615,7 @@ public class WebsocketTest extends NetTestBase {
   public void testCopyOptionsJson() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    MultiMap headers = new CaseInsensitiveMultiMap();
+    Headers headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     int websocketFrameSize = TestUtils.randomPositiveInt();

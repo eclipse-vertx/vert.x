@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -86,13 +86,13 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * The headers will be automatically lower-cased when they reach the server
    */
   @CacheReturn
-  MultiMap headers();
+  Headers headers();
 
   /**
    * Returns a map of all the parameters in the request
    */
   @CacheReturn
-  MultiMap params();
+  Headers params();
 
   /**
    * Return the remote (client side) address of the request
@@ -161,6 +161,6 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * {@link #setExpectMultipart(boolean)} must be called first before trying to get the formAttributes
    */
   @CacheReturn
-  MultiMap formAttributes();
+  Headers formAttributes();
 
 }

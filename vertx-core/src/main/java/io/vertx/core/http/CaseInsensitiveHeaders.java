@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -32,7 +32,7 @@ import java.util.TreeSet;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class CaseInsensitiveMultiMap implements MultiMap {
+public final class CaseInsensitiveHeaders implements Headers {
   private static final int BUCKET_SIZE = 17;
 
   private static int hash(String name) {
@@ -54,7 +54,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
     }
   }
 
-  private MultiMap set0(Iterable<Map.Entry<String, String>> map) {
+  private Headers set0(Iterable<Map.Entry<String, String>> map) {
     clear();
     for (Map.Entry<String, String> entry: map) {
       add(entry.getKey(), entry.getValue());
@@ -63,12 +63,12 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap setAll(MultiMap headers) {
+  public Headers setAll(Headers headers) {
     return set0(headers);
   }
 
   @Override
-  public MultiMap setAll(Map<String, String> headers) {
+  public Headers setAll(Map<String, String> headers) {
     return set0(headers.entrySet());
   }
 
@@ -108,12 +108,12 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   private final MapEntry[] entries = new MapEntry[BUCKET_SIZE];
   private final MapEntry head = new MapEntry(-1, null, null);
 
-  public CaseInsensitiveMultiMap() {
+  public CaseInsensitiveHeaders() {
     head.before = head.after = head;
   }
 
   @Override
-  public MultiMap add(final String name, final String strVal) {
+  public Headers add(final String name, final String strVal) {
     int h = hash(name);
     int i = index(h);
     add0(h, i, name, strVal);
@@ -121,7 +121,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap add(String name, Iterable<String> values) {
+  public Headers add(String name, Iterable<String> values) {
     int h = hash(name);
     int i = index(h);
     for (String vstr: values) {
@@ -131,7 +131,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap addAll(MultiMap headers) {
+  public Headers addAll(Headers headers) {
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -139,7 +139,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap addAll(Map<String, String> map) {
+  public Headers addAll(Map<String, String> map) {
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -158,7 +158,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap remove(final String name) {
+  public Headers remove(final String name) {
     if (name == null) {
       throw new NullPointerException("name");
     }
@@ -205,7 +205,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap set(final String name, final String strVal) {
+  public Headers set(final String name, final String strVal) {
     int h = hash(name);
     int i = index(h);
     remove0(h, i, name);
@@ -214,7 +214,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap set(final String name, final Iterable<String> values) {
+  public Headers set(final String name, final Iterable<String> values) {
     if (values == null) {
       throw new NullPointerException("values");
     }
@@ -234,7 +234,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap clear() {
+  public Headers clear() {
     for (int i = 0; i < entries.length; i ++) {
       entries[i] = null;
     }
@@ -338,12 +338,12 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap add(CharSequence name, CharSequence value) {
+  public Headers add(CharSequence name, CharSequence value) {
     return add(name.toString(), value.toString());
   }
 
   @Override
-  public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+  public Headers add(CharSequence name, Iterable<CharSequence> values) {
     String n = name.toString();
     for (CharSequence seq: values) {
       add(n, seq.toString());
@@ -352,12 +352,12 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap set(CharSequence name, CharSequence value) {
+  public Headers set(CharSequence name, CharSequence value) {
     return set(name.toString(), value.toString());
   }
 
   @Override
-  public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+  public Headers set(CharSequence name, Iterable<CharSequence> values) {
     remove(name);
     String n = name.toString();
     for (CharSequence seq: values) {
@@ -367,7 +367,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   @Override
-  public MultiMap remove(CharSequence name) {
+  public Headers remove(CharSequence name) {
     return remove(name.toString());
   }
 

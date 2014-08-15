@@ -275,7 +275,7 @@ public class DNSTest extends VertxTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
     await();
   }
 

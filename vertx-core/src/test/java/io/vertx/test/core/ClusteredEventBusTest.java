@@ -18,18 +18,15 @@ package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
-import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -46,13 +43,21 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   }
 
   @Override
-  protected <T> void testSend(T val, Consumer <T> consumer) {
-    startNodes(2);
-    registerCodecs();
+  protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
+    if (vertices == null) {
+      startNodes(2);
+    }
 
     Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
       if (consumer == null) {
-        assertEquals(val, msg.body());
+        assertEquals(received, msg.body());
+        if (options != null && options.getHeaders() != null) {
+          assertNotNull(msg.headers());
+          assertEquals(options.getHeaders().size(), msg.headers().size());
+          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+            assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+          }
+        }
       } else {
         consumer.accept(msg.body());
       }
@@ -60,30 +65,56 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     });
     reg.completionHandler(ar -> {
       assertTrue(ar.succeeded());
-      vertices[0].eventBus().send(ADDRESS1, val);
+      if (options == null) {
+        vertices[0].eventBus().send(ADDRESS1, val);
+      } else {
+        vertices[0].eventBus().sendWithOptions(ADDRESS1, val, options);
+      }
     });
     await();
   }
 
   @Override
+  protected <T> void testSend(T val, Consumer <T> consumer) {
+    testSend(val, val, consumer, null);
+  }
+
+  @Override
   protected <T> void testReply(T val, Consumer<T> consumer) {
-    startNodes(2);
-    registerCodecs();
+    testReply(val, val, consumer, null);
+  }
+
+  @Override
+  protected <T, R> void testReply(T val, R received, Consumer<R> consumer, DeliveryOptions options) {
+    if (vertices == null) {
+      startNodes(2);
+    }
     String str = TestUtils.randomUnicodeString(1000);
     Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
-      msg.reply(val);
+      if (options == null) {
+        msg.reply(val);
+      } else {
+        msg.replyWithOptions(val, options);
+      }
     });
     reg.completionHandler(ar -> {
       assertTrue(ar.succeeded());
-      vertices[0].eventBus().send(ADDRESS1, str, (Message<T> reply) -> {
+      vertices[0].eventBus().send(ADDRESS1, str, onSuccess((Message<R> reply) -> {
         if (consumer == null) {
-          assertEquals(val, reply.body());
+          assertEquals(received, reply.body());
+          if (options != null && options.getHeaders() != null) {
+            assertNotNull(reply.headers());
+            assertEquals(options.getHeaders().size(), reply.headers().size());
+            for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+              assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
+            }
+          }
         } else {
           consumer.accept(reply.body());
         }
         testComplete();
-      });
+      }));
     });
 
     await();
@@ -93,8 +124,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   protected <T> void testPublish(T val, Consumer<T> consumer) {
     int numNodes = 3;
     startNodes(numNodes);
-    registerCodecs();
-
     AtomicInteger count = new AtomicInteger();
     class MyHandler implements Handler<Message<T>> {
       @Override
@@ -138,109 +167,88 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
 
-  // FIXME - these tests should test specifically with Copyable objects not just Object
-  // Testing whether an Object with no codec can be sent and an object that is not Copyable/Shareable can be sent
-  // should be separate tests
-  // Also... need tests for replying with both objects with no codec and objects that are not Copyable/Shareable
-
   @Test
-  public void testSendUnsupportedObject() {
-    startNodes(1);
-    EventBus eb = vertices[0].eventBus();
-    try {
-      eb.send(ADDRESS1, new Object());
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      eb.send(ADDRESS1, new HashMap<>());
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+  public void testDecoderSendAsymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertices[0].eventBus().registerCodec(codec);
+    vertices[1].eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    testSend(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
   }
 
   @Test
-  public void testSendWithReplyUnsupportedObject() {
-    startNodes(1);
-    EventBus eb = vertices[0].eventBus();
-    try {
-      eb.send(ADDRESS1, new Object(), reply -> {});
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      eb.send(ADDRESS1, new HashMap<>(), reply -> {});
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+  public void testDecoderReplyAsymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertices[0].eventBus().registerCodec(codec);
+    vertices[1].eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    testReply(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
   }
 
   @Test
-  public void testSendWithTimeoutUnsupportedObject() {
-    startNodes(1);
-    EventBus eb = vertices[0].eventBus();
-    try {
-      eb.sendWithTimeout(ADDRESS1, new Object(), 1, reply -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      eb.sendWithTimeout(ADDRESS1, new HashMap<>(), 1, reply -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+  public void testDecoderSendSymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertices[0].eventBus().registerCodec(codec);
+    vertices[1].eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testSend(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
   }
 
   @Test
-  public void testUnregisterCodec() {
-    startNodes(1);
-    EventBus eb = vertices[0].eventBus();
-    class Foo implements Shareable {
-    }
-    class FooCodec implements MessageCodec<Foo> {
-      @Override
-      public Buffer encode(Foo object) {
-        return Buffer.buffer();
-      }
-
-      @Override
-      public Foo decode(Buffer buffer) {
-        return new Foo();
-      }
-    }
-
-    eb.registerCodec(Foo.class, new FooCodec());
-    eb.registerHandler("foo", (Message<Foo> msg) -> {
-      eb.unregisterCodec(Foo.class);
-      try {
-        eb.send("bar", new Foo());
-        fail("Should throw exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
-    });
-    eb.registerHandler("bar", (Message<Foo> msg) -> {
-      fail("Should not be called");
-    });
-
-    eb.send("foo", new Foo());
-
-    await();
+  public void testDecoderReplySymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertices[0].eventBus().registerCodec(codec);
+    vertices[1].eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testReply(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
   }
 
-  private void registerCodecs() {
-    for (Vertx vertx : vertices) {
-      registerCodecs(vertx.eventBus());
-    }
+  @Test
+  public void testDefaultDecoderSendAsymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertices[0].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    vertices[1].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    testSend(new MyPOJO(str), str, null, null);
+  }
+
+  @Test
+  public void testDefaultDecoderReplyAsymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertices[0].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    vertices[1].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    testReply(new MyPOJO(str), str, null, null);
+  }
+
+  @Test
+  public void testDefaultDecoderSendSymetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertices[0].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    vertices[1].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testSend(pojo, pojo, null, null);
+  }
+
+  @Test
+  public void testDefaultDecoderReplySymetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertices[0].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    vertices[1].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testReply(pojo, pojo, null, null);
   }
 
 }

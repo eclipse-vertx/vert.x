@@ -26,9 +26,10 @@ import java.util.Set;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface MultiMap extends Iterable<Map.Entry<String, String>> {
+public interface Headers extends Iterable<Map.Entry<String, String>> {
 
   @GenIgnore
   String get(CharSequence name);
@@ -97,10 +98,10 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @Fluent
-  MultiMap add(String name, String value);
+  Headers add(String name, String value);
 
   @GenIgnore
-  MultiMap add(CharSequence name, CharSequence value);
+  Headers add(CharSequence name, CharSequence value);
 
   /**
    * Adds a new values under the specified name
@@ -111,10 +112,10 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @GenIgnore
-  MultiMap add(String name, Iterable<String> values);
+  Headers add(String name, Iterable<String> values);
 
   @GenIgnore
-  MultiMap add(CharSequence name, Iterable<CharSequence> values);
+  Headers add(CharSequence name, Iterable<CharSequence> values);
 
   /**
    * Adds all the entries from another MultiMap to this one
@@ -122,7 +123,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @Fluent
-  MultiMap addAll(MultiMap headers);
+  Headers addAll(Headers headers);
 
   /**
    * Adds all the entries from a Map to this
@@ -130,7 +131,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @GenIgnore
-  MultiMap addAll(Map<String, String> headers);
+  Headers addAll(Map<String, String> headers);
 
   /**
    * Sets a value under the specified name.
@@ -142,10 +143,10 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @Fluent
-  MultiMap set(String name, String value);
+  Headers set(String name, String value);
 
   @GenIgnore
-  MultiMap set(CharSequence name, CharSequence value);
+  Headers set(CharSequence name, CharSequence value);
 
   /**
    * Sets values for the specified name.
@@ -155,10 +156,10 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @GenIgnore
-  MultiMap set(String name, Iterable<String> values);
+  Headers set(String name, Iterable<String> values);
 
   @GenIgnore
-  MultiMap set(CharSequence name, Iterable<CharSequence> values);
+  Headers set(CharSequence name, Iterable<CharSequence> values);
 
 
   /**
@@ -167,7 +168,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @Fluent
-  MultiMap setAll(MultiMap headers);
+  Headers setAll(Headers headers);
 
   /**
    * Cleans and set all values of the given instance
@@ -175,7 +176,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @GenIgnore
-  MultiMap setAll(Map<String, String> headers);
+  Headers setAll(Map<String, String> headers);
 
  /**
   * Removes the value with the given name
@@ -184,10 +185,10 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   * @return {@code this}
   */
   @Fluent
-  MultiMap remove(String name);
+  Headers remove(String name);
 
   @GenIgnore
-  MultiMap remove(CharSequence name);
+  Headers remove(CharSequence name);
 
 
   /**
@@ -196,7 +197,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return {@code this}
    */
   @Fluent
-  MultiMap clear();
+  Headers clear();
 
   /**
    * Return the number of names.

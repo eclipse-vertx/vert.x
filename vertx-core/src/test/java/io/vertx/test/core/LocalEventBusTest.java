@@ -21,15 +21,16 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
+import io.vertx.core.Headers;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Copyable;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
@@ -233,7 +234,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     long timeout = 1000;
-    eb.sendWithTimeout(ADDRESS1, str, timeout, ar -> {
+    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
     });
     await();
   }
@@ -246,10 +247,10 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       msg.reply(reply);
     });
-    eb.send(ADDRESS1, str, (Message<String> msg) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<String> msg) -> {
       assertEquals(reply, msg.body());
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -260,15 +261,15 @@ public class LocalEventBusTest extends EventBusTestBase {
     String replyReply = TestUtils.randomUnicodeString(1000);
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
-      msg.reply(reply, (Message<String> rep) -> {
+      msg.reply(reply, onSuccess((Message<String> rep) -> {
         assertEquals(replyReply, rep.body());
         testComplete();
-      });
+      }));
     });
-    eb.send(ADDRESS1, str, (Message<String>msg) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<String>msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
-    });
+    }));
     await();
   }
 
@@ -280,7 +281,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       long start = System.currentTimeMillis();
       long timeout = 1000;
-      msg.replyWithTimeout(reply, timeout, ar -> {
+      msg.replyWithOptions(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
         long now = System.currentTimeMillis();
         assertFalse(ar.succeeded());
         Throwable cause = ar.cause();
@@ -292,10 +293,10 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       });
     });
-    eb.send(ADDRESS1, str, (Message<String>msg) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<String>msg) -> {
       assertEquals(reply, msg.body());
       // Now don't reply
-    });
+    }));
     await();
   }
 
@@ -307,35 +308,16 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       long timeout = 1000;
-      msg.replyWithTimeout(reply, timeout, ar -> {
+      msg.replyWithOptions(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
         assertTrue(ar.succeeded());
         assertEquals(replyReply, ar.result().body());
         testComplete();
       });
     });
-    eb.send(ADDRESS1, str, (Message<String>msg) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<String>msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
-    });
-    await();
-  }
-
-  @Test
-  public void testSendWithReplyDefaultTimeout() {
-    long timeout = 1234;
-    eb.setDefaultReplyTimeout(timeout);
-    assertEquals(timeout, eb.getDefaultReplyTimeout());
-    String str = TestUtils.randomUnicodeString(1000);
-    String reply = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
-      assertEquals(str, msg.body());
-      // reply after timeout
-      vertx.setTimer((long)(timeout * 1.5), id -> msg.reply(reply));
-    });
-    eb.send(ADDRESS1, str, (Message<String> msg) -> {
-      fail("Should not be called");
-    });
-    vertx.setTimer(timeout * 2, id -> testComplete());
+    }));
     await();
   }
 
@@ -347,7 +329,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply(23);
     });
     long timeout = 1000;
-    eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
+    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertEquals(23, (int) ar.result().body());
       testComplete();
@@ -363,7 +345,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     long timeout = 1000;
     long start = System.currentTimeMillis();
-    eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
+    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       long now = System.currentTimeMillis();
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
@@ -381,7 +363,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithTimeoutNoHandlers() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
-    eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
+    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -403,7 +385,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.fail(failureCode, failureMsg);
     });
     long timeout = 1000;
-    eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
+    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -426,7 +408,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         msg.reply("too late!");
       });
     });
-    eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
+    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -439,7 +421,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testSendWithTimeouNoTimeoutAfterReply() {
+  public void testSendWithTimeoutNoTimeoutAfterReply() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
@@ -447,7 +429,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply("a reply");
     });
     AtomicBoolean received = new AtomicBoolean();
-    eb.sendWithTimeout(ADDRESS1, str, timeout, (AsyncResult<Message<Integer>> ar) -> {
+    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertFalse(received.get());
       received.set(true);
@@ -460,8 +442,6 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   // Sends with different types
-
-
 
   @Test
   public void testPublish() {
@@ -544,78 +524,6 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testSendPojoShareable() {
-    ShareablePojo pojo = new ShareablePojo("foo");
-    testPublish(pojo, received -> {
-      assertEquals(pojo, received);
-      assertTrue(pojo == received); // Make sure it's *not* copied, since it implements Shareable
-    });
-  }
-
-  @Test
-  public void testPublishPojoShareable() {
-    ShareablePojo pojo = new ShareablePojo("foo");
-    testPublish(pojo, received -> {
-      assertEquals(pojo, received);
-      assertTrue(pojo == received); // Make sure it's *not* copied, since it implements Shareable
-    });
-  }
-
-  @Test
-  public void testReplyPojoShareable() {
-    ShareablePojo pojo = new ShareablePojo("foo");
-    testPublish(pojo, received -> {
-      assertEquals(pojo, received);
-      assertTrue(pojo == received); // Make sure it's *not* copied, since it implements Shareable
-    });
-  }
-
-  @Test
-  public void testSendPojoWithBadCopy() {
-    registerCodecs(eb);
-    SomePojo pojo = new SomePojo("foo", 100, true);
-    eb.registerHandler(ADDRESS1, msg -> {});
-    try {
-      eb.send(ADDRESS1, pojo);
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // OK
-    }
-  }
-
-
-
-  @Test
-  public void testSendNonCloneable() {
-    class Foo {
-    }
-    eb.registerCodec(Foo.class, new MessageCodec<Foo>() {
-      @Override
-      public Buffer encode(Foo object) {
-        return null;
-      }
-
-      @Override
-      public Foo decode(Buffer buffer) {
-        return null;
-      }
-    });
-
-    eb.registerHandler("foo", msg -> {
-      fail("Should not have gotten here");
-    });
-
-    try {
-      eb.send("foo", new Foo());
-      fail("Should not be able to send object Foo");
-    } catch (IllegalArgumentException e) {
-      testComplete();
-    }
-
-    await();
-  }
-
-  @Test
   public void testNonRegisteredCodecType() {
     class Boom {
     }
@@ -639,22 +547,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertTrue(ar.succeeded());
       testComplete();
     });
-    await();
-  }
-
-  @Test
-  public void testSendObjectWithNoCodec() {
-    class MyObject implements Copyable {
-      @Override
-      public Object copy() {
-        return new MyObject();
-      }
-    }
-    // OK to do this on an unclustered event bus
-    eb.registerHandler(ADDRESS1, (Message<MyObject> msg) -> {
-      testComplete();
-    });
-    eb.send(ADDRESS1, new MyObject());
     await();
   }
 
@@ -702,19 +594,19 @@ public class LocalEventBusTest extends EventBusTestBase {
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          vertx.eventBus().send(ADDRESS1, "foo", reply -> {
+          vertx.eventBus().send(ADDRESS1, "foo", onSuccess((Message<Object> reply) -> {
             assertSame(ctx, vertx.currentContext());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
             assertEquals("bar", reply.body());
             testComplete();
-          });
+          }));
         });
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(worker).setMultiThreaded(multiThreaded));
+    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(worker).setMultiThreaded(multiThreaded));
     await();
   }
 
@@ -727,11 +619,11 @@ public class LocalEventBusTest extends EventBusTestBase {
       contexts.add(((VertxInternal) vertx).getContext());
       latch.countDown();
     });
-    vertx.eventBus().send(ADDRESS1, "foo", reply -> {
+    vertx.eventBus().send(ADDRESS1, "foo", onSuccess((Message<Object> reply) -> {
       assertEquals("bar", reply.body());
       contexts.add(((VertxInternal) vertx).getContext());
       latch.countDown();
-    });
+    }));
     awaitLatch(latch);
     assertEquals(2, contexts.size());
   }
@@ -754,45 +646,266 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
   }
 
-  @Override
-  protected <T> void testSend(T val, Consumer<T> consumer) {
-    registerCodecs(eb);
+  @Test
+  public void testHeadersCopiedAfterSend() throws Exception {
+    Headers headers = new CaseInsensitiveHeaders();
+    headers.add("foo", "bar");
+    vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+      assertNotSame(headers, msg.headers());
+      assertEquals("bar", msg.headers().get("foo"));
+      testComplete();
+    });
+    vertx.eventBus().sendWithOptions(ADDRESS1, "foo", DeliveryOptions.options().setHeaders(headers));
+    headers.remove("foo");
+    await();
+  }
 
+  @Test
+  public void testDecoderSendAsymmetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    testSend(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+  }
+
+  @Test
+  public void testDecoderReplyAsymmetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    testReply(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+  }
+
+  @Test
+  public void testDecoderSendSymmetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertx.eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testSend(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+  }
+
+  @Test
+  public void testDecoderReplySymmetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertx.eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testReply(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+  }
+
+  @Test
+  public void testNoRegisteredDecoder() throws Exception {
+    try {
+      vertx.eventBus().sendWithOptions(ADDRESS1, "foo", DeliveryOptions.options().setCodecName("iqwjdoqiwd"));
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testRegisterSystemDecoder() throws Exception {
+    try {
+      vertx.eventBus().registerCodec(new MySystemDecoder());
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testUnregisterDecoder() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerCodec(codec);
+    vertx.eventBus().unregisterCodec(codec.name());
+    try {
+      vertx.eventBus().sendWithOptions(ADDRESS1, new MyPOJO("foo"), DeliveryOptions.options().setCodecName(codec.name()));
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testRegisterTwice() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerCodec(codec);
+    try {
+      vertx.eventBus().registerCodec(codec);
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testCodecNullName() throws Exception {
+    try {
+      vertx.eventBus().registerCodec(new NullNameCodec());
+      fail("Should throw exception");
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testDefaultDecoderSendAsymmetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    testSend(new MyPOJO(str), str, null, null);
+  }
+
+  @Test
+  public void testDefaultDecoderReplyAsymmetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    testReply(new MyPOJO(str), str, null, null);
+  }
+
+  @Test
+  public void testDefaultDecoderSendSymetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testSend(pojo, pojo, null, null);
+  }
+
+  @Test
+  public void testDefaultDecoderReplySymetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MyPOJO(str);
+    testReply(pojo, pojo, null, null);
+  }
+
+  @Test
+  public void testNoRegisteredDefaultDecoder() throws Exception {
+    try {
+      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"));
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testRegisterDefaultSystemDecoder() throws Exception {
+    try {
+      vertx.eventBus().registerDefaultCodec(MyPOJO.class, new MySystemDecoder());
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testUnregisterDefaultDecoder() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    vertx.eventBus().unregisterDefaultCodec(MyPOJO.class);
+    try {
+      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"));
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testRegisterDefaultTwice() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder1();
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    try {
+      vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testDefaultCodecNullName() throws Exception {
+    try {
+      vertx.eventBus().registerDefaultCodec(String.class, new NullNameCodec());
+      fail("Should throw exception");
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+
+  @Override
+  protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
     eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
       if (consumer == null) {
-        assertEquals(val, msg.body());
+        assertEquals(received, msg.body());
+        if (options != null && options.getHeaders() != null) {
+          assertNotNull(msg.headers());
+          assertEquals(options.getHeaders().size(), msg.headers().size());
+          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+            assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+          }
+        }
       } else {
         consumer.accept(msg.body());
       }
       testComplete();
     });
-    eb.send(ADDRESS1, val);
+    if (options != null) {
+      eb.sendWithOptions(ADDRESS1, val, options);
+    } else {
+      eb.send(ADDRESS1, val);
+    }
     await();
   }
 
   @Override
+  protected <T> void testSend(T val, Consumer<T> consumer) {
+    testSend(val, val, consumer, null);
+  }
+
+  @Override
   protected <T> void testReply(T val, Consumer<T> consumer) {
+    testReply(val, val, consumer, null);
+  }
+
+  @Override
+  protected <T, R> void testReply(T val, R received, Consumer<R> consumer, DeliveryOptions options) {
+
     String str = TestUtils.randomUnicodeString(1000);
-    registerCodecs(eb);
     eb.registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
-      msg.reply(val);
+      if (options != null) {
+        msg.replyWithOptions(val, options);
+      } else {
+        msg.reply(val);
+      }
     });
-    eb.send(ADDRESS1, str, (Message<T> reply) -> {
+    eb.send(ADDRESS1, str, onSuccess((Message<R> reply) -> {
       if (consumer == null) {
-        assertEquals(val, reply.body());
+        assertEquals(received, reply.body());
+        if (options != null && options.getHeaders() != null) {
+          assertNotNull(reply.headers());
+          assertEquals(options.getHeaders().size(), reply.headers().size());
+          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+            assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
+          }
+        }
       } else {
         consumer.accept(reply.body());
       }
       testComplete();
-    });
+    }));
     await();
   }
 
   @Override
   protected <T> void testPublish(T val, Consumer<T> consumer) {
-    registerCodecs(eb);
-
     AtomicInteger count = new AtomicInteger();
     class MyHandler implements Handler<Message<T>> {
       @Override

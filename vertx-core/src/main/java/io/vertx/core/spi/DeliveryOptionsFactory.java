@@ -14,29 +14,19 @@
  *   under the License.
  */
 
-package io.vertx.core.eventbus;
+package io.vertx.core.spi;
 
-import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.json.JsonObject;
 
 /**
- *
- * Instances of this class must be stateless as they will be used concurrently.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface MessageCodec<S, R> {
+public interface DeliveryOptionsFactory {
 
-  // Called when object is encoded to wire
-  void encodeToWire(Buffer buffer, S s);
+  DeliveryOptions options();
 
-  // Called when object is decoded from wire
-  R decodeFromWire(int pos, Buffer buffer);
+  DeliveryOptions options(DeliveryOptions other);
 
-  // Used when sending locally and no wire involved
-  // Must, at least, make a copy of the message if it is not immutable
-  R transform(S s);
-
-  String name();
-
-  byte systemCodecID();
+  DeliveryOptions options(JsonObject json);
 }

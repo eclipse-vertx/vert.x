@@ -23,12 +23,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.Registration;
-import io.vertx.core.http.CaseInsensitiveMultiMap;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -39,7 +39,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.RequestOptionsBase;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.impl.HttpHeadersAdapter;
+import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
@@ -950,7 +950,7 @@ public class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(onSuccess(server -> {
-      MultiMap headers = new CaseInsensitiveMultiMap();
+      Headers headers = new CaseInsensitiveHeaders();
       headers.add("foo", "bar");
       client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).setHeaders(headers), resp -> {
         assertEquals(200, resp.statusCode());
@@ -967,7 +967,7 @@ public class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).putHeader("foo", "bar"), resp -> {
+      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).addHeader("foo", "bar"), resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
       });
@@ -1210,7 +1210,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testRequestHeaders(boolean individually) {
-    MultiMap headers = getHeaders(10);
+    Headers headers = getHeaders(10);
 
     server.requestHandler(req -> {
       assertEquals(headers.size() + 1, req.headers().size());
@@ -1246,7 +1246,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testResponseHeaders(boolean individually) {
-    MultiMap headers = getHeaders(10);
+    Headers headers = getHeaders(10);
 
     server.requestHandler(req -> {
       if (individually) {
@@ -1683,7 +1683,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testResponseTrailers(boolean individually) {
-    MultiMap trailers = getHeaders(10);
+    Headers trailers = getHeaders(10);
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -3325,7 +3325,7 @@ public class HttpTest extends HttpTestBase {
           });
         });
         req.endHandler(v -> {
-          MultiMap attrs = req.formAttributes();
+          Headers attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           req.response().end();
         });
@@ -3374,7 +3374,7 @@ public class HttpTest extends HttpTestBase {
           fail("Should get here");
         }));
         req.endHandler(v -> {
-          MultiMap attrs = req.formAttributes();
+          Headers attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("vert x", attrs.get("framework"));
           assertEquals("jvm", attrs.get("runson"));
@@ -3419,7 +3419,7 @@ public class HttpTest extends HttpTestBase {
           fail("Should not get here");
         }));
         req.endHandler(v -> {
-          MultiMap attrs = req.formAttributes();
+          Headers attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("junit-testUserAlias", attrs.get("origin"));
           assertEquals("admin@foo.bar", attrs.get("login"));
@@ -3675,7 +3675,7 @@ public class HttpTest extends HttpTestBase {
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
-    MultiMap headers = new CaseInsensitiveMultiMap();
+    Headers headers = new CaseInsensitiveHeaders();
     assertNull(options.getHeaders());
     assertEquals(options, options.setHeaders(headers));
     assertSame(headers, options.getHeaders());
@@ -3683,7 +3683,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals("/", options.getRequestURI());
     assertEquals(options, options.setRequestURI(randString));
     assertEquals(randString, options.getRequestURI());
-    options.putHeader("foo", "bar");
+    options.addHeader("foo", "bar");
     assertNotNull(options.getHeaders());
     assertEquals("bar", options.getHeaders().get("foo"));
     testComplete();
@@ -3693,7 +3693,7 @@ public class HttpTest extends HttpTestBase {
   public void testCopyRequestOptions() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    MultiMap headers = new CaseInsensitiveMultiMap();
+    Headers headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     RequestOptions options = RequestOptions.options().setPort(port).setHost(host).setHeaders(headers).setRequestURI(uri);
@@ -3717,7 +3717,7 @@ public class HttpTest extends HttpTestBase {
   public void testCopyRequestOptionsJson() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    MultiMap headers = new CaseInsensitiveMultiMap();
+    Headers headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     JsonObject json = new JsonObject();
@@ -3749,7 +3749,7 @@ public class HttpTest extends HttpTestBase {
         int index = i;
         threads[i] = new Thread() {
           public void run() {
-            client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).putHeader("count", String.valueOf(index)), res -> {
+            client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).addHeader("count", String.valueOf(index)), res -> {
               assertEquals(200, res.statusCode());
               assertEquals(String.valueOf(index), res.headers().get("count"));
               latch.countDown();
@@ -3816,7 +3816,7 @@ public class HttpTest extends HttpTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(worker));
+    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(worker));
     await();
   }
 
@@ -3841,7 +3841,7 @@ public class HttpTest extends HttpTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleInstance(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
     await();
   }
 
@@ -3963,9 +3963,9 @@ public class HttpTest extends HttpTestBase {
     server.listen(onSuccess(consumer));
   }
 
-  private static MultiMap getHeaders(int num) {
+  private static Headers getHeaders(int num) {
     Map<String, String> map = genMap(num);
-    MultiMap headers = new HttpHeadersAdapter(new DefaultHttpHeaders());
+    Headers headers = new HeadersAdaptor(new DefaultHttpHeaders());
     for (Map.Entry<String, String> entry : map.entrySet()) {
       headers.add(entry.getKey(), entry.getValue());
     }

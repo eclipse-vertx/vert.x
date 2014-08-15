@@ -18,7 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.Headers;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -95,7 +95,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return The HTTP headers
    */
   @CacheReturn
-  MultiMap headers();
+  Headers headers();
 
   /**
    * Put an HTTP header - fluent API
@@ -126,7 +126,7 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return The HTTP trailers
    */
   @CacheReturn
-  MultiMap trailers();
+  Headers trailers();
 
   /**
    * Put an HTTP trailer - fluent API

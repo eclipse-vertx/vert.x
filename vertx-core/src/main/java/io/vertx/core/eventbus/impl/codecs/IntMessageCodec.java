@@ -14,29 +14,39 @@
  *   under the License.
  */
 
-package io.vertx.core.eventbus;
+package io.vertx.core.eventbus.impl.codecs;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.MessageCodec;
 
 /**
- *
- * Instances of this class must be stateless as they will be used concurrently.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface MessageCodec<S, R> {
+public class IntMessageCodec implements MessageCodec<Integer, Integer> {
 
-  // Called when object is encoded to wire
-  void encodeToWire(Buffer buffer, S s);
+  @Override
+  public void encodeToWire(Buffer buffer, Integer i) {
+    buffer.appendInt(i);
+  }
 
-  // Called when object is decoded from wire
-  R decodeFromWire(int pos, Buffer buffer);
+  @Override
+  public Integer decodeFromWire(int pos, Buffer buffer) {
+    return buffer.getInt(pos);
+  }
 
-  // Used when sending locally and no wire involved
-  // Must, at least, make a copy of the message if it is not immutable
-  R transform(S s);
+  @Override
+  public Integer transform(Integer i) {
+    // Integers are immutable so just return it
+    return i;
+  }
 
-  String name();
+  @Override
+  public String name() {
+    return "int";
+  }
 
-  byte systemCodecID();
+  @Override
+  public byte systemCodecID() {
+    return 3;
+  }
 }
