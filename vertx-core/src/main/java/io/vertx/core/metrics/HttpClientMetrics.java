@@ -23,6 +23,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.impl.VertxInternal;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -32,7 +33,7 @@ import java.util.WeakHashMap;
 public class HttpClientMetrics extends HttpMetrics {
 
   private Map<HttpClientRequest, TimedContext> timings;
-  private Map<HttpClientResponse, HttpClientRequest> requestsToResponses;
+  private Map<HttpClientResponse, WeakReference<HttpClientRequest>> requestsToResponses;
 
   public HttpClientMetrics(VertxInternal vertx, HttpClient client, HttpClientOptions options) {
     super(vertx, instanceName("io.vertx.http.clients", client));
@@ -66,7 +67,7 @@ public class HttpClientMetrics extends HttpMetrics {
   public void beginResponse(HttpClientRequest request, HttpClientResponse response) {
     if (!isEnabled()) return;
 
-    requestsToResponses.put(response, request);
+    requestsToResponses.put(response, new WeakReference<>(request));
   }
 
   public void cancel(HttpClientRequest request) {
@@ -78,7 +79,8 @@ public class HttpClientMetrics extends HttpMetrics {
   public void endResponse(HttpClientResponse response) {
     if (!isEnabled()) return;
 
-    HttpClientRequest req = requestsToResponses.remove(response);
+    WeakReference<HttpClientRequest> ref = requestsToResponses.remove(response);
+    HttpClientRequest req = (ref == null) ? null : ref.get();
     TimedContext ctx = (req == null) ? null : timings.remove(req);
     if (ctx != null) {
       ctx.stop();

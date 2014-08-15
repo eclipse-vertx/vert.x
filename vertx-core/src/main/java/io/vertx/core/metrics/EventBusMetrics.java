@@ -25,7 +25,6 @@ import io.vertx.core.impl.VertxInternal;
  */
 public class EventBusMetrics extends AbstractMetrics {
 
-  //TODO: Do we want to provide metrics for every address ? i.e. inbound/outbound, handlers, etc. This could get overwhelming.
   private Counter handlerCount;
   private Meter messages;
   private Meter receivedMessages;
