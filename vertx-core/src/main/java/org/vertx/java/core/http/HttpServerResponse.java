@@ -16,6 +16,7 @@
 
 package org.vertx.java.core.http;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
@@ -51,6 +52,12 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   HttpServerResponse setStatusCode(int statusCode);
+
+  /**
+   * Set the full status. This sets both the status code and the status message.
+   * @return A reference to this, so multiple method calls can be chained.
+   */
+  HttpServerResponse setStatus(HttpResponseStatus status);
 
   /**
    * The HTTP status message of the response. If this is not specified a default value will be used depending on what
