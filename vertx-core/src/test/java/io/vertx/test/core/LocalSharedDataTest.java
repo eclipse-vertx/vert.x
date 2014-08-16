@@ -89,11 +89,11 @@ public class LocalSharedDataTest extends VertxTestBase {
     map.put(key, bytes);
     byte[] bgot1 = (byte[]) map.get(key);
     assertTrue(bgot1 != bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot1));
+    assertArrayEquals(bytes, bgot1);
     byte[] bgot2 = (byte[]) map.get(key);
     assertTrue(bgot2 != bytes);
     assertTrue(bgot1 != bgot2);
-    assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
+    assertArrayEquals(bytes, bgot2);
 
     try {
       map.put(key, new SomeOtherClass());

@@ -879,7 +879,7 @@ public class FileSystemTest extends VertxTestBase {
       if (ar.failed()) {
         fail(ar.cause().getMessage());
       } else {
-        assertTrue(TestUtils.buffersEqual(Buffer.buffer(content), ar.result()));
+        assertEquals(Buffer.buffer(content), ar.result());
         testComplete();
       }
     });
@@ -904,7 +904,7 @@ public class FileSystemTest extends VertxTestBase {
           fail(e.getMessage());
           return;
         }
-        assertTrue(TestUtils.buffersEqual(buff, Buffer.buffer(readBytes)));
+        assertEquals(buff, Buffer.buffer(readBytes));
         testComplete();
       }
     });
@@ -940,7 +940,7 @@ public class FileSystemTest extends VertxTestBase {
                       return;
                     }
                     Buffer read = Buffer.buffer(readBytes);
-                    assertTrue(TestUtils.buffersEqual(buff, read));
+                    assertEquals(buff, read);
                     testComplete();
                   }
                 });
@@ -977,7 +977,7 @@ public class FileSystemTest extends VertxTestBase {
                   if (ar.failed()) {
                     fail(ar.cause().getMessage());
                   } else {
-                    assertTrue(TestUtils.buffersEqual(expected, buff));
+                    assertEquals(expected, buff);
                     assertEquals(buff, arb.result());
                     testComplete();
                   }
@@ -1023,7 +1023,7 @@ public class FileSystemTest extends VertxTestBase {
               fail(e.getMessage());
               return;
             }
-            assertTrue(TestUtils.buffersEqual(buff, Buffer.buffer(readBytes)));
+            assertEquals(buff, Buffer.buffer(readBytes));
             testComplete();
           }
         });
@@ -1060,7 +1060,7 @@ public class FileSystemTest extends VertxTestBase {
               fail(e.getMessage());
               return;
             }
-            assertTrue(TestUtils.buffersEqual(buff, Buffer.buffer(readBytes)));
+            assertEquals(buff, Buffer.buffer(readBytes));
             byteBuf.release();
             testComplete();
           }
@@ -1090,7 +1090,7 @@ public class FileSystemTest extends VertxTestBase {
             if (ar2.failed()) {
               fail(ar2.cause().getMessage());
             } else {
-              assertTrue(TestUtils.buffersEqual(buff, Buffer.buffer(content)));
+              assertEquals(buff, Buffer.buffer(content));
               testComplete();
             }
           });
@@ -1138,7 +1138,7 @@ public class FileSystemTest extends VertxTestBase {
                         fail(e.getMessage());
                         return;
                       }
-                      assertTrue(TestUtils.buffersEqual(Buffer.buffer(content), Buffer.buffer(readBytes)));
+                      assertEquals(Buffer.buffer(content), Buffer.buffer(readBytes));
                       testComplete();
                     }
                   });
