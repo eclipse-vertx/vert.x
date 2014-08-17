@@ -187,20 +187,6 @@ public class TestUtils {
   }
 
   /**
-   * Determine if two Buffer objects are equal
-   * @param b1 The first buffer to compare
-   * @param b2 The second buffer to compare
-   * @return true if the Buffers are equal
-   */
-  public static boolean buffersEqual(Buffer b1, Buffer b2) {
-    if (b1.length() != b2.length()) return false;
-    for (int i = 0; i < b1.length(); i++) {
-      if (b1.getByte(i) != b2.getByte(i)) return false;
-    }
-    return true;
-  }
-
-  /**
    * Determine if two byte arrays are equal
    * @param b1 The first byte array to compare
    * @param b2 The second byte array to compare

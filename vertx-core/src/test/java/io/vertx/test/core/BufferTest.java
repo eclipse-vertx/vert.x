@@ -606,12 +606,12 @@ public class BufferTest {
     Buffer b = TestUtils.randomBuffer(100);
     buff.setBuffer(50, b);
     byte[] b2 = buff.getBytes(50, 150);
-    assertTrue(TestUtils.buffersEqual(b, Buffer.buffer(b2)));
+    assertEquals(b, Buffer.buffer(b2));
 
     byte[] b3 = TestUtils.randomByteArray(100);
     buff.setBytes(50, b3);
     byte[] b4 = buff.getBytes(50, 150);
-    assertTrue(TestUtils.buffersEqual(Buffer.buffer(b3), Buffer.buffer(b4)));
+    assertEquals(Buffer.buffer(b3), Buffer.buffer(b4));
   }
 
   @Test
@@ -689,14 +689,15 @@ public class BufferTest {
   @Test
   public void testCopy() throws Exception {
     Buffer buff = TestUtils.randomBuffer(100);
-    assertTrue(TestUtils.buffersEqual(buff, buff.copy()));
+    assertEquals(buff, buff.copy());
 
     Buffer copy = buff.getBuffer(0, buff.length());
-    assertTrue(TestUtils.buffersEqual(buff, copy));
+    assertEquals(buff, copy);
 
     //Make sure they don't share underlying buffer
+    Buffer copy2 = buff.copy();
     buff.setInt(0, 1);
-    assertFalse(TestUtils.buffersEqual(buff, copy));
+    assertEquals(copy, copy2);
   }
 
   @Test
@@ -714,14 +715,14 @@ public class BufferTest {
     byte[] bytes = TestUtils.randomByteArray(100);
     buff = Buffer.buffer(bytes);
     assertEquals(buff.length(), bytes.length);
-    assertTrue(TestUtils.buffersEqual(Buffer.buffer(bytes), Buffer.buffer(buff.getBytes())));
+    assertEquals(Buffer.buffer(bytes), Buffer.buffer(buff.getBytes()));
   }
 
   @Test
   public void testSlice1() throws Exception {
     Buffer buff = TestUtils.randomBuffer(100);
     Buffer sliced = buff.slice();
-    assertTrue(TestUtils.buffersEqual(buff, sliced));
+    assertEquals(buff, sliced);
     long rand = TestUtils.randomLong();
     sliced.setLong(0, rand);
     assertEquals(rand, buff.getLong(0));

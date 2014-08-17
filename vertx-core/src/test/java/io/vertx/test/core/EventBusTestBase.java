@@ -101,7 +101,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testSendBuffer() {
     Buffer sent = TestUtils.randomBuffer(100);
     testSend(sent, (buffer) -> {
-      TestUtils.buffersEqual(sent, buffer);
+      assertEquals(sent, buffer);
       assertFalse(sent == buffer); // Make sure it's copied
     });
   }
@@ -110,7 +110,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testReplyBuffer() {
     Buffer sent = TestUtils.randomBuffer(100);
     testReply(sent, (bytes) -> {
-      TestUtils.buffersEqual(sent, bytes);
+      assertEquals(sent, bytes);
       assertFalse(sent == bytes); // Make sure it's copied
     });
   }
@@ -119,7 +119,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testPublishBuffer() {
     Buffer sent = TestUtils.randomBuffer(100);
     testPublish(sent, (buffer) -> {
-      TestUtils.buffersEqual(sent, buffer);
+      assertEquals(sent, buffer);
       assertFalse(sent == buffer); // Make sure it's copied
     });
   }

@@ -270,7 +270,7 @@ public class DeploymentManager {
       parent.addChild(deployment);
       deployment.child = true;
     }
-    JsonObject conf = options.getConfig() == null ? null : options.getConfig().copy(); // Copy it
+    JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
     context.runOnContext(v -> {
       try {
         verticle.setVertx(vertx);

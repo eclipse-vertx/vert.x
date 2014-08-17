@@ -896,7 +896,7 @@ public class DeploymentTest extends VertxTestBase {
     assertNotNull(ar.result());
     assertEquals(deploymentID, verticle.getDeploymentID());
     if (config == null) {
-      assertNull(verticle.getConfig());
+      assertEquals(0, verticle.getConfig().size());
     } else {
       assertEquals(config, verticle.getConfig());
     }

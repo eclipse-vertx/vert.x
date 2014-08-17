@@ -226,8 +226,8 @@ public class RecordParserTest {
 
   private void checkResults(Buffer[] expected, Buffer[] results) {
     for (int i = 0; i < expected.length; i++) {
-      assertTrue("Expected:" + expected[i] + " length:" + expected[i].length() +
-        " Actual:" + results[i] + " length:" + results[i].length(), TestUtils.buffersEqual(expected[i], results[i]));
+      assertEquals("Expected:" + expected[i] + " length:" + expected[i].length() +
+        " Actual:" + results[i] + " length:" + results[i].length(), expected[i], results[i]);
     }
   }
 
