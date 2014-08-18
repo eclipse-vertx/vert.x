@@ -48,8 +48,10 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Set the result. Any handler will be called, if there is one
+   *
+   * @throws IllegalStateException when the future is already completed
    */
-  Future<T> setResult(T result);
+  Future<T> setResult(T result) throws IllegalStateException;
 
   /**
    * Set the failure. Any handler will be called, if there is one
