@@ -103,7 +103,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private final HttpServerOptions options;
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
-  private final HttpServerMetrics metrics;
+  private HttpServerMetrics metrics;
   private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
@@ -131,7 +131,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
-    this.metrics = new HttpServerMetrics(vertx, options);
+    this.metrics = new HttpServerMetrics(vertx, options.getHost(), options.getPort());
   }
 
   @Override
@@ -259,6 +259,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         addHandlers(actualServer, listenContext);
+        metrics = new HttpServerMetrics(vertx, options.getHost(), options.getPort());
       }
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override

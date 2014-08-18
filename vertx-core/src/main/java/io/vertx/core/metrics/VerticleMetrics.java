@@ -28,9 +28,11 @@ public class VerticleMetrics extends AbstractMetrics {
 
   public VerticleMetrics(VertxInternal vertx) {
     super(vertx, "io.vertx.verticle");
-    if (isEnabled()) {
-      instanceCounter = counter("instances");
-    }
+  }
+
+  @Override
+  protected void initializeMetrics() {
+    instanceCounter = counter("instances");
   }
 
   public void deployed(Verticle verticle) {

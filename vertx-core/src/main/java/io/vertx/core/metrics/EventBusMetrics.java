@@ -32,12 +32,15 @@ public class EventBusMetrics extends AbstractMetrics {
 
   public EventBusMetrics(VertxInternal vertx) {
     super(vertx, "io.vertx.eventbus");
-    if (isEnabled()) {
-      this.handlerCount = counter("handlers");
-      this.messages = meter("messages");
-      this.receivedMessages = meter("messages-received");
-      this.sentMessages = meter("messages-sent");
-    }
+  }
+
+  @Override
+  protected void initializeMetrics() {
+    super.initializeMetrics();
+    this.handlerCount = counter("handlers");
+    this.messages = meter("messages");
+    this.receivedMessages = meter("messages-received");
+    this.sentMessages = meter("messages-sent");
   }
 
   public void register(String address) {

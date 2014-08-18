@@ -16,7 +16,6 @@
 
 package io.vertx.core.metrics;
 
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.VertxInternal;
@@ -31,11 +30,14 @@ public class HttpServerMetrics extends HttpMetrics {
 
   private Map<HttpServerResponse, TimedContext> timings;
 
-  public HttpServerMetrics(VertxInternal vertx, HttpServerOptions options) {
-    super(vertx, addressName("io.vertx.http.servers", options.getHost(), options.getPort()));
-    if (isEnabled()) {
-      timings = new WeakHashMap<>();
-    }
+  public HttpServerMetrics(VertxInternal vertx, String host, int port) {
+    super(vertx, addressName("io.vertx.http.servers", host, port));
+  }
+
+  @Override
+  protected void initializeMetrics() {
+    super.initializeMetrics();
+    timings = new WeakHashMap<>();
   }
 
   public void beginRequest(HttpServerRequest request, HttpServerResponse response) {

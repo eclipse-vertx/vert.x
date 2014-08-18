@@ -67,7 +67,7 @@ public class NetServerImpl implements NetServer, Closeable {
   private final NetServerOptions options;
   private final ContextImpl creatingContext;
   private final SSLHelper sslHelper;
-  private final NetworkMetrics metrics;
+  private NetworkMetrics metrics;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
@@ -93,7 +93,6 @@ public class NetServerImpl implements NetServer, Closeable {
       }
       creatingContext.addCloseHook(this);
     }
-    this.metrics = new NetServerMetrics(vertx, options);
   }
 
   @Override
@@ -179,6 +178,7 @@ public class NetServerImpl implements NetServer, Closeable {
               NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
+              metrics = new NetServerMetrics(vertx, id.host, id.port);
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -203,6 +203,7 @@ public class NetServerImpl implements NetServer, Closeable {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
+        metrics = new NetServerMetrics(vertx, id.host, id.port);
         if (connectHandler != null) {
           actualServer.handlerManager.addHandler(connectHandler, listenContext);
         }

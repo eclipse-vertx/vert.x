@@ -31,9 +31,12 @@ public abstract class HttpMetrics extends NetworkMetrics {
 
   public HttpMetrics(VertxInternal vertx, String baseName) {
     super(vertx, baseName);
-    if (isEnabled()) {
-      requests = timer("requests");
-    }
+  }
+
+  @Override
+  protected void initializeMetrics() {
+    super.initializeMetrics();
+    requests = timer("requests");
   }
 
   /**

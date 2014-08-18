@@ -29,9 +29,11 @@ public class VertxMetrics extends AbstractMetrics {
 
   public VertxMetrics(VertxInternal vertx) {
     super(vertx, "io.vertx");
-    if (isEnabled()) {
-      timers = counter("timers");
-    }
+  }
+
+  @Override
+  protected void initializeMetrics() {
+    timers = counter("timers");
   }
 
   public void newVertx(VertxOptions options) {
