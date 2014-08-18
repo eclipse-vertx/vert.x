@@ -36,13 +36,27 @@ import static com.codahale.metrics.MetricRegistry.*;
  */
 abstract class AbstractMetrics {
   private final MetricRegistry registry;
-  private final String baseName;
+  private String baseName;
   private boolean enabled;
 
   public AbstractMetrics(VertxInternal vertx, String baseName) {
     this.registry = vertx.metricRegistry();
     this.baseName = baseName;
     this.enabled = registry != null;
+    if (enabled) {
+      initializeMetrics();
+    }
+  }
+
+  protected void initializeMetrics() {
+  }
+
+  protected void setBaseName(String baseName) {
+    this.baseName = baseName;
+  }
+
+  protected String baseName() {
+    return baseName;
   }
 
   public boolean isEnabled() {

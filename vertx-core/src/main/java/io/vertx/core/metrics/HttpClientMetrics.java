@@ -34,27 +34,31 @@ public class HttpClientMetrics extends HttpMetrics {
 
   private Map<HttpClientRequest, TimedContext> timings;
   private Map<HttpClientResponse, WeakReference<HttpClientRequest>> requestsToResponses;
+  private final int maxPoolSize;
 
   public HttpClientMetrics(VertxInternal vertx, HttpClient client, HttpClientOptions options) {
     super(vertx, instanceName("io.vertx.http.clients", client));
-    int maxPoolSize = options.getMaxPoolSize();
-    if (isEnabled()) {
-      // request timings
-      timings = new WeakHashMap<>();
-      requestsToResponses = new WeakHashMap<>();
+    maxPoolSize = options.getMaxPoolSize();
+  }
 
-      // max pool size gauge
-      gauge(() -> maxPoolSize, "connections", "max-pool-size");
+  @Override
+  protected void initializeMetrics() {
+    super.initializeMetrics();
+    // request timings
+    timings = new WeakHashMap<>();
+    requestsToResponses = new WeakHashMap<>();
 
-      // connection pool ratio
-      RatioGauge gauge = new RatioGauge() {
-        @Override
-        protected Ratio getRatio() {
-          return Ratio.of(connections(), maxPoolSize);
-        }
-      };
-      gauge(gauge, "connections", "pool-ratio");
-    }
+    // max pool size gauge
+    gauge(() -> maxPoolSize, "connections", "max-pool-size");
+
+    // connection pool ratio
+    RatioGauge gauge = new RatioGauge() {
+      @Override
+      protected Ratio getRatio() {
+        return Ratio.of(connections(), maxPoolSize);
+      }
+    };
+    gauge(gauge, "connections", "pool-ratio");
   }
 
   public void beginRequest(HttpClientRequest request) {

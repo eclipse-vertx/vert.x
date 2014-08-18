@@ -39,14 +39,16 @@ public abstract class NetworkMetrics extends AbstractMetrics {
 
   public NetworkMetrics(VertxInternal vertx, String baseName) {
     super(vertx, baseName);
-    if (isEnabled()) {
-      this.connections = counter("connections");
-      this.connectionLifetime = timer("connection-lifetime");
+  }
 
-      this.bytesRead = histogram("bytes-read");
-      this.bytesWritten = histogram("bytes-written");
-      this.connectionLifetimes = new WeakHashMap<>();
-    }
+  @Override
+  protected void initializeMetrics() {
+    this.connections = counter("connections");
+    this.connectionLifetime = timer("connection-lifetime");
+
+    this.bytesRead = histogram("bytes-read");
+    this.bytesWritten = histogram("bytes-written");
+    this.connectionLifetimes = new WeakHashMap<>();
   }
 
   public void connectionOpened(ConnectionBase connection) {

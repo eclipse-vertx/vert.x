@@ -23,7 +23,7 @@ import io.vertx.core.net.NetServerOptions;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class NetServerMetrics extends NetworkMetrics {
-  public NetServerMetrics(VertxInternal vertx, NetServerOptions options) {
-    super(vertx, addressName("io.vertx.net.servers", options.getHost(), options.getPort()));
+  public NetServerMetrics(VertxInternal vertx, String host, int port) {
+    super(vertx, addressName("io.vertx.net.servers", host, port));
   }
 }
