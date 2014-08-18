@@ -27,4 +27,6 @@ public class NetClientMetrics extends NetworkMetrics {
   public NetClientMetrics(VertxInternal vertx, NetClient client, NetClientOptions options) {
     super(vertx, instanceName("io.vertx.net.clients", client));
   }
+
+  //TODO: Request latency
 }

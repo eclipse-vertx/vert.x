@@ -48,6 +48,7 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.VertxMetrics;
 import io.vertx.core.metrics.reporters.JmxMetricReporter;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -91,6 +92,7 @@ public class VertxImpl implements VertxInternal {
   private final FileSystem fileSystem = getFileSystem();
   private EventBus eventBus;
   private final SharedData sharedData;
+  private VertxMetrics metrics;
   private MetricRegistry metricRegistry;
   private JmxMetricReporter jmxMetricReporter;
 
@@ -155,6 +157,8 @@ public class VertxImpl implements VertxInternal {
         resultHandler.handle(Future.completedFuture(this));
       }
     }
+    this.metrics = new VertxMetrics(this);
+    metrics.newVertx(options);
   }
 
   /**
@@ -553,6 +557,7 @@ public class VertxImpl implements VertxInternal {
 
     boolean cancel() {
       cancelled = true;
+      metrics.cancelTimer(timerID);
       return future.cancel(false);
     }
 
@@ -561,6 +566,7 @@ public class VertxImpl implements VertxInternal {
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
+      metrics.setTimer(timerID, periodic);
     }
 
     public void run() throws Exception {
@@ -578,6 +584,7 @@ public class VertxImpl implements VertxInternal {
 
     private void cleanupNonPeriodic() {
       VertxImpl.this.timeouts.remove(timerID);
+      metrics.finishedTimer(timerID);
       ContextImpl context = getContext();
       context.removeCloseHook(this);
     }
