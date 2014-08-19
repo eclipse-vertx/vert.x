@@ -19,7 +19,6 @@ package io.vertx.test.core;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import org.junit.Before;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -33,8 +32,8 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
 
   protected final int numNodes = 2;
 
-  @Before
-  public void before() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     startNodes(numNodes);
   }
 

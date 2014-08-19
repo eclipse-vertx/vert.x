@@ -37,8 +37,6 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
@@ -58,20 +56,20 @@ public class LocalEventBusTest extends EventBusTestBase {
   private Vertx vertx;
   private EventBus eb;
 
-  @Before
-  public void before() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     vertx = Vertx.vertx();
     eb = vertx.eventBus();
   }
 
-  @After
-  public void after() throws Exception {
+  protected void tearDown() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     vertx.close(ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
     assertTrue(latch.await(30, TimeUnit.SECONDS));
+    super.tearDown();
   }
 
   @Test

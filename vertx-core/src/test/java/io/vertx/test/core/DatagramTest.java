@@ -22,7 +22,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.JsonObject;
-import org.junit.After;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -41,8 +40,7 @@ public class DatagramTest extends VertxTestBase {
   private volatile DatagramSocket peer1;
   private volatile DatagramSocket peer2;
 
-  @After
-  public void after() throws Exception {
+  protected void tearDown() throws Exception {
     if (peer1 != null) {
       CountDownLatch latch = new CountDownLatch(2);
       peer1.close(ar -> {
@@ -59,6 +57,7 @@ public class DatagramTest extends VertxTestBase {
       });
       latch.await(10L, TimeUnit.SECONDS);
     }
+    super.tearDown();
   }
 
   @Test

@@ -18,7 +18,6 @@ package io.vertx.test.core;
 
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.impl.hazelcast.HazelcastClusterManager;
-import org.junit.Test;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -26,6 +25,7 @@ import org.junit.Test;
 public class HazelcastClusteredEventbusTest extends ClusteredEventBusTest {
 
   static {
+    System.setProperty("hazelcast.wait.seconds.before.join", "0");
     System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
   }
 
@@ -34,8 +34,4 @@ public class HazelcastClusteredEventbusTest extends ClusteredEventBusTest {
     return new HazelcastClusterManager();
   }
 
-  @Test
-  public void testFoo() {
-
-  }
 }

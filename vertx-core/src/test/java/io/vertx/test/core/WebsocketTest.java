@@ -17,7 +17,6 @@
 package io.vertx.test.core;
 
 
-import io.vertx.core.Future;
 import io.vertx.core.Headers;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
@@ -32,8 +31,6 @@ import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.security.MessageDigest;
@@ -57,13 +54,12 @@ public class WebsocketTest extends NetTestBase {
   private HttpClient client;
   private HttpServer server;
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     client = vertx.createHttpClient(HttpClientOptions.options());
   }
 
-  @After
-  public void after() throws Exception {
+  protected void tearDown() throws Exception {
     client.close();
     if (server != null) {
       CountDownLatch latch = new CountDownLatch(1);
@@ -73,6 +69,7 @@ public class WebsocketTest extends NetTestBase {
       });
       awaitLatch(latch);
     }
+    super.tearDown();
   }
 
   @Test

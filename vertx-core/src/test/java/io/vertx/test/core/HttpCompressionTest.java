@@ -19,7 +19,6 @@ package io.vertx.test.core;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.RequestOptions;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -28,8 +27,8 @@ import org.junit.Test;
  */
 public class HttpCompressionTest extends HttpTestBase {
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     client = vertx.createHttpClient(HttpClientOptions.options().setTryUseCompression(true));
     server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setCompressionSupported(true));
   }

@@ -3,7 +3,6 @@ package io.vertx.test.core;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.SharedData;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Random;
@@ -15,8 +14,8 @@ public class LocalSharedDataTest extends VertxTestBase {
 
   private SharedData sharedData;
 
-  @Before
-  public void before() {    
+  public void setUp() throws Exception {
+    super.setUp();
     sharedData = vertx.sharedData();
   }
 

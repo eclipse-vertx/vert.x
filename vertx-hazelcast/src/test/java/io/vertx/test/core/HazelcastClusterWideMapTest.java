@@ -25,6 +25,7 @@ import io.vertx.spi.cluster.impl.hazelcast.HazelcastClusterManager;
 public class HazelcastClusterWideMapTest extends ClusterWideMapTestDifferentNodes {
 
   static {
+    System.setProperty("hazelcast.wait.seconds.before.join", "0");
     System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
   }
 
@@ -32,4 +33,5 @@ public class HazelcastClusterWideMapTest extends ClusterWideMapTestDifferentNode
   protected ClusterManager getClusterManager() {
     return new HazelcastClusterManager();
   }
+
 }

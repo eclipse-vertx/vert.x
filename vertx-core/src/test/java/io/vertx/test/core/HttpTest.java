@@ -98,8 +98,8 @@ public class HttpTest extends HttpTestBase {
 
   private File testDir;
 
-  @Before
-  public void before() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     testDir = Files.createTempDirectory("vertx-test").toFile();
     testDir.deleteOnExit();
     server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));

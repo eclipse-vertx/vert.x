@@ -22,7 +22,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -40,11 +39,10 @@ public class ClusterWideMapTest extends VertxTestBase {
     return vertices[0];
   }
 
-  @Before
-  public void before() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     startNodes(getNumNodes());
   }
-
 
   @Override
   protected ClusterManager getClusterManager() {

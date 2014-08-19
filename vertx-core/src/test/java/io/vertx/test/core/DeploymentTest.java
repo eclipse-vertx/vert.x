@@ -56,8 +56,8 @@ import java.util.function.Consumer;
  */
 public class DeploymentTest extends VertxTestBase {
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     TestVerticle.instanceCount.set(0);
   }
 

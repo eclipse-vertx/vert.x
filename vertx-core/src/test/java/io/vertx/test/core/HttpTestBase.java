@@ -20,10 +20,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.RequestOptionsBase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -40,13 +36,12 @@ public class HttpTestBase extends NetTestBase {
   protected HttpServer server;
   protected HttpClient client;
 
-  @Before
-  public void beforeHttpTestBase() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
   }
 
-  @After
-  public void afterHttpTestBase() throws Exception {
+  protected void tearDown() throws Exception {
     if (client != null) {
       client.close();
     }
@@ -58,6 +53,7 @@ public class HttpTestBase extends NetTestBase {
       });
       awaitLatch(latch);
     }
+    super.tearDown();
   }
 
   @SuppressWarnings("unchecked")

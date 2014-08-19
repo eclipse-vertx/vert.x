@@ -5,6 +5,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.file.impl.ClasspathPathResolver;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.CaOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -13,8 +15,6 @@ import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import org.junit.After;
-import org.junit.Before;
 
 import java.net.URL;
 import java.nio.file.Path;
@@ -28,23 +28,24 @@ import java.util.function.Consumer;
  */
 public class VertxTestBase extends AsyncTestBase {
 
+  private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
+
   protected Vertx vertx;
 
   protected Vertx[] vertices;
 
-  private void init() {
+  protected void vinit() {
     vertx = null;
     vertices = null;
   }
 
-  @Before
-  public void beforeVertxTestBase() throws Exception {
-    init();
+  public void setUp() throws Exception {
+    super.setUp();
+    vinit();
     vertx = Vertx.vertx();
   }
 
-  @After
-  public void afterVertxTestBase() throws Exception {
+  protected void tearDown() throws Exception {
     if (vertx != null) {
       CountDownLatch latch = new CountDownLatch(1);
       vertx.close(ar -> {
@@ -57,6 +58,9 @@ public class VertxTestBase extends AsyncTestBase {
       for (Vertx vertx: vertices) {
         if (vertx != null) {
           vertx.close(ar -> {
+            if (ar.failed()) {
+              log.error("Failed to shutdown vert.x", ar.cause());
+            }
             latch.countDown();
           });
         }
@@ -64,6 +68,7 @@ public class VertxTestBase extends AsyncTestBase {
       assertTrue(latch.await(180, TimeUnit.SECONDS));
     }
     FakeClusterManager.reset(); // Bit ugly
+    super.tearDown();
   }
 
   protected ClusterManager getClusterManager() {

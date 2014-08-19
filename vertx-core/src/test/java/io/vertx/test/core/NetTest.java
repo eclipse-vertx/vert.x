@@ -43,8 +43,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketDefaults;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -73,8 +71,8 @@ public class NetTest extends NetTestBase {
   private NetServer server;
   private NetClient client;
 
-  @Before
-  public void before() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     client = vertx.createNetClient(NetClientOptions.options().setConnectTimeout(1000));
     server = vertx.createNetServer(NetServerOptions.options().setPort(1234).setHost("localhost"));
   }
@@ -87,14 +85,14 @@ public class NetTest extends NetTestBase {
     awaitLatch(latch);
   }
 
-  @After
-  public void after() throws Exception {
+  protected void tearDown() throws Exception {
     if (client != null) {
       client.close();
     }
     if (server != null) {
       awaitClose(server);
     }
+    super.tearDown();
   }
 
   @Test

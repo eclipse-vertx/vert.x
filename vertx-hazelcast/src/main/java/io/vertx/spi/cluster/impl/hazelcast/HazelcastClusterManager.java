@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -207,13 +208,26 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
       if (!active) {
         return null;
       } else {
-        active = false;
-        boolean left = hazelcast.getCluster().removeMembershipListener(membershipListenerId);
-        if (!left) {
-          log.warn("No membership listener");
+        try {
+          active = false;
+          boolean left = hazelcast.getCluster().removeMembershipListener(membershipListenerId);
+          if (!left) {
+            log.warn("No membership listener");
+          }
+          while (hazelcast.getLifecycleService().isRunning()) {
+            try {
+              // This can sometimes throw java.util.concurrent.RejectedExecutionException so we retry.
+              hazelcast.getLifecycleService().shutdown();
+            } catch (RejectedExecutionException ignore) {
+              ignore.printStackTrace();
+            }
+            Thread.sleep(1);
+          }
+          return null;
+        } catch (Throwable t) {
+          t.printStackTrace();
+          throw new RuntimeException(t.getMessage());
         }
-        hazelcast.getLifecycleService().shutdown();
-        return null;
       }
     }, resultHandler);
   }

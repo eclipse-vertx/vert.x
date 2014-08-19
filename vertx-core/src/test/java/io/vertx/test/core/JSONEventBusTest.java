@@ -20,7 +20,6 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -35,8 +34,8 @@ public class JSONEventBusTest extends VertxTestBase {
 
   private EventBus eb;
 
-  @Before
-  public void before() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     eb = vertx.eventBus();
   }
 

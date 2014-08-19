@@ -41,7 +41,7 @@ public class AsyncTestBase {
   private boolean threadChecksEnabled = true;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
 
-  private void init() {
+  protected void setUp() throws Exception {
     latch = new CountDownLatch(1);
     throwable = null;
     testCompleteCalled = false;
@@ -50,9 +50,18 @@ public class AsyncTestBase {
     threadNames.clear();
   }
 
+  protected void tearDown() throws Exception {
+    afterAsyncTestBase();
+  }
+
   @Before
-  public void beforeAsyncTestBase() {
-    init();
+  public void before() throws Exception {
+    setUp();
+  }
+
+  @After
+  public void after() throws Exception {
+    tearDown();
   }
 
   protected void testComplete() {
@@ -107,8 +116,7 @@ public class AsyncTestBase {
     threadChecksEnabled = false;
   }
 
-  @After
-  public void afterAsyncTestBase() {
+  protected void afterAsyncTestBase() {
     checkTestCompleteCalled();
     if (threadChecksEnabled) {
       for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {

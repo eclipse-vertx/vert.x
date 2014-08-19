@@ -55,7 +55,7 @@
     </file>
     <file>
       <outputDirectory>/conf</outputDirectory>
-      <source>${project.basedir}/../vertx-core/src/main/resources/logging.properties</source>
+      <source>${project.basedir}/src/conf/logging.properties</source>
     </file>
   </files>
 </assembly>

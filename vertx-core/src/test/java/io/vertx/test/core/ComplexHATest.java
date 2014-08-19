@@ -24,7 +24,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -58,8 +57,8 @@ public class ComplexHATest extends VertxTestBase {
   protected volatile int killedNode;
   protected List<Integer> aliveNodes;
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     deploymentSnapshots = null;
     totDeployed = 0;
     killedNode = 0;

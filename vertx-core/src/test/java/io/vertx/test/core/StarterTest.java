@@ -17,7 +17,6 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Starter;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -25,8 +24,8 @@ import org.junit.Test;
  */
 public class StarterTest extends VertxTestBase {
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     TestVerticle.instanceCount.set(0);
   }
 

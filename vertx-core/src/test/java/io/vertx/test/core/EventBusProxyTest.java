@@ -23,7 +23,6 @@ import io.vertx.core.VertxException;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -35,8 +34,8 @@ public class EventBusProxyTest extends VertxTestBase {
   protected MyService proxy;
   protected MyServiceImpl impl;
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     eb = vertx.eventBus();
     impl = new MyServiceImpl();
     eb.registerService(impl, "service_address");

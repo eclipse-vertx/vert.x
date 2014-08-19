@@ -17,8 +17,6 @@ package io.vertx.test.core;
  *
  */
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.ComparisonFailure;
 import org.junit.Test;
 
@@ -33,15 +31,15 @@ public class AsyncTestBaseTest extends AsyncTestBase {
 
   private ExecutorService executor;
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     disableThreadChecks();
     executor = Executors.newFixedThreadPool(10);
   }
 
-  @After
-  public void after() throws Exception {
+  protected void tearDown() throws Exception {
     executor.shutdownNow();
+    super.tearDown();
   }
 
   @Test

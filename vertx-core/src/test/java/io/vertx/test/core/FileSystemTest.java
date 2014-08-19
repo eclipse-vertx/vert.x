@@ -32,8 +32,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -64,17 +62,13 @@ public class FileSystemTest extends VertxTestBase {
   private String pathSep;
   private String testDir;
 
-  @Before
-  public void before() throws Exception {
+  public void setUp() throws Exception {
+    super.setUp();
     java.nio.file.FileSystem fs = FileSystems.getDefault();
     pathSep = fs.getSeparator();
     File ftestDir = Files.createTempDirectory("vertx-test").toFile();
     ftestDir.deleteOnExit();
     testDir = ftestDir.toString();
-  }
-
-  @After
-  public void after() {
   }
 
   @Test

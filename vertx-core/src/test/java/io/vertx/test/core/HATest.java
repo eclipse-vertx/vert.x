@@ -75,10 +75,10 @@ public class HATest extends VertxTestBase {
     // Shouldn't deploy until a quorum is obtained
     Thread.sleep(500);
     assertTrue(vertx1.deployments().isEmpty());
-    startVertx(2);
+    Vertx vertx2 = startVertx(2);
     // Now should be deployed
     await();
-    closeVertices(vertx1);
+    closeVertices(vertx1, vertx2);
   }
 
   @Rule
@@ -294,6 +294,7 @@ public class HATest extends VertxTestBase {
 
   @Test
   public void testQuorumWithHaGroups() throws Exception {
+
     Vertx vertx1 = startVertx("group1", 2);
     Vertx vertx2 = startVertx("group2", 2);
 

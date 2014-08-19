@@ -21,7 +21,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -29,8 +28,8 @@ import org.junit.Test;
  */
 public class VerticleFactoryTest extends VertxTestBase {
 
-  @Before
-  public void before() {
+  public void setUp() throws Exception {
+    super.setUp();
     // Unregister the factory that's loaded from the classpath
     VerticleFactory factory = vertx.verticleFactories().iterator().next();
     vertx.unregisterVerticleFactory(factory);
