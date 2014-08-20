@@ -215,7 +215,10 @@ public class NetServerImpl implements NetServer, Closeable {
             listening = false;
             res = Future.completedFuture(actualServer.bindFuture.cause());
           }
-          listenContext.execute(() -> listenHandler.handle(res), true);
+          // Call with expectRightThread = false as if server is already listening
+          // Netty will call future handler immediately with calling thread
+          // which might be a non Vert.x thread (if running embedded)
+          listenContext.execute(() -> listenHandler.handle(res), false);
         } else if (!actualServer.bindFuture.isSuccess()) {
           // No handler - log so user can see failure
           log.error(actualServer.bindFuture.cause());
