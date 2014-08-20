@@ -14,29 +14,24 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics;
+package io.vertx.core.metrics.impl;
 
 import com.codahale.metrics.Timer;
-import io.vertx.core.impl.VertxInternal;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public abstract class HttpMetrics extends NetworkMetrics {
+abstract class HttpMetricsImpl extends NetMetricsImpl {
 
   private Timer requests;
 
-  public HttpMetrics(VertxInternal vertx, String baseName) {
-    super(vertx, baseName);
-  }
-
-  @Override
-  protected void initializeMetrics() {
-    super.initializeMetrics();
-    requests = timer("requests");
+  public HttpMetricsImpl(AbstractMetrics metrics, String baseName) {
+    super(metrics, baseName);
+    if (isEnabled()) {
+      requests = timer("requests");
+    }
   }
 
   /**

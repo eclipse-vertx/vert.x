@@ -65,13 +65,14 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.HttpServerMetrics;
+import io.vertx.core.metrics.spi.HttpServerMetrics;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
 
 import javax.net.ssl.SSLEngine;
@@ -131,7 +132,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
-    this.metrics = new HttpServerMetrics(vertx, options.getHost(), options.getPort());
+    this.metrics = vertx.metrics().register(this, options);
   }
 
   @Override
@@ -239,6 +240,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
             public void operationComplete(ChannelFuture channelFuture) throws Exception {
               if (!channelFuture.isSuccess()) {
                 vertx.sharedHttpServers().remove(id);
+              } else {
+                metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
               }
             }
           });
@@ -259,7 +262,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         addHandlers(actualServer, listenContext);
-        metrics = new HttpServerMetrics(vertx, options.getHost(), options.getPort());
+        metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
       }
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override

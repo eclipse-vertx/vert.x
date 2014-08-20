@@ -16,7 +16,6 @@
 
 package io.vertx.core.impl;
 
-import com.codahale.metrics.MetricRegistry;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -47,8 +46,7 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.VertxMetrics;
-import io.vertx.core.metrics.reporters.JmxMetricReporter;
+import io.vertx.core.metrics.spi.Metrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -91,9 +89,7 @@ public class VertxImpl implements VertxInternal {
   private final FileSystem fileSystem = getFileSystem();
   private EventBus eventBus;
   private final SharedData sharedData;
-  private VertxMetrics metrics;
-  private MetricRegistry metricRegistry;
-  private JmxMetricReporter jmxMetricReporter;
+  private Metrics metrics;
 
   private ExecutorService workerPool;
   private ExecutorService internalBlockingPool;
@@ -121,9 +117,9 @@ public class VertxImpl implements VertxInternal {
   }
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    configureMetrics(options);
     configurePools(options);
     this.deploymentManager = new DeploymentManager(this);
+    this.metrics = Metrics.metrics(this, options);
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
       this.clusterManager.setVertx(this);
@@ -152,8 +148,6 @@ public class VertxImpl implements VertxInternal {
       this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout());
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
-    this.metrics = new VertxMetrics(this);
-    metrics.newVertx(options);
   }
 
   /**
@@ -240,8 +234,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public MetricRegistry metricRegistry() {
-    return metricRegistry;
+  public Metrics metrics() {
+    return metrics;
   }
 
   public boolean cancelTimer(long id) {
@@ -353,9 +347,6 @@ public class VertxImpl implements VertxInternal {
       });
     }
     closed = true;
-    if (jmxMetricReporter != null) {
-      jmxMetricReporter.stop();
-    }
     deploymentManager.undeployAll(ar -> {
       if (haManager != null) {
         haManager.stop();
@@ -519,16 +510,6 @@ public class VertxImpl implements VertxInternal {
     }
   }
 
-  private void configureMetrics(VertxOptions options) {
-    if (options.isMetricsEnabled()) {
-      metricRegistry = new MetricRegistry();
-      if (options.isJmxEnabled()) {
-        this.jmxMetricReporter = new JmxMetricReporter(this, options.getJmxDomain());
-        jmxMetricReporter.start();
-      }
-    }
-  }
-
   private void configurePools(VertxOptions options) {
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime(),
                                        options.getMaxWorkerExecuteTime());
@@ -552,7 +533,7 @@ public class VertxImpl implements VertxInternal {
 
     boolean cancel() {
       cancelled = true;
-      metrics.cancelTimer(timerID);
+      metrics.timerEnded(timerID, true);
       return future.cancel(false);
     }
 
@@ -561,7 +542,7 @@ public class VertxImpl implements VertxInternal {
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
-      metrics.setTimer(timerID, periodic);
+      metrics.timerCreated(timerID);
     }
 
     public void run() throws Exception {
@@ -579,7 +560,7 @@ public class VertxImpl implements VertxInternal {
 
     private void cleanupNonPeriodic() {
       VertxImpl.this.timeouts.remove(timerID);
-      metrics.finishedTimer(timerID);
+      metrics.timerEnded(timerID, false);
       ContextImpl context = getContext();
       context.removeCloseHook(this);
     }

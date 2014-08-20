@@ -14,19 +14,13 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics;
-
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
+package io.vertx.core.metrics.spi;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class NetClientMetrics extends NetworkMetrics {
-  public NetClientMetrics(VertxInternal vertx, NetClient client, NetClientOptions options) {
-    super(vertx, instanceName("io.vertx.net.clients", client));
-  }
+public interface BaseMetrics {
+  String baseName();
 
-  //TODO: Request latency
+  boolean isEnabled();
 }

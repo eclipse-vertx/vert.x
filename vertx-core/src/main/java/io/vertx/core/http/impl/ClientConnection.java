@@ -44,7 +44,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.HttpClientMetrics;
+import io.vertx.core.metrics.spi.HttpClientMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
@@ -328,7 +328,7 @@ class ClientConnection extends ConnectionBase {
     }
     this.currentRequest = req;
     this.requests.add(req);
-    client.metrics.beginRequest(req);
+    client.metrics.requestBegin(req);
   }
 
   void endRequest() {

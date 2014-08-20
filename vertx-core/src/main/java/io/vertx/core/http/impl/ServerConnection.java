@@ -38,7 +38,7 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.metrics.HttpServerMetrics;
+import io.vertx.core.metrics.spi.HttpServerMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
@@ -110,7 +110,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   void responseComplete() {
-    metrics.endResponse(pendingResponse);
+    metrics.responseEnd(pendingResponse);
     pendingResponse = null;
     checkNextTick();
   }
@@ -135,7 +135,7 @@ class ServerConnection extends ConnectionBase {
   @Override
   public ChannelFuture write(Object obj) {
     if (obj instanceof HttpContent) {
-      metrics.bytesWritten(((HttpContent) obj).content().readableBytes());
+      metrics.bytesWritten(remoteAddress(), ((HttpContent) obj).content().readableBytes());
     }
     return lastWriteFuture = super.write(obj);
   }
@@ -202,7 +202,7 @@ class ServerConnection extends ConnectionBase {
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     this.currentRequest = req;
     pendingResponse = resp;
-    metrics.beginRequest(req, resp);
+    metrics.requestBegin(req, resp);
     if (requestHandler != null) {
       requestHandler.handle(req);
     }
@@ -215,7 +215,7 @@ class ServerConnection extends ConnectionBase {
 
   private void handleEnd() {
     currentRequest.handleEnd();
-    metrics.bytesRead(bytesRead);
+    metrics.bytesRead(remoteAddress(), bytesRead);
 
     currentRequest = null;
     bytesRead = 0;

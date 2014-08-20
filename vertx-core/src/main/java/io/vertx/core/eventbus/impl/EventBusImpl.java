@@ -50,7 +50,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.EventBusMetrics;
+import io.vertx.core.metrics.spi.EventBusMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -126,7 +126,7 @@ public class EventBusImpl implements EventBus {
     this.subs = null;
     this.clusterMgr = null;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-    this.metrics = new EventBusMetrics(vertx);
+    this.metrics = vertx.metrics().register(this);
     setPingHandler();
     putStandardCodecs();
   }
@@ -136,7 +136,7 @@ public class EventBusImpl implements EventBus {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-    this.metrics = new EventBusMetrics(vertx);
+    this.metrics = vertx.metrics().register(this);
     clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
       if (ar.succeeded()) {
         subs = ar.result();
@@ -448,7 +448,7 @@ public class EventBusImpl implements EventBus {
   private <T> void sendOrPub(ServerID replyDest, MessageImpl message, DeliveryOptions options,
                              Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
-    metrics.sent(message.address());
+    metrics.messageSent(message.address());
     ContextImpl context = vertx.getOrCreateContext();
     Handler<Message<T>> simpleReplyHandler = null;
     try {
@@ -733,7 +733,7 @@ public class EventBusImpl implements EventBus {
       // before it was received
       try {
         if (!holder.removed) {
-          metrics.receive(msg.address());
+          metrics.messageReceived(msg.address());
           holder.handler.handle(copied);
         }
       } finally {
@@ -948,7 +948,7 @@ public class EventBusImpl implements EventBus {
     public void unregister(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
       unregisterHandler(address, handler, ar -> {
-        metrics.unregister(address);
+        metrics.handlerUnregistered(address);
         completionHandler.handle(ar);
       });
     }
@@ -957,13 +957,13 @@ public class EventBusImpl implements EventBus {
       this.result = result;
       if (completionHandler != null) {
         if (result.succeeded()) {
-          metrics.register(address);
+          metrics.handlerRegistered(address);
         }
         completionHandler.handle(result);
       } else if (result.failed()) {
         log.error("Failed to propagate registration for handler " + handler + " and address " + address);
       } else {
-        metrics.register(address);
+        metrics.handlerRegistered(address);
       }
     }
   }

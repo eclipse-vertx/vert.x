@@ -14,16 +14,17 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics;
+package io.vertx.core.metrics.spi;
 
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class NetServerMetrics extends NetworkMetrics {
-  public NetServerMetrics(VertxInternal vertx, String host, int port) {
-    super(vertx, addressName("io.vertx.net.servers", host, port));
-  }
+public interface HttpServerMetrics extends NetMetrics {
+
+  void requestBegin(HttpServerRequest request, HttpServerResponse response);
+
+  void responseEnd(HttpServerResponse response);
 }

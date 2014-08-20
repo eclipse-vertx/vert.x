@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics;
+package io.vertx.core.metrics.impl;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -24,7 +24,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.metrics.spi.BaseMetrics;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -34,28 +34,22 @@ import static com.codahale.metrics.MetricRegistry.*;
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-abstract class AbstractMetrics {
+abstract class AbstractMetrics implements BaseMetrics {
   private final MetricRegistry registry;
   private String baseName;
   private boolean enabled;
 
-  public AbstractMetrics(VertxInternal vertx, String baseName) {
-    this.registry = vertx.metricRegistry();
+  public AbstractMetrics(MetricRegistry registry, String baseName) {
+    this.registry = registry;
     this.baseName = baseName;
     this.enabled = registry != null;
-    if (enabled) {
-      initializeMetrics();
-    }
   }
 
-  protected void initializeMetrics() {
+  protected MetricRegistry registry() {
+    return registry;
   }
 
-  protected void setBaseName(String baseName) {
-    this.baseName = baseName;
-  }
-
-  protected String baseName() {
+  public String baseName() {
     return baseName;
   }
 

@@ -36,7 +36,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.NetworkMetrics;
+import io.vertx.core.metrics.spi.NetMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -62,7 +62,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private boolean client;
   private ChannelFuture writeFuture;
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, NetworkMetrics metrics) {
+  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, NetMetrics metrics) {
     super(vertx, channel, context, metrics);
     this.helper = helper;
     this.client = client;
@@ -288,14 +288,14 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       pendingData.add(data);
       return;
     }
-    metrics.bytesRead(data.length());
+    metrics.bytesRead(remoteAddress(), data.length());
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
   }
 
   private void write(ByteBuf buff) {
-    metrics.bytesWritten(buff.readableBytes());
+    metrics.bytesWritten(remoteAddress(), buff.readableBytes());
     writeFuture = super.write(buff);
   }
 
