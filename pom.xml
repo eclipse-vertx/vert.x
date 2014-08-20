@@ -56,8 +56,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <netty.version>4.0.23.Final</netty.version>
-    <jackson.version>2.2.2</jackson.version>
-    <hazelcast.version>3.2.1</hazelcast.version>
+    <jackson.version>2.4.0</jackson.version>
+    <hazelcast.version>3.2.5</hazelcast.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.7</slf4j.version>
     <junit.version>4.11</junit.version>
