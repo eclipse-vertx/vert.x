@@ -35,6 +35,7 @@ public abstract class NetworkMetrics extends AbstractMetrics {
   private Timer connectionLifetime;
   private Histogram bytesRead;
   private Histogram bytesWritten;
+  private Counter exceptions;
   private Map<ConnectionBase, Timer.Context> connectionLifetimes;
 
   public NetworkMetrics(VertxInternal vertx, String baseName) {
@@ -45,7 +46,7 @@ public abstract class NetworkMetrics extends AbstractMetrics {
   protected void initializeMetrics() {
     this.connections = counter("connections");
     this.connectionLifetime = timer("connection-lifetime");
-
+    this.exceptions = counter("exceptions");
     this.bytesRead = histogram("bytes-read");
     this.bytesWritten = histogram("bytes-written");
     this.connectionLifetimes = new WeakHashMap<>();
@@ -80,6 +81,12 @@ public abstract class NetworkMetrics extends AbstractMetrics {
     if (!isEnabled()) return;
 
     bytesWritten.update(length);
+  }
+
+  public void exceptionOccurred(Throwable t) {
+    if (!isEnabled()) return;
+
+    exceptions.inc();
   }
 
   protected long connections() {

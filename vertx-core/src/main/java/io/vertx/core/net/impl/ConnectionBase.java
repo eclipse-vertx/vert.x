@@ -143,6 +143,7 @@ public abstract class ConnectionBase {
   }
 
   protected void handleException(Throwable t) {
+    metrics.exceptionOccurred(t);
     if (exceptionHandler != null) {
       context.execute(() -> exceptionHandler.handle(t), false);
     } else {
