@@ -191,6 +191,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocket sendBuffer(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
+    metrics.bytesWritten(packet.length());
     return this;
   }
 
@@ -280,6 +281,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
+    metrics.bytesRead(packet.data().length());
     if (packetHandler != null) {
       packetHandler.handle(packet);
     }
