@@ -14,29 +14,18 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.reporters;
-
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.metrics.reporters.codahale.JmxReporter;
+package io.vertx.core.metrics.spi;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class JmxMetricReporter {
-  private JmxReporter reporter;
+public interface EventBusMetrics extends BaseMetrics {
 
-  public JmxMetricReporter(VertxInternal vertx, String jmxDomain) {
-    if (jmxDomain == null) {
-      jmxDomain = "vertx" + "@" + Integer.toHexString(vertx.hashCode());
-    }
-    reporter = JmxReporter.forRegistry(vertx.metricRegistry()).inDomain(jmxDomain).build();
-  }
+  void handlerRegistered(String address);
 
-  public void start() {
-    reporter.start();
-  }
+  void handlerUnregistered(String address);
 
-  public void stop() {
-    reporter.stop();
-  }
+  void messageSent(String address);
+
+  void messageReceived(String address);
 }

@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.reporters;
+package io.vertx.core.metrics.impl.reporters;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -25,7 +25,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Locale;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class EventBusMetricReporter {
-  private final VertxInternal vertx;
+  private final Vertx vertx;
 
   private Long timerId;
   private TimeUnit rateUnit = TimeUnit.SECONDS;
@@ -45,9 +45,9 @@ public class EventBusMetricReporter {
   private double durationFactor;
   private final MetricRegistry registry;
 
-  public EventBusMetricReporter(VertxInternal vertx) {
+  public EventBusMetricReporter(Vertx vertx, MetricRegistry registry) {
     this.vertx = vertx;
-    this.registry = vertx.metricRegistry();
+    this.registry = registry;
     this.rateFactor = rateUnit.toSeconds(1);
     this.durationFactor = 1.0 / durationUnit.toNanos(1);
   }

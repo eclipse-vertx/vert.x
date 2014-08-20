@@ -14,64 +14,65 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics;
+package io.vertx.core.metrics.impl;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.metrics.spi.EventBusMetrics;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class EventBusMetrics extends AbstractMetrics {
+class EventBusMetricsImpl extends AbstractMetrics implements EventBusMetrics {
 
   private Counter handlerCount;
   private Meter messages;
   private Meter receivedMessages;
   private Meter sentMessages;
 
-  public EventBusMetrics(VertxInternal vertx) {
-    super(vertx, "io.vertx.eventbus");
+  public EventBusMetricsImpl(AbstractMetrics metrics, String baseName) {
+    super(metrics.registry(), baseName);
+    initialize();
   }
 
-  @Override
-  protected void initializeMetrics() {
-    super.initializeMetrics();
+  private void initialize() {
+    if (!isEnabled()) return;
+
     this.handlerCount = counter("handlers");
     this.messages = meter("messages");
     this.receivedMessages = meter("messages-received");
     this.sentMessages = meter("messages-sent");
   }
 
-  public void register(String address) {
+  @Override
+  public void handlerRegistered(String address) {
     if (!isEnabled()) return;
 
     handlerCount.inc();
-//    addressHandlerCounter(address).inc();
+//    counter("handlers", address).inc();
   }
 
-  public void unregister(String address) {
+  @Override
+  public void handlerUnregistered(String address) {
     if (!isEnabled()) return;
 
     handlerCount.dec();
-//    addressHandlerCounter(address).dec();
+//    counter("handlers", address).dec();
   }
 
-  public void sent(String address) {
+  @Override
+  public void messageSent(String address) {
     if (!isEnabled()) return;
 
     messages.mark();
     sentMessages.mark();
   }
 
-  public void receive(String address) {
+  @Override
+  public void messageReceived(String address) {
     if (!isEnabled()) return;
 
     messages.mark();
     receivedMessages.mark();
-  }
-
-  private Counter addressHandlerCounter(String address) {
-    return counter("handlers", address);
   }
 }

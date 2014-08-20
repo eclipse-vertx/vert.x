@@ -14,11 +14,11 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics;
+package io.vertx.core.metrics.impl;
 
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.metrics.spi.HttpServerMetrics;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -26,28 +26,27 @@ import java.util.WeakHashMap;
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class HttpServerMetrics extends HttpMetrics {
+class HttpServerMetricsImpl extends HttpMetricsImpl implements HttpServerMetrics {
 
   private Map<HttpServerResponse, TimedContext> timings;
 
-  public HttpServerMetrics(VertxInternal vertx, String host, int port) {
-    super(vertx, addressName("io.vertx.http.servers", host, port));
+  public HttpServerMetricsImpl(AbstractMetrics metrics, String baseName) {
+    super(metrics, baseName);
+    if (isEnabled()) {
+      timings = new WeakHashMap<>();
+    }
   }
 
   @Override
-  protected void initializeMetrics() {
-    super.initializeMetrics();
-    timings = new WeakHashMap<>();
-  }
-
-  public void beginRequest(HttpServerRequest request, HttpServerResponse response) {
+  public void requestBegin(HttpServerRequest request, HttpServerResponse response) {
     if (!isEnabled()) return;
 
     // Start timing the request, but do so only for all server requests and
     timings.put(response, time(null, request.uri()));
   }
 
-  public void endResponse(HttpServerResponse response) {
+  @Override
+  public void responseEnd(HttpServerResponse response) {
     if (!isEnabled()) return;
 
     TimedContext ctx = timings.remove(response);

@@ -30,7 +30,6 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.ContextImpl;
 
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.metrics.DatagramMetrics;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
@@ -51,7 +50,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocketImpl(VertxInternal vertx,
                             DatagramSocketOptions options) {
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext(), new DatagramMetrics(vertx));
+          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext(), vertx.metrics().register(null, options));
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultithreaded()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
@@ -163,7 +162,12 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
     InetSocketAddress is = new InetSocketAddress(local.hostAddress(), local.hostPort());
     ChannelFuture future = channel().bind(is);
-    addListener(future, handler);
+    addListener(future, ar -> {
+      if (ar.succeeded()) {
+        metrics.listening(localAddress());
+      }
+      handler.handle(ar);
+    });
     return this;
   }
 
@@ -191,7 +195,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocket sendBuffer(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
-    metrics.bytesWritten(packet.length());
+    metrics.bytesWritten(new SocketAddressImpl(port, host), packet.length());
     return this;
   }
 
@@ -281,7 +285,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
-    metrics.bytesRead(packet.data().length());
+    metrics.bytesRead(packet.sender(), packet.data().length());
     if (packetHandler != null) {
       packetHandler.handle(packet);
     }

@@ -32,7 +32,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.NetworkMetrics;
+import io.vertx.core.metrics.spi.NetMetrics;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -51,18 +51,18 @@ public abstract class ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetMetrics metrics) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
     this.metrics = metrics;
-    metrics.connectionOpened(this);
+    metrics.connected(remoteAddress());
   }
 
   protected final VertxInternal vertx;
   protected final Channel channel;
   protected final ContextImpl context;
-  protected final NetworkMetrics metrics;
+  protected final NetMetrics metrics;
 
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
@@ -143,7 +143,7 @@ public abstract class ConnectionBase {
   }
 
   protected void handleException(Throwable t) {
-    metrics.exceptionOccurred(t);
+    metrics.exceptionOccurred(remoteAddress(), t);
     if (exceptionHandler != null) {
       context.execute(() -> exceptionHandler.handle(t), false);
     } else {
@@ -152,7 +152,7 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
-    metrics.connectionClosed(this);
+    metrics.disconnected(remoteAddress());
     if (closeHandler != null) {
       closeHandler.handle(null);
     }
@@ -226,11 +226,15 @@ public abstract class ConnectionBase {
 
   public SocketAddress remoteAddress() {
     InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+    if (addr == null) return null;
+
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
   public SocketAddress localAddress() {
     InetSocketAddress addr = (InetSocketAddress) channel.localAddress();
+    if (addr == null) return null;
+
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 

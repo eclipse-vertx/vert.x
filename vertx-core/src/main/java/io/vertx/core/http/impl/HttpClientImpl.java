@@ -51,7 +51,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.HttpClientMetrics;
+import io.vertx.core.metrics.spi.HttpClientMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
@@ -105,7 +105,7 @@ public class HttpClientImpl implements HttpClient {
     pool.setKeepAlive(options.isKeepAlive());
     pool.setPipelining(options.isPipelining());
     pool.setMaxSockets(options.getMaxPoolSize());
-    this.metrics = new HttpClientMetrics(vertx, this, options);
+    this.metrics = vertx.metrics().register(this, options);
   }
 
   @Override

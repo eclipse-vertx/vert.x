@@ -1,4 +1,4 @@
-package io.vertx.core.metrics.reporters.codahale;
+package io.vertx.core.metrics.impl.reporters.codahale;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
