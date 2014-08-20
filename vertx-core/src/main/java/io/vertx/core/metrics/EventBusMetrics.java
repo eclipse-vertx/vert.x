@@ -47,14 +47,14 @@ public class EventBusMetrics extends AbstractMetrics {
     if (!isEnabled()) return;
 
     handlerCount.inc();
-    addressHandlerCounter(address).inc();
+//    addressHandlerCounter(address).inc();
   }
 
   public void unregister(String address) {
     if (!isEnabled()) return;
 
     handlerCount.dec();
-    addressHandlerCounter(address).dec();
+//    addressHandlerCounter(address).dec();
   }
 
   public void sent(String address) {
