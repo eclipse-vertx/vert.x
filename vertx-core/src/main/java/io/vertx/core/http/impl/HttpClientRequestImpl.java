@@ -37,6 +37,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -132,6 +133,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public HttpClientRequestImpl write(String chunk, String enc) {
+    Objects.requireNonNull(enc, "no null encoding accepted");
     check();
     return write(Buffer.buffer(chunk, enc));
   }
@@ -205,6 +207,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public void end(String chunk, String enc) {
+    Objects.requireNonNull(enc, "no null encoding accepted");
     end(Buffer.buffer(chunk, enc));
   }
 

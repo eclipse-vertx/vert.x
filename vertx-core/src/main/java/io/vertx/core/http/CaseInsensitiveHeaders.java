@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -159,9 +160,7 @@ public final class CaseInsensitiveHeaders implements Headers {
 
   @Override
   public Headers remove(final String name) {
-    if (name == null) {
-      throw new NullPointerException("name");
-    }
+    Objects.requireNonNull(name, "name");
     int h = hash(name);
     int i = index(h);
     remove0(h, i, name);
@@ -215,9 +214,7 @@ public final class CaseInsensitiveHeaders implements Headers {
 
   @Override
   public Headers set(final String name, final Iterable<String> values) {
-    if (values == null) {
-      throw new NullPointerException("values");
-    }
+    Objects.requireNonNull(values, "values");
 
     int h = hash(name);
     int i = index(h);
@@ -244,9 +241,7 @@ public final class CaseInsensitiveHeaders implements Headers {
 
   @Override
   public String get(final String name) {
-    if (name == null) {
-      throw new NullPointerException("name");
-    }
+    Objects.requireNonNull(name, "name");
 
     int h = hash(name);
     int i = index(h);
@@ -263,9 +258,7 @@ public final class CaseInsensitiveHeaders implements Headers {
 
   @Override
   public List<String> getAll(final String name) {
-    if (name == null) {
-      throw new NullPointerException("name");
-    }
+    Objects.requireNonNull(name, "name");
 
     LinkedList<String> values = new LinkedList<>();
 
@@ -408,9 +401,7 @@ public final class CaseInsensitiveHeaders implements Headers {
 
     @Override
     public String setValue(String value) {
-      if (value == null) {
-        throw new NullPointerException("value");
-      }
+      Objects.requireNonNull(value, "value");
       String oldValue = this.value;
       this.value = value;
       return oldValue;

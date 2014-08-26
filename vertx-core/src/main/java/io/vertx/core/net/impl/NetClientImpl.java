@@ -43,6 +43,7 @@ import io.vertx.core.net.NetSocket;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -123,6 +124,8 @@ public class NetClientImpl implements NetClient {
 
   private void connect(final int port, final String host, final Handler<AsyncResult<NetSocket>> connectHandler,
                        final int remainingAttempts) {
+    Objects.requireNonNull(host, "No null host accepted");
+    Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextImpl context = vertx.getOrCreateContext();
     sslHelper.checkSSL(vertx);
     Bootstrap bootstrap = new Bootstrap();

@@ -42,6 +42,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
 import org.junit.Test;
 
@@ -62,6 +63,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -103,35 +107,15 @@ public class NetTest extends NetTestBase {
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
     assertEquals(-1, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
@@ -141,18 +125,8 @@ public class NetTest extends NetTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -168,12 +142,7 @@ public class NetTest extends NetTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -203,11 +172,13 @@ public class NetTest extends NetTestBase {
     assertTrue(options.isTrustAll());
 
     assertEquals(0, options.getReconnectAttempts());
+    assertIllegalArgumentException(() -> options.setReconnectAttempts(-2));
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReconnectAttempts(rand));
     assertEquals(rand, options.getReconnectAttempts());
 
     assertEquals(1000, options.getReconnectInterval());
+    assertIllegalArgumentException(() -> options.setReconnectInterval(0));
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReconnectInterval(rand));
     assertEquals(rand, options.getReconnectInterval());
@@ -222,8 +193,6 @@ public class NetTest extends NetTestBase {
     testComplete();
   }
 
-
-
   @Test
   public void testServerOptions() {
     NetServerOptions options = NetServerOptions.options();
@@ -232,35 +201,15 @@ public class NetTest extends NetTestBase {
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
     assertEquals(-1, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
@@ -270,18 +219,8 @@ public class NetTest extends NetTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -297,12 +236,7 @@ public class NetTest extends NetTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -312,13 +246,7 @@ public class NetTest extends NetTestBase {
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(rand));
     assertEquals(rand, options.getIdleTimeout());
-
-    try {
-      options.setIdleTimeout(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
@@ -342,18 +270,8 @@ public class NetTest extends NetTestBase {
     assertEquals(0, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    try {
-      options.setPort(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(65536);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setPort(-1));
+    assertIllegalArgumentException(() -> options.setPort(65536));
 
     assertEquals("0.0.0.0", options.getHost());
     String randString = TestUtils.randomUnicodeString(100);
@@ -541,22 +459,12 @@ public class NetTest extends NetTestBase {
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
-
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> NetClientOptions.optionsFromJson(json));
+
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> NetClientOptions.optionsFromJson(json));
   }
 
   @Test
@@ -730,19 +638,18 @@ public class NetTest extends NetTestBase {
 
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> NetServerOptions.optionsFromJson(json));
+
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> NetServerOptions.optionsFromJson(json));
+  }
+
+  @Test
+  public void testSocketAddress() throws Exception {
+    assertNullPointerException(() -> new SocketAddressImpl(0, null));
+    assertIllegalArgumentException(() -> new SocketAddressImpl(0, ""));
+    assertIllegalArgumentException(() -> new SocketAddressImpl(-1, "someHost"));
+    assertIllegalArgumentException(() -> new SocketAddressImpl(65536, "someHost"));
   }
 
   @Test
@@ -829,6 +736,8 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testConnectInvalidPort() {
+    assertIllegalArgumentException(() -> client.connect(-1, "localhost", res -> {}));
+    assertIllegalArgumentException(() -> client.connect(65536, "localhost", res -> {}));
     client.connect(9998, "localhost", res -> {
       assertTrue(res.failed());
       assertFalse(res.succeeded());
@@ -840,6 +749,7 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testConnectInvalidHost() {
+    assertNullPointerException(() -> client.connect(80, null, res -> {}));
     client.connect(1234, "127.0.0.2", res -> {
       assertTrue(res.failed());
       assertFalse(res.succeeded());
@@ -847,6 +757,11 @@ public class NetTest extends NetTestBase {
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testConnectInvalidConnectHandler() throws Exception {
+    assertNullPointerException(() -> client.connect(80, "localhost", null));
   }
 
   @Test

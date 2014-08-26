@@ -62,6 +62,7 @@ import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HttpClientImpl implements HttpClient {
@@ -312,6 +313,8 @@ public class HttpClientImpl implements HttpClient {
   }
 
   private HttpClientRequest doRequest(String method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    Objects.requireNonNull(options, "no null options accepted");
+    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     checkClosed();
     HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, vertx);
     if (options.getHeaders() != null) {
@@ -365,6 +368,7 @@ public class HttpClientImpl implements HttpClient {
   }
 
   private Handler<HttpClientResponse> connectHandler(Handler<HttpClientResponse> responseHandler) {
+    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     return resp -> {
       HttpClientResponse response;
       if (resp.statusCode() == 200) {
