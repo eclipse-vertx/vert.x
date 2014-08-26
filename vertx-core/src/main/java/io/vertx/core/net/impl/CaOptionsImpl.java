@@ -17,6 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
@@ -24,6 +25,7 @@ import io.vertx.core.net.CaOptions;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -63,9 +65,8 @@ public class CaOptionsImpl implements CaOptions, Cloneable {
   }
 
   public CaOptions addCertPath(String certPath) throws NullPointerException {
-    if (certPath == null) {
-      throw new NullPointerException("No null certificate accepted");
-    }
+    Objects.requireNonNull(certPath, "No null certificate accepted");
+    Arguments.require(!certPath.isEmpty(), "No empty certificate path accepted");
     certPaths.add(certPath);
     return this;
   }
@@ -75,9 +76,7 @@ public class CaOptionsImpl implements CaOptions, Cloneable {
   }
 
   public CaOptions addCertValue(Buffer certValue) throws NullPointerException {
-    if (certValue == null) {
-      throw new NullPointerException("No null certificate accepted");
-    }
+    Objects.requireNonNull(certValue, "No null certificate accepted");
     certValues.add(certValue);
     return this;
   }

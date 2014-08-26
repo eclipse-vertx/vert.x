@@ -32,6 +32,9 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import java.util.Collections;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -224,11 +227,14 @@ public class KeyStoreTest extends VertxTestBase {
     CaOptions options = CaOptions.options();
 
     assertEquals(Collections.emptyList(), options.getCertPaths());
+    assertNullPointerException(() -> options.addCertPath(null));
+    assertIllegalArgumentException(() -> options.addCertPath(""));
     String randString = TestUtils.randomAlphaString(100);
     options.addCertPath(randString);
     assertEquals(Collections.singletonList(randString), options.getCertPaths());
 
     assertEquals(Collections.emptyList(), options.getCertValues());
+    assertNullPointerException(() -> options.addCertValue(null));
     randString = TestUtils.randomAlphaString(100);
     options.addCertValue(Buffer.buffer(randString));
     assertEquals(Collections.singletonList(Buffer.buffer(randString)), options.getCertValues());

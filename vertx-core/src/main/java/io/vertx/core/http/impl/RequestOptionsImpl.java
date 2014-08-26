@@ -22,6 +22,8 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.RequestOptionsBase;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Objects;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -113,12 +115,8 @@ public class RequestOptionsImpl implements RequestOptions {
 
   @Override
   public RequestOptions addHeader(CharSequence name, CharSequence value) {
-    if (name == null) {
-      throw new NullPointerException("name");
-    }
-    if (value == null) {
-      throw new NullPointerException("value");
-    }
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(value, "value");
     if (headers == null) {
       headers = new CaseInsensitiveHeaders();
     }

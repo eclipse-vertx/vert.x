@@ -31,8 +31,8 @@ import io.vertx.core.net.impl.SocketDefaults;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -374,9 +374,7 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
 
   @Override
   public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
-    if (crlPath == null) {
-      throw new NullPointerException("No null crl accepted");
-    }
+    Objects.requireNonNull(crlPath, "No null crl accepted");
     crlPaths.add(crlPath);
     return this;
   }
@@ -388,9 +386,7 @@ public class HttpClientOptionsImpl implements HttpClientOptions {
 
   @Override
   public HttpClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
-    if (crlValue == null) {
-      throw new NullPointerException("No null crl accepted");
-    }
+    Objects.requireNonNull(crlValue, "No null crl accepted");
     crlValues.add(crlValue);
     return this;
   }

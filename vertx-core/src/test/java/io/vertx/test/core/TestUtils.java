@@ -23,6 +23,8 @@ import io.vertx.core.buffer.Buffer;
 
 import java.util.Random;
 
+import static org.junit.Assert.fail;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -198,5 +200,44 @@ public class TestUtils {
       if (b1[i] != b2[i]) return false;
     }
     return true;
+  }
+
+  /**
+   * Asserts that an IllegalArgumentException is thrown by the code block.
+   * @param runnable code block to execute
+   */
+  public static void assertIllegalArgumentException(Runnable runnable) {
+    try {
+      runnable.run();
+      fail("Should throw IllegalArgumentException");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+  }
+
+  /**
+   * Asserts that a NullPointerException is thrown by the code block.
+   * @param runnable code block to execute
+   */
+  public static void assertNullPointerException(Runnable runnable) {
+    try {
+      runnable.run();
+      fail("Should throw NullPointerException");
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  /**
+   * Asserts that an IllegalStateException is thrown by the code block.
+   * @param runnable code block to execute
+   */
+  public static void assertIllegalStateException(Runnable runnable) {
+    try {
+      runnable.run();
+      fail("Should throw IllegalStateException");
+    } catch (IllegalStateException e) {
+      // OK
+    }
   }
 }
