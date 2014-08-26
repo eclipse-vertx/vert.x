@@ -944,17 +944,13 @@ public class WebsocketTest extends NetTestBase {
     await();
   }
 
-/*
-  Those 3 tests cannot pass for the moment due to a bug in Netty for websocket version 0:
-  https://github.com/netty/netty/issues/2768
-
   @Test
   public void testWriteMessageHybi00() {
     testWriteMessage(256, 0);
   }
 
   @Test
-  public void testWriteFragmentedMessage2Hybi00() {
+  public void testWriteFragmentedMessage1Hybi00() {
     testWriteMessage(65536 + 256, 0);
   }
 
@@ -962,7 +958,6 @@ public class WebsocketTest extends NetTestBase {
   public void testWriteFragmentedMessage2Hybi00() {
     testWriteMessage(65536 + 65536 + 256, 0);
   }
-*/
 
   @Test
   public void testWriteMessageHybi08() {
