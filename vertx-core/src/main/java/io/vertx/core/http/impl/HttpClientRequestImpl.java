@@ -267,6 +267,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     // If an exception occurred (e.g. a timeout fired) we won't receive the response.
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();
+      client.metrics.requestEndAndResponseBegin(this, resp);
       try {
         if (resp.statusCode() == 100) {
           if (continueHandler != null) {
@@ -359,6 +360,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(pending, true);
 
+        conn.metrics.bytesWritten(conn.remoteAddress(), written);
         conn.endRequest();
       } else {
         writeHeadWithContent(pending, false);
@@ -367,6 +369,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       if (completed) {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
+
+        conn.metrics.bytesWritten(conn.remoteAddress(), written);
         conn.endRequest();
       } else {
         if (writeHead) {
@@ -457,6 +461,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         }
       }
       if (end) {
+        conn.metrics.bytesWritten(conn.remoteAddress(), written);
         conn.endRequest();
       }
     }

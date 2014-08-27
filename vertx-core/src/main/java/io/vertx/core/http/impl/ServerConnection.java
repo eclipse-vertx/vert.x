@@ -38,6 +38,7 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.metrics.spi.HttpServerMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
@@ -69,12 +70,15 @@ class ServerConnection extends ConnectionBase {
   private final HttpServerImpl server;
   private final WebSocketServerHandshaker handshaker;
   private ChannelFuture lastWriteFuture;
+  final HttpServerMetrics metrics;
+  private long bytesRead;
 
-  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, WebSocketServerHandshaker handshaker) {
-    super(vertx, channel, context);
+  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
+    super(vertx, channel, context, metrics);
     this.serverOrigin = serverOrigin;
     this.server = server;
     this.handshaker = handshaker;
+    this.metrics = metrics;
   }
 
   public void pause() {
@@ -106,6 +110,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   void responseComplete() {
+    metrics.responseEnd(pendingResponse);
     pendingResponse = null;
     checkNextTick();
   }
@@ -129,11 +134,14 @@ class ServerConnection extends ConnectionBase {
 
   @Override
   public ChannelFuture write(Object obj) {
+    if (obj instanceof HttpContent) {
+      metrics.bytesWritten(remoteAddress(), ((HttpContent) obj).content().readableBytes());
+    }
     return lastWriteFuture = super.write(obj);
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<Channel, NetSocketImpl>(1);
     connectionMap.put(channel, socket);
 
@@ -194,18 +202,23 @@ class ServerConnection extends ConnectionBase {
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     this.currentRequest = req;
     pendingResponse = resp;
+    metrics.requestBegin(req, resp);
     if (requestHandler != null) {
       requestHandler.handle(req);
     }
   }
 
   private void handleChunk(Buffer chunk) {
+    bytesRead += chunk.length();
     currentRequest.handleData(chunk);
   }
 
   private void handleEnd() {
     currentRequest.handleEnd();
+    metrics.bytesRead(remoteAddress(), bytesRead);
+
     currentRequest = null;
+    bytesRead = 0;
   }
 
   @Override

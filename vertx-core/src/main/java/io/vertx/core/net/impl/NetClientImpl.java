@@ -37,6 +37,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.spi.NetMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -58,6 +59,7 @@ public class NetClientImpl implements NetClient {
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final Closeable closeHook;
   private final ContextImpl creatingContext;
+  private final NetMetrics metrics;
   private boolean closed;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
@@ -75,6 +77,7 @@ public class NetClientImpl implements NetClient {
       }
       creatingContext.addCloseHook(closeHook);
     }
+    this.metrics = vertx.metrics().register(this, options);
   }
 
   @Override
@@ -197,7 +200,7 @@ public class NetClientImpl implements NetClient {
   }
 
   private void doConnected(ContextImpl context, Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
-    NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true);
+    NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics);
     socketMap.put(ch, sock);
     connectHandler.handle(Future.completedFuture(sock));
   }

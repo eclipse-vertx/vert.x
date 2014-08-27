@@ -46,6 +46,8 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.MetricsProvider;
+import io.vertx.core.metrics.spi.Metrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -88,6 +90,7 @@ public class VertxImpl implements VertxInternal {
   private final FileSystem fileSystem = getFileSystem();
   private EventBus eventBus;
   private final SharedData sharedData;
+  private Metrics metrics;
 
   private ExecutorService workerPool;
   private ExecutorService internalBlockingPool;
@@ -102,7 +105,7 @@ public class VertxImpl implements VertxInternal {
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
-  private final DeploymentManager deploymentManager = new DeploymentManager(this);
+  private final DeploymentManager deploymentManager;
   private boolean closed;
   private HAManager haManager;
 
@@ -116,6 +119,8 @@ public class VertxImpl implements VertxInternal {
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     configurePools(options);
+    this.deploymentManager = new DeploymentManager(this);
+    this.metrics = Metrics.metrics(this, options);
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
       this.clusterManager.setVertx(this);
@@ -144,7 +149,6 @@ public class VertxImpl implements VertxInternal {
       this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout());
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
-
   }
 
   /**
@@ -228,6 +232,17 @@ public class VertxImpl implements VertxInternal {
 
   public Map<ServerID, NetServerImpl> sharedNetServers() {
     return sharedNetServers;
+  }
+
+  // Internal SPI
+  @Override
+  public Metrics metrics() {
+    return metrics;
+  }
+
+  @Override
+  public MetricsProvider metricsProvider() {
+    return metrics;
   }
 
   public boolean cancelTimer(long id) {
@@ -525,6 +540,7 @@ public class VertxImpl implements VertxInternal {
 
     boolean cancel() {
       cancelled = true;
+      metrics.timerEnded(timerID, true);
       return future.cancel(false);
     }
 
@@ -533,6 +549,7 @@ public class VertxImpl implements VertxInternal {
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
+      metrics.timerCreated(timerID);
     }
 
     public void run() throws Exception {
@@ -550,6 +567,7 @@ public class VertxImpl implements VertxInternal {
 
     private void cleanupNonPeriodic() {
       VertxImpl.this.timeouts.remove(timerID);
+      metrics.timerEnded(timerID, false);
       ContextImpl context = getContext();
       context.removeCloseHook(this);
     }

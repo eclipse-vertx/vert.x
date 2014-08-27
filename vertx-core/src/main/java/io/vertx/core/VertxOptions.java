@@ -95,6 +95,18 @@ public interface VertxOptions {
 
   VertxOptions setHAGroup(String haGroup);
 
+  VertxOptions setMetricsEnabled(boolean enable);
+
+  boolean isMetricsEnabled();
+
+  VertxOptions setJmxEnabled(boolean enabled);
+
+  boolean isJmxEnabled();
+
+  VertxOptions setJmxDomain(String domain);
+
+  String getJmxDomain();
+
   static final VertxOptionsFactory factory = ServiceHelper.loadFactory(VertxOptionsFactory.class);
 
 }
