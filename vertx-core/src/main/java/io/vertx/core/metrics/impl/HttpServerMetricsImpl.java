@@ -31,7 +31,7 @@ class HttpServerMetricsImpl extends HttpMetricsImpl implements HttpServerMetrics
   private Map<HttpServerResponse, TimedContext> timings;
 
   public HttpServerMetricsImpl(AbstractMetrics metrics, String baseName) {
-    super(metrics, baseName);
+    super(metrics, baseName, false);
     if (isEnabled()) {
       timings = new WeakHashMap<>();
     }

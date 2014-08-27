@@ -49,6 +49,10 @@ abstract class AbstractMetrics implements BaseMetrics {
     return registry;
   }
 
+  protected void setBaseName(String baseName) {
+    this.baseName = baseName;
+  }
+
   public String baseName() {
     return baseName;
   }

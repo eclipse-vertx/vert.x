@@ -27,11 +27,16 @@ abstract class HttpMetricsImpl extends NetMetricsImpl {
 
   private Timer requests;
 
-  public HttpMetricsImpl(AbstractMetrics metrics, String baseName) {
-    super(metrics, baseName);
-    if (isEnabled()) {
-      requests = timer("requests");
-    }
+  public HttpMetricsImpl(AbstractMetrics metrics, String baseName, boolean client) {
+    super(metrics, baseName, client);
+  }
+
+  @Override
+  protected void initialize() {
+    if (!isEnabled()) return;
+
+    super.initialize();
+    requests = timer("requests");
   }
 
   /**
@@ -59,9 +64,8 @@ abstract class HttpMetricsImpl extends NetMetricsImpl {
     }
 
     protected void stop() {
-      if (!isEnabled()) {
-        return;
-      }
+      if (!isEnabled()) return;
+
       long duration = System.nanoTime() - start;
       requests.update(duration, TimeUnit.NANOSECONDS);
 

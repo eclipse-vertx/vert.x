@@ -46,6 +46,7 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.MetricsProvider;
 import io.vertx.core.metrics.spi.Metrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -233,8 +234,14 @@ public class VertxImpl implements VertxInternal {
     return sharedNetServers;
   }
 
+  // Internal SPI
   @Override
   public Metrics metrics() {
+    return metrics;
+  }
+
+  @Override
+  public MetricsProvider metricsProvider() {
     return metrics;
   }
 

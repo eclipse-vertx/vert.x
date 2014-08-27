@@ -28,6 +28,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.metrics.MetricsProvider;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -186,6 +187,9 @@ public interface Vertx {
 
   @GenIgnore
   Set<VerticleFactory> verticleFactories();
+
+  @GenIgnore
+  MetricsProvider metricsProvider();
 
   static final VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
 

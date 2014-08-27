@@ -32,25 +32,15 @@ public class MetricsFactoryImpl implements MetricsFactory {
   @Override
   public Metrics metrics(Vertx vertx, VertxOptions options) {
     MetricsImpl metrics = new MetricsImpl(vertx, options);
-    startReporters(metrics, vertx, options);
+    // TODO: Probably should consume metrics through MetricsProvider API, and expose as JMXBeans
+    if (options.isJmxEnabled()) {
+      String jmxDomain = options.getJmxDomain();
+      if (jmxDomain == null) {
+        jmxDomain = "vertx" + "@" + Integer.toHexString(vertx.hashCode());
+      }
+      JmxReporter.forRegistry(metrics.registry()).inDomain(jmxDomain).build().start();
+    }
 
     return metrics;
-  }
-
-  private static void startReporters(MetricsImpl metrics, Vertx vertx, VertxOptions options) {
-    if (options.isMetricsEnabled()) {
-      // Start jmx reporter if jmx is enabled
-      if (options.isJmxEnabled()) {
-        String jmxDomain = options.getJmxDomain();
-        if (jmxDomain == null) {
-          jmxDomain = "vertx" + "@" + Integer.toHexString(vertx.hashCode());
-        }
-        JmxReporter.forRegistry(metrics.registry()).inDomain(jmxDomain).build().start();
-      } else {
-        // Start event bus if metrics is enabled & jmx is not
-        //TODO: Allow configuration of duration
-        new EventBusMetricReporter(vertx, metrics.registry()).start(5, TimeUnit.MINUTES);
-      }
-    }
   }
 }
