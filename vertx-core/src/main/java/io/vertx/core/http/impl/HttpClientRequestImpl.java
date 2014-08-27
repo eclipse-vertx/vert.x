@@ -360,6 +360,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(pending, true);
 
+        conn.metrics.bytesWritten(conn.remoteAddress(), written);
         conn.endRequest();
       } else {
         writeHeadWithContent(pending, false);
@@ -368,6 +369,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       if (completed) {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
+
+        conn.metrics.bytesWritten(conn.remoteAddress(), written);
         conn.endRequest();
       } else {
         if (writeHead) {
@@ -458,7 +461,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         }
       }
       if (end) {
-        client.metrics.bytesWritten(conn.remoteAddress(), written);
+        conn.metrics.bytesWritten(conn.remoteAddress(), written);
         conn.endRequest();
       }
     }

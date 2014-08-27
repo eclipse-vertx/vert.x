@@ -35,7 +35,7 @@ class HttpClientMetricsImpl extends HttpMetricsImpl implements HttpClientMetrics
   private Map<HttpClientResponse, WeakReference<HttpClientRequest>> requestsToResponses;
 
   public HttpClientMetricsImpl(AbstractMetrics metrics, String baseName, HttpClientOptions options) {
-    super(metrics, baseName);
+    super(metrics, baseName, true);
     initialize(options);
   }
 
