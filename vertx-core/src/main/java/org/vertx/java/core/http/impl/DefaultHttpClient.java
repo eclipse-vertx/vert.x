@@ -716,12 +716,12 @@ public class DefaultHttpClient implements HttpClient {
           ChannelPipeline pipeline = ch.pipeline();
           if (tcpHelper.isSSL()) {
             SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine(host, port);
+            engine.setUseClientMode(true); //We are on the client side of the connection
             if (tcpHelper.isVerifyHost()) {
               SSLParameters sslParameters = engine.getSSLParameters();
               sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
               engine.setSSLParameters(sslParameters);
             }
-            engine.setUseClientMode(true); //We are on the client side of the connection
             pipeline.addLast("ssl", new SslHandler(engine));
           }
 
