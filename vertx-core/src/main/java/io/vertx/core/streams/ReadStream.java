@@ -31,7 +31,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface ReadStream<T> {
+public interface ReadStream<T> extends StreamBase<T> {
 
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
@@ -57,9 +57,4 @@ public interface ReadStream<T> {
   @Fluent
   T endHandler(Handler<Void> endHandler);
 
-  /**
-   * Set an exception handler.
-   */
-  @Fluent
-  T exceptionHandler(Handler<Throwable> handler);
 }

@@ -32,7 +32,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface WriteStream<T> {
+public interface WriteStream<T> extends StreamBase<T> {
 
   /**
    * Write some data to the stream. The data is put on an internal write queue, and the write actually happens
@@ -63,9 +63,4 @@ public interface WriteStream<T> {
   @Fluent
   T drainHandler(Handler<Void> handler);
 
-  /**
-   * Set an exception handler.
-   */
-  @Fluent
-  T exceptionHandler(Handler<Throwable> handler);
 }
