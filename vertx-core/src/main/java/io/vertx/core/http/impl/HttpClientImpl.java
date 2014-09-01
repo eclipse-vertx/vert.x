@@ -262,12 +262,12 @@ public class HttpClientImpl implements HttpClient {
         ChannelPipeline pipeline = ch.pipeline();
         if (options.isSsl()) {
           SSLEngine engine = sslHelper.getSslContext().createSSLEngine(host, port);
+          engine.setUseClientMode(true); // We are on the client side of the connection
           if (options.isVerifyHost()) {
             SSLParameters sslParameters = engine.getSSLParameters();
             sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
             engine.setSSLParameters(sslParameters);
           }
-          engine.setUseClientMode(true); //We are on the client side of the connection
           pipeline.addLast("ssl", new SslHandler(engine));
         }
 
