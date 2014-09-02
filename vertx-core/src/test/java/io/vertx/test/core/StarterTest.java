@@ -31,7 +31,7 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testVersion() throws Exception {
-    String[] args = new String[] {"version"};
+    String[] args = new String[] {"-version"};
     Starter starter = new Starter();
     starter.run(args);
     // TODO some way of getting this from the version in pom.xml
@@ -58,6 +58,21 @@ public class StarterTest extends VertxTestBase {
     Starter starter = new Starter();
     Thread t = new Thread(() -> {
       String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
+      starter.run(args);
+    });
+    t.start();
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertTrue(t.isAlive()); // It's blocked
+    // Now unblock it
+    starter.unblock();
+    waitUntil(() -> !t.isAlive());
+  }
+
+  @Test
+  public void testRunVerticleWithMainVerticleInManifest() throws Exception {
+    Starter starter = new Starter();
+    Thread t = new Thread(() -> {
+      String[] args = new String[0];
       starter.run(args);
     });
     t.start();
