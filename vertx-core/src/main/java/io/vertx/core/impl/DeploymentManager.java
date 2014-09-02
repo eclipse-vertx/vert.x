@@ -261,8 +261,11 @@ public class DeploymentManager {
     if (options.isMultiThreaded() && !options.isWorker()) {
       throw new IllegalArgumentException("If multi-threaded then must be worker too");
     }
-    ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded()) : vertx.createEventLoopContext();
     String deploymentID = UUID.randomUUID().toString();
+    JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
+    ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, conf) :
+                                               vertx.createEventLoopContext(deploymentID, conf);
+
     DeploymentImpl deployment = new DeploymentImpl(deploymentID, context, verticleName, verticle, options);
     context.setDeployment(deployment);
     Deployment parent = currentContext.getDeployment();
@@ -270,12 +273,9 @@ public class DeploymentManager {
       parent.addChild(deployment);
       deployment.child = true;
     }
-    JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
     context.runOnContext(v -> {
       try {
         verticle.setVertx(vertx);
-        verticle.setConfig(conf);
-        verticle.setDeploymentID(deploymentID);
         Future<Void> startFuture = Future.future();
         verticle.start(startFuture);
         startFuture.setHandler(ar -> {

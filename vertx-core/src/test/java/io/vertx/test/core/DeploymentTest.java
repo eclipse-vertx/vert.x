@@ -26,14 +26,12 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.Deployment;
-
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.sourceverticle.SourceVerticle;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URLClassLoader;
@@ -894,11 +892,11 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(vertx, verticle.getVertx());
     String deploymentID = ar.result();
     assertNotNull(ar.result());
-    assertEquals(deploymentID, verticle.getDeploymentID());
+    assertEquals(deploymentID, verticle.deploymentID);
     if (config == null) {
-      assertEquals(0, verticle.getConfig().size());
+      assertEquals(0, verticle.config.size());
     } else {
-      assertEquals(config, verticle.getConfig());
+      assertEquals(config, verticle.config);
     }
     assertTrue(verticle.startCalled);
     assertFalse(verticle.stopCalled);
@@ -923,6 +921,8 @@ public class DeploymentTest extends VertxTestBase {
     Context stopContext;
     int startAction;
     int stopAction;
+    String deploymentID;
+    JsonObject config;
 
     MyVerticle() {
       this(NOOP, NOOP);
@@ -944,6 +944,8 @@ public class DeploymentTest extends VertxTestBase {
           startCalled = true;
           startContext = vertx.currentContext();
       }
+      deploymentID = vertx.currentContext().deploymentID();
+      config = vertx.currentContext().config();
     }
 
     @Override

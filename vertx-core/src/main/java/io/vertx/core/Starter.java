@@ -32,6 +32,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Scanner;
@@ -48,11 +50,15 @@ public class Starter {
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
+  public static List<String> PROCESS_ARGS;
+
   public static void main(String[] args) {
     new Starter().run(args);
   }
 
   public void run(String[] sargs) {
+
+    PROCESS_ARGS = Collections.unmodifiableList(Arrays.asList(sargs));
 
     Args args = new Args(sargs);
 

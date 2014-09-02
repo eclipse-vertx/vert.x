@@ -522,7 +522,8 @@ public class EventBusImpl implements EventBus {
     ContextImpl context = vertx.getContext();
     boolean hasContext = context != null;
     if (!hasContext) {
-      context = vertx.createEventLoopContext();
+      // Embedded
+      context = vertx.createEventLoopContext(null, new JsonObject());
     }
     HandlerHolder holder = new HandlerHolder<T>(handler, replyHandler, localOnly, context, timeoutID);
     HandlerRegistration registration = new HandlerRegistration<T>(address, handler);

@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,14 +28,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestVerticle extends AbstractVerticle {
 
   public static AtomicInteger instanceCount = new AtomicInteger();
+  public static List<String> processArgs;
 
   public TestVerticle() {
   }
 
   @Override
   public void start() throws Exception {
+    processArgs = vertx.currentContext().processArgs();
     vertx.eventBus().send("testcounts",
-      new JsonObject().putString("deploymentID", getDeploymentID()).putNumber("count", instanceCount.incrementAndGet()));
+      new JsonObject().putString("deploymentID", vertx.currentContext().deploymentID()).putNumber("count", instanceCount.incrementAndGet()));
   }
 
   @Override

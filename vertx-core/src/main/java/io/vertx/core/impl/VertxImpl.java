@@ -44,6 +44,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetClient;
@@ -216,8 +217,8 @@ public class VertxImpl implements VertxInternal {
   public ContextImpl getOrCreateContext() {
     ContextImpl ctx = getContext();
     if (ctx == null) {
-      // Create a context
-      ctx = createEventLoopContext();
+      // We are running embedded - Create a context
+      ctx = createEventLoopContext(null, new JsonObject());
     }
     return ctx;
   }
@@ -240,8 +241,8 @@ public class VertxImpl implements VertxInternal {
     }
   }
 
-  public EventLoopContext createEventLoopContext() {
-    return new EventLoopContext(this, workerOrderedFact.getExecutor());
+  public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config) {
+    return new EventLoopContext(this, workerOrderedFact.getExecutor(), deploymentID, config);
   }
 
   @Override
@@ -298,11 +299,11 @@ public class VertxImpl implements VertxInternal {
     return timerId;
   }
 
-  public ContextImpl createWorkerContext(boolean multiThreaded) {
+  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config) {
     if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool);
+      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config);
     } else {
-      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor());
+      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID, config);
     }
   }
 

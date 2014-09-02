@@ -16,6 +16,7 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 
@@ -28,8 +29,8 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  public EventLoopContext(VertxInternal vertx, Executor bgExec) {
-    super(vertx, bgExec);
+  public EventLoopContext(VertxInternal vertx, Executor bgExec, String deploymentID, JsonObject config) {
+    super(vertx, bgExec, deploymentID, config);
   }
 
   public void doExecute(ContextTask task) {

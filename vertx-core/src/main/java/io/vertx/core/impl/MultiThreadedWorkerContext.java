@@ -16,6 +16,8 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.json.JsonObject;
+
 import java.util.concurrent.Executor;
 
 /**
@@ -23,8 +25,8 @@ import java.util.concurrent.Executor;
  */
 public class MultiThreadedWorkerContext extends WorkerContext {
 
-  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedInternalExec, Executor workerExec) {
-    super(vertx, orderedInternalExec, workerExec);
+  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedInternalExec, Executor workerExec, String deploymentID, JsonObject config) {
+    super(vertx, orderedInternalExec, workerExec, deploymentID, config);
   }
 
   @Override

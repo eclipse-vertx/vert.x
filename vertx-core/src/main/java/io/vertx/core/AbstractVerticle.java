@@ -16,31 +16,12 @@
 
 package io.vertx.core;
 
-import io.vertx.core.json.JsonObject;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class AbstractVerticle implements Verticle {
 
-  protected String deploymentID;
   protected Vertx vertx;
-  protected JsonObject config;
-
-  @Override
-  public String getDeploymentID() {
-    return deploymentID;
-  }
-
-  @Override
-  public void setDeploymentID(String deploymentID) {
-    this.deploymentID = deploymentID;
-  }
-
-  @Override
-  public JsonObject getConfig() {
-    return config;
-  }
 
   @Override
   public Vertx getVertx() {
@@ -50,11 +31,6 @@ public abstract class AbstractVerticle implements Verticle {
   @Override
   public void setVertx(Vertx vertx) {
     this.vertx = vertx;
-  }
-
-  @Override
-  public void setConfig(JsonObject config) {
-    this.config = config;
   }
 
   @Override
@@ -74,7 +50,5 @@ public abstract class AbstractVerticle implements Verticle {
 
   public void stop() throws Exception {
   }
-
-
 
 }

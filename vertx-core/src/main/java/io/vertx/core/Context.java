@@ -17,6 +17,9 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.json.JsonObject;
+
+import java.util.List;
 
 /**
  * Represents the execution context of a Verticle.
@@ -27,5 +30,11 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface Context {
 
   void runOnContext(Handler<Void> action);
+
+  String deploymentID();
+
+  JsonObject config();
+
+  List<String> processArgs();
 
 }

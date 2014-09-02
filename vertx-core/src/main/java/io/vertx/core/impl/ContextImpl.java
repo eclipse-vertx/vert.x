@@ -22,12 +22,15 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Starter;
 import io.vertx.core.file.impl.PathResolver;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.spi.cluster.Action;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -41,6 +44,8 @@ public abstract class ContextImpl implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
+  protected final String deploymentID;
+  protected final JsonObject config;
   protected final VertxInternal vertx;
   private Deployment deployment;
   private Set<Closeable> closeHooks;
@@ -50,9 +55,11 @@ public abstract class ContextImpl implements Context {
   protected final Executor orderedInternalPoolExec;
   protected VertxThread contextThread;
 
-  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec) {
+  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, String deploymentID, JsonObject config) {
     this.vertx = vertx;
     this.orderedInternalPoolExec = orderedInternalPoolExec;
+    this.deploymentID = deploymentID;
+    this.config = config;
     EventLoopGroup group = vertx.getEventLoopGroup();
     if (group != null) {
       this.eventLoop = group.next();
@@ -144,6 +151,21 @@ public abstract class ContextImpl implements Context {
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
+  }
+
+  @Override
+  public String deploymentID() {
+    return deploymentID;
+  }
+
+  @Override
+  public JsonObject config() {
+    return config;
+  }
+
+  @Override
+  public List<String> processArgs() {
+    return Starter.PROCESS_ARGS;
   }
 
   public EventLoop getEventLoop() {

@@ -16,8 +16,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.json.JsonObject;
-
 /**
  * A verticle is the deployment unit of Vert.x
  *
@@ -25,17 +23,17 @@ import io.vertx.core.json.JsonObject;
  */
 public interface Verticle {
 
-  String getDeploymentID();
-
-  void setDeploymentID(String deploymentID);
+//  String getDeploymentID();
+//
+//  void setDeploymentID(String deploymentID);
 
   Vertx getVertx();
 
   void setVertx(Vertx vertx);
 
-  JsonObject getConfig();
-
-  void setConfig(JsonObject config);
+//  JsonObject getConfig();
+//
+//  void setConfig(JsonObject config);
 
   void start(Future<Void> startFuture) throws Exception;
 

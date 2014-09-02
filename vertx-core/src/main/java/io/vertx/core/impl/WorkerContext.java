@@ -16,6 +16,8 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.json.JsonObject;
+
 import java.util.concurrent.Executor;
 
 /**
@@ -25,8 +27,8 @@ public class WorkerContext extends ContextImpl {
 
   protected final Executor workerExec;
 
-  public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec) {
-    super(vertx, orderedInternalPoolExec);
+  public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config) {
+    super(vertx, orderedInternalPoolExec, deploymentID, config);
     this.workerExec = workerExec;
   }
 

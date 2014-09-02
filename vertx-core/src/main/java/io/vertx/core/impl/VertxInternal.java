@@ -20,6 +20,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.Handler;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.cluster.VertxSPI;
@@ -60,12 +61,12 @@ public interface VertxInternal extends VertxSPI {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext();
+  EventLoopContext createEventLoopContext(String deploymentID, JsonObject config);
 
   /**
    * @return worker loop context
    */
-  ContextImpl createWorkerContext(boolean multiThreaded);
+  ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config);
 
   void simulateKill();
 
