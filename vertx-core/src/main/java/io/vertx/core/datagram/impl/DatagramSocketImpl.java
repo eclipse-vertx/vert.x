@@ -195,7 +195,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocket sendBuffer(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
-    metrics.bytesWritten(new SocketAddressImpl(port, host), packet.length());
+    if (metrics.isEnabled()) metrics.bytesWritten(new SocketAddressImpl(port, host), packet.length());
+
     return this;
   }
 

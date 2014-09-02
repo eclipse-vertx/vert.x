@@ -328,7 +328,7 @@ class ClientConnection extends ConnectionBase {
     }
     this.currentRequest = req;
     this.requests.add(req);
-    client.metrics.requestBegin(req);
+    client.metrics().requestBegin(req);
   }
 
   void endRequest() {

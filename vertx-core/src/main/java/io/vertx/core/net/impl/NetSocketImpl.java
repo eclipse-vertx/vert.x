@@ -288,14 +288,16 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       pendingData.add(data);
       return;
     }
-    metrics.bytesRead(remoteAddress(), data.length());
+    if (metrics.isEnabled()) metrics.bytesRead(remoteAddress(), data.length());
+
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
   }
 
   private void write(ByteBuf buff) {
-    metrics.bytesWritten(remoteAddress(), buff.readableBytes());
+    if (metrics.isEnabled()) metrics.bytesWritten(remoteAddress(), buff.readableBytes());
+
     writeFuture = super.write(buff);
   }
 

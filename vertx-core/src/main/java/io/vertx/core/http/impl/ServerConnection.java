@@ -134,9 +134,10 @@ class ServerConnection extends ConnectionBase {
 
   @Override
   public ChannelFuture write(Object obj) {
-    if (obj instanceof HttpContent) {
+    if (metrics.isEnabled() && obj instanceof HttpContent) {
       metrics.bytesWritten(remoteAddress(), ((HttpContent) obj).content().readableBytes());
     }
+
     return lastWriteFuture = super.write(obj);
   }
 
@@ -215,7 +216,7 @@ class ServerConnection extends ConnectionBase {
 
   private void handleEnd() {
     currentRequest.handleEnd();
-    metrics.bytesRead(remoteAddress(), bytesRead);
+    if (metrics.isEnabled()) metrics.bytesRead(remoteAddress(), bytesRead);
 
     currentRequest = null;
     bytesRead = 0;

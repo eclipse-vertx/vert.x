@@ -49,7 +49,6 @@ class EventBusMetricsImpl extends AbstractMetrics implements EventBusMetrics {
     if (!isEnabled()) return;
 
     handlerCount.inc();
-//    counter("handlers", address).inc();
   }
 
   @Override
@@ -57,7 +56,6 @@ class EventBusMetricsImpl extends AbstractMetrics implements EventBusMetrics {
     if (!isEnabled()) return;
 
     handlerCount.dec();
-//    counter("handlers", address).dec();
   }
 
   @Override

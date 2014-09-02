@@ -95,7 +95,7 @@ public class VertxOptionsImpl implements VertxOptions{
     this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUMSIZE);
     this.haGroup = json.getString("haGroup", null);
     this.metricsEnabled = json.getBoolean("metricsEnabled", DEFAULT_METRICS_ENABLED);
-    this.jmxEnabled = json.getBoolean("jmxEnabled", DEFAULT_METRICS_ENABLED);
+    this.jmxEnabled = json.getBoolean("jmxEnabled", DEFAULT_JMX_ENABLED);
     this.jmxDomain = json.getString("jmxDomain");
   }
 

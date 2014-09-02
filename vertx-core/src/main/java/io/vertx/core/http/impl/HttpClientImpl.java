@@ -79,7 +79,7 @@ public class HttpClientImpl implements HttpClient {
   private final Closeable closeHook;
   private boolean closed;
   private final SSLHelper sslHelper;
-  final HttpClientMetrics metrics;
+  private final HttpClientMetrics metrics;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
@@ -233,6 +233,10 @@ public class HttpClientImpl implements HttpClient {
 
   void removeChannel(Channel channel) {
     connectionMap.remove(channel);
+  }
+
+  HttpClientMetrics metrics() {
+    return metrics;
   }
 
   private void applyConnectionOptions(Bootstrap bootstrap) {
