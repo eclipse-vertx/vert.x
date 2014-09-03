@@ -62,8 +62,8 @@ public interface Vertx {
     return factory.vertx(options);
   }
 
-  static void vertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    factory.vertx(options, resultHandler);
+  static void vertxAsync(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    factory.vertxAsync(options, resultHandler);
   }
 
   /**

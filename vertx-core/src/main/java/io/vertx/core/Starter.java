@@ -142,7 +142,7 @@ public class Starter {
       }
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
-      Vertx.vertx(VertxOptions.options().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true), ar -> {
+      Vertx.vertxAsync(VertxOptions.options().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true), ar -> {
         result.set(ar);
         latch.countDown();
       });

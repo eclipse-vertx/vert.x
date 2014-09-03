@@ -33,6 +33,6 @@ public interface VertxFactory {
 
   Vertx vertx(VertxOptions options);
 
-  void vertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
+  void vertxAsync(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
 
 }

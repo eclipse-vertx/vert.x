@@ -140,12 +140,15 @@ public class VertxImpl implements VertxInternal {
           }
         });
       });
+      this.sharedData = new SharedDataImpl(this, clusterManager);
     } else {
       this.clusterManager = null;
+      this.sharedData = new SharedDataImpl(this, clusterManager);
       this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout());
+      if (resultHandler != null) {
+        resultHandler.handle(Future.completedFuture(this));
+      }
     }
-    this.sharedData = new SharedDataImpl(this, clusterManager);
-
   }
 
   /**

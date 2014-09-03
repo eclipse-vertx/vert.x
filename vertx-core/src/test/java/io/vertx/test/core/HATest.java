@@ -361,7 +361,7 @@ public class HATest extends VertxTestBase {
       setClusterHost("localhost").setClusterManager(getClusterManager());
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Vertx> vertxRef = new AtomicReference<>();
-    Vertx.vertx(options, onSuccess(vertx -> {
+    Vertx.vertxAsync(options, onSuccess(vertx -> {
       vertxRef.set(vertx);
       latch.countDown();
     }));

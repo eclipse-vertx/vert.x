@@ -35,11 +35,14 @@ public class VertxFactoryImpl implements VertxFactory {
 
   @Override
   public Vertx vertx(VertxOptions options) {
+    if (options.isClustered()) {
+      throw new IllegalArgumentException("Please use the asynchronous method to create a clustered Vertx");
+    }
     return new VertxImpl(options);
   }
 
   @Override
-  public void vertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
+  public void vertxAsync(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
     new VertxImpl(options, resultHandler);
   }
 
