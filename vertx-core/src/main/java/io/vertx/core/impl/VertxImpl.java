@@ -91,7 +91,7 @@ public class VertxImpl implements VertxInternal {
   private final FileSystem fileSystem = getFileSystem();
   private EventBus eventBus;
   private final SharedData sharedData;
-  private Metrics metrics;
+  private final Metrics metrics;
 
   private ExecutorService workerPool;
   private ExecutorService internalBlockingPool;
@@ -395,6 +395,8 @@ public class VertxImpl implements VertxInternal {
         if (eventLoopGroup != null) {
           eventLoopGroup.shutdownNow();
         }
+
+        metrics.stop();
 
         checker.close();
 

@@ -18,12 +18,9 @@ package io.vertx.core.metrics.impl;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.metrics.impl.reporters.EventBusMetricReporter;
 import io.vertx.core.metrics.impl.reporters.codahale.JmxReporter;
 import io.vertx.core.metrics.spi.Metrics;
 import io.vertx.core.spi.MetricsFactory;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
@@ -38,7 +35,9 @@ public class MetricsFactoryImpl implements MetricsFactory {
       if (jmxDomain == null) {
         jmxDomain = "vertx" + "@" + Integer.toHexString(vertx.hashCode());
       }
-      JmxReporter.forRegistry(metrics.registry()).inDomain(jmxDomain).build().start();
+      JmxReporter reporter = JmxReporter.forRegistry(metrics.registry()).inDomain(jmxDomain).build();
+      metrics.setDoneHandler(v -> reporter.stop());
+      reporter.start();
     }
 
     return metrics;

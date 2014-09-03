@@ -59,6 +59,8 @@ public interface Metrics extends BaseMetrics, MetricsProvider {
 
   DatagramMetrics register(DatagramSocket socket, DatagramSocketOptions options);
 
+  void stop();
+
   static Metrics metrics(Vertx vertx, VertxOptions options) {
     return factory.metrics(vertx, options);
   }

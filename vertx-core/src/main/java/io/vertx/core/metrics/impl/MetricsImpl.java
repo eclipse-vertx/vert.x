@@ -22,9 +22,11 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
+import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -63,6 +65,7 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
 
   private Counter timers;
   private Counter verticles;
+  private Handler<Void> doneHandler;
 
   public MetricsImpl(Vertx vertx, VertxOptions vertxOptions) {
     super(createRegistry(vertxOptions), instanceName(BASE_NAME, vertx));
@@ -145,6 +148,13 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
   }
 
   @Override
+  public void stop() {
+    if (doneHandler != null) {
+      doneHandler.handle(null);
+    }
+  }
+
+  @Override
   public Map<String, JsonObject> getMetrics(TimeUnit rateUnit, TimeUnit durationUnit, BiPredicate<String, JsonObject> filter) {
     Objects.requireNonNull(rateUnit);
     Objects.requireNonNull(durationUnit);
@@ -159,6 +169,10 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
     });
 
     return metrics;
+  }
+
+  void setDoneHandler(Handler<Void> handler) {
+    this.doneHandler = handler;
   }
 
   private static String verticleName(Verticle verticle) {
