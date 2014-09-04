@@ -23,17 +23,9 @@ package io.vertx.core;
  */
 public interface Verticle {
 
-//  String getDeploymentID();
-//
-//  void setDeploymentID(String deploymentID);
-
   Vertx getVertx();
 
   void setVertx(Vertx vertx);
-
-//  JsonObject getConfig();
-//
-//  void setConfig(JsonObject config);
 
   void start(Future<Void> startFuture) throws Exception;
 
