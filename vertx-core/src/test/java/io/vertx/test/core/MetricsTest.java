@@ -32,6 +32,7 @@ import io.vertx.core.net.NetSocket;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -99,14 +100,12 @@ public class MetricsTest extends AsyncTestBase {
     assertTrue(latch.await(10, TimeUnit.SECONDS));
     assertEquals(requests, expected.get());
 
-
     // Gather metrics
     Map<String, JsonObject> httpMetrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.http"));
 
     // Verify http server
     String baseName = "io.vertx.http.servers.localhost:8080";
     assertCount(httpMetrics, baseName + ".requests", requests); // requests
-    assertCount(httpMetrics, baseName + ".requests.uri." + uri, requests); // requests.uri.{uri}
     assertMinMax(httpMetrics, baseName + ".bytes-written", (long) serverMin.length(), (long) serverMax.length());
     assertMinMax(httpMetrics, baseName + ".bytes-read", (long) clientMin.length(), (long) clientMax.length());
     assertCount(httpMetrics, baseName + ".exceptions", 0);
@@ -124,14 +123,23 @@ public class MetricsTest extends AsyncTestBase {
   }
 
   @Test
-  public void testHttpClientChunkWrites() {
-    String uri = "/blah";
-    int clientChunkSize = 100;
+  public void testHttpChunkWritesMetrics() {
+    String uri = "/foo";
     int chunks = 10;
-    long numberOfBytes = clientChunkSize * chunks;
+    int max = 1000;
+    int min = 50;
+    AtomicLong serverWrittenBytes = new AtomicLong();
+    AtomicLong clientWrittenBytes = new AtomicLong();
+    Random random = new Random();
 
     HttpClient client = vertx.createHttpClient(HttpClientOptions.options());
     vertx.createHttpServer(HttpServerOptions.options().setHost("localhost").setPort(8080)).requestHandler(req -> {
+      req.response().setChunked(true);
+      for (int i = 0; i < chunks; i++) {
+        int size = random.nextInt(max - min) + min;
+        serverWrittenBytes.addAndGet(size);
+        req.response().writeBuffer(randomBuffer(size));
+      }
       req.response().end();
     }).listen(ar -> {
       if (ar.succeeded()) {
@@ -141,7 +149,9 @@ public class MetricsTest extends AsyncTestBase {
         req.setChunked(true);
 
         for (int i = 0; i < chunks; i++) {
-          req.writeBuffer(randomBuffer(clientChunkSize));
+          int size = random.nextInt(max - min) + min;
+          clientWrittenBytes.addAndGet(size);
+          req.writeBuffer(randomBuffer(size));
         }
         req.end();
       } else {
@@ -157,19 +167,51 @@ public class MetricsTest extends AsyncTestBase {
     // Verify http server
     String baseName = "io.vertx.http.servers.localhost:8080";
     assertCount(httpMetrics, baseName + ".requests", 1); // requests
-    assertCount(httpMetrics, baseName + ".requests.uri." + uri, 1); // requests.uri.{uri}
-    assertMinMax(httpMetrics, baseName + ".bytes-written", 0L, 0L);
-    assertMinMax(httpMetrics, baseName + ".bytes-read", numberOfBytes, numberOfBytes);
+    assertMinMax(httpMetrics, baseName + ".bytes-written", serverWrittenBytes.get(), serverWrittenBytes.get());
+    assertMinMax(httpMetrics, baseName + ".bytes-read", clientWrittenBytes.get(), clientWrittenBytes.get());
     assertCount(httpMetrics, baseName + ".exceptions", 0);
     expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
 
     // Verify http client
     baseName = "io.vertx.http.clients.@" + Integer.toHexString(client.hashCode());
     assertCount(httpMetrics, baseName + ".requests", 1); // requests
-    assertMinMax(httpMetrics, baseName + ".bytes-written", numberOfBytes, numberOfBytes);
-    assertMinMax(httpMetrics, baseName + ".bytes-read", 0L, 0L);
+    assertMinMax(httpMetrics, baseName + ".bytes-written", clientWrittenBytes.get(), clientWrittenBytes.get());
+    assertMinMax(httpMetrics, baseName + ".bytes-read", serverWrittenBytes.get(), serverWrittenBytes.get());
     assertCount(httpMetrics, baseName + ".exceptions", 0);
     expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
+  }
+
+  @Test
+  public void testHttpMethodAndUriMetrics() throws Exception {
+    int requests = 4;
+    CountDownLatch latch = new CountDownLatch(requests);
+
+    vertx.createHttpServer(HttpServerOptions.options().setHost("localhost").setPort(8080)).requestHandler(req -> {
+      req.response().end();
+    }).listen();
+
+    RequestOptions requestOptions = RequestOptions.options().setHost("localhost").setPort(8080);
+    HttpClient client = vertx.createHttpClient(HttpClientOptions.options());
+    client.get(requestOptions.setRequestURI("/get"), resp -> latch.countDown()).end();
+    client.post(requestOptions.setRequestURI("/post"), resp -> latch.countDown()).end();
+    client.put(requestOptions.setRequestURI("/put"), resp -> latch.countDown()).end();
+    client.delete(requestOptions.setRequestURI("/delete"), resp -> latch.countDown()).end();
+    // We don't have to test all http methods...
+
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    // Gather metrics
+    Map<String, JsonObject> httpMetrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.http"));
+
+    String baseName = "io.vertx.http.servers.localhost:8080";
+    assertCount(httpMetrics, baseName + ".get-requests", 1);
+    assertCount(httpMetrics, baseName + ".get-requests./get", 1);
+    assertCount(httpMetrics, baseName + ".post-requests", 1);
+    assertCount(httpMetrics, baseName + ".post-requests./post", 1);
+    assertCount(httpMetrics, baseName + ".put-requests", 1);
+    assertCount(httpMetrics, baseName + ".put-requests./put", 1);
+    assertCount(httpMetrics, baseName + ".delete-requests", 1);
+    assertCount(httpMetrics, baseName + ".delete-requests./delete", 1);
   }
 
   @Test
@@ -212,9 +254,6 @@ public class MetricsTest extends AsyncTestBase {
     String baseName = "io.vertx.net.servers.localhost:" + actualPort.get();
     assertMinMax(metrics, baseName + ".bytes-written", (long) serverData.length(), (long) serverData.length());
     assertMinMax(metrics, baseName + ".bytes-read", (long) clientData.length(), (long) clientData.length());
-
-    //assertHistogram(name(serverMetricName, "bytes-read"), requests, clientData.length(), clientData.length());
-    //assertHistogram(name(serverMetricName, "bytes-written"), requests, serverData.length(), serverData.length());
 
     // Verify net client
     assertNotNull(clientRef.get());

@@ -67,18 +67,18 @@ abstract class HttpMetricsImpl extends NetMetricsImpl {
       if (!isEnabled()) return;
 
       long duration = System.nanoTime() - start;
+
+      // Update generic requests metric
       requests.update(duration, TimeUnit.NANOSECONDS);
 
-      // Having named metrics based on URI could get ugly
-      if (uri != null) {
-        timer("requests", "uri", uri).update(duration, TimeUnit.NANOSECONDS);
-      }
-
+      // Update specific method / uri request metrics
       if (method != null) {
         timer(method + "-requests").update(duration, TimeUnit.NANOSECONDS);
         if (uri != null) {
           timer(method + "-requests", uri).update(duration, TimeUnit.NANOSECONDS);
         }
+      } else if (uri != null) {
+        timer("requests", uri).update(duration, TimeUnit.NANOSECONDS);
       }
     }
   }

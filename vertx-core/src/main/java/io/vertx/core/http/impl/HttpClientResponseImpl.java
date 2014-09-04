@@ -202,7 +202,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   void handleEnd(LastHttpContent trailer) {
     if (conn.metrics.isEnabled()) conn.metrics.bytesRead(conn.remoteAddress(), bytesRead);
     bytesRead = 0;
-    conn.metrics.responseEnd(this);
+    conn.metrics.responseEnd(request, this);
     if (paused) {
       hasPausedEnd = true;
       pausedTrailer = trailer;

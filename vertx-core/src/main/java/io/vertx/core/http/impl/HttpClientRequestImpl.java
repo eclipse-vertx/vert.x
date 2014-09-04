@@ -54,6 +54,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private Handler<Void> continueHandler;
   private final VertxInternal vertx;
   private boolean chunked;
+  private String method;
+  private String uri;
   private ClientConnection conn;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
@@ -75,6 +77,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), options.getRequestURI(), false);
     this.chunked = false;
+    this.method = request.getMethod().toString();
+    this.uri = request.getUri();
     this.respHandler = respHandler;
     this.vertx = vertx;
   }
@@ -92,6 +96,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public boolean isChunked() {
     return chunked;
+  }
+
+  @Override
+  public String method() {
+    return method;
+  }
+
+  @Override
+  public String uri() {
+    return uri;
   }
 
   @Override
@@ -267,7 +281,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     // If an exception occurred (e.g. a timeout fired) we won't receive the response.
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();
-      client.metrics().requestEndAndResponseBegin(this, resp);
       try {
         if (resp.statusCode() == 100) {
           if (continueHandler != null) {

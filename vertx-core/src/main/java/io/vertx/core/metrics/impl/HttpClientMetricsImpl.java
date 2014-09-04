@@ -22,7 +22,6 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.metrics.spi.HttpClientMetrics;
 
-import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -32,7 +31,6 @@ import java.util.WeakHashMap;
 class HttpClientMetricsImpl extends HttpMetricsImpl implements HttpClientMetrics {
 
   private Map<HttpClientRequest, TimedContext> timings;
-  private Map<HttpClientResponse, WeakReference<HttpClientRequest>> requestsToResponses;
 
   public HttpClientMetricsImpl(AbstractMetrics metrics, String baseName, HttpClientOptions options) {
     super(metrics, baseName, true);
@@ -44,7 +42,6 @@ class HttpClientMetricsImpl extends HttpMetricsImpl implements HttpClientMetrics
 
     // request timings
     timings = new WeakHashMap<>();
-    requestsToResponses = new WeakHashMap<>();
 
     // max pool size gauge
     int maxPoolSize = options.getMaxPoolSize();
@@ -64,24 +61,14 @@ class HttpClientMetricsImpl extends HttpMetricsImpl implements HttpClientMetrics
   public void requestBegin(HttpClientRequest request) {
     if (!isEnabled()) return;
 
-    timings.put(request, time(null, null));
+    timings.put(request, time(request.method(), request.uri()));
   }
 
   @Override
-  public void requestEndAndResponseBegin(HttpClientRequest request, HttpClientResponse response) {
+  public void responseEnd(HttpClientRequest request, HttpClientResponse response) {
     if (!isEnabled()) return;
 
-    // This maps the response to a request so we can later complete our timing
-    requestsToResponses.put(response, new WeakReference<>(request));
-  }
-
-  @Override
-  public void responseEnd(HttpClientResponse response) {
-    if (!isEnabled()) return;
-
-    WeakReference<HttpClientRequest> ref = requestsToResponses.remove(response);
-    HttpClientRequest req = (ref == null) ? null : ref.get();
-    TimedContext ctx = (req == null) ? null : timings.remove(req);
+    TimedContext ctx = timings.remove(request);
     if (ctx != null) {
       ctx.stop();
     }

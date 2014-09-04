@@ -41,8 +41,7 @@ class HttpServerMetricsImpl extends HttpMetricsImpl implements HttpServerMetrics
   public void requestBegin(HttpServerRequest request, HttpServerResponse response) {
     if (!isEnabled()) return;
 
-    // Start timing the request, but do so only for all server requests and
-    timings.put(response, time(null, request.uri()));
+    timings.put(response, time(request.method(), request.uri()));
   }
 
   @Override

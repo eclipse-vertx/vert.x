@@ -241,7 +241,7 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
     populateSnapshot(json, snapshot, factor);
 
     // Duration rate
-    String duration = durationUnit.toString().toLowerCase(Locale.US);
+    String duration = durationUnit.toString().toLowerCase();
     json.putString("durationRate", duration);
 
     return json;
@@ -254,7 +254,7 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
     json.putNumber("oneMinuteRate", meter.getOneMinuteRate() * factor);
     json.putNumber("fiveMinuteRate", meter.getFiveMinuteRate() * factor);
     json.putNumber("fifteenMinuteRate", meter.getFifteenMinuteRate() * factor);
-    String rate = "events/" + rateUnit.toString().toLowerCase(Locale.US);
+    String rate = "events/" + rateUnit.toString().toLowerCase();
     json.putString("rate", rate);
   }
 

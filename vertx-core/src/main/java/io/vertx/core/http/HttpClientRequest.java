@@ -79,6 +79,17 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
   boolean isChunked();
 
   /**
+   * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
+   */
+  String method();
+
+  /**
+   * The uri of the request. For example
+   * http://www.somedomain.com/somepath/somemorepath/someresource.foo?someparam=32&amp;someotherparam=x
+   */
+  String uri();
+
+  /**
    * @return The HTTP headers
    */
   @CacheReturn

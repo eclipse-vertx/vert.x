@@ -24,9 +24,7 @@ import io.vertx.core.http.HttpClientResponse;
  */
 public interface HttpClientMetrics extends NetMetrics {
 
-  public void requestBegin(HttpClientRequest request);
+  void requestBegin(HttpClientRequest request);
 
-  public void requestEndAndResponseBegin(HttpClientRequest request, HttpClientResponse response);
-
-  public void responseEnd(HttpClientResponse response);
+  void responseEnd(HttpClientRequest request, HttpClientResponse response);
 }
