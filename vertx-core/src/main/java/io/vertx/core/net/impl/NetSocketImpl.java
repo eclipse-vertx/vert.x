@@ -236,7 +236,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket ssl(final Handler<Void> handler) {
+  public NetSocket upgradeToSsl(final Handler<Void> handler) {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
       sslHandler = helper.createSslHandler(vertx, client);

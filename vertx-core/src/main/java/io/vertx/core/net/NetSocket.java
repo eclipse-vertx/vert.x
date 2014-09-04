@@ -103,7 +103,7 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
    */
   @Fluent
-  NetSocket ssl(Handler<Void> handler);
+  NetSocket upgradeToSsl(Handler<Void> handler);
 
   /**
    * Returns {@code true} if this {@link NetSocket} is encrypted via SSL/TLS.

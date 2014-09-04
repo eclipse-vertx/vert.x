@@ -1184,7 +1184,7 @@ public class NetTest extends NetTestBase {
         socket.writeBuffer(buff); // echo the data
         if (startTLS && !upgradedServer.get()) {
           assertFalse(socket.isSsl());
-          socket.ssl(v -> assertTrue(socket.isSsl()));
+          socket.upgradeToSsl(v -> assertTrue(socket.isSsl()));
           upgradedServer.set(true);
         } else {
           assertTrue(socket.isSsl());
@@ -1231,7 +1231,7 @@ public class NetTest extends NetTestBase {
             }
             if (startTLS && !upgradedClient.get()) {
               assertFalse(socket.isSsl());
-              socket.ssl(v -> {
+              socket.upgradeToSsl(v -> {
                 assertTrue(socket.isSsl());
                 // Now send the rest
                 for (int i = 1; i < numChunks; i++) {
