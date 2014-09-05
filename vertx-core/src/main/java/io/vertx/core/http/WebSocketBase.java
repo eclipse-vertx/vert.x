@@ -73,9 +73,8 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   /**
    * Writes a (potentially large) piece of data as a websocket message - this may be split into multiple frames
    * if it is large.
-   * @param data
-   * @return
    */
+  @Fluent
   T writeMessage(Buffer data);
 
 
