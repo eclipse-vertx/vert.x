@@ -77,6 +77,7 @@ public interface CaOptions extends TrustStoreOptions {
 
   CaOptions addCertValue(Buffer certValue);
 
+  @Override
   CaOptions clone();
 
   static final CaOptionsFactory factory = ServiceHelper.loadFactory(CaOptionsFactory.class);
