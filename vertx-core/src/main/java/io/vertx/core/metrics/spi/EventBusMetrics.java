@@ -16,6 +16,8 @@
 
 package io.vertx.core.metrics.spi;
 
+import io.vertx.core.eventbus.ReplyFailure;
+
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
@@ -25,7 +27,9 @@ public interface EventBusMetrics extends BaseMetrics {
 
   void handlerUnregistered(String address);
 
-  void messageSent(String address);
+  void messageSent(String address, boolean publish);
 
   void messageReceived(String address);
+
+  void replyFailure(String address, ReplyFailure failure);
 }

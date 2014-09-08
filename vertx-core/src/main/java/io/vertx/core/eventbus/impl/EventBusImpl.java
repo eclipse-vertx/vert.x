@@ -268,7 +268,7 @@ public class EventBusImpl implements EventBus {
 
   <T> void sendReply(ServerID dest, MessageImpl message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     if (message.address() == null) {
-      sendNoHandlersFailure(replyHandler);
+      sendNoHandlersFailure(null, replyHandler);
     } else {
       sendOrPub(dest, message, options, replyHandler);
     }
@@ -448,7 +448,7 @@ public class EventBusImpl implements EventBus {
   private <T> void sendOrPub(ServerID replyDest, MessageImpl message, DeliveryOptions options,
                              Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
-    metrics.messageSent(message.address());
+    metrics.messageSent(message.address(), !message.send());
     ContextImpl context = vertx.getOrCreateContext();
     Handler<Message<T>> simpleReplyHandler = null;
     try {
@@ -460,6 +460,7 @@ public class EventBusImpl implements EventBus {
         timeoutID = vertx.setTimer(options.getSendTimeout(), timerID -> {
           log.warn("Message reply handler timed out as no reply was received - it will be removed");
           refReg.get().unregister();
+          metrics.replyFailure(message.address(), ReplyFailure.TIMEOUT);
           replyHandler.handle(Future.completedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
         });
         simpleReplyHandler = convertHandler(replyHandler);
@@ -507,7 +508,9 @@ public class EventBusImpl implements EventBus {
       Future<Message<T>> result;
       if (reply.body() instanceof ReplyException) {
         // This is kind of clunky - but hey-ho
-        result = Future.completedFuture((ReplyException) reply.body());
+        ReplyException exception = (ReplyException) reply.body();
+        metrics.replyFailure(reply.address(), exception.failureType());
+        result = Future.completedFuture(exception);
       } else {
         result = Future.completedFuture(reply);
       }
@@ -703,7 +706,7 @@ public class EventBusImpl implements EventBus {
     } else {
       // no handlers
       if (replyHandler != null) {
-        sendNoHandlersFailure(replyHandler);
+        sendNoHandlersFailure(msg.address(), replyHandler);
         if (timeoutID != -1) {
           vertx.cancelTimer(timeoutID);
         }
@@ -714,10 +717,11 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private <T> void sendNoHandlersFailure(Handler<AsyncResult<Message<T>>> handler) {
+  private <T> void sendNoHandlersFailure(String address, Handler<AsyncResult<Message<T>>> handler) {
     vertx.runOnContext(new Handler<Void>() {
       @Override
       public void handle(Void v) {
+        metrics.replyFailure(address, ReplyFailure.NO_HANDLERS);
         handler.handle(Future.completedFuture(new ReplyException(ReplyFailure.NO_HANDLERS)));
       }
     });

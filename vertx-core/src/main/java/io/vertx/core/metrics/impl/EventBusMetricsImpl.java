@@ -18,6 +18,7 @@ package io.vertx.core.metrics.impl;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.metrics.spi.EventBusMetrics;
 
 /**
@@ -26,9 +27,10 @@ import io.vertx.core.metrics.spi.EventBusMetrics;
 class EventBusMetricsImpl extends AbstractMetrics implements EventBusMetrics {
 
   private Counter handlerCount;
-  private Meter messages;
   private Meter receivedMessages;
   private Meter sentMessages;
+  private Meter publishedMessages;
+  private Meter replyFailures;
 
   public EventBusMetricsImpl(AbstractMetrics metrics, String baseName) {
     super(metrics.registry(), baseName);
@@ -39,9 +41,10 @@ class EventBusMetricsImpl extends AbstractMetrics implements EventBusMetrics {
     if (!isEnabled()) return;
 
     this.handlerCount = counter("handlers");
-    this.messages = meter("messages");
-    this.receivedMessages = meter("messages-received");
-    this.sentMessages = meter("messages-sent");
+    this.receivedMessages = meter("messages", "received");
+    this.sentMessages = meter("messages", "sent");
+    this.publishedMessages = meter("messages", "published");
+    this.replyFailures = meter("messages", "reply-failures");
   }
 
   @Override
@@ -59,18 +62,28 @@ class EventBusMetricsImpl extends AbstractMetrics implements EventBusMetrics {
   }
 
   @Override
-  public void messageSent(String address) {
+  public void messageSent(String address, boolean publish) {
     if (!isEnabled()) return;
 
-    messages.mark();
-    sentMessages.mark();
+    if (publish) {
+      publishedMessages.mark();
+    } else {
+      sentMessages.mark();
+    }
   }
 
   @Override
   public void messageReceived(String address) {
     if (!isEnabled()) return;
 
-    messages.mark();
     receivedMessages.mark();
+  }
+
+  @Override
+  public void replyFailure(String address, ReplyFailure failure) {
+    if (!isEnabled()) return;
+
+    replyFailures.mark();
+    meter("messages", "reply-failures", failure.name()).mark();
   }
 }

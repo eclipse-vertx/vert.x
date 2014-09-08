@@ -19,12 +19,15 @@ package io.vertx.test.core;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.metrics.ScheduledMetricsConsumer;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
@@ -105,18 +108,18 @@ public class MetricsTest extends AsyncTestBase {
 
     // Verify http server
     String baseName = "io.vertx.http.servers.localhost:8080";
-    assertCount(httpMetrics, baseName + ".requests", requests); // requests
+    assertCount(httpMetrics, baseName + ".requests", (long) requests); // requests
     assertMinMax(httpMetrics, baseName + ".bytes-written", (long) serverMin.length(), (long) serverMax.length());
     assertMinMax(httpMetrics, baseName + ".bytes-read", (long) clientMin.length(), (long) clientMax.length());
-    assertCount(httpMetrics, baseName + ".exceptions", 0);
+    assertCount(httpMetrics, baseName + ".exceptions", 0L);
     expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
 
     // Verify http client
     baseName = "io.vertx.http.clients.@" + Integer.toHexString(client.hashCode());
-    assertCount(httpMetrics, baseName + ".requests", requests); // requests
+    assertCount(httpMetrics, baseName + ".requests", (long) requests); // requests
     assertMinMax(httpMetrics, baseName + ".bytes-written", (long) clientMin.length(), (long) clientMax.length());
     assertMinMax(httpMetrics, baseName + ".bytes-read", (long) serverMin.length(), (long) serverMax.length());
-    assertCount(httpMetrics, baseName + ".exceptions", 0);
+    assertCount(httpMetrics, baseName + ".exceptions", 0L);
     expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
 
     testComplete();
@@ -166,18 +169,18 @@ public class MetricsTest extends AsyncTestBase {
 
     // Verify http server
     String baseName = "io.vertx.http.servers.localhost:8080";
-    assertCount(httpMetrics, baseName + ".requests", 1); // requests
+    assertCount(httpMetrics, baseName + ".requests", 1L); // requests
     assertMinMax(httpMetrics, baseName + ".bytes-written", serverWrittenBytes.get(), serverWrittenBytes.get());
     assertMinMax(httpMetrics, baseName + ".bytes-read", clientWrittenBytes.get(), clientWrittenBytes.get());
-    assertCount(httpMetrics, baseName + ".exceptions", 0);
+    assertCount(httpMetrics, baseName + ".exceptions", 0L);
     expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
 
     // Verify http client
     baseName = "io.vertx.http.clients.@" + Integer.toHexString(client.hashCode());
-    assertCount(httpMetrics, baseName + ".requests", 1); // requests
+    assertCount(httpMetrics, baseName + ".requests", 1L); // requests
     assertMinMax(httpMetrics, baseName + ".bytes-written", clientWrittenBytes.get(), clientWrittenBytes.get());
     assertMinMax(httpMetrics, baseName + ".bytes-read", serverWrittenBytes.get(), serverWrittenBytes.get());
-    assertCount(httpMetrics, baseName + ".exceptions", 0);
+    assertCount(httpMetrics, baseName + ".exceptions", 0L);
     expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
   }
 
@@ -204,14 +207,14 @@ public class MetricsTest extends AsyncTestBase {
     Map<String, JsonObject> httpMetrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.http"));
 
     String baseName = "io.vertx.http.servers.localhost:8080";
-    assertCount(httpMetrics, baseName + ".get-requests", 1);
-    assertCount(httpMetrics, baseName + ".get-requests./get", 1);
-    assertCount(httpMetrics, baseName + ".post-requests", 1);
-    assertCount(httpMetrics, baseName + ".post-requests./post", 1);
-    assertCount(httpMetrics, baseName + ".put-requests", 1);
-    assertCount(httpMetrics, baseName + ".put-requests./put", 1);
-    assertCount(httpMetrics, baseName + ".delete-requests", 1);
-    assertCount(httpMetrics, baseName + ".delete-requests./delete", 1);
+    assertCount(httpMetrics, baseName + ".get-requests", 1L);
+    assertCount(httpMetrics, baseName + ".get-requests./get", 1L);
+    assertCount(httpMetrics, baseName + ".post-requests", 1L);
+    assertCount(httpMetrics, baseName + ".post-requests./post", 1L);
+    assertCount(httpMetrics, baseName + ".put-requests", 1L);
+    assertCount(httpMetrics, baseName + ".put-requests./put", 1L);
+    assertCount(httpMetrics, baseName + ".delete-requests", 1L);
+    assertCount(httpMetrics, baseName + ".delete-requests./delete", 1L);
   }
 
   @Test
@@ -264,14 +267,134 @@ public class MetricsTest extends AsyncTestBase {
     testComplete();
   }
 
-  private void assertCount(Map<String, JsonObject> metrics, String name, Integer expected) {
-    Integer actual = expectNonNullMetric(metrics, name).getInteger("count");
+  @Test
+  public void testEventBusMetricsWithoutHandler() {
+    long send = 12;
+    for (int i = 0; i < send; i++) {
+      vertx.eventBus().send("foo", "Hello");
+    }
+    long pub = 7;
+    for (int i = 0; i < pub; i++) {
+      vertx.eventBus().publish("foo", "Hello");
+    }
+
+    Map<String, JsonObject> metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.eventbus"));
+    assertCount(metrics, "io.vertx.eventbus.messages.sent",send);
+    assertCount(metrics, "io.vertx.eventbus.messages.published", pub);
+    assertCount(metrics, "io.vertx.eventbus.messages.received", 0L);
+  }
+
+  @Test
+  public void testEventBusMetricsWithHandler() {
+    int messages = 13;
+    AtomicInteger count = new AtomicInteger(messages);
+
+    vertx.eventBus().registerHandler("foo", msg -> {
+      if (count.decrementAndGet() == 0) testComplete();
+    });
+
+    for (int i = 0; i < messages; i++) {
+      vertx.eventBus().send("foo", "Hello");
+    }
+
+    await();
+
+    Map<String, JsonObject> metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.eventbus"));
+    assertCount(metrics, "io.vertx.eventbus.messages.sent", (long) messages);
+    assertCount(metrics, "io.vertx.eventbus.messages.received", (long) messages);
+  }
+
+  @Test
+  public void testEventBusMetricsReplyNoHandlers() {
+    vertx.eventBus().sendWithOptions("foo", "bar", DeliveryOptions.options().setSendTimeout(300), ar -> {
+      assertTrue(ar.failed());
+      testComplete();
+    });
+
+    await();
+
+    Map<String, JsonObject> metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.eventbus"));
+    assertCount(metrics, "io.vertx.eventbus.messages.reply-failures", 1L);
+    assertCount(metrics, "io.vertx.eventbus.messages.reply-failures." + ReplyFailure.NO_HANDLERS, 1L);
+  }
+
+  @Test
+  public void testEventBusMetricsReplyTimeout() {
+    vertx.eventBus().registerHandler("foo", msg -> {});
+
+    vertx.eventBus().sendWithOptions("foo", "bar", DeliveryOptions.options().setSendTimeout(300), ar -> {
+      assertTrue(ar.failed());
+      testComplete();
+    });
+
+    await();
+
+    Map<String, JsonObject> metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.eventbus"));
+    assertCount(metrics, "io.vertx.eventbus.messages.reply-failures", 1L);
+    assertCount(metrics, "io.vertx.eventbus.messages.reply-failures." + ReplyFailure.TIMEOUT, 1L);
+  }
+
+  @Test
+  public void testEventBusMetricsReplyRecipientFailure() {
+    vertx.eventBus().registerHandler("foo", msg -> msg.fail(1, "blah"));
+
+    vertx.eventBus().sendWithOptions("foo", "bar", DeliveryOptions.options().setSendTimeout(300), ar -> {
+      assertTrue(ar.failed());
+      testComplete();
+    });
+
+    await();
+
+    Map<String, JsonObject> metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.eventbus"));
+    assertCount(metrics, "io.vertx.eventbus.messages.reply-failures", 1L);
+    assertCount(metrics, "io.vertx.eventbus.messages.reply-failures." + ReplyFailure.RECIPIENT_FAILURE, 1L);
+  }
+
+
+
+  @Test
+  public void testScheduledMetricConsumer() {
+    int messages = 18;
+    AtomicInteger count = new AtomicInteger(messages);
+    String baseName = "io.vertx.eventbus";
+
+    ScheduledMetricsConsumer consumer = new ScheduledMetricsConsumer(vertx).filter((name, metric) -> {
+      return name.startsWith(baseName);
+    });
+
+    consumer.start(300, TimeUnit.MILLISECONDS, (name, metric) -> {
+      assertTrue(name.startsWith(baseName));
+      if (count.get() == 0) {
+        if (name.equals(baseName + ".messages.sent")) {
+          assertCount(metric, name, (long) messages);
+          testComplete();
+        }
+      }
+    });
+
+    for (int i = 0; i < messages; i++) {
+      vertx.eventBus().send("foo", "Hello");
+      count.decrementAndGet();
+    }
+
+    await();
+  }
+
+  private void assertCount(Map<String, JsonObject> metrics, String name, Long expected) {
+    assertCount(expectNonNullMetric(metrics, name), name, expected);
+  }
+
+  private void assertCount(JsonObject metric, String name, Long expected) {
+    Long actual = metric.getLong("count");
     assertNotNull(actual);
     assertEquals(name + " (count)", expected, actual);
   }
 
   private void assertMinMax(Map<String, JsonObject> metrics, String name, Long min, Long max) {
-    JsonObject metric = expectNonNullMetric(metrics, name);
+    assertMinMax(expectNonNullMetric(metrics, name), name, min, max);
+  }
+
+  private void assertMinMax(JsonObject metric, String name, Long min, Long max) {
     if (min != null) {
       assertEquals(name + " (min)", min, metric.getLong("min"));
     }
