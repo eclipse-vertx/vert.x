@@ -131,7 +131,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     return msg;
   }
 
-
+  
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
     if (msg instanceof WebSocketFrameInternal) {
@@ -141,26 +141,26 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
          buf = safeBuffer(buf, ctx.alloc());
       }
       switch (frame.type()) {
-        case BINARY:
-          msg = new BinaryWebSocketFrame(buf);
-          break;
-        case TEXT:
-          msg = new TextWebSocketFrame(buf);
-          break;
-        case CLOSE:
-          msg = new CloseWebSocketFrame(true, 0, buf);
-          break;
-        case CONTINUATION:
-          msg = new ContinuationWebSocketFrame(buf);
-          break;
-        case PONG:
-          msg = new PongWebSocketFrame(buf);
-          break;
-        case PING:
-          msg = new PingWebSocketFrame(buf);
-          break;
-        default:
-          throw new IllegalStateException("Unsupported websocket msg " + msg);
+      case BINARY:
+        msg = new BinaryWebSocketFrame(frame.isFinalFrame(), 0, buf);
+        break;
+      case TEXT:
+        msg = new TextWebSocketFrame(frame.isFinalFrame(), 0, buf);
+        break;
+      case CLOSE:
+        msg = new CloseWebSocketFrame(true, 0, buf);
+        break;
+      case CONTINUATION:
+        msg = new ContinuationWebSocketFrame(frame.isFinalFrame(), 0, buf);
+        break;
+      case PONG:
+        msg = new PongWebSocketFrame(frame.isFinalFrame(), 0, buf);
+        break;
+      case PING:
+        msg = new PingWebSocketFrame(frame.isFinalFrame(), 0, buf);
+        break;
+      default:
+        throw new IllegalStateException("Unsupported websocket msg " + msg);
       }
     }
     ctx.write(msg, promise);
