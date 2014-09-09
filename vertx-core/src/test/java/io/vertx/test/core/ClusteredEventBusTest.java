@@ -68,7 +68,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       if (options == null) {
         vertices[0].eventBus().send(ADDRESS1, val);
       } else {
-        vertices[0].eventBus().sendWithOptions(ADDRESS1, val, options);
+        vertices[0].eventBus().send(ADDRESS1, val, options);
       }
     });
     await();
@@ -95,7 +95,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       if (options == null) {
         msg.reply(val);
       } else {
-        msg.replyWithOptions(val, options);
+        msg.reply(val, options);
       }
     });
     reg.completionHandler(ar -> {

@@ -66,7 +66,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     this.helper = helper;
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
-    Handler<Message<Buffer>> writeHandler = msg -> writeBuffer(msg.body());
+    Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
   }
 
@@ -76,22 +76,22 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket writeBuffer(Buffer data) {
+  public NetSocket write(Buffer data) {
     ByteBuf buf = data.getByteBuf();
     write(buf);
     return this;
   }
 
   @Override
-  public NetSocket writeString(String str) {
+  public NetSocket write(String str) {
     write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
     return this;
   }
 
   @Override
-  public NetSocket writeString(String str, String enc) {
+  public NetSocket write(String str, String enc) {
     if (enc == null) {
-      writeString(str);
+      write(str);
     } else {
       write(Unpooled.copiedBuffer(str, Charset.forName(enc)));
     }
@@ -293,7 +293,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   private void write(ByteBuf buff) {
-    writeFuture = super.write(buff);
+    writeFuture = super.writeToChannel(buff);
   }
 
   private void callDrainHandler() {

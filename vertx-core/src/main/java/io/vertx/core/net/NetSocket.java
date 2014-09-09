@@ -53,14 +53,14 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  NetSocket writeString(String str);
+  NetSocket write(String str);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  NetSocket writeString(String str, String enc);
+  NetSocket write(String str, String enc);
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection,

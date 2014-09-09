@@ -286,27 +286,27 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   @Override
-  public void forwardWithOptions(String address, DeliveryOptions options) {
+  public void forward(String address, DeliveryOptions options) {
 
   }
 
   @Override
   public void reply(Object message) {
-    replyWithOptions(message, DeliveryOptions.options(), null);
+    reply(message, DeliveryOptions.options(), null);
   }
 
   @Override
   public <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    replyWithOptions(message, DeliveryOptions.options(), replyHandler);
+    reply(message, DeliveryOptions.options(), replyHandler);
   }
 
   @Override
-  public void replyWithOptions(Object message, DeliveryOptions options) {
-    replyWithOptions(message, options, null);
+  public void reply(Object message, DeliveryOptions options) {
+    reply(message, options, null);
   }
 
   @Override
-  public <R> void replyWithOptions(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
+  public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
   }
 

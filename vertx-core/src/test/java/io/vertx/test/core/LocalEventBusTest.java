@@ -232,7 +232,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
     });
     await();
   }
@@ -279,7 +279,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       long start = System.currentTimeMillis();
       long timeout = 1000;
-      msg.replyWithOptions(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+      msg.reply(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
         long now = System.currentTimeMillis();
         assertFalse(ar.succeeded());
         Throwable cause = ar.cause();
@@ -306,7 +306,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       long timeout = 1000;
-      msg.replyWithOptions(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+      msg.reply(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
         assertTrue(ar.succeeded());
         assertEquals(replyReply, ar.result().body());
         testComplete();
@@ -327,7 +327,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply(23);
     });
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertEquals(23, (int) ar.result().body());
       testComplete();
@@ -343,12 +343,12 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     long timeout = 1000;
     long start = System.currentTimeMillis();
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       long now = System.currentTimeMillis();
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.TIMEOUT, re.failureType());
       assertTrue(now - start >= timeout);
@@ -361,11 +361,11 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithTimeoutNoHandlers() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.NO_HANDLERS, re.failureType());
       testComplete();
@@ -383,11 +383,11 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.fail(failureCode, failureMsg);
     });
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(failureCode, re.failureCode());
       assertEquals(failureMsg, re.getMessage());
       assertEquals(ReplyFailure.RECIPIENT_FAILURE, re.failureType());
@@ -406,11 +406,11 @@ public class LocalEventBusTest extends EventBusTestBase {
         msg.reply("too late!");
       });
     });
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.TIMEOUT, re.failureType());
       testComplete();
@@ -427,7 +427,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply("a reply");
     });
     AtomicBoolean received = new AtomicBoolean();
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertFalse(received.get());
       received.set(true);
@@ -604,7 +604,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(worker).setMultiThreaded(multiThreaded));
+    vertx.deployVerticle(verticle, DeploymentOptions.options().setWorker(worker).setMultiThreaded(multiThreaded));
     await();
   }
 
@@ -653,7 +653,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals("bar", msg.headers().get("foo"));
       testComplete();
     });
-    vertx.eventBus().sendWithOptions(ADDRESS1, "foo", DeliveryOptions.options().setHeaders(headers));
+    vertx.eventBus().send(ADDRESS1, "foo", DeliveryOptions.options().setHeaders(headers));
     headers.remove("foo");
     await();
   }
@@ -695,7 +695,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testNoRegisteredDecoder() throws Exception {
     try {
-      vertx.eventBus().sendWithOptions(ADDRESS1, "foo", DeliveryOptions.options().setCodecName("iqwjdoqiwd"));
+      vertx.eventBus().send(ADDRESS1, "foo", DeliveryOptions.options().setCodecName("iqwjdoqiwd"));
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -718,7 +718,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.eventBus().registerCodec(codec);
     vertx.eventBus().unregisterCodec(codec.name());
     try {
-      vertx.eventBus().sendWithOptions(ADDRESS1, new MyPOJO("foo"), DeliveryOptions.options().setCodecName(codec.name()));
+      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"), DeliveryOptions.options().setCodecName(codec.name()));
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -855,7 +855,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     if (options != null) {
-      eb.sendWithOptions(ADDRESS1, val, options);
+      eb.send(ADDRESS1, val, options);
     } else {
       eb.send(ADDRESS1, val);
     }
@@ -879,7 +879,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, msg -> {
       assertEquals(str, msg.body());
       if (options != null) {
-        msg.replyWithOptions(val, options);
+        msg.reply(val, options);
       } else {
         msg.reply(val);
       }

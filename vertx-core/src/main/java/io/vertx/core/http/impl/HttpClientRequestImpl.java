@@ -117,7 +117,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequestImpl writeBuffer(Buffer chunk) {
+  public HttpClientRequestImpl write(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false);
@@ -125,15 +125,15 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequestImpl writeString(String chunk) {
+  public HttpClientRequestImpl write(String chunk) {
     check();
-    return writeBuffer(Buffer.buffer(chunk));
+    return write(Buffer.buffer(chunk));
   }
 
   @Override
-  public HttpClientRequestImpl writeString(String chunk, String enc) {
+  public HttpClientRequestImpl write(String chunk, String enc) {
     check();
-    return writeBuffer(Buffer.buffer(chunk, enc));
+    return write(Buffer.buffer(chunk, enc));
   }
 
   @Override
@@ -199,17 +199,17 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public void writeStringAndEnd(String chunk) {
-    writeBufferAndEnd(Buffer.buffer(chunk));
+  public void end(String chunk) {
+    end(Buffer.buffer(chunk));
   }
 
   @Override
-  public void writeStringAndEnd(String chunk, String enc) {
-    writeBufferAndEnd(Buffer.buffer(chunk, enc));
+  public void end(String chunk, String enc) {
+    end(Buffer.buffer(chunk, enc));
   }
 
   @Override
-  public void writeBufferAndEnd(Buffer chunk) {
+  public void end(Buffer chunk) {
     check();
     if (!chunked && !contentLengthSet()) {
       headers().set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
@@ -386,16 +386,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private void writeHead() {
     prepareHeaders();
-    conn.write(request);
+    conn.writeToChannel(request);
     headWritten = true;
   }
 
   private void writeHeadWithContent(ByteBuf buf, boolean end) {
     prepareHeaders();
     if (end) {
-      conn.write(new AssembledFullHttpRequest(request, buf));
+      conn.writeToChannel(new AssembledFullHttpRequest(request, buf));
     } else {
-      conn.write(new AssembledHttpRequest(request, buf));
+      conn.writeToChannel(new AssembledHttpRequest(request, buf));
     }
     headWritten = true;
   }
@@ -463,14 +463,14 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   private void sendChunk(ByteBuf buff) {
-    conn.write(new DefaultHttpContent(buff));
+    conn.writeToChannel(new DefaultHttpContent(buff));
   }
 
   private void writeEndChunk(ByteBuf buf) {
     if (buf.isReadable()) {
-      conn.write(new DefaultLastHttpContent(buf, false));
+      conn.writeToChannel(new DefaultLastHttpContent(buf, false));
     } else {
-      conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+      conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
     }
   }
 

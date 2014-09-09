@@ -223,12 +223,12 @@ public interface FileSystem {
    * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.<p>
    * The operation will fail if the directory already exists.
    */
-  FileSystem mkdirWithPermissions(String path, String perms, Handler<AsyncResult<Void>> handler);
+  FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdirWithPermissions(String, String, Handler)}
+   * Synchronous version of {@link #mkdir(String, String, Handler)}
    */
-  FileSystem mkdirWithPermissionsSync(String path, String perms) ;
+  FileSystem mkdirSync(String path, String perms) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -252,12 +252,12 @@ public interface FileSystem {
    * will also be created.<p>
    * The operation will fail if the directory already exists.<p>
    */
-  FileSystem mkdirsWithPermissions(String path, String perms, Handler<AsyncResult<Void>> handler);
+  FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdirsWithPermissions(String, String, Handler)}
+   * Synchronous version of {@link #mkdirs(String, String, Handler)}
    */
-  FileSystem mkdirsWithPermissionsSync(String path, String perms) ;
+  FileSystem mkdirsSync(String path, String perms) ;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
@@ -276,12 +276,12 @@ public interface FileSystem {
    * match  @{filter}will be returned.<p>
    * The result is an array of String representing the paths of the files inside the directory.
    */
-  FileSystem readDirWithFilter(String path, String filter, Handler<AsyncResult<List<String>>> handler);
+  FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler);
 
   /**
-   * Synchronous version of {@link #readDirWithFilter(String, String, Handler)}
+   * Synchronous version of {@link #readDir(String, String, Handler)}
    */
-  List<String> readDirWithFilterSync(String path, String filter) ;
+  List<String> readDirSync(String path, String filter) ;
 
   /**
    * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
@@ -330,12 +330,12 @@ public interface FileSystem {
   /**
    * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.
    */
-  FileSystem createFileWithPerms(String path, String perms, Handler<AsyncResult<Void>> handler);
+  FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #createFileWithPerms(String, String, Handler)}
+   * Synchronous version of {@link #createFile(String, String, Handler)}
    */
-  FileSystem createFileWithPermsSync(String path, String perms) ;
+  FileSystem createFileSync(String path, String perms) ;
 
   /**
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.

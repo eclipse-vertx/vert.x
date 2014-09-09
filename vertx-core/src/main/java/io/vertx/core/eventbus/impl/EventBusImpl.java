@@ -150,32 +150,32 @@ public class EventBusImpl implements EventBus {
 
   @Override
   public EventBus send(String address, Object message) {
-    return sendWithOptions(address, message, DeliveryOptions.options(), null);
+    return send(address, message, DeliveryOptions.options(), null);
   }
 
   @Override
   public <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
-    return sendWithOptions(address, message, DeliveryOptions.options(), replyHandler);
+    return send(address, message, DeliveryOptions.options(), replyHandler);
   }
 
   @Override
-  public <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options) {
-    return sendWithOptions(address, message, options, null);
+  public <T> EventBus send(String address, Object message, DeliveryOptions options) {
+    return send(address, message, options, null);
   }
 
   @Override
-  public <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPub(null, createMessage(true, address, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Object message) {
-    return publishWithOptions(address, message, DeliveryOptions.options());
+    return publish(address, message, DeliveryOptions.options());
   }
 
   @Override
-  public EventBus publishWithOptions(String address, Object message, DeliveryOptions options) {
+  public EventBus publish(String address, Object message, DeliveryOptions options) {
     sendOrPub(null, createMessage(false, address, options.getHeaders(), message, options.getCodecName()), options, null);
     return this;
   }
@@ -663,7 +663,7 @@ public class EventBusImpl implements EventBus {
         cleanupConnection(holder.theServerID, holder, true);
       });
       MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new NullMessageCodec(), true);
-      holder.socket.writeBuffer(pingMessage.encodeToWire());
+      holder.socket.write(pingMessage.encodeToWire());
     });
   }
 
@@ -798,11 +798,11 @@ public class EventBusImpl implements EventBus {
 
     void writeMessage(MessageImpl message) {
       if (connected) {
-        socket.writeBuffer(message.encodeToWire());
+        socket.write(message.encodeToWire());
       } else {
         synchronized (this) {
           if (connected) {
-            socket.writeBuffer(message.encodeToWire());
+            socket.write(message.encodeToWire());
           } else {
             pending.add(message);
           }
@@ -824,7 +824,7 @@ public class EventBusImpl implements EventBus {
       // Start a pinger
       schedulePing(ConnectionHolder.this);
       for (MessageImpl message : pending) {
-        socket.writeBuffer(message.encodeToWire());
+        socket.write(message.encodeToWire());
       }
       pending.clear();
     }

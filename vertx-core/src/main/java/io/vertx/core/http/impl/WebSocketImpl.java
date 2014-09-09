@@ -98,7 +98,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
   }
 
   @Override
-  public WebSocket writeBuffer(Buffer data) {
+  public WebSocket write(Buffer data) {
     writeFrame(WebSocketFrame.binaryFrame(data, true));
     return this;
   }

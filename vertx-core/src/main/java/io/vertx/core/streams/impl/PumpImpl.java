@@ -64,7 +64,7 @@ public class PumpImpl implements Pump {
     this.writeStream = ws;
     drainHandler = v-> readStream.resume();
     dataHandler = buffer -> {
-      writeStream.writeBuffer(buffer);
+      writeStream.write(buffer);
       pumped += buffer.length();
       if (writeStream.writeQueueFull()) {
         readStream.pause();

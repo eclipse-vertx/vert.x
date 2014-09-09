@@ -758,13 +758,13 @@ public class FileSystemTest extends VertxTestBase {
     AsyncResultHandler<Void> handler = createHandler(shouldPass, afterOK);
     if (createParents) {
       if (perms != null) {
-        vertx.fileSystem().mkdirsWithPermissions(testDir + pathSep + dirName, perms, handler);
+        vertx.fileSystem().mkdirs(testDir + pathSep + dirName, perms, handler);
       } else {
         vertx.fileSystem().mkdirs(testDir + pathSep + dirName, handler);
       }
     } else {
       if (perms != null) {
-        vertx.fileSystem().mkdirWithPermissions(testDir + pathSep + dirName, perms, handler);
+        vertx.fileSystem().mkdir(testDir + pathSep + dirName, perms, handler);
       } else {
         vertx.fileSystem().mkdir(testDir + pathSep + dirName, handler);
       }
@@ -859,7 +859,7 @@ public class FileSystemTest extends VertxTestBase {
     if (filter == null) {
       vertx.fileSystem().readDir(testDir + pathSep + dirName, handler);
     } else {
-      vertx.fileSystem().readDirWithFilter(testDir + pathSep + dirName, filter, handler);
+      vertx.fileSystem().readDir(testDir + pathSep + dirName, filter, handler);
     }
   }
 
@@ -1003,7 +1003,7 @@ public class FileSystemTest extends VertxTestBase {
         for (int i = 0; i < chunks; i++) {
           Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
           assertEquals(chunkSize, chunk.length());
-          ws.writeBuffer(chunk);
+          ws.write(chunk);
         }
         ar.result().close(ar2 -> {
           if (ar2.failed()) {
@@ -1041,7 +1041,7 @@ public class FileSystemTest extends VertxTestBase {
       if (ar.succeeded()) {
         WriteStream<AsyncFile> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
-        ws.writeBuffer(buff);
+        ws.write(buff);
         ar.result().close(ar2 -> {
           if (ar2.failed()) {
             fail(ar2.cause().getMessage());
@@ -1190,7 +1190,7 @@ public class FileSystemTest extends VertxTestBase {
       }
     };
     if (perms != null) {
-      vertx.fileSystem().createFileWithPerms(testDir + pathSep + fileName, perms, handler);
+      vertx.fileSystem().createFile(testDir + pathSep + fileName, perms, handler);
     } else {
       vertx.fileSystem().createFile(testDir + pathSep + fileName, handler);
     }

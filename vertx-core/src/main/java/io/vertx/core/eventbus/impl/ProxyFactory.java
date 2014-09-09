@@ -150,7 +150,7 @@ public class ProxyFactory {
       }
       msg.putArray(ARGS_FIELD, jargs);
       Handler fHandler = handler;
-      eventBus.sendWithOptions(address, msg, DeliveryOptions.options().setSendTimeout(proxyOperationTimeout), ar -> {
+      eventBus.send(address, msg, DeliveryOptions.options().setSendTimeout(proxyOperationTimeout), ar -> {
         if (fHandler != null) {
           if (ar.failed()) {
             fHandler.handle(ar);

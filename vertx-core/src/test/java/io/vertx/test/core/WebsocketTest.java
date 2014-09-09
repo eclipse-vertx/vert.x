@@ -340,7 +340,7 @@ public class WebsocketTest extends NetTestBase {
     }
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.websocketHandler(ws -> {
-      ws.dataHandler(ws::writeBuffer);
+      ws.dataHandler(ws::write);
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -383,7 +383,7 @@ public class WebsocketTest extends NetTestBase {
       buff.appendByte((byte)129); // Text frame
       buff.appendByte((byte)message.length());
       buff.appendString(message);
-      sock.writeBuffer(buff);
+      sock.write(buff);
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -658,11 +658,11 @@ public class WebsocketTest extends NetTestBase {
     String secHeader = req.headers().get("Sec-WebSocket-Key");
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
-    sock.writeString("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-        "Upgrade: WebSocket\r\n" +
-        "Connection: Upgrade\r\n" +
-        "Sec-WebSocket-Accept: " + encoded + "\r\n" +
-        "\r\n");
+    sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
+      "Upgrade: WebSocket\r\n" +
+      "Connection: Upgrade\r\n" +
+      "Sec-WebSocket-Accept: " + encoded + "\r\n" +
+      "\r\n");
     return sock;
   }
 
@@ -677,7 +677,7 @@ public class WebsocketTest extends NetTestBase {
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
       assertEquals("Upgrade", ws.headers().get("Connection"));
-      ws.dataHandler(data -> ws.writeBuffer(data));
+      ws.dataHandler(data -> ws.write(data));
     });
 
     server.listen(ar -> {
@@ -697,7 +697,7 @@ public class WebsocketTest extends NetTestBase {
         final Buffer sent = Buffer.buffer();
         for (int i = 0; i < sends; i++) {
           Buffer buff = Buffer.buffer(TestUtils.randomByteArray(bsize));
-          ws.writeBuffer(buff);
+          ws.write(buff);
           sent.appendBuffer(buff);
         }
       });
@@ -821,13 +821,13 @@ public class WebsocketTest extends NetTestBase {
       buff.appendByte((byte) 0x01); // Incomplete Text frame
       buff.appendByte((byte) firstFrame.length());
       buff.appendString(firstFrame);
-      sock.writeBuffer(buff);
+      sock.write(buff);
 
       buff = Buffer.buffer();
       buff.appendByte((byte) (0x00 | 0x80)); // Complete continuation frame
       buff.appendByte((byte) continuationFrame.length());
       buff.appendString(continuationFrame);
-      sock.writeBuffer(buff);
+      sock.write(buff);
     });
 
     server.listen(ar -> {

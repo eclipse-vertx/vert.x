@@ -77,8 +77,6 @@ public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
   @Fluent
   T writeMessage(Buffer data);
 
-
-
   /**
    * Set a closed handler on the connection
    */

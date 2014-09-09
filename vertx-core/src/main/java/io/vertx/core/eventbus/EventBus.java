@@ -21,14 +21,11 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.eventbus.impl.EventBusImpl;
-
-import java.util.Objects;
 
 /**
  * A distributed lightweight event bus which can encompass multiple vert.x instances.
  * The event bus implements publish / subscribe, point to point messaging and request-response messaging.<p>
- * Messages sent over the event bus are represented by instances of the {@link io.vertx.core.eventbus.impl.old.Message} class.<p>
+ * Messages sent over the event bus are represented by instances of the {@link io.vertx.core.eventbus.Message} class.<p>
  * For publish / subscribe, messages can be published to an address using one of the {@link #publish} methods. An
  * address is a simple {@code String} instance.<p>
  * Handlers are registered against an address. There can be multiple handlers registered against each address, and a particular handler can
@@ -82,10 +79,10 @@ public interface EventBus {
   <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
 
   @Fluent
-  <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options);
+  <T> EventBus send(String address, Object message, DeliveryOptions options);
 
   @Fluent
-  <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
+  <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Publish a message
@@ -96,7 +93,7 @@ public interface EventBus {
   EventBus publish(String address, Object message);
 
   @Fluent
-  EventBus publishWithOptions(String address, Object message, DeliveryOptions options);
+  EventBus publish(String address, Object message, DeliveryOptions options);
 
   /**
    * Registers a handler against the specified address

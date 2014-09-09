@@ -147,7 +147,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile writeBuffer(Buffer buffer) {
+  public AsyncFile write(Buffer buffer) {
     check();
     int length = buffer.length();
     Handler<AsyncResult<Void>> handler = ar -> {

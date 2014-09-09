@@ -748,14 +748,14 @@ public class NetTest extends NetTestBase {
   @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
-    testEcho(sock -> sock.writeBuffer(sent), buff -> assertEquals(sent, buff), sent.length());
+    testEcho(sock -> sock.write(sent), buff -> assertEquals(sent, buff), sent.length());
   }
 
   @Test
   public void testEchoString() {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = Buffer.buffer(sent);
-    testEcho(sock -> sock.writeString(sent), buff -> assertEquals(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.write(sent), buff -> assertEquals(buffSent, buff), buffSent.length());
   }
 
   @Test
@@ -771,7 +771,7 @@ public class NetTest extends NetTestBase {
   void testEchoStringWithEncoding(String encoding) {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = Buffer.buffer(sent, encoding);
-    testEcho(sock -> sock.writeString(sent, encoding), buff -> assertEquals(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.write(sent, encoding), buff -> assertEquals(buffSent, buff), buffSent.length());
   }
 
   void testEcho(Consumer<NetSocket> writer, Consumer<Buffer> dataChecker, int length) {
@@ -799,7 +799,7 @@ public class NetTest extends NetTestBase {
   }
 
   void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler) {
-    Handler<NetSocket> serverHandler = socket -> socket.dataHandler(socket::writeBuffer);
+    Handler<NetSocket> serverHandler = socket -> socket.dataHandler(socket::write);
     server.connectHandler(serverHandler).listen(listenHandler);
   }
 
@@ -955,7 +955,7 @@ public class NetTest extends NetTestBase {
         sock.setWriteQueueMaxSize(1000);
         Buffer buff = TestUtils.randomBuffer(10000);
         vertx.setPeriodic(1, id -> {
-          sock.writeBuffer(buff.copy());
+          sock.write(buff.copy());
           if (sock.writeQueueFull()) {
             vertx.cancelTimer(id);
             sock.drainHandler(v -> {
@@ -1008,7 +1008,7 @@ public class NetTest extends NetTestBase {
       Buffer buff = TestUtils.randomBuffer(10000);
       //Send data until the buffer is full
       vertx.setPeriodic(1, id -> {
-        sock.writeBuffer(buff.copy());
+        sock.write(buff.copy());
         if (sock.writeQueueFull()) {
           vertx.cancelTimer(id);
           sock.drainHandler(v -> {
@@ -1181,7 +1181,7 @@ public class NetTest extends NetTestBase {
     Handler<NetSocket> serverHandler = socket -> {
       AtomicBoolean upgradedServer = new AtomicBoolean();
       socket.dataHandler(buff -> {
-        socket.writeBuffer(buff); // echo the data
+        socket.write(buff); // echo the data
         if (startTLS && !upgradedServer.get()) {
           assertFalse(socket.isSsl());
           socket.upgradeToSsl(v -> assertTrue(socket.isSsl()));
@@ -1263,7 +1263,7 @@ public class NetTest extends NetTestBase {
   void sendBuffer(NetSocket socket, Buffer sent, int chunkSize) {
     Buffer buff = TestUtils.randomBuffer(chunkSize);
     sent.appendBuffer(buff);
-    socket.writeBuffer(buff);
+    socket.write(buff);
   }
 
   @Test
@@ -1425,7 +1425,7 @@ public class NetTest extends NetTestBase {
 
     // Send some data
     client.connect(1234, "localhost", res -> {
-      res.result().writeString("foo");
+      res.result().write("foo");
     });
     assertTrue(receivedLatch.await(10, TimeUnit.SECONDS));
 
@@ -1465,8 +1465,8 @@ public class NetTest extends NetTestBase {
       client.connect(1234, "localhost", result -> {
         NetSocket socket = result.result();
         Buffer buff = Buffer.buffer("foo");
-        socket.writeBuffer(buff);
-        socket.writeBuffer(buff);
+        socket.write(buff);
+        socket.write(buff);
       });
     });
     await();
@@ -1488,7 +1488,7 @@ public class NetTest extends NetTestBase {
         }
       });
       // Send some data to the client to trigger the sendfile
-      sock.writeString("foo");
+      sock.write("foo");
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -1528,7 +1528,7 @@ public class NetTest extends NetTestBase {
             testComplete();
           }
         });
-        sock.writeString("foo");
+        sock.write("foo");
       });
     });
 
@@ -1707,7 +1707,7 @@ public class NetTest extends NetTestBase {
     Thread[] threads = new Thread[numThreads];
     CountDownLatch latch = new CountDownLatch(numThreads);
     server.connectHandler(socket -> {
-      socket.dataHandler(socket::writeBuffer);
+      socket.dataHandler(socket::write);
     }).listen(ar -> {
       assertTrue(ar.succeeded());
       for (int i = 0; i < numThreads; i++) {
@@ -1717,7 +1717,7 @@ public class NetTest extends NetTestBase {
               assertTrue(result.succeeded());
               Buffer buff = TestUtils.randomBuffer(100000);
               NetSocket sock = result.result();
-              sock.writeBuffer(buff);
+              sock.write(buff);
               Buffer received = Buffer.buffer();
               sock.dataHandler(rec -> {
                 received.appendBuffer(rec);
@@ -1765,7 +1765,7 @@ public class NetTest extends NetTestBase {
         server = vertx.createNetServer(NetServerOptions.options().setPort(1234));
         server.connectHandler(sock -> {
           sock.dataHandler(buff -> {
-            sock.writeBuffer(buff);
+            sock.write(buff);
           });
           assertSame(ctx, vertx.currentContext());
           if (!worker) {
@@ -1787,7 +1787,7 @@ public class NetTest extends NetTestBase {
             assertTrue(ar2.succeeded());
             NetSocket sock = ar2.result();
             Buffer buff = TestUtils.randomBuffer(10000);
-            sock.writeBuffer(buff);
+            sock.write(buff);
             Buffer brec = Buffer.buffer();
             sock.dataHandler(rec -> {
               assertSame(ctx, vertx.currentContext());
@@ -1804,7 +1804,7 @@ public class NetTest extends NetTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(worker));
+    vertx.deployVerticle(verticle, DeploymentOptions.options().setWorker(worker));
     await();
   }
 
@@ -1829,7 +1829,7 @@ public class NetTest extends NetTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticle(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
     await();
   }
 
@@ -1840,7 +1840,7 @@ public class NetTest extends NetTestBase {
     AtomicReference<ContextImpl> serverConnectContext = new AtomicReference<>();
     // Server connect handler should always be called with same context
     server.connectHandler(sock -> {
-      sock.dataHandler(sock::writeBuffer);
+      sock.dataHandler(sock::write);
       ContextImpl serverContext = ((VertxInternal) vertx).getContext();
       if (serverConnectContext.get() != null) {
         assertSame(serverConnectContext.get(), serverContext);

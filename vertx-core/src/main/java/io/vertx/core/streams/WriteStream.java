@@ -40,7 +40,7 @@ public interface WriteStream<T> extends StreamBase<T> {
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    */
   @Fluent
-  T writeBuffer(Buffer data);
+  T write(Buffer data);
 
   /**
    * Set the maximum size of the write queue to {@code maxSize}. You will still be able to write to the stream even

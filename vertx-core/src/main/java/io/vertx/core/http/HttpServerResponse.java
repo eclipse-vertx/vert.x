@@ -161,20 +161,12 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
   HttpServerResponse closeHandler(Handler<Void> handler);
 
   /**
-   * Write a {@link io.vertx.core.buffer.Buffer} to the response body.
-   *
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  @Fluent
-  HttpServerResponse writeBuffer(Buffer chunk);
-
-  /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  HttpServerResponse writeString(String chunk, String enc);
+  HttpServerResponse write(String chunk, String enc);
 
   /**
    * Write a {@link String} to the response body, encoded in UTF-8.
@@ -182,23 +174,23 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  HttpServerResponse writeString(String chunk);
+  HttpServerResponse write(String chunk);
 
   /**
-   * Same as {@link #writeBufferAndEnd(Buffer)} but writes a String with the default encoding before ending the response.
+   * Same as {@link #end(Buffer)} but writes a String with the default encoding before ending the response.
    */
-  void writeStringAndEnd(String chunk);
+  void end(String chunk);
 
   /**
-   * Same as {@link #writeBufferAndEnd(Buffer)} but writes a String with the specified encoding before ending the response.
+   * Same as {@link #end(Buffer)} but writes a String with the specified encoding before ending the response.
    */
-  void writeStringAndEnd(String chunk, String enc);
+  void end(String chunk, String enc);
 
   /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
    */
-  void writeBufferAndEnd(Buffer chunk);
+  void end(Buffer chunk);
 
   /**
    * Ends the response. If no data has been written to the response body,
@@ -221,6 +213,9 @@ public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
    */
   @Fluent
   HttpServerResponse sendFile(String filename, String notFoundFile);
+
+  @Fluent
+  HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Same as {@link #sendFile(String, String)} but also takes a handler that will be called when the send has completed or

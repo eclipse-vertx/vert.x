@@ -213,7 +213,7 @@ public class Starter {
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     for (int i = 0; i < instances; i++) {
-      vertx.deployVerticleWithOptions(main, DeploymentOptions.options().setConfig(conf).setWorker(worker), createLoggingHandler(message, res -> {
+      vertx.deployVerticle(main, DeploymentOptions.options().setConfig(conf).setWorker(worker), createLoggingHandler(message, res -> {
         if (res.failed()) {
           // Failed to deploy
           unblock();

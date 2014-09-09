@@ -227,33 +227,33 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl writeBuffer(Buffer chunk) {
+  public HttpServerResponseImpl write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
     return write(buf, null);
   }
 
   @Override
-  public HttpServerResponseImpl writeString(String chunk, String enc) {
+  public HttpServerResponseImpl write(String chunk, String enc) {
     return write(Buffer.buffer(chunk, enc).getByteBuf(),  null);
   }
 
   @Override
-  public HttpServerResponseImpl writeString(String chunk) {
+  public HttpServerResponseImpl write(String chunk) {
     return write(Buffer.buffer(chunk).getByteBuf(), null);
   }
 
   @Override
-  public void writeStringAndEnd(String chunk) {
-    writeBufferAndEnd(Buffer.buffer(chunk));
+  public void end(String chunk) {
+    end(Buffer.buffer(chunk));
   }
 
   @Override
-  public void writeStringAndEnd(String chunk, String enc) {
-    writeBufferAndEnd(Buffer.buffer(chunk, enc));
+  public void end(String chunk, String enc) {
+    end(Buffer.buffer(chunk, enc));
   }
 
   @Override
-  public void writeBufferAndEnd(Buffer chunk) {
+  public void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
       headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
@@ -291,14 +291,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }  else {
         resp = new AssembledFullHttpResponse(response, data);
       }
-      channelFuture = conn.write(resp);
+      channelFuture = conn.writeToChannel(resp);
       headWritten = true;
     } else {
       if (!data.isReadable()) {
         if (trailing == null) {
-          channelFuture = conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+          channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
         } else {
-          channelFuture = conn.write(trailing);
+          channelFuture = conn.writeToChannel(trailing);
         }
       } else {
         LastHttpContent content;
@@ -307,7 +307,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         } else {
           content = new DefaultLastHttpContent(data, false);
         }
-        channelFuture = conn.write(content);
+        channelFuture = conn.writeToChannel(content);
       }
     }
 
@@ -332,6 +332,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse sendFile(String filename, String notFoundFile, Handler<AsyncResult<Void>> resultHandler) {
     doSendFile(filename, notFoundFile, resultHandler);
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+    doSendFile(filename, null, resultHandler);
     return this;
   }
 
@@ -370,7 +376,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       conn.sendFile(file);
 
       // write an empty last content to let the http encoder know the response is complete
-      channelFuture = conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+      channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
       headWritten = written = true;
 
       if (resultHandler != null) {
@@ -427,13 +433,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private void sendForbidden() {
     setStatusCode(HttpResponseStatus.FORBIDDEN.code());
     putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML);
-    writeBufferAndEnd(FORBIDDEN);
+    end(FORBIDDEN);
   }
 
   private void sendNotFound() {
     setStatusCode(HttpResponseStatus.NOT_FOUND.code());
     putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML);
-    writeBufferAndEnd(NOT_FOUND);
+    end(NOT_FOUND);
   }
 
   void handleDrained() {
@@ -481,10 +487,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
     if (!headWritten) {
       prepareHeaders();
-      channelFuture = conn.write(new AssembledHttpResponse(response, chunk));
+      channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));
       headWritten = true;
     }  else {
-      channelFuture = conn.write(new DefaultHttpContent(chunk));
+      channelFuture = conn.writeToChannel(new DefaultHttpContent(chunk));
     }
 
     conn.addFuture(completionHandler, channelFuture);

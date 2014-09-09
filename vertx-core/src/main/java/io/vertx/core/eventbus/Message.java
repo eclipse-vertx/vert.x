@@ -59,13 +59,13 @@ public interface Message<T> {
    */
   <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler);
 
-  void replyWithOptions(Object message, DeliveryOptions options);
+  void reply(Object message, DeliveryOptions options);
 
   /**
    * The same as {@code reply(R message)} but you can specify handler for the reply - i.e.
    * to receive the reply to the reply.
    */
-  <R> void replyWithOptions(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
+  <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
 
   /**
    * Signal that processing of this message failed. If the message was sent specifying a result handler
@@ -77,5 +77,5 @@ public interface Message<T> {
 
   void forward(String address);
 
-  void forwardWithOptions(String address, DeliveryOptions options);
+  void forward(String address, DeliveryOptions options);
 }

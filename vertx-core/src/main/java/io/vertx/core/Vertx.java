@@ -159,10 +159,10 @@ public interface Vertx {
   void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler);
 
   @GenIgnore
-  void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options);
+  void deployVerticle(Verticle verticle, DeploymentOptions options);
 
   @GenIgnore
-  void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
 
 
@@ -170,9 +170,9 @@ public interface Vertx {
 
   void deployVerticle(String verticleName, Handler<AsyncResult<String>> completionHandler);
 
-  void deployVerticleWithOptions(String verticleName, DeploymentOptions options);
+  void deployVerticle(String verticleName, DeploymentOptions options);
 
-  void deployVerticleWithOptions(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler);
 

@@ -394,41 +394,41 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticle(Verticle verticle) {
-    deployVerticleWithOptions(verticle, DeploymentOptions.options(), null);
+    deployVerticle(verticle, DeploymentOptions.options(), null);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticleWithOptions(verticle, DeploymentOptions.options(), completionHandler);
+    deployVerticle(verticle, DeploymentOptions.options(), completionHandler);
   }
 
   @Override
   public void deployVerticle(String verticleName, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticleWithOptions(verticleName, DeploymentOptions.options(), completionHandler);
+    deployVerticle(verticleName, DeploymentOptions.options(), completionHandler);
   }
 
   @Override
-  public void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options) {
-    deployVerticleWithOptions(verticle, options, null);
+  public void deployVerticle(Verticle verticle, DeploymentOptions options) {
+    deployVerticle(verticle, options, null);
   }
 
   @Override
-  public void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+  public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     deploymentManager.deployVerticle(verticle, options, completionHandler);
   }
 
   @Override
   public void deployVerticle(String verticleName) {
-    deployVerticleWithOptions(verticleName, DeploymentOptions.options(), null);
+    deployVerticle(verticleName, DeploymentOptions.options(), null);
   }
 
   @Override
-  public void deployVerticleWithOptions(String verticleName, DeploymentOptions options) {
-    deployVerticleWithOptions(verticleName, options, null);
+  public void deployVerticle(String verticleName, DeploymentOptions options) {
+    deployVerticle(verticleName, options, null);
   }
 
   @Override
-  public void deployVerticleWithOptions(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+  public void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     if (options.isHA() && haManager != null) {
       haManager.deployVerticle(verticleName, options, completionHandler);
     } else {

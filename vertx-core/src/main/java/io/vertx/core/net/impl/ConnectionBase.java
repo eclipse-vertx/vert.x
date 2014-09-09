@@ -93,7 +93,7 @@ public abstract class ConnectionBase {
     return channel.write(obj);
   }
 
-  public ChannelFuture write(Object obj) {
+  public ChannelFuture writeToChannel(Object obj) {
     if (read) {
       return queueForWrite(obj);
     }
@@ -188,12 +188,12 @@ public abstract class ConnectionBase {
       ChannelFuture writeFuture;
       if (!supportsFileRegion()) {
         // Cannot use zero-copy
-        writeFuture = write(new ChunkedFile(raf, 0, fileLength, 8192));
+        writeFuture = writeToChannel(new ChunkedFile(raf, 0, fileLength, 8192));
       } else {
         // No encryption - use zero-copy.
         final FileRegion region =
             new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-        writeFuture = write(region);
+        writeFuture = writeToChannel(region);
       }
       writeFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {

@@ -148,7 +148,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   protected void writeFrameInternal(WebSocketFrame frame) {
     checkClosed();
-    conn.write(frame);
+    conn.writeToChannel(frame);
   }
 
   protected void checkClosed() {

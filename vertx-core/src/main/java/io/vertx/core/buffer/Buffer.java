@@ -51,7 +51,6 @@ public interface Buffer extends ClusterSerializable {
     return factory.buffer();
   }
 
-  @GenIgnore
   static Buffer buffer(int initialSizeHint) {
     return factory.buffer(initialSizeHint);
   }
