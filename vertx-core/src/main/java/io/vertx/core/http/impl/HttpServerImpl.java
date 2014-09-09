@@ -63,6 +63,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.metrics.spi.HttpServerMetrics;
@@ -87,6 +88,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.*;
@@ -104,7 +106,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private final HttpServerOptions options;
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
-  private HttpServerMetrics metrics;
+  private final HttpServerMetrics metrics;
   private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
@@ -132,7 +134,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
-    this.metrics = vertx.metrics().register(this, options);
+    this.metrics = vertx.metricsSPI().register(this, options);
   }
 
   @Override
@@ -330,6 +332,19 @@ public class HttpServerImpl implements HttpServer, Closeable {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(this);
     }
+  }
+
+  @Override
+  public String metricBaseName() {
+    return metrics.baseName();
+  }
+
+  @Override
+  public Map<String, JsonObject> metrics(TimeUnit rateUnit, TimeUnit durationUnit) {
+    String name = metricBaseName();
+    return vertx.metrics(rateUnit, durationUnit).entrySet().stream()
+      .filter(e -> e.getKey().startsWith(name))
+      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
   }
 
   SSLHelper getSslHelper() {

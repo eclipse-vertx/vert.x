@@ -30,6 +30,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.ContextImpl;
 
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
@@ -39,6 +40,9 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -50,7 +54,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public DatagramSocketImpl(VertxInternal vertx,
                             DatagramSocketOptions options) {
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext(), vertx.metrics().register(null, options));
+          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext(), vertx.metricsSPI().register(null, options));
     ContextImpl creatingContext = vertx.getContext();
     if (creatingContext != null && creatingContext.isMultithreaded()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
@@ -219,6 +223,19 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     if (handler != null) {
       future.addListener(new DatagramChannelFutureListener<>(null, handler, vertx, context));
     }
+  }
+
+  @Override
+  public String metricBaseName() {
+    return metrics.baseName();
+  }
+
+  @Override
+  public Map<String, JsonObject> metrics(TimeUnit rateUnit, TimeUnit durationUnit) {
+    String name = metricBaseName();
+    return vertx.metrics(rateUnit, durationUnit).entrySet().stream()
+      .filter(e -> e.getKey().startsWith(name))
+      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
   }
 
   protected DatagramChannel channel() {

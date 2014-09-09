@@ -47,7 +47,6 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.MetricsProvider;
 import io.vertx.core.metrics.spi.Metrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -73,6 +72,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -239,15 +239,17 @@ public class VertxImpl implements VertxInternal {
     return sharedNetServers;
   }
 
-  // Internal SPI
   @Override
-  public Metrics metrics() {
-    return metrics;
+  public String metricBaseName() {
+    return metrics.baseName();
   }
 
   @Override
-  public MetricsProvider metricsProvider() {
-    return metrics;
+  public Map<String, JsonObject> metrics(TimeUnit rateUnit, TimeUnit durationUnit) {
+    String name = metricBaseName();
+    return metrics.metrics(rateUnit, durationUnit).entrySet().stream()
+      .filter(e -> e.getKey().startsWith(name))
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public boolean cancelTimer(long id) {
@@ -522,6 +524,11 @@ public class VertxImpl implements VertxInternal {
     if (haManager != null) {
       haManager.failDuringFailover(fail);
     }
+  }
+
+  @Override
+  public Metrics metricsSPI() {
+    return metrics;
   }
 
   private void configurePools(VertxOptions options) {

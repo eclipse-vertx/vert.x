@@ -28,15 +28,21 @@ import java.util.function.BiPredicate;
  */
 public class ScheduledMetricsConsumer {
   private final Vertx vertx;
+  private final Measured measured;
 
-  private TimeUnit rateUnit = MetricsProvider.DEFAULT_RATE_UNIT;
-  private TimeUnit durationUnit = MetricsProvider.DEFAULT_DURATION_UNIT;
-  private BiPredicate<String, JsonObject> filter = MetricsProvider.ALL_FILTER;
+  private TimeUnit rateUnit = TimeUnit.SECONDS;
+  private TimeUnit durationUnit = TimeUnit.MILLISECONDS;
+  private BiPredicate<String, JsonObject> filter = (name, metric) -> true;
 
   private volatile long timerId = -1;
 
   public ScheduledMetricsConsumer(Vertx vertx) {
+    this(vertx, vertx);
+  }
+
+  public ScheduledMetricsConsumer(Vertx vertx, Measured measured) {
     this.vertx = vertx;
+    this.measured = measured;
   }
 
   public ScheduledMetricsConsumer convertRatesTo(TimeUnit rateUnit) {
@@ -59,7 +65,11 @@ public class ScheduledMetricsConsumer {
 
   public void start(long delay, TimeUnit unit, BiConsumer<String, JsonObject> consumer) {
     timerId = vertx.setPeriodic(unit.toMillis(delay), tid -> {
-      vertx.metricsProvider().getMetrics(rateUnit, durationUnit, filter).forEach(consumer);
+      measured.metrics(rateUnit, durationUnit).forEach((name, metric) -> {
+        if (filter.test(name, metric)) {
+          consumer.accept(name, metric);
+        }
+      });
     });
   }
 

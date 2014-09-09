@@ -239,7 +239,7 @@ public abstract class ConnectionBase {
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
-  public NetMetrics metrics() {
+  public NetMetrics netMetrics() {
     return metrics;
   }
 

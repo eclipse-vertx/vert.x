@@ -49,6 +49,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.metrics.spi.HttpClientMetrics;
@@ -64,6 +65,8 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class HttpClientImpl implements HttpClient {
 
@@ -105,7 +108,7 @@ public class HttpClientImpl implements HttpClient {
     pool.setKeepAlive(options.isKeepAlive());
     pool.setPipelining(options.isPipelining());
     pool.setMaxSockets(options.getMaxPoolSize());
-    this.metrics = vertx.metrics().register(this, options);
+    this.metrics = vertx.metricsSPI().register(this, options);
   }
 
   @Override
@@ -204,6 +207,19 @@ public class HttpClientImpl implements HttpClient {
     metrics.closed();
   }
 
+  @Override
+  public String metricBaseName() {
+    return metrics.baseName();
+  }
+
+  @Override
+  public Map<String, JsonObject> metrics(TimeUnit rateUnit, TimeUnit durationUnit) {
+    String name = metricBaseName();
+    return vertx.metrics(rateUnit, durationUnit).entrySet().stream()
+      .filter(e -> e.getKey().startsWith(name))
+      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  }
+
   HttpClientOptions getOptions() {
     return options;
   }
@@ -236,7 +252,7 @@ public class HttpClientImpl implements HttpClient {
     connectionMap.remove(channel);
   }
 
-  HttpClientMetrics metrics() {
+  HttpClientMetrics httpClientMetrics() {
     return metrics;
   }
 

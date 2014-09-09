@@ -63,6 +63,7 @@ import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
@@ -70,9 +71,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -126,7 +129,7 @@ public class EventBusImpl implements EventBus {
     this.subs = null;
     this.clusterMgr = null;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-    this.metrics = vertx.metrics().register(this);
+    this.metrics = vertx.metricsSPI().register(this);
     setPingHandler();
     putStandardCodecs();
   }
@@ -136,7 +139,7 @@ public class EventBusImpl implements EventBus {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-    this.metrics = vertx.metrics().register(this);
+    this.metrics = vertx.metricsSPI().register(this);
     clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
       if (ar.succeeded()) {
         subs = ar.result();
@@ -264,6 +267,19 @@ public class EventBusImpl implements EventBus {
       closeClusterManager(completionHandler);
       pingRegistration.unregister();
     }
+  }
+
+  @Override
+  public String metricBaseName() {
+    return metrics.baseName();
+  }
+
+  @Override
+  public Map<String, JsonObject> metrics(TimeUnit rateUnit, TimeUnit durationUnit) {
+    String name = metricBaseName();
+    return vertx.metrics(rateUnit, durationUnit).entrySet().stream()
+      .filter(e -> e.getKey().startsWith(name))
+      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
   }
 
   <T> void sendReply(ServerID dest, MessageImpl message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {

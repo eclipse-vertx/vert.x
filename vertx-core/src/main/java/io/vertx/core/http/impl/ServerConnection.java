@@ -78,7 +78,7 @@ class ServerConnection extends ConnectionBase {
   private final HttpServerImpl server;
   private final WebSocketServerHandshaker handshaker;
   private ChannelFuture lastWriteFuture;
-  final HttpServerMetrics metrics;
+  private final HttpServerMetrics metrics;
   private long bytesRead;
   private long bytesWritten;
 

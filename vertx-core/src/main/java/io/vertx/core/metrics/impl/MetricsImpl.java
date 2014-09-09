@@ -22,7 +22,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
@@ -50,25 +49,25 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiPredicate;
+
+import static com.codahale.metrics.MetricRegistry.*;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 class MetricsImpl extends AbstractMetrics implements Metrics {
 
-  static final String BASE_NAME = "io.vertx";
+  static final String BASE_NAME = "vertx";
 
   private Counter timers;
   private Counter verticles;
   private Handler<Void> doneHandler;
 
   public MetricsImpl(Vertx vertx, VertxOptions vertxOptions) {
-    super(new Registry(vertxOptions), instanceName(BASE_NAME, vertx));
+    super(new Registry(vertxOptions), BASE_NAME);
     initialize(vertxOptions);
   }
 
@@ -119,32 +118,32 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
 
   @Override
   public EventBusMetrics register(EventBus eventBus) {
-    return new EventBusMetricsImpl(this, "io.vertx.eventbus");
+    return new EventBusMetricsImpl(this, name(baseName(), "eventbus"));
   }
 
   @Override
   public HttpServerMetrics register(HttpServer server, HttpServerOptions options) {
-    return new HttpServerMetricsImpl(this, "io.vertx.http.servers");
+    return new HttpServerMetricsImpl(this, name(baseName(), "http.servers"));
   }
 
   @Override
   public HttpClientMetrics register(HttpClient client, HttpClientOptions options) {
-    return new HttpClientMetricsImpl(this, instanceName("io.vertx.http.clients", client), options);
+    return new HttpClientMetricsImpl(this, instanceName(name(baseName(), "http.clients"), client), options);
   }
 
   @Override
   public NetMetrics register(NetServer server, NetServerOptions options) {
-    return new NetMetricsImpl(this, "io.vertx.net.servers", false);
+    return new NetMetricsImpl(this, name(baseName(), "net.servers"), false);
   }
 
   @Override
   public NetMetrics register(NetClient client, NetClientOptions options) {
-    return new NetMetricsImpl(this, instanceName("io.vertx.net.clients", client), true);
+    return new NetMetricsImpl(this, instanceName(name(baseName(), "net.clients"), client), true);
   }
 
   @Override
   public DatagramMetrics register(DatagramSocket socket, DatagramSocketOptions options) {
-    return new DatagramMetricsImpl(this, "io.vertx.datagram");
+    return new DatagramMetricsImpl(this, name(baseName(), "datagram"));
   }
 
   @Override
@@ -156,17 +155,19 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
   }
 
   @Override
-  public Map<String, JsonObject> getMetrics(TimeUnit rateUnit, TimeUnit durationUnit, BiPredicate<String, JsonObject> filter) {
+  public String metricBaseName() {
+    return baseName();
+  }
+
+  @Override
+  public Map<String, JsonObject> metrics(TimeUnit rateUnit, TimeUnit durationUnit) {
     Objects.requireNonNull(rateUnit);
     Objects.requireNonNull(durationUnit);
-    Objects.requireNonNull(filter);
 
     Map<String, JsonObject> metrics = new HashMap<>();
     registry().getMetrics().forEach((name, metric) -> {
       JsonObject data = convertMetric(metric, rateUnit, durationUnit);
-      if (filter.test(name, data)) {
-        metrics.put(name, data);
-      }
+      metrics.put(name, data);
     });
 
     return metrics;

@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.metrics.Measured;
 
 /**
  * Represents a TCP or SSL server<p>
@@ -34,7 +35,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetServer {
+public interface NetServer extends Measured {
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.

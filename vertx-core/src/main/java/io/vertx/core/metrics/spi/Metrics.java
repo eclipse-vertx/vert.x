@@ -16,7 +16,6 @@
 
 package io.vertx.core.metrics.spi;
 
-import io.vertx.core.metrics.MetricsProvider;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
@@ -28,6 +27,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -37,7 +37,7 @@ import io.vertx.core.spi.MetricsFactory;
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface Metrics extends BaseMetrics, MetricsProvider {
+public interface Metrics extends BaseMetrics, Measured {
 
   void verticleDeployed(Verticle verticle);
 

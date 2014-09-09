@@ -48,7 +48,7 @@ public interface VertxInternal extends VertxSPI {
 
   Map<ServerID, NetServerImpl> sharedNetServers();
 
-  Metrics metrics();
+  Metrics metricsSPI();
 
 	/**
 	 * Get the current context

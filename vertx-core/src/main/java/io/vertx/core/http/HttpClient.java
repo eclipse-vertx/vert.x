@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.metrics.Measured;
 
 /**
  * An HTTP client that maintains a pool of connections to a specific host, at a specific port. The client supports
@@ -33,7 +34,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClient {
+public interface HttpClient extends Measured {
 
   /**
    * Set an exception handler
