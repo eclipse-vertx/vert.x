@@ -24,12 +24,14 @@ import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.ScheduledMetricsConsumer;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import org.junit.Test;
@@ -112,7 +114,6 @@ public class MetricsTest extends AsyncTestBase {
     assertMinMax(httpMetrics, baseName + ".bytes-written", (long) serverMin.length(), (long) serverMax.length());
     assertMinMax(httpMetrics, baseName + ".bytes-read", (long) clientMin.length(), (long) clientMax.length());
     assertCount(httpMetrics, baseName + ".exceptions", 0L);
-    expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
 
     // Verify http client
     baseName = "io.vertx.http.clients.@" + Integer.toHexString(client.hashCode());
@@ -120,7 +121,6 @@ public class MetricsTest extends AsyncTestBase {
     assertMinMax(httpMetrics, baseName + ".bytes-written", (long) clientMin.length(), (long) clientMax.length());
     assertMinMax(httpMetrics, baseName + ".bytes-read", (long) serverMin.length(), (long) serverMax.length());
     assertCount(httpMetrics, baseName + ".exceptions", 0L);
-    expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
 
     testComplete();
   }
@@ -173,7 +173,6 @@ public class MetricsTest extends AsyncTestBase {
     assertMinMax(httpMetrics, baseName + ".bytes-written", serverWrittenBytes.get(), serverWrittenBytes.get());
     assertMinMax(httpMetrics, baseName + ".bytes-read", clientWrittenBytes.get(), clientWrittenBytes.get());
     assertCount(httpMetrics, baseName + ".exceptions", 0L);
-    expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
 
     // Verify http client
     baseName = "io.vertx.http.clients.@" + Integer.toHexString(client.hashCode());
@@ -181,7 +180,6 @@ public class MetricsTest extends AsyncTestBase {
     assertMinMax(httpMetrics, baseName + ".bytes-written", clientWrittenBytes.get(), clientWrittenBytes.get());
     assertMinMax(httpMetrics, baseName + ".bytes-read", serverWrittenBytes.get(), serverWrittenBytes.get());
     assertCount(httpMetrics, baseName + ".exceptions", 0L);
-    expectNonNullMetric(httpMetrics, baseName + ".connections.127.0.0.1");
   }
 
   @Test
@@ -215,6 +213,42 @@ public class MetricsTest extends AsyncTestBase {
     assertCount(httpMetrics, baseName + ".put-requests./put", 1L);
     assertCount(httpMetrics, baseName + ".delete-requests", 1L);
     assertCount(httpMetrics, baseName + ".delete-requests./delete", 1L);
+  }
+
+  @Test
+  public void testHttpMetricsOnClose() throws Exception {
+    int requests = 6;
+    CountDownLatch latch = new CountDownLatch(requests);
+
+    HttpServer server = vertx.createHttpServer(HttpServerOptions.options().setHost("localhost").setPort(8081)).requestHandler(req -> {
+      req.response().end();
+    }).listen();
+
+    HttpClient client = vertx.createHttpClient(HttpClientOptions.options());
+
+    for (int i = 0; i < requests; i++) {
+      client.getNow(RequestOptions.options().setHost("localhost").setPort(8081), resp -> {
+        latch.countDown();
+      });
+    }
+
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    client.close();
+    server.close(ar -> {
+      assertTrue(ar.succeeded());
+      testComplete();
+    });
+
+    await();
+
+    Map<String, JsonObject> metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.http.servers.localhost:8081"));
+    assertNotNull(metrics);
+    assertTrue(metrics.isEmpty());
+
+    metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.http.clients.@" + Integer.toHexString(client.hashCode())));
+    assertNotNull(metrics);
+    assertTrue(metrics.isEmpty());
   }
 
   @Test
@@ -265,6 +299,42 @@ public class MetricsTest extends AsyncTestBase {
     assertMinMax(metrics, baseName + ".bytes-read", (long) serverData.length(), (long) serverData.length());
 
     testComplete();
+  }
+
+  @Test
+  public void testNetMetricsOnClose() throws Exception {
+    int requests = 8;
+    CountDownLatch latch = new CountDownLatch(requests);
+
+    NetServer server = vertx.createNetServer(NetServerOptions.options().setHost("localhost").setPort(1235).setReceiveBufferSize(50)).connectHandler(socket -> {
+      socket.dataHandler(buff -> latch.countDown());
+    }).listen();
+
+    NetClient client = vertx.createNetClient(NetClientOptions.options());
+    client.connect(1235, "localhost", ar -> {
+      assertTrue(ar.succeeded());
+      for (int i = 0; i < requests; i++) {
+        ar.result().writeBuffer(randomBuffer(50));
+      }
+    });
+
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+    client.close();
+    server.close(ar -> {
+      assertTrue(ar.succeeded());
+      testComplete();
+    });
+
+    await();
+
+    Map<String, JsonObject> metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.net.servers.localhost:1235"));
+    assertNotNull(metrics);
+    assertTrue(metrics.isEmpty());
+
+    metrics = vertx.metricsProvider().getMetrics((name, metric) -> name.startsWith("io.vertx.net.clients.@" + Integer.toHexString(client.hashCode())));
+    assertNotNull(metrics);
+    assertTrue(metrics.isEmpty());
   }
 
   @Test

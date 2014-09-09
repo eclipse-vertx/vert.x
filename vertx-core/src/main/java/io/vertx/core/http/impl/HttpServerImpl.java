@@ -396,6 +396,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
     } catch (InterruptedException e) {
     }
 
+    metrics.closed();
+
     executeCloseDone(closeContext, done, fut.cause());
   }
 

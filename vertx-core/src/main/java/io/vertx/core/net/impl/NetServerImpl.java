@@ -328,7 +328,10 @@ public class NetServerImpl implements NetServer, Closeable {
     vertx.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
-    fut.addListener(cg ->  executeCloseDone(closeContext, done, fut.cause()));
+    fut.addListener(cg ->  {
+      metrics.closed();
+      executeCloseDone(closeContext, done, fut.cause());
+    });
 
   }
 

@@ -97,6 +97,7 @@ public class NetClientImpl implements NetClient {
         creatingContext.removeCloseHook(closeHook);
       }
       closed = true;
+      metrics.closed();
     }
   }
 

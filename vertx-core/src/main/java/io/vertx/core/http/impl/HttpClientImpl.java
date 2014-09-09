@@ -201,6 +201,7 @@ public class HttpClientImpl implements HttpClient {
       creatingContext.removeCloseHook(closeHook);
     }
     closed = true;
+    metrics.closed();
   }
 
   HttpClientOptions getOptions() {

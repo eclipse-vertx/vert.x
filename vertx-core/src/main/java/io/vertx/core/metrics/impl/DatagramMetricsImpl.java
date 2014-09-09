@@ -21,7 +21,7 @@ import com.codahale.metrics.Histogram;
 import io.vertx.core.metrics.spi.DatagramMetrics;
 import io.vertx.core.net.SocketAddress;
 
-import static io.vertx.core.metrics.impl.NetMetricsImpl.addressName;
+import static io.vertx.core.metrics.impl.NetMetricsImpl.*;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
@@ -32,16 +32,13 @@ class DatagramMetricsImpl extends AbstractMetrics implements DatagramMetrics {
   private Histogram bytesRead;
   private Histogram bytesWritten;
   private Counter exceptions;
-
-  private Histogram serverBytesRead;
-  private Counter serverExceptions;
+  private String serverName;
 
   public DatagramMetricsImpl(AbstractMetrics metrics, String baseName) {
     super(metrics.registry(), baseName);
     if (isEnabled()) {
       socketsCounter = counter("sockets");
       exceptions = counter("exceptions");
-      bytesRead = histogram("bytes-read");
       bytesWritten = histogram("bytes-written");
     }
   }
@@ -58,24 +55,25 @@ class DatagramMetricsImpl extends AbstractMetrics implements DatagramMetrics {
     if (!isEnabled()) return;
 
     socketsCounter.dec();
+    if (serverName != null) {
+      remove(serverName, "bytes-read");
+    }
   }
 
   @Override
   public void listening(SocketAddress localAddress) {
     if (!isEnabled()) return;
 
-    String serverName = addressName(localAddress);
-    this.serverExceptions = counter(serverName, "exceptions");
-    this.serverBytesRead = histogram(serverName, "bytes-read");
+    serverName = addressName(localAddress);
+    bytesRead = histogram(serverName, "bytes-read");
   }
 
   @Override
   public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
     if (!isEnabled()) return;
 
-    bytesRead.update(numberOfBytes);
-    if (serverBytesRead != null) {
-      serverBytesRead.update(numberOfBytes);
+    if (bytesRead != null) {
+      bytesRead.update(numberOfBytes);
     }
   }
 
@@ -91,8 +89,5 @@ class DatagramMetricsImpl extends AbstractMetrics implements DatagramMetrics {
     if (!isEnabled()) return;
 
     exceptions.inc();
-    if (serverExceptions != null) {
-      serverExceptions.inc();
-    }
   }
 }

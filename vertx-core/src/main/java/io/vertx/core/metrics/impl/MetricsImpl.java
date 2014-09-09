@@ -68,7 +68,7 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
   private Handler<Void> doneHandler;
 
   public MetricsImpl(Vertx vertx, VertxOptions vertxOptions) {
-    super(createRegistry(vertxOptions), instanceName(BASE_NAME, vertx));
+    super(new Registry(vertxOptions), instanceName(BASE_NAME, vertx));
     initialize(vertxOptions);
   }
 
@@ -149,6 +149,7 @@ class MetricsImpl extends AbstractMetrics implements Metrics {
 
   @Override
   public void stop() {
+    registry().shutdown();
     if (doneHandler != null) {
       doneHandler.handle(null);
     }

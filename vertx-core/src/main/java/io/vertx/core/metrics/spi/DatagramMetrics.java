@@ -36,6 +36,4 @@ public interface DatagramMetrics extends NetMetrics {
   }
 
   void newSocket();
-
-  void closed();
 }

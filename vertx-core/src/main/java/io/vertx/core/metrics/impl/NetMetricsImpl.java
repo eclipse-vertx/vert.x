@@ -37,22 +37,13 @@ class NetMetricsImpl extends AbstractMetrics implements NetMetrics {
   private Histogram bytesWritten;
   private Counter exceptions;
   private Map<SocketAddress, Timer.Context> connectionLifetimes;
+  private volatile boolean closed;
 
   public NetMetricsImpl(AbstractMetrics metrics, String baseName, boolean client) {
     super(metrics.registry(), baseName);
     if (client) {
       initialize();
     }
-  }
-
-  @Override
-  public void listening(SocketAddress localAddress) {
-    if (!isEnabled()) return;
-
-    // Set the base name of the server to include the host:port
-    setBaseName(name(baseName(), addressName(localAddress)));
-
-    initialize();
   }
 
   protected void initialize() {
@@ -64,6 +55,22 @@ class NetMetricsImpl extends AbstractMetrics implements NetMetrics {
     this.bytesRead = histogram("bytes-read");
     this.bytesWritten = histogram("bytes-written");
     this.connectionLifetimes = new ConcurrentHashMap<>();
+  }
+
+  @Override
+  public void closed() {
+    removeAll();
+    this.closed = true;
+  }
+
+  @Override
+  public void listening(SocketAddress localAddress) {
+    if (!isEnabled()) return;
+
+    // Set the base name of the server to include the host:port
+    setBaseName(name(baseName(), addressName(localAddress)));
+
+    initialize();
   }
 
   @Override
@@ -80,7 +87,7 @@ class NetMetricsImpl extends AbstractMetrics implements NetMetrics {
 
   @Override
   public void disconnected(SocketAddress remoteAddress) {
-    if (!isEnabled()) return;
+    if (!isEnabled() || closed) return;
 
     connections.dec();
     Timer.Context ctx = connectionLifetimes.remove(remoteAddress);
@@ -89,7 +96,11 @@ class NetMetricsImpl extends AbstractMetrics implements NetMetrics {
     }
 
     // Remote address connection metrics
-    counter("connections", remoteAddress.hostAddress()).dec();
+    Counter counter = counter("connections", remoteAddress.hostAddress());
+    counter.dec();
+    if (counter.getCount() == 0) {
+      remove("connections", remoteAddress.hostAddress());
+    }
   }
 
   @Override
