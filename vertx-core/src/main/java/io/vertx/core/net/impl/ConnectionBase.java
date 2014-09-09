@@ -27,6 +27,7 @@ import io.netty.handler.stream.ChunkedFile;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.ContextImpl;
 
 import io.vertx.core.impl.VertxInternal;
@@ -238,6 +239,9 @@ public abstract class ConnectionBase {
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
+  public NetMetrics metrics() {
+    return metrics;
+  }
 
 
   protected abstract void handleInterestedOpsChanged();
