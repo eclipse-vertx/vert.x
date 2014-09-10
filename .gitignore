@@ -19,3 +19,4 @@ test-results
 test-tmp
 *.class
 ScratchPad.java
+*.swp

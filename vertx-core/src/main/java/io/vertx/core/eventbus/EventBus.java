@@ -55,8 +55,8 @@ import io.vertx.core.Handler;
 public interface EventBus {
 
 	/**
-	 * Close the EventBus and release all resources. 
-	 * 
+	 * Close the EventBus and release all resources.
+	 *
 	 * @param completionHandler
 	 */
   void close(Handler<AsyncResult<Void>> completionHandler);
@@ -94,6 +94,18 @@ public interface EventBus {
 
   @Fluent
   EventBus publish(String address, Object message, DeliveryOptions options);
+
+  /**
+   * Forward a message
+   * @param address The address to forward it to
+   * @param message the message
+   *
+   */
+  @Fluent
+  EventBus forward(String address, Object message);
+
+  @Fluent
+  EventBus forward(String address, Object message, DeliveryOptions options);
 
   /**
    * Registers a handler against the specified address
