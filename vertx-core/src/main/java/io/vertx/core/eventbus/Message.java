@@ -78,4 +78,10 @@ public interface Message<T> {
   void forward(String address);
 
   void forward(String address, DeliveryOptions options);
+
+  /**
+   * indicates that this message has been forwarded
+   * @return
+   */
+  boolean isForward();
 }
