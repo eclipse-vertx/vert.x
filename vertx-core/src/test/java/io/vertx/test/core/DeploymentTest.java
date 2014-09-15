@@ -26,7 +26,6 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
@@ -184,6 +183,9 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertDeployment(1, verticle, null, ar);
+      assertFalse(verticle.startContext.isMultiThreaded());
+      assertFalse(verticle.startContext.isWorker());
+      assertTrue(verticle.startContext.isEventLoopContext());
       testComplete();
     });
     await();
@@ -245,7 +247,9 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject conf = generateJSONObject();
     vertx.deployVerticle(verticle, DeploymentOptions.options().setConfig(conf).setWorker(true), ar -> {
       assertDeployment(1, verticle, conf, ar);
-      assertTrue(verticle.startContext instanceof WorkerContext);
+      assertFalse(verticle.startContext.isMultiThreaded());
+      assertTrue(verticle.startContext.isWorker());
+      assertFalse(verticle.startContext.isEventLoopContext());
       vertx.undeployVerticle(ar.result(), ar2 -> {
         assertTrue(ar2.succeeded());
         assertEquals(verticle.startContext, verticle.stopContext);
@@ -261,7 +265,9 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject conf = generateJSONObject();
     vertx.deployVerticle(verticle, DeploymentOptions.options().setConfig(conf).setWorker(true).setMultiThreaded(true), ar -> {
       assertDeployment(1, verticle, conf, ar);
-      assertTrue(verticle.startContext instanceof MultiThreadedWorkerContext);
+      assertTrue(verticle.startContext.isMultiThreaded());
+      assertTrue(verticle.startContext.isWorker());
+      assertFalse(verticle.startContext.isEventLoopContext());
       vertx.undeployVerticle(ar.result(), ar2 -> {
         assertTrue(ar2.succeeded());
         assertEquals(verticle.startContext, verticle.stopContext);

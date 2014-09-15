@@ -133,7 +133,11 @@ public abstract class ContextImpl implements Context {
 
   public abstract boolean isEventLoopContext();
 
-  public abstract boolean isMultithreaded();
+  public abstract boolean isMultiThreaded();
+
+  public boolean isWorker() {
+    return !isEventLoopContext();
+  }
 
   public void execute(ContextTask task, boolean expectRightThread) {
     if (isOnCorrectContextThread(expectRightThread)) {
