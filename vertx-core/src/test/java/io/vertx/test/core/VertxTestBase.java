@@ -45,6 +45,10 @@ public class VertxTestBase extends AsyncTestBase {
     vertx = Vertx.vertx();
   }
 
+  protected VertxOptions getOptions() {
+    return VertxOptions.options();
+  }
+
   protected void tearDown() throws Exception {
     if (vertx != null) {
       CountDownLatch latch = new CountDownLatch(1);

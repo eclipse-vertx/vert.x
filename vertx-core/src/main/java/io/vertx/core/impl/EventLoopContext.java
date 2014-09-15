@@ -43,7 +43,7 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  public boolean isMultithreaded() {
+  public boolean isMultiThreaded() {
     return false;
   }
 

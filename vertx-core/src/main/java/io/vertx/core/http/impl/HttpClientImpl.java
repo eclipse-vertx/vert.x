@@ -89,7 +89,7 @@ public class HttpClientImpl implements HttpClient {
       completionHandler.handle(Future.completedFuture());
     };
     if (creatingContext != null) {
-      if (creatingContext.isMultithreaded()) {
+      if (creatingContext.isMultiThreaded()) {
         throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(closeHook);

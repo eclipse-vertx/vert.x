@@ -16,12 +16,19 @@
 
 package io.vertx.core;
 
+import io.vertx.core.json.JsonObject;
+
+import java.util.List;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class AbstractVerticle implements Verticle {
 
   protected Vertx vertx;
+  protected JsonObject config;
+  protected String deploymentID;
+  protected List<String> processArgs;
 
   @Override
   public Vertx getVertx() {
@@ -35,6 +42,10 @@ public abstract class AbstractVerticle implements Verticle {
 
   @Override
   public void start(Future<Void> startFuture) throws Exception {
+    Context ctx = vertx.currentContext();
+    config = ctx.config();
+    deploymentID = ctx.deploymentID();
+    processArgs = ctx.processArgs();
     start();
     startFuture.setResult(null);
   }

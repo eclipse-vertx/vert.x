@@ -38,7 +38,7 @@ public class VertxThreadFactory implements ThreadFactory {
   public Thread newThread(Runnable runnable) {
     VertxThread t = new VertxThread(runnable, prefix + threadCount.getAndIncrement(), worker);
     // All vert.x threads are daemons
-    t.setDaemon(true);
+    //t.setDaemon(true);
     if (checker != null) {
       checker.registerThread(t);
     }

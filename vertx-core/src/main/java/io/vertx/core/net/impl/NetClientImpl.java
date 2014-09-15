@@ -70,7 +70,7 @@ public class NetClientImpl implements NetClient {
     };
     creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isMultithreaded()) {
+      if (creatingContext.isMultiThreaded()) {
         throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(closeHook);

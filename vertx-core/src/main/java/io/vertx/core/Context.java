@@ -37,4 +37,10 @@ public interface Context {
 
   List<String> processArgs();
 
+  boolean isEventLoopContext();
+
+  boolean isWorker();
+
+  boolean isMultiThreaded();
+
 }
