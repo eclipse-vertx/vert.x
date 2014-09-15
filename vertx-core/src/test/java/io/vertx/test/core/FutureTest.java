@@ -19,7 +19,6 @@ import io.vertx.core.Future;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -33,14 +32,14 @@ public class FutureTest extends VertxTestBase {
     Future<Object> future = Future.completedFuture(foo);
     assertTrue(future.succeeded());
     assertFalse(future.failed());
-    assertTrue(future.complete());
+    assertTrue(future.isComplete());
     assertEquals(foo, future.result());
     assertNull(future.cause());
     Exception cause = new Exception();
     future = Future.completedFuture(cause);
     assertFalse(future.succeeded());
     assertTrue(future.failed());
-    assertTrue(future.complete());
+    assertTrue(future.isComplete());
     assertNull(future.result());
     assertEquals(cause, future.cause());
   }
@@ -49,24 +48,24 @@ public class FutureTest extends VertxTestBase {
   public void testSetResultOnCompletedFuture() {
     ArrayList<Future<Object>> futures = new ArrayList<>();
     futures.add(Future.completedFuture());
-    futures.add(Future.future().setResult(null));
+    futures.add(Future.completedFuture());
     futures.add(Future.completedFuture(new Object()));
-    futures.add(Future.future().setResult(new Object()));
+    futures.add(Future.completedFuture(new Object()));
     futures.add(Future.completedFuture(new Exception()));
-    futures.add(Future.future().setFailure(new Exception()));
+    futures.add(Future.completedFuture(new Exception()));
     for (Future<Object> future : futures) {
       try {
-        future.setResult(new Object());
+        future.complete(new Object());
         fail();
       } catch (IllegalStateException ignore) {
       }
       try {
-        future.setResult(null);
+        future.complete(null);
         fail();
       } catch (IllegalStateException ignore) {
       }
       try {
-        future.setFailure(new Exception());
+        future.fail(new Exception());
         fail();
       } catch (IllegalStateException ignore) {
       }
@@ -85,7 +84,7 @@ public class FutureTest extends VertxTestBase {
       called.set(true);
     });
     assertFalse(called.get());
-    future.setResult(null);
+    future.complete(null);
     assertTrue(called.get());
     called.set(false);
     Object foo = new Object();
@@ -98,7 +97,7 @@ public class FutureTest extends VertxTestBase {
       assertEquals(null, result.cause());
     });
     assertFalse(called.get());
-    future.setResult(foo);
+    future.complete(foo);
     assertTrue(called.get());
     called.set(false);
     Exception cause = new Exception();
@@ -111,7 +110,7 @@ public class FutureTest extends VertxTestBase {
       assertEquals(cause, result.cause());
     });
     assertFalse(called.get());
-    future.setFailure(cause);
+    future.fail(cause);
     assertTrue(called.get());
   }
 

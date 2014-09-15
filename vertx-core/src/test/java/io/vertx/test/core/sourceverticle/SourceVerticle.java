@@ -31,7 +31,7 @@ public class SourceVerticle extends AbstractVerticle {
   public void start(Future<Void> startFuture) throws Exception {
     vertx.deployVerticle("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", DeploymentOptions.options(), ar -> {
       if (ar.succeeded()) {
-        startFuture.setResult((Void) null);
+        startFuture.complete((Void) null);
       } else {
         ar.cause().printStackTrace();
       }

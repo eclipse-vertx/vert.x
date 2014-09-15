@@ -85,9 +85,8 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
   @Override
   public void get(final K k, final Handler<AsyncResult<ChoosableIterable<V>>> resultHandler) {
     ChoosableSet<V> entries = cache.get(k);
-    Future<ChoosableIterable<V>> result = Future.future();
     if (entries != null && entries.isInitialised()) {
-      result.setResult(entries).setHandler(resultHandler);
+      resultHandler.handle(Future.completedFuture(entries));
     } else {
       vertx.executeBlocking(() -> map.get(k), (AsyncResult<Collection<V>> res2) -> {
         Future<ChoosableIterable<V>> sresult = Future.future();
@@ -109,9 +108,10 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
             sids = prev;
           }
           sids.setInitialised();
-          sresult.setResult(sids);
+          sresult.complete(sids);
         } else {
-          sresult.setFailure(result.cause());
+          sresult.fail(res2.cause());
+
         }
         sresult.setHandler(resultHandler);
       });

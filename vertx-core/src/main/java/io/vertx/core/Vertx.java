@@ -134,7 +134,7 @@ public interface Vertx {
   /**
    * @return The current context
    */
-  Context currentContext();
+  Context context();
 
   /**
    * Put the handler on the event queue for the current loop (or worker context) so it will be run asynchronously ASAP after this event has

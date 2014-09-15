@@ -568,7 +568,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.currentContext();
+        ctx = vertx.context();
         if (worker) {
           if (multiThreaded) {
             assertTrue(ctx instanceof MultiThreadedWorkerContext);
@@ -580,7 +580,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         }
         Thread thr = Thread.currentThread();
         Registration reg = vertx.eventBus().registerHandler(ADDRESS1, msg -> {
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
@@ -588,12 +588,12 @@ public class LocalEventBusTest extends EventBusTestBase {
         });
         reg.completionHandler(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           vertx.eventBus().send(ADDRESS1, "foo", onSuccess((Message<Object> reply) -> {
-            assertSame(ctx, vertx.currentContext());
+            assertSame(ctx, vertx.context());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }

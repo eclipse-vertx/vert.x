@@ -363,13 +363,11 @@ public class AsyncFileImpl implements AsyncFile {
 
       long pos = position;
 
-      Future<Buffer> result = Future.future();
-
       private void done() {
         context.execute(() -> {
           buff.flip();
           writeBuff.setBytes(offset, buff);
-          result.setResult(writeBuff).setHandler(handler);
+          handler.handle(Future.completedFuture(writeBuff));
         }, false);
       }
 
@@ -389,7 +387,7 @@ public class AsyncFileImpl implements AsyncFile {
       }
 
       public void failed(Throwable t, Object attachment) {
-        context.execute(() -> result.setFailure(t).setHandler(handler), false);
+        context.execute(() -> handler.handle(Future.completedFuture(t)), false);
       }
     });
   }
@@ -416,9 +414,9 @@ public class AsyncFileImpl implements AsyncFile {
     Future<Void> res = Future.future();
     try {
       ch.close();
-      res.setResult(null);
+      res.complete(null);
     } catch (IOException e) {
-      res.setFailure(e);
+      res.fail(e);
     }
     if (handler != null) {
       handler.handle(res);
