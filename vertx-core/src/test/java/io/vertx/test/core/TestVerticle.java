@@ -35,9 +35,9 @@ public class TestVerticle extends AbstractVerticle {
 
   @Override
   public void start() throws Exception {
-    processArgs = vertx.currentContext().processArgs();
+    processArgs = vertx.context().processArgs();
     vertx.eventBus().send("testcounts",
-      new JsonObject().putString("deploymentID", vertx.currentContext().deploymentID()).putNumber("count", instanceCount.incrementAndGet()));
+      new JsonObject().putString("deploymentID", vertx.context().deploymentID()).putNumber("count", instanceCount.incrementAndGet()));
   }
 
   @Override

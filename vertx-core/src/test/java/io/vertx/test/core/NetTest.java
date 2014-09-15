@@ -1670,7 +1670,7 @@ public class NetTest extends NetTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.currentContext();
+        ctx = vertx.context();
         if (worker) {
           assertTrue(ctx instanceof WorkerContext);
         } else {
@@ -1682,20 +1682,20 @@ public class NetTest extends NetTestBase {
           sock.dataHandler(buff -> {
             sock.write(buff);
           });
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           client = vertx.createNetClient(NetClientOptions.options());
           client.connect(1234, "localhost", ar2 -> {
-            assertSame(ctx, vertx.currentContext());
+            assertSame(ctx, vertx.context());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
@@ -1705,7 +1705,7 @@ public class NetTest extends NetTestBase {
             sock.write(buff);
             Buffer brec = Buffer.buffer();
             sock.dataHandler(rec -> {
-              assertSame(ctx, vertx.currentContext());
+              assertSame(ctx, vertx.context());
               if (!worker) {
                 assertSame(thr, Thread.currentThread());
               }

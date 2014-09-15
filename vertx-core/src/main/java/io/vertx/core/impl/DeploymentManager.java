@@ -357,7 +357,7 @@ public class DeploymentManager {
           try {
             verticle.stop(stopFuture);
           } catch (Throwable t) {
-            stopFuture.setFailure(t);
+            stopFuture.fail(t);
           }
         });
       }

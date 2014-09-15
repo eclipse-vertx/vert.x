@@ -2804,7 +2804,7 @@ public class HttpTest extends HttpTestBase {
       servers.add(theServer);
       final AtomicReference<Context> context = new AtomicReference<>();
       theServer.requestHandler(req -> {
-        Context ctx = vertx.currentContext();
+        Context ctx = vertx.context();
         if (context.get() != null) {
           assertSame(ctx, context.get());
         } else {
@@ -3478,7 +3478,7 @@ public class HttpTest extends HttpTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.currentContext();
+        ctx = vertx.context();
         if (worker) {
           assertTrue(ctx instanceof WorkerContext);
         } else {
@@ -3488,20 +3488,20 @@ public class HttpTest extends HttpTestBase {
         server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           client = vertx.createHttpClient(HttpClientOptions.options());
           client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT), res -> {
-            assertSame(ctx, vertx.currentContext());
+            assertSame(ctx, vertx.context());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }

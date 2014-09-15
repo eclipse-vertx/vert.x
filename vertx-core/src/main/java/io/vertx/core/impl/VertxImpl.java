@@ -204,7 +204,7 @@ public class VertxImpl implements VertxInternal {
     context.runOnContext(task);
   }
 
-  public Context currentContext() {
+  public Context context() {
     return getOrCreateContext();
   }
 

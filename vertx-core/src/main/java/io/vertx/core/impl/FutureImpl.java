@@ -39,9 +39,9 @@ class FutureImpl<T> implements Future<T> {
    */
   FutureImpl(Throwable t) {
     if (t == null) {
-      setResult(null);
+      complete(null);
     } else {
-      setFailure(t);
+      fail(t);
     }
   }
 
@@ -50,7 +50,7 @@ class FutureImpl<T> implements Future<T> {
    * @param result The result
    */
   FutureImpl(T result) {
-    setResult(result);
+    complete(result);
   }
 
   /**
@@ -84,47 +84,49 @@ class FutureImpl<T> implements Future<T> {
   /**
    * Has it completed?
    */
-  public boolean complete() {
+  public boolean isComplete() {
     return failed || succeeded;
   }
 
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  public FutureImpl<T> setHandler(Handler<AsyncResult<T>> handler) {
+  public void setHandler(Handler<AsyncResult<T>> handler) {
     this.handler = handler;
     checkCallHandler();
-    return this;
   }
 
   /**
    * Set the result. Any handler will be called, if there is one
    */
-  public FutureImpl<T> setResult(T result) {
+  public void complete(T result) {
     if (this.succeeded || this.failed) {
       throw new IllegalStateException("Result has already been set");
     }
     this.result = result;
     succeeded = true;
     checkCallHandler();
-    return this;
+  }
+
+  @Override
+  public void complete() {
+    complete(null);
   }
 
   /**
    * Set the failure. Any handler will be called, if there is one
    */
-  public FutureImpl<T> setFailure(Throwable throwable) {
+  public void fail(Throwable throwable) {
     if (this.succeeded || this.failed) {
       throw new IllegalStateException("Failure has already been set");
     }
     this.throwable = throwable;
     failed = true;
     checkCallHandler();
-    return this;
   }
 
   private void checkCallHandler() {
-    if (handler != null && complete()) {
+    if (handler != null && isComplete()) {
       handler.handle(this);
     }
   }
