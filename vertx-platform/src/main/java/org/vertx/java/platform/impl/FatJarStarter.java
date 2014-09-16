@@ -70,7 +70,7 @@ public class FatJarStarter implements Runnable {
     URLClassLoader urlc = (URLClassLoader)FatJarStarter.class.getClassLoader();
 
     final int totalUrlsCount = urlc.getURLs().length;
-    String fileName = urlc.getURLs()[totalUrlsCount - 1].getFile();
+    String fileName = urlc.getURLs()[totalUrlsCount - 1].toURI().getPath();
 
     // Look for -cp or -classpath parameter
     String classpath = null;
