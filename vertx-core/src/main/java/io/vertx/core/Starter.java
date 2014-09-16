@@ -338,7 +338,7 @@ public class Starter {
         "                               a cluster with any other vert.x instances on    \n" +
         "                               the network.                                    \n" +
         "        -cluster-port          port to use for cluster communication.          \n" +
-        "                               Default is 0 which means chose a spare          \n" +
+        "                               Default is 0 which means choose a spare          \n" +
         "                               random port.                                    \n" +
         "        -cluster-host          host to bind to for cluster communication.      \n" +
         "                               If this is not specified vert.x will attempt    \n" +
