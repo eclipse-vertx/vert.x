@@ -28,7 +28,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
@@ -66,7 +66,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private boolean writeHead;
   private long written;
   private long currentTimeoutTimerId = -1;
-  private Headers headers;
+  private MultiMap headers;
   private boolean exceptionOccurred;
   private long lastDataReceived;
 
@@ -96,7 +96,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(request.headers());
     }

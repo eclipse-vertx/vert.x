@@ -30,7 +30,7 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerFileUpload;
@@ -74,14 +74,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private Handler<Throwable> exceptionHandler;
 
   //Cache this for performance
-  private Headers params;
-  private Headers headers;
+  private MultiMap params;
+  private MultiMap headers;
   private String absoluteURI;
 
   private NetSocket netSocket;
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
-  private Headers attributes;
+  private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
 
@@ -146,7 +146,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(request.headers());
     }
@@ -154,7 +154,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public Headers params() {
+  public MultiMap params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
       Map<String, List<String>> prms = queryStringDecoder.parameters();
@@ -249,7 +249,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public Headers formAttributes() {
+  public MultiMap formAttributes() {
     if (decoder == null) {
       throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
     }
@@ -333,7 +333,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  private Headers attributes() {
+  private MultiMap attributes() {
     // Create it lazily
     if (attributes == null) {
       attributes = new CaseInsensitiveHeaders();

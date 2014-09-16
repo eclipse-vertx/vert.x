@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -56,13 +56,13 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse, Buffe
    * @return The HTTP headers
    */
   @CacheReturn
-  Headers headers();
+  MultiMap headers();
 
   /**
    * @return The HTTP trailers
    */
   @CacheReturn
-  Headers trailers();
+  MultiMap trailers();
 
   /**
    * @return The Set-Cookie headers (including trailers)
