@@ -17,7 +17,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Options;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.DeliveryOptionsFactory;
@@ -50,9 +50,9 @@ public interface DeliveryOptions {
 
   DeliveryOptions addHeader(String key, String value);
 
-  DeliveryOptions setHeaders(Headers headers);
+  DeliveryOptions setHeaders(MultiMap headers);
 
-  Headers getHeaders();
+  MultiMap getHeaders();
 
   static final DeliveryOptionsFactory factory = ServiceHelper.loadFactory(DeliveryOptionsFactory.class);
 

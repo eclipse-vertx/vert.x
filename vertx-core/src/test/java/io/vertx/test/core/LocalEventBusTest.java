@@ -21,7 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
@@ -646,7 +646,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testHeadersCopiedAfterSend() throws Exception {
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     vertx.eventBus().registerHandler(ADDRESS1, msg -> {
       assertNotSame(headers, msg.headers());

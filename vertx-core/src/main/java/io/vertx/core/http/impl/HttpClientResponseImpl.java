@@ -20,7 +20,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
@@ -57,8 +57,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private NetSocket netSocket;
 
   // Cache these for performance
-  private Headers headers;
-  private Headers trailers;
+  private MultiMap headers;
+  private MultiMap trailers;
   private List<String> cookies;
 
   HttpClientResponseImpl(Vertx vertx, HttpClientRequestImpl request, ClientConnection conn, HttpResponse response) {
@@ -81,7 +81,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(response.headers());
     }
@@ -89,7 +89,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public Headers trailers() {
+  public MultiMap trailers() {
     if (trailers == null) {
       trailers = new HeadersAdaptor(new DefaultHttpHeaders());
     }

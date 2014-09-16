@@ -17,7 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
@@ -32,9 +32,9 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private final Runnable connectRunnable;
   private boolean connected;
   private boolean rejected;
-  private final Headers headers;
+  private final MultiMap headers;
 
-  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, Headers headers,
+  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
                              ConnectionBase conn, boolean supportsContinuation, Runnable connectRunnable) {
     super(vertx, conn, supportsContinuation);
 
@@ -61,7 +61,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     return headers;
   }
 

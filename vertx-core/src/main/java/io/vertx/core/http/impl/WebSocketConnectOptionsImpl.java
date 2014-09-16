@@ -16,7 +16,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.json.JsonArray;
@@ -39,7 +39,7 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
 
   private int port ;
   private String host;
-  private Headers headers;
+  private MultiMap headers;
   private String requestURI;
   private int maxWebsocketFrameSize;
   private int version;
@@ -111,12 +111,12 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
   }
 
   @Override
-  public Headers getHeaders() {
+  public MultiMap getHeaders() {
     return headers;
   }
 
   @Override
-  public WebSocketConnectOptions setHeaders(Headers headers) {
+  public WebSocketConnectOptions setHeaders(MultiMap headers) {
     this.headers = headers;
     return this;
   }

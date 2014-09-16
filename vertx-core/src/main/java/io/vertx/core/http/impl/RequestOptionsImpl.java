@@ -16,7 +16,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.RequestOptionsBase;
@@ -33,7 +33,7 @@ public class RequestOptionsImpl implements RequestOptions {
 
   private int port ;
   private String host;
-  private Headers headers;
+  private MultiMap headers;
   private String requestURI;
 
   RequestOptionsImpl() {
@@ -90,12 +90,12 @@ public class RequestOptionsImpl implements RequestOptions {
   }
 
   @Override
-  public Headers getHeaders() {
+  public MultiMap getHeaders() {
     return headers;
   }
 
   @Override
-  public RequestOptions setHeaders(Headers headers) {
+  public RequestOptions setHeaders(MultiMap headers) {
     this.headers = headers;
     return this;
   }
