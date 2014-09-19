@@ -1078,7 +1078,7 @@ public class FileSystemTest extends VertxTestBase {
     Buffer buff = Buffer.buffer(content);
     vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), ar -> {
       if (ar.succeeded()) {
-        WriteStream<AsyncFile> ws = ar.result();
+        WriteStream<AsyncFile, Buffer> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
         for (int i = 0; i < chunks; i++) {
           Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
@@ -1119,7 +1119,7 @@ public class FileSystemTest extends VertxTestBase {
     Buffer buff = Buffer.buffer(byteBuf);
     vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), ar -> {
       if (ar.succeeded()) {
-        WriteStream<AsyncFile> ws = ar.result();
+        WriteStream<AsyncFile, Buffer> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
         ws.write(buff);
         ar.result().close(ar2 -> {
@@ -1155,9 +1155,9 @@ public class FileSystemTest extends VertxTestBase {
     createFile(fileName, content);
     vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), ar -> {
       if (ar.succeeded()) {
-        ReadStream<AsyncFile> rs = ar.result();
+        ReadStream<AsyncFile, Buffer> rs = ar.result();
         Buffer buff = Buffer.buffer();
-        rs.dataHandler(buff::appendBuffer);
+        rs.handler(buff::appendBuffer);
         rs.exceptionHandler(t -> fail(t.getMessage()));
         rs.endHandler(v -> {
           ar.result().close(ar2 -> {

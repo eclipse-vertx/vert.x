@@ -19,7 +19,6 @@ package io.vertx.core.streams;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 
 /**
  * Represents a stream of data.<p>
@@ -27,11 +26,11 @@ import io.vertx.core.buffer.Buffer;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface StreamBase<T> {
+public interface StreamBase<R> {
 
   /**
    * Set an exception handler.
    */
   @Fluent
-  T exceptionHandler(Handler<Throwable> handler);
+  R exceptionHandler(Handler<Throwable> handler);
 }

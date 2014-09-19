@@ -17,6 +17,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -25,7 +26,7 @@ import io.vertx.core.streams.ReadStream;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @VertxGen
-public interface HttpServerFileUpload extends ReadStream<HttpServerFileUpload> {
+public interface HttpServerFileUpload extends ReadStream<HttpServerFileUpload, Buffer> {
   /**
    * Stream the content of this upload to the given filename.
    */

@@ -343,7 +343,7 @@ public class WebsocketTest extends NetTestBase {
     }
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.websocketHandler(ws -> {
-      ws.dataHandler(ws::write);
+      ws.handler(ws::write);
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -359,7 +359,7 @@ public class WebsocketTest extends NetTestBase {
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(4043), ws -> {
         int size = 100;
         Buffer received = Buffer.buffer();
-        ws.dataHandler(data -> {
+        ws.handler(data -> {
           received.appendBuffer(data);
           if (received.length() == size) {
             ws.close();
@@ -391,7 +391,7 @@ public class WebsocketTest extends NetTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path), ws -> {
-        ws.dataHandler(buff -> {
+        ws.handler(buff -> {
           assertEquals(message, buff.toString("UTF-8"));
           testComplete();
         });
@@ -663,7 +663,7 @@ public class WebsocketTest extends NetTestBase {
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
       assertEquals("Upgrade", ws.headers().get("Connection"));
-      ws.dataHandler(data -> ws.write(data));
+      ws.handler(data -> ws.write(data));
     });
 
     server.listen(ar -> {
@@ -673,7 +673,7 @@ public class WebsocketTest extends NetTestBase {
 
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
         final Buffer received = Buffer.buffer();
-        ws.dataHandler(data -> {
+        ws.handler(data -> {
           received.appendBuffer(data);
           if (received.length() == bsize * sends) {
             ws.close();
@@ -849,7 +849,7 @@ public class WebsocketTest extends NetTestBase {
       assertTrue(ar.succeeded());
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
         Buffer received = Buffer.buffer();
-        ws.dataHandler(data -> {
+        ws.handler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
             assertEquals(buff, received);
@@ -874,7 +874,7 @@ public class WebsocketTest extends NetTestBase {
       assertTrue(ar.succeeded());
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
         final Buffer received = Buffer.buffer();
-        ws.dataHandler(data -> {
+        ws.handler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
             assertEquals(buff, received);
@@ -900,7 +900,7 @@ public class WebsocketTest extends NetTestBase {
       assertTrue(ar.succeeded());
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
         final Buffer received = Buffer.buffer();
-        ws.dataHandler(data -> {
+        ws.handler(data -> {
           received.appendBuffer(data);
           if (received.length() == buff.length()) {
             assertEquals(buff, received);
@@ -986,7 +986,7 @@ public class WebsocketTest extends NetTestBase {
       assertTrue(ar.succeeded());
       client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
         Buffer actual = Buffer.buffer();
-        ws.dataHandler(actual::appendBuffer);
+        ws.handler(actual::appendBuffer);
         ws.closeHandler(v -> {
           assertArrayEquals(expected, actual.getBytes());
           testComplete();

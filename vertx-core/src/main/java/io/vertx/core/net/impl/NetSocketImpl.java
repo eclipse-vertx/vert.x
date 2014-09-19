@@ -99,7 +99,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket dataHandler(Handler<Buffer> dataHandler) {
+  public NetSocket handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }

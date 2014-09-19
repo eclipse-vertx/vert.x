@@ -17,11 +17,13 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -32,18 +34,18 @@ public class PumpTest {
 
   @Test
   public void testPumpBasic() throws Exception {
-    FakeReadStream rs = new FakeReadStream();
-    FakeWriteStream ws = new FakeWriteStream();
+    FakeReadStream<MyClass> rs = new FakeReadStream<>();
+    FakeWriteStream<MyClass> ws = new FakeWriteStream<>();
     Pump p = Pump.pump(rs, ws, 1001);
 
     for (int i = 0; i < 10; i++) { // Repeat a few times
       p.start();
 
-      Buffer inp = Buffer.buffer();
+      List<MyClass> inp = new ArrayList<>();
       for (int j = 0; j < 10; j++) {
-        Buffer b = TestUtils.randomBuffer(100);
-        inp.appendBuffer(b);
-        rs.addData(b);
+        MyClass myClass = new MyClass();
+        inp.add(myClass);
+        rs.addData(myClass);
       }
       assertEquals(inp, ws.received);
       assertFalse(rs.paused);
@@ -52,59 +54,58 @@ public class PumpTest {
 
       p.stop();
       ws.clearReceived();
-      Buffer b = TestUtils.randomBuffer(100);
-      rs.addData(b);
-      assertEquals(0, ws.received.length());
+      MyClass myClass = new MyClass();
+      rs.addData(myClass);
+      assertEquals(0, ws.received.size());
     }
   }
 
   @Test
   public void testPumpPauseResume() throws Exception {
-    FakeReadStream rs = new FakeReadStream();
-    FakeWriteStream ws = new FakeWriteStream();
-    Pump p = Pump.pump(rs, ws, 500);
+    FakeReadStream<MyClass> rs = new FakeReadStream<>();
+    FakeWriteStream<MyClass> ws = new FakeWriteStream<>();
+    Pump p = Pump.pump(rs, ws, 5);
     p.start();
 
     for (int i = 0; i < 10; i++) {   // Repeat a few times
-      Buffer inp = Buffer.buffer();
+      List<MyClass> inp = new ArrayList<>();
       for (int j = 0; j < 4; j++) {
-        Buffer b = TestUtils.randomBuffer(100);
-        inp.appendBuffer(b);
-        rs.addData(b);
+        MyClass myClass = new MyClass();
+        inp.add(myClass);
+        rs.addData(myClass);
         assertFalse(rs.paused);
         assertEquals(i, rs.pauseCount);
         assertEquals(i, rs.resumeCount);
       }
-      Buffer b = TestUtils.randomBuffer(100);
-      inp.appendBuffer(b);
-      rs.addData(b);
+      MyClass myClass = new MyClass();
+      inp.add(myClass);
+      rs.addData(myClass);
       assertTrue(rs.paused);
       assertEquals(i + 1, rs.pauseCount);
       assertEquals(i, rs.resumeCount);
 
       assertEquals(inp, ws.received);
       ws.clearReceived();
-      inp = Buffer.buffer();
       assertFalse(rs.paused);
       assertEquals(i + 1, rs.pauseCount);
       assertEquals(i + 1, rs.resumeCount);
     }
   }
 
-  private class FakeReadStream implements ReadStream<FakeReadStream> {
+  private class FakeReadStream<T> implements ReadStream<FakeReadStream, T> {
 
-    private Handler<Buffer> dataHandler;
+    private Handler<T> dataHandler;
     private boolean paused;
     int pauseCount;
     int resumeCount;
 
-    void addData(Buffer data) {
+    void addData(T data) {
       if (dataHandler != null) {
         dataHandler.handle(data);
       }
     }
 
-    public FakeReadStream dataHandler(Handler<Buffer> handler) {
+    public FakeReadStream handler(Handler<T> handler) {
       this.dataHandler = handler;
       return this;
     }
@@ -130,15 +131,15 @@ public class PumpTest {
     }
   }
 
-  private class FakeWriteStream implements WriteStream<FakeWriteStream> {
+  private class FakeWriteStream<T> implements WriteStream<FakeWriteStream, T> {
 
     int maxSize;
-    Buffer received = Buffer.buffer();
+    List<T> received = new ArrayList<>();
     Handler<Void> drainHandler;
 
     void clearReceived() {
       boolean callDrain = writeQueueFull();
-      received = Buffer.buffer();
+      received = new ArrayList<>();
       if (callDrain && drainHandler != null) {
         drainHandler.handle(null);
       }
@@ -150,7 +151,7 @@ public class PumpTest {
     }
 
     public boolean writeQueueFull() {
-      return received.length() >= maxSize;
+      return received.size() >= maxSize;
     }
 
     public FakeWriteStream drainHandler(Handler<Void> handler) {
@@ -158,13 +159,17 @@ public class PumpTest {
       return this;
     }
 
-    public FakeWriteStream write(Buffer data) {
-      received.appendBuffer(data);
+    public FakeWriteStream write(T data) {
+      received.add(data);
       return this;
     }
 
     public FakeWriteStream exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
+  }
+
+  static class MyClass {
+
   }
 }

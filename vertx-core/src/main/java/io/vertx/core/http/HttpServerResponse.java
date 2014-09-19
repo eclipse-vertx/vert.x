@@ -44,7 +44,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpServerResponse extends WriteStream<HttpServerResponse> {
+public interface HttpServerResponse extends WriteStream<HttpServerResponse, Buffer> {
 
   /**
    * The HTTP status code of the response. The default is {@code 200} representing {@code OK}.

@@ -35,7 +35,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile> {
+public interface AsyncFile extends ReadStream<AsyncFile, Buffer>, WriteStream<AsyncFile, Buffer> {
 
   /**
    * Close the file. The actual close happens asynchronously.

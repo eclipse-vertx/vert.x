@@ -2973,7 +2973,7 @@ public class HttpTest extends HttpTestBase {
     HttpClientRequest clientRequest = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
       resp.pause();
       paused.set(true);
-      resp.dataHandler(chunk -> {
+      resp.handler(chunk -> {
         if (paused.get()) {
           fail("Shouldn't receive chunks when paused");
         } else {
@@ -3024,7 +3024,7 @@ public class HttpTest extends HttpTestBase {
         req.response().setChunked(true);
         req.setExpectMultipart(true);
         req.uploadHandler(upload -> {
-          upload.dataHandler(buffer -> {
+          upload.handler(buffer -> {
             assertEquals(content, buffer.toString("UTF-8"));
           });
           assertEquals("file", upload.name());
@@ -3081,7 +3081,7 @@ public class HttpTest extends HttpTestBase {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
-        req.uploadHandler(upload -> upload.dataHandler(buffer -> {
+        req.uploadHandler(upload -> upload.handler(buffer -> {
           fail("Should get here");
         }));
         req.endHandler(v -> {
@@ -3126,7 +3126,7 @@ public class HttpTest extends HttpTestBase {
       if (req.method().equals("POST")) {
         assertEquals(req.path(), "/form");
         req.setExpectMultipart(true);
-        req.uploadHandler(event -> event.dataHandler(buffer -> {
+        req.uploadHandler(event -> event.handler(buffer -> {
           fail("Should not get here");
         }));
         req.endHandler(v -> {
@@ -3230,7 +3230,7 @@ public class HttpTest extends HttpTestBase {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
     vertx.createNetServer(NetServerOptions.options().setPort(1235)).connectHandler(socket -> {
-      socket.dataHandler(socket::write);
+      socket.handler(socket::write);
     }).listen(onSuccess(netServer -> {
       server.requestHandler(req -> {
         vertx.createNetClient(NetClientOptions.options()).connect(netServer.actualPort(), "localhost", onSuccess(socket -> {
@@ -3248,7 +3248,7 @@ public class HttpTest extends HttpTestBase {
         client.connect(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
           assertEquals(200, resp.statusCode());
           NetSocket socket = resp.netSocket();
-          socket.dataHandler(buff -> {
+          socket.handler(buff -> {
             received.appendBuffer(buff);
             if (received.length() == buffer.length()) {
               netServer.close();
@@ -3615,7 +3615,7 @@ public class HttpTest extends HttpTestBase {
       Registration reg = vertx.eventBus().registerHandler("server_resume", resumeHandler);
       req.endHandler(v -> reg.unregister());
 
-      req.dataHandler(buff -> {
+      req.handler(buff -> {
         req.response().write(buff);
       });
     });

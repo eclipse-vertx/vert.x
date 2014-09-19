@@ -101,7 +101,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public HttpServerFileUpload dataHandler(Handler<Buffer> handler) {
+  public HttpServerFileUpload handler(Handler<Buffer> handler) {
     this.dataHandler = handler;
     return this;
   }

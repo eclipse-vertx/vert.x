@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -37,7 +38,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket> {
+public interface NetSocket extends ReadStream<NetSocket, Buffer>, WriteStream<NetSocket, Buffer> {
 
   /**
    * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
