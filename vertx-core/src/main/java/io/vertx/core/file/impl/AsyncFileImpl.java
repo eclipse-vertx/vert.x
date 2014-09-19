@@ -246,7 +246,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile dataHandler(Handler<Buffer> handler) {
+  public AsyncFile handler(Handler<Buffer> handler) {
     check();
     this.dataHandler = handler;
     if (dataHandler != null && !paused && !closed) {

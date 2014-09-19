@@ -30,7 +30,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
   }
 
   @Override
-  public WebSocket dataHandler(Handler<Buffer> handler) {
+  public WebSocket handler(Handler<Buffer> handler) {
     checkClosed();
     this.dataHandler = handler;
     return this;

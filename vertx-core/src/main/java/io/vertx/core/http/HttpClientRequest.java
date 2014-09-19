@@ -62,7 +62,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
+public interface HttpClientRequest extends WriteStream<HttpClientRequest, Buffer> {
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode

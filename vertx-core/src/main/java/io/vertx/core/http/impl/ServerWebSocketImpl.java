@@ -94,7 +94,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public ServerWebSocket dataHandler(Handler<Buffer> handler) {
+  public ServerWebSocket handler(Handler<Buffer> handler) {
     checkClosed();
     this.dataHandler = handler;
     return this;

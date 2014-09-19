@@ -37,7 +37,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface WebSocketBase<T> extends ReadStream<T>, WriteStream<T> {
+public interface WebSocketBase<T> extends ReadStream<T, Buffer>, WriteStream<T, Buffer> {
 
   /**
    * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that

@@ -16,9 +16,8 @@
 
 package io.vertx.core.streams.impl;
 
-import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Handler;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -42,30 +41,30 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public class PumpImpl implements Pump {
+public class PumpImpl<T> implements Pump {
 
-  private final ReadStream<?> readStream;
-  private final WriteStream<?> writeStream;
+  private final ReadStream<?, T> readStream;
+  private final WriteStream<?, T> writeStream;
   private int pumped;
-  private final Handler<Buffer> dataHandler;
+  private final Handler<T> dataHandler;
   private final Handler<Void> drainHandler;
 
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
    * of the write stream to {@code maxWriteQueueSize}
    */
-  PumpImpl(ReadStream<?> rs, WriteStream<?> ws, int maxWriteQueueSize) {
+  PumpImpl(ReadStream<?, T> rs, WriteStream<?, T> ws, int maxWriteQueueSize) {
     this(rs, ws);
     this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
   }
 
-  PumpImpl(ReadStream<?> rs, WriteStream<?> ws) {
+  PumpImpl(ReadStream<?, T> rs, WriteStream<?, T> ws) {
     this.readStream = rs;
     this.writeStream = ws;
     drainHandler = v-> readStream.resume();
-    dataHandler = buffer -> {
-      writeStream.write(buffer);
-      pumped += buffer.length();
+    dataHandler = data -> {
+      writeStream.write(data);
+      pumped++;
       if (writeStream.writeQueueFull()) {
         readStream.pause();
         writeStream.drainHandler(drainHandler);
@@ -78,7 +77,7 @@ public class PumpImpl implements Pump {
    */
   @Override
   public PumpImpl setWriteQueueMaxSize(int maxSize) {
-    this.writeStream.setWriteQueueMaxSize(maxSize);
+    writeStream.setWriteQueueMaxSize(maxSize);
     return this;
   }
 
@@ -87,7 +86,7 @@ public class PumpImpl implements Pump {
    */
   @Override
   public PumpImpl start() {
-    readStream.dataHandler(dataHandler);
+    readStream.handler(dataHandler);
     return this;
   }
 
@@ -97,7 +96,7 @@ public class PumpImpl implements Pump {
   @Override
   public PumpImpl stop() {
     writeStream.drainHandler(null);
-    readStream.dataHandler(null);
+    readStream.handler(null);
     return this;
   }
 
@@ -105,7 +104,7 @@ public class PumpImpl implements Pump {
    * Return the total number of bytes pumped by this pump.
    */
   @Override
-  public int bytesPumped() {
+  public int numberPumped() {
     return pumped;
   }
 

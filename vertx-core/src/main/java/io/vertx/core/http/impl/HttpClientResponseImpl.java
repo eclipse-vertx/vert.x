@@ -109,7 +109,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public HttpClientResponse dataHandler(Handler<Buffer> dataHandler) {
+  public HttpClientResponse handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
@@ -144,7 +144,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse bodyHandler(final Handler<Buffer> bodyHandler) {
     final BodyHandler handler = new BodyHandler();
-    dataHandler(handler);
+    handler(handler);
     endHandler(new VoidHandler() {
       public void handle() {
         handler.notifyHandler(bodyHandler);

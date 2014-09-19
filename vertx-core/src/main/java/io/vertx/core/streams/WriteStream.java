@@ -16,10 +16,9 @@
 
 package io.vertx.core.streams;
 
-import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Handler;
 
 /**
  *
@@ -32,7 +31,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface WriteStream<T> extends StreamBase<T> {
+public interface WriteStream<R, T> extends StreamBase<R> {
 
   /**
    * Write some data to the stream. The data is put on an internal write queue, and the write actually happens
@@ -40,7 +39,7 @@ public interface WriteStream<T> extends StreamBase<T> {
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    */
   @Fluent
-  T write(Buffer data);
+  R write(T data);
 
   /**
    * Set the maximum size of the write queue to {@code maxSize}. You will still be able to write to the stream even
@@ -48,7 +47,7 @@ public interface WriteStream<T> extends StreamBase<T> {
    * {@code Pump} to provide flow control.
    */
   @Fluent
-  T setWriteQueueMaxSize(int maxSize);
+  R setWriteQueueMaxSize(int maxSize);
 
   /**
    * This will return {@code true} if there are more bytes in the write queue than the value set using {@link
@@ -61,6 +60,6 @@ public interface WriteStream<T> extends StreamBase<T> {
    * queue has been reduced to maxSize / 2. See {@link Pump} for an example of this being used.
    */
   @Fluent
-  T drainHandler(Handler<Void> handler);
+  R drainHandler(Handler<Void> handler);
 
 }

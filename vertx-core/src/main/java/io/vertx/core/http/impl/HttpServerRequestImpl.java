@@ -169,7 +169,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest dataHandler(Handler<Buffer> dataHandler) {
+  public HttpServerRequest handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
@@ -229,7 +229,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
     final Buffer body = Buffer.buffer();
-    dataHandler(body::appendBuffer);
+    handler(body::appendBuffer);
     endHandler(v -> bodyHandler.handle(body));
     return this;
   }

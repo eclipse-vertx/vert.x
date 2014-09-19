@@ -424,8 +424,8 @@ public class HttpClientImpl implements HttpClient {
           }
 
           @Override
-          public HttpClientResponse dataHandler(Handler<Buffer> handler) {
-            resp.dataHandler(handler);
+          public HttpClientResponse handler(Handler<Buffer> handler) {
+            resp.handler(handler);
             return this;
           }
 

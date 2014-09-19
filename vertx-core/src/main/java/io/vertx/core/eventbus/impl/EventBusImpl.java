@@ -365,7 +365,7 @@ public class EventBusImpl implements EventBus {
         }
       };
       parser.setOutput(handler);
-      socket.dataHandler(parser);
+      socket.handler(parser);
     });
 
     server.listen(asyncResult -> {
@@ -816,7 +816,7 @@ public class EventBusImpl implements EventBus {
       connected = true;
       socket.exceptionHandler(t -> cleanupConnection(theServerID, ConnectionHolder.this, true));
       socket.closeHandler(v -> cleanupConnection(theServerID, ConnectionHolder.this, false));
-      socket.dataHandler(data -> {
+      socket.handler(data -> {
         // Got a pong back
         vertx.cancelTimer(timeoutID);
         schedulePing(ConnectionHolder.this);
