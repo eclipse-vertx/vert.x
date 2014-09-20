@@ -32,7 +32,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.http.HttpHeaders;
@@ -63,9 +63,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private boolean chunked;
   private boolean closed;
   private ChannelFuture channelFuture;
-  private Headers headers;
+  private MultiMap headers;
   private LastHttpContent trailing;
-  private Headers trailers;
+  private MultiMap trailers;
   private String statusMessage;
 
   HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
@@ -78,7 +78,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(response.headers());
     }
@@ -86,7 +86,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public Headers trailers() {
+  public MultiMap trailers() {
     if (trailers == null) {
       if (trailing == null) {
         trailing = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, false);
