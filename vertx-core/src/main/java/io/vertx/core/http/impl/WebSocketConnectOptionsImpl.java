@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Headers;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -92,9 +93,7 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
 
   @Override
   public WebSocketConnectOptions setPort(int port) {
-    if (port < 1|| port > 65535) {
-      throw new IllegalArgumentException("port p must be in range 1 <=p <= 65535");
-    }
+    Arguments.requireInRange(port, 1, 65535, "port p must be in range 1 <= p <= 65535");
     this.port = port;
     return this;
   }
@@ -106,6 +105,7 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
 
   @Override
   public WebSocketConnectOptions setHost(String host) {
+    Objects.requireNonNull(host);
     this.host = host;
     return this;
   }
@@ -134,12 +134,8 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
 
   @Override
   public WebSocketConnectOptions addHeader(CharSequence name, CharSequence value) {
-    if (name == null) {
-      throw new NullPointerException("name");
-    }
-    if (value == null) {
-      throw new NullPointerException("value");
-    }
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(value, "value");
     if (headers == null) {
       headers = new CaseInsensitiveHeaders();
     }
@@ -152,9 +148,7 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
   }
 
   public WebSocketConnectOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
-    if (maxWebsocketFrameSize < 1) {
-      throw new IllegalArgumentException("maxWebsocketFrameSize must be > 0");
-    }
+    Arguments.require(maxWebsocketFrameSize > 0, "maxWebsocketFrameSize must be > 0");
     this.maxWebsocketFrameSize = maxWebsocketFrameSize;
     return this;
   }
@@ -165,9 +159,7 @@ public class WebSocketConnectOptionsImpl implements WebSocketConnectOptions {
 
   public WebSocketConnectOptions setVersion(int version) {
     Objects.requireNonNull(version);
-    if (version != 0 && version != 8 && version != 13 ) {
-      throw new IllegalArgumentException("version must be 0 or 8 or 13");
-    }
+    Arguments.require(0 == version || 8 == version || 13 == version, "version must be 0 or 8 or 13");
     this.version = version;
     return this;
   }

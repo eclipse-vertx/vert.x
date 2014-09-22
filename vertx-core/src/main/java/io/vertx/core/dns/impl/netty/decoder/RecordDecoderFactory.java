@@ -21,6 +21,7 @@ import io.vertx.core.dns.impl.netty.DnsResponse;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Handles the decoding of resource records. Some default decoders are mapped to
@@ -46,10 +47,8 @@ public final class RecordDecoderFactory {
      *            the {@link RecordDecoderFactory} to use
      */
     public static void setFactory(RecordDecoderFactory factory) {
-        if (factory == null) {
-            throw new NullPointerException("Cannot set record decoder factory to null.");
-        }
-        RecordDecoderFactory.factory = factory;
+      Objects.requireNonNull(factory, "Cannot set record decoder factory to null.");
+      RecordDecoderFactory.factory = factory;
     }
 
     private final Map<Integer, RecordDecoder<?>> decoders = new HashMap<Integer, RecordDecoder<?>>();
