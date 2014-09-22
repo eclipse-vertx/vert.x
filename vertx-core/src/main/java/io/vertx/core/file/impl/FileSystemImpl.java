@@ -55,6 +55,7 @@ import java.nio.file.attribute.UserPrincipalLookupService;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -702,6 +703,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<Void> writeFileInternal(String path, final Buffer data, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(data, "no null data accepted");
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<Void>(handler) {
       public Void perform() {
@@ -716,6 +718,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<AsyncFile> openInternal(String p, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler) {
+    Objects.requireNonNull(options, "no null options accepted");
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<AsyncFile>(handler) {
       public AsyncFile perform() {

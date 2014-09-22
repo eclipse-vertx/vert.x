@@ -513,12 +513,8 @@ public class EventBusImpl implements EventBus {
   private <T> Registration registerHandler(String address, Handler<Message<T>> handler,
                                        boolean replyHandler, boolean localOnly, long timeoutID) {
     checkStarted();
-    if (address == null) {
-      throw new NullPointerException("address");
-    }
-    if (handler == null) {
-      throw new NullPointerException("handler");
-    }
+    Objects.requireNonNull(address, "address");
+    Objects.requireNonNull(handler, "handler");
     ContextImpl context = vertx.getContext();
     boolean hasContext = context != null;
     if (!hasContext) {

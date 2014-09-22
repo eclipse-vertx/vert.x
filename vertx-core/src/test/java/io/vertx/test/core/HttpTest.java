@@ -84,6 +84,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -109,35 +113,15 @@ public class HttpTest extends HttpTestBase {
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
     assertEquals(-1, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
@@ -147,18 +131,8 @@ public class HttpTest extends HttpTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -174,12 +148,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -188,12 +157,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(10));
     assertEquals(10, options.getIdleTimeout());
-    try {
-      options.setIdleTimeout(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
@@ -221,18 +185,8 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setMaxPoolSize(rand));
     assertEquals(rand, options.getMaxPoolSize());
-    try {
-      options.setMaxPoolSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setMaxPoolSize(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setMaxPoolSize(0));
+    assertIllegalArgumentException(() -> options.setMaxPoolSize(-1));
 
     assertTrue(options.isKeepAlive());
     assertEquals(options, options.setKeepAlive(false));
@@ -246,12 +200,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setConnectTimeout(rand));
     assertEquals(rand, options.getConnectTimeout());
-    try {
-      options.setConnectTimeout(-2);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setConnectTimeout(-2));
 
     assertFalse(options.isTryUseCompression());
     assertEquals(options, options.setTryUseCompression(true));
@@ -276,35 +225,15 @@ public class HttpTest extends HttpTestBase {
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
     assertEquals(-1, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
@@ -314,18 +243,8 @@ public class HttpTest extends HttpTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -341,12 +260,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -355,12 +269,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(10));
     assertEquals(10, options.getIdleTimeout());
-    try {
-      options.setIdleTimeout(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
@@ -393,18 +302,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    try {
-      options.setPort(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(65536);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setPort(-1));
+    assertIllegalArgumentException(() -> options.setPort(65536));
 
     assertEquals("0.0.0.0", options.getHost());
     String randString = TestUtils.randomUnicodeString(100);
@@ -424,7 +323,6 @@ public class HttpTest extends HttpTestBase {
     assertNotNull(options.getEnabledCipherSuites());
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
-
 
     testComplete();
   }
@@ -623,22 +521,11 @@ public class HttpTest extends HttpTestBase {
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
-
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> HttpClientOptions.optionsFromJson(json));
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> HttpClientOptions.optionsFromJson(json));
   }
 
   @Test
@@ -824,22 +711,11 @@ public class HttpTest extends HttpTestBase {
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
-
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> HttpServerOptions.optionsFromJson(json));
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> HttpServerOptions.optionsFromJson(json));
   }
 
   @Test
@@ -872,6 +748,23 @@ public class HttpTest extends HttpTestBase {
     }));
 
     await();
+  }
+
+  @Test
+  public void testClientRequestArguments() throws Exception {
+    HttpClientRequest req = client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+    assertNullPointerException(() -> req.putHeader((String) null, "someValue"));
+    assertNullPointerException(() -> req.putHeader((CharSequence) null, "someValue"));
+    assertNullPointerException(() -> req.putHeader("someKey", (Iterable<String>) null));
+    assertNullPointerException(() -> req.write((Buffer) null));
+    assertNullPointerException(() -> req.write((String) null));
+    assertNullPointerException(() -> req.write(null, "UTF-8"));
+    assertNullPointerException(() -> req.write("someString", null));
+    assertNullPointerException(() -> req.end((Buffer) null));
+    assertNullPointerException(() -> req.end((String) null));
+    assertNullPointerException(() -> req.end(null, "UTF-8"));
+    assertNullPointerException(() -> req.end("someString", null));
+    assertIllegalArgumentException(() -> req.setTimeout(0));
   }
 
   @Test
@@ -973,54 +866,72 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testSimpleGET() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.get(null, resp -> testComplete()));
     testSimpleRequest(uri, "GET", client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimplePUT() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.put(null, resp -> testComplete()));
     testSimpleRequest(uri, "PUT", client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimplePOST() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.post(null, resp -> testComplete()));
     testSimpleRequest(uri, "POST", client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimpleDELETE() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.delete(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.delete(null, resp -> testComplete()));
     testSimpleRequest(uri, "DELETE", client.delete(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimpleHEAD() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.head(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.head(null, resp -> testComplete()));
     testSimpleRequest(uri, "HEAD", client.head(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimpleTRACE() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.trace(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.trace(null, resp -> testComplete()));
     testSimpleRequest(uri, "TRACE", client.trace(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimpleCONNECT() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.connect(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.connect(null, resp -> testComplete()));
     testSimpleRequest(uri, "CONNECT", client.connect(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimpleOPTIONS() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.options(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.options(null, resp -> testComplete()));
     testSimpleRequest(uri, "OPTIONS", client.options(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
   @Test
   public void testSimplePATCH() {
     String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.patch(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), null));
+    TestUtils.assertNullPointerException(() -> client.patch(null, resp -> testComplete()));
     testSimpleRequest(uri, "PATCH", client.patch(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
   }
 
@@ -1328,96 +1239,21 @@ public class HttpTest extends HttpTestBase {
       req.end();
 
       Buffer buff = Buffer.buffer();
-      try {
-        req.end();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.continueHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.drainHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.end("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.end(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.end("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.exceptionHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.sendHead();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.setChunked(false);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.setWriteQueueMaxSize(123);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.write(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.write("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.write("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.write(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeQueueFull();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
+      assertIllegalStateException(() -> req.end());
+      assertIllegalStateException(() -> req.continueHandler(noOpHandler()));
+      assertIllegalStateException(() -> req.drainHandler(noOpHandler()));
+      assertIllegalStateException(() -> req.end("foo"));
+      assertIllegalStateException(() -> req.end(buff));
+      assertIllegalStateException(() -> req.end("foo", "UTF-8"));
+      assertIllegalStateException(() -> req.exceptionHandler(noOpHandler()));
+      assertIllegalStateException(() -> req.sendHead());
+      assertIllegalStateException(() -> req.setChunked(false));
+      assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
+      assertIllegalStateException(() -> req.write(buff));
+      assertIllegalStateException(() -> req.write("foo"));
+      assertIllegalStateException(() -> req.write("foo", "UTF-8"));
+      assertIllegalStateException(() -> req.write(buff));
+      assertIllegalStateException(() -> req.writeQueueFull());
 
       testComplete();
     }));
@@ -1733,94 +1569,20 @@ public class HttpTest extends HttpTestBase {
       HttpServerResponse resp = req.response();
       resp.end();
 
-      try {
-        resp.drainHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.end();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.end("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.end(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.end("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.exceptionHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.setChunked(false);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.setWriteQueueMaxSize(123);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.write(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.write("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.write("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.write(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.writeQueueFull();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.sendFile("asokdasokd");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
+      assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
+      assertIllegalStateException(() -> resp.end());
+      assertIllegalStateException(() -> resp.end("foo"));
+      assertIllegalStateException(() -> resp.end(buff));
+      assertIllegalStateException(() -> resp.end("foo", "UTF-8"));
+      assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
+      assertIllegalStateException(() -> resp.setChunked(false));
+      assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
+      assertIllegalStateException(() -> resp.write(buff));
+      assertIllegalStateException(() -> resp.write("foo"));
+      assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
+      assertIllegalStateException(() -> resp.write(buff));
+      assertIllegalStateException(() -> resp.writeQueueFull());
+      assertIllegalStateException(() -> resp.sendFile("asokdasokd"));
 
       testComplete();
     });
@@ -1900,13 +1662,8 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testResponseBodyWriteStringNonChunked() {
     server.requestHandler(req -> {
-      try {
-        req.response().write("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-        testComplete();
-      }
+      assertIllegalStateException(() -> req.response().write("foo"));
+      testComplete();
     });
 
     server.listen(onSuccess(s -> {
@@ -2982,18 +2739,8 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
 
     server.listen(onSuccess(s -> {
-      try {
-        server.requestHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //Ok
-      }
-      try {
-        server.websocketHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //Ok
-      }
+      assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
+      assertIllegalStateException(() -> server.websocketHandler(noOpHandler()));
       testComplete();
     }));
 
@@ -3005,51 +2752,25 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
 
     server.listen();
-    try {
-      server.requestHandler(noOpHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
-    try {
-      server.websocketHandler(noOpHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
+    assertIllegalStateException(() -> server.websocketHandler(noOpHandler()));
   }
 
   @Test
   public void testListenNoHandlers() throws Exception {
-    try {
-      server.listen(ar -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.listen(ar -> {}));
   }
 
   @Test
   public void testListenNoHandlers2() throws Exception {
-    try {
-      server.listen();
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.listen());
   }
 
   @Test
   public void testListenTwice() throws Exception {
     server.requestHandler(noOpHandler());
     server.listen();
-    try {
-      server.listen();
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.listen());
   }
 
   @Test
@@ -3057,12 +2778,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      try {
-        server.listen();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //Ok
-      }
+      assertIllegalStateException(() -> server.listen());
       testComplete();
     });
     await();
@@ -3648,24 +3364,9 @@ public class HttpTest extends HttpTestBase {
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    try {
-      options.setPort(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(65536);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setPort(0));
+    assertIllegalArgumentException(() -> options.setPort(-1));
+    assertIllegalArgumentException(() -> options.setPort(65536));
     assertEquals("localhost", options.getHost());
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
@@ -3820,18 +3521,8 @@ public class HttpTest extends HttpTestBase {
     class MyVerticle extends AbstractVerticle {
       @Override
       public void start() {
-        try {
-          server = vertx.createHttpServer(HttpServerOptions.options());
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
-        try {
-          client = vertx.createHttpClient(HttpClientOptions.options());
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
+        assertIllegalStateException(() -> server = vertx.createHttpServer(HttpServerOptions.options()));
+        assertIllegalStateException(() -> client = vertx.createHttpClient(HttpClientOptions.options()));
         testComplete();
       }
     }

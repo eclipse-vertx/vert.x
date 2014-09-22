@@ -15,6 +15,8 @@
  */
 package io.vertx.core.dns.impl.netty;
 
+import java.util.Objects;
+
 /**
  * The header super-class which includes information shared by DNS query and
  * response packet headers such as the ID, opcode, and type. The only flag
@@ -52,9 +54,7 @@ public class DnsHeader {
   private int type;
 
   public DnsHeader(DnsMessage<? extends DnsHeader> parent) {
-    if (parent == null) {
-      throw new NullPointerException("the parent field cannot be null and must point to a valid DnsMessage.");
-    }
+    Objects.requireNonNull(parent, "the parent field cannot be null and must point to a valid DnsMessage.");
     this.parent = parent;
   }
 

@@ -31,7 +31,7 @@ You do this by adding the `-s` flag when you make the commit(s), e.g.
 
 ## Making your changes
 
-* For the repository on GitHub
+* Fork the repository on GitHub
 * Create a new branch for your changes
 * Make your changes
 * Make sure you include tests

@@ -30,6 +30,7 @@ import io.vertx.core.net.TrustStoreOptions;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -354,9 +355,7 @@ public class NetServerOptionsImpl implements NetServerOptions {
 
   @Override
   public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
-    if (crlPath == null) {
-      throw new NullPointerException("No null crl accepted");
-    }
+    Objects.requireNonNull(crlPath, "No null crl accepted");
     crlPaths.add(crlPath);
     return this;
   }
@@ -368,9 +367,7 @@ public class NetServerOptionsImpl implements NetServerOptions {
 
   @Override
   public NetServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
-    if (crlValue == null) {
-      throw new NullPointerException("No null crl accepted");
-    }
+    Objects.requireNonNull(crlValue, "No null crl accepted");
     crlValues.add(crlValue);
     return this;
   }

@@ -51,6 +51,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -69,6 +71,84 @@ public class FileSystemTest extends VertxTestBase {
     File ftestDir = Files.createTempDirectory("vertx-test").toFile();
     ftestDir.deleteOnExit();
     testDir = ftestDir.toString();
+  }
+
+  @Test
+  public void testIllegalArguments() throws Exception {
+    assertNullPointerException(() -> vertx.fileSystem().copy(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copy("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copySync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().copySync("ignored", null));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursive(null, "ignored", true, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursive("ignored", null, true, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursiveSync(null, "ignored", true));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursiveSync("ignored", null, true));
+    assertNullPointerException(() -> vertx.fileSystem().move(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().move("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().moveSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().moveSync("ignored", null));
+    assertNullPointerException(() -> vertx.fileSystem().truncate(null, 0, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().truncateSync(null, 0));
+    assertNullPointerException(() -> vertx.fileSystem().chmod(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().chmod("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().chmodSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().chmodSync("ignored", null));
+    assertNullPointerException(() -> vertx.fileSystem().chmodRecursive(null, "ignored", "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().chmodRecursive("ignored", null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().chmodRecursiveSync(null, "ignored", "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().chmodRecursiveSync("ignored", null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().chown(null, "ignored", "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().chownSync(null, "ignored", "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().props(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().propsSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().lprops(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().lpropsSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().link(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().link("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().linkSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().linkSync("ignored", null));
+    assertNullPointerException(() -> vertx.fileSystem().symlink(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().symlink("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().symlinkSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().symlinkSync("ignored", null));
+    assertNullPointerException(() -> vertx.fileSystem().unlink(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().unlinkSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().readSymlink(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().readSymlinkSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().delete(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().deleteSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().deleteRecursive(null, true, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().deleteSyncRecursive(null, true));
+    assertNullPointerException(() -> vertx.fileSystem().mkdir(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().mkdir(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirs(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirsSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirs(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().mkdirsSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().readDir(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().readDirSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().readDir(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().readDirSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().readFile(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().readFileSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().writeFile(null, Buffer.buffer(), h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().writeFile("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().writeFileSync(null, Buffer.buffer()));
+    assertNullPointerException(() -> vertx.fileSystem().writeFileSync("ignored", null));
+    assertNullPointerException(() -> vertx.fileSystem().open(null, OpenOptions.options(), h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().open("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().openSync(null, OpenOptions.options()));
+    assertNullPointerException(() -> vertx.fileSystem().openSync("ignored", null));
+    assertNullPointerException(() -> vertx.fileSystem().createFile(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().createFileSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().createFile(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().createFileSync(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().exists(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().existsSync(null));
+    assertNullPointerException(() -> vertx.fileSystem().fsProps(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().fsPropsSync(null));
   }
 
   @Test

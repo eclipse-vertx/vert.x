@@ -46,6 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -513,24 +516,10 @@ public class WebsocketTest extends NetTestBase {
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    try {
-      options.setPort(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(65536);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setPort(0));
+    assertIllegalArgumentException(() -> options.setPort(-1));
+    assertIllegalArgumentException(() -> options.setPort(65536));
+    assertNullPointerException(() -> options.setHost(null));
     assertEquals("localhost", options.getHost());
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
@@ -550,18 +539,8 @@ public class WebsocketTest extends NetTestBase {
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setMaxWebsocketFrameSize(rand));
     assertEquals(rand, options.getMaxWebsocketFrameSize());
-    try {
-      options.setMaxWebsocketFrameSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
-    try {
-      options.setMaxWebsocketFrameSize(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
+    assertIllegalArgumentException(() -> options.setMaxWebsocketFrameSize(0));
+    assertIllegalArgumentException(() -> options.setMaxWebsocketFrameSize(-1));
     assertEquals(13, options.getVersion());
     assertEquals(options, options.setVersion(0));
     assertEquals(0, options.getVersion());
@@ -637,6 +616,13 @@ public class WebsocketTest extends NetTestBase {
     assertEquals(version, copy.getVersion());
     assertTrue(copy.getSubProtocols().contains(subProtocol));
     testComplete();
+  }
+
+  @Test
+  public void testWebsocketFrameFactoryArguments() throws Exception {
+    assertNullPointerException(() -> WebSocketFrame.binaryFrame(null, true));
+    assertNullPointerException(() -> WebSocketFrame.textFrame(null, true));
+    assertNullPointerException(() -> WebSocketFrame.continuationFrame(null, true));
   }
 
   private String sha1(String s) {
