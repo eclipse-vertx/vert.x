@@ -25,7 +25,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
@@ -291,30 +290,23 @@ public class HAManager {
     if (clusterMap.containsKey(nodeID)) {
       checkQuorum();
     } else {
-      vertx.setTimer(200, new Handler<Long>() {
-        @Override
-        public void handle(Long event) {
-
-          // This can block on a monitor so it needs to run as a worker
-          vertx.executeBlocking(new Action<Void>() {
-            @Override
-            public Void perform() {
-              if (System.currentTimeMillis() - start > 10000) {
-                log.warn("Timed out waiting for group information to appear");
-              } else if (!stopped) {
-                ContextImpl context = vertx.getContext();
-                try {
-                  // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
-                  vertx.setContext(null);
-                  checkQuorumWhenAdded(nodeID, start);
-                } finally {
-                  vertx.setContext(context);
-                }
-              }
-              return null;
+      vertx.setTimer(200, tid -> {
+        // This can block on a monitor so it needs to run as a worker
+        vertx.executeBlocking(() -> {
+          if (System.currentTimeMillis() - start > 10000) {
+            log.warn("Timed out waiting for group information to appear");
+          } else if (!stopped) {
+            ContextImpl context = vertx.getContext();
+            try {
+              // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
+              vertx.setContext(null);
+              checkQuorumWhenAdded(nodeID, start);
+            } finally {
+              vertx.setContext(context);
             }
-          }, null);
-        }
+          }
+          return null;
+        }, null);
       });
     }
   }
@@ -492,20 +484,17 @@ public class HAManager {
     ContextImpl ctx = vertx.getContext();
     vertx.setContext(null);
     JsonObject options = failedVerticle.getObject("options");
-    doDeployVerticle(verticleName, DeploymentOptions.optionsFromJson(options), new Handler<AsyncResult<String>>() {
-      @Override
-      public void handle(AsyncResult<String> result) {
-        if (result.succeeded()) {
-          log.info("Successfully redeployed verticle " + verticleName + " after failover");
-        } else {
-          log.error("Failed to redeploy verticle after failover", result.cause());
-          err.set(result.cause());
-        }
-        latch.countDown();
-        Throwable t = err.get();
-        if (t != null) {
-          throw new VertxException(t);
-        }
+    doDeployVerticle(verticleName, DeploymentOptions.optionsFromJson(options), result -> {
+      if (result.succeeded()) {
+        log.info("Successfully redeployed verticle " + verticleName + " after failover");
+      } else {
+        log.error("Failed to redeploy verticle after failover", result.cause());
+        err.set(result.cause());
+      }
+      latch.countDown();
+      Throwable t = err.get();
+      if (t != null) {
+        throw new VertxException(t);
       }
     });
     vertx.setContext(ctx);
