@@ -121,7 +121,7 @@ public class Starter {
     };
   }
 
-  private Vertx startVertx(boolean clustered, Args args) {
+  private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     Vertx vertx;
     if (clustered) {
       log.info("Starting clustering...");
@@ -142,7 +142,17 @@ public class Starter {
       }
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
-      Vertx.vertxAsync(VertxOptions.options().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true), ar -> {
+      VertxOptions options = VertxOptions.options();
+      options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
+      if (ha) {
+        String haGroup = args.map.get("-hagroup");
+        int quorumSize = args.getInt("-quorum");
+        options.setHAEnabled(true).setHAGroup(haGroup);
+        if (quorumSize != -1) {
+          options.setQuorumSize(quorumSize);
+        }
+      }
+      Vertx.vertxAsync(options, ar -> {
         result.set(ar);
         latch.countDown();
       });
@@ -168,8 +178,10 @@ public class Starter {
   }
 
   private void runVerticle(String main, Args args) {
-    boolean clustered = args.map.get("-cluster") != null;
-    Vertx vertx = startVertx(clustered, args);
+    boolean ha = args.map.get("-ha") != null;
+    boolean clustered = args.map.get("-cluster") != null || ha;
+
+    Vertx vertx = startVertx(clustered, ha, args);
 
     String sinstances = args.map.get("-instances");
     int instances;
@@ -213,7 +225,7 @@ public class Starter {
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     for (int i = 0; i < instances; i++) {
-      vertx.deployVerticle(main, DeploymentOptions.options().setConfig(conf).setWorker(worker), createLoggingHandler(message, res -> {
+      vertx.deployVerticle(main, DeploymentOptions.options().setConfig(conf).setWorker(worker).setHA(ha), createLoggingHandler(message, res -> {
         if (res.failed()) {
           // Failed to deploy
           unblock();

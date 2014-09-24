@@ -668,7 +668,7 @@ public class EventBusImpl implements EventBus {
       // If we don't get a pong back in time we close the connection
       holder.timeoutID = vertx.setTimer(PING_REPLY_INTERVAL, id2 -> {
         // Didn't get pong in time - consider connection dead
-        log.warn("No pong from server " + serverID + " - will consider it dead, timerID: " + id2 + " holder " + holder);
+        log.warn("No pong from server " + serverID + " - will consider it dead");
         cleanupConnection(holder.theServerID, holder, true);
       });
       MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new NullMessageCodec(), true);
