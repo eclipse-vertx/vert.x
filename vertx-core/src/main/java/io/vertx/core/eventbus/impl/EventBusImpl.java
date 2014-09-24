@@ -180,15 +180,12 @@ public class EventBusImpl implements EventBus {
     return this;
   }
 
-
-  @Override
-  public EventBus forward(String address, Object message) {
+  EventBus forward(String address, Object message) {
 	  forward(address, message, null);
 	  return null;
   }
 
-  @Override
-  public EventBus forward(String address, Object message, DeliveryOptions options) {
+  EventBus forward(String address, Object message, DeliveryOptions options) {
 	  sendOrPub(null, (MessageImpl)message, options, null);
 	  return this;
   }

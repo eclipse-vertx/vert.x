@@ -55,7 +55,6 @@ public class MessageImpl<U, V> implements Message<V> {
   private Buffer wireBuffer;
   private int bodyPos;
   private int headersPos;
-  private boolean forward;
 
   public MessageImpl() {
   }
@@ -77,7 +76,6 @@ public class MessageImpl<U, V> implements Message<V> {
     this.address = other.address;
     this.replyAddress = other.replyAddress;
     this.messageCodec = other.messageCodec;
-    this.forward = other.forward;
     if (other.headers != null) {
       List<Map.Entry<String, String>> entries = other.headers.entries();
       this.headers = new CaseInsensitiveHeaders();
@@ -290,7 +288,6 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public void forward(String address, DeliveryOptions options) {
 	  this.address = address;
-	  this.forward = true;
 	  bus.forward(address, this, options);
   }
 
@@ -313,11 +310,6 @@ public class MessageImpl<U, V> implements Message<V> {
   public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
   }
-
-  public boolean isForward(){
-	  return forward;
-  }
-
 
   protected void setReplyAddress(String replyAddress) {
     this.replyAddress = replyAddress;
