@@ -78,4 +78,5 @@ public interface Message<T> {
   void forward(String address);
 
   void forward(String address, DeliveryOptions options);
+
 }
