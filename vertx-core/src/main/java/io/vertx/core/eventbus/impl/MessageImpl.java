@@ -282,12 +282,13 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public void forward(String address) {
-
+    forward(address, null);
   }
 
   @Override
   public void forward(String address, DeliveryOptions options) {
-
+	  this.address = address;
+	  bus.forward(address, this, options);
   }
 
   @Override

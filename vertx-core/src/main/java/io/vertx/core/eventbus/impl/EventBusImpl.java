@@ -180,6 +180,16 @@ public class EventBusImpl implements EventBus {
     return this;
   }
 
+  EventBus forward(String address, Object message) {
+	  forward(address, message, null);
+	  return null;
+  }
+
+  EventBus forward(String address, Object message, DeliveryOptions options) {
+	  sendOrPub(null, (MessageImpl)message, options, null);
+	  return this;
+  }
+
   @Override
   public <T> Registration registerHandler(String address, Handler<Message<T>> handler) {
     return registerHandler(address, handler, false, false, -1);

@@ -54,11 +54,11 @@ import io.vertx.core.Handler;
 @VertxGen
 public interface EventBus {
 
-	/**
-	 * Close the EventBus and release all resources. 
-	 * 
-	 * @param completionHandler
-	 */
+ /**
+ * Close the EventBus and release all resources.
+ *
+ * @param completionHandler
+ */
   void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
