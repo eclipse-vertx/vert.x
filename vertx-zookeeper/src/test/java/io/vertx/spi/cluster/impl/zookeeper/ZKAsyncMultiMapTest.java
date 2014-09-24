@@ -26,7 +26,7 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
     asyncMultiMap.add("myKey", "myValue", event -> {
       if (event.failed()) event.cause().printStackTrace();
       Assert.assertTrue(event.succeeded());
-      vertx.setTimer(1000, timerEvent -> startTest[0] = true);
+      startTest[0] = true;
     });
     waitUntil(() -> startTest[0]);
   }
@@ -49,16 +49,14 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
     asyncMultiMap.remove("myKey", "myValue", event -> {
       Assert.assertTrue(event.succeeded());
       Assert.assertTrue(event.result());
-      vertx.setTimer(1000, e -> {
-        asyncMultiMap.get("myKey", ea -> {
-          Assert.assertTrue(ea.succeeded());
-          ea.result().forEach(s -> {
-            if (s.equals("myValue")) {
-              Assert.fail("the value should be removed");
-            }
-          });
-          testComplete();
+      asyncMultiMap.get("myKey", ea -> {
+        Assert.assertTrue(ea.succeeded());
+        ea.result().forEach(s -> {
+          if (s.equals("myValue")) {
+            Assert.fail("the value should be removed");
+          }
         });
+        testComplete();
       });
     });
     await();
@@ -70,15 +68,13 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
       Assert.assertTrue(event.succeeded());
       asyncMultiMap.removeAllForValue("myValue", e -> {
         Assert.assertTrue(e.succeeded());
-        vertx.setTimer(1000, timerEvent -> {
-          asyncMultiMap.get("myAnotherKey", ea -> {
-            Assert.assertTrue(ea.succeeded());
-            ea.result().forEach(s -> {
-              if (s.equals("myValue"))
-                Assert.fail("the value should be removed");
-            });
-            testComplete();
+        asyncMultiMap.get("myAnotherKey", ea -> {
+          Assert.assertTrue(ea.succeeded());
+          ea.result().forEach(s -> {
+            if (s.equals("myValue"))
+              Assert.fail("the value should be removed");
           });
+          testComplete();
         });
       });
     });

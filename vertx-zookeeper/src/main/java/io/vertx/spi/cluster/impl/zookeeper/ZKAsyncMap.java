@@ -8,14 +8,12 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.shareddata.AsyncMap;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.api.BackgroundCallback;
 import org.apache.curator.framework.api.CuratorEventType;
-import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.state.ConnectionState;
+import org.apache.zookeeper.CreateMode;
 
 import java.io.*;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -28,7 +26,6 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
   private final Vertx vertx;
   private final AtomicBoolean nodeSplit = new AtomicBoolean(false);
   private final CuratorFramework curator;
-  private Map<String, PathChildrenCache> pathCache = new ConcurrentHashMap<>();
 
   ZKAsyncMap(Vertx vertx, CuratorFramework curator, String mapName) {
     this.vertx = vertx;
@@ -41,6 +38,7 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
         nodeSplit.set(false);
       }
     });
+
   }
 
   private String keyPath(K k) {
@@ -53,16 +51,6 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
     }
   }
 
-  private PathChildrenCache getPathChildrenCache() throws Exception {
-    PathChildrenCache pathChildrenCache = pathCache.get(mapPath);
-    if (pathChildrenCache == null) {
-      pathChildrenCache = new PathChildrenCache(curator, mapPath, true);
-      pathCache.put(mapPath, pathChildrenCache);
-      pathChildrenCache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
-    }
-    return pathChildrenCache;
-  }
-
   private byte[] asByte(Object object) throws IOException {
     ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
     new ObjectOutputStream(byteOut).writeObject(object);
@@ -70,25 +58,40 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
   }
 
   //TODO change parameter to bytes
-  private <T> T asSet(ChildData childData, Class<T> clazz) throws Exception {
-    ByteArrayInputStream byteIn = new ByteArrayInputStream(childData.getData());
+  private <T> T asObject(byte[] bytes, Class<T> clazz) throws Exception {
+    ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
     ObjectInputStream in = new ObjectInputStream(byteIn);
     T byteObject = (T) in.readObject();
     return byteObject == null ? clazz.newInstance() : byteObject;
+  }
+
+  public void createMapNode(BackgroundCallback callback) throws Exception {
+    this.curator.create().creatingParentsIfNeeded().inBackground(callback).forPath(this.mapPath);
   }
 
   @Override
   public void get(K k, Handler<AsyncResult<V>> asyncResultHandler) {
     try {
       checkState();
-      PathChildrenCache pathChildrenCache = getPathChildrenCache();
-      ChildData childData = pathChildrenCache.getCurrentData(keyPath(k));
-      if (childData != null) {
-        V result = (V) asSet(childData, Object.class);
-        vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(result)));
-      } else {
-        vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(null)));
-      }
+      String keyPath = keyPath(k);
+      curator.checkExists().inBackground((client, event) -> {
+        if (event.getType() == CuratorEventType.EXISTS) {
+          if (event.getStat() != null) {
+            curator.getData().inBackground((cl, el) -> {
+              if (el.getType() == CuratorEventType.GET_DATA) {
+                if (el.getData() != null) {
+                  V result = (V) asObject(el.getData(), Object.class);
+                  vertx.runOnContext(handler -> asyncResultHandler.handle(Future.completedFuture(result)));
+                } else {
+                  vertx.runOnContext(handler -> asyncResultHandler.handle(Future.completedFuture()));
+                }
+              }
+            }).forPath(keyPath);
+          } else {
+            vertx.runOnContext(handler -> asyncResultHandler.handle(Future.completedFuture()));
+          }
+        }
+      }).forPath(keyPath);
     } catch (Exception e) {
       log.error(e);
       vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(e)));
@@ -99,11 +102,24 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
   public void put(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
     try {
       checkState();
-      curator.create().creatingParentsIfNeeded().inBackground((client, event) -> {
-        if (event.getType() == CuratorEventType.CREATE) {
-          vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+      String keyPath = keyPath(k);
+      curator.checkExists().inBackground((client, event) -> {
+        if (event.getType() == CuratorEventType.EXISTS) {
+          if (event.getStat() != null) {
+            curator.setData().inBackground((cli, ele) -> {
+              if (ele.getType() == CuratorEventType.SET_DATA) {
+                vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+              }
+            }).forPath(keyPath, asByte(v));
+          } else {
+            curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).inBackground((cl, el) -> {
+              if (el.getType() == CuratorEventType.CREATE) {
+                vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+              }
+            }).forPath(keyPath, asByte(v));
+          }
         }
-      }).forPath(keyPath(k), asByte(v));
+      }).forPath(keyPath);
     } catch (Exception e) {
       vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(e)));
     }
@@ -111,18 +127,19 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler) {
-    String keyPath = keyPath(k);
     try {
       checkState();
-      curator.checkExists().inBackground((client, event) -> {
-        if (event.getType() == CuratorEventType.EXISTS && event.getStat() == null) {
-          curator.create().creatingParentsIfNeeded().inBackground((anotherClient, anotherEvent) -> {
-            if (anotherEvent.getType() == CuratorEventType.CREATE) {
-              vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(v)));
-            }
-          }).forPath(keyPath, asByte(v));
+      get(k, ar -> {
+        if (ar.succeeded()) {
+          if (ar.result() == null) {
+            put(k, v, event -> vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(ar.result()))));
+          } else {
+            vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(ar.result())));
+          }
+        } else {
+          vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ar.cause())));
         }
-      }).forPath(keyPath);
+      });
     } catch (Exception e) {
       log.error(e);
       vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(e)));
@@ -186,14 +203,26 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void replace(K k, V v, Handler<AsyncResult<V>> asyncResultHandler) {
-    String keyPath = keyPath(k);
     try {
       checkState();
-      curator.create().creatingParentsIfNeeded().inBackground((client, event) -> {
-        if (event.getType() == CuratorEventType.CREATE) {
-          vertx.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(v)));
+      get(k, event -> {
+        if (event.succeeded()) {
+          final V oldValue = event.result();
+          if (oldValue != null) {
+            put(k, v, e -> {
+              if (e.succeeded()) {
+                vertx.runOnContext(handler -> asyncResultHandler.handle(Future.completedFuture(oldValue)));
+              } else {
+                vertx.runOnContext(handler -> asyncResultHandler.handle(Future.completedFuture(e.cause())));
+              }
+            });
+          } else {
+            vertx.runOnContext(handler -> asyncResultHandler.handle(Future.completedFuture()));
+          }
+        } else {
+          vertx.runOnContext(handler -> asyncResultHandler.handle(Future.completedFuture(event.cause())));
         }
-      }).forPath(keyPath, asByte(v));
+      });
     } catch (Exception e) {
       log.error(e);
       vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(e)));

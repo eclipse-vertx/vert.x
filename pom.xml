@@ -69,6 +69,7 @@
     <module>vertx-core</module>
     <module>vertx-hazelcast</module>
     <module>vertx-dist</module>
+    <module>vertx-zookeeper</module>
   </modules>
 
   <dependencyManagement>

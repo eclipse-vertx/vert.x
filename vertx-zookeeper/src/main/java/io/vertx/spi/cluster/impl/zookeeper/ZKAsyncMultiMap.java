@@ -4,22 +4,15 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.CuratorEventType;
-import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.state.ConnectionState;
 
 import java.io.*;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -27,13 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 class ZKAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
 
-  private static final Logger log = LoggerFactory.getLogger(ZKAsyncMultiMap.class);
   private final CuratorFramework curator;
   private final String mapPath;
   private final Vertx vertx;
   private final AtomicBoolean nodeSplit = new AtomicBoolean(false);
-
-  private Map<String, PathChildrenCache> pathCache = new ConcurrentHashMap<>();
 
   ZKAsyncMultiMap(Vertx vertx, CuratorFramework curator, String mapName) {
     this.vertx = vertx;
@@ -58,59 +48,72 @@ class ZKAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
     }
   }
 
-  private PathChildrenCache getPathChildrenCache() throws Exception {
-    PathChildrenCache pathChildrenCache = pathCache.get(mapPath);
-    if (pathChildrenCache == null) {
-      pathChildrenCache = new PathChildrenCache(curator, mapPath, true);
-      pathCache.put(mapPath, pathChildrenCache);
-      pathChildrenCache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
-    }
-    return pathChildrenCache;
-  }
-
   private byte[] asByte(Object object) throws IOException {
     ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
     new ObjectOutputStream(byteOut).writeObject(object);
     return byteOut.toByteArray();
   }
 
-  private <T> T asSet(ChildData childData, Class<T> clazz) throws Exception {
-    ByteArrayInputStream byteIn = new ByteArrayInputStream(childData.getData());
+  private <T> T asObject(byte[] bytes, Class<T> clazz) throws Exception {
+    ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
     ObjectInputStream in = new ObjectInputStream(byteIn);
     T byteObject = (T) in.readObject();
     return byteObject == null ? clazz.newInstance() : byteObject;
   }
+
+  private void checkExists(String path, Handler<Boolean> handler) throws Exception {
+    curator.checkExists().inBackground((client, event) -> {
+      if (event.getType() == CuratorEventType.EXISTS && event.getStat() == null) {
+        curator.create().creatingParentsIfNeeded().inBackground((c, e) -> {
+          if (event.getType() == CuratorEventType.CREATE) handler.handle(false);
+        }).forPath(path);
+      } else {
+        handler.handle(true);
+      }
+    }).forPath(path);
+  }
+
 
   @Override
   public void add(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
     try {
       checkState();
       String keyPath = keyPath(k);
-      PathChildrenCache pathChildrenCache = getPathChildrenCache();
-
-      curator.checkExists().inBackground((client, event) -> {
-        Set<V> set = new HashSet<>();
-        if (event.getType() == CuratorEventType.EXISTS && event.getStat() == null) {
-          //create
-          set.add(v);
-          curator.create().creatingParentsIfNeeded().inBackground((client1, event1) -> {
-            if (event1.getType() == CuratorEventType.CREATE) {
-              vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
-            }
-          }).forPath(keyPath, asByte(set));
+      checkExists(keyPath, exist -> {
+        if (exist) {
+          //getAndSetData
+          try {
+            curator.getData().inBackground((c, el) -> {
+              if (el.getType() == CuratorEventType.GET_DATA) {
+                Set<V> set = asObject(el.getData(), HashSet.class);
+                set.add(v);
+                curator.setData().inBackground((callbackClient, ea) -> {
+                  if (ea.getType() == CuratorEventType.SET_DATA) {
+                    vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+                  }
+                }).forPath(keyPath, asByte(set));
+              }
+            }).forPath(keyPath);
+          } catch (Exception ex) {
+            vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
+          }
         } else {
-          //setData
-          set = asSet(pathChildrenCache.getCurrentData(keyPath), HashSet.class);
+          Set<V> set = new HashSet<>();
           set.add(v);
-          curator.setData().inBackground((callbackClient, ea) -> {
-            if (ea.getType() == CuratorEventType.SET_DATA) {
-              vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
-            }
-          }).forPath(keyPath, asByte(set));
+          try {
+            byte[] bytes = asByte(set);
+            curator.setData().inBackground((callbackClient, ea) -> {
+              if (ea.getType() == CuratorEventType.SET_DATA) {
+                vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+              }
+            }).forPath(keyPath, bytes);
+          } catch (Exception ex) {
+            vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
+          }
         }
-      }).forPath(keyPath);
-    } catch (Exception e) {
-      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(e)));
+      });
+    } catch (Exception ex) {
+      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
     }
   }
 
@@ -118,46 +121,57 @@ class ZKAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
   public void get(K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
     try {
       checkState();
-      PathChildrenCache pathChildrenCache = getPathChildrenCache();
-      ChildData childData = pathChildrenCache.getCurrentData(keyPath(k));
-      if (childData != null) {
-        HashSet result = asSet(childData, HashSet.class);
-        ChoosableIterable<V> choosableIterable = new ChoosableSet<V>(result);
-        vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(choosableIterable)));
-      } else {
-        vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(null)));
-      }
+      String keyPath = keyPath(k);
+      checkExists(keyPath, exist -> {
+        if (exist) {
+          try {
+            curator.getData().inBackground((client, event) -> {
+              HashSet set = asObject(event.getData(), HashSet.class);
+              ChoosableIterable<V> choosableIterable = new ChoosableSet<V>(set);
+              vertx.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(choosableIterable)));
+            }).forPath(keyPath);
+          } catch (Exception ex) {
+            vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(ex)));
+          }
+        } else {
+          vertx.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(null)));
+        }
+      });
     } catch (Exception e) {
-      log.error(e);
       vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(e)));
     }
   }
+
 
   @Override
   public void remove(K k, V v, Handler<AsyncResult<Boolean>> completionHandler) {
     try {
       checkState();
       String keyPath = keyPath(k);
-      PathChildrenCache pathChildrenCache = getPathChildrenCache();
-
-      HashSet set = new HashSet<>();
-      ChildData childData = pathChildrenCache.getCurrentData(keyPath);
-      if (childData != null) {
-        set = asSet(childData, HashSet.class);
-      }
-
-      if (set.contains(v)) {
-        set.remove(v);
-        curator.setData().inBackground((client, event) -> {
-          if (event.getType() == CuratorEventType.SET_DATA) {
-            vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(Boolean.TRUE)));
+      checkExists(keyPath, exist -> {
+        if (exist) {
+          try {
+            curator.getData().inBackground((client, event) -> {
+              HashSet set = asObject(event.getData(), HashSet.class);
+              if (set.contains(v)) {
+                set.remove(v);
+                curator.setData().inBackground((c, ev) -> {
+                  if (ev.getType() == CuratorEventType.SET_DATA) {
+                    vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(Boolean.TRUE)));
+                  }
+                }).forPath(keyPath, asByte(set));
+              } else {
+                vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(Boolean.FALSE)));
+              }
+            }).forPath(keyPath);
+          } catch (Exception ex) {
+            vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
           }
-        }).forPath(keyPath, asByte(set));
-      } else {
-        vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(Boolean.FALSE)));
-      }
+        } else {
+          vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(Boolean.FALSE)));
+        }
+      });
     } catch (Exception e) {
-      log.error(e);
       vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(e)));
     }
   }
@@ -166,28 +180,33 @@ class ZKAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
   public void removeAllForValue(V v, Handler<AsyncResult<Void>> completionHandler) {
     try {
       checkState();
-      PathChildrenCache pathChildrenCache = getPathChildrenCache();
-
-      Map<String, Set<V>> updateResult = new HashMap<>();
-      for (ChildData childData : pathChildrenCache.getCurrentData()) {
-        HashSet result = asSet(childData, HashSet.class);
-        if (result.contains(v)) {
-          result.remove(v);
-          updateResult.put(childData.getPath(), result);
-        }
-      }
-
-      final int[] count = {updateResult.size()};
-      for (Map.Entry<String, Set<V>> kv : updateResult.entrySet()) {
-        curator.setData().inBackground((client, event) -> {
-          if (event.getType() == CuratorEventType.SET_DATA && --count[0] == 0) {
-            vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+      curator.getChildren().inBackground((client, event) -> {
+        final int[] count = {event.getChildren().size()};
+        for (String path : event.getChildren()) {
+          String keyPath = keyPath((K) path);
+          try {
+            curator.getData().inBackground((c, el) -> {
+              if (el.getType() == CuratorEventType.GET_DATA) {
+                count[0]--;
+                HashSet result = asObject(el.getData(), HashSet.class);
+                if (result.contains(v)) {
+                  result.remove(v);
+                  //update
+                  curator.setData().inBackground((anotherC, ele) -> {
+                    if (ele.getType() == CuratorEventType.SET_DATA && count[0] == 0) {
+                      vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+                    }
+                  }).forPath(keyPath, asByte(result));
+                }
+              }
+            }).forPath(keyPath);
+          } catch (Exception ex) {
+            vertx.runOnContext(handler -> completionHandler.handle(Future.completedFuture(ex)));
           }
-        }).forPath(kv.getKey(), asByte(kv.getValue()));
-      }
+        }
+      }).forPath(mapPath);
     } catch (Exception e) {
-      log.error(e);
-      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(e)));
+      vertx.runOnContext(handler -> completionHandler.handle(Future.completedFuture(e)));
     }
   }
 
