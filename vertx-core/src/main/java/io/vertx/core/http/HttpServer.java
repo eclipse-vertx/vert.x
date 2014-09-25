@@ -21,6 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * An HTTP and WebSockets server<p>
@@ -42,7 +43,7 @@ public interface HttpServer {
    *
    * @return the request stream
    */
-  HttpStream<HttpServerRequest> requestStream();
+  ReadStream<HttpServerRequest> requestStream();
 
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
@@ -61,7 +62,7 @@ public interface HttpServer {
    *
    * @return the websocket stream
    */
-  HttpStream<ServerWebSocket> websocketStream();
+  ReadStream<ServerWebSocket> websocketStream();
 
 
 

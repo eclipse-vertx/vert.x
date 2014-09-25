@@ -38,7 +38,31 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetSocket extends ReadStream<NetSocket, Buffer>, WriteStream<NetSocket, Buffer> {
+public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
+
+  @Override
+  NetSocket exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  NetSocket handler(Handler<Buffer> handler);
+
+  @Override
+  NetSocket pause();
+
+  @Override
+  NetSocket resume();
+
+  @Override
+  NetSocket endHandler(Handler<Void> endHandler);
+
+  @Override
+  NetSocket write(Buffer data);
+
+  @Override
+  NetSocket setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  NetSocket drainHandler(Handler<Void> handler);
 
   /**
    * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that

@@ -62,7 +62,19 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<HttpClientRequest, Buffer> {
+public interface HttpClientRequest extends WriteStream<Buffer> {
+
+  @Override
+  HttpClientRequest exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  HttpClientRequest write(Buffer data);
+
+  @Override
+  HttpClientRequest setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  HttpClientRequest drainHandler(Handler<Void> handler);
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode

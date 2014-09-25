@@ -43,8 +43,8 @@ import io.vertx.core.streams.WriteStream;
 @VertxGen
 public class PumpImpl<T> implements Pump {
 
-  private final ReadStream<?, T> readStream;
-  private final WriteStream<?, T> writeStream;
+  private final ReadStream<T> readStream;
+  private final WriteStream<T> writeStream;
   private int pumped;
   private final Handler<T> dataHandler;
   private final Handler<Void> drainHandler;
@@ -53,12 +53,12 @@ public class PumpImpl<T> implements Pump {
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
    * of the write stream to {@code maxWriteQueueSize}
    */
-  PumpImpl(ReadStream<?, T> rs, WriteStream<?, T> ws, int maxWriteQueueSize) {
+  PumpImpl(ReadStream<T> rs, WriteStream<T> ws, int maxWriteQueueSize) {
     this(rs, ws);
     this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
   }
 
-  PumpImpl(ReadStream<?, T> rs, WriteStream<?, T> ws) {
+  PumpImpl(ReadStream<T> rs, WriteStream<T> ws) {
     this.readStream = rs;
     this.writeStream = ws;
     drainHandler = v-> readStream.resume();

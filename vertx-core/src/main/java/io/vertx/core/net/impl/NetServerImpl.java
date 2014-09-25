@@ -45,10 +45,10 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.net.NetStream;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -108,7 +108,7 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
-  public NetStream connectStream() {
+  public ReadStream<NetSocket> connectStream() {
     return connectStream;
   }
 
@@ -411,7 +411,7 @@ public class NetServerImpl implements NetServer, Closeable {
     super.finalize();
   }
 
-  class NetReadStream implements Handler<NetSocket>, NetStream {
+  class NetReadStream implements Handler<NetSocket>, ReadStream<NetSocket> {
 
     protected Handler<NetSocket> handler;
     private final Queue<NetSocket> pending = new ArrayDeque<>(8);
@@ -430,7 +430,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetStream handler(Handler<NetSocket> handler) {
+    public NetReadStream handler(Handler<NetSocket> handler) {
       if (listening) {
         throw new IllegalStateException("Cannot set connectHandler when server is listening");
       }
@@ -439,7 +439,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetStream pause() {
+    public NetReadStream pause() {
       if (!paused) {
         NetServerImpl.this.bindFuture.channel().config().setAutoRead(false);
         paused = true;
@@ -448,7 +448,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetStream resume() {
+    public NetReadStream resume() {
       if (paused) {
         NetServerImpl.this.bindFuture.channel().config().setAutoRead(true);
         paused = false;
@@ -458,13 +458,13 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetStream endHandler(Handler<Void> endHandler) {
+    public NetReadStream endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
       return this;
     }
 
     @Override
-    public NetStream exceptionHandler(Handler<Throwable> handler) {
+    public NetReadStream exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
       return this;
     }

@@ -44,7 +44,19 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpServerResponse extends WriteStream<HttpServerResponse, Buffer> {
+public interface HttpServerResponse extends WriteStream<Buffer> {
+
+  @Override
+  HttpServerResponse exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  HttpServerResponse write(Buffer data);
+
+  @Override
+  HttpServerResponse setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  HttpServerResponse drainHandler(Handler<Void> handler);
 
   /**
    * The HTTP status code of the response. The default is {@code 200} representing {@code OK}.

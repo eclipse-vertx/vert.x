@@ -40,7 +40,22 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientResponse extends ReadStream<HttpClientResponse, Buffer> {
+public interface HttpClientResponse extends ReadStream<Buffer> {
+
+  @Override
+  HttpClientResponse resume();
+
+  @Override
+  HttpClientResponse exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  HttpClientResponse handler(Handler<Buffer> handler);
+
+  @Override
+  HttpClientResponse pause();
+
+  @Override
+  HttpClientResponse endHandler(Handler<Void> endHandler);
 
   /**
    * The HTTP status code of the response

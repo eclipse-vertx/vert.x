@@ -44,7 +44,22 @@ import javax.security.cert.X509Certificate;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpServerRequest extends ReadStream<HttpServerRequest, Buffer> {
+public interface HttpServerRequest extends ReadStream<Buffer> {
+
+  @Override
+  HttpServerRequest exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  HttpServerRequest handler(Handler<Buffer> handler);
+
+  @Override
+  HttpServerRequest pause();
+
+  @Override
+  HttpServerRequest resume();
+
+  @Override
+  HttpServerRequest endHandler(Handler<Void> endHandler);
 
   /**
    * The HTTP version of the request

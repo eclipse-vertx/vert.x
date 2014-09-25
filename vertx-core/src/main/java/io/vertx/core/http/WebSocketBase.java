@@ -37,7 +37,31 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface WebSocketBase<T> extends ReadStream<T, Buffer>, WriteStream<T, Buffer> {
+public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
+
+  @Override
+  WebSocketBase exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  WebSocketBase handler(Handler<Buffer> handler);
+
+  @Override
+  WebSocketBase pause();
+
+  @Override
+  WebSocketBase resume();
+
+  @Override
+  WebSocketBase endHandler(Handler<Void> endHandler);
+
+  @Override
+  WebSocketBase write(Buffer data);
+
+  @Override
+  WebSocketBase setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  WebSocketBase drainHandler(Handler<Void> handler);
 
   /**
    * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
@@ -58,7 +82,7 @@ public interface WebSocketBase<T> extends ReadStream<T, Buffer>, WriteStream<T, 
   String textHandlerID();
 
   @Fluent
-  T writeFrame(WebSocketFrame frame);
+  WebSocketBase writeFrame(WebSocketFrame frame);
 
 
   /*
@@ -75,19 +99,19 @@ public interface WebSocketBase<T> extends ReadStream<T, Buffer>, WriteStream<T, 
    * if it is large.
    */
   @Fluent
-  T writeMessage(Buffer data);
+  WebSocketBase writeMessage(Buffer data);
 
   /**
    * Set a closed handler on the connection
    */
   @Fluent
-  T closeHandler(Handler<Void> handler);
+  WebSocketBase closeHandler(Handler<Void> handler);
 
   /**
    * Set a frame handler on the connection
    */
   @Fluent
-  T frameHandler(Handler<WebSocketFrame> handler);
+  WebSocketBase frameHandler(Handler<WebSocketFrame> handler);
 
   /**
    * Close the websocket

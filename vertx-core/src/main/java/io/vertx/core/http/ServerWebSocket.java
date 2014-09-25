@@ -17,9 +17,11 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.buffer.Buffer;
 
 /**
  * Represents a server side WebSocket that is passed into a the websocketHandler of an {@link HttpServer}<p>
@@ -28,7 +30,43 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
+public interface ServerWebSocket extends WebSocketBase {
+
+  @Override
+  ServerWebSocket exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  ServerWebSocket handler(Handler<Buffer> handler);
+
+  @Override
+  ServerWebSocket pause();
+
+  @Override
+  ServerWebSocket resume();
+
+  @Override
+  ServerWebSocket endHandler(Handler<Void> endHandler);
+
+  @Override
+  ServerWebSocket write(Buffer data);
+
+  @Override
+  ServerWebSocket setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  ServerWebSocket drainHandler(Handler<Void> handler);
+
+  @Override
+  ServerWebSocket writeFrame(WebSocketFrame frame);
+
+  @Override
+  ServerWebSocket writeMessage(Buffer data);
+
+  @Override
+  ServerWebSocket closeHandler(Handler<Void> handler);
+
+  @Override
+  ServerWebSocket frameHandler(Handler<WebSocketFrame> handler);
 
   /*
    * The uri the websocket handshake occurred at

@@ -30,30 +30,32 @@ import io.vertx.core.Handler;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface ReadStream<R, T> extends StreamBase<R> {
+public interface ReadStream<T> extends StreamBase {
+
+  ReadStream<T> exceptionHandler(Handler<Throwable> handler);
 
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
    */
   @Fluent
-  R handler(Handler<T> handler);
+  ReadStream<T> handler(Handler<T> handler);
 
   /**
    * Pause the {@code ReadSupport}. While it's paused, no data will be sent to the {@code dataHandler}
    */
   @Fluent
-  R pause();
+  ReadStream<T> pause();
 
   /**
    * Resume reading. If the {@code ReadSupport} has been paused, reading will recommence on it.
    */
   @Fluent
-  R resume();
+  ReadStream<T> resume();
 
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
    */
   @Fluent
-  R endHandler(Handler<Void> endHandler);
+  ReadStream<T> endHandler(Handler<Void> endHandler);
 
 }
