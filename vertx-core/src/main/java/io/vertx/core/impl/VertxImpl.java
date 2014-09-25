@@ -108,7 +108,7 @@ public class VertxImpl implements VertxInternal {
   private HAManager haManager;
 
   VertxImpl() {
-    this(VertxOptions.options());
+    this(new VertxOptions());
   }
 
   VertxImpl(VertxOptions options) {
@@ -394,17 +394,17 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticle(Verticle verticle) {
-    deployVerticle(verticle, DeploymentOptions.options(), null);
+    deployVerticle(verticle, new DeploymentOptions(), null);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(verticle, DeploymentOptions.options(), completionHandler);
+    deployVerticle(verticle, new DeploymentOptions(), completionHandler);
   }
 
   @Override
   public void deployVerticle(String verticleName, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(verticleName, DeploymentOptions.options(), completionHandler);
+    deployVerticle(verticleName, new DeploymentOptions(), completionHandler);
   }
 
   @Override
@@ -419,7 +419,7 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticle(String verticleName) {
-    deployVerticle(verticleName, DeploymentOptions.options(), null);
+    deployVerticle(verticleName, new DeploymentOptions(), null);
   }
 
   @Override

@@ -142,7 +142,7 @@ public class Starter {
       }
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
-      VertxOptions options = VertxOptions.options();
+      VertxOptions options = new VertxOptions();
       options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
       if (ha) {
         String haGroup = args.map.get("-hagroup");
@@ -229,7 +229,7 @@ public class Starter {
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     for (int i = 0; i < instances; i++) {
-      vertx.deployVerticle(main, DeploymentOptions.options().setConfig(conf).setWorker(worker).setHA(ha), createLoggingHandler(message, res -> {
+      vertx.deployVerticle(main, new DeploymentOptions().setConfig(conf).setWorker(worker).setHA(ha), createLoggingHandler(message, res -> {
         if (res.failed()) {
           // Failed to deploy
           unblock();

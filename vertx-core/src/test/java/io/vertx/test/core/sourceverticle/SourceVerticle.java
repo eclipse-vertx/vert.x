@@ -29,7 +29,7 @@ public class SourceVerticle extends AbstractVerticle {
 
   @Override
   public void start(Future<Void> startFuture) throws Exception {
-    vertx.deployVerticle("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", DeploymentOptions.options(), ar -> {
+    vertx.deployVerticle("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", new DeploymentOptions(), ar -> {
       if (ar.succeeded()) {
         startFuture.complete((Void) null);
       } else {

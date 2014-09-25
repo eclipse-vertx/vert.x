@@ -59,7 +59,7 @@ public class WebsocketTest extends NetTestBase {
 
   public void setUp() throws Exception {
     super.setUp();
-    client = vertx.createHttpClient(HttpClientOptions.options());
+    client = vertx.createHttpClient(new HttpClientOptions());
   }
 
   protected void tearDown() throws Exception {
@@ -314,7 +314,7 @@ public class WebsocketTest extends NetTestBase {
                        boolean requireClientAuth, boolean serverUsesCrl, boolean clientTrustAll,
                        boolean clientUsesCrl, boolean shouldPass,
                        String... enabledCipherSuites) throws Exception {
-    HttpClientOptions options = HttpClientOptions.options();
+    HttpClientOptions options = new HttpClientOptions();
     options.setSsl(true);
     if (clientTrustAll) {
       options.setTrustAll(true);
@@ -328,7 +328,7 @@ public class WebsocketTest extends NetTestBase {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
-    HttpServerOptions serverOptions = HttpServerOptions.options();
+    HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
     serverOptions.setTrustStoreOptions(getServerTrustOptions(serverTrust));
     serverOptions.setKeyStoreOptions(getServerCertOptions(serverCert));
@@ -356,7 +356,7 @@ public class WebsocketTest extends NetTestBase {
           testComplete();
         }
       });
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(4043), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(4043), ws -> {
         int size = 100;
         Buffer received = Buffer.buffer();
         ws.handler(data -> {
@@ -379,7 +379,7 @@ public class WebsocketTest extends NetTestBase {
     String path = "/some/path";
     String message = "here is some text data";
 
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, path);
       // Let's write a Text frame raw
       Buffer buff = Buffer.buffer();
@@ -390,7 +390,7 @@ public class WebsocketTest extends NetTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path), ws -> {
         ws.handler(buff -> {
           assertEquals(message, buff.toString("UTF-8"));
           testComplete();
@@ -414,7 +414,7 @@ public class WebsocketTest extends NetTestBase {
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numConnections);
     for (int i = 0; i < numServers; i++) {
-      HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+      HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
       servers.add(theServer);
       theServer.websocketHandler(ws -> {
         connectedServers.add(theServer);
@@ -436,7 +436,7 @@ public class WebsocketTest extends NetTestBase {
     // Create a bunch of connections
     CountDownLatch latchClient = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI("/someuri"), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI("/someuri"), ws -> {
         ws.closeHandler(v -> latchClient.countDown());
         ws.close();
       });
@@ -472,7 +472,7 @@ public class WebsocketTest extends NetTestBase {
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
     // Have a server running on a different port to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(4321));
+    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(4321));
     theServer.websocketHandler(ws -> {
       fail("Should not connect");
     }).listen(ar -> {
@@ -490,7 +490,7 @@ public class WebsocketTest extends NetTestBase {
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(4321));
+    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(4321));
     theServer.websocketHandler(ws -> {
       fail("Should not connect");
     }).listen(ar -> {
@@ -512,7 +512,7 @@ public class WebsocketTest extends NetTestBase {
 
   @Test
   public void testOptions() throws Exception {
-    WebSocketConnectOptions options = WebSocketConnectOptions.options();
+    WebSocketConnectOptions options = new WebSocketConnectOptions();
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
@@ -563,9 +563,9 @@ public class WebsocketTest extends NetTestBase {
     int websocketFrameSize = TestUtils.randomPositiveInt();
     int version = 13;
     String subProtocol = TestUtils.randomAlphaString(100);
-    WebSocketConnectOptions options = WebSocketConnectOptions.options().setPort(port).setHost(host).setHeaders(headers).setRequestURI(uri)
+    WebSocketConnectOptions options = new WebSocketConnectOptions().setPort(port).setHost(host).setHeaders(headers).setRequestURI(uri)
       .setMaxWebsocketFrameSize(websocketFrameSize).setVersion(version).addSubProtocol(subProtocol);
-    WebSocketConnectOptions copy = WebSocketConnectOptions.copiedOptions(options);
+    WebSocketConnectOptions copy = new WebSocketConnectOptions(options);
     assertEquals(port, copy.getPort());
     assertEquals(host, copy.getHost());
     assertEquals(uri, copy.getRequestURI());
@@ -579,8 +579,8 @@ public class WebsocketTest extends NetTestBase {
 
   @Test
   public void testDefaultWebSocketConnectOptionsJson() {
-    WebSocketConnectOptions def = WebSocketConnectOptions.options();
-    WebSocketConnectOptions json = WebSocketConnectOptions.optionsFromJson(new JsonObject());
+    WebSocketConnectOptions def = new WebSocketConnectOptions();
+    WebSocketConnectOptions json = new WebSocketConnectOptions(new JsonObject());
     assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
     assertEquals(def.getVersion(), json.getVersion());
     assertEquals(def.getSubProtocols(), json.getSubProtocols());
@@ -607,7 +607,7 @@ public class WebsocketTest extends NetTestBase {
     JsonObject jheaders = new JsonObject();
     jheaders.putString("foo", "bar");
     json.putObject("headers", jheaders);
-    WebSocketConnectOptions copy = WebSocketConnectOptions.optionsFromJson(json);
+    WebSocketConnectOptions copy = new WebSocketConnectOptions(json);
     assertEquals(port, copy.getPort());
     assertEquals(host, copy.getHost());
     assertEquals(uri, copy.getRequestURI());
@@ -658,7 +658,7 @@ public class WebsocketTest extends NetTestBase {
     String query = "foo=bar&wibble=eek";
     String uri = path + "?" + query;
 
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals(uri, ws.uri());
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
@@ -671,7 +671,7 @@ public class WebsocketTest extends NetTestBase {
       int bsize = 100;
       int sends = 10;
 
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -700,7 +700,7 @@ public class WebsocketTest extends NetTestBase {
     // version 0 doesn't support continuations so we just send 1 frame per message
     int frames = version == 0 ? 1: 10;
 
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals(uri, ws.uri());
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
@@ -739,7 +739,7 @@ public class WebsocketTest extends NetTestBase {
 
       int msgs = 10;
 
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path + "?" + query).setVersion(version), ws -> {
         final List<Buffer> sent = new ArrayList<>();
         final List<Buffer> received = new ArrayList<>();
 
@@ -799,7 +799,7 @@ public class WebsocketTest extends NetTestBase {
     String firstFrame = "AAA";
     String continuationFrame = "BBB";
 
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, path);
 
       // Let's write a Text frame raw
@@ -818,7 +818,7 @@ public class WebsocketTest extends NetTestBase {
 
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
         AtomicBoolean receivedFirstFrame = new AtomicBoolean();
         ws.frameHandler(received -> {
           Buffer receivedBuffer = Buffer.buffer(received.textData());
@@ -841,13 +841,13 @@ public class WebsocketTest extends NetTestBase {
     String path = "/some/path";
     Buffer buff = Buffer.buffer("AAA");
 
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
       ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
         Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -866,13 +866,13 @@ public class WebsocketTest extends NetTestBase {
     String path = "/some/path";
     String subProtocol = "myprotocol";
     Buffer buff = Buffer.buffer("AAA");
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol(subProtocol)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol(subProtocol)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
       ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -892,13 +892,13 @@ public class WebsocketTest extends NetTestBase {
     String subProtocol = "myprotocol";
     Buffer buff = Buffer.buffer("AAA");
 
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).addWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
       assertEquals(path, ws.path());
       ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version).addSubProtocol(subProtocol), ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -917,7 +917,7 @@ public class WebsocketTest extends NetTestBase {
 
     String path = "/some/path";
 
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
       ws.reject();
     });
@@ -925,7 +925,7 @@ public class WebsocketTest extends NetTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.exceptionHandler(t -> testComplete());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> fail("Should not be called"));
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> fail("Should not be called"));
     });
     await();
   }
@@ -978,13 +978,13 @@ public class WebsocketTest extends NetTestBase {
   private void testWriteMessage(int size, int version) {
     String path = "/some/path";
     byte[] expected = TestUtils.randomByteArray(size);
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       ws.writeMessage(Buffer.buffer(expected));
       ws.close();
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
+      client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path).setVersion(version), ws -> {
         Buffer actual = Buffer.buffer();
         ws.handler(actual::appendBuffer);
         ws.closeHandler(v -> {

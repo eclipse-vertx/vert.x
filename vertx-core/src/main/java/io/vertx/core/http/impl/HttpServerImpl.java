@@ -119,7 +119,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private ContextImpl listenContext;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
-    this.options = HttpServerOptions.copiedOptions(options);
+    this.options = new HttpServerOptions(options);
     this.vertx = vertx;
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {

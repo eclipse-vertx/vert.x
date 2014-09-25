@@ -232,7 +232,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     long timeout = 1000;
-    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), ar -> {
     });
     await();
   }
@@ -279,7 +279,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       long start = System.currentTimeMillis();
       long timeout = 1000;
-      msg.reply(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+      msg.reply(reply, new DeliveryOptions().setSendTimeout(timeout), ar -> {
         long now = System.currentTimeMillis();
         assertFalse(ar.succeeded());
         Throwable cause = ar.cause();
@@ -306,7 +306,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       long timeout = 1000;
-      msg.reply(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+      msg.reply(reply, new DeliveryOptions().setSendTimeout(timeout), ar -> {
         assertTrue(ar.succeeded());
         assertEquals(replyReply, ar.result().body());
         testComplete();
@@ -327,7 +327,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply(23);
     });
     long timeout = 1000;
-    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertEquals(23, (int) ar.result().body());
       testComplete();
@@ -343,7 +343,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     long timeout = 1000;
     long start = System.currentTimeMillis();
-    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       long now = System.currentTimeMillis();
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
@@ -361,7 +361,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithTimeoutNoHandlers() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
-    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -383,7 +383,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.fail(failureCode, failureMsg);
     });
     long timeout = 1000;
-    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -406,7 +406,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         msg.reply("too late!");
       });
     });
-    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -427,7 +427,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply("a reply");
     });
     AtomicBoolean received = new AtomicBoolean();
-    eb.send(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertFalse(received.get());
       received.set(true);
@@ -604,7 +604,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, DeploymentOptions.options().setWorker(worker).setMultiThreaded(multiThreaded));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded));
     await();
   }
 
@@ -653,7 +653,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals("bar", msg.headers().get("foo"));
       testComplete();
     });
-    vertx.eventBus().send(ADDRESS1, "foo", DeliveryOptions.options().setHeaders(headers));
+    vertx.eventBus().send(ADDRESS1, "foo", new DeliveryOptions().setHeaders(headers));
     headers.remove("foo");
     await();
   }
@@ -663,7 +663,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testSend(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -671,7 +671,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testReply(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -680,7 +680,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testSend(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -689,13 +689,13 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testReply(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
   public void testNoRegisteredDecoder() throws Exception {
     try {
-      vertx.eventBus().send(ADDRESS1, "foo", DeliveryOptions.options().setCodecName("iqwjdoqiwd"));
+      vertx.eventBus().send(ADDRESS1, "foo", new DeliveryOptions().setCodecName("iqwjdoqiwd"));
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -718,7 +718,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.eventBus().registerCodec(codec);
     vertx.eventBus().unregisterCodec(codec.name());
     try {
-      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"), DeliveryOptions.options().setCodecName(codec.name()));
+      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"), new DeliveryOptions().setCodecName(codec.name()));
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK

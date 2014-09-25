@@ -18,42 +18,86 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Options;
 import io.vertx.core.Headers;
-import io.vertx.core.ServiceHelper;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.DeliveryOptionsFactory;
+
+import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public interface DeliveryOptions {
+public class DeliveryOptions {
 
-  static DeliveryOptions options() {
-    return factory.options();
+  private static final long DEFAULT_TIMEOUT = 30 * 1000;
+
+  private long timeout = DEFAULT_TIMEOUT;
+  private String codecName;
+  private Headers headers;
+
+  public DeliveryOptions() {
   }
 
-  static DeliveryOptions copiedOptions(DeliveryOptions other) {
-    return factory.options(other);
+  public DeliveryOptions(DeliveryOptions other) {
+    this.timeout = other.getSendTimeout();
+    this.codecName = other.getCodecName();
+    this.headers = other.getHeaders();
   }
 
-  static DeliveryOptions optionsFromJson(JsonObject json) {
-    return factory.options(json);
+  public DeliveryOptions(JsonObject json) {
+    this.timeout = json.getLong("timeout", DEFAULT_TIMEOUT);
+    this.codecName = json.getString("codecName", null);
+    JsonObject hdrs = json.getObject("headers", null);
+    if (hdrs != null) {
+      headers = new CaseInsensitiveHeaders();
+      for (Map.Entry<String, Object> entry: hdrs.toMap().entrySet()) {
+        if (!(entry.getValue() instanceof String)) {
+          throw new IllegalStateException("Invalid type for message header value " + entry.getValue().getClass());
+        }
+        headers.set(entry.getKey(), (String)entry.getValue());
+      }
+    }
   }
 
-  long getSendTimeout();
+  public long getSendTimeout() {
+    return timeout;
+  }
 
-  DeliveryOptions setSendTimeout(long timeout);
+  public DeliveryOptions setSendTimeout(long timeout) {
+    if (timeout < 1) {
+      throw new IllegalArgumentException("sendTimeout must be >= 1");
+    }
+    this.timeout = timeout;
+    return this;
+  }
 
-  String getCodecName();
+  public String getCodecName() {
+    return codecName;
+  }
 
-  DeliveryOptions setCodecName(String codecName);
+  public DeliveryOptions setCodecName(String codecName) {
+    this.codecName = codecName;
+    return this;
+  }
 
-  DeliveryOptions addHeader(String key, String value);
+  public DeliveryOptions addHeader(String key, String value) {
+    checkHeaders();
+    headers.add(key, value);
+    return this;
+  }
 
-  DeliveryOptions setHeaders(Headers headers);
+  public DeliveryOptions setHeaders(Headers headers) {
+    this.headers = headers;
+    return this;
+  }
 
-  Headers getHeaders();
+  public Headers getHeaders() {
+    return headers;
+  }
 
-  static final DeliveryOptionsFactory factory = ServiceHelper.loadFactory(DeliveryOptionsFactory.class);
-
+  private void checkHeaders() {
+    if (headers == null) {
+      headers = new CaseInsensitiveHeaders();
+    }
+  }
 }

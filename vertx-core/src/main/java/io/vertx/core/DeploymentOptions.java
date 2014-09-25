@@ -1,71 +1,158 @@
 /*
  * Copyright 2014 Red Hat, Inc.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * and Apache License v2.0 which accompanies this distribution.
+ *   Red Hat licenses this file to you under the Apache License, version 2.0
+ *   (the "License"); you may not use this file except in compliance with the
+ *   License.  You may obtain a copy of the License at:
  *
- * The Eclipse Public License is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * The Apache License v2.0 is available at
- * http://www.opensource.org/licenses/apache2.0.php
- *
- * You may elect to redistribute this code under either of these licenses.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ *   License for the specific language governing permissions and limitations
+ *   under the License.
  */
 
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.DeploymentOptionsFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public interface DeploymentOptions {
+public class DeploymentOptions {
 
-  static DeploymentOptions options() {
-    return factory.options();
+  private JsonObject config;
+  private boolean worker;
+  private boolean multiThreaded;
+  private String isolationGroup;
+  private boolean ha;
+  private List<String> extraClasspath;
+
+  public DeploymentOptions() {
   }
 
-  static DeploymentOptions copiedOptions(DeploymentOptions other) {
-    return factory.options(other);
+  public DeploymentOptions(DeploymentOptions other) {
+    this.config = other.getConfig() == null ? null : other.getConfig().copy();
+    this.worker = other.isWorker();
+    this.multiThreaded = other.isMultiThreaded();
+    this.isolationGroup = other.getIsolationGroup();
+    this.ha = other.isHA();
+    this.extraClasspath = other.getExtraClasspath() == null ? null : new ArrayList<>(other.getExtraClasspath());
   }
 
-  static DeploymentOptions optionsFromJson(JsonObject json) {
-    return factory.options(json);
+  public DeploymentOptions(JsonObject json) {
+    this.config = json.getObject("config");
+    this.worker = json.getBoolean("worker", false);
+    this.multiThreaded = json.getBoolean("multiThreaded", false);
+    this.isolationGroup = json.getString("isolationGroup", null);
+    this.ha = json.getBoolean("ha", false);
+    JsonArray arr = json.getArray("extraClasspath", null);
+    if (arr != null) {
+      this.extraClasspath = arr.toList();
+    }
   }
 
-  JsonObject getConfig();
+  public JsonObject getConfig() {
+    return config;
+  }
 
-  DeploymentOptions setConfig(JsonObject config);
+  public DeploymentOptions setConfig(JsonObject config) {
+    this.config = config;
+    return this;
+  }
 
-  boolean isWorker();
+  public boolean isWorker() {
+    return worker;
+  }
 
-  DeploymentOptions setWorker(boolean worker);
+  public DeploymentOptions setWorker(boolean worker) {
+    this.worker = worker;
+    return this;
+  }
 
-  boolean isMultiThreaded();
+  public boolean isMultiThreaded() {
+    return multiThreaded;
+  }
 
-  DeploymentOptions setMultiThreaded(boolean multiThreaded);
+  public DeploymentOptions setMultiThreaded(boolean multiThreaded) {
+    this.multiThreaded = multiThreaded;
+    return this;
+  }
 
-  String getIsolationGroup();
+  public String getIsolationGroup() {
+    return isolationGroup;
+  }
 
-  DeploymentOptions setIsolationGroup(String isolationGroup);
+  public DeploymentOptions setIsolationGroup(String isolationGroup) {
+    this.isolationGroup = isolationGroup;
+    return this;
+  }
 
-  JsonObject toJson();
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    if (worker) json.putBoolean("worker", true);
+    if (multiThreaded) json.putBoolean("multiThreaded", true);
+    if (isolationGroup != null) json.putString("isolationGroup", isolationGroup);
+    if (ha) json.putBoolean("ha", true);
+    if (config != null) json.putObject("config", config);
+    if (extraClasspath != null) json.putArray("extraClasspath", new JsonArray(extraClasspath));
+    return json;
+  }
 
-  boolean isHA();
+  public boolean isHA() {
+    return ha;
+  }
 
-  DeploymentOptions setHA(boolean HA);
+  public DeploymentOptions setHA(boolean ha) {
+    this.ha = ha;
+    return this;
+  }
 
-  List<String> getExtraClasspath();
+  public List<String> getExtraClasspath() {
+    return extraClasspath;
+  }
 
-  DeploymentOptions setExtraClasspath(List<String> extraClasspath);
+  public DeploymentOptions setExtraClasspath(List<String> extraClasspath) {
+    this.extraClasspath = extraClasspath;
+    return this;
+  }
 
-  static final DeploymentOptionsFactory factory = ServiceHelper.loadFactory(DeploymentOptionsFactory.class);
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
 
+    DeploymentOptions that = (DeploymentOptions) o;
+
+    if (ha != that.ha) return false;
+    if (multiThreaded != that.multiThreaded) return false;
+    if (worker != that.worker) return false;
+    if (config != null ? !config.equals(that.config) : that.config != null) return false;
+    if (extraClasspath != null ? !extraClasspath.equals(that.extraClasspath) : that.extraClasspath != null)
+      return false;
+    if (isolationGroup != null ? !isolationGroup.equals(that.isolationGroup) : that.isolationGroup != null)
+      return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = config != null ? config.hashCode() : 0;
+    result = 31 * result + (worker ? 1 : 0);
+    result = 31 * result + (multiThreaded ? 1 : 0);
+    result = 31 * result + (isolationGroup != null ? isolationGroup.hashCode() : 0);
+    result = 31 * result + (ha ? 1 : 0);
+    result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);
+    return result;
+  }
 }

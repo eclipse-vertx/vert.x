@@ -484,7 +484,7 @@ public class HAManager {
     ContextImpl ctx = vertx.getContext();
     vertx.setContext(null);
     JsonObject options = failedVerticle.getObject("options");
-    doDeployVerticle(verticleName, DeploymentOptions.optionsFromJson(options), result -> {
+    doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
       if (result.succeeded()) {
         log.info("Successfully redeployed verticle " + verticleName + " after failover");
       } else {

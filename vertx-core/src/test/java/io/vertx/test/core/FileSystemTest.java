@@ -137,9 +137,9 @@ public class FileSystemTest extends VertxTestBase {
     assertNullPointerException(() -> vertx.fileSystem().writeFile("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().writeFileSync(null, Buffer.buffer()));
     assertNullPointerException(() -> vertx.fileSystem().writeFileSync("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().open(null, OpenOptions.options(), h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().open(null, new OpenOptions(), h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().open("ignored", null, h -> {}));
-    assertNullPointerException(() -> vertx.fileSystem().openSync(null, OpenOptions.options()));
+    assertNullPointerException(() -> vertx.fileSystem().openSync(null, new OpenOptions()));
     assertNullPointerException(() -> vertx.fileSystem().openSync("ignored", null));
     assertNullPointerException(() -> vertx.fileSystem().createFile(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().createFileSync(null));
@@ -993,7 +993,7 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.buffer(content);
     AtomicInteger count = new AtomicInteger();
-    vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), arr -> {
       if (arr.succeeded()) {
         for (int i = 0; i < chunks; i++) {
           Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
@@ -1040,7 +1040,7 @@ public class FileSystemTest extends VertxTestBase {
     Buffer expected = Buffer.buffer(content);
     createFile(fileName, content);
     AtomicInteger reads = new AtomicInteger();
-    vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), arr -> {
       if (arr.succeeded()) {
         Buffer buff = Buffer.buffer(chunks * chunkSize);
         for (int i = 0; i < chunks; i++) {
@@ -1076,7 +1076,7 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.buffer(content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), ar -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         WriteStream<AsyncFile, Buffer> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
@@ -1117,7 +1117,7 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content2 = TestUtils.randomByteArray(chunkSize * (chunks / 2));
     ByteBuf byteBuf = Unpooled.wrappedBuffer(content1, content2);
     Buffer buff = Buffer.buffer(byteBuf);
-    vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), ar -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         WriteStream<AsyncFile, Buffer> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
@@ -1153,7 +1153,7 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, OpenOptions.options(), ar -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         ReadStream<AsyncFile, Buffer> rs = ar.result();
         Buffer buff = Buffer.buffer();
@@ -1186,11 +1186,11 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(fileSize);
     createFile(fileName1, content);
 
-    vertx.fileSystem().open(testDir + pathSep + fileName1, OpenOptions.options(), arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName1, new OpenOptions(), arr -> {
       if (arr.succeeded()) {
         ReadStream rs = arr.result();
         //Open file for writing
-        vertx.fileSystem().open(testDir + pathSep + fileName2, OpenOptions.options(), ar -> {
+        vertx.fileSystem().open(testDir + pathSep + fileName2, new OpenOptions(), ar -> {
           if (ar.succeeded()) {
             WriteStream ws = ar.result();
             Pump p = Pump.pump(rs, ws);
@@ -1333,7 +1333,7 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testOpenOptions() {
-    OpenOptions opts = OpenOptions.options();
+    OpenOptions opts = new OpenOptions();
     assertNull(opts.getPerms());
     String perms = "rwxrwxrwx";
     assertEquals(opts, opts.setPerms(perms));
@@ -1369,8 +1369,8 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testDefaultOptionOptions() {
-    OpenOptions def = OpenOptions.options();
-    OpenOptions json = OpenOptions.optionsFromJson(new JsonObject());
+    OpenOptions def = new OpenOptions();
+    OpenOptions json = new OpenOptions(new JsonObject());
     assertEquals(def.getPerms(), json.getPerms());
     assertEquals(def.isRead(), json.isRead());
     assertEquals(def.isWrite(), json.isWrite());

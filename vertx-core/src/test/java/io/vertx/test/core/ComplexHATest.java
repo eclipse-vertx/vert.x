@@ -91,7 +91,7 @@ public class ComplexHATest extends VertxTestBase {
       for (int j = 0; j < numToDeploy; j++) {
         JsonObject config = new JsonObject();
         config.putString("foo", TestUtils.randomAlphaString(100));
-        DeploymentOptions options = DeploymentOptions.options().setHA(true).setConfig(config);
+        DeploymentOptions options = new DeploymentOptions().setHA(true).setConfig(config);
         String verticleName = "java:io.vertx.test.core.HAVerticle" + (random.nextInt(3) + 1);
         toDeploy++;
         v.deployVerticle(verticleName, options, ar -> {
@@ -184,7 +184,7 @@ public class ComplexHATest extends VertxTestBase {
   }
 
   protected void createNodes(int nodes) {
-    startNodes(nodes, VertxOptions.options().setHAEnabled(true));
+    startNodes(nodes, new VertxOptions().setHAEnabled(true));
     aliveNodes = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
       aliveNodes.add(i);

@@ -174,7 +174,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[0].eventBus().registerCodec(codec);
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testSend(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -184,7 +184,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[0].eventBus().registerCodec(codec);
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testReply(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -195,7 +195,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testSend(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -206,7 +206,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testReply(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test

@@ -150,12 +150,12 @@ public class EventBusImpl implements EventBus {
 
   @Override
   public EventBus send(String address, Object message) {
-    return send(address, message, DeliveryOptions.options(), null);
+    return send(address, message, new DeliveryOptions(), null);
   }
 
   @Override
   public <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
-    return send(address, message, DeliveryOptions.options(), replyHandler);
+    return send(address, message, new DeliveryOptions(), replyHandler);
   }
 
   @Override
@@ -171,7 +171,7 @@ public class EventBusImpl implements EventBus {
 
   @Override
   public EventBus publish(String address, Object message) {
-    return publish(address, message, DeliveryOptions.options());
+    return publish(address, message, new DeliveryOptions());
   }
 
   @Override
@@ -346,7 +346,7 @@ public class EventBusImpl implements EventBus {
   }
 
   private NetServer setServer(int port, String hostName, Handler<AsyncResult<Void>> listenHandler) {
-    NetServer server = vertx.createNetServer(NetServerOptions.options().setPort(port).setHost(hostName)).connectHandler(socket -> {
+    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(port).setHost(hostName)).connectHandler(socket -> {
       RecordParser parser = RecordParser.newFixed(4, null);
       Handler<Buffer> handler = new Handler<Buffer>() {
         int size = -1;
@@ -634,7 +634,7 @@ public class EventBusImpl implements EventBus {
     // tricky
     ConnectionHolder holder = connections.get(theServerID);
     if (holder == null) {
-      NetClient client = vertx.createNetClient(NetClientOptions.options().setConnectTimeout(60 * 1000));
+      NetClient client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(60 * 1000));
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
       holder = new ConnectionHolder(client);

@@ -292,12 +292,12 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public void reply(Object message) {
-    reply(message, DeliveryOptions.options(), null);
+    reply(message, new DeliveryOptions(), null);
   }
 
   @Override
   public <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    reply(message, DeliveryOptions.options(), replyHandler);
+    reply(message, new DeliveryOptions(), replyHandler);
   }
 
   @Override

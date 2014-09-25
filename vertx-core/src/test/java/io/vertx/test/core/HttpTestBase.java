@@ -38,7 +38,7 @@ public class HttpTestBase extends NetTestBase {
 
   public void setUp() throws Exception {
     super.setUp();
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
   }
 
   protected void tearDown() throws Exception {
