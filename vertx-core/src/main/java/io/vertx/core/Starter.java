@@ -202,21 +202,25 @@ public class Starter {
       instances = 1;
     }
 
-    String configFile = args.map.get("-conf");
+    String confArg = args.map.get("-conf");
     JsonObject conf;
 
-    if (configFile != null) {
-      try (Scanner scanner = new Scanner(new File(configFile)).useDelimiter("\\A")){
+    if (confArg != null) {
+      try (Scanner scanner = new Scanner(new File(confArg)).useDelimiter("\\A")){
         String sconf = scanner.next();
         try {
           conf = new JsonObject(sconf);
         } catch (DecodeException e) {
-          log.error("Configuration file does not contain a valid JSON object");
+          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
           return;
         }
       } catch (FileNotFoundException e) {
-        log.error("Config file " + configFile + " does not exist");
-        return;
+        try {
+          conf = new JsonObject(confArg);
+        } catch (DecodeException e2) {
+          log.error("-conf option does not point to a file and is not valid JSON: " + confArg);
+          return;
+        }
       }
     } else {
       conf = null;
@@ -331,6 +335,9 @@ public class Starter {
 
   private void displaySyntax() {
 
+    // TODO
+    // Update usage string for ha
+    // Also for vertx version
     String usage =
 
       "    vertx run <main> [-options]                                                \n" +
@@ -341,7 +348,8 @@ public class Starter {
         "        -conf <config_file>    Specifies configuration that should be provided \n" +
         "                               to the verticle. <config_file> should reference \n" +
         "                               a text file containing a valid JSON object      \n" +
-        "                               which represents the configuration.             \n" +
+        "                               which represents the configuration OR should be \n" +
+        "                               a string that contains valid JSON.              \n" +
         "        -instances <instances> specifies how many instances of the verticle    \n" +
         "                               will be deployed. Defaults to 1                 \n" +
         "        -worker                if specified then the verticle is a worker      \n" +

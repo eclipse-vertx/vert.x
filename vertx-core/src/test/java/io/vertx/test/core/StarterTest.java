@@ -17,8 +17,11 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Starter;
+import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,6 +34,7 @@ public class StarterTest extends VertxTestBase {
     super.setUp();
     TestVerticle.instanceCount.set(0);
     TestVerticle.processArgs = null;
+    TestVerticle.conf = null;
   }
 
   @Test
@@ -105,5 +109,47 @@ public class StarterTest extends VertxTestBase {
     // Now unblock it
     starter.unblock();
     waitUntil(() -> !t.isAlive());
+  }
+
+  @Test
+  public void testRunVerticleWithConfString() throws Exception {
+    Starter starter = new Starter();
+    JsonObject conf = new JsonObject().putString("foo", "bar").putNumber("wibble", 123);
+    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", conf.encode()};
+    Thread t = new Thread(() -> {
+      starter.run(args);
+    });
+    t.start();
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertTrue(t.isAlive()); // It's blocked
+    assertEquals(conf, TestVerticle.conf);
+    // Now unblock it
+    starter.unblock();
+    waitUntil(() -> !t.isAlive());
+  }
+
+  @Test
+  public void testRunVerticleWithConfFile() throws Exception {
+    Path tempDir = Files.createTempDirectory("conf");
+    Path tempFile = Files.createTempFile(tempDir, "conf", "json");
+    try {
+      Starter starter = new Starter();
+      JsonObject conf = new JsonObject().putString("foo", "bar").putNumber("wibble", 123);
+      Files.write(tempFile, conf.encode().getBytes());
+      String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
+      Thread t = new Thread(() -> {
+        starter.run(args);
+      });
+      t.start();
+      waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+      assertTrue(t.isAlive()); // It's blocked
+      assertEquals(conf, TestVerticle.conf);
+      // Now unblock it
+      starter.unblock();
+      waitUntil(() -> !t.isAlive());
+    } finally {
+      Files.delete(tempFile);
+      Files.delete(tempDir);
+    }
   }
 }

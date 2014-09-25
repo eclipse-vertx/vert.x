@@ -29,6 +29,7 @@ public class TestVerticle extends AbstractVerticle {
 
   public static AtomicInteger instanceCount = new AtomicInteger();
   public static List<String> processArgs;
+  public static JsonObject conf;
 
   public TestVerticle() {
   }
@@ -36,6 +37,7 @@ public class TestVerticle extends AbstractVerticle {
   @Override
   public void start() throws Exception {
     processArgs = vertx.context().processArgs();
+    conf = vertx.context().config();
     vertx.eventBus().send("testcounts",
       new JsonObject().putString("deploymentID", vertx.context().deploymentID()).putNumber("count", instanceCount.incrementAndGet()));
   }
