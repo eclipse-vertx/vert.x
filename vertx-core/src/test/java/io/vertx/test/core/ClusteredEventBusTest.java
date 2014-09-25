@@ -24,6 +24,7 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
+
 import org.junit.Test;
 
 import java.util.Map;
@@ -155,7 +156,33 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[0].eventBus().publish(ADDRESS1, (T)val);
     await();
   }
+  
+  @Override
+  protected <T> void testForward(T val) {
+    startNodes(2);
+    vertices[0].eventBus().registerHandler(ADDRESS1, new Handler<Message<String>>(){
 
+      @Override
+      public void handle(Message<String> event) {
+        assertEquals(val, event.body());
+        event.forward(ADDRESS2);
+      }
+
+    });
+    
+    vertices[1].eventBus().registerHandler(ADDRESS2, new Handler<Message<String>>(){
+
+      @Override
+      public void handle(Message<String> event) {
+        assertEquals(val, event.body());
+        testComplete();
+      }
+    });
+    
+    vertices[0].eventBus().send(ADDRESS1, val);
+    await();
+  
+  }
   @Test
   public void testLocalHandlerNotReceive() throws Exception {
     startNodes(2);
@@ -250,5 +277,5 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     MyPOJO pojo = new MyPOJO(str);
     testReply(pojo, pojo, null, null);
   }
-
+  
 }

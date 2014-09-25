@@ -22,6 +22,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+
 import org.junit.Test;
 
 import java.util.function.Consumer;
@@ -325,7 +326,14 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testReplyWithHeaders() {
     testReply("foo", "foo", null, DeliveryOptions.options().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
-
+  
+  @Test
+  public void testForward(){
+    testForward(TestUtils.randomUnicodeString(100));
+  }
+  
+  protected abstract <T> void testForward(T val);
+  
   protected <T> void testSend(T val) {
     testSend(val, null);
   }
