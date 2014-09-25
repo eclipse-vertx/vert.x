@@ -181,8 +181,7 @@ public class EventBusImpl implements EventBus {
   }
 
   EventBus forward(String address, Object message) {
-	  forward(address, message, null);
-	  return null;
+	  return forward(address, message, null);
   }
 
   EventBus forward(String address, Object message, DeliveryOptions options) {
