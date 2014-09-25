@@ -157,7 +157,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
   
-  @Override
+    @Override
   protected <T> void testForward(T val) {
     startNodes(2);
     vertices[0].eventBus().registerHandler(ADDRESS1, new Handler<Message<String>>(){
