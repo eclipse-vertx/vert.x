@@ -25,7 +25,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.codecs.BooleanMessageCodec;
@@ -114,7 +114,7 @@ public class EventBusImpl implements EventBus {
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
   private final ProxyFactory proxyFactory;
-  private Registration pingRegistration;
+  private MessageConsumer pingRegistration;
   private MessageCodec[] systemCodecs;
 
   public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout) {
@@ -182,12 +182,12 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public <T> Registration<T> registerHandler(String address) {
+  public <T> MessageConsumer<T> consumer(String address) {
     return new HandlerRegistration<>(address, false, false, -1);
   }
 
   @Override
-  public <T> Registration<T> registerLocalHandler(String address) {
+  public <T> MessageConsumer<T> localConsumer(String address) {
     return new HandlerRegistration<>(address, false, true, -1);
   }
 
@@ -243,7 +243,7 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public <T> Registration registerService(T service, String address) {
+  public <T> MessageConsumer registerService(T service, String address) {
     return proxyFactory.registerService(service, address);
   }
 
@@ -341,7 +341,7 @@ public class EventBusImpl implements EventBus {
   }
 
   private void setPingHandler() {
-    pingRegistration = registerHandler(PING_ADDRESS).handler(msg -> {
+    pingRegistration = consumer(PING_ADDRESS).handler(msg -> {
       msg.reply(null);
     });
   }
@@ -451,7 +451,7 @@ public class EventBusImpl implements EventBus {
       long timeoutID = -1;
       if (replyHandler != null) {
         message.setReplyAddress(generateReplyAddress());
-        AtomicReference<Registration> refReg = new AtomicReference<>();
+        AtomicReference<MessageConsumer> refReg = new AtomicReference<>();
         // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
         timeoutID = vertx.setTimer(options.getSendTimeout(), timerID -> {
           log.warn("Message reply handler timed out as no reply was received - it will be removed");
@@ -459,7 +459,7 @@ public class EventBusImpl implements EventBus {
           replyHandler.handle(Future.completedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
         });
         simpleReplyHandler = convertHandler(replyHandler);
-        Registration registration = registerHandler(message.replyAddress(), simpleReplyHandler, true, true, timeoutID);
+        MessageConsumer registration = registerHandler(message.replyAddress(), simpleReplyHandler, true, true, timeoutID);
         refReg.set(registration);
       }
       if (replyDest != null) {
@@ -511,7 +511,7 @@ public class EventBusImpl implements EventBus {
     };
   }
 
-  private <T> Registration registerHandler(String address, Handler<Message<T>> handler,
+  private <T> MessageConsumer registerHandler(String address, Handler<Message<T>> handler,
                                        boolean replyHandler, boolean localOnly, long timeoutID) {
     HandlerRegistration<T> registration = new HandlerRegistration<>(address, replyHandler, localOnly, timeoutID);
     registration.handler(handler);
@@ -909,7 +909,7 @@ public class EventBusImpl implements EventBus {
     super.finalize();
   }
 
-  public class HandlerRegistration<T> implements Registration<T>, Handler<Message<T>> {
+  public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Message<T>> {
     private final String address;
     private final boolean replyHandler;
     private final boolean localOnly;
@@ -930,7 +930,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public Registration<T> setMaxBufferedMessages(int maxBufferedMessages) {
+    public MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
       if (maxBufferedMessages < 0) {
         throw new IllegalArgumentException("Max buffered messages cannot be negative");
       }
@@ -1008,7 +1008,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public Registration<T> handler(Handler<Message<T>> handler) {
+    public MessageConsumer<T> handler(Handler<Message<T>> handler) {
       if (this.handler != null) {
         throw new UnsupportedOperationException();
       }
@@ -1018,7 +1018,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public Registration<T> pause() {
+    public MessageConsumer<T> pause() {
       if (!paused) {
         paused = true;
       }
@@ -1026,7 +1026,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public Registration<T> resume() {
+    public MessageConsumer<T> resume() {
       if (paused) {
         paused = false;
         checkNextTick();
@@ -1035,12 +1035,12 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public Registration<T> endHandler(Handler<Void> endHandler) {
+    public MessageConsumer<T> endHandler(Handler<Void> endHandler) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public Registration<T> exceptionHandler(Handler<Throwable> handler) {
+    public MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
       throw new UnsupportedOperationException();
     }
 

@@ -22,12 +22,19 @@ import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 
 /**
- * An event bus registration object which can be used to later unregister an event bus handler.
+ * An event bus consumer object representing a stream of message to an {@link EventBus} address that can
+ * be read from.<p>
+ *
+ * The {@link EventBus#consumer(String)} or {@link EventBus#localConsumer(String)}
+ * create a new consumer, the returned consumer is not yet registered against the event bus. Registration
+ * is effective after the {@link #handler(io.vertx.core.Handler)} method is invoked.<p>
+ *
+ * The consumer is unregistered from the event bus using the {@link #unregister()} method.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 @VertxGen
-public interface Registration<T> extends ReadStream<Registration<T>, Message<T>> {
+public interface MessageConsumer<T> extends ReadStream<MessageConsumer<T>, Message<T>> {
 
   /**
    * @return The address the handler was registered with.
@@ -42,7 +49,7 @@ public interface Registration<T> extends ReadStream<Registration<T>, Message<T>>
    * @param maxBufferedMessages the maximum number of messages that can be buffered
    * @return this registration
    */
-  Registration<T> setMaxBufferedMessages(int maxBufferedMessages);
+  MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages);
 
   /**
    * @return the maximum number of messages that can be buffered when this stream is paused

@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
@@ -49,8 +49,8 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   protected Handler<Void> endHandler;
-  protected Registration binaryHandlerRegistration;
-  protected Registration textHandlerRegistration;
+  protected MessageConsumer binaryHandlerRegistration;
+  protected MessageConsumer textHandlerRegistration;
   protected boolean closed;
 
   private int maxWebSocketFrameSize = 65536;
@@ -62,9 +62,9 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
     this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
     Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
-    binaryHandlerRegistration = vertx.eventBus().<Buffer>registerLocalHandler(binaryHandlerID).handler(binaryHandler);
+    binaryHandlerRegistration = vertx.eventBus().<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
     Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
-    textHandlerRegistration = vertx.eventBus().<String>registerLocalHandler(textHandlerID).handler(textHandler);
+    textHandlerRegistration = vertx.eventBus().<String>localConsumer(textHandlerID).handler(textHandler);
   }
 
   public String binaryHandlerID() {

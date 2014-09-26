@@ -30,7 +30,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -54,7 +54,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private Registration registration;
+  private MessageConsumer registration;
   private Queue<Buffer> pendingData;
   private boolean paused = false;
   private SSLHelper helper;
@@ -67,7 +67,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
-    registration = vertx.eventBus().<Buffer>registerLocalHandler(writeHandlerID).handler(writeHandler);
+    registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }
 
   @Override

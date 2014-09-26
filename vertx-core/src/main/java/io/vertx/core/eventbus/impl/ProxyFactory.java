@@ -23,7 +23,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -59,8 +59,8 @@ public class ProxyFactory {
     return proxy;
   }
 
-  public <T> Registration registerService(T service, String address) {
-    return eventBus.<JsonObject>registerHandler(address).handler((Message<JsonObject> msg) -> {
+  public <T> MessageConsumer registerService(T service, String address) {
+    return eventBus.<JsonObject>consumer(address).handler((Message<JsonObject> msg) -> {
       JsonObject body = msg.body();
       String op = body.getString(OPS_FIELD);
       JsonArray args = body.getArray(ARGS_FIELD);

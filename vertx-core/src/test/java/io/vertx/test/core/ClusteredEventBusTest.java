@@ -21,7 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       startNodes(2);
     }
 
-    Registration<T> reg = vertices[1].eventBus().<T>registerHandler(ADDRESS1).handler((Message<T> msg) -> {
+    MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(received, msg.body());
         if (options != null && options.getHeaders() != null) {
@@ -90,7 +90,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       startNodes(2);
     }
     String str = TestUtils.randomUnicodeString(1000);
-    Registration<?> reg = vertices[1].eventBus().registerHandler(ADDRESS1).handler(msg -> {
+    MessageConsumer<?> reg = vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       assertEquals(str, msg.body());
       if (options == null) {
         msg.reply(val);
@@ -148,9 +148,9 @@ public class ClusteredEventBusTest extends EventBusTestBase {
         }
       }
     }
-    Registration reg = vertices[2].eventBus().<T>registerHandler(ADDRESS1).handler(new MyHandler());
+    MessageConsumer reg = vertices[2].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
     reg.completionHandler(new MyRegisterHandler());
-    reg = vertices[1].eventBus().<T>registerHandler(ADDRESS1).handler(new MyHandler());
+    reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
     reg.completionHandler(new MyRegisterHandler());
     vertices[0].eventBus().publish(ADDRESS1, val);
     await();
@@ -159,7 +159,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   @Test
   public void testLocalHandlerNotReceive() throws Exception {
     startNodes(2);
-    vertices[1].eventBus().registerLocalHandler(ADDRESS1).handler(msg -> {
+    vertices[1].eventBus().localConsumer(ADDRESS1).handler(msg -> {
       fail("Should not receive message");
     });
     vertices[0].eventBus().send(ADDRESS1, "foo");

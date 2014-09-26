@@ -96,21 +96,25 @@ public interface EventBus {
   EventBus publish(String address, Object message, DeliveryOptions options);
 
   /**
-   * Create a registration against the specified address.
+   * Create a message consumer against the specified address. The returned consumer is not yet registered
+   * at the address, registration will be effective when {@link MessageConsumer#handler(io.vertx.core.Handler)}
+   * is called.
    *
-   * @param address The address to register it at
-   * @return the event bus registration
+   * @param address The address that will register it at
+   * @return the event bus message consumer
    */
-  <T> Registration<T> registerHandler(String address);
+  <T> MessageConsumer<T> consumer(String address);
 
   /**
-   * Create a local registration against the specified address. The handler info won't
-   * be propagated across the cluster
+   * Create a local message consumer against the specified address. The handler info won't
+   * be propagated across the cluster. The returned consumer is not yet registered at the
+   * address, registration will be effective when {@link MessageConsumer#handler(io.vertx.core.Handler)}
+   * is called.
    *
    * @param address The address to register it at
-   * @return the event bus registration
+   * @return the event bus message consumer
    */
-  <T> Registration<T> registerLocalHandler(String address);
+  <T> MessageConsumer<T> localConsumer(String address);
 
   @GenIgnore
   EventBus registerCodec(MessageCodec codec);
@@ -128,7 +132,7 @@ public interface EventBus {
   <T> T createProxy(Class<T> clazz, String address);
 
   @GenIgnore
-  <T> Registration registerService(T service, String address);
+  <T> MessageConsumer registerService(T service, String address);
 
 }
 

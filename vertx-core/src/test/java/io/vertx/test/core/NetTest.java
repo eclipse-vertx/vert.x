@@ -24,7 +24,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
@@ -892,7 +892,7 @@ public class NetTest extends NetTestBase {
     server.connectHandler(sock -> {
       sock.pause();
       Handler<Message<Buffer>> resumeHandler = (m) -> sock.resume();
-      Registration reg = vertx.eventBus().<Buffer>registerHandler("server_resume").handler(resumeHandler);
+      MessageConsumer reg = vertx.eventBus().<Buffer>consumer("server_resume").handler(resumeHandler);
       sock.closeHandler(v -> reg.unregister());
     }).listen(listenHandler);
   }
@@ -913,7 +913,7 @@ public class NetTest extends NetTestBase {
 
   void setHandlers(NetSocket sock) {
     Handler<Message<Buffer>> resumeHandler = m -> sock.resume();
-    Registration reg = vertx.eventBus().<Buffer>registerHandler("client_resume").handler(resumeHandler);
+    MessageConsumer reg = vertx.eventBus().<Buffer>consumer("client_resume").handler(resumeHandler);
     sock.closeHandler(v -> reg.unregister());
   }
 

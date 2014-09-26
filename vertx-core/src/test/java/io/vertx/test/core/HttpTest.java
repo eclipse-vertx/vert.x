@@ -27,7 +27,7 @@ import io.vertx.core.Headers;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -2116,7 +2116,7 @@ public class HttpTest extends HttpTestBase {
       client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
         resp.pause();
         Handler<Message<Buffer>> resumeHandler = msg -> resp.resume();
-        Registration reg = vertx.eventBus().<Buffer>registerHandler("client_resume").handler(resumeHandler);
+        MessageConsumer reg = vertx.eventBus().<Buffer>consumer("client_resume").handler(resumeHandler);
         resp.endHandler(v -> reg.unregister());
       });
     });
@@ -3612,7 +3612,7 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.pause();
       Handler<Message<Buffer>> resumeHandler = msg -> req.resume();
-      Registration reg = vertx.eventBus().<Buffer>registerHandler("server_resume").handler(resumeHandler);
+      MessageConsumer reg = vertx.eventBus().<Buffer>consumer("server_resume").handler(resumeHandler);
       req.endHandler(v -> reg.unregister());
 
       req.handler(buff -> {
