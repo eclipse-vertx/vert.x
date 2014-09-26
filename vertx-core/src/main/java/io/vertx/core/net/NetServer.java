@@ -16,6 +16,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -51,6 +52,9 @@ public interface NetServer {
    * @return a reference to this so multiple method calls can be chained together
    */
   NetServer connectHandler(Handler<NetSocket> handler);
+
+  @GenIgnore
+  Handler<NetSocket> connectHandler();
 
   @Fluent
   NetServer listen();

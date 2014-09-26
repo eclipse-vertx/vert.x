@@ -16,6 +16,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -51,6 +52,9 @@ public interface HttpServer {
    */
   HttpServer requestHandler(Handler<HttpServerRequest> handler);
 
+  @GenIgnore
+  Handler<HttpServerRequest> requestHandler();
+
   /**
    * Return the websocket stream for the server. If a websocket connect handshake is successful a
    * new {@link ServerWebSocket} instance will be created and passed to this stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
@@ -59,6 +63,8 @@ public interface HttpServer {
    */
   HttpStream<ServerWebSocket> websocketStream();
 
+
+
   /**
    * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
    * new {@link ServerWebSocket} instance will be created and passed to the handler.
@@ -66,6 +72,9 @@ public interface HttpServer {
    * @return a reference to this, so methods can be chained.
    */
   HttpServer websocketHandler(Handler<ServerWebSocket> handler);
+
+  @GenIgnore
+  Handler<ServerWebSocket> websocketHandler();
 
   @Fluent
   HttpServer listen();

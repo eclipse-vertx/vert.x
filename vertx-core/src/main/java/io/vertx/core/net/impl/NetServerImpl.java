@@ -103,6 +103,11 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
+  public Handler<NetSocket> connectHandler() {
+    return connectStream.handler;
+  }
+
+  @Override
   public NetStream connectStream() {
     return connectStream;
   }

@@ -174,6 +174,16 @@ public class HttpServerImpl implements HttpServer, Closeable {
   }
 
   @Override
+  public Handler<HttpServerRequest> requestHandler() {
+    return requestStream.handler;
+  }
+
+  @Override
+  public Handler<ServerWebSocket> websocketHandler() {
+    return wsStream.handler;
+  }
+
+  @Override
   public HttpStream<ServerWebSocket> websocketStream() {
     return wsStream;
   }
