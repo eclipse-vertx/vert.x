@@ -1549,7 +1549,7 @@ public class NetTest extends NetTestBase {
     });
     server.listen();
     try {
-      server.connectStream().handler(sock -> {
+      server.connectHandler(sock -> {
       });
       fail("Should throw exception");
     } catch (IllegalStateException e) {

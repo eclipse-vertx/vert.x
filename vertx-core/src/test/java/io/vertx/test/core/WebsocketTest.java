@@ -345,7 +345,7 @@ public class WebsocketTest extends NetTestBase {
       serverOptions.addEnabledCipherSuite(suite);
     }
     server = vertx.createHttpServer(serverOptions.setPort(4043));
-    server.websocketStream().handler(ws -> {
+    server.websocketHandler(ws -> {
       ws.handler(ws::write);
     });
     server.listen(ar -> {
