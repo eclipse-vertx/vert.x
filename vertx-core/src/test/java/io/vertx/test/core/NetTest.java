@@ -33,7 +33,6 @@ import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.NetStream;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClient;
@@ -66,8 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -1808,50 +1806,50 @@ public class NetTest extends NetTestBase {
     await();
   }
 
-  @Test
-  public void testReadStreamPauseResume() {
-
-    server.close();
-    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
-    NetStream stream = server.connectStream();
-    AtomicBoolean paused = new AtomicBoolean();
-    stream.handler(so -> {
-      assert(!paused.get());
-      so.write("hello");
-      so.close();
-    });
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
-      paused.set(true);
-      stream.pause();
-      AtomicInteger count = new AtomicInteger();
-      Runnable[] r = new Runnable[1];
-      (r[0] = () -> {
-        client.connect(1234, "localhost", ar2 -> {
-          if (ar2.succeeded()) {
-            // We connect clients until one is rejected
-            // because we cannot assume a precise number of connections that will succeed
-            count.incrementAndGet();
-            r[0].run();
-            NetSocket so = ar2.result();
-            so.handler(buffer -> {
-              assertEquals("hello", buffer.toString("utf-8"));
-              so.closeHandler(v -> {
-                if (count.decrementAndGet() == 0) {
-                  testComplete();
-                }
-              });
-            });
-          } else {
-            // When we succeed
-            paused.set(false);
-            stream.resume();
-          }
-        });
-      }).run();
-    });
-    await();
-  }
+//  @Test
+//  public void testReadStreamPauseResume() {
+//
+//    server.close();
+//    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
+//    NetStream stream = server.connectStream();
+//    AtomicBoolean paused = new AtomicBoolean();
+//    stream.handler(so -> {
+//      assert(!paused.get());
+//      so.write("hello");
+//      so.close();
+//    });
+//    server.listen(ar -> {
+//      assertTrue(ar.succeeded());
+//      paused.set(true);
+//      stream.pause();
+//      AtomicInteger count = new AtomicInteger();
+//      Runnable[] r = new Runnable[1];
+//      (r[0] = () -> {
+//        client.connect(1234, "localhost", ar2 -> {
+//          if (ar2.succeeded()) {
+//            // We connect clients until one is rejected
+//            // because we cannot assume a precise number of connections that will succeed
+//            count.incrementAndGet();
+//            r[0].run();
+//            NetSocket so = ar2.result();
+//            so.handler(buffer -> {
+//              assertEquals("hello", buffer.toString("utf-8"));
+//              so.closeHandler(v -> {
+//                if (count.decrementAndGet() == 0) {
+//                  testComplete();
+//                }
+//              });
+//            });
+//          } else {
+//            // When we succeed
+//            paused.set(false);
+//            stream.resume();
+//          }
+//        });
+//      }).run();
+//    });
+//    await();
+//  }
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
