@@ -19,7 +19,7 @@ package io.vertx.core.eventbus.impl;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -47,7 +47,7 @@ public class MessageImpl<U, V> implements Message<V> {
   private ServerID sender;
   private String address;
   private String replyAddress;
-  private Headers headers;
+  private MultiMap headers;
   private U sentBody;
   private V receivedBody;
   private MessageCodec<U, V> messageCodec;
@@ -59,7 +59,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public MessageImpl() {
   }
 
-  public MessageImpl(ServerID sender, String address, String replyAddress, Headers headers, U sentBody,
+  public MessageImpl(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec, boolean send) {
     this.sender = sender;
     this.address = address;
@@ -105,7 +105,7 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     // Lazily decode headers
     if (headers == null) {
       // The message has been read from the wire

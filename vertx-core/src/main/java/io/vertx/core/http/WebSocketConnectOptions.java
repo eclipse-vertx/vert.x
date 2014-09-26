@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Options;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -40,7 +40,7 @@ public class WebSocketConnectOptions implements RequestOptionsBase<WebSocketConn
 
   private int port ;
   private String host;
-  private Headers headers;
+  private MultiMap headers;
   private String requestURI;
   private int maxWebsocketFrameSize;
   private int version;
@@ -111,12 +111,12 @@ public class WebSocketConnectOptions implements RequestOptionsBase<WebSocketConn
   }
 
   @Override
-  public Headers getHeaders() {
+  public MultiMap getHeaders() {
     return headers;
   }
 
   @Override
-  public WebSocketConnectOptions setHeaders(Headers headers) {
+  public WebSocketConnectOptions setHeaders(MultiMap headers) {
     this.headers = headers;
     return this;
   }

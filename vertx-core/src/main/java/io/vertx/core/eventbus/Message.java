@@ -20,7 +20,7 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -33,7 +33,7 @@ public interface Message<T> {
    */
   String address();
 
-  Headers headers();
+  MultiMap headers();
 
   /**
    * The body of the message

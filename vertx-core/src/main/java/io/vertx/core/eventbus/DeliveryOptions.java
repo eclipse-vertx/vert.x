@@ -17,8 +17,8 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Options;
-import io.vertx.core.Headers;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
@@ -33,7 +33,7 @@ public class DeliveryOptions {
 
   private long timeout = DEFAULT_TIMEOUT;
   private String codecName;
-  private Headers headers;
+  private MultiMap headers;
 
   public DeliveryOptions() {
   }
@@ -86,12 +86,12 @@ public class DeliveryOptions {
     return this;
   }
 
-  public DeliveryOptions setHeaders(Headers headers) {
+  public DeliveryOptions setHeaders(MultiMap headers) {
     this.headers = headers;
     return this;
   }
 
-  public Headers getHeaders() {
+  public MultiMap getHeaders() {
     return headers;
   }
 

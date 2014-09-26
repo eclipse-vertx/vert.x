@@ -16,7 +16,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
@@ -49,7 +49,7 @@ public interface ServerWebSocket extends WebSocketBase<ServerWebSocket> {
    * A map of all headers in the request to upgrade to websocket
    */
   @CacheReturn
-  Headers headers();
+  MultiMap headers();
 
   /**
    * Reject the WebSocket<p>

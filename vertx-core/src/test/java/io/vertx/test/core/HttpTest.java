@@ -23,7 +23,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -838,7 +838,7 @@ public class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(onSuccess(server -> {
-      Headers headers = new CaseInsensitiveHeaders();
+      MultiMap headers = new CaseInsensitiveHeaders();
       headers.add("foo", "bar");
       client.getNow(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).setHeaders(headers), resp -> {
         assertEquals(200, resp.statusCode());
@@ -1116,7 +1116,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testRequestHeaders(boolean individually) {
-    Headers headers = getHeaders(10);
+    MultiMap headers = getHeaders(10);
 
     server.requestHandler(req -> {
       assertEquals(headers.size() + 1, req.headers().size());
@@ -1152,7 +1152,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testResponseHeaders(boolean individually) {
-    Headers headers = getHeaders(10);
+    MultiMap headers = getHeaders(10);
 
     server.requestHandler(req -> {
       if (individually) {
@@ -1514,7 +1514,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testResponseTrailers(boolean individually) {
-    Headers trailers = getHeaders(10);
+    MultiMap trailers = getHeaders(10);
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -3036,7 +3036,7 @@ public class HttpTest extends HttpTestBase {
           });
         });
         req.endHandler(v -> {
-          Headers attrs = req.formAttributes();
+          MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           req.response().end();
         });
@@ -3085,7 +3085,7 @@ public class HttpTest extends HttpTestBase {
           fail("Should get here");
         }));
         req.endHandler(v -> {
-          Headers attrs = req.formAttributes();
+          MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("vert x", attrs.get("framework"));
           assertEquals("jvm", attrs.get("runson"));
@@ -3130,7 +3130,7 @@ public class HttpTest extends HttpTestBase {
           fail("Should not get here");
         }));
         req.endHandler(v -> {
-          Headers attrs = req.formAttributes();
+          MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("junit-testUserAlias", attrs.get("origin"));
           assertEquals("admin@foo.bar", attrs.get("login"));
@@ -3371,7 +3371,7 @@ public class HttpTest extends HttpTestBase {
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     assertNull(options.getHeaders());
     assertEquals(options, options.setHeaders(headers));
     assertSame(headers, options.getHeaders());
@@ -3389,7 +3389,7 @@ public class HttpTest extends HttpTestBase {
   public void testCopyRequestOptions() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     RequestOptions options = new RequestOptions().setPort(port).setHost(host).setHeaders(headers).setRequestURI(uri);
@@ -3413,7 +3413,7 @@ public class HttpTest extends HttpTestBase {
   public void testCopyRequestOptionsJson() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     JsonObject json = new JsonObject();
@@ -3649,9 +3649,9 @@ public class HttpTest extends HttpTestBase {
     server.listen(onSuccess(consumer));
   }
 
-  private static Headers getHeaders(int num) {
+  private static MultiMap getHeaders(int num) {
     Map<String, String> map = genMap(num);
-    Headers headers = new HeadersAdaptor(new DefaultHttpHeaders());
+    MultiMap headers = new HeadersAdaptor(new DefaultHttpHeaders());
     for (Map.Entry<String, String> entry : map.entrySet()) {
       headers.add(entry.getKey(), entry.getValue());
     }

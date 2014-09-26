@@ -17,7 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 
 import java.util.Iterator;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class HeadersAdaptor implements Headers {
+public class HeadersAdaptor implements MultiMap {
   private final HttpHeaders headers;
 
   public HeadersAdaptor(HttpHeaders headers) {
@@ -65,19 +65,19 @@ public class HeadersAdaptor implements Headers {
   }
 
   @Override
-  public Headers add(String name, String value) {
+  public MultiMap add(String name, String value) {
     headers.add(name, value);
     return this;
   }
 
   @Override
-  public Headers add(String name, Iterable<String> values) {
+  public MultiMap add(String name, Iterable<String> values) {
     headers.add(name, values);
     return this;
   }
 
   @Override
-  public Headers addAll(Headers headers) {
+  public MultiMap addAll(MultiMap headers) {
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -85,7 +85,7 @@ public class HeadersAdaptor implements Headers {
   }
 
   @Override
-  public Headers addAll(Map<String, String> map) {
+  public MultiMap addAll(Map<String, String> map) {
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -93,19 +93,19 @@ public class HeadersAdaptor implements Headers {
   }
 
   @Override
-  public Headers set(String name, String value) {
+  public MultiMap set(String name, String value) {
     headers.set(name, value);
     return this;
   }
 
   @Override
-  public Headers set(String name, Iterable<String> values) {
+  public MultiMap set(String name, Iterable<String> values) {
     headers.set(name, values);
     return this;
   }
 
   @Override
-  public Headers setAll(Headers httpHeaders) {
+  public MultiMap setAll(MultiMap httpHeaders) {
     clear();
     for (Map.Entry<String, String> entry: httpHeaders) {
       add(entry.getKey(), entry.getValue());
@@ -114,13 +114,13 @@ public class HeadersAdaptor implements Headers {
   }
 
   @Override
-  public Headers remove(String name) {
+  public MultiMap remove(String name) {
     headers.remove(name);
     return this;
   }
 
   @Override
-  public Headers clear() {
+  public MultiMap clear() {
     headers.clear();
     return this;
   }
@@ -136,7 +136,7 @@ public class HeadersAdaptor implements Headers {
   }
 
   @Override
-  public Headers setAll(Map<String, String> headers) {
+  public MultiMap setAll(Map<String, String> headers) {
     for (Map.Entry<String, String> entry: headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -159,31 +159,31 @@ public class HeadersAdaptor implements Headers {
   }
 
   @Override
-  public Headers add(CharSequence name, CharSequence value) {
+  public MultiMap add(CharSequence name, CharSequence value) {
     headers.add(name, value);
     return this;
   }
 
   @Override
-  public Headers add(CharSequence name, Iterable<CharSequence> values) {
+  public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
     headers.add(name, values);
     return this;
   }
 
   @Override
-  public Headers set(CharSequence name, CharSequence value) {
+  public MultiMap set(CharSequence name, CharSequence value) {
     headers.set(name, value);
     return this;
   }
 
   @Override
-  public Headers set(CharSequence name, Iterable<CharSequence> values) {
+  public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
     headers.set(name, values);
     return this;
   }
 
   @Override
-  public Headers remove(CharSequence name) {
+  public MultiMap remove(CharSequence name) {
     headers.remove(name);
     return this;
   }

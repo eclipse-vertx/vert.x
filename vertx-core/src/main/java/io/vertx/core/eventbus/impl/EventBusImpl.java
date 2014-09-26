@@ -19,7 +19,7 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
@@ -271,7 +271,7 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  MessageImpl createMessage(boolean send, String address, Headers headers, Object body, String codecName) {
+  MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     MessageCodec codec;
     if (codecName != null) {
       codec = userCodecMap.get(codecName);

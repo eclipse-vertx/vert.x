@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -82,7 +82,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest, Buffer
    * @return The HTTP headers
    */
   @CacheReturn
-  Headers headers();
+  MultiMap headers();
 
   /**
    * Put an HTTP header - fluent API

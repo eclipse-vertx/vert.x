@@ -17,7 +17,7 @@
 package io.vertx.test.core;
 
 
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClient;
@@ -527,7 +527,7 @@ public class WebsocketTest extends NetTestBase {
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     assertNull(options.getHeaders());
     assertEquals(options, options.setHeaders(headers));
     assertSame(headers, options.getHeaders());
@@ -560,7 +560,7 @@ public class WebsocketTest extends NetTestBase {
   public void testCopyOptions() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     int websocketFrameSize = TestUtils.randomPositiveInt();
@@ -594,7 +594,7 @@ public class WebsocketTest extends NetTestBase {
   public void testCopyOptionsJson() {
     int port = 4523;
     String host = TestUtils.randomAlphaString(100);
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
     String uri = TestUtils.randomAlphaString(100);
     int websocketFrameSize = TestUtils.randomPositiveInt();
