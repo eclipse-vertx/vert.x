@@ -60,7 +60,7 @@ public class ProxyFactory {
   }
 
   public <T> Registration registerService(T service, String address) {
-    return eventBus.registerHandler(address, (Message<JsonObject> msg) -> {
+    return eventBus.<JsonObject>registerHandler(address).handler((Message<JsonObject> msg) -> {
       JsonObject body = msg.body();
       String op = body.getString(OPS_FIELD);
       JsonArray args = body.getArray(ARGS_FIELD);

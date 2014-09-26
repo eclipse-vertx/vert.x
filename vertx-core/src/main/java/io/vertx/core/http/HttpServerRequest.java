@@ -34,7 +34,7 @@ import javax.security.cert.X509Certificate;
  * Represents a server-side HTTP request.<p>
  * Instances are created for each request that is handled by the server
  * and is passed to the user via the {@link io.vertx.core.Handler} instance
- * registered with the {@link HttpServer} using the method {@link HttpServer#requestHandler(io.vertx.core.Handler)}.<p>
+ * registered with the {@link HttpServer} using the request stream {@link io.vertx.core.http.HttpServer#requestStream()}.<p>
  * Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via
  * the {@code response} field.<p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with

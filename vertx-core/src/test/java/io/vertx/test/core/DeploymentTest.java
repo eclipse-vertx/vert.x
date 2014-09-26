@@ -869,7 +869,7 @@ public class DeploymentTest extends VertxTestBase {
 
   private void testIsolationGroup(String group1, String group2, int count1, int count2) throws Exception {
     Map<String, Integer> countMap = new ConcurrentHashMap<>();
-    vertx.eventBus().registerHandler("testcounts", (Message<JsonObject> msg) -> {
+    vertx.eventBus().<JsonObject>registerHandler("testcounts").handler((Message<JsonObject> msg) -> {
       countMap.put(msg.body().getString("deploymentID"), msg.body().getInteger("count"));
     });
     CountDownLatch latch = new CountDownLatch(1);

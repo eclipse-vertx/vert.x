@@ -62,9 +62,9 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
     this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
     Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
-    binaryHandlerRegistration = vertx.eventBus().registerLocalHandler(binaryHandlerID, binaryHandler);
+    binaryHandlerRegistration = vertx.eventBus().<Buffer>registerLocalHandler(binaryHandlerID).handler(binaryHandler);
     Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
-    textHandlerRegistration = vertx.eventBus().registerLocalHandler(textHandlerID, textHandler);
+    textHandlerRegistration = vertx.eventBus().<String>registerLocalHandler(textHandlerID).handler(textHandler);
   }
 
   public String binaryHandlerID() {

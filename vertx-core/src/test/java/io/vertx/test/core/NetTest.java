@@ -33,6 +33,7 @@ import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
+import io.vertx.core.net.NetStream;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClient;
@@ -891,7 +892,7 @@ public class NetTest extends NetTestBase {
     server.connectHandler(sock -> {
       sock.pause();
       Handler<Message<Buffer>> resumeHandler = (m) -> sock.resume();
-      Registration reg = vertx.eventBus().registerHandler("server_resume", resumeHandler);
+      Registration reg = vertx.eventBus().<Buffer>registerHandler("server_resume").handler(resumeHandler);
       sock.closeHandler(v -> reg.unregister());
     }).listen(listenHandler);
   }
@@ -912,7 +913,7 @@ public class NetTest extends NetTestBase {
 
   void setHandlers(NetSocket sock) {
     Handler<Message<Buffer>> resumeHandler = m -> sock.resume();
-    Registration reg = vertx.eventBus().registerHandler("client_resume", resumeHandler);
+    Registration reg = vertx.eventBus().<Buffer>registerHandler("client_resume").handler(resumeHandler);
     sock.closeHandler(v -> reg.unregister());
   }
 
@@ -1002,7 +1003,8 @@ public class NetTest extends NetTestBase {
     client.close();
     client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(1));
 
-    server.connectHandler(s -> {}).listen(ar -> {
+    server.connectHandler(s -> {
+    }).listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", res -> {
         assertTrue(res.succeeded());
@@ -1547,7 +1549,7 @@ public class NetTest extends NetTestBase {
     });
     server.listen();
     try {
-      server.connectHandler(sock -> {
+      server.connectStream().handler(sock -> {
       });
       fail("Should throw exception");
     } catch (IllegalStateException e) {
@@ -1806,6 +1808,50 @@ public class NetTest extends NetTestBase {
     await();
   }
 
+  @Test
+  public void testReadStreamPauseResume() {
+
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
+    NetStream stream = server.connectStream();
+    AtomicBoolean paused = new AtomicBoolean();
+    stream.handler(so -> {
+      assert(!paused.get());
+      so.write("hello");
+      so.close();
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      paused.set(true);
+      stream.pause();
+      AtomicInteger count = new AtomicInteger();
+      Runnable[] r = new Runnable[1];
+      (r[0] = () -> {
+        client.connect(1234, "localhost", ar2 -> {
+          if (ar2.succeeded()) {
+            // We connect clients until one is rejected
+            // because we cannot assume a precise number of connections that will succeed
+            count.incrementAndGet();
+            r[0].run();
+            NetSocket so = ar2.result();
+            so.handler(buffer -> {
+              assertEquals("hello", buffer.toString("utf-8"));
+              so.closeHandler(v -> {
+                if (count.decrementAndGet() == 0) {
+                  testComplete();
+                }
+              });
+            });
+          } else {
+            // When we succeed
+            paused.set(false);
+            stream.resume();
+          }
+        });
+      }).run();
+    });
+    await();
+  }
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);

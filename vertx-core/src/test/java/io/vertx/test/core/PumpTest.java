@@ -116,9 +116,21 @@ public class PumpTest {
       return this;
     }
 
+    public FakeReadStream pause(Handler<Void> doneHandler) {
+      pause();
+      doneHandler.handle(null);
+      return this;
+    }
+
     public FakeReadStream resume() {
       paused = false;
       resumeCount++;
+      return this;
+    }
+
+    public FakeReadStream resume(Handler<Void> doneHandler) {
+      resume();
+      doneHandler.handle(null);
       return this;
     }
 

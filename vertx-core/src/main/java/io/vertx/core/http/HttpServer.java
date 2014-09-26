@@ -19,7 +19,6 @@ package io.vertx.core.http;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -37,20 +36,28 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface HttpServer {
 
   /**
+   * Return the request stream for the server. As HTTP requests are received by the server,
+   * instances of {@link HttpServerRequest} will be created and passed to this stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
+   *
+   * @return the request stream
+   */
+  HttpStream<HttpServerRequest> requestStream();
+
+  /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
    * instances of {@link HttpServerRequest} will be created and passed to this handler.
    *
    * @return a reference to this, so methods can be chained.
    */
-  @Fluent
-  HttpServer requestHandler(Handler<HttpServerRequest> requestHandler);
+  HttpServer requestHandler(Handler<HttpServerRequest> handler);
 
   /**
-   * Get the request handler
-   * @return The request handler
+   * Return the websocket stream for the server. If a websocket connect handshake is successful a
+   * new {@link ServerWebSocket} instance will be created and passed to this stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
+   *
+   * @return the websocket stream
    */
-  @GenIgnore
-  Handler<HttpServerRequest> requestHandler();
+  HttpStream<ServerWebSocket> websocketStream();
 
   /**
    * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
@@ -58,14 +65,7 @@ public interface HttpServer {
    *
    * @return a reference to this, so methods can be chained.
    */
-  HttpServer websocketHandler(Handler<ServerWebSocket> wsHandler);
-
-  /**
-   * Get the websocket handler
-   * @return The websocket handler
-   */
-  @GenIgnore
-  Handler<ServerWebSocket> websocketHandler();
+  HttpServer websocketHandler(Handler<ServerWebSocket> handler);
 
   @Fluent
   HttpServer listen();

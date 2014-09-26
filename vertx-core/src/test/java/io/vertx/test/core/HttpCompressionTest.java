@@ -35,7 +35,7 @@ public class HttpCompressionTest extends HttpTestBase {
 
   @Test
   public void testDefaultRequestHeaders() {
-    server.requestHandler(req -> {
+    server.requestStream().handler(req -> {
       assertEquals(2, req.headers().size());
       assertEquals("localhost:" + DEFAULT_HTTP_PORT, req.headers().get("host"));
       assertNotNull(req.headers().get("Accept-Encoding"));

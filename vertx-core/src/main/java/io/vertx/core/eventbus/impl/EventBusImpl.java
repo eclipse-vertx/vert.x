@@ -61,6 +61,7 @@ import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
@@ -181,13 +182,13 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public <T> Registration registerHandler(String address, Handler<Message<T>> handler) {
-    return registerHandler(address, handler, false, false, -1);
+  public <T> Registration<T> registerHandler(String address) {
+    return new HandlerRegistration<>(address, false, false, -1);
   }
 
   @Override
-  public <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler) {
-    return registerHandler(address, handler, false, true, -1);
+  public <T> Registration<T> registerLocalHandler(String address) {
+    return new HandlerRegistration<>(address, false, true, -1);
   }
 
   @Override
@@ -340,7 +341,7 @@ public class EventBusImpl implements EventBus {
   }
 
   private void setPingHandler() {
-    pingRegistration = registerHandler(PING_ADDRESS, msg -> {
+    pingRegistration = registerHandler(PING_ADDRESS).handler(msg -> {
       msg.reply(null);
     });
   }
@@ -512,17 +513,23 @@ public class EventBusImpl implements EventBus {
 
   private <T> Registration registerHandler(String address, Handler<Message<T>> handler,
                                        boolean replyHandler, boolean localOnly, long timeoutID) {
+    HandlerRegistration<T> registration = new HandlerRegistration<>(address, replyHandler, localOnly, timeoutID);
+    registration.handler(handler);
+    return registration;
+  }
+
+  private <T> void registerHandler(String address, HandlerRegistration<T> registration,
+                                   boolean replyHandler, boolean localOnly, long timeoutID) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    Objects.requireNonNull(handler, "handler");
+    Objects.requireNonNull(registration.handler, "handler");
     ContextImpl context = vertx.getContext();
     boolean hasContext = context != null;
     if (!hasContext) {
       // Embedded
       context = vertx.createEventLoopContext(null, new JsonObject());
     }
-    HandlerHolder holder = new HandlerHolder<T>(handler, replyHandler, localOnly, context, timeoutID);
-    HandlerRegistration registration = new HandlerRegistration<T>(address, handler);
+    HandlerHolder holder = new HandlerHolder<T>(registration, replyHandler, localOnly, context, timeoutID);
 
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
@@ -544,11 +551,9 @@ public class EventBusImpl implements EventBus {
     handlers.list.add(holder);
 
     if (hasContext) {
-      HandlerEntry entry = new HandlerEntry<T>(address, handler);
+      HandlerEntry entry = new HandlerEntry<T>(address, registration);
       context.addCloseHook(entry);
     }
-
-    return registration;
   }
 
   private <T> void unregisterHandler(String address, Handler<Message<T>> handler, Handler<AsyncResult<Void>> completionHandler) {
@@ -904,15 +909,41 @@ public class EventBusImpl implements EventBus {
     super.finalize();
   }
 
-  private class HandlerRegistration<T> implements Registration {
+  public class HandlerRegistration<T> implements Registration<T>, Handler<Message<T>> {
     private final String address;
-    private final Handler<Message<T>> handler;
+    private final boolean replyHandler;
+    private final boolean localOnly;
+    private final long timeoutID;
+    private Handler<Message<T>> handler;
     private AsyncResult<Void> result;
     private Handler<AsyncResult<Void>> completionHandler;
+    private Handler<Message<T>> discardHandler;
+    private int maxBufferedMessages;
+    private final Queue<Message<T>> pending = new ArrayDeque<>(8);
+    private boolean paused;
 
-    public HandlerRegistration(String address, Handler<Message<T>> handler) {
+    public HandlerRegistration(String address, boolean replyHandler, boolean localOnly, long timeoutID) {
       this.address = address;
-      this.handler = handler;
+      this.replyHandler = replyHandler;
+      this.localOnly = localOnly;
+      this.timeoutID = timeoutID;
+    }
+
+    @Override
+    public Registration<T> setMaxBufferedMessages(int maxBufferedMessages) {
+      if (maxBufferedMessages < 0) {
+        throw new IllegalArgumentException("Max buffered messages cannot be negative");
+      }
+      while (pending.size() > maxBufferedMessages) {
+        pending.poll();
+      }
+      this.maxBufferedMessages = maxBufferedMessages;
+      return this;
+    }
+
+    @Override
+    public int getMaxBufferedMessages() {
+      return 0;
     }
 
     @Override
@@ -938,7 +969,7 @@ public class EventBusImpl implements EventBus {
     @Override
     public void unregister(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
-      unregisterHandler(address, handler, completionHandler);
+      unregisterHandler(address, this, completionHandler);
     }
 
     private synchronized void setResult(AsyncResult<Void> result) {
@@ -949,8 +980,84 @@ public class EventBusImpl implements EventBus {
         log.error("Failed to propagate registration for handler " + handler + " and address " + address);
       }
     }
-  }
 
+    @Override
+    public void handle(Message<T> event) {
+      if (paused) {
+        if (pending.size() < maxBufferedMessages) {
+          pending.add(event);
+        } else {
+          if (discardHandler != null) {
+            discardHandler.handle(event);
+          }
+        }
+      } else {
+        checkNextTick();
+        handler.handle(event);
+      }
+    }
+
+    /*
+     * Internal API for testing purposes.
+     */
+    public void discardHandler(Handler<Message<T>> handler) {
+      if (this.handler != null) {
+        throw new UnsupportedOperationException();
+      }
+      this.discardHandler = handler;
+    }
+
+    @Override
+    public Registration<T> handler(Handler<Message<T>> handler) {
+      if (this.handler != null) {
+        throw new UnsupportedOperationException();
+      }
+      this.handler = handler;
+      registerHandler(address, this, replyHandler, localOnly, timeoutID);
+      return this;
+    }
+
+    @Override
+    public Registration<T> pause() {
+      if (!paused) {
+        paused = true;
+      }
+      return this;
+    }
+
+    @Override
+    public Registration<T> resume() {
+      if (paused) {
+        paused = false;
+        checkNextTick();
+      }
+      return this;
+    }
+
+    @Override
+    public Registration<T> endHandler(Handler<Void> endHandler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Registration<T> exceptionHandler(Handler<Throwable> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    private void checkNextTick() {
+      // Check if there are more pending messages in the queue that can be processed next time around
+      if (!pending.isEmpty()) {
+        vertx.runOnContext(v -> {
+          if (!paused) {
+            Message<T> message = pending.poll();
+            if (message != null) {
+              HandlerRegistration.this.handle(message);
+            }
+          }
+        });
+      }
+    }
+  }
 
 }
 

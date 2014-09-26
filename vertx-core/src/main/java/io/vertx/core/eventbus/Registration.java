@@ -19,6 +19,7 @@ package io.vertx.core.eventbus;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * An event bus registration object which can be used to later unregister an event bus handler.
@@ -26,12 +27,27 @@ import io.vertx.core.Handler;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 @VertxGen
-public interface Registration {
+public interface Registration<T> extends ReadStream<Registration<T>, Message<T>> {
 
   /**
    * @return The address the handler was registered with.
    */
   String address();
+
+  /**
+   * Set the number of messages this registration will buffer when this stream is paused. The default
+   * value is <code>0</code>. When a new value is set, buffered messages may be discarded to reach
+   * the new value.
+   *
+   * @param maxBufferedMessages the maximum number of messages that can be buffered
+   * @return this registration
+   */
+  Registration<T> setMaxBufferedMessages(int maxBufferedMessages);
+
+  /**
+   * @return the maximum number of messages that can be buffered when this stream is paused
+   */
+  int getMaxBufferedMessages();
 
   /**
    * Optional method which can be called to indicate when the registration has been propagated across the cluster.

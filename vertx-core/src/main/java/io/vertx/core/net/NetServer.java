@@ -19,7 +19,6 @@ package io.vertx.core.net;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -37,16 +36,21 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface NetServer {
 
   /**
+   * Return the connect stream for this server. The server can only have at most one handler at any one time.
+   * As the server accepts TCP or SSL connections it creates an instance of {@link NetSocket} and passes it to the
+   * connect stream {@link NetStream#handler(io.vertx.core.Handler)}.
+   *
+   * @return the connect stream
+   */
+  NetStream connectStream();
+
+  /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
    * As the server accepts TCP or SSL connections it creates an instance of {@link NetSocket} and passes it to the
    * connect handler.
    * @return a reference to this so multiple method calls can be chained together
    */
-  @Fluent
-  NetServer connectHandler(Handler<NetSocket> connectHandler);
-
-  @GenIgnore
-  Handler<NetSocket> connectHandler();
+  NetServer connectHandler(Handler<NetSocket> handler);
 
   @Fluent
   NetServer listen();

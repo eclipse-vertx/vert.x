@@ -25,12 +25,15 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpStream;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
 import java.security.MessageDigest;
@@ -342,7 +345,7 @@ public class WebsocketTest extends NetTestBase {
       serverOptions.addEnabledCipherSuite(suite);
     }
     server = vertx.createHttpServer(serverOptions.setPort(4043));
-    server.websocketHandler(ws -> {
+    server.websocketStream().handler(ws -> {
       ws.handler(ws::write);
     });
     server.listen(ar -> {
@@ -991,6 +994,75 @@ public class WebsocketTest extends NetTestBase {
           assertArrayEquals(expected, actual.getBytes());
           testComplete();
         });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testWebsocketPauseAndResume() {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
+    String path = "/some/path";
+    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    HttpStream<ServerWebSocket> stream = server.websocketStream();
+    stream.handler(ws -> {
+      ws.writeMessage(Buffer.buffer("whatever"));
+      ws.close();
+    });
+    server.listen(listenAR -> {
+      assertTrue(listenAR.succeeded());
+      stream.pause();
+      AtomicBoolean rejected = new AtomicBoolean();
+      AtomicInteger connections = new AtomicInteger();
+      client.exceptionHandler(event -> {
+        if (!rejected.getAndSet(true)) {
+          // Resume
+          rejected.set(true);
+          stream.resume();
+        }
+        if (connections.decrementAndGet() == 0) {
+          testComplete();
+        }
+      });
+      Runnable[] r = new Runnable[1];
+      // Connect until we get the first rejection
+      (r[0] = () -> {
+        connections.incrementAndGet();
+        client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path), ws -> {
+          ws.handler(buffer -> {
+            assertEquals("whatever", buffer.toString("UTF-8"));
+            ws.closeHandler(v2 -> {
+              if (connections.decrementAndGet() == 0) {
+                testComplete();
+              }
+            });
+          });
+        });
+        if (!rejected.get()) {
+          vertx.setTimer(100, l -> {
+            r[0].run();
+          });
+        }
+      }).run();
+    });
+    await();
+  }
+
+  @Test
+  public void testClosingServerClosesWebSocketStreamEndHandler() {
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    HttpStream<ServerWebSocket> stream = server.websocketStream();
+    AtomicBoolean closed = new AtomicBoolean();
+    stream.endHandler(v -> closed.set(true));
+    stream.handler(ws -> {});
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      assertFalse(closed.get());
+      server.close(v -> {
+        assertTrue(ar.succeeded());
+        assertTrue(closed.get());
+        testComplete();
       });
     });
     await();

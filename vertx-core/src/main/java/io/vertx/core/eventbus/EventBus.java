@@ -96,21 +96,21 @@ public interface EventBus {
   EventBus publish(String address, Object message, DeliveryOptions options);
 
   /**
-   * Registers a handler against the specified address
+   * Create a registration against the specified address.
+   *
    * @param address The address to register it at
-   * @param handler The handler
    * @return the event bus registration
    */
-  <T> Registration registerHandler(String address, Handler<Message<T>> handler);
+  <T> Registration<T> registerHandler(String address);
 
   /**
-   * Registers a local handler against the specified address. The handler info won't
+   * Create a local registration against the specified address. The handler info won't
    * be propagated across the cluster
+   *
    * @param address The address to register it at
-   * @param handler The handler
    * @return the event bus registration
    */
-  <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler);
+  <T> Registration<T> registerLocalHandler(String address);
 
   @GenIgnore
   EventBus registerCodec(MessageCodec codec);

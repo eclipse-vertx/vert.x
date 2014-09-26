@@ -48,7 +48,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       startNodes(2);
     }
 
-    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
+    Registration<T> reg = vertices[1].eventBus().<T>registerHandler(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(received, msg.body());
         if (options != null && options.getHeaders() != null) {
@@ -90,7 +90,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       startNodes(2);
     }
     String str = TestUtils.randomUnicodeString(1000);
-    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
+    Registration<?> reg = vertices[1].eventBus().registerHandler(ADDRESS1).handler(msg -> {
       assertEquals(str, msg.body());
       if (options == null) {
         msg.reply(val);
@@ -148,18 +148,18 @@ public class ClusteredEventBusTest extends EventBusTestBase {
         }
       }
     }
-    Registration reg = vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    Registration reg = vertices[2].eventBus().<T>registerHandler(ADDRESS1).handler(new MyHandler());
     reg.completionHandler(new MyRegisterHandler());
-    reg = vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    reg = vertices[1].eventBus().<T>registerHandler(ADDRESS1).handler(new MyHandler());
     reg.completionHandler(new MyRegisterHandler());
-    vertices[0].eventBus().publish(ADDRESS1, (T)val);
+    vertices[0].eventBus().publish(ADDRESS1, val);
     await();
   }
 
   @Test
   public void testLocalHandlerNotReceive() throws Exception {
     startNodes(2);
-    vertices[1].eventBus().registerLocalHandler(ADDRESS1, msg -> {
+    vertices[1].eventBus().registerLocalHandler(ADDRESS1).handler(msg -> {
       fail("Should not receive message");
     });
     vertices[0].eventBus().send(ADDRESS1, "foo");
