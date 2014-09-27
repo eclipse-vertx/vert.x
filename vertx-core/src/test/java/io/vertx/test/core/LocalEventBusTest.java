@@ -38,6 +38,7 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -629,7 +630,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     awaitLatch(latch);
     assertEquals(2, contexts.size());
   }
-  
+
   @Test
   public void testContextsPublish() throws Exception {
     Set<ContextImpl> contexts = new ConcurrentHashSet<>();
@@ -988,6 +989,32 @@ public class LocalEventBusTest extends EventBusTestBase {
     for (String msg : data) {
       eb.publish(ADDRESS1, msg);
     }
+    await();
+  }
+  
+  @Override
+  protected <T> void testForward(T val) {
+
+    eb.registerHandler(ADDRESS1, new Handler<Message<String>>() {
+
+      @Override
+      public void handle(Message<String> event) {
+        assertEquals(val, event.body());
+        event.forward(ADDRESS2);
+      }
+
+    });
+
+    eb.registerHandler(ADDRESS2, new Handler<Message<String>>() {
+
+      @Override
+      public void handle(Message<String> event) {
+        assertEquals(val, event.body());
+        testComplete();
+      }
+    });
+
+    eb.send(ADDRESS1, val);
     await();
   }
 }
