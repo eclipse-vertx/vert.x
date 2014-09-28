@@ -112,6 +112,7 @@ class ZKAsyncMap<K, V> implements AsyncMap<K, V> {
               }
             }).forPath(keyPath, asByte(v));
           } else {
+            System.out.println(" " + keyPath + " doesn't exist.");
             curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).inBackground((cl, el) -> {
               if (el.getType() == CuratorEventType.CREATE) {
                 vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));

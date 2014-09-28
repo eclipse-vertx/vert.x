@@ -6,6 +6,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
+import org.apache.zookeeper.KeeperException;
 
 import java.io.*;
 import java.util.Collection;
@@ -86,9 +87,7 @@ class ZKSyncMap<K, V> implements Map<K, V> {
   public boolean containsKey(Object key) {
     try {
       checkState();
-      return curator.getChildren().forPath(mapPath).stream().anyMatch(e -> {
-        return e.equals(key);
-      });
+      return curator.getChildren().forPath(mapPath).stream().anyMatch(e -> e.equals(key));
     } catch (Exception e) {
       log.error(e);
       throw new VertxException(e.getMessage());
@@ -127,9 +126,11 @@ class ZKSyncMap<K, V> implements Map<K, V> {
         return keyValue.getValue();
       }
     } catch (Exception e) {
-      log.error(e);
-      throw new VertxException(e.getMessage());
+      if (!(e instanceof KeeperException.NodeExistsException)) {
+        throw new VertxException(e.getMessage());
+      }
     }
+    return null;
   }
 
   @Override
@@ -147,6 +148,7 @@ class ZKSyncMap<K, V> implements Map<K, V> {
       return value;
     } catch (Exception e) {
       log.error(e);
+      e.printStackTrace();
       throw new VertxException(e.getMessage());
     }
   }

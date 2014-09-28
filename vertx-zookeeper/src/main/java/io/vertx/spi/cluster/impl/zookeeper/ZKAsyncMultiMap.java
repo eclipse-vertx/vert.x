@@ -7,13 +7,17 @@ import io.vertx.core.Vertx;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.api.BackgroundCallback;
+import org.apache.curator.framework.api.CuratorEvent;
 import org.apache.curator.framework.api.CuratorEventType;
+import org.apache.curator.framework.api.transaction.CuratorTransactionResult;
 import org.apache.curator.framework.state.ConnectionState;
 
 import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  *
@@ -63,26 +67,38 @@ class ZKAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
 
   private void checkExists(String path, Handler<Boolean> handler) throws Exception {
     curator.checkExists().inBackground((client, event) -> {
-      if (event.getType() == CuratorEventType.EXISTS && event.getStat() == null) {
-        curator.create().creatingParentsIfNeeded().inBackground((c, e) -> {
-          if (event.getType() == CuratorEventType.CREATE) handler.handle(false);
-        }).forPath(path);
-      } else {
-        handler.handle(true);
+      if (event.getType() == CuratorEventType.EXISTS) {
+        if (event.getStat() == null) {
+          vertx.runOnContext(aVoid -> handler.handle(false));
+        } else {
+          vertx.runOnContext(aVoid -> handler.handle(true));
+        }
       }
     }).forPath(path);
   }
 
+
+  private void ensureData(String keyPath, Handler<AsyncResult<Void>> completionHandler) {
+    try {
+      curator.getData().inBackground((client2, event2) -> {
+        if (event2.getData() != null)
+          vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
+        else
+          ensureData(keyPath, completionHandler);
+      }).forPath(keyPath);
+    } catch (Exception ex) {
+      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
+    }
+  }
 
   @Override
   public void add(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
     try {
       checkState();
       String keyPath = keyPath(k);
-      checkExists(keyPath, exist -> {
-        if (exist) {
-          //getAndSetData
-          try {
+      curator.checkExists().inBackground((client, event) -> {
+        if (event.getType() == CuratorEventType.EXISTS) {
+          if (event.getStat() != null) {
             curator.getData().inBackground((c, el) -> {
               if (el.getType() == CuratorEventType.GET_DATA) {
                 Set<V> set = asObject(el.getData(), HashSet.class);
@@ -94,60 +110,65 @@ class ZKAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
                 }).forPath(keyPath, asByte(set));
               }
             }).forPath(keyPath);
-          } catch (Exception ex) {
-            vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
-          }
-        } else {
-          Set<V> set = new HashSet<>();
-          set.add(v);
-          try {
+          } else {
+            Set<V> set = new HashSet<>();
+            set.add(v);
             byte[] bytes = asByte(set);
-            curator.setData().inBackground((callbackClient, ea) -> {
-              if (ea.getType() == CuratorEventType.SET_DATA) {
+            curator.create().creatingParentsIfNeeded().inBackground((client1, event1) -> {
+              if (event1.getType() == CuratorEventType.CREATE) {
                 vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture()));
               }
             }).forPath(keyPath, bytes);
-          } catch (Exception ex) {
-            vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
           }
         }
-      });
+      }).forPath(keyPath);
     } catch (Exception ex) {
       vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
     }
   }
 
-  @Override
-  public void get(K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
-    try {
-      checkState();
-      String keyPath = keyPath(k);
-      checkExists(keyPath, exist -> {
-        if (exist) {
-          try {
-            curator.getData().inBackground((client, event) -> {
-              HashSet set = asObject(event.getData(), HashSet.class);
-              ChoosableIterable<V> choosableIterable = new ChoosableSet<V>(set);
-              vertx.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(choosableIterable)));
-            }).forPath(keyPath);
-          } catch (Exception ex) {
-            vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(ex)));
-          }
-        } else {
-          vertx.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(null)));
+
+  private void delayGet(String keyPath, int count, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
+    if (count <= 5) {
+      vertx.setTimer(20 * count, timerEvent1 -> {
+        try {
+          checkState();
+          checkExists(keyPath, exist -> {
+            if (exist) {
+              try {
+                curator.getData().inBackground((client, event) -> {
+                  HashSet set = asObject(event.getData(), HashSet.class);
+                  ChoosableIterable<V> choosableIterable = new ChoosableSet<V>(set);
+                  vertx.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(choosableIterable)));
+                }).forPath(keyPath);
+              } catch (Exception ex) {
+                vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(ex)));
+              }
+            } else {
+              delayGet(keyPath, count + 1, asyncResultHandler);
+            }
+          });
+        } catch (Exception e) {
+          vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(e)));
         }
       });
-    } catch (Exception e) {
-      vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(e)));
+    } else {
+      vertx.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture()));
     }
+  }
+
+  @Override
+  public void get(K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
+    //since data which be created could be delay in zk cluster, so we try to get it with timer.
+    delayGet(keyPath(k), 1, asyncResultHandler);
   }
 
 
   @Override
   public void remove(K k, V v, Handler<AsyncResult<Boolean>> completionHandler) {
+    checkState();
+    String keyPath = keyPath(k);
     try {
-      checkState();
-      String keyPath = keyPath(k);
       checkExists(keyPath, exist -> {
         if (exist) {
           try {
@@ -171,8 +192,8 @@ class ZKAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
           vertx.runOnContext(e -> completionHandler.handle(Future.completedFuture(Boolean.FALSE)));
         }
       });
-    } catch (Exception e) {
-      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(e)));
+    } catch (Exception ex) {
+      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
     }
   }
 

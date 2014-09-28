@@ -1,9 +1,6 @@
 package io.vertx.spi.cluster.impl.zookeeper;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.shareddata.AsyncMap;
@@ -14,6 +11,8 @@ import io.vertx.core.spi.cluster.*;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.BackgroundCallback;
+import org.apache.curator.framework.api.CuratorEvent;
 import org.apache.curator.framework.api.CuratorEventType;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
@@ -52,9 +51,11 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
   private String nodeID;
   private CuratorFramework curator;
   private RetryPolicy retryPolicy;
+  //TODO should we cache it.
   private Map<String, ZKLock> locks = new ConcurrentHashMap<>();
   private Map<String, ZKCounter> counters = new ConcurrentHashMap<>();
   private Map<String, ZKAsyncMap> asyncMaps = new ConcurrentHashMap<>();
+  private Map<String, ZKAsyncMultiMap> asyncMultiMaps = new ConcurrentHashMap<>();
 
   // zookeeper config file
   private static final String DEFAULT_CONFIG_FILE = "default-zookeeper.properties";
@@ -121,14 +122,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
    */
   @Override
   public <K, V> void getAsyncMultiMap(String name, MapOptions options, Handler<AsyncResult<AsyncMultiMap<K, V>>> asyncResultHandler) {
-    vertxSPI.executeBlocking(() -> new ZKAsyncMultiMap<K, V>(vertxSPI, curator, name),
-        ar -> {
-          if (ar.succeeded()) {
-            asyncResultHandler.handle(Future.completedFuture(ar.result()));
-          } else {
-            asyncResultHandler.handle(Future.completedFuture(ar.cause()));
-          }
-        });
+    vertxSPI.executeBlocking(() -> new ZKAsyncMultiMap<>(vertxSPI, curator, name), asyncResultHandler);
   }
 
   @Override
@@ -210,20 +204,19 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
       if (active) return null;
       else {
         active = true;
-        if (retryPolicy == null && curator == null) {
+        if (curator == null) {
           retryPolicy = new ExponentialBackoffRetry(1000, 3);
           curator = CuratorFrameworkFactory.builder().connectString("127.0.0.1").namespace("io.vertx").retryPolicy(retryPolicy).build();
         }
         curator.start();
         nodeID = UUID.randomUUID().toString();
-        clusterNodes = new PathChildrenCache(curator, "/cluster/nodes", false);
+        clusterNodes = new PathChildrenCache(curator, "/cluster/nodes", true);
         clusterNodes.getListenable().addListener(this);
         try {
           clusterNodes.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
           //join to the cluster
-          curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath("/cluster/nodes" + nodeID, nodeID.getBytes());
+          curator.create().withMode(CreateMode.EPHEMERAL).forPath("/cluster/nodes/" + nodeID, nodeID.getBytes());
         } catch (Exception e) {
-          log.error(e);
           throw new VertxException(e.getMessage());
         }
         return null;

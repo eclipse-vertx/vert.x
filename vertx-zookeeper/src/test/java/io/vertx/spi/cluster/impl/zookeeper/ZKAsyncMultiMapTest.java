@@ -1,10 +1,14 @@
 package io.vertx.spi.cluster.impl.zookeeper;
 
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.spi.cluster.VertxSPI;
 import io.vertx.test.core.VertxTestBase;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.test.TestingServer;
+import org.apache.curator.test.Timing;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -12,58 +16,88 @@ import org.junit.Test;
  *
  */
 public class ZKAsyncMultiMapTest extends VertxTestBase {
-  private CuratorFramework curator;
   private ZKAsyncMultiMap<String, String> asyncMultiMap;
 
-  public void setUp() throws Exception {
-    super.setUp();
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-    curator = CuratorFrameworkFactory.builder().namespace("io.vertx").connectString("127.0.0.1").retryPolicy(retryPolicy).build();
+  @Test
+  public void mockAsyncMultiMap() throws Exception {
+    Timing timing = new Timing();
+    TestingServer server = new TestingServer();
+
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(100, 3);
+    CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("io.vertx").sessionTimeoutMs(10000).connectionTimeoutMs(timing.connection()).connectString(server.getConnectString()).retryPolicy(retryPolicy).build();
     curator.start();
 
-    final boolean[] startTest = {false};
-    asyncMultiMap = new ZKAsyncMultiMap<>(vertx, curator, "multiMapTest");
+    VertxSPI vertxSPI = (VertxInternal) vertx;
+
+    asyncMultiMap = new ZKAsyncMultiMap<>(vertxSPI, curator, "multiMapTest");
     asyncMultiMap.add("myKey", "myValue", event -> {
       if (event.failed()) event.cause().printStackTrace();
       Assert.assertTrue(event.succeeded());
-      startTest[0] = true;
-    });
-    waitUntil(() -> startTest[0]);
-  }
-
-  @Test
-  public void asyncMultiMapGet() {
-    asyncMultiMap.get("myKey", event -> {
-      Assert.assertTrue(event.succeeded());
-      event.result().forEach(s -> {
-        if (s.equals("myValue")) {
-          testComplete();
-        }
-      });
+      asyncMultiMapRemove();
     });
     await();
   }
 
+
   @Test
-  public void asyncMultiMapRemove() {
-    asyncMultiMap.remove("myKey", "myValue", event -> {
+  public void multiAdd() throws Exception {
+    Timing timing = new Timing();
+    TestingServer server = new TestingServer();
+
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(100, 3);
+    CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("io.vertx").sessionTimeoutMs(10000).connectionTimeoutMs(timing.connection()).connectString(server.getConnectString()).retryPolicy(retryPolicy).build();
+    curator.start();
+
+    asyncMultiMap = new ZKAsyncMultiMap<>((VertxSPI) vertx, curator, "multiMapTest");
+    asyncMultiMap.add("myKey", "myValue", event -> {
+      if (event.failed()) event.cause().printStackTrace();
       Assert.assertTrue(event.succeeded());
-      Assert.assertTrue(event.result());
-      asyncMultiMap.get("myKey", ea -> {
-        Assert.assertTrue(ea.succeeded());
-        ea.result().forEach(s -> {
-          if (s.equals("myValue")) {
-            Assert.fail("the value should be removed");
-          }
+    });
+
+    asyncMultiMap.get("myKey", e -> {
+      if (e.failed()) e.cause().printStackTrace();
+      Assert.assertTrue(e.succeeded());
+      Assert.assertNotNull(e.result());
+      Assert.assertFalse(e.result().isEmpty());
+      testComplete();
+    });
+
+
+//    asyncMultiMap.add("myKey", "myValue", ev -> {
+//      if (ev.failed()) ev.cause().printStackTrace();
+//      Assert.assertTrue(ev.succeeded());
+//      testComplete();
+//    });
+
+    await();
+  }
+
+
+  private void asyncMultiMapRemove() {
+    asyncMultiMap.get("myKey", ev -> {
+      Assert.assertTrue(ev.succeeded());
+      ev.result().forEach(s -> {
+        assertEquals("myValue", s);
+        //remove
+        asyncMultiMap.remove("myKey", "myValue", eve -> {
+          Assert.assertTrue(eve.succeeded());
+          Assert.assertTrue(eve.result());
+          asyncMultiMap.get("myKey", even -> {
+            Assert.assertTrue(even.succeeded());
+            even.result().forEach(el -> {
+              if (el.equals("myValue")) {
+                Assert.fail("the value should be removed");
+              }
+            });
+            //remove all
+            asyncMultiMapRemoveAll();
+          });
         });
-        testComplete();
       });
     });
-    await();
   }
 
-  @Test
-  public void asyncMultiMapRemoveAll() {
+  private void asyncMultiMapRemoveAll() {
     asyncMultiMap.add("myAnotherKey", "myValue", event -> {
       Assert.assertTrue(event.succeeded());
       asyncMultiMap.removeAllForValue("myValue", e -> {
@@ -78,7 +112,6 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
         });
       });
     });
-    await();
   }
 
 

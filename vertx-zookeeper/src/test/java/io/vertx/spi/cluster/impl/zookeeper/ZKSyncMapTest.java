@@ -5,6 +5,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingCluster;
+import org.apache.curator.test.TestingServer;
 import org.apache.curator.test.Timing;
 import org.junit.Test;
 
@@ -53,11 +54,10 @@ public class ZKSyncMapTest {
   @Test
   public void mockCluster() throws Exception {
     Timing timing = new Timing();
-    TestingCluster cluster = new TestingCluster(3);
-    cluster.start();
+    TestingServer server = new TestingServer();
 
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-    CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("io.vertx").sessionTimeoutMs(timing.session()).connectionTimeoutMs(timing.connection()).connectString(cluster.getConnectString()).retryPolicy(retryPolicy).build();
+    CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("io.vertx").sessionTimeoutMs(timing.session()).connectionTimeoutMs(timing.connection()).connectString(server.getConnectString()).retryPolicy(retryPolicy).build();
     curator.start();
 
     String k = "myKey";
