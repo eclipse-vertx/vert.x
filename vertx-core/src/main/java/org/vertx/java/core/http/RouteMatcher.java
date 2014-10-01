@@ -16,11 +16,19 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.Handler;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.vertx.java.core.Handler;
 
 /**
  * This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
@@ -35,12 +43,18 @@ import java.util.regex.Pattern;
  * parameters do not have a name, so they are put into the HTTP request with names of param0, param1, param2 etc.<p>
  * Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
  * a particular request, the first matching one will be used.<p>
- * Instances of this class are not thread-safe<p>
+ * Instances of this class are not thread-safe except for updating or removing
+ * routes after a call to setUpdatable(true). Call setUpdatable(false) when not
+ * updating to remove try/finally and {@link ReentrantReadWriteLock.ReadLock}
+ * lock/unlock overhead.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Troy Collinsworth
  */
 public class RouteMatcher implements Handler<HttpServerRequest> {
-
+  private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+  private final AtomicBoolean updatable = new AtomicBoolean();
+	
   private final List<PatternBinding> getBindings = new ArrayList<>();
   private final List<PatternBinding> putBindings = new ArrayList<>();
   private final List<PatternBinding> postBindings = new ArrayList<>();
@@ -52,6 +66,17 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   private final List<PatternBinding> patchBindings = new ArrayList<>();
   private Handler<HttpServerRequest> noMatchHandler;
 
+  /**
+   * {@inheritDoc}
+   * 
+   * If the RouteMatcher is not being updated the route matching does not
+   * incur any overhead other than checking an AtomicBoolean. If the
+   * RouteMatcher is in the updated state, the route matching incurs a
+   * try/finally and {@link ReentrantReadWriteLock.ReadLock} lock/unlock
+   * overhead. Actual RouteMatcher updates momentarily take a
+   * {@link ReentrantReadWriteLock.WriteLock} and very briefly block route
+   * matching.
+   */
   @Override
   public void handle(HttpServerRequest request) {
     switch (request.method()) {
@@ -93,7 +118,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher get(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, getBindings);
+    addPattern(pattern, handler, getBindings, lock.writeLock());
     return this;
   }
 
@@ -103,7 +128,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher put(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, putBindings);
+    addPattern(pattern, handler, putBindings, lock.writeLock());
     return this;
   }
 
@@ -113,7 +138,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher post(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, postBindings);
+    addPattern(pattern, handler, postBindings, lock.writeLock());
     return this;
   }
 
@@ -123,7 +148,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher delete(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, deleteBindings);
+    addPattern(pattern, handler, deleteBindings, lock.writeLock());
     return this;
   }
 
@@ -133,7 +158,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher options(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, optionsBindings);
+    addPattern(pattern, handler, optionsBindings, lock.writeLock());
     return this;
   }
 
@@ -143,7 +168,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher head(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, headBindings);
+    addPattern(pattern, handler, headBindings, lock.writeLock());
     return this;
   }
 
@@ -153,7 +178,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher trace(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, traceBindings);
+    addPattern(pattern, handler, traceBindings, lock.writeLock());
     return this;
   }
 
@@ -163,7 +188,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher connect(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, connectBindings);
+    addPattern(pattern, handler, connectBindings, lock.writeLock());
     return this;
   }
 
@@ -173,7 +198,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher patch(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, patchBindings);
+    addPattern(pattern, handler, patchBindings, lock.writeLock());
     return this;
   }
 
@@ -183,15 +208,15 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher all(String pattern, Handler<HttpServerRequest> handler) {
-    addPattern(pattern, handler, getBindings);
-    addPattern(pattern, handler, putBindings);
-    addPattern(pattern, handler, postBindings);
-    addPattern(pattern, handler, deleteBindings);
-    addPattern(pattern, handler, optionsBindings);
-    addPattern(pattern, handler, headBindings);
-    addPattern(pattern, handler, traceBindings);
-    addPattern(pattern, handler, connectBindings);
-    addPattern(pattern, handler, patchBindings);
+    addPattern(pattern, handler, getBindings, lock.writeLock());
+    addPattern(pattern, handler, putBindings, lock.writeLock());
+    addPattern(pattern, handler, postBindings, lock.writeLock());
+    addPattern(pattern, handler, deleteBindings, lock.writeLock());
+    addPattern(pattern, handler, optionsBindings, lock.writeLock());
+    addPattern(pattern, handler, headBindings, lock.writeLock());
+    addPattern(pattern, handler, traceBindings, lock.writeLock());
+    addPattern(pattern, handler, connectBindings, lock.writeLock());
+    addPattern(pattern, handler, patchBindings, lock.writeLock());
     return this;
   }
 
@@ -201,7 +226,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher getWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, getBindings);
+    addRegEx(regex, handler, getBindings, lock.writeLock());
     return this;
   }
 
@@ -211,7 +236,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher putWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, putBindings);
+    addRegEx(regex, handler, putBindings, lock.writeLock());
     return this;
   }
 
@@ -221,7 +246,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher postWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, postBindings);
+    addRegEx(regex, handler, postBindings, lock.writeLock());
     return this;
   }
 
@@ -231,7 +256,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher deleteWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, deleteBindings);
+    addRegEx(regex, handler, deleteBindings, lock.writeLock());
     return this;
   }
 
@@ -241,7 +266,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher optionsWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, optionsBindings);
+    addRegEx(regex, handler, optionsBindings, lock.writeLock());
     return this;
   }
 
@@ -251,7 +276,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher headWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, headBindings);
+    addRegEx(regex, handler, headBindings, lock.writeLock());
     return this;
   }
 
@@ -261,7 +286,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher traceWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, traceBindings);
+    addRegEx(regex, handler, traceBindings, lock.writeLock());
     return this;
   }
 
@@ -271,7 +296,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher connectWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, connectBindings);
+    addRegEx(regex, handler, connectBindings, lock.writeLock());
     return this;
   }
 
@@ -281,7 +306,7 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher patchWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, patchBindings);
+    addRegEx(regex, handler, patchBindings, lock.writeLock());
     return this;
   }
 
@@ -291,15 +316,15 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
    * @param handler The handler to call
    */
   public RouteMatcher allWithRegEx(String regex, Handler<HttpServerRequest> handler) {
-    addRegEx(regex, handler, getBindings);
-    addRegEx(regex, handler, putBindings);
-    addRegEx(regex, handler, postBindings);
-    addRegEx(regex, handler, deleteBindings);
-    addRegEx(regex, handler, optionsBindings);
-    addRegEx(regex, handler, headBindings);
-    addRegEx(regex, handler, traceBindings);
-    addRegEx(regex, handler, connectBindings);
-    addRegEx(regex, handler, patchBindings);
+    addRegEx(regex, handler, getBindings, lock.writeLock());
+    addRegEx(regex, handler, putBindings, lock.writeLock());
+    addRegEx(regex, handler, postBindings, lock.writeLock());
+    addRegEx(regex, handler, deleteBindings, lock.writeLock());
+    addRegEx(regex, handler, optionsBindings, lock.writeLock());
+    addRegEx(regex, handler, headBindings, lock.writeLock());
+    addRegEx(regex, handler, traceBindings, lock.writeLock());
+    addRegEx(regex, handler, connectBindings, lock.writeLock());
+    addRegEx(regex, handler, patchBindings, lock.writeLock());
     return this;
   }
 
@@ -311,9 +336,105 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     noMatchHandler = handler;
     return this;
   }
+  
+  /**
+   * Set true before updating and wait a brief period for current
+   * routeMatching to complete. Since routeMatching should be very quick and
+   * updates are rare, a second or two should be adequate. When set route
+   * matching will be slightly slower due to try/finally and locking overhead.
+   * When updates are complete be sure to set updatable to false to remove the
+   * try/finally and locking overhead from route matching.
+   * 
+   * @param updatable
+   *            true when safe to update
+   */
+  public void setUpdatable(boolean updatable) {
+    if (updatable) {
+      this.updatable.set(updatable);
+    } else {
+      this.updatable.set(updatable);
+    }
+  }
+  
+	/**
+	 * Removes all patterns that match for the specified method or all methods
+	 * if ALL is specified.
+	 * 
+	 * @param pattern
+	 * @param method
+	 *            GET, PUT, POST, DELETE, OPTIONS, HEAD, TRACE, CONNECT, PATCH,
+	 *            ALL
+	 * @return the number of patterns removed or zero for none
+	 */
+	public int removePattern(String pattern, String method) {
+		int removedCnt = 0;
+		switch (method.toUpperCase()) {
+		case "GET":
+			removedCnt += removeMatchingBindings(pattern, getBindings);
+			break;
+		case "PUT":
+			removedCnt += removeMatchingBindings(pattern, putBindings);
+			break;
+		case "POST":
+			removedCnt += removeMatchingBindings(pattern, postBindings);
+			break;
+		case "DELETE":
+			removedCnt += removeMatchingBindings(pattern, deleteBindings);
+			break;
+		case "OPTIONS":
+			removedCnt += removeMatchingBindings(pattern, optionsBindings);
+			break;
+		case "HEAD":
+			removedCnt += removeMatchingBindings(pattern, headBindings);
+			break;
+		case "TRACE":
+			removedCnt += removeMatchingBindings(pattern, traceBindings);
+			break;
+		case "PATCH":
+			removedCnt += removeMatchingBindings(pattern, patchBindings);
+			break;
+		case "CONNECT":
+			removedCnt += removeMatchingBindings(pattern, connectBindings);
+			break;
+		case "ALL":
+			removedCnt += removeMatchingBindings(pattern, getBindings);
+			removedCnt += removeMatchingBindings(pattern, putBindings);
+			removedCnt += removeMatchingBindings(pattern, postBindings);
+			removedCnt += removeMatchingBindings(pattern, deleteBindings);
+			removedCnt += removeMatchingBindings(pattern, optionsBindings);
+			removedCnt += removeMatchingBindings(pattern, headBindings);
+			removedCnt += removeMatchingBindings(pattern, traceBindings);
+			removedCnt += removeMatchingBindings(pattern, patchBindings);
+			removedCnt += removeMatchingBindings(pattern, connectBindings);
+			break;
+		default:
+			throw new RuntimeException(
+					"Method did not match any known type was: " + method);
+		}
+		return removedCnt;
+	}
+	
+	private int removeMatchingBindings(String pattern,
+			List<PatternBinding> bindings) {
+		int removedCnt = 0;
+		for (Iterator<PatternBinding> it = bindings.iterator(); it.hasNext();) {
+			PatternBinding b = it.next();
+			Matcher m = b.pattern.matcher(pattern);
+			if (m.matches()) {
+				try {
+					lock.writeLock().lock();
+					it.remove();
+					++removedCnt;
+				} finally {
+					lock.writeLock().unlock();
+				}
+			}
+		}
+		return removedCnt;
+	}
 
-
-  private static void addPattern(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
+  private static void addPattern(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings,
+			ReentrantReadWriteLock.WriteLock writeLock) {
     // We need to search for any :<token name> tokens in the String and replace them with named capture groups
     Matcher m =  Pattern.compile(":([A-Za-z][A-Za-z0-9_]*)").matcher(input);
     StringBuffer sb = new StringBuffer();
@@ -329,15 +450,51 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     m.appendTail(sb);
     String regex = sb.toString();
     PatternBinding binding = new PatternBinding(Pattern.compile(regex), groups, handler);
-    bindings.add(binding);
+	try {
+		writeLock.lock();
+		bindings.add(binding);
+	} finally {
+		writeLock.unlock();
+	}
   }
 
-  private static void addRegEx(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
+  private static void addRegEx(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings,
+			ReentrantReadWriteLock.WriteLock writeLock) {
     PatternBinding binding = new PatternBinding(Pattern.compile(input), null, handler);
-    bindings.add(binding);
+	try {
+		writeLock.lock();
+		bindings.add(binding);
+	} finally {
+		writeLock.unlock();
+	}
   }
+  
+	/**
+	 * If the RouteMatcher is not being updated the route matching does not
+	 * incur any overhead other than checking an AtomicBoolean. If the
+	 * RouteMatcher is in the updated state, the route matching incurs a
+	 * try/finally and {@link ReentrantReadWriteLock.ReadLock} lock/unlock
+	 * overhead. Actual RouteMatcher updates momentarily take a
+	 * {@link ReentrantReadWriteLock.WriteLock} and very briefly block route
+	 * matching.
+	 * 
+	 * @param request
+	 * @param bindings
+	 */
+	private void route(HttpServerRequest request, List<PatternBinding> bindings) {
+		if (updatable.get()) {
+			try {
+				lock.readLock().lock();
+				routeImpl(request, bindings);
+			} finally {
+				lock.readLock().unlock();
+			}
+			return;
+		}
+		routeImpl(request, bindings);
+	}
 
-  private void route(HttpServerRequest request, List<PatternBinding> bindings) {
+  private void routeImpl(HttpServerRequest request, List<PatternBinding> bindings) {
     for (PatternBinding binding: bindings) {
       Matcher m = binding.pattern.matcher(request.path());
       if (m.matches()) {
