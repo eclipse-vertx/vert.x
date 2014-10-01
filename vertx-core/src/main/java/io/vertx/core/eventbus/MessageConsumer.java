@@ -52,6 +52,12 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
   MessageConsumer<T> endHandler(Handler<Void> endHandler);
 
   /**
+   * @return a read stream for the body of the message stream.
+   */
+  ReadStream<T> bodyStream();
+
+
+  /**
    * @return The address the handler was registered with.
    */
   String address();
