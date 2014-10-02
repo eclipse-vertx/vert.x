@@ -417,18 +417,19 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
 	private int removeMatchingBindings(String pattern,
 			List<PatternBinding> bindings) {
 		int removedCnt = 0;
-		for (Iterator<PatternBinding> it = bindings.iterator(); it.hasNext();) {
-			PatternBinding b = it.next();
-			Matcher m = b.pattern.matcher(pattern);
-			if (m.matches()) {
-				try {
-					lock.writeLock().lock();
+		try {
+			lock.writeLock().lock();
+			for (Iterator<PatternBinding> it = bindings.iterator(); it
+					.hasNext();) {
+				PatternBinding b = it.next();
+				Matcher m = b.pattern.matcher(pattern);
+				if (m.matches()) {
 					it.remove();
 					++removedCnt;
-				} finally {
-					lock.writeLock().unlock();
 				}
 			}
+		} finally {
+			lock.writeLock().unlock();
 		}
 		return removedCnt;
 	}
