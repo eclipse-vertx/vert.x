@@ -16,8 +16,9 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 
 /**
  * An HTTP client that maintains a pool of connections to a specific host, at a specific port. The client supports
@@ -44,27 +45,25 @@ public interface HttpClient {
 
   HttpClient connectWebsocket(WebSocketConnectOptions options, Handler<WebSocket> wsConnect);
 
+  HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler);
+
+  HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
+
+  HttpClientRequest request(HttpMethod method, String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
+
+  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+
+  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
+
   HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
-  HttpClientRequest options(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
-  HttpClientRequest get(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
 
-  HttpClientRequest head(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
-  HttpClientRequest post(RequestOptions options, Handler<HttpClientResponse> responseHandler);
-
-  HttpClientRequest put(RequestOptions options, Handler<HttpClientResponse> responseHandler);
-
-  HttpClientRequest delete(RequestOptions options, Handler<HttpClientResponse> responseHandler);
-
-  HttpClientRequest trace(RequestOptions options, Handler<HttpClientResponse> responseHandler);
-
-  HttpClientRequest connect(RequestOptions options, Handler<HttpClientResponse> responseHandler);
-
-  HttpClientRequest patch(RequestOptions options, Handler<HttpClientResponse> responseHandler);
-
-  HttpClientRequest request(String method, RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient getNow(int port, String host, String requestURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Close the HTTP client. This will cause any pooled HTTP connections to be closed.

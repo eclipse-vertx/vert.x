@@ -36,11 +36,13 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
@@ -60,6 +62,8 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -129,63 +133,61 @@ public class HttpClientImpl implements HttpClient {
 
   @Override
   public HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    get(options, responseHandler).end();
+    doRequest(HttpMethod.GET, options, responseHandler).end();
     return this;
   }
 
   @Override
-  public HttpClientRequest options(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("OPTIONS", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest get(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("GET", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest head(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("HEAD", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest post(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("POST", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest put(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("PUT", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest delete(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("DELETE", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest trace(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("TRACE", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest connect(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("CONNECT", options, connectHandler(responseHandler));
-  }
-
-  @Override
-  public HttpClientRequest patch(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest("PATCH", options, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest request(String method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    checkClosed();
-    if (method.equalsIgnoreCase("CONNECT")) {
-      // special handling for CONNECT
-      responseHandler = connectHandler(responseHandler);
-    }
+  public HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    checkConnect(method, responseHandler);
     return doRequest(method, options, responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+    return request(method, absoluteURI, null, responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
+    checkConnect(method, responseHandler);
+    URL url = parseUrl(absoluteURI);
+    return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null, responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, int port, String host, String path, Handler<HttpClientResponse> responseHandler) {
+    checkConnect(method, responseHandler);
+    return doRequest(method, host, port, path, null, responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, int port, String host, String path, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
+    checkConnect(method, responseHandler);
+    return doRequest(method, host, port, path, headers, responseHandler);
+  }
+
+  @Override
+  public HttpClient getNow(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+    URL url = parseUrl(absoluteURI);
+    return getNow(url.getPort(), url.getHost(), url.getPath(), null, responseHandler);
+  }
+
+  @Override
+  public HttpClient getNow(String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
+    URL url = parseUrl(absoluteURI);
+    return getNow(url.getPort(), url.getHost(), url.getPath(), headers, responseHandler);
+  }
+
+  @Override
+  public HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+    return getNow(port, host, requestURI, null, responseHandler);
+  }
+
+  @Override
+  public HttpClient getNow(int port, String host, String requestURI, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
+    doRequest(HttpMethod.GET, host, port, requestURI, headers, responseHandler).end();
+    return this;
   }
 
   @Override
@@ -312,13 +314,30 @@ public class HttpClientImpl implements HttpClient {
     });
   }
 
-  private HttpClientRequest doRequest(String method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    Objects.requireNonNull(options, "no null options accepted");
+  private URL parseUrl(String surl) {
+    // Note - parsing a URL this way is slower than specifying host, port and relativeURI
+    URL url;
+    try {
+      return new URL(surl);
+    } catch (MalformedURLException e) {
+      throw new VertxException("Invalid url: " + surl);
+    }
+  }
+
+  private HttpClientRequest doRequest(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
+    return doRequest(method, options.getHost(), options.getPort(), options.getRequestURI(), options.getHeaders(), responseHandler);
+  }
+
+  private HttpClientRequest doRequest(HttpMethod method, String host, int port, String relativeURI, MultiMap headers,
+                                      Handler<HttpClientResponse> responseHandler) {
+    Objects.requireNonNull(method, "no null method accepted");
+    Objects.requireNonNull(host, "no null host accepted");
+    Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     checkClosed();
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, options, responseHandler, vertx);
-    if (options.getHeaders() != null) {
-      req.headers().setAll(options.getHeaders());
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, relativeURI, responseHandler, vertx);
+    if (headers != null) {
+      req.headers().setAll(headers);
     }
     return req;
   }
@@ -327,6 +346,14 @@ public class HttpClientImpl implements HttpClient {
     if (closed) {
       throw new IllegalStateException("Client is closed");
     }
+  }
+
+  private Handler<HttpClientResponse> checkConnect(HttpMethod method, Handler<HttpClientResponse> handler) {
+    if (method == HttpMethod.CONNECT) {
+      // special handling for CONNECT
+      handler = connectHandler(handler);
+    }
+    return handler;
   }
 
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {

@@ -32,7 +32,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -48,7 +47,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
-  private final RequestOptions options;
+  private final String host;
+  private final int port;
   private final HttpClientImpl client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
@@ -70,11 +70,13 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private boolean exceptionOccurred;
   private long lastDataReceived;
 
-  HttpClientRequestImpl(HttpClientImpl client, String method, RequestOptions options,
+  HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
+                        String relativeURI,
                         Handler<HttpClientResponse> respHandler, VertxInternal vertx) {
-    this.options = options;
+    this.host = host;
+    this.port = port;
     this.client = client;
-    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), options.getRequestURI(), false);
+    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method.toString()), relativeURI, false);
     this.chunked = false;
     this.respHandler = respHandler;
     this.vertx = vertx;
@@ -324,7 +326,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnection(options.getPort(), options.getHost(), conn -> {
+      client.getConnection(port, host, conn -> {
         if (exceptionOccurred) {
           // The request already timed out before it has left the pool waiter queue
           // So return it
