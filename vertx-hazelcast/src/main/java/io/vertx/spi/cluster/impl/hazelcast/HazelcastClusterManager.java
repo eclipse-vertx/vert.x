@@ -104,11 +104,13 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
         return null;
       } else {
         active = true;
-        Config cfg = getConfig();
-        if (cfg == null) {
-          log.warn("Cannot find cluster configuration on classpath. Using default hazelcast configuration");
+        if (conf == null) {
+          conf = loadConfigFromClasspath();
+          if (conf == null) {
+            log.warn("Cannot find cluster configuration on classpath and none specified programmatically. Using default hazelcast configuration");
+          }
         }
-        hazelcast = Hazelcast.newHazelcastInstance(cfg);
+        hazelcast = Hazelcast.newHazelcastInstance(conf);
         nodeID = hazelcast.getCluster().getLocalMember().getUuid();
         membershipListenerId = hazelcast.getCluster().addMembershipListener(this);
         return null;
@@ -290,10 +292,19 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
    * Get the Hazelcast config
    * @return a config object
    */
-  protected Config getConfig() {
-    if (conf != null) {
-      return conf;
-    }
+  public Config getConfig() {
+    return conf;
+  }
+
+  /**
+   * Set the hazelcast config
+   * @param config
+   */
+  public void setConfig(Config config) {
+    this.conf = config;
+  }
+
+  public Config loadConfigFromClasspath() {
     Config cfg = null;
     try (InputStream is = getConfigStream();
          InputStream bis = new BufferedInputStream(is)) {
