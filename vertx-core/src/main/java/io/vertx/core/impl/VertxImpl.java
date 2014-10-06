@@ -59,6 +59,7 @@ import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -195,8 +196,18 @@ public class VertxImpl implements VertxInternal {
     return scheduleTimeout(getOrCreateContext(), handler, delay, true);
   }
 
+  @Override
+  public ReadStream<Long> periodicStream(long delay) {
+    return new TimeoutStream(delay, true);
+  }
+
   public long setTimer(long delay, Handler<Long> handler) {
     return scheduleTimeout(getOrCreateContext(), handler, delay, false);
+  }
+
+  @Override
+  public ReadStream<Long> timerStream(long delay) {
+    return new TimeoutStream(delay, false);
   }
 
   public void runOnContext(Handler<Void> task) {
@@ -572,5 +583,76 @@ public class VertxImpl implements VertxInternal {
       completionHandler.handle(Future.completedFuture());
     }
 
+  }
+
+  private class TimeoutStream implements ReadStream<Long>, Handler<Long> {
+
+    private final long delay;
+    private final boolean periodic;
+    private boolean paused;
+    private Long id;
+    private Handler<Long> handler;
+    private Handler<Void> endHandler;
+
+    public TimeoutStream(long delay, boolean periodic) {
+      this.delay = delay;
+      this.periodic = periodic;
+    }
+
+
+    @Override
+    public void handle(Long event) {
+      try {
+        if (!paused) {
+          handler.handle(event);
+        }
+      } finally {
+        if (!periodic && endHandler != null) {
+          endHandler.handle(null);
+        }
+      }
+    }
+
+    @Override
+    public ReadStream<Long> exceptionHandler(Handler<Throwable> handler) {
+      return this;
+    }
+
+    @Override
+    public ReadStream<Long> handler(Handler<Long> handler) {
+      if (handler != null) {
+        if (id != null) {
+          throw new IllegalStateException();
+        }
+        this.handler = handler;
+        id = scheduleTimeout(getOrCreateContext(), this, delay, periodic);
+      } else {
+        if (id != null) {
+          VertxImpl.this.cancelTimer(id);
+          if (endHandler != null) {
+            endHandler.handle(null);
+          }
+        }
+      }
+      return this;
+    }
+
+    @Override
+    public ReadStream<Long> pause() {
+      this.paused = true;
+      return this;
+    }
+
+    @Override
+    public ReadStream<Long> resume() {
+      this.paused = false;
+      return null;
+    }
+
+    @Override
+    public ReadStream<Long> endHandler(Handler<Void> endHandler) {
+      this.endHandler = endHandler;
+      return this;
+    }
   }
 }
