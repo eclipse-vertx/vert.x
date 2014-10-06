@@ -26,11 +26,11 @@ import io.vertx.core.Handler;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface StreamBase<R> {
+public interface StreamBase {
 
   /**
    * Set an exception handler.
    */
   @Fluent
-  R exceptionHandler(Handler<Throwable> handler);
+  StreamBase exceptionHandler(Handler<Throwable> handler);
 }

@@ -38,6 +38,9 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -50,6 +53,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -929,14 +933,22 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testPauseResume() {
+  public void testPauseResumeMessageStream() {
+    testPauseResume((consumer, handler) -> consumer.handler(message -> handler.handle(message.body())));
+  }
+
+  @Test
+  public void testPauseResumeBodyStream() {
+    testPauseResume((consumer, handler) -> consumer.bodyStream().handler(handler));
+  }
+
+  private void testPauseResume(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> register) {
     String[] data = new String[11];
     for (int i = 0;i < data.length;i++) {
       data[i] = TestUtils.randomAlphaString(10);
     }
     Set<String> expected = new HashSet<>();
-    Handler<Message<String>> handler = message -> {
-      String body = message.body();
+    Handler<String> handler = body -> {
       if ("end".equals(body)) {
         assertEquals(Collections.emptySet(), expected);
         testComplete();
@@ -945,14 +957,14 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     };
     MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
+    ReadStream<?> controller = register.apply(reg, handler);
     ((EventBusImpl.HandlerRegistration<String>) reg).discardHandler(msg -> {
       assertEquals(data[10], msg.body());
       expected.addAll(Arrays.asList(data).subList(0, 10));
-      reg.resume();
+      controller.resume();
       eb.send(ADDRESS1, "end");
     });
-    reg.handler(handler);
-    reg.pause();
+    controller.pause();
     for (String msg : data) {
       eb.publish(ADDRESS1, msg);
     }
@@ -989,6 +1001,80 @@ public class LocalEventBusTest extends EventBusTestBase {
       eb.publish(ADDRESS1, msg);
     }
     await();
+  }
+
+  @Test
+  public void testSender() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> sender = eb.sender(ADDRESS1);
+    eb.consumer(ADDRESS1).handler(message -> {
+      if (message.body().equals(str)) {
+        testComplete();
+      }
+    });
+    sender.write(str);
+    await();
+  }
+
+  @Test
+  public void testSenderWithOptions() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> sender = eb.sender(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    eb.consumer(ADDRESS1).handler(message -> {
+      if (message.body().equals(str) && "foo_value".equals(message.headers().get("foo"))) {
+        testComplete();
+      }
+    });
+    sender.write(str);
+    await();
+  }
+
+  @Test
+  public void testPublisher() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> publisher = eb.publisher(ADDRESS1);
+    AtomicInteger count = new AtomicInteger();
+    int n = 2;
+    for (int i = 0;i < n;i++) {
+      eb.consumer(ADDRESS1).handler(message -> {
+        if (message.body().equals(str) && count.incrementAndGet() == n) {
+          testComplete();
+        }
+      });
+    }
+    publisher.write(str);
+    await();
+  }
+
+  @Test
+  public void testPublisherWithOptions() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> publisher = eb.publisher(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    AtomicInteger count = new AtomicInteger();
+    int n = 2;
+    for (int i = 0;i < n;i++) {
+      eb.consumer(ADDRESS1).handler(message -> {
+        if (message.body().equals(str) && "foo_value".equals(message.headers().get("foo")) && count.incrementAndGet() == n) {
+          testComplete();
+        }
+      });
+    }
+    publisher.write(str);
+    await();
+  }
+
+  @Test
+  public void testPump() {
+    String str = TestUtils.randomUnicodeString(100);
+    ReadStream<String> consumer = eb.<String>consumer(ADDRESS1).bodyStream();
+    consumer.handler(message -> {
+      if (message.equals(str)) {
+        testComplete();
+      }
+    });
+    WriteStream<String> producer = eb.sender(ADDRESS2);
+    Pump.pump(consumer, producer);
+    producer.write(str);
   }
 }
 

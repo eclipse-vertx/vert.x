@@ -60,6 +60,8 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -168,6 +170,26 @@ public class EventBusImpl implements EventBus {
   public <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPub(null, createMessage(true, address, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
     return this;
+  }
+
+  @Override
+  public <T> WriteStream<T> sender(String address) {
+    return (ProducerBase<T>) data -> send(address, data);
+  }
+
+  @Override
+  public <T> WriteStream<T> sender(String address, DeliveryOptions options) {
+    return (ProducerBase<T>) data -> send(address, data, options);
+  }
+
+  @Override
+  public <T> WriteStream<T> publisher(String address) {
+    return (ProducerBase<T>) data -> publish(address, data);
+  }
+
+  @Override
+  public <T> WriteStream<T> publisher(String address, DeliveryOptions options) {
+    return (ProducerBase<T>) data -> publish(address, data, options);
   }
 
   @Override
@@ -910,6 +932,7 @@ public class EventBusImpl implements EventBus {
   }
 
   public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Message<T>> {
+    private boolean registered;
     private final String address;
     private final boolean replyHandler;
     private final boolean localOnly;
@@ -1001,20 +1024,21 @@ public class EventBusImpl implements EventBus {
      * Internal API for testing purposes.
      */
     public void discardHandler(Handler<Message<T>> handler) {
-      if (this.handler != null) {
-        throw new UnsupportedOperationException();
-      }
       this.discardHandler = handler;
     }
 
     @Override
     public MessageConsumer<T> handler(Handler<Message<T>> handler) {
-      if (this.handler != null) {
-        throw new UnsupportedOperationException();
-      }
       this.handler = handler;
-      registerHandler(address, this, replyHandler, localOnly, timeoutID);
+      if (this.handler != null && !registered) {
+        registerHandler(address, this, replyHandler, localOnly, timeoutID);
+      }
       return this;
+    }
+
+    @Override
+    public ReadStream<T> bodyStream() {
+      return new BodyReadStream<>(this);
     }
 
     @Override

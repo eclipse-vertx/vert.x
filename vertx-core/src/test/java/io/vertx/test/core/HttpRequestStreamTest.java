@@ -20,10 +20,10 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpStream;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class HttpRequestStreamTest extends NetTestBase {
   public void testPausedRequestStreamWithFilledBacklogFailsConnecting() {
     String path = "/some/path";
     this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-    HttpStream<HttpServerRequest> stream = server.requestStream();
+    ReadStream<HttpServerRequest> stream = server.requestStream();
     AtomicInteger count = new AtomicInteger();
     AtomicBoolean paused = new AtomicBoolean();
     stream.handler(req -> {
@@ -109,7 +109,7 @@ public class HttpRequestStreamTest extends NetTestBase {
     String path = "/some/path";
     ArrayList<String> messages = new ArrayList<>();
     this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-    HttpStream<HttpServerRequest> stream = server.requestStream();
+    ReadStream<HttpServerRequest> stream = server.requestStream();
     stream.handler(req -> {
       StringBuilder data = new StringBuilder();
       req.handler(event -> {
@@ -164,7 +164,7 @@ public class HttpRequestStreamTest extends NetTestBase {
   @Test
   public void testClosingServerClosesRequestStreamEndHandler() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-    HttpStream<HttpServerRequest> stream = server.requestStream();
+    ReadStream<HttpServerRequest> stream = server.requestStream();
     AtomicBoolean closed = new AtomicBoolean();
     stream.endHandler(v -> closed.set(true));
     stream.handler(req -> {});

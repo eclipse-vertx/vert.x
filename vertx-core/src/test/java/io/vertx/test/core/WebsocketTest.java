@@ -25,7 +25,6 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpStream;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.WebSocketFrame;
@@ -1005,7 +1004,7 @@ public class WebsocketTest extends NetTestBase {
     client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
     String path = "/some/path";
     this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-    HttpStream<ServerWebSocket> stream = server.websocketStream();
+    ReadStream<ServerWebSocket> stream = server.websocketStream();
     stream.handler(ws -> {
       ws.writeMessage(Buffer.buffer("whatever"));
       ws.close();
@@ -1052,7 +1051,7 @@ public class WebsocketTest extends NetTestBase {
   @Test
   public void testClosingServerClosesWebSocketStreamEndHandler() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-    HttpStream<ServerWebSocket> stream = server.websocketStream();
+    ReadStream<ServerWebSocket> stream = server.websocketStream();
     AtomicBoolean closed = new AtomicBoolean();
     stream.endHandler(v -> closed.set(true));
     stream.handler(ws -> {});

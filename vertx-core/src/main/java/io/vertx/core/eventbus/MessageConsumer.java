@@ -34,7 +34,28 @@ import io.vertx.core.streams.ReadStream;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 @VertxGen
-public interface MessageConsumer<T> extends ReadStream<MessageConsumer<T>, Message<T>> {
+public interface MessageConsumer<T> extends ReadStream<Message<T>> {
+
+  @Override
+  MessageConsumer<T> exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  MessageConsumer<T> handler(Handler<Message<T>> handler);
+
+  @Override
+  MessageConsumer<T> pause();
+
+  @Override
+  MessageConsumer<T> resume();
+
+  @Override
+  MessageConsumer<T> endHandler(Handler<Void> endHandler);
+
+  /**
+   * @return a read stream for the body of the message stream.
+   */
+  ReadStream<T> bodyStream();
+
 
   /**
    * @return The address the handler was registered with.

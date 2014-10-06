@@ -31,7 +31,10 @@ import io.vertx.core.Handler;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface WriteStream<R, T> extends StreamBase<R> {
+public interface WriteStream<T> extends StreamBase {
+
+  @Override
+  WriteStream<T> exceptionHandler(Handler<Throwable> handler);
 
   /**
    * Write some data to the stream. The data is put on an internal write queue, and the write actually happens
@@ -39,7 +42,7 @@ public interface WriteStream<R, T> extends StreamBase<R> {
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    */
   @Fluent
-  R write(T data);
+  WriteStream<T> write(T data);
 
   /**
    * Set the maximum size of the write queue to {@code maxSize}. You will still be able to write to the stream even
@@ -47,7 +50,7 @@ public interface WriteStream<R, T> extends StreamBase<R> {
    * {@code Pump} to provide flow control.
    */
   @Fluent
-  R setWriteQueueMaxSize(int maxSize);
+  WriteStream<T> setWriteQueueMaxSize(int maxSize);
 
   /**
    * This will return {@code true} if there are more bytes in the write queue than the value set using {@link
@@ -60,6 +63,6 @@ public interface WriteStream<R, T> extends StreamBase<R> {
    * queue has been reduced to maxSize / 2. See {@link Pump} for an example of this being used.
    */
   @Fluent
-  R drainHandler(Handler<Void> handler);
+  WriteStream<T> drainHandler(Handler<Void> handler);
 
 }

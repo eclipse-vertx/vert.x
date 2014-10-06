@@ -22,6 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.StreamBase;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -35,7 +36,31 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface AsyncFile extends ReadStream<AsyncFile, Buffer>, WriteStream<AsyncFile, Buffer> {
+public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
+
+  @Override
+  AsyncFile handler(Handler<Buffer> handler);
+
+  @Override
+  AsyncFile pause();
+
+  @Override
+  AsyncFile resume();
+
+  @Override
+  AsyncFile endHandler(Handler<Void> endHandler);
+
+  @Override
+  AsyncFile write(Buffer data);
+
+  @Override
+  AsyncFile setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  AsyncFile drainHandler(Handler<Void> handler);
+
+  @Override
+  AsyncFile exceptionHandler(Handler<Throwable> handler);
 
   /**
    * Close the file. The actual close happens asynchronously.

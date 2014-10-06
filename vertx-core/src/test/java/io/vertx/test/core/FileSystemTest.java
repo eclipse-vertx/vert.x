@@ -21,7 +21,6 @@ import io.netty.buffer.Unpooled;
 import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
@@ -1078,7 +1077,7 @@ public class FileSystemTest extends VertxTestBase {
     Buffer buff = Buffer.buffer(content);
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
-        WriteStream<AsyncFile, Buffer> ws = ar.result();
+        WriteStream<Buffer> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
         for (int i = 0; i < chunks; i++) {
           Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
@@ -1119,7 +1118,7 @@ public class FileSystemTest extends VertxTestBase {
     Buffer buff = Buffer.buffer(byteBuf);
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
-        WriteStream<AsyncFile, Buffer> ws = ar.result();
+        WriteStream<Buffer> ws = ar.result();
         ws.exceptionHandler(t -> fail(t.getMessage()));
         ws.write(buff);
         ar.result().close(ar2 -> {
@@ -1155,7 +1154,7 @@ public class FileSystemTest extends VertxTestBase {
     createFile(fileName, content);
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
-        ReadStream<AsyncFile, Buffer> rs = ar.result();
+        ReadStream<Buffer> rs = ar.result();
         Buffer buff = Buffer.buffer();
         rs.handler(buff::appendBuffer);
         rs.exceptionHandler(t -> fail(t.getMessage()));

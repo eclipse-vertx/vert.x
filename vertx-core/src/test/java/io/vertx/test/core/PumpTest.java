@@ -92,7 +92,7 @@ public class PumpTest {
     }
   }
 
-  private class FakeReadStream<T> implements ReadStream<FakeReadStream, T> {
+  private class FakeReadStream<T> implements ReadStream<T> {
 
     private Handler<T> dataHandler;
     private boolean paused;
@@ -143,7 +143,7 @@ public class PumpTest {
     }
   }
 
-  private class FakeWriteStream<T> implements WriteStream<FakeWriteStream, T> {
+  private class FakeWriteStream<T> implements WriteStream<T> {
 
     int maxSize;
     List<T> received = new ArrayList<>();

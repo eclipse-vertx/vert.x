@@ -35,7 +35,7 @@ import java.util.UUID;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
+public abstract class WebSocketImplBase<T> implements WebSocketBase {
 
   private final boolean supportsContinuation;
   private final String textHandlerID;
