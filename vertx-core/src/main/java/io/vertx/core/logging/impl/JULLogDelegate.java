@@ -16,8 +16,6 @@
 
 package io.vertx.core.logging.impl;
 
-import io.vertx.core.logging.Logger;
-
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -27,8 +25,6 @@ import java.util.logging.LogRecord;
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public class JULLogDelegate implements LogDelegate {
-  private static final String FQCN = Logger.class.getCanonicalName();
-
   private final java.util.logging.Logger logger;
 
   JULLogDelegate(final String name) {
@@ -107,22 +103,9 @@ public class JULLogDelegate implements LogDelegate {
     LogRecord record = new LogRecord(level, msg);
     record.setLoggerName(logger.getName());
     record.setThrown(t);
-    // Find FQCN of calling class
-    boolean found = false;
-    for (StackTraceElement ste : new Throwable().getStackTrace()) {
-      if (FQCN.equals(ste.getClassName())) {
-        found = true;
-      } else if (found && !FQCN.equals(ste.getClassName())) {
-        record.setSourceClassName(ste.getClassName());
-        record.setSourceMethodName(ste.getMethodName());
-        break;
-      }
-    }
-    // If not found, set it to null, which will default to use logger name. Otherwise it will be incorrect and
-    // use this class.
-    if (!found) {
-      record.setSourceClassName(null);
-    }
+    // This will disable stack trace lookup inside JUL. If someone wants location info, they can use their own formatter
+    // or use a different logging framework like sl4j, or log4j
+    record.setSourceClassName(null);
 
     logger.log(record);
   }
