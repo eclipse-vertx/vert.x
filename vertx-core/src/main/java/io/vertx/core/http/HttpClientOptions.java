@@ -21,7 +21,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
@@ -39,7 +38,7 @@ import java.util.Set;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class HttpClientOptions implements ClientOptions<HttpClientOptions> {
+public class HttpClientOptions {
 
   private static final int DEFAULT_SENDBUFFERSIZE = -1;
   private static final int DEFAULT_RECEIVEBUFFERSIZE = -1;
@@ -200,12 +199,10 @@ public class HttpClientOptions implements ClientOptions<HttpClientOptions> {
     keepAlive = DEFAULT_KEEPALIVE;
   }
 
-  @Override
   public int getSendBufferSize() {
     return sendBufferSize;
   }
 
-  @Override
   public HttpClientOptions setSendBufferSize(int sendBufferSize) {
     if (sendBufferSize < 1) {
       throw new IllegalArgumentException("sendBufferSize must be > 0");
@@ -214,12 +211,10 @@ public class HttpClientOptions implements ClientOptions<HttpClientOptions> {
     return this;
   }
 
-  @Override
   public int getReceiveBufferSize() {
     return receiveBufferSize;
   }
 
-  @Override
   public HttpClientOptions setReceiveBufferSize(int receiveBufferSize) {
     if (receiveBufferSize < 1) {
       throw new IllegalArgumentException("receiveBufferSize must be > 0");
@@ -228,23 +223,19 @@ public class HttpClientOptions implements ClientOptions<HttpClientOptions> {
     return this;
   }
 
-  @Override
   public boolean isReuseAddress() {
     return reuseAddress;
   }
 
-  @Override
   public HttpClientOptions setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
     return this;
   }
 
-  @Override
   public int getTrafficClass() {
     return trafficClass;
   }
 
-  @Override
   public HttpClientOptions setTrafficClass(int trafficClass) {
     if (trafficClass < 0 || trafficClass > 255) {
       throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
@@ -253,34 +244,28 @@ public class HttpClientOptions implements ClientOptions<HttpClientOptions> {
     return this;
   }
 
-  @Override
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
-  @Override
   public HttpClientOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
-  @Override
   public boolean isTcpKeepAlive() {
     return tcpKeepAlive;
   }
 
-  @Override
   public HttpClientOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
 
-  @Override
   public int getSoLinger() {
     return soLinger;
   }
 
-  @Override
   public HttpClientOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
@@ -289,18 +274,15 @@ public class HttpClientOptions implements ClientOptions<HttpClientOptions> {
     return this;
   }
 
-  @Override
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
 
-  @Override
   public HttpClientOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
   }
 
-  @Override
   public HttpClientOptions setIdleTimeout(int idleTimeout) {
     if (idleTimeout < 0) {
       throw new IllegalArgumentException("idleTimeout must be >= 0");
@@ -309,96 +291,79 @@ public class HttpClientOptions implements ClientOptions<HttpClientOptions> {
     return this;
   }
 
-  @Override
   public int getIdleTimeout() {
     return idleTimeout;
   }
 
-  @Override
   public boolean isSsl() {
     return ssl;
   }
 
-  @Override
   public HttpClientOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
-  @Override
   public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
-  @Override
   public HttpClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
-  @Override
   public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
-  @Override
   public HttpClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }
 
-  @Override
   public HttpClientOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
   }
 
-  @Override
   public Set<String> getEnabledCipherSuites() {
     return enabledCipherSuites;
   }
 
-  @Override
   public boolean isTrustAll() {
     return trustAll;
   }
 
-  @Override
   public HttpClientOptions setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }
 
-  @Override
   public List<String> getCrlPaths() {
     return crlPaths;
   }
 
-  @Override
   public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
     Objects.requireNonNull(crlPath, "No null crl accepted");
     crlPaths.add(crlPath);
     return this;
   }
 
-  @Override
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
 
-  @Override
   public HttpClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     Objects.requireNonNull(crlValue, "No null crl accepted");
     crlValues.add(crlValue);
     return this;
   }
 
-  @Override
   public int getConnectTimeout() {
     return connectTimeout;
   }
 
-  @Override
   public HttpClientOptions setConnectTimeout(int connectTimeout) {
     if (connectTimeout < 0) {
       throw new IllegalArgumentException("connectTimeout must be >= 0");

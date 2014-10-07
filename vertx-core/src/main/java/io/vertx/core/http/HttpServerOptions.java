@@ -24,7 +24,6 @@ import io.vertx.core.net.CaOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.NetServerOptionsBase;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.impl.SocketDefaults;
@@ -39,7 +38,7 @@ import java.util.Set;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions> {
+public class HttpServerOptions {
 
   private static final int DEFAULT_SENDBUFFERSIZE = -1;
   private static final int DEFAULT_RECEIVEBUFFERSIZE = -1;
@@ -204,12 +203,10 @@ public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions
     port = DEFAULT_PORT;
   }
 
-  @Override
   public int getSendBufferSize() {
     return sendBufferSize;
   }
 
-  @Override
   public HttpServerOptions setSendBufferSize(int sendBufferSize) {
     if (sendBufferSize < 1) {
       throw new IllegalArgumentException("sendBufferSize must be > 0");
@@ -218,12 +215,10 @@ public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions
     return this;
   }
 
-  @Override
   public int getReceiveBufferSize() {
     return receiveBufferSize;
   }
 
-  @Override
   public HttpServerOptions setReceiveBufferSize(int receiveBufferSize) {
     if (receiveBufferSize < 1) {
       throw new IllegalArgumentException("receiveBufferSize must be > 0");
@@ -232,23 +227,19 @@ public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions
     return this;
   }
 
-  @Override
   public boolean isReuseAddress() {
     return reuseAddress;
   }
 
-  @Override
   public HttpServerOptions setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
     return this;
   }
 
-  @Override
   public int getTrafficClass() {
     return trafficClass;
   }
 
-  @Override
   public HttpServerOptions setTrafficClass(int trafficClass) {
     if (trafficClass < 0 || trafficClass > 255) {
       throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
@@ -257,34 +248,28 @@ public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions
     return this;
   }
 
-  @Override
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
-  @Override
   public HttpServerOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
-  @Override
   public boolean isTcpKeepAlive() {
     return tcpKeepAlive;
   }
 
-  @Override
   public HttpServerOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
 
-  @Override
   public int getSoLinger() {
     return soLinger;
   }
 
-  @Override
   public HttpServerOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
@@ -293,18 +278,15 @@ public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions
     return this;
   }
 
-  @Override
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
 
-  @Override
   public HttpServerOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
   }
 
-  @Override
   public HttpServerOptions setIdleTimeout(int idleTimeout) {
     if (idleTimeout < 0) {
       throw new IllegalArgumentException("idleTimeout must be >= 0");
@@ -313,108 +295,88 @@ public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions
     return this;
   }
 
-  @Override
   public int getIdleTimeout() {
     return idleTimeout;
   }
 
-  @Override
   public boolean isSsl() {
     return ssl;
   }
 
-  @Override
   public HttpServerOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
-  @Override
   public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
-  @Override
   public HttpServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
-  @Override
   public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
-  @Override
   public HttpServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }
 
-  @Override
   public HttpServerOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
   }
 
-  @Override
   public Set<String> getEnabledCipherSuites() {
     return enabledCipherSuites;
   }
 
-
-  @Override
   public boolean isClientAuthRequired() {
     return clientAuthRequired;
   }
 
-  @Override
   public HttpServerOptions setClientAuthRequired(boolean clientAuthRequired) {
     this.clientAuthRequired = clientAuthRequired;
     return this;
   }
 
-  @Override
   public List<String> getCrlPaths() {
     return crlPaths;
   }
 
-  @Override
   public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
     Objects.requireNonNull(crlPath, "No null crl accepted");
     crlPaths.add(crlPath);
     return this;
   }
 
-  @Override
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
 
-  @Override
   public HttpServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     Objects.requireNonNull(crlValue, "No null crl accepted");
     crlValues.add(crlValue);
     return this;
   }
 
-  @Override
   public int getAcceptBacklog() {
     return acceptBacklog;
   }
 
-  @Override
   public HttpServerOptions setAcceptBacklog(int acceptBacklog) {
     this.acceptBacklog = acceptBacklog;
     return this;
   }
 
-  @Override
   public int getPort() {
     return port;
   }
 
-  @Override
   public HttpServerOptions setPort(int port) {
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port p must be in range 0 <= p <= 65535");
@@ -423,12 +385,10 @@ public class HttpServerOptions implements NetServerOptionsBase<HttpServerOptions
     return this;
   }
 
-  @Override
   public String getHost() {
     return host;
   }
 
-  @Override
   public HttpServerOptions setHost(String host) {
     this.host = host;
     return this;

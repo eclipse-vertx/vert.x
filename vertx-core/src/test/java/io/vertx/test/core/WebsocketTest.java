@@ -54,7 +54,7 @@ import static io.vertx.test.core.TestUtils.assertNullPointerException;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WebsocketTest extends NetTestBase {
+public class WebsocketTest extends VertxTestBase {
 
   private HttpClient client;
   private HttpServer server;
@@ -586,7 +586,10 @@ public class WebsocketTest extends NetTestBase {
     assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
     assertEquals(def.getVersion(), json.getVersion());
     assertEquals(def.getSubProtocols(), json.getSubProtocols());
-    testDefaultRequestOptionsBaseJson(def, json);
+    assertEquals(def.getPort(), json.getPort());
+    assertEquals(def.getHost(), json.getHost());
+    assertEquals(def.getHeaders(), json.getHeaders());
+    assertEquals(def.getRequestURI(), json.getRequestURI());
   }
 
   @Test

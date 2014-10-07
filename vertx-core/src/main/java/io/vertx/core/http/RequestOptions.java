@@ -26,7 +26,7 @@ import java.util.Objects;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class RequestOptions implements RequestOptionsBase<RequestOptions> {
+public class RequestOptions {
 
   private static final int DEFAULT_PORT = 80;
   private static final String DEFAULT_HOST = "localhost";
@@ -65,12 +65,10 @@ public class RequestOptions implements RequestOptionsBase<RequestOptions> {
     }
   }
 
-  @Override
   public int getPort() {
     return port;
   }
 
-  @Override
   public RequestOptions setPort(int port) {
     if (port < 1|| port > 65535) {
       throw new IllegalArgumentException("port p must be in range 1 <=p <= 65535");
@@ -79,40 +77,33 @@ public class RequestOptions implements RequestOptionsBase<RequestOptions> {
     return this;
   }
 
-  @Override
   public String getHost() {
     return host;
   }
 
-  @Override
   public RequestOptions setHost(String host) {
     this.host = host;
     return this;
   }
 
-  @Override
   public MultiMap getHeaders() {
     return headers;
   }
 
-  @Override
   public RequestOptions setHeaders(MultiMap headers) {
     this.headers = headers;
     return this;
   }
 
-  @Override
   public String getRequestURI() {
     return requestURI;
   }
 
-  @Override
   public RequestOptions setRequestURI(String requestURI) {
     this.requestURI = requestURI;
     return this;
   }
 
-  @Override
   public RequestOptions addHeader(CharSequence name, CharSequence value) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(value, "value");

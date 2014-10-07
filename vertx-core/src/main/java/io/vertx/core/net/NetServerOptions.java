@@ -32,7 +32,7 @@ import java.util.Set;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> {
+public class NetServerOptions {
 
   private static final int DEFAULT_SENDBUFFERSIZE = -1;
   private static final int DEFAULT_RECEIVEBUFFERSIZE = -1;
@@ -175,12 +175,10 @@ public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> 
     this.crlValues = new ArrayList<>();
   }
 
-  @Override
   public int getSendBufferSize() {
     return sendBufferSize;
   }
 
-  @Override
   public NetServerOptions setSendBufferSize(int sendBufferSize) {
     if (sendBufferSize < 1) {
       throw new IllegalArgumentException("sendBufferSize must be > 0");
@@ -189,12 +187,10 @@ public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> 
     return this;
   }
 
-  @Override
   public int getReceiveBufferSize() {
     return receiveBufferSize;
   }
 
-  @Override
   public NetServerOptions setReceiveBufferSize(int receiveBufferSize) {
     if (receiveBufferSize < 1) {
       throw new IllegalArgumentException("receiveBufferSize must be > 0");
@@ -203,23 +199,19 @@ public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> 
     return this;
   }
 
-  @Override
   public boolean isReuseAddress() {
     return reuseAddress;
   }
 
-  @Override
   public NetServerOptions setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
     return this;
   }
 
-  @Override
   public int getTrafficClass() {
     return trafficClass;
   }
 
-  @Override
   public NetServerOptions setTrafficClass(int trafficClass) {
     if (trafficClass < 0 || trafficClass > 255) {
       throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
@@ -228,34 +220,28 @@ public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> 
     return this;
   }
 
-  @Override
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
-  @Override
   public NetServerOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
-  @Override
   public boolean isTcpKeepAlive() {
     return tcpKeepAlive;
   }
 
-  @Override
   public NetServerOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
 
-  @Override
   public int getSoLinger() {
     return soLinger;
   }
 
-  @Override
   public NetServerOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
@@ -264,18 +250,15 @@ public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> 
     return this;
   }
 
-  @Override
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
 
-  @Override
   public NetServerOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
   }
 
-  @Override
   public NetServerOptions setIdleTimeout(int idleTimeout) {
     if (idleTimeout < 0) {
       throw new IllegalArgumentException("idleTimeout must be >= 0");
@@ -284,107 +267,88 @@ public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> 
     return this;
   }
 
-  @Override
   public int getIdleTimeout() {
     return idleTimeout;
   }
 
-  @Override
   public boolean isSsl() {
     return ssl;
   }
 
-  @Override
   public NetServerOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
-  @Override
   public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
-  @Override
   public NetServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
-  @Override
   public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
-  @Override
   public NetServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }
 
-  @Override
   public NetServerOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
   }
 
-  @Override
   public Set<String> getEnabledCipherSuites() {
     return enabledCipherSuites;
   }
 
-  @Override
   public boolean isClientAuthRequired() {
     return clientAuthRequired;
   }
 
-  @Override
   public NetServerOptions setClientAuthRequired(boolean clientAuthRequired) {
     this.clientAuthRequired = clientAuthRequired;
     return this;
   }
 
-  @Override
   public List<String> getCrlPaths() {
     return crlPaths;
   }
 
-  @Override
   public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
     Objects.requireNonNull(crlPath, "No null crl accepted");
     crlPaths.add(crlPath);
     return this;
   }
 
-  @Override
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
 
-  @Override
   public NetServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     Objects.requireNonNull(crlValue, "No null crl accepted");
     crlValues.add(crlValue);
     return this;
   }
 
-  @Override
   public int getAcceptBacklog() {
     return acceptBacklog;
   }
 
-  @Override
   public NetServerOptions setAcceptBacklog(int acceptBacklog) {
     this.acceptBacklog = acceptBacklog;
     return this;
   }
 
-  @Override
   public int getPort() {
     return port;
   }
 
-  @Override
   public NetServerOptions setPort(int port) {
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port p must be in range 0 <= p <= 65535");
@@ -393,12 +357,10 @@ public class NetServerOptions implements NetServerOptionsBase<NetServerOptions> 
     return this;
   }
 
-  @Override
   public String getHost() {
     return host;
   }
 
-  @Override
   public NetServerOptions setHost(String host) {
     this.host = host;
     return this;

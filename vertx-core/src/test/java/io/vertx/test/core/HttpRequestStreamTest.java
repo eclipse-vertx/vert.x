@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpRequestStreamTest extends NetTestBase {
+public class HttpRequestStreamTest extends VertxTestBase {
 
   private HttpServer server;
   private NetClient netClient;

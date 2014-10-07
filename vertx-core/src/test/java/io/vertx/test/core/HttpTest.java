@@ -421,7 +421,15 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.isPipelining(), json.isPipelining());
     assertEquals(def.isVerifyHost(), json.isVerifyHost());
     assertEquals(def.isTryUseCompression(), json.isTryUseCompression());
-    testDefaultClientOptions(def, json);
+    assertEquals(def.isTrustAll(), json.isTrustAll());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getConnectTimeout(), json.getConnectTimeout());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
@@ -614,7 +622,17 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
     assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
     assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
-    testDefaultNetServerOptionsBase(def, json);
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
+    assertEquals(def.getPort(), json.getPort());
+    assertEquals(def.getHost(), json.getHost());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
@@ -3492,7 +3510,10 @@ public class HttpTest extends HttpTestBase {
   public void testDefaultRequestOptionsJson() {
     RequestOptions def = new RequestOptions();
     RequestOptions json = new RequestOptions(new JsonObject());
-    testDefaultRequestOptionsBaseJson(def, json);
+    assertEquals(def.getPort(), json.getPort());
+    assertEquals(def.getHost(), json.getHost());
+    assertEquals(def.getHeaders(), json.getHeaders());
+    assertEquals(def.getRequestURI(), json.getRequestURI());
   }
 
   @Test

@@ -18,13 +18,12 @@ package io.vertx.core.datagram;
 
 import io.vertx.codegen.annotations.Options;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetworkOptions;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class DatagramSocketOptions implements NetworkOptions<DatagramSocketOptions> {
+public class DatagramSocketOptions {
 
   private static final int DEFAULT_SENDBUFFERSIZE = -1;
   private static final int DEFAULT_RECEIVEBUFFERSIZE = -1;

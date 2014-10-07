@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class HttpTestBase extends NetTestBase {
+public class HttpTestBase extends VertxTestBase {
 
   public static final String DEFAULT_HTTP_HOST = "localhost";
   public static final int DEFAULT_HTTP_PORT = 8080;

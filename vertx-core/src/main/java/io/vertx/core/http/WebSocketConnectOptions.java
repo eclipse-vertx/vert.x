@@ -30,7 +30,7 @@ import java.util.Set;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class WebSocketConnectOptions implements RequestOptionsBase<WebSocketConnectOptions> {
+public class WebSocketConnectOptions {
 
   private static final int DEFAULT_PORT = 80;
   private static final String DEFAULT_HOST = "localhost";
@@ -86,53 +86,44 @@ public class WebSocketConnectOptions implements RequestOptionsBase<WebSocketConn
     }
   }
 
-  @Override
   public int getPort() {
     return port;
   }
 
-  @Override
   public WebSocketConnectOptions setPort(int port) {
     Arguments.requireInRange(port, 1, 65535, "port p must be in range 1 <= p <= 65535");
     this.port = port;
     return this;
   }
 
-  @Override
   public String getHost() {
     return host;
   }
 
-  @Override
   public WebSocketConnectOptions setHost(String host) {
     Objects.requireNonNull(host);
     this.host = host;
     return this;
   }
 
-  @Override
   public MultiMap getHeaders() {
     return headers;
   }
 
-  @Override
   public WebSocketConnectOptions setHeaders(MultiMap headers) {
     this.headers = headers;
     return this;
   }
 
-  @Override
   public String getRequestURI() {
     return requestURI;
   }
 
-  @Override
   public WebSocketConnectOptions setRequestURI(String requestURI) {
     this.requestURI = requestURI;
     return this;
   }
 
-  @Override
   public WebSocketConnectOptions addHeader(CharSequence name, CharSequence value) {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(value, "value");

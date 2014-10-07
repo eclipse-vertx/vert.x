@@ -70,7 +70,7 @@ import static io.vertx.test.core.TestUtils.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetTest extends NetTestBase {
+public class NetTest extends VertxTestBase {
 
   private NetServer server;
   private NetClient client;
@@ -367,7 +367,15 @@ public class NetTest extends NetTestBase {
     NetClientOptions json = new NetClientOptions(new JsonObject());
     assertEquals(def.getReconnectAttempts(), json.getReconnectAttempts());
     assertEquals(def.getReconnectInterval(), json.getReconnectInterval());
-    testDefaultClientOptions(def, json);
+    assertEquals(def.isTrustAll(), json.isTrustAll());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getConnectTimeout(), json.getConnectTimeout());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
@@ -546,7 +554,17 @@ public class NetTest extends NetTestBase {
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
     assertEquals(def.getPort(), json.getPort());
     assertEquals(def.getHost(), json.getHost());
-    testDefaultNetServerOptionsBase(def, json);
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
+    assertEquals(def.getPort(), json.getPort());
+    assertEquals(def.getHost(), json.getHost());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
