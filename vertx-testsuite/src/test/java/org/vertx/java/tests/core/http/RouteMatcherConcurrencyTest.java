@@ -48,7 +48,7 @@ public class RouteMatcherConcurrencyTest {
 	public void test() throws InterruptedException {
 		ExecutorService execService = Executors.newFixedThreadPool(2);
 		execService.submit(new RouteMatching());
-		Thread.sleep(500);
+		Thread.sleep(100);
 		execService.submit(new RouteUpdater());
 		while (System.currentTimeMillis() < endTime) {
 			if (exception != null) {
@@ -58,7 +58,7 @@ public class RouteMatcherConcurrencyTest {
 			}
 			Thread.sleep(1);
 		}
-		execService.awaitTermination(2, TimeUnit.SECONDS);
+		execService.awaitTermination(1, TimeUnit.SECONDS);
 		execService.shutdownNow();
 	}
 
@@ -68,14 +68,8 @@ public class RouteMatcherConcurrencyTest {
 			while (System.currentTimeMillis() < endTime) {
 				try {
 					final String path = "/boo/";
-					m.setUpdatable(true);
-					Thread.sleep(100);
 					m.get(path, h);
-					m.setUpdatable(false);
-					Thread.sleep(100);
-					m.setUpdatable(true);
 					assertEquals(1, m.removePattern(path, "GET"));
-					m.setUpdatable(false);
 					try {
 						Thread.sleep(1);
 					} catch (InterruptedException e) {

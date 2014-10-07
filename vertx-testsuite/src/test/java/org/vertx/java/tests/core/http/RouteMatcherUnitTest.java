@@ -144,6 +144,22 @@ public class RouteMatcherUnitTest {
 	}
 	
 	@Test
+	public void testRemoveMultiPatternGet2() {
+		final String path = "/foo/";
+		m.get("foo", h);
+		m.get("foo/", h);
+		m.get(path, h);
+		m.get("/foo/bar", h);
+		m.get(path, h);
+		m.get("/foo/foo/", h);
+		m.get(path, h);
+		m.get("/foo", h);
+		assertEquals(3, m.removePattern(path, "GET"));
+		m.handle(r.setPath(path).setMethod("GET"));
+		assertEquals(404, r.response.getStatusCode());
+	}
+	
+	@Test
 	public void testRemovePatternPut() {
 		final String path = "/foo/";
 		m.put(path, h);
