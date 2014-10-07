@@ -54,6 +54,7 @@ import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.impl.SocketDefaults;
@@ -85,9 +86,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  *
@@ -110,14 +109,14 @@ public class HttpTest extends HttpTestBase {
   public void testClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
     assertIllegalArgumentException(() -> options.setSendBufferSize(0));
     assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
@@ -128,7 +127,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
@@ -222,14 +221,14 @@ public class HttpTest extends HttpTestBase {
   public void testServerOptions() {
     HttpServerOptions options = new HttpServerOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
     assertIllegalArgumentException(() -> options.setSendBufferSize(0));
     assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
@@ -240,7 +239,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());

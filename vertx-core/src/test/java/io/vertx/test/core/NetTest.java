@@ -40,6 +40,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
@@ -103,14 +104,14 @@ public class NetTest extends VertxTestBase {
   public void testClientOptions() {
     NetClientOptions options = new NetClientOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
     assertIllegalArgumentException(() -> options.setSendBufferSize(0));
     assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
@@ -121,7 +122,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
@@ -197,14 +198,14 @@ public class NetTest extends VertxTestBase {
   public void testServerOptions() {
     NetServerOptions options = new NetServerOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
     assertIllegalArgumentException(() -> options.setSendBufferSize(0));
     assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
@@ -215,7 +216,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());

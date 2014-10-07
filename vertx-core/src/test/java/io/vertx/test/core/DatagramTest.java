@@ -22,6 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetworkOptions;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -250,7 +251,7 @@ public class DatagramTest extends VertxTestBase {
   @Test
   public void testOptions() {
     DatagramSocketOptions options = new DatagramSocketOptions();
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
@@ -267,7 +268,7 @@ public class DatagramTest extends VertxTestBase {
       // OK
     }
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
@@ -288,7 +289,7 @@ public class DatagramTest extends VertxTestBase {
     assertEquals(options, options.setReuseAddress(true));
     assertTrue(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());

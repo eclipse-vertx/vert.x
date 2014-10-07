@@ -18,40 +18,29 @@ package io.vertx.core.datagram;
 
 import io.vertx.codegen.annotations.Options;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetworkOptions;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public class DatagramSocketOptions {
-
-  private static final int DEFAULT_SENDBUFFERSIZE = -1;
-  private static final int DEFAULT_RECEIVEBUFFERSIZE = -1;
-  private static final int DEFAULT_TRAFFICCLASS = -1;
-
-  private int sendBufferSize = DEFAULT_SENDBUFFERSIZE;
-  private int receiveBufferSize = DEFAULT_RECEIVEBUFFERSIZE;
-  private int trafficClass = DEFAULT_TRAFFICCLASS;
-
-  private static final boolean DEFAULT_BROADCAST = false;
-  private static final boolean DEFAULT_LOOPBACK_MODE_DISABLED = true;
-  private static final int DEFAULT_MULTICASTTIMETOLIVE = -1;
-  private static final String DEFAULT_MULTICASTNETWORKINTERFACE = null;
-  private static final boolean DEFAULT_REUSEADDRESS = false;
-  private static final boolean DEFAULT_IPV6 = false;
+public class DatagramSocketOptions extends NetworkOptions {
+  
+  public static final boolean DEFAULT_BROADCAST = false;
+  public static final boolean DEFAULT_LOOPBACK_MODE_DISABLED = true;
+  public static final int DEFAULT_MULTICAST_TIME_TO_LIVE = -1;
+  public static final String DEFAULT_MULTICAST_NETWORK_INTERFACE = null;
+  public static final boolean DEFAULT_REUSE_ADDRESS = false; // Override this
+  public static final boolean DEFAULT_IPV6 = false;
 
   private boolean broadcast;
   private boolean loopbackModeDisabled;
   private int multicastTimeToLive;
   private String multicastNetworkInterface;
-  private boolean reuseAddress;
   private boolean ipV6;
 
   public DatagramSocketOptions(DatagramSocketOptions other) {
-    this.sendBufferSize = other.getSendBufferSize();
-    this.receiveBufferSize = other.getReceiveBufferSize();
-    this.reuseAddress = other.isReuseAddress();
-    this.trafficClass = other.getTrafficClass();
+    super(other);
     this.broadcast = other.isBroadcast();
     this.loopbackModeDisabled = other.isLoopbackModeDisabled();
     this.multicastTimeToLive = other.getMulticastTimeToLive();
@@ -60,74 +49,61 @@ public class DatagramSocketOptions {
   }
 
   public DatagramSocketOptions(JsonObject json) {
-    this.sendBufferSize = json.getInteger("sendBufferSize", DEFAULT_SENDBUFFERSIZE);
-    this.receiveBufferSize = json.getInteger("receiveBufferSize", DEFAULT_RECEIVEBUFFERSIZE);
-    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSEADDRESS);
-    this.trafficClass = json.getInteger("trafficClass", DEFAULT_TRAFFICCLASS);
+    super(json);
     this.broadcast = json.getBoolean("broadcast", DEFAULT_BROADCAST);
     this.loopbackModeDisabled = json.getBoolean("loopbackModeDisabled", DEFAULT_LOOPBACK_MODE_DISABLED);
-    this.multicastTimeToLive = json.getInteger("multicastTimeToLive", DEFAULT_MULTICASTTIMETOLIVE);
-    this.multicastNetworkInterface = json.getString("multicastNetworkInterface", DEFAULT_MULTICASTNETWORKINTERFACE);
-    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSEADDRESS);
+    this.multicastTimeToLive = json.getInteger("multicastTimeToLive", DEFAULT_MULTICAST_TIME_TO_LIVE);
+    this.multicastNetworkInterface = json.getString("multicastNetworkInterface", DEFAULT_MULTICAST_NETWORK_INTERFACE);
     this.ipV6 = json.getBoolean("ipV6", DEFAULT_IPV6);
+    setReuseAddress(json.getBoolean("reuseAddress", DEFAULT_REUSE_ADDRESS));
   }
 
   public DatagramSocketOptions() {
-    sendBufferSize = DEFAULT_SENDBUFFERSIZE;
-    receiveBufferSize = DEFAULT_RECEIVEBUFFERSIZE;
-    reuseAddress = DEFAULT_REUSEADDRESS;
-    trafficClass = DEFAULT_TRAFFICCLASS;
-
+    super();
+    setReuseAddress(DEFAULT_REUSE_ADDRESS); // default is different for DatagramSocket
     broadcast = DEFAULT_BROADCAST;
     loopbackModeDisabled = DEFAULT_LOOPBACK_MODE_DISABLED;
-    multicastTimeToLive = DEFAULT_MULTICASTTIMETOLIVE;
-    multicastNetworkInterface = DEFAULT_MULTICASTNETWORKINTERFACE;
-    reuseAddress = DEFAULT_REUSEADDRESS; // We override this as default is different for DatagramSocket
+    multicastTimeToLive = DEFAULT_MULTICAST_TIME_TO_LIVE;
+    multicastNetworkInterface = DEFAULT_MULTICAST_NETWORK_INTERFACE;
     ipV6 = DEFAULT_IPV6;
   }
 
+  @Override
   public int getSendBufferSize() {
-    return sendBufferSize;
+    return super.getSendBufferSize();
   }
 
+  @Override
   public DatagramSocketOptions setSendBufferSize(int sendBufferSize) {
-    if (sendBufferSize < 1) {
-      throw new IllegalArgumentException("sendBufferSize must be > 0");
-    }
-    this.sendBufferSize = sendBufferSize;
+    super.setSendBufferSize(sendBufferSize);
     return this;
   }
 
+  @Override
   public int getReceiveBufferSize() {
-    return receiveBufferSize;
+    return super.getReceiveBufferSize();
   }
 
+  @Override
   public DatagramSocketOptions setReceiveBufferSize(int receiveBufferSize) {
-    if (receiveBufferSize < 1) {
-      throw new IllegalArgumentException("receiveBufferSize must be > 0");
-    }
-    this.receiveBufferSize = receiveBufferSize;
+    super.setReceiveBufferSize(receiveBufferSize);
     return this;
   }
 
-  public boolean isReuseAddress() {
-    return reuseAddress;
-  }
-
+  @Override
   public DatagramSocketOptions setReuseAddress(boolean reuseAddress) {
-    this.reuseAddress = reuseAddress;
+    super.setReuseAddress(reuseAddress);
     return this;
   }
 
+  @Override
   public int getTrafficClass() {
-    return trafficClass;
+    return super.getTrafficClass();
   }
 
+  @Override
   public DatagramSocketOptions setTrafficClass(int trafficClass) {
-    if (trafficClass < 0 || trafficClass > 255) {
-      throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
-    }
-    this.trafficClass = trafficClass;
+    super.setTrafficClass(trafficClass);
     return this;
   }
 
@@ -183,6 +159,7 @@ public class DatagramSocketOptions {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof DatagramSocketOptions)) return false;
+    if (!super.equals(o)) return false;
 
     DatagramSocketOptions that = (DatagramSocketOptions) o;
 
@@ -190,10 +167,6 @@ public class DatagramSocketOptions {
     if (ipV6 != that.ipV6) return false;
     if (loopbackModeDisabled != that.loopbackModeDisabled) return false;
     if (multicastTimeToLive != that.multicastTimeToLive) return false;
-    if (receiveBufferSize != that.receiveBufferSize) return false;
-    if (reuseAddress != that.reuseAddress) return false;
-    if (sendBufferSize != that.sendBufferSize) return false;
-    if (trafficClass != that.trafficClass) return false;
     if (multicastNetworkInterface != null ? !multicastNetworkInterface.equals(that.multicastNetworkInterface) : that.multicastNetworkInterface != null)
       return false;
 
@@ -202,14 +175,11 @@ public class DatagramSocketOptions {
 
   @Override
   public int hashCode() {
-    int result = sendBufferSize;
-    result = 31 * result + receiveBufferSize;
-    result = 31 * result + trafficClass;
+    int result = super.hashCode();
     result = 31 * result + (broadcast ? 1 : 0);
     result = 31 * result + (loopbackModeDisabled ? 1 : 0);
     result = 31 * result + multicastTimeToLive;
     result = 31 * result + (multicastNetworkInterface != null ? multicastNetworkInterface.hashCode() : 0);
-    result = 31 * result + (reuseAddress ? 1 : 0);
     result = 31 * result + (ipV6 ? 1 : 0);
     return result;
   }
