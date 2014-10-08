@@ -37,6 +37,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.impl.HeadersAdaptor;
@@ -1036,7 +1037,7 @@ public class HttpTest extends HttpTestBase {
     String path = uri.indexOf('?') == -1 ? uri : uri.substring(0, uri.indexOf('?'));
     server.requestHandler(req -> {
       assertEquals(path, req.path());
-      assertEquals(method.toString(), req.method());
+      assertEquals(method, req.method());
       req.response().end();
     });
 
@@ -2995,7 +2996,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testHeadNoBody() {
     server.requestHandler(req -> {
-      assertEquals("HEAD", req.method());
+      assertEquals(HttpMethod.HEAD, req.method());
       // Head never contains a body but it can contain a Content-Length header
       // Since headers from HEAD must correspond EXACTLY with corresponding headers for GET
       req.response().headers().set("Content-Length", String.valueOf(41));
@@ -3105,7 +3106,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testHttpVersion() {
     server.requestHandler(req -> {
-      assertEquals("HTTP/1.1", req.version());
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
     });
 
@@ -3122,7 +3123,7 @@ public class HttpTest extends HttpTestBase {
     String content = "Vert.x rocks!";
 
     server.requestHandler(req -> {
-      if (req.method().equals("POST")) {
+      if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
@@ -3180,7 +3181,7 @@ public class HttpTest extends HttpTestBase {
   public void testFormUploadAttributes() throws Exception {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
-      if (req.method().equals("POST")) {
+      if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
@@ -3226,7 +3227,7 @@ public class HttpTest extends HttpTestBase {
   public void testFormUploadAttributes2() throws Exception {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
-      if (req.method().equals("POST")) {
+      if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.setExpectMultipart(true);
         req.uploadHandler(event -> event.handler(buffer -> {

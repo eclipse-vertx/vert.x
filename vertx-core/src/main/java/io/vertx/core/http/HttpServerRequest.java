@@ -64,12 +64,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * The HTTP version of the request
    */
-  String version();
+  HttpVersion version();
 
   /**
    * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
    */
-  String method();
+  HttpMethod method();
 
   /**
    * The uri of the request. For example

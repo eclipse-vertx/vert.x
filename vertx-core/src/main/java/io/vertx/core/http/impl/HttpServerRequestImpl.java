@@ -36,6 +36,7 @@ import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -64,8 +65,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private final HttpRequest request;
   private final HttpServerResponse response;
 
-  private String version;
-  private String method;
+  private io.vertx.core.http.HttpVersion version;
+  private io.vertx.core.http.HttpMethod method;
   private String uri;
   private String path;
   private String query;
@@ -94,13 +95,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String version() {
+  public io.vertx.core.http.HttpVersion version() {
     if (version == null) {
       io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
       if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
-        version = "HTTP/1.0";
+        version = HttpVersion.HTTP_1_0;
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-        version = "HTTP/1.1";
+        version = HttpVersion.HTTP_1_1;
       } else {
         throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
       }
@@ -109,9 +110,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String method() {
+  public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
-      method = request.getMethod().toString();
+      method = io.vertx.core.http.HttpMethod.valueOf(request.getMethod().toString());
     }
     return method;
   }
