@@ -44,7 +44,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketConnectOptions;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
@@ -127,19 +127,20 @@ public class HttpClientImpl implements HttpClient {
   }
 
   @Override
-  public HttpClient connectWebsocket(int port, String host, String requestURI, WebsocketConnectOptions options, Handler<WebSocket> wsConnect) {
-    return connectWebsocket(port, host, requestURI, null, options, wsConnect);
+  public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
+    return connectWebsocket(port, host, requestURI, headers, version, null, wsConnect);
   }
 
   @Override
-  public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketConnectOptions wsOptions, Handler<WebSocket> wsConnect) {
+  public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+                                     String subProtocols, Handler<WebSocket> wsConnect) {
     checkClosed();
     ContextImpl context = vertx.getOrCreateContext();
     getConnection(port, host, conn -> {
       if (!conn.isClosed()) {
-        conn.toWebSocket(requestURI, headers, wsOptions, options.getMaxWebsocketFrameSize(), wsConnect);
+        conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
       } else {
-        connectWebsocket(port, host, requestURI, headers, wsOptions, wsConnect);
+        connectWebsocket(port, host, requestURI, headers, version, subProtocols, wsConnect);
       }
     }, exceptionHandler, context);
     return this;

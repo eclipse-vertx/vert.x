@@ -52,9 +52,11 @@ public interface HttpClient {
 
   HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
-  HttpClient connectWebsocket(int port, String host, String requestURI, WebsocketConnectOptions options, Handler<WebSocket> wsConnect);
+  HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+                              Handler<WebSocket> wsConnect);
 
-  HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketConnectOptions options, Handler<WebSocket> wsConnect);
+  HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+                              String subProtocols, Handler<WebSocket> wsConnect);
 
   /**
    * Close the HTTP client. This will cause any pooled HTTP connections to be closed.

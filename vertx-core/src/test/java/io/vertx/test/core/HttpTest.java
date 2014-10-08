@@ -308,12 +308,9 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
 
-    assertTrue(options.getWebsocketSubProtocols().isEmpty());
-    assertEquals(options, options.addWebsocketSubProtocol("foo"));
-    assertEquals(options, options.addWebsocketSubProtocol("bar"));
-    assertNotNull(options.getWebsocketSubProtocols());
-    assertTrue(options.getWebsocketSubProtocols().contains("foo"));
-    assertTrue(options.getWebsocketSubProtocols().contains("bar"));
+    assertNull(options.getWebsocketSubProtocols());
+    assertEquals(options, options.setWebsocketSubProtocol("foo"));
+    assertEquals("foo", options.getWebsocketSubProtocols());
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -332,7 +329,7 @@ public class HttpTest extends HttpTestBase {
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
-    int trafficClass = TestUtils.randomByte() + 127;
+    int trafficClass = TestUtils.randomByte() + 128;
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
@@ -582,7 +579,7 @@ public class HttpTest extends HttpTestBase {
     options.setAcceptBacklog(acceptBacklog);
     options.setCompressionSupported(compressionSupported);
     options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
-    options.addWebsocketSubProtocol(wsSubProtocol);
+    options.setWebsocketSubProtocol(wsSubProtocol);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -609,7 +606,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
     assertEquals(compressionSupported, copy.isCompressionSupported());
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
-    assertTrue(options.getWebsocketSubProtocols().contains(wsSubProtocol));
+    assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
   }
 
   @Test
@@ -684,7 +681,7 @@ public class HttpTest extends HttpTestBase {
       .putNumber("acceptBacklog", acceptBacklog)
       .putBoolean("compressionSupported", compressionSupported)
       .putNumber("maxWebsocketFrameSize", maxWebsocketFrameSize)
-      .putArray("websocketSubProtocols", new JsonArray().addString(wsSubProtocol));
+      .putString("websocketSubProtocols", wsSubProtocol);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -712,7 +709,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(acceptBacklog, options.getAcceptBacklog());
     assertEquals(compressionSupported, options.isCompressionSupported());
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
-    assertTrue(options.getWebsocketSubProtocols().contains(wsSubProtocol));
+    assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
 
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))

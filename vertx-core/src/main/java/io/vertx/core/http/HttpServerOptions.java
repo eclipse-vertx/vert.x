@@ -17,14 +17,10 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Options;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.TrustStoreOptions;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -38,24 +34,20 @@ public class HttpServerOptions extends NetServerOptions {
 
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
-  private Set<String> websocketSubProtocols = new HashSet<>();
+  private String websocketSubProtocols;
 
   public HttpServerOptions(HttpServerOptions other) {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
     this.maxWebsocketFrameSize = other.getMaxWebsocketFrameSize();
-    this.websocketSubProtocols = other.getWebsocketSubProtocols() != null ? new HashSet<>(other.getWebsocketSubProtocols()) : null;
+    this.websocketSubProtocols = other.getWebsocketSubProtocols();
   }
 
   public HttpServerOptions(JsonObject json) {
     super(json);
     this.compressionSupported = json.getBoolean("compressionSupported", DEFAULT_COMPRESSION_SUPPORTED);
     this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAX_WEBSOCKET_FRAME_SIZE);
-    JsonArray arr = json.getArray("websocketSubProtocols");
-    this.websocketSubProtocols = new HashSet<>();
-    if (arr != null) {
-      websocketSubProtocols.addAll(arr.toList());
-    }
+    this.websocketSubProtocols = json.getString("websocketSubProtocols", null);
     setPort(json.getInteger("port", DEFAULT_PORT));
   }
 
@@ -179,12 +171,12 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
-  public HttpServerOptions addWebsocketSubProtocol(String subProtocol) {
-    websocketSubProtocols.add(subProtocol);
+  public HttpServerOptions setWebsocketSubProtocol(String subProtocols) {
+    websocketSubProtocols = subProtocols;
     return this;
   }
 
-  public Set<String> getWebsocketSubProtocols() {
+  public String getWebsocketSubProtocols() {
     return websocketSubProtocols;
   }
   
@@ -204,8 +196,7 @@ public class HttpServerOptions extends NetServerOptions {
 
     if (compressionSupported != that.compressionSupported) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
-    if (websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null)
-      return false;
+    if (websocketSubProtocols != that.websocketSubProtocols) return false;
 
     return true;
   }

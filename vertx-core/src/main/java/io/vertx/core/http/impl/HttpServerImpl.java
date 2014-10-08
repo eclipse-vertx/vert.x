@@ -81,11 +81,8 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -114,7 +111,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private HttpStreamHandler<HttpServerRequest> requestStream;
   private boolean listening;
   private String serverOrigin;
-  private Set<String> webSocketSubProtocols = Collections.unmodifiableSet(Collections.<String>emptySet());
+  private String subProtocols;
   private ChannelFuture bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
@@ -153,6 +150,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         return this;
       }
     };
+    this.subProtocols = options.getWebsocketSubProtocols();
   }
 
   @Override
@@ -592,19 +590,6 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
     private void handshake(final FullHttpRequest request, final Channel ch, ChannelHandlerContext ctx) throws Exception {
       final WebSocketServerHandshaker shake;
-      String subProtocols = null;
-      Set<String> webSocketSubProtocols = HttpServerImpl.this.webSocketSubProtocols;
-      if (!webSocketSubProtocols.isEmpty()) {
-        StringBuilder sb = new StringBuilder();
-        Iterator<String> protocols = webSocketSubProtocols.iterator();
-        while(protocols.hasNext()) {
-          sb.append(protocols.next());
-          if (protocols.hasNext()) {
-            sb.append(',');
-          }
-        }
-        subProtocols = sb.toString();
-      }
       WebSocketServerHandshakerFactory factory =
           new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
                                                options.getMaxWebsocketFrameSize());

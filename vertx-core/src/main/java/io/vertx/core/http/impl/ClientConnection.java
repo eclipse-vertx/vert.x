@@ -40,7 +40,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketConnectOptions;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -54,7 +54,6 @@ import io.vertx.core.net.impl.VertxNetHandler;
 import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 
@@ -96,7 +95,8 @@ class ClientConnection extends ConnectionBase {
 
   void toWebSocket(String requestURI,
                    MultiMap headers,
-                   WebsocketConnectOptions options,
+                   WebsocketVersion vers,
+                   String subProtocols,
                    int maxWebSocketFrameSize,
                    final Handler<WebSocket> wsConnect) {
     if (ws != null) {
@@ -110,8 +110,8 @@ class ClientConnection extends ConnectionBase {
         wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + requestURI);
       }
       io.netty.handler.codec.http.websocketx.WebSocketVersion version =
-         io.netty.handler.codec.http.websocketx.WebSocketVersion.valueOf((options == null ?
-           WebsocketConnectOptions.DEFAULT_WEBSOCKET_VERSION : options.getVersion()).toString());
+         io.netty.handler.codec.http.websocketx.WebSocketVersion.valueOf((vers == null ?
+           WebSocketVersion.V13 : vers).toString());
       HttpHeaders nettyHeaders;
       if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();
@@ -121,20 +121,7 @@ class ClientConnection extends ConnectionBase {
       } else {
         nettyHeaders = null;
       }
-      String wsSubProtocols = null;
-      if (options != null && options.getSubProtocols() != null && !options.getSubProtocols().isEmpty()) {
-        StringBuilder sb = new StringBuilder();
-
-        Iterator<String> protocols = options.getSubProtocols().iterator();
-        while (protocols.hasNext()) {
-          sb.append(protocols.next());
-          if (protocols.hasNext()) {
-            sb.append(",");
-          }
-        }
-        wsSubProtocols = sb.toString();
-      }
-      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, wsSubProtocols, false,
+      handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
                                                                   nettyHeaders, maxWebSocketFrameSize);
       final ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
