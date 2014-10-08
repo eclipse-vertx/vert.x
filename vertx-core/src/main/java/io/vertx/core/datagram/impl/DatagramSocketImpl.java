@@ -147,8 +147,14 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket packetHandler(Handler<io.vertx.core.datagram.DatagramPacket> handler) {
+  public DatagramSocket handler(Handler<io.vertx.core.datagram.DatagramPacket> handler) {
     this.packetHandler = handler;
+    return this;
+  }
+
+  @Override
+  public DatagramSocket endHandler(Handler<Void> endHandler) {
+    this.closeHandler = endHandler;
     return this;
   }
 
