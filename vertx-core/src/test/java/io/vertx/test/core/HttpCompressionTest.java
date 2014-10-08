@@ -17,8 +17,8 @@
 package io.vertx.test.core;
 
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.RequestOptions;
 import org.junit.Test;
 
 /**
@@ -43,7 +43,7 @@ public class HttpCompressionTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(new RequestOptions().setRequestURI("some-uri").setPort(DEFAULT_HTTP_PORT), resp -> testComplete());
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "some-uri", resp -> testComplete()).end();
     }));
 
     await();

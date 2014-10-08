@@ -43,27 +43,18 @@ public interface HttpClient {
    */
   HttpClient exceptionHandler(Handler<Throwable> handler);
 
-  HttpClient connectWebsocket(WebSocketConnectOptions options, Handler<WebSocket> wsConnect);
-
-  HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler);
-
   HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
-
-  HttpClientRequest request(HttpMethod method, String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
 
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
-  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
 
-  HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
+  HttpClient connectWebsocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect);
 
-  HttpClient getNow(String absoluteURI, Handler<HttpClientResponse> responseHandler);
+  HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
-  HttpClient getNow(String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
+  HttpClient connectWebsocket(int port, String host, String requestURI, WebsocketConnectOptions options, Handler<WebSocket> wsConnect);
 
-  HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
-
-  HttpClient getNow(int port, String host, String requestURI, MultiMap headers, Handler<HttpClientResponse> responseHandler);
+  HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketConnectOptions options, Handler<WebSocket> wsConnect);
 
   /**
    * Close the HTTP client. This will cause any pooled HTTP connections to be closed.

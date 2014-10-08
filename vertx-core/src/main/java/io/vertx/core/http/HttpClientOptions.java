@@ -33,12 +33,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final boolean DEFAULT_PIPELINING = false;
   public static final boolean DEFAULT_TRY_USE_COMPRESSION = false;
   public static final boolean DEFAULT_VERIFY_HOST = true;
+  public static final int DEFAULT_MAX_WEBSOCKET_FRAME_SIZE = 65536;
 
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
   private boolean pipelining;
   private boolean tryUseCompression;
+  private int maxWebsocketFrameSize;
 
   public HttpClientOptions(HttpClientOptions other) {
     super(other);
@@ -47,6 +49,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.keepAlive = other.isKeepAlive();
     this.pipelining = other.isPipelining();
     this.tryUseCompression = other.isTryUseCompression();
+    this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
   }
 
   public HttpClientOptions(JsonObject json) {
@@ -56,6 +59,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.keepAlive = json.getBoolean("keepAlive", DEFAULT_KEEP_ALIVE);
     this.pipelining = json.getBoolean("pipelining", DEFAULT_PIPELINING);
     this.tryUseCompression = json.getBoolean("tryUseCompression", DEFAULT_TRY_USE_COMPRESSION);
+    this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAX_WEBSOCKET_FRAME_SIZE);
   }
 
   public HttpClientOptions() {
@@ -65,6 +69,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     keepAlive = DEFAULT_KEEP_ALIVE;
     pipelining = DEFAULT_PIPELINING;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
+    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
   }
 
   @Override
@@ -205,6 +210,15 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  public int getMaxWebsocketFrameSize() {
+    return maxWebsocketFrameSize;
+  }
+
+  public HttpClientOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
+    this.maxWebsocketFrameSize = maxWebsocketFrameSize;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -218,6 +232,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (pipelining != that.pipelining) return false;
     if (tryUseCompression != that.tryUseCompression) return false;
     if (verifyHost != that.verifyHost) return false;
+    if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
 
     return true;
   }
@@ -230,6 +245,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (keepAlive ? 1 : 0);
     result = 31 * result + (pipelining ? 1 : 0);
     result = 31 * result + (tryUseCompression ? 1 : 0);
+    result = 31 * result + maxWebsocketFrameSize;
     return result;
   }
+
+
 }

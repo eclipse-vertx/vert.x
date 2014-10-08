@@ -34,11 +34,13 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebsocketConnectOptions;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -92,7 +94,9 @@ class ClientConnection extends ConnectionBase {
     this.listener = listener;
   }
 
-  void toWebSocket(WebSocketConnectOptions options,
+  void toWebSocket(String requestURI,
+                   MultiMap headers,
+                   WebsocketConnectOptions options,
                    int maxWebSocketFrameSize,
                    final Handler<WebSocket> wsConnect) {
     if (ws != null) {
@@ -100,32 +104,25 @@ class ClientConnection extends ConnectionBase {
     }
 
     try {
-      URI wsuri = new URI(options.getRequestURI());
+      URI wsuri = new URI(requestURI);
       if (!wsuri.isAbsolute()) {
         // Netty requires an absolute url
-        wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + options.getRequestURI());
+        wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + requestURI);
       }
-      io.netty.handler.codec.http.websocketx.WebSocketVersion version;
-      if (options.getVersion() == 0) {
-        version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
-      } else if (options.getVersion() == 8) {
-        version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V08;
-      } else if (options.getVersion() == 13) {
-        version = io.netty.handler.codec.http.websocketx.WebSocketVersion.V13;
-      } else {
-        throw new IllegalArgumentException("Invalid version");
-      }
+      io.netty.handler.codec.http.websocketx.WebSocketVersion version =
+         io.netty.handler.codec.http.websocketx.WebSocketVersion.valueOf((options == null ?
+           WebsocketConnectOptions.DEFAULT_WEBSOCKET_VERSION : options.getVersion()).toString());
       HttpHeaders nettyHeaders;
-      if (options.getHeaders() != null) {
+      if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();
-        for (Map.Entry<String, String> entry: options.getHeaders()) {
+        for (Map.Entry<String, String> entry: headers) {
           nettyHeaders.add(entry.getKey(), entry.getValue());
         }
       } else {
         nettyHeaders = null;
       }
       String wsSubProtocols = null;
-      if (options.getSubProtocols() != null && !options.getSubProtocols().isEmpty()) {
+      if (options != null && options.getSubProtocols() != null && !options.getSubProtocols().isEmpty()) {
         StringBuilder sb = new StringBuilder();
 
         Iterator<String> protocols = options.getSubProtocols().iterator();
@@ -140,7 +137,7 @@ class ClientConnection extends ConnectionBase {
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, wsSubProtocols, false,
                                                                   nettyHeaders, maxWebSocketFrameSize);
       final ChannelPipeline p = channel.pipeline();
-      p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, options.getVersion() > 0));
+      p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(channel).addListener(future -> {
         if (!future.isSuccess()) {
           client.handleException((Exception) future.cause());

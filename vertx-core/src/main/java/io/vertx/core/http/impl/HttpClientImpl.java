@@ -43,9 +43,8 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebsocketConnectOptions;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
@@ -118,38 +117,36 @@ public class HttpClientImpl implements HttpClient {
   }
 
   @Override
-  public HttpClient connectWebsocket(WebSocketConnectOptions wsOptions, Handler<WebSocket> wsConnect) {
+  public HttpClient connectWebsocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect) {
+    return connectWebsocket(port, host, requestURI, null, null, wsConnect);
+  }
+
+  @Override
+  public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect) {
+    return connectWebsocket(port, host, requestURI, headers, null, wsConnect);
+  }
+
+  @Override
+  public HttpClient connectWebsocket(int port, String host, String requestURI, WebsocketConnectOptions options, Handler<WebSocket> wsConnect) {
+    return connectWebsocket(port, host, requestURI, null, options, wsConnect);
+  }
+
+  @Override
+  public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketConnectOptions wsOptions, Handler<WebSocket> wsConnect) {
     checkClosed();
     ContextImpl context = vertx.getOrCreateContext();
-    getConnection(wsOptions.getPort(), wsOptions.getHost(), conn -> {
+    getConnection(port, host, conn -> {
       if (!conn.isClosed()) {
-        conn.toWebSocket(wsOptions, wsOptions.getMaxWebsocketFrameSize(), wsConnect);
+        conn.toWebSocket(requestURI, headers, wsOptions, options.getMaxWebsocketFrameSize(), wsConnect);
       } else {
-        connectWebsocket(wsOptions, wsConnect);
+        connectWebsocket(port, host, requestURI, headers, wsOptions, wsConnect);
       }
     }, exceptionHandler, context);
     return this;
   }
 
   @Override
-  public HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    doRequest(HttpMethod.GET, options, responseHandler).end();
-    return this;
-  }
-
-  @Override
-  public HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    checkConnect(method, responseHandler);
-    return doRequest(method, options, responseHandler);
-  }
-
-  @Override
   public HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler) {
-    return request(method, absoluteURI, null, responseHandler);
-  }
-
-  @Override
-  public HttpClientRequest request(HttpMethod method, String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
     checkConnect(method, responseHandler);
     URL url = parseUrl(absoluteURI);
     return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null, responseHandler);
@@ -161,34 +158,6 @@ public class HttpClientImpl implements HttpClient {
     return doRequest(method, host, port, path, null, responseHandler);
   }
 
-  @Override
-  public HttpClientRequest request(HttpMethod method, int port, String host, String path, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
-    checkConnect(method, responseHandler);
-    return doRequest(method, host, port, path, headers, responseHandler);
-  }
-
-  @Override
-  public HttpClient getNow(String absoluteURI, Handler<HttpClientResponse> responseHandler) {
-    URL url = parseUrl(absoluteURI);
-    return getNow(url.getPort(), url.getHost(), url.getPath(), null, responseHandler);
-  }
-
-  @Override
-  public HttpClient getNow(String absoluteURI, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
-    URL url = parseUrl(absoluteURI);
-    return getNow(url.getPort(), url.getHost(), url.getPath(), headers, responseHandler);
-  }
-
-  @Override
-  public HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
-    return getNow(port, host, requestURI, null, responseHandler);
-  }
-
-  @Override
-  public HttpClient getNow(int port, String host, String requestURI, MultiMap headers, Handler<HttpClientResponse> responseHandler) {
-    doRequest(HttpMethod.GET, host, port, requestURI, headers, responseHandler).end();
-    return this;
-  }
 
   @Override
   public synchronized void close() {
@@ -322,10 +291,6 @@ public class HttpClientImpl implements HttpClient {
     } catch (MalformedURLException e) {
       throw new VertxException("Invalid url: " + surl);
     }
-  }
-
-  private HttpClientRequest doRequest(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler) {
-    return doRequest(method, options.getHost(), options.getPort(), options.getRequestURI(), options.getHeaders(), responseHandler);
   }
 
   private HttpClientRequest doRequest(HttpMethod method, String host, int port, String relativeURI, MultiMap headers,
