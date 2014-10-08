@@ -14,13 +14,13 @@ import org.apache.curator.test.Timing;
  * Mock ZooKeeper Server.
  * Created by stream.Liu
  */
-class ZKClustered {
+class ZKMockServer {
 
   private RetryPolicy retryPolicy = new ExponentialBackoffRetry(100, 3);
   private Timing timing;
   private TestingServer server;
 
-  public ZKClustered() {
+  public ZKMockServer() {
     try {
       server = new TestingServer(new InstanceSpec(null, -1, -1, -1, true, -1, -1, 200));
       timing = new Timing();

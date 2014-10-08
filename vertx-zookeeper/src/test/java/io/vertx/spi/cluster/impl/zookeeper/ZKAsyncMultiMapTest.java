@@ -54,6 +54,7 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
       Assert.assertTrue(event.succeeded());
     });
 
+    //get data immediately.
     asyncMultiMap.get("myKey", e -> {
       if (e.failed()) e.cause().printStackTrace();
       Assert.assertTrue(e.succeeded());
@@ -61,14 +62,6 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
       Assert.assertFalse(e.result().isEmpty());
       testComplete();
     });
-
-
-//    asyncMultiMap.add("myKey", "myValue", ev -> {
-//      if (ev.failed()) ev.cause().printStackTrace();
-//      Assert.assertTrue(ev.succeeded());
-//      testComplete();
-//    });
-
     await();
   }
 

@@ -7,7 +7,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
  */
 public class ZKClusteredAsynchronousLockTest extends ClusteredAsynchronousLockTest {
 
-  private ZKClustered zkClustered = new ZKClustered();
+  private ZKMockServer zkClustered = new ZKMockServer();
 
   @Override
   protected ClusterManager getClusterManager() {

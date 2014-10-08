@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -35,11 +34,6 @@ class ChoosableSet<T> implements ChoosableIterable<T>, Serializable {
 
   public ChoosableSet(int initialSize) {
     ids = new ConcurrentHashSet<>(initialSize);
-  }
-
-  ChoosableSet(Set<T> set) {
-    this.ids = new ConcurrentHashSet<>();
-    this.ids.addAll(set.stream().collect(Collectors.toList()));
   }
 
   public Set<T> getIds() {

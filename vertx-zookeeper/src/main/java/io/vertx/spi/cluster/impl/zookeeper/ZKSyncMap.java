@@ -2,64 +2,23 @@ package io.vertx.spi.cluster.impl.zookeeper;
 
 import com.google.common.collect.Maps;
 import io.vertx.core.VertxException;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.state.ConnectionState;
 import org.apache.zookeeper.KeeperException;
 
-import java.io.*;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
  *
  */
-class ZKSyncMap<K, V> implements Map<K, V> {
-
-  private final String mapPath;
-  private final AtomicBoolean nodeSplit = new AtomicBoolean(false);
-  private final CuratorFramework curator;
-  private final Logger log = LoggerFactory.getLogger(ZKSyncMap.class);
+class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
 
   ZKSyncMap(CuratorFramework curator, String mapName) {
-    this.curator = curator;
-    this.mapPath = "/syncMap/" + mapName;
-    this.curator.getConnectionStateListenable().addListener((client, newState) -> {
-      if (newState == ConnectionState.LOST || newState == ConnectionState.SUSPENDED) {
-        nodeSplit.set(true);
-      } else {
-        nodeSplit.set(false);
-      }
-    });
+    super(curator, null, "syncMap", mapName);
   }
-
-  private String keyPath(K k) {
-    return mapPath + "/" + k.toString();
-  }
-
-  private byte[] asByte(Object object) throws IOException {
-    ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-    new ObjectOutputStream(byteOut).writeObject(object);
-    return byteOut.toByteArray();
-  }
-
-  private <T> T asObject(byte[] bytes, Class<T> clazz) throws Exception {
-    ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
-    ObjectInputStream in = new ObjectInputStream(byteIn);
-    T byteObject = (T) in.readObject();
-    return byteObject == null ? clazz.newInstance() : byteObject;
-  }
-
-  private void checkState() throws IllegalStateException {
-    if (nodeSplit.get()) {
-      throw new IllegalStateException("this zookeeper node have detached from cluster");
-    }
-  }
-
 
   @Override
   public int size() {
@@ -67,7 +26,6 @@ class ZKSyncMap<K, V> implements Map<K, V> {
       checkState();
       return curator.getChildren().forPath(mapPath).size();
     } catch (Exception e) {
-      log.error(e);
       throw new VertxException(e.getMessage());
     }
   }
@@ -78,7 +36,6 @@ class ZKSyncMap<K, V> implements Map<K, V> {
       checkState();
       return curator.getChildren().forPath(mapPath).isEmpty();
     } catch (Exception e) {
-      log.error(e);
       throw new VertxException(e.getMessage());
     }
   }
@@ -89,7 +46,6 @@ class ZKSyncMap<K, V> implements Map<K, V> {
       checkState();
       return curator.getChildren().forPath(mapPath).stream().anyMatch(e -> e.equals(key));
     } catch (Exception e) {
-      log.error(e);
       throw new VertxException(e.getMessage());
     }
   }
@@ -104,12 +60,10 @@ class ZKSyncMap<K, V> implements Map<K, V> {
           KeyValue<K, V> keyValue = asObject(bytes, KeyValue.class);
           return keyValue.getValue().equals(value);
         } catch (Exception ex) {
-          log.error(e);
           throw new VertxException(ex.getMessage());
         }
       });
     } catch (Exception e) {
-      log.error(e);
       throw new VertxException(e.getMessage());
     }
   }
@@ -147,7 +101,6 @@ class ZKSyncMap<K, V> implements Map<K, V> {
       }
       return value;
     } catch (Exception e) {
-      log.error(e);
       e.printStackTrace();
       throw new VertxException(e.getMessage());
     }
@@ -161,7 +114,6 @@ class ZKSyncMap<K, V> implements Map<K, V> {
       if (result != null) curator.delete().deletingChildrenIfNeeded().forPath(keyPath((K) key));
       return result;
     } catch (Exception e) {
-      log.error(e);
       throw new VertxException(e.getMessage());
     }
   }
@@ -169,7 +121,6 @@ class ZKSyncMap<K, V> implements Map<K, V> {
   @Override
   public void putAll(Map<? extends K, ? extends V> m) {
     checkState();
-    //TODO transaction.
     m.entrySet().stream().forEach(entry -> put(entry.getKey(), entry.getValue()));
   }
 
@@ -177,11 +128,9 @@ class ZKSyncMap<K, V> implements Map<K, V> {
   public void clear() {
     try {
       checkState();
-      //TODO transaction.
       curator.delete().deletingChildrenIfNeeded().forPath(mapPath);
       curator.create().creatingParentsIfNeeded().forPath(mapPath);
     } catch (Exception e) {
-      log.error(e);
       throw new VertxException(e.getMessage());
     }
   }
@@ -195,12 +144,10 @@ class ZKSyncMap<K, V> implements Map<K, V> {
           KeyValue<K, V> keyValue = asObject(curator.getData().forPath(keyPath((K) e)), KeyValue.class);
           return keyValue.getKey();
         } catch (Exception ex) {
-          log.error(ex);
           throw new VertxException(ex.getMessage());
         }
       }).collect(Collectors.toSet());
     } catch (Exception ex) {
-      log.error(ex);
       throw new VertxException(ex.getMessage());
     }
   }
