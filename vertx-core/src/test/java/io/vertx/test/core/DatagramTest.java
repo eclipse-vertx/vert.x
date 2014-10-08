@@ -23,6 +23,7 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
+import io.vertx.core.streams.WriteStream;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -118,6 +119,23 @@ public class DatagramTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testSender() {
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    peer2.exceptionHandler(t -> fail(t.getMessage()));
+    peer2.listen(1234, "127.0.0.1", ar -> {
+      Buffer buffer = TestUtils.randomBuffer(128);
+      peer2.handler(packet -> {
+        assertEquals(buffer, packet.data());
+        testComplete();
+      });
+
+      WriteStream<Buffer> sender1 = peer1.sender(1234, "127.0.0.1");
+      sender1.write(buffer);
+    });
   }
 
   @Test

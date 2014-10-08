@@ -23,6 +23,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 
 /**
  * A Datagram socket which can be used to send {@link DatagramPacket}'s to remote Datagram servers and receive {@link DatagramPacket}s .
@@ -52,6 +53,16 @@ public interface DatagramSocket extends ReadStream<DatagramPacket> {
    */
   @Fluent
   DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
+
+  /**
+   * Returns a {@link WriteStream} able to write {@link Buffer} to the {@link io.vertx.core.net.SocketAddress}. The
+   * stream {@link WriteStream#exceptionHandler} is called when the write fails.
+   *
+   * @param port the host port of the remote peer
+   * @param host the host address of the remote peer
+   * @return the write stream for sending packets
+   */
+  WriteStream<Buffer> sender(int port, String host);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the

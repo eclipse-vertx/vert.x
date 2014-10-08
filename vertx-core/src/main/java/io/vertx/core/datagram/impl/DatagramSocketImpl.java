@@ -33,6 +33,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.streams.WriteStream;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -196,6 +197,11 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
     return this;
+  }
+
+  @Override
+  public WriteStream<Buffer> sender(int port, String host) {
+    return new PacketWriteStream(this, port, host);
   }
 
   @Override
