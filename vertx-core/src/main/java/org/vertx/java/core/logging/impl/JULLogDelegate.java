@@ -17,6 +17,7 @@
 package org.vertx.java.core.logging.impl;
 
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 /**
  * A {@link LogDelegate} which delegates to java.util.logging
@@ -43,53 +44,69 @@ public class JULLogDelegate implements LogDelegate {
   }
 
   public void fatal(final Object message) {
-    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString());
+    log(Level.SEVERE, message);
   }
 
   public void fatal(final Object message, final Throwable t) {
-    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString(), t);
+    log(Level.SEVERE, message, t);
   }
 
   public void error(final Object message) {
-    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString());
+    log(Level.SEVERE, message);
   }
 
   public void error(final Object message, final Throwable t) {
-    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString(), t);
-
-    logger.log(Level.SEVERE, message == null ? "NULL" : message.toString(), t);
+    log(Level.SEVERE, message, t);
   }
 
   public void warn(final Object message) {
-    logger.log(Level.WARNING, message == null ? "NULL" : message.toString());
+    log(Level.WARNING, message);
   }
 
   public void warn(final Object message, final Throwable t) {
-    logger.log(Level.WARNING, message == null ? "NULL" : message.toString(), t);
+    log(Level.WARNING, message, t);
   }
 
   public void info(final Object message) {
-    logger.log(Level.INFO, message == null ? "NULL" : message.toString());
+    log(Level.INFO, message);
   }
 
   public void info(final Object message, final Throwable t) {
-    logger.log(Level.INFO, message == null ? "NULL" : message.toString(), t);
+    log(Level.INFO, message, t);
   }
 
   public void debug(final Object message) {
-    logger.log(Level.FINE, message == null ? "NULL" : message.toString());
+    log(Level.FINE, message);
   }
 
   public void debug(final Object message, final Throwable t) {
-    logger.log(Level.FINE, message == null ? "NULL" : message.toString(), t);
+    log(Level.FINE, message, t);
   }
 
   public void trace(final Object message) {
-    logger.log(Level.FINEST, message == null ? "NULL" : message.toString());
+    log(Level.FINEST, message);
   }
 
   public void trace(final Object message, final Throwable t) {
-    logger.log(Level.FINEST, message == null ? "NULL" : message.toString(), t);
+    log(Level.FINEST, message, t);
   }
 
+  private void log(Level level, Object message) {
+    log(level, message, null);
+  }
+
+  private void log(Level level, Object message, Throwable t) {
+    if (!logger.isLoggable(level)) {
+      return;
+    }
+    String msg = (message == null) ? "NULL" : message.toString();
+    LogRecord record = new LogRecord(level, msg);
+    record.setLoggerName(logger.getName());
+    record.setThrown(t);
+    // This will disable stack trace lookup inside JUL. If someone wants location info, they can use their own formatter
+    // or use a different logging framework like sl4j, or log4j
+    record.setSourceClassName(null);
+
+    logger.log(record);
+  }
 }
