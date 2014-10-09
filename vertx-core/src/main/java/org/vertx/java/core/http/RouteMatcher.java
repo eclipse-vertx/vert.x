@@ -331,13 +331,12 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
   }
   
 	/**
-	 * Removes all patterns that match for the specified method or all methods
-	 * if ALL is specified.
+	 * Removes all patterns that match for the specified method or all methods if
+	 * ALL is specified.
 	 * 
 	 * @param pattern
 	 * @param method
-	 *            GET, PUT, POST, DELETE, OPTIONS, HEAD, TRACE, CONNECT, PATCH,
-	 *            ALL
+	 *          GET, PUT, POST, DELETE, OPTIONS, HEAD, TRACE, CONNECT, PATCH, ALL
 	 * @return the number of patterns removed or zero for none
 	 */
 	public int removePattern(String pattern, String method) {
@@ -382,14 +381,14 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
 			removedCnt += removeMatchingBindings(pattern, connectBindings);
 			break;
 		default:
-			throw new RuntimeException(
-					"Method did not match any known type was: " + method);
+			throw new RuntimeException("Method did not match any known type was: "
+			    + method);
 		}
 		return removedCnt;
 	}
 	
 	private int removeMatchingBindings(String pattern,
-			List<PatternBinding> bindings) {
+	    List<PatternBinding> bindings) {
 		int removedCnt = 0;
 		again: while (true) {
 			for (int i = 0; i < bindings.size(); i++) {
