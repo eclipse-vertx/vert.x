@@ -18,8 +18,10 @@ package io.vertx.core.logging.impl;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.LogRecord;
 
 /**
@@ -30,13 +32,11 @@ public class VertxLoggerFormatter extends java.util.logging.Formatter {
 
   @Override
   public String format(final LogRecord record) {
-    Date date = new Date();
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    OffsetDateTime date = fromMillis(record.getMillis());
     StringBuilder sb = new StringBuilder();
     // Minimize memory allocations here.
-    date.setTime(record.getMillis());
     sb.append("[").append(Thread.currentThread().getName()).append("] ");
-    sb.append(dateFormat.format(date)).append(" ");
+    sb.append(date.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)).append(" ");
     sb.append(record.getLevel()).append(" [");
     sb.append(record.getLoggerName()).append("]").append("  ");
     sb.append(record.getMessage());
@@ -56,4 +56,7 @@ public class VertxLoggerFormatter extends java.util.logging.Formatter {
     return sb.toString();
   }
 
+  private static OffsetDateTime fromMillis(long epochMillis) {
+    return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
+  }
 }
