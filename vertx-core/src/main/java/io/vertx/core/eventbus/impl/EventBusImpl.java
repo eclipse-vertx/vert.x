@@ -940,6 +940,8 @@ public class EventBusImpl implements EventBus {
     private Handler<Message<T>> handler;
     private AsyncResult<Void> result;
     private Handler<AsyncResult<Void>> completionHandler;
+    private Handler<Void> endHandler;
+    private Handler<Throwable> exceptionHandler;
     private Handler<Message<T>> discardHandler;
     private int maxBufferedMessages;
     private final Queue<Message<T>> pending = new ArrayDeque<>(8);
@@ -992,7 +994,22 @@ public class EventBusImpl implements EventBus {
     @Override
     public void unregister(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
-      unregisterHandler(address, this, completionHandler);
+      if (endHandler != null) {
+        Handler<AsyncResult<Void>> handler = completionHandler;
+        completionHandler = ar -> {
+          if (ar.failed()) {
+            exceptionHandler.handle(ar.cause());
+          }
+          endHandler.handle(null);
+          handler.handle(ar);
+        };
+      }
+      if (registered) {
+        unregisterHandler(address, this, completionHandler);
+      } else {
+        callCompletionHandler(completionHandler);
+      }
+      registered = false;
     }
 
     private synchronized void setResult(AsyncResult<Void> result) {
@@ -1031,6 +1048,7 @@ public class EventBusImpl implements EventBus {
     public MessageConsumer<T> handler(Handler<Message<T>> handler) {
       this.handler = handler;
       if (this.handler != null && !registered) {
+        registered = true;
         registerHandler(address, this, replyHandler, localOnly, timeoutID);
       }
       return this;
@@ -1060,12 +1078,14 @@ public class EventBusImpl implements EventBus {
 
     @Override
     public MessageConsumer<T> endHandler(Handler<Void> endHandler) {
-      throw new UnsupportedOperationException();
+      this.endHandler = endHandler;
+      return this;
     }
 
     @Override
     public MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
-      throw new UnsupportedOperationException();
+      this.exceptionHandler = handler;
+      return this;
     }
 
     private void checkNextTick() {

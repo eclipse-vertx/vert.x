@@ -1004,6 +1004,60 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testUnregisterRegisteredConsumerCallsEndHandler() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {});
+    consumer.endHandler(v -> testComplete());
+    consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testUnregisterUnregisteredConsumerCallsEndHandler() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    consumer.endHandler(v -> testComplete());
+    consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testCompletionUnregisterRegisteredConsumerCallsEndHandler() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    AtomicInteger count = new AtomicInteger(0);
+    consumer.handler(msg -> {});
+    consumer.endHandler(v -> {
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    consumer.unregister(ar -> {
+      assertTrue(ar.succeeded());
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    await();
+  }
+
+  @Test
+  public void testCompletionUnregisterUnregisteredConsumerCallsEndHandler() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    AtomicInteger count = new AtomicInteger(0);
+    consumer.endHandler(v -> {
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    consumer.unregister(ar -> {
+      assertTrue(ar.succeeded());
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    await();
+  }
+
+  @Test
   public void testSender() {
     String str = TestUtils.randomUnicodeString(100);
     WriteStream<String> sender = eb.sender(ADDRESS1);
