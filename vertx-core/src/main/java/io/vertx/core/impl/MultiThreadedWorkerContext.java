@@ -25,8 +25,9 @@ import java.util.concurrent.Executor;
  */
 public class MultiThreadedWorkerContext extends WorkerContext {
 
-  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedInternalExec, Executor workerExec, String deploymentID, JsonObject config) {
-    super(vertx, orderedInternalExec, workerExec, deploymentID, config);
+  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedInternalExec, Executor workerExec,
+                                    String deploymentID, JsonObject config, ClassLoader tccl) {
+    super(vertx, orderedInternalExec, workerExec, deploymentID, config, tccl);
   }
 
   @Override

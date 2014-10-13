@@ -221,7 +221,7 @@ public class VertxImpl implements VertxInternal {
     ContextImpl ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext(null, new JsonObject());
+      ctx = createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
     }
     return ctx;
   }
@@ -244,8 +244,8 @@ public class VertxImpl implements VertxInternal {
     }
   }
 
-  public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config) {
-    return new EventLoopContext(this, workerOrderedFact.getExecutor(), deploymentID, config);
+  public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl) {
+    return new EventLoopContext(this, workerOrderedFact.getExecutor(), deploymentID, config, tccl);
   }
 
   @Override
@@ -302,11 +302,13 @@ public class VertxImpl implements VertxInternal {
     return timerId;
   }
 
-  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config) {
+  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config,
+                                         ClassLoader tccl) {
     if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config);
+      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config, tccl);
     } else {
-      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID, config);
+      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
+                               config, tccl);
     }
   }
 

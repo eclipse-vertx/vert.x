@@ -55,7 +55,8 @@ public abstract class ContextImpl implements Context {
   protected final Executor orderedInternalPoolExec;
   protected VertxThread contextThread;
 
-  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, String deploymentID, JsonObject config) {
+  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, String deploymentID, JsonObject config,
+                        ClassLoader tccl) {
     this.vertx = vertx;
     this.orderedInternalPoolExec = orderedInternalPoolExec;
     this.deploymentID = deploymentID;
@@ -63,11 +64,10 @@ public abstract class ContextImpl implements Context {
     EventLoopGroup group = vertx.getEventLoopGroup();
     if (group != null) {
       this.eventLoop = group.next();
-      this.tccl = Thread.currentThread().getContextClassLoader();
     } else {
       this.eventLoop = null;
-      this.tccl = null;
     }
+    this.tccl = tccl;
   }
 
   public void setTCCL() {

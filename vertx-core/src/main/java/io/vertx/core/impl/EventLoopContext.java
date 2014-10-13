@@ -29,8 +29,9 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  public EventLoopContext(VertxInternal vertx, Executor bgExec, String deploymentID, JsonObject config) {
-    super(vertx, bgExec, deploymentID, config);
+  public EventLoopContext(VertxInternal vertx, Executor bgExec, String deploymentID, JsonObject config,
+                          ClassLoader tccl) {
+    super(vertx, bgExec, deploymentID, config, tccl);
   }
 
   public void doExecute(ContextTask task) {

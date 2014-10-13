@@ -27,7 +27,7 @@ import java.net.URLClassLoader;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class IsolatingClassLoader extends URLClassLoader {
+public class IsolatingClassLoader extends URLClassLoader {
 
   IsolatingClassLoader(URL[] urls, ClassLoader parent) {
     super(urls, parent);

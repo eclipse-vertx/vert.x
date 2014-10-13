@@ -27,8 +27,9 @@ public class WorkerContext extends ContextImpl {
 
   protected final Executor workerExec;
 
-  public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config) {
-    super(vertx, orderedInternalPoolExec, deploymentID, config);
+  public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID,
+                       JsonObject config, ClassLoader tccl) {
+    super(vertx, orderedInternalPoolExec, deploymentID, config, tccl);
     this.workerExec = workerExec;
   }
 
