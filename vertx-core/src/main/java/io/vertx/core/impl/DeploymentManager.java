@@ -92,20 +92,43 @@ public class DeploymentManager {
                              Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
     ClassLoader cl = getClassLoader(options.getIsolationGroup(), options);
+    /*
+      We resolve the verticle factory to use as follows:
+      1. We look for a prefix in the verticleName.
+      E.g. the verticleName might be "js:app.js" <-- the prefix is "js"
+      If it exists we use that to lookup the verticle factory
+      2. We look for a suffix (like a file extension),
+      E.g. the verticleName might be just "app.js"
+      If it exists we use that to lookup the factory
+      3. If there is no prefix or suffix OR there is no match then Java will be assumed
+    */
+    VerticleFactory verticleFactory = null;
     int pos = verticleName.indexOf(':');
-    if (pos == -1) {
-      throw new IllegalArgumentException("verticleName must start with prefix");
+    String lookup = null;
+    String actualName;
+    if (pos != -1) {
+      // Infer factory from prefix, e.g. "java:" or "js:"
+      lookup = verticleName.substring(0, pos);
+      actualName = getSuffix(pos, verticleName);
+    } else {
+      // Try and infer name from extension
+      pos = verticleName.lastIndexOf('.');
+      if (pos != -1) {
+        lookup = getSuffix(pos, verticleName);
+        actualName = verticleName;
+      } else {
+        // Assume it's Java
+        verticleFactory = DEFAULT_VERTICLE_FACTORY;
+        actualName = verticleName;
+      }
     }
-    String prefix = verticleName.substring(0, pos);
-    if (pos + 1 >= verticleName.length()) {
-      throw new IllegalArgumentException("Invalid name: " + verticleName);
-    }
-    String actualName = verticleName.substring(pos + 1);
-    VerticleFactory verticleFactory = verticleFactories.get(prefix);
     if (verticleFactory == null) {
-      // Use default Java verticle factory
-      verticleFactory = DEFAULT_VERTICLE_FACTORY;
+      verticleFactory = verticleFactories.get(lookup);
+      if (verticleFactory == null) {
+        verticleFactory = DEFAULT_VERTICLE_FACTORY;
+      }
     }
+
     try {
       Verticle verticle = verticleFactory.createVerticle(actualName, cl);
       if (verticle == null) {
@@ -116,6 +139,13 @@ public class DeploymentManager {
     } catch (Exception e) {
       reportFailure(e, currentContext, completionHandler);
     }
+  }
+
+  private String getSuffix(int pos, String str) {
+    if (pos + 1 >= str.length()) {
+      throw new IllegalArgumentException("Invalid name: " + str);
+    }
+    return str.substring(pos + 1);
   }
 
   public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {

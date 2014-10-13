@@ -497,14 +497,23 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testDeployWithNoPrefix() throws Exception {
-    try {
-      vertx.deployVerticle("uhqwuhiqwduhwd", ar -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+  public void testDeployClassNotFound1() throws Exception {
+    testDeployClassNotFound("iqwjdiqwjdoiqwjdqwij");
+  }
+
+  @Test
+  public void testDeployClassNotFound2() throws Exception {
+    testDeployClassNotFound("foo.bar.wibble.CiejdioqjdoiqwjdoiqjwdClass");
+  }
+
+  private void testDeployClassNotFound(String className) throws Exception {
+    vertx.deployVerticle(className, ar -> {
+      assertTrue(ar.failed());
+      // No prefix or suffix so should be interpreted as a java class
+      assertTrue(ar.cause() instanceof ClassNotFoundException);
+      testComplete();
+    });
+    await();
   }
 
   @Test
