@@ -368,6 +368,16 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testUndeployNoHandler() throws Exception {
+    MyVerticle verticle = new MyVerticle();
+    vertx.deployVerticle(verticle, ar -> {
+      assertTrue(ar.succeeded());
+      vertx.undeployVerticle(ar.result());
+    });
+    waitUntil(() -> vertx.deployments().isEmpty());
+  }
+
+  @Test
   public void testUndeployTwice() throws Exception {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {

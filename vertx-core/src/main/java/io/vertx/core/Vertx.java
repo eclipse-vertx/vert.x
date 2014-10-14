@@ -174,6 +174,8 @@ public interface Vertx {
 
   void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
+  void undeployVerticle(String deploymentID);
+
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler);
 
   Set<String> deployments();

@@ -65,11 +65,12 @@ public class IsolatingClassLoader extends URLClassLoader {
 
   private boolean isVertxOrSystemClass(String name) {
     return
-      name.startsWith("java.") ||
+        name.startsWith("java.") ||
         name.startsWith("javax.") ||
         name.startsWith("com.sun.") ||
         name.startsWith("io.vertx.core") ||
         name.startsWith("com.hazelcast") ||
-        name.startsWith("io.netty.");
+        name.startsWith("io.netty.") ||
+        name.startsWith("com.fasterxml.jackson");
   }
 }

@@ -22,7 +22,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
-import io.vertx.core.impl.verticle.SimpleJavaVerticleFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -58,7 +56,7 @@ public class DeploymentManager {
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
   private Map<String, VerticleFactory> verticleFactories = new ConcurrentHashMap<>();
-  private static final VerticleFactory DEFAULT_VERTICLE_FACTORY = new SimpleJavaVerticleFactory();
+  private static final VerticleFactory DEFAULT_VERTICLE_FACTORY = new JavaVerticleFactory();
 
   public DeploymentManager(VertxInternal vertx) {
     this.vertx = vertx;
@@ -67,9 +65,7 @@ public class DeploymentManager {
 
   private void loadVerticleFactories() {
     ServiceLoader<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
-    Iterator<VerticleFactory> iter = factories.iterator();
-    while (iter.hasNext()) {
-      VerticleFactory factory = iter.next();
+    for (VerticleFactory factory: factories) {
       factory.init(vertx);
       String prefix = factory.prefix();
       if (verticleFactories.containsKey(prefix)) {
