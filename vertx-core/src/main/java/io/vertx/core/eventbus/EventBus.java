@@ -58,15 +58,15 @@ public interface EventBus extends Measured {
 
   /**
 	 * Close the EventBus and release all resources. 
-	 * 
-	 * @param completionHandler
-	 */
+   *
+   * @param completionHandler may be {@code null}
+   */
   void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Send a message
    * @param address The address to send it to
-   * @param message The message
+   * @param message The message, may be {@code null}
    */
   @Fluent
   EventBus send(String address, Object message);
@@ -74,8 +74,8 @@ public interface EventBus extends Measured {
   /**
    * Send a message
    * @param address The address to send it to
-   * @param message The message
-   * @param replyHandler Reply handler will be called when any reply from the recipient is received
+   * @param message The message, may be {@code null}
+   * @param replyHandler Reply handler will be called when any reply from the recipient is received, may be {@code null}
    */
   @Fluent
   <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
@@ -89,7 +89,7 @@ public interface EventBus extends Measured {
   /**
    * Publish a message
    * @param address The address to publish it to
-   * @param message The message
+   * @param message The message, may be {@code null}
    */
   @Fluent
   EventBus publish(String address, Object message);

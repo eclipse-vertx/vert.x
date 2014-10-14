@@ -29,6 +29,9 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -36,6 +39,23 @@ import java.util.List;
 public class DNSTest extends VertxTestBase {
 
   private FakeDNSServer dnsServer;
+
+  @Test
+  public void testIllegalArguments() throws Exception {
+    DnsClient dns = prepareDns(FakeDNSServer.testResolveAAAA("::1"));
+
+    assertNullPointerException(() -> dns.lookup(null, ar -> {}));
+    assertNullPointerException(() -> dns.lookup4(null, ar -> {}));
+    assertNullPointerException(() -> dns.lookup6(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolveA(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolveAAAA(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolveCNAME(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolveMX(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolveTXT(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolvePTR(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolveNS(null, ar -> {}));
+    assertNullPointerException(() -> dns.resolveSRV(null, ar -> {}));
+  }
 
   @Test
   public void testResolveA() throws Exception {
@@ -265,12 +285,7 @@ public class DNSTest extends VertxTestBase {
     class MyVerticle extends AbstractVerticle {
       @Override
       public void start() {
-        try {
-          vertx.createDnsClient(1234, "localhost");
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
+        assertIllegalStateException(() -> vertx.createDnsClient(1234, "localhost"));
         testComplete();
       }
     }

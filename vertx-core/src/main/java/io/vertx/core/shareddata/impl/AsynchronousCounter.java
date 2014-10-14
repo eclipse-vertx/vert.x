@@ -23,6 +23,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.Counter;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -39,42 +40,49 @@ public class AsynchronousCounter implements Counter {
 
   @Override
   public void get(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.completedFuture(counter.get())));
   }
 
   @Override
   public void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.completedFuture(counter.incrementAndGet())));
   }
 
   @Override
   public void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.completedFuture(counter.getAndIncrement())));
   }
 
   @Override
   public void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.completedFuture(counter.decrementAndGet())));
   }
 
   @Override
   public void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.completedFuture(counter.addAndGet(value))));
   }
 
   @Override
   public void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.completedFuture(counter.getAndAdd(value))));
   }
 
   @Override
   public void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> resultHandler.handle(Future.completedFuture(counter.compareAndSet(expected, value))));
   }

@@ -45,7 +45,6 @@ import io.vertx.core.dns.impl.netty.decoder.RecordDecoderFactory;
 import io.vertx.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import io.vertx.core.dns.impl.netty.decoder.record.ServiceRecord;
 import io.vertx.core.impl.ContextImpl;
-
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
@@ -57,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -238,6 +238,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @SuppressWarnings("unchecked")
   private void lookup(String name, Future result, int... types) {
+    Objects.requireNonNull(name, "no null name accepted");
     bootstrap.connect(dnsServer).addListener(new RetryChannelFutureListener(result) {
       @Override
       public void onSuccess(ChannelFuture future) throws Exception {

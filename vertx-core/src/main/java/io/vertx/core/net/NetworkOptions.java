@@ -16,6 +16,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SocketDefaults;
 
@@ -60,9 +61,7 @@ public abstract class NetworkOptions {
   }
 
   public NetworkOptions setSendBufferSize(int sendBufferSize) {
-    if (sendBufferSize < 1) {
-      throw new IllegalArgumentException("sendBufferSize must be > 0");
-    }
+    Arguments.require(sendBufferSize > 0, "sendBufferSize must be > 0");
     this.sendBufferSize = sendBufferSize;
     return this;
   }
@@ -72,9 +71,7 @@ public abstract class NetworkOptions {
   }
 
   public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
-    if (receiveBufferSize < 1) {
-      throw new IllegalArgumentException("receiveBufferSize must be > 0");
-    }
+    Arguments.require(receiveBufferSize > 0, "receiveBufferSize must be > 0");
     this.receiveBufferSize = receiveBufferSize;
     return this;
   }
@@ -93,9 +90,7 @@ public abstract class NetworkOptions {
   }
 
   public NetworkOptions setTrafficClass(int trafficClass) {
-    if (trafficClass < 0 || trafficClass > 255) {
-      throw new IllegalArgumentException("trafficClass tc must be 0 <= tc <= 255");
-    }
+    Arguments.requireInRange(trafficClass, 0, 255, "trafficClass tc must be 0 <= tc <= 255");
     this.trafficClass = trafficClass;
     return this;
   }

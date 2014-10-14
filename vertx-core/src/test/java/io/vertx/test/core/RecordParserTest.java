@@ -25,12 +25,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class RecordParserTest {
+
+  @Test
+  public void testIllegalArguments() throws Exception {
+    assertNullPointerException(() -> RecordParser.newDelimited((byte[]) null, handler -> {}));
+    assertNullPointerException(() -> RecordParser.newDelimited((String) null, handler -> {}));
+
+    RecordParser parser = RecordParser.newDelimited("", handler -> {});
+    assertNullPointerException(() -> parser.setOutput(null));
+    assertNullPointerException(() -> parser.delimitedMode((byte[]) null));
+    assertNullPointerException(() -> parser.delimitedMode((String) null));
+  }
 
   @Test
   /*

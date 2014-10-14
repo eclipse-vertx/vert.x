@@ -20,9 +20,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -44,7 +46,7 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(String str, String enc) {
-    this(str.getBytes(Charset.forName(enc)));
+    this(str.getBytes(Charset.forName(Objects.requireNonNull(enc))));
   }
 
   BufferImpl(String str) {
@@ -94,6 +96,7 @@ public class BufferImpl implements Buffer {
   }
 
   public byte[] getBytes(int start, int end) {
+    Arguments.require(end >= start, "end must be greater or equal than start");
     byte[] arr = new byte[end - start];
     buffer.getBytes(start, arr, 0, end - start);
     return arr;
@@ -168,7 +171,7 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer appendString(String str, String enc) {
-    return append(str, Charset.forName(enc));
+    return append(str, Charset.forName(Objects.requireNonNull(enc)));
   }
 
   public Buffer appendString(String str) {

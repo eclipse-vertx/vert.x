@@ -17,6 +17,7 @@
 package io.vertx.core.datagram;
 
 import io.vertx.codegen.annotations.Options;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 
@@ -130,9 +131,7 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   public DatagramSocketOptions setMulticastTimeToLive(int multicastTimeToLive) {
-    if (multicastTimeToLive < 0) {
-      throw new IllegalArgumentException("multicastTimeToLive must be >= 0");
-    }
+    Arguments.require(multicastTimeToLive >= 0, "multicastTimeToLive must be >= 0");
     this.multicastTimeToLive = multicastTimeToLive;
     return this;
   }

@@ -252,4 +252,17 @@ public class TestUtils {
       // OK
     }
   }
+
+  /**
+   * Asserts that an IndexOutOfBoundsException is thrown by the code block.
+   * @param runnable code block to execute
+   */
+  public static void assertIndexOutOfBoundsException(Runnable runnable) {
+    try {
+      runnable.run();
+      fail("Should throw IndexOutOfBoundsException");
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+  }
 }

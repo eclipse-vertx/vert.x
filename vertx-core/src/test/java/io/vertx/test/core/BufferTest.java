@@ -16,15 +16,32 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import java.nio.ByteBuffer;
+
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertIndexOutOfBoundsException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class BufferTest {
+
+  @Test
+  public void testConstructorArguments() throws Exception {
+    assertIllegalArgumentException(() -> Buffer.buffer(-1));
+    assertNullPointerException(() -> Buffer.buffer((byte[]) null));
+    assertNullPointerException(() -> Buffer.buffer((String) null));
+    assertNullPointerException(() -> Buffer.buffer((ByteBuf) null));
+    assertNullPointerException(() -> Buffer.buffer(null, "UTF-8"));
+    assertNullPointerException(() -> Buffer.buffer("", null));
+  }
 
   //https://github.com/vert-x/vert.x/issues/561
   @Test
@@ -53,6 +70,8 @@ public class BufferTest {
     assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
     b.appendBuffer(toAppend);
     assertEquals(b.length(), 2 * bytes.length);
+
+    assertNullPointerException(() -> b.appendBuffer(null));
   }
 
   @Test
@@ -68,6 +87,8 @@ public class BufferTest {
 
     b.appendBytes(bytes);
     assertEquals(b.length(), 2 * bytes.length);
+
+    assertNullPointerException(() -> b.appendBytes(null));
   }
 
   @Test
@@ -85,6 +106,8 @@ public class BufferTest {
 
     b.appendBytes(bytes, 1, len);
     assertEquals(b.length(), 2 * len);
+
+    assertNullPointerException(() -> b.appendBytes(null, 1, len));
   }
 
   @Test
@@ -103,6 +126,8 @@ public class BufferTest {
 
     b.appendBuffer(src, 1, len);
     assertEquals(b.length(), 2 * len);
+
+    assertNullPointerException(() -> b.appendBuffer(null, 1, len));
   }
 
   @Test
@@ -141,6 +166,10 @@ public class BufferTest {
     b.appendString(str);
     assertEquals(b.length(), sb.length);
     assertTrue(str.equals(b.toString("UTF-8")));
+
+    assertNullPointerException(() -> b.appendString(null));
+    assertNullPointerException(() -> b.appendString(null, "UTF-8"));
+    assertNullPointerException(() -> b.appendString("", null));
   }
 
   @Test
@@ -154,218 +183,66 @@ public class BufferTest {
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
 
     Buffer b = Buffer.buffer(bytes);
-    try {
-      b.getByte(bytesLen);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getByte(bytesLen + 1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getByte(bytesLen + 100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getByte(-1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getByte(-100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
+    assertIndexOutOfBoundsException(() -> b.getByte(bytesLen));
+    assertIndexOutOfBoundsException(() -> b.getByte(bytesLen + 1));
+    assertIndexOutOfBoundsException(() -> b.getByte(bytesLen + 100));
+    assertIndexOutOfBoundsException(() -> b.getByte(-1));
+    assertIndexOutOfBoundsException(() -> b.getByte(-100));
+    assertIndexOutOfBoundsException(() -> b.getInt(bytesLen));
+    assertIndexOutOfBoundsException(() -> b.getInt(bytesLen + 1));
+    assertIndexOutOfBoundsException(() -> b.getInt(bytesLen + 100));
+    assertIndexOutOfBoundsException(() -> b.getInt(-1));
+    assertIndexOutOfBoundsException(() -> b.getInt(-100));
+    assertIndexOutOfBoundsException(() -> b.getLong(bytesLen));
+    assertIndexOutOfBoundsException(() -> b.getLong(bytesLen + 1));
+    assertIndexOutOfBoundsException(() -> b.getLong(bytesLen + 100));
+    assertIndexOutOfBoundsException(() -> b.getLong(-1));
+    assertIndexOutOfBoundsException(() -> b.getLong(-100));
+    assertIndexOutOfBoundsException(() -> b.getFloat(bytesLen));
+    assertIndexOutOfBoundsException(() -> b.getFloat(bytesLen + 1));
+    assertIndexOutOfBoundsException(() -> b.getFloat(bytesLen + 100));
+    assertIndexOutOfBoundsException(() -> b.getFloat(-1));
+    assertIndexOutOfBoundsException(() -> b.getFloat(-100));
+    assertIndexOutOfBoundsException(() -> b.getDouble(bytesLen));
+    assertIndexOutOfBoundsException(() -> b.getDouble(bytesLen + 1));
+    assertIndexOutOfBoundsException(() -> b.getDouble(bytesLen + 100));
+    assertIndexOutOfBoundsException(() -> b.getDouble(-1));
+    assertIndexOutOfBoundsException(() -> b.getDouble(-100));
+    assertIndexOutOfBoundsException(() -> b.getShort(bytesLen));
+    assertIndexOutOfBoundsException(() -> b.getShort(bytesLen + 1));
+    assertIndexOutOfBoundsException(() -> b.getShort(bytesLen + 100));
+    assertIndexOutOfBoundsException(() -> b.getShort(-1));
+    assertIndexOutOfBoundsException(() -> b.getShort(-100));
+    assertIndexOutOfBoundsException(() -> b.getBytes(bytesLen + 1, bytesLen + 1));
+    assertIndexOutOfBoundsException(() -> b.getBytes(bytesLen + 100, bytesLen + 100));
+    assertIndexOutOfBoundsException(() -> b.getBytes(-1, -1));
+    assertIndexOutOfBoundsException(() -> b.getBytes(-100, -100));
+    assertIndexOutOfBoundsException(() -> b.getString(-1, bytesLen));
+    assertIndexOutOfBoundsException(() -> b.getString(0, bytesLen + 1));
+    assertIllegalArgumentException(() -> b.getString(2, 1));
+    assertIndexOutOfBoundsException(() -> b.getString(-1, bytesLen, "UTF-8"));
+    assertIndexOutOfBoundsException(() -> b.getString(0, bytesLen + 1, "UTF-8"));
+    assertIllegalArgumentException(() -> b.getString(2, 1, "UTF-8"));
+  }
 
-    try {
-      b.getInt(bytesLen);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getInt(bytesLen + 1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getInt(bytesLen + 100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getInt(-1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getInt(-100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
+  @Test
+  public void testSetOutOfBounds() throws Exception {
+    Buffer b = Buffer.buffer(numSets);
 
-    try {
-      b.getLong(bytesLen);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getLong(bytesLen + 1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getLong(bytesLen + 100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getLong(-1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getLong(-100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-
-    try {
-      b.getFloat(bytesLen);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getFloat(bytesLen + 1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getFloat(bytesLen + 100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getFloat(-1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getFloat(-100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-
-    try {
-      b.getDouble(bytesLen);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getDouble(bytesLen + 1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getDouble(bytesLen + 100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getDouble(-1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getDouble(-100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-
-
-    try {
-      b.getShort(bytesLen);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getShort(bytesLen + 1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getShort(bytesLen + 100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getShort(-1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getShort(-100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-
-    try {
-      b.getBytes(bytesLen + 1, bytesLen + 1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getBytes(bytesLen + 100, bytesLen + 100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getBytes(-1, -1);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-    try {
-      b.getBytes(-100, -100);
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-      //expected
-    }
-
+    assertIndexOutOfBoundsException(() -> b.setByte(-1, (byte) 0));
+    assertIndexOutOfBoundsException(() -> b.setInt(-1, 0));
+    assertIndexOutOfBoundsException(() -> b.setLong(-1, 0));
+    assertIndexOutOfBoundsException(() -> b.setDouble(-1, 0));
+    assertIndexOutOfBoundsException(() -> b.setFloat(-1, 0));
+    assertIndexOutOfBoundsException(() -> b.setShort(-1, (short) 0));
+    assertIndexOutOfBoundsException(() -> b.setBuffer(-1, b));
+    assertIndexOutOfBoundsException(() -> b.setBuffer(0, b, -1, 0));
+    assertIllegalArgumentException(() -> b.setBuffer(0, b, 0, -1));
+    assertIndexOutOfBoundsException(() -> b.setBytes(-1, TestUtils.randomByteArray(1)));
+    assertIndexOutOfBoundsException(() -> b.setBytes(-1, TestUtils.randomByteArray(1), -1, 0));
+    assertIllegalArgumentException(() -> b.setBytes(-1, TestUtils.randomByteArray(1), 0, -1));
+    assertIndexOutOfBoundsException(() -> b.setString(-1, ""));
+    assertIndexOutOfBoundsException(() -> b.setString(-1, "", "UTF-8"));
   }
 
   @Test
@@ -594,6 +471,7 @@ public class BufferTest {
   @Test
   public void testSetBytesBuffer() throws Exception {
     testSetBytesBuffer(Buffer.buffer(150));
+    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (ByteBuffer) null));
   }
 
   @Test
@@ -631,6 +509,9 @@ public class BufferTest {
 
     b.setBytes(b.length(), bytes, 1, len);
     assertEquals(b.length(), 2 * len + 1);
+
+    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (byte[]) null));
+    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, null, 1, len));
   }
 
 
@@ -652,6 +533,9 @@ public class BufferTest {
 
     b.setBuffer(b.length(), src, 1, len);
     assertEquals(b.length(), 2 * len + 1);
+
+    assertNullPointerException(() -> b.setBuffer(1, null));
+    assertNullPointerException(() -> b.setBuffer(1, null, 0, len));
   }
 
   @Test
@@ -673,6 +557,9 @@ public class BufferTest {
     String str2 = new String(b1, "UTF-8");
 
     assertEquals(str, str2);
+
+    assertNullPointerException(() -> Buffer.buffer(150).setString(0, null));
+    assertNullPointerException(() -> Buffer.buffer(150).setString(0, null, "UTF-8"));
 
     //TODO setString with encoding
   }

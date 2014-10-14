@@ -56,6 +56,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -78,6 +82,40 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     assertTrue(latch.await(30, TimeUnit.SECONDS));
     super.tearDown();
+  }
+
+  @Test
+  public void testDeliveryOptions() {
+    DeliveryOptions options = new DeliveryOptions();
+
+    assertIllegalArgumentException(() -> options.setSendTimeout(0));
+    assertIllegalArgumentException(() -> options.setSendTimeout(-1));
+    assertNullPointerException(() -> options.addHeader(null, ""));
+    assertNullPointerException(() -> options.addHeader("", null));
+  }
+
+  @Test
+  public void testArgumentValidation() throws Exception {
+    assertNullPointerException(() -> eb.send(null, ""));
+    assertNullPointerException(() -> eb.send(null, "", handler -> {}));
+    assertNullPointerException(() -> eb.send(null, "", new DeliveryOptions()));
+    assertNullPointerException(() -> eb.send("", "", (DeliveryOptions) null));
+    assertNullPointerException(() -> eb.send(null, "", new DeliveryOptions(), handler -> {}));
+    assertNullPointerException(() -> eb.send("", "", null, handler -> {}));
+    assertNullPointerException(() -> eb.publish(null, ""));
+    assertNullPointerException(() -> eb.publish(null, "", new DeliveryOptions()));
+    assertNullPointerException(() -> eb.publish("", "", null));
+    assertNullPointerException(() -> eb.consumer(null));
+    assertNullPointerException(() -> eb.localConsumer(null));
+    assertNullPointerException(() -> eb.sender(null));
+    assertNullPointerException(() -> eb.sender(null, new DeliveryOptions()));
+    assertNullPointerException(() -> eb.publisher("", null));
+    assertNullPointerException(() -> eb.publisher(null, new DeliveryOptions()));
+    assertNullPointerException(() -> eb.registerCodec(null));
+    assertNullPointerException(() -> eb.unregisterCodec(null));
+    assertNullPointerException(() -> eb.registerDefaultCodec(null, new MyPOJOEncoder1()));
+    assertNullPointerException(() -> eb.registerDefaultCodec(Object.class, null));
+    assertNullPointerException(() -> eb.unregisterDefaultCodec(null));
   }
 
   @Test
@@ -791,22 +829,12 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testNoRegisteredDefaultDecoder() throws Exception {
-    try {
-      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"));
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> vertx.eventBus().send(ADDRESS1, new MyPOJO("foo")));
   }
 
   @Test
   public void testRegisterDefaultSystemDecoder() throws Exception {
-    try {
-      vertx.eventBus().registerDefaultCodec(MyPOJO.class, new MySystemDecoder());
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> vertx.eventBus().registerDefaultCodec(MyPOJO.class, new MySystemDecoder()));
   }
 
   @Test
@@ -814,34 +842,19 @@ public class LocalEventBusTest extends EventBusTestBase {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
     vertx.eventBus().unregisterDefaultCodec(MyPOJO.class);
-    try {
-      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"));
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> vertx.eventBus().send(ADDRESS1, new MyPOJO("foo")));
   }
 
   @Test
   public void testRegisterDefaultTwice() throws Exception {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
-    try {
-      vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // OK
-    }
+    assertIllegalStateException(() -> vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec));
   }
 
   @Test
   public void testDefaultCodecNullName() throws Exception {
-    try {
-      vertx.eventBus().registerDefaultCodec(String.class, new NullNameCodec());
-      fail("Should throw exception");
-    } catch (NullPointerException e) {
-      // OK
-    }
+    assertNullPointerException(() -> vertx.eventBus().registerDefaultCodec(String.class, new NullNameCodec()));
   }
 
 

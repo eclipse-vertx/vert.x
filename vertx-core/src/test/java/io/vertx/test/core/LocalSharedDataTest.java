@@ -23,6 +23,9 @@ import org.junit.Test;
 
 import java.util.Random;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -37,7 +40,7 @@ public class LocalSharedDataTest extends VertxTestBase {
 
   @Test
   public void testMap() throws Exception {
-
+    assertNullPointerException(() -> sharedData.getLocalMap(null));
     LocalMap<String, String> map = sharedData.getLocalMap("foo");
     LocalMap<String, String> map2 = sharedData.getLocalMap("foo");
     assertTrue(map == map2);
@@ -110,12 +113,7 @@ public class LocalSharedDataTest extends VertxTestBase {
     assertTrue(bgot1 != bgot2);
     assertTrue(TestUtils.byteArraysEqual(bytes, bgot2));
 
-    try {
-      map.put(key, new SomeOtherClass());
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      //OK
-    }
+    assertIllegalArgumentException(() -> map.put(key, new SomeOtherClass()));
   }
 
 

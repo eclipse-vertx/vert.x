@@ -32,7 +32,10 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -61,6 +64,33 @@ public class DatagramTest extends VertxTestBase {
       latch.await(10L, TimeUnit.SECONDS);
     }
     super.tearDown();
+  }
+
+  @Test
+  public void testDatagramSocket() throws Exception {
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+
+    assertNullPointerException(() -> peer1.send((Buffer) null, 1, "127.0.0.1", ar -> {}));
+    assertIllegalArgumentException(() -> peer1.send(Buffer.buffer(), -1, "127.0.0.1", ar -> {}));
+    assertIllegalArgumentException(() -> peer1.send(Buffer.buffer(), 65536, "127.0.0.1", ar -> {}));
+
+    assertNullPointerException(() -> peer1.send((String) null, 1, "127.0.0.1", ar -> {}));
+    assertIllegalArgumentException(() -> peer1.send("", -1, "127.0.0.1", ar -> {}));
+    assertIllegalArgumentException(() -> peer1.send("", 65536, "127.0.0.1", ar -> {}));
+
+    assertNullPointerException(() -> peer1.send((String) null, "UTF-8", 1, "127.0.0.1", ar -> {}));
+    assertIllegalArgumentException(() -> peer1.send("", "UTF-8", -1, "127.0.0.1", ar -> {}));
+    assertIllegalArgumentException(() -> peer1.send("", "UTF-8", 65536, "127.0.0.1", ar -> {}));
+    assertNullPointerException(() -> peer1.send("", null, 1, "127.0.0.1", ar -> {}));
+
+    assertIllegalArgumentException(() -> peer1.sender(-1, "127.0.0.1"));
+    assertIllegalArgumentException(() -> peer1.sender(65536, "127.0.0.1"));
+    assertNullPointerException(() -> peer1.sender(1, null));
+
+    assertIllegalArgumentException(() -> peer1.listen(-1, "127.0.0.1", ar -> {}));
+    assertIllegalArgumentException(() -> peer1.listen(65536, "127.0.0.1", ar -> {}));
+    assertNullPointerException(() -> peer1.listen(1, null, ar -> {}));
+    assertNullPointerException(() -> peer1.listen(1, "127.0.0.1", null));
   }
 
   @Test
@@ -320,35 +350,15 @@ public class DatagramTest extends VertxTestBase {
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
     assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertFalse(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(true));
@@ -358,18 +368,8 @@ public class DatagramTest extends VertxTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertFalse(options.isBroadcast());
     assertEquals(options, options.setBroadcast(true));
@@ -383,12 +383,7 @@ public class DatagramTest extends VertxTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setMulticastTimeToLive(rand));
     assertEquals(rand, options.getMulticastTimeToLive());
-    try {
-      options.setMulticastTimeToLive(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setMulticastTimeToLive(-1));
 
     assertNull(options.getMulticastNetworkInterface());
     String randString = TestUtils.randomUnicodeString(100);
@@ -488,12 +483,7 @@ public class DatagramTest extends VertxTestBase {
     class MyVerticle extends AbstractVerticle {
       @Override
       public void start() {
-        try {
-          peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
+        assertIllegalStateException(() -> peer1 = vertx.createDatagramSocket(new DatagramSocketOptions()));
         testComplete();
       }
     }

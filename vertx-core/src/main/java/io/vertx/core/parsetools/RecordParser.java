@@ -18,6 +18,9 @@ package io.vertx.core.parsetools;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
+
+import java.util.Objects;
 
 /**
  * A helper class which allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
@@ -65,6 +68,7 @@ public class RecordParser implements Handler<Buffer> {
   }
 
   public void setOutput(Handler<Buffer> output) {
+    Objects.requireNonNull(output, "output");
     this.output = output;
   }
 
@@ -110,7 +114,7 @@ public class RecordParser implements Handler<Buffer> {
    * {@code output} Will receive whole records which have been parsed.
    */
   public static RecordParser newFixed(int size, Handler<Buffer> output) {
-    if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
+    Arguments.require(size > 0, "Size must be > 0");
     RecordParser ls = new RecordParser(output);
     ls.fixedSizeMode(size);
     return ls;
@@ -131,6 +135,7 @@ public class RecordParser implements Handler<Buffer> {
    * This method can be called multiple times with different values of delim while data is being parsed.
    */
   public void delimitedMode(byte[] delim) {
+    Objects.requireNonNull(delim, "delim");
     delimited = true;
     this.delim = delim;
     delimPos = 0;
@@ -142,7 +147,7 @@ public class RecordParser implements Handler<Buffer> {
    * This method can be called multiple times with different values of size while data is being parsed.
    */
   public void fixedSizeMode(int size) {
-    if (size <= 0) throw new IllegalArgumentException("Size must be > 0");
+    Arguments.require(size > 0, "Size must be > 0");
     delimited = false;
     recordSize = size;
     reset = true;

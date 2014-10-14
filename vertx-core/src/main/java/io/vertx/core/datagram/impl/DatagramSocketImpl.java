@@ -28,13 +28,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.PacketWritestream;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.streams.WriteStream;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,6 +42,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -169,6 +170,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
+    Objects.requireNonNull(handler, "no null handler accepted");
     InetSocketAddress is = new InetSocketAddress(local.hostAddress(), local.hostPort());
     ChannelFuture future = channel().bind(is);
     addListener(future, ar -> {
@@ -202,6 +204,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   @Override
   @SuppressWarnings("unchecked")
   public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    Objects.requireNonNull(host, "no null host accepted");
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
     if (metrics.isEnabled()) metrics.bytesWritten(new SocketAddressImpl(port, host), packet.length());
@@ -211,6 +214,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   @Override
   public PacketWritestream sender(int port, String host) {
+    Arguments.requireInRange(port, 0, 65535, "port p must be in range 0 <= p <= 65535");
+    Objects.requireNonNull(host, "no null host accepted");
     return new PacketWriteStreamImpl(this, port, host);
   }
 

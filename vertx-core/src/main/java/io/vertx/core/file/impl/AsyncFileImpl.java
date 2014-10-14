@@ -24,6 +24,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -41,6 +42,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -111,6 +113,9 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public AsyncFile write(Buffer buffer, long position,  Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(buffer, "buffer");
+    Objects.requireNonNull(handler, "handler");
+    Arguments.require(position >= 0, "position must be >= 0");
     check();
     ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
@@ -140,6 +145,11 @@ public class AsyncFileImpl implements AsyncFile {
   }
   @Override
   public AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
+    Objects.requireNonNull(buffer, "buffer");
+    Objects.requireNonNull(handler, "handler");
+    Arguments.require(offset >= 0, "offset must be >= 0");
+    Arguments.require(position >= 0, "position must be >= 0");
+    Arguments.require(length >= 0, "length must be >= 0");
     check();
     ByteBuffer bb = ByteBuffer.allocate(length);
     doRead(buffer, offset, bb, position, handler);
@@ -184,6 +194,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public AsyncFile setWriteQueueMaxSize(int maxSize) {
+    Arguments.require(maxSize >= 2, "maxSize must be >= 2");
     check();
     this.maxWrites = maxSize;
     this.lwm = maxWrites / 2;

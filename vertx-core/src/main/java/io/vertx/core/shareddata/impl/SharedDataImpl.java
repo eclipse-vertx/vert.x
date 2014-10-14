@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -29,6 +30,7 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -52,6 +54,8 @@ public class SharedDataImpl implements SharedData {
 
   @Override
   public <K, V> void getClusterWideMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
     if (clusterManager == null) {
       throw new IllegalStateException("Can't get cluster wide map if not clustered");
     }
@@ -67,11 +71,16 @@ public class SharedDataImpl implements SharedData {
 
   @Override
   public void getLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
     getLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT, resultHandler);
   }
 
   @Override
   public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    Arguments.require(timeout >= 0, "timeout must be >= 0");
     if (clusterManager == null) {
       getLocalLock(name, timeout, resultHandler);
     } else {
@@ -81,6 +90,8 @@ public class SharedDataImpl implements SharedData {
 
   @Override
   public void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(resultHandler, "resultHandler");
     if (clusterManager == null) {
       getLocalCounter(name, resultHandler);
     } else {
@@ -92,6 +103,7 @@ public class SharedDataImpl implements SharedData {
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
    */
+  @SuppressWarnings("unchecked")
   public <K, V> LocalMap<K, V> getLocalMap(String name) {
     LocalMap<K, V> map = (LocalMap<K, V>) localMaps.get(name);
     if (map == null) {

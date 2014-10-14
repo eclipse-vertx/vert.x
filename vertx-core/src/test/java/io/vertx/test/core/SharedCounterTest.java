@@ -20,6 +20,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Counter;
 import org.junit.Test;
 
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -27,6 +29,24 @@ public class SharedCounterTest extends VertxTestBase {
 
   protected Vertx getVertx() {
     return vertx;
+  }
+
+  @Test
+  public void testIllegalArguments() throws Exception {
+    assertNullPointerException(() -> getVertx().sharedData().getCounter(null, ar -> {}));
+    assertNullPointerException(() -> getVertx().sharedData().getCounter("foo", null));
+    getVertx().sharedData().getCounter("foo", ar -> {
+      Counter counter = ar.result();
+      assertNullPointerException(() -> counter.get(null));
+      assertNullPointerException(() -> counter.incrementAndGet(null));
+      assertNullPointerException(() -> counter.getAndIncrement(null));
+      assertNullPointerException(() -> counter.decrementAndGet(null));
+      assertNullPointerException(() -> counter.addAndGet(1, null));
+      assertNullPointerException(() -> counter.getAndAdd(1, null));
+      assertNullPointerException(() -> counter.compareAndSet(1, 1, null));
+      testComplete();
+    });
+    await();
   }
 
   @Test

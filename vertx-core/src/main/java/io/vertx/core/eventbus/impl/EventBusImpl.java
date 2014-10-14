@@ -44,6 +44,7 @@ import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
 import io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec;
 import io.vertx.core.eventbus.impl.codecs.ShortMessageCodec;
 import io.vertx.core.eventbus.impl.codecs.StringMessageCodec;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -184,21 +185,27 @@ public class EventBusImpl implements EventBus {
 
   @Override
   public <T> WriteStream<T> sender(String address) {
+    Objects.requireNonNull(address, "address");
     return (ProducerBase<T>) data -> send(address, data);
   }
 
   @Override
   public <T> WriteStream<T> sender(String address, DeliveryOptions options) {
+    Objects.requireNonNull(address, "address");
+    Objects.requireNonNull(options, "options");
     return (ProducerBase<T>) data -> send(address, data, options);
   }
 
   @Override
   public <T> WriteStream<T> publisher(String address) {
+    Objects.requireNonNull(address, "address");
     return (ProducerBase<T>) data -> publish(address, data);
   }
 
   @Override
   public <T> WriteStream<T> publisher(String address, DeliveryOptions options) {
+    Objects.requireNonNull(address, "address");
+    Objects.requireNonNull(options, "options");
     return (ProducerBase<T>) data -> publish(address, data, options);
   }
 
@@ -215,11 +222,13 @@ public class EventBusImpl implements EventBus {
 
   @Override
   public <T> MessageConsumer<T> consumer(String address) {
+    Objects.requireNonNull(address, "address");
     return new HandlerRegistration<>(address, false, false, -1);
   }
 
   @Override
   public <T> MessageConsumer<T> localConsumer(String address) {
+    Objects.requireNonNull(address, "address");
     return new HandlerRegistration<>(address, false, true, -1);
   }
 
@@ -310,6 +319,7 @@ public class EventBusImpl implements EventBus {
   }
 
   MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+    Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec;
     if (codecName != null) {
       codec = userCodecMap.get(codecName);
@@ -976,9 +986,7 @@ public class EventBusImpl implements EventBus {
 
     @Override
     public MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
-      if (maxBufferedMessages < 0) {
-        throw new IllegalArgumentException("Max buffered messages cannot be negative");
-      }
+      Arguments.require(maxBufferedMessages >= 0, "Max buffered messages cannot be negative");
       while (pending.size() > maxBufferedMessages) {
         pending.poll();
       }

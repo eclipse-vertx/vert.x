@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
@@ -149,6 +150,24 @@ public class FileSystemTest extends VertxTestBase {
     assertNullPointerException(() -> vertx.fileSystem().existsSync(null));
     assertNullPointerException(() -> vertx.fileSystem().fsProps(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().fsPropsSync(null));
+
+    String fileName = "some-file.dat";
+    AsyncFile asyncFile = vertx.fileSystem().openSync(testDir + pathSep + fileName, new OpenOptions());
+
+    assertNullPointerException(() -> asyncFile.write(null));
+    assertIllegalArgumentException(() -> asyncFile.setWriteQueueMaxSize(1));
+    assertIllegalArgumentException(() -> asyncFile.setWriteQueueMaxSize(0));
+    assertIllegalArgumentException(() -> asyncFile.setWriteQueueMaxSize(-1));
+    assertNullPointerException(() -> asyncFile.write(null, 0, h -> {}));
+    assertNullPointerException(() -> asyncFile.write(Buffer.buffer(), 0, null));
+    assertIllegalArgumentException(() -> asyncFile.write(Buffer.buffer(), -1, h -> {}));
+
+    assertNullPointerException(() -> asyncFile.read(null, 0, 0, 0, h -> {}));
+    assertNullPointerException(() -> asyncFile.read(Buffer.buffer(), 0, 0, 0, null));
+
+    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), -1, 0, 0, h -> {}));
+    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), 0, -1, 0, h -> {}));
+    assertIllegalArgumentException(() -> asyncFile.read(Buffer.buffer(), 0, 0, -1, h -> {}));
   }
 
   @Test
@@ -1254,6 +1273,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void testPumpFileStreams() throws Exception {
     String fileName1 = "some-file.dat";
     String fileName2 = "some-other-file.dat";

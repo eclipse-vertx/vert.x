@@ -25,6 +25,9 @@ import org.junit.Test;
 
 import java.io.Serializable;
 
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -417,15 +420,20 @@ public class ClusterWideMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testGetMapWithNullName() throws Exception {
+    assertNullPointerException(() -> getVertx().sharedData().<String, String>getClusterWideMap(null, ar -> {}));
+  }
+
+  @Test
+  public void testGetMapWithNullResultHandler() throws Exception {
+    assertNullPointerException(() -> getVertx().sharedData().<String, String>getClusterWideMap("foo", null));
+  }
+
+  @Test
   public void testPutNullKey() {
     getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
-      try {
-        map.put(null, "foo", ar2 -> {});
-        fail("Should throw Exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
+      assertIllegalArgumentException(() -> map.put(null, "foo", ar2 -> {}));
+      testComplete();
     }));
     await();
   }
@@ -433,13 +441,8 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testPutNullValue() {
     getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
-      try {
-        map.put("foo", null, ar2 -> {});
-        fail("Should throw Exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
+      assertIllegalArgumentException(() -> map.put("foo", null, ar2 -> {}));
+      testComplete();
     }));
     await();
   }
@@ -447,13 +450,8 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testPutInvalidKey() {
     getVertx().sharedData().<SomeObject, String>getClusterWideMap("foo", onSuccess(map -> {
-      try {
-        map.put(new SomeObject(), "foo", ar2 -> {});
-        fail("Should throw Exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
+      assertIllegalArgumentException(() -> map.put(new SomeObject(), "foo", ar2 -> {}));
+      testComplete();
     }));
     await();
   }
@@ -461,13 +459,8 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testPutInvalidValue() {
     getVertx().sharedData().<String, SomeObject>getClusterWideMap("foo", onSuccess(map -> {
-      try {
-        map.put("foo", new SomeObject(), ar2 -> {});
-        fail("Should throw Exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
+      assertIllegalArgumentException(() -> map.put("foo", new SomeObject(), ar2 -> {}));
+      testComplete();
     }));
     await();
   }
@@ -475,14 +468,8 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testPutIfAbsentInvalidKey() {
     getVertx().sharedData().<SomeObject, String>getClusterWideMap("foo", onSuccess(map -> {
-      try {
-        map.putIfAbsent(new SomeObject(), "foo", ar2 -> {
-        });
-        fail("Should throw Exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
+      assertIllegalArgumentException(() -> map.putIfAbsent(new SomeObject(), "foo", ar2 -> {}));
+      testComplete();
     }));
     await();
   }
@@ -490,14 +477,8 @@ public class ClusterWideMapTest extends VertxTestBase {
   @Test
   public void testPutIfAbsentInvalidValue() {
     getVertx().sharedData().<String, SomeObject>getClusterWideMap("foo", onSuccess(map -> {
-      try {
-        map.putIfAbsent("foo", new SomeObject(), ar2 -> {
-        });
-        fail("Should throw Exception");
-      } catch (IllegalArgumentException e) {
-        // OK
-        testComplete();
-      }
+      assertIllegalArgumentException(() -> map.putIfAbsent("foo", new SomeObject(), ar2 -> {}));
+      testComplete();
     }));
     await();
   }
