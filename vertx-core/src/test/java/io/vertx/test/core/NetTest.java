@@ -1857,6 +1857,9 @@ public class NetTest extends VertxTestBase {
     });
   }
 
+// FIXME
+// commented out because intermittently fails until this netty issue is addressed:
+// https://github.com/netty/netty/issues/3007
 //  @Test
 //  public void testReadStreamPauseResume() {
 //

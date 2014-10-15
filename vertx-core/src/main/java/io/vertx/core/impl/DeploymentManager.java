@@ -98,7 +98,7 @@ public class DeploymentManager {
       try {
         VerticleFactory verticleFactory = iter.next();
         if (verticleFactory.requiresResolve()) {
-          String resolvedName = verticleFactory.resolve(identifier, options);
+          String resolvedName = verticleFactory.resolve(identifier, options, cl);
           if (!resolvedName.equals(identifier)) {
             deployVerticle(resolvedName, options, completionHandler);
             return;

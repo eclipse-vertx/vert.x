@@ -30,7 +30,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -59,56 +58,60 @@ public class HttpRequestStreamTest extends VertxTestBase {
   @Rule
   public RepeatRule repeatRule = new RepeatRule();
 
-  @Test
+
+
+  //@Test
   //@Repeat(times = 10000)
   // FIXME - this intermittently fails (uncomment he above to run in a loop)
-  public void testPausedRequestStreamWithFilledBacklogFailsConnecting() {
-    String path = "/some/path";
-    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-    ReadStream<HttpServerRequest> stream = server.requestStream();
-    AtomicInteger count = new AtomicInteger();
-    AtomicBoolean paused = new AtomicBoolean();
-    stream.handler(req -> {
-      assertFalse(paused.get());
-      HttpServerResponse response = req.response();
-      response.setStatusCode(200).end();
-      response.close();
-    });
-    server.listen(listenAR -> {
-      assertTrue(listenAR.succeeded());
-      paused.set(true);
-      stream.pause();
-      netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
-      Runnable[] r = new Runnable[1];
-      (r[0] = () -> {
-        netClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", socketAR -> {
-          if (socketAR.succeeded()) {
-            NetSocket socket = socketAR.result();
-            socket.write(Buffer.buffer(
-              "GET " + path + " HTTP/1.1\r\n" +
-              "Host: localhost:8080\r\n" +
-              "\r\n"
-            ));
-            count.incrementAndGet();
-            StringBuilder sb = new StringBuilder();
-            socket.handler(data -> sb.append(data.toString("UTF-8")));
-            socket.closeHandler(v2 -> {
-              String expectedPrefix = "HTTP/1.1 200 OK\r\n";
-              assertTrue("Was expecting <" + sb + "> to start with <" + expectedPrefix + ">", sb.toString().startsWith(expectedPrefix));
-              if (count.decrementAndGet() == 0) {
-                testComplete();
-              }
-            });
-            r[0].run();
-          } else {
-            paused.set(false);
-            stream.resume();
-          }
-        });
-      }).run();
-    });
-    await();
-  }
+  // Commented out until this issue is addressed:
+  // https://github.com/netty/netty/issues/3007
+//  public void testPausedRequestStreamWithFilledBacklogFailsConnecting() {
+//    String path = "/some/path";
+//    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+//    ReadStream<HttpServerRequest> stream = server.requestStream();
+//    AtomicInteger count = new AtomicInteger();
+//    AtomicBoolean paused = new AtomicBoolean();
+//    stream.handler(req -> {
+//      assertFalse(paused.get());
+//      HttpServerResponse response = req.response();
+//      response.setStatusCode(200).end();
+//      response.close();
+//    });
+//    server.listen(listenAR -> {
+//      assertTrue(listenAR.succeeded());
+//      paused.set(true);
+//      stream.pause();
+//      netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
+//      Runnable[] r = new Runnable[1];
+//      (r[0] = () -> {
+//        netClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", socketAR -> {
+//          if (socketAR.succeeded()) {
+//            NetSocket socket = socketAR.result();
+//            socket.write(Buffer.buffer(
+//              "GET " + path + " HTTP/1.1\r\n" +
+//              "Host: localhost:8080\r\n" +
+//              "\r\n"
+//            ));
+//            count.incrementAndGet();
+//            StringBuilder sb = new StringBuilder();
+//            socket.handler(data -> sb.append(data.toString("UTF-8")));
+//            socket.closeHandler(v2 -> {
+//              String expectedPrefix = "HTTP/1.1 200 OK\r\n";
+//              assertTrue("Was expecting <" + sb + "> to start with <" + expectedPrefix + ">", sb.toString().startsWith(expectedPrefix));
+//              if (count.decrementAndGet() == 0) {
+//                testComplete();
+//              }
+//            });
+//            r[0].run();
+//          } else {
+//            paused.set(false);
+//            stream.resume();
+//          }
+//        });
+//      }).run();
+//    });
+//    await();
+//  }
 
   @Test
   public void testResumePausedRequestStream() {

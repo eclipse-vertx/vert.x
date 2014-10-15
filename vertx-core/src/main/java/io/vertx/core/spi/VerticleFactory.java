@@ -45,7 +45,7 @@ public interface VerticleFactory {
     return false;
   }
 
-  default String resolve(String identifier, DeploymentOptions deploymentOptions) throws Exception {
+  default String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader) throws Exception {
     return identifier;
   }
 

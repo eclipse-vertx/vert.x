@@ -468,7 +468,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     }
 
     @Override
-    public String resolve(String identifier, DeploymentOptions deploymentOptions) throws Exception {
+    public String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader cl) throws Exception {
       if (failInResolve) {
         throw new IOException("whatever");
       }

@@ -17,7 +17,6 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.Options;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -50,6 +49,10 @@ public class DeploymentOptions {
   }
 
   public DeploymentOptions(JsonObject json) {
+    fromJson(json);
+  }
+
+  public void fromJson(JsonObject json) {
     this.config = json.getObject("config");
     this.worker = json.getBoolean("worker", false);
     this.multiThreaded = json.getBoolean("multiThreaded", false);
