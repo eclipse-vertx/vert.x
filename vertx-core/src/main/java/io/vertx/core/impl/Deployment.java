@@ -32,7 +32,7 @@ public interface Deployment {
 
   void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler);
 
-  String verticleName();
+  String identifier();
 
   DeploymentOptions deploymentOptions();
 

@@ -24,6 +24,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -55,7 +56,12 @@ public class HttpRequestStreamTest extends VertxTestBase {
     super.tearDown();
   }
 
+  @Rule
+  public RepeatRule repeatRule = new RepeatRule();
+
   @Test
+  //@Repeat(times = 10000)
+  // FIXME - this intermittently fails (uncomment he above to run in a loop)
   public void testPausedRequestStreamWithFilledBacklogFailsConnecting() {
     String path = "/some/path";
     this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(HttpTestBase.DEFAULT_HTTP_PORT));

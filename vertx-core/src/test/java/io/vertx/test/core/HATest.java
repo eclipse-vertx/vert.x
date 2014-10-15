@@ -258,7 +258,7 @@ public class HATest extends VertxTestBase {
 
     assertTrue(vertx1.deployments().size() == 1);
     String depID = vertx1.deployments().iterator().next();
-    assertTrue(((VertxInternal) vertx1).getDeployment(depID).verticleName().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxInternal) vertx1).getDeployment(depID).identifier().equals("java:" + HAVerticle1.class.getName()));
     closeVertices(vertx1, vertx2);
   }
 
@@ -288,7 +288,7 @@ public class HATest extends VertxTestBase {
 
     assertTrue(vertx1.deployments().size() == 1);
     String depID = vertx1.deployments().iterator().next();
-    assertTrue(((VertxInternal) vertx1).getDeployment(depID).verticleName().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxInternal) vertx1).getDeployment(depID).identifier().equals("java:" + HAVerticle1.class.getName()));
     closeVertices(vertx1, vertx3);
   }
 
@@ -374,7 +374,7 @@ public class HATest extends VertxTestBase {
     VertxInternal vi = (VertxInternal)vertices[pos];
     for (String deploymentID: vi.deployments()) {
       Deployment dep = vi.getDeployment(deploymentID);
-      if (verticleName.equals(dep.verticleName()) && options.equals(dep.deploymentOptions())) {
+      if (verticleName.equals(dep.identifier()) && options.equals(dep.deploymentOptions())) {
         return;
       }
     }

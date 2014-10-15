@@ -20,8 +20,13 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.VerticleFactory;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -127,21 +132,21 @@ public class VerticleFactoryTest extends VertxTestBase {
     String name3 = "cc:myverticle3";
     vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
       assertTrue(ar.succeeded());
-      assertEquals(name1.substring(3), fact1.verticleName);
+      assertEquals(name1, fact1.identifier);
       assertTrue(verticle1.startCalled);
       assertFalse(verticle2.startCalled);
       assertFalse(verticle3.startCalled);
-      assertNull(fact2.verticleName);
-      assertNull(fact3.verticleName);
+      assertNull(fact2.identifier);
+      assertNull(fact3.identifier);
       vertx.deployVerticle(name2, new DeploymentOptions(), ar2 -> {
         assertTrue(ar2.succeeded());
-        assertEquals(name2.substring(3), fact2.verticleName);
+        assertEquals(name2, fact2.identifier);
         assertTrue(verticle2.startCalled);
         assertFalse(verticle3.startCalled);
-        assertNull(fact3.verticleName);
+        assertNull(fact3.identifier);
         vertx.deployVerticle(name3, new DeploymentOptions(), ar3 -> {
           assertTrue(ar3.succeeded());
-          assertEquals(name3.substring(3), fact3.verticleName);
+          assertEquals(name3, fact3.identifier);
           assertTrue(verticle3.startCalled);
           testComplete();
         });
@@ -166,42 +171,27 @@ public class VerticleFactoryTest extends VertxTestBase {
     String name3 = "myverticle3.cc";
     vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
       assertTrue(ar.succeeded());
-      assertEquals(name1, fact1.verticleName);
+      assertEquals(name1, fact1.identifier);
       assertTrue(verticle1.startCalled);
       assertFalse(verticle2.startCalled);
       assertFalse(verticle3.startCalled);
-      assertNull(fact2.verticleName);
-      assertNull(fact3.verticleName);
+      assertNull(fact2.identifier);
+      assertNull(fact3.identifier);
       vertx.deployVerticle(name2, new DeploymentOptions(), ar2 -> {
         assertTrue(ar2.succeeded());
-        assertEquals(name2, fact2.verticleName);
+        assertEquals(name2, fact2.identifier);
         assertTrue(verticle2.startCalled);
         assertFalse(verticle3.startCalled);
-        assertNull(fact3.verticleName);
+        assertNull(fact3.identifier);
         vertx.deployVerticle(name3, new DeploymentOptions(), ar3 -> {
           assertTrue(ar3.succeeded());
-          assertEquals(name3, fact3.verticleName);
+          assertEquals(name3, fact3.identifier);
           assertTrue(verticle3.startCalled);
           testComplete();
         });
       });
     });
     await();
-  }
-
-  @Test
-  public void testMultipleMatch() {
-    TestVerticle verticle1 = new TestVerticle();
-    TestVerticle verticle2 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
-    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle2);
-    vertx.registerVerticleFactory(fact1);
-    try {
-      vertx.registerVerticleFactory(fact2);
-      fail("Should throw exception") ;
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
   }
 
   @Test
@@ -224,11 +214,208 @@ public class VerticleFactoryTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testResolve() {
+    TestVerticle verticle = new TestVerticle();
+    TestVerticleFactory fact = new TestVerticleFactory("actual", verticle);
+    vertx.registerVerticleFactory(fact);
+    TestVerticleFactory factResolve = new TestVerticleFactory("resolve", "actual:myverticle");
+    vertx.registerVerticleFactory(factResolve);
+    JsonObject config = new JsonObject().putString("foo", "bar");
+    DeploymentOptions original = new DeploymentOptions().setWorker(false).setConfig(config).setIsolationGroup("somegroup");
+    DeploymentOptions options = new DeploymentOptions(original);
+    vertx.deployVerticle("resolve:someid", options, res -> {
+      assertTrue(res.succeeded());
+      assertEquals("resolve:someid", factResolve.identifierToResolve);
+      assertEquals(options, factResolve.deploymentOptionsToResolve);
+      assertEquals("actual:myverticle", fact.identifier);
+      assertTrue(verticle.startCalled);
+      assertTrue(verticle.startCalled);
+      assertEquals(1, vertx.deployments().size());
+      Deployment dep = ((VertxInternal)vertx).getDeployment(res.result());
+      assertNotNull(dep);
+      assertFalse(original.equals(dep.deploymentOptions()));
+      assertFalse(dep.deploymentOptions().getConfig().containsField("foo"));
+      assertEquals("quux", dep.deploymentOptions().getConfig().getString("wibble"));
+      assertTrue(dep.deploymentOptions().isWorker());
+      assertEquals("othergroup", dep.deploymentOptions().getIsolationGroup());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testOrdering() {
+    TestVerticle verticle = new TestVerticle();
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2);
+    vertx.registerVerticleFactory(fact2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1);
+    vertx.registerVerticleFactory(fact1);
+    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
+    vertx.registerVerticleFactory(fact3);
+    vertx.deployVerticle("aa:someverticle", res -> {
+      assertTrue(res.succeeded());
+      assertEquals("aa:someverticle", fact1.identifier);
+      assertNull(fact2.identifier);
+      assertNull(fact3.identifier);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testOrderingFailedInCreate() {
+    TestVerticle verticle = new TestVerticle();
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2);
+    vertx.registerVerticleFactory(fact2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1, true);
+    vertx.registerVerticleFactory(fact1);
+    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
+    vertx.registerVerticleFactory(fact3);
+    vertx.deployVerticle("aa:someverticle", res -> {
+      assertTrue(res.succeeded());
+      assertEquals("aa:someverticle", fact2.identifier);
+      assertNull(fact1.identifier);
+      assertNull(fact3.identifier);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testOrderingFailedInCreate2() {
+    TestVerticle verticle = new TestVerticle();
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2, true);
+    vertx.registerVerticleFactory(fact2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1, true);
+    vertx.registerVerticleFactory(fact1);
+    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
+    vertx.registerVerticleFactory(fact3);
+    vertx.deployVerticle("aa:someverticle", res -> {
+      assertTrue(res.succeeded());
+      assertEquals("aa:someverticle", fact3.identifier);
+      assertNull(fact1.identifier);
+      assertNull(fact2.identifier);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testOrderingFailedInCreateAll() {
+    TestVerticle verticle = new TestVerticle();
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2, true);
+    vertx.registerVerticleFactory(fact2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1, true);
+    vertx.registerVerticleFactory(fact1);
+    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3, true);
+    vertx.registerVerticleFactory(fact3);
+    vertx.deployVerticle("aa:someverticle", res -> {
+      assertFalse(res.succeeded());
+      assertTrue(res.cause() instanceof ClassNotFoundException);
+      assertNull(fact1.identifier);
+      assertNull(fact2.identifier);
+      assertNull(fact3.identifier);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testOrderingFailedInResolve() {
+    TestVerticle verticle = new TestVerticle();
+
+    TestVerticleFactory factActual = new TestVerticleFactory("actual", verticle);
+    vertx.registerVerticleFactory(factActual);
+
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", "actual:someverticle", 2);
+    vertx.registerVerticleFactory(fact2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", "actual:someverticle", 1, true);
+    vertx.registerVerticleFactory(fact1);
+    TestVerticleFactory fact3 = new TestVerticleFactory("aa", "actual:someverticle", 3);
+    vertx.registerVerticleFactory(fact3);
+    vertx.deployVerticle("aa:blah", res -> {
+      assertTrue(res.succeeded());
+      assertNull(fact2.identifier);
+      assertNull(fact1.identifier);
+      assertNull(fact3.identifier);
+      assertEquals("aa:blah", fact2.identifierToResolve);
+      assertNull(fact1.identifierToResolve);
+      assertNull(fact3.identifierToResolve);
+      assertEquals("actual:someverticle", factActual.identifier);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testOrderingFailedInResolve2() {
+    TestVerticle verticle = new TestVerticle();
+
+    TestVerticleFactory factActual = new TestVerticleFactory("actual", verticle);
+    vertx.registerVerticleFactory(factActual);
+
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", "actual:someverticle", 2, true);
+    vertx.registerVerticleFactory(fact2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", "actual:someverticle", 1, true);
+    vertx.registerVerticleFactory(fact1);
+    TestVerticleFactory fact3 = new TestVerticleFactory("aa", "actual:someverticle", 3);
+    vertx.registerVerticleFactory(fact3);
+    vertx.deployVerticle("aa:blah", res -> {
+      assertTrue(res.succeeded());
+      assertNull(fact2.identifier);
+      assertNull(fact1.identifier);
+      assertNull(fact3.identifier);
+      assertEquals("aa:blah", fact3.identifierToResolve);
+      assertNull(fact1.identifierToResolve);
+      assertNull(fact2.identifierToResolve);
+      assertEquals("actual:someverticle", factActual.identifier);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testOrderingAllFailedInResolve() {
+    TestVerticle verticle = new TestVerticle();
+
+    TestVerticleFactory factActual = new TestVerticleFactory("actual", verticle);
+    vertx.registerVerticleFactory(factActual);
+
+    TestVerticleFactory fact2 = new TestVerticleFactory("aa", "actual:someverticle", 2, true);
+    vertx.registerVerticleFactory(fact2);
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", "actual:someverticle", 1, true);
+    vertx.registerVerticleFactory(fact1);
+    TestVerticleFactory fact3 = new TestVerticleFactory("aa", "actual:someverticle", 3, true);
+    vertx.registerVerticleFactory(fact3);
+    vertx.deployVerticle("aa:blah", res -> {
+      assertTrue(res.failed());
+      assertTrue(res.cause() instanceof IOException);
+      assertNull(fact2.identifier);
+      assertNull(fact1.identifier);
+      assertNull(fact3.identifier);
+      assertNull(fact3.identifierToResolve);
+      assertNull(fact1.identifierToResolve);
+      assertNull(fact2.identifierToResolve);
+      assertNull(factActual.identifier);
+      testComplete();
+    });
+    await();
+  }
+
   class TestVerticleFactory implements VerticleFactory {
 
     String prefix;
     Verticle verticle;
-    String verticleName;
+    String identifier;
+
+    String resolvedIdentifier;
+
+    String identifierToResolve;
+    DeploymentOptions deploymentOptionsToResolve;
+    int order;
+    boolean failInCreate;
+    boolean failInResolve;
 
     TestVerticleFactory(String prefix) {
       this.prefix = prefix;
@@ -239,10 +426,63 @@ public class VerticleFactoryTest extends VertxTestBase {
       this.verticle = verticle;
     }
 
+    TestVerticleFactory(String prefix, String resolvedIdentifier) {
+      this.prefix = prefix;
+      this.resolvedIdentifier = resolvedIdentifier;
+    }
+
+    TestVerticleFactory(String prefix, Verticle verticle, int order) {
+      this.prefix = prefix;
+      this.verticle = verticle;
+      this.order = order;
+    }
+
+    TestVerticleFactory(String prefix, Verticle verticle, int order, boolean failInCreate) {
+      this.prefix = prefix;
+      this.verticle = verticle;
+      this.order = order;
+      this.failInCreate = failInCreate;
+    }
+
+    TestVerticleFactory(String prefix, String resolvedIdentifier, int order) {
+      this.prefix = prefix;
+      this.resolvedIdentifier = resolvedIdentifier;
+      this.order = order;
+    }
+
+    TestVerticleFactory(String prefix, String resolvedIdentifier, int order, boolean failInResolve) {
+      this.prefix = prefix;
+      this.resolvedIdentifier = resolvedIdentifier;
+      this.order = order;
+      this.failInResolve = failInResolve;
+    }
+
+    @Override
+    public int order() {
+      return order;
+    }
+
+    @Override
+    public boolean requiresResolve() {
+      return resolvedIdentifier != null;
+    }
+
+    @Override
+    public String resolve(String identifier, DeploymentOptions deploymentOptions) throws Exception {
+      if (failInResolve) {
+        throw new IOException("whatever");
+      }
+      identifierToResolve = identifier;
+      deploymentOptionsToResolve = deploymentOptions;
+      // Now we change the deployment options
+      deploymentOptions.setConfig(new JsonObject().putString("wibble", "quux"));
+      deploymentOptions.setWorker(true);
+      deploymentOptions.setIsolationGroup("othergroup");
+      return resolvedIdentifier;
+    }
 
     @Override
     public void init(Vertx vertx) {
-
     }
 
     @Override
@@ -253,7 +493,10 @@ public class VerticleFactoryTest extends VertxTestBase {
 
     @Override
     public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
-      this.verticleName = verticleName;
+      if (failInCreate) {
+        throw new ClassNotFoundException("whatever");
+      }
+      this.identifier = verticleName;
       return verticle;
     }
 

@@ -166,13 +166,13 @@ public interface Vertx {
 
 
 
-  void deployVerticle(String verticleName);
+  void deployVerticle(String identifier);
 
-  void deployVerticle(String verticleName, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(String identifier, Handler<AsyncResult<String>> completionHandler);
 
-  void deployVerticle(String verticleName, DeploymentOptions options);
+  void deployVerticle(String identifier, DeploymentOptions options);
 
-  void deployVerticle(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(String identifier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   void undeployVerticle(String deploymentID);
 
