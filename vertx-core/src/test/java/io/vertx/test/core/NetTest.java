@@ -45,6 +45,7 @@ import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
+import io.vertx.core.streams.ReadStream;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -1823,6 +1824,37 @@ public class NetTest extends VertxTestBase {
 
     server = null;
     await();
+  }
+
+  //@Test
+  public void testReadStreamPaused() {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
+    ReadStream<NetSocket> stream = server.connectStream();
+    stream.handler(sock -> {});
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      // We pause the stream - this causes channel.setAutoRead(false) to be called so there should ne no
+      // more connects after this
+      stream.pause();
+      attemptConnect(0);
+    });
+    await();
+  }
+
+  // The stream is paused so it should NEVER connect
+  private void attemptConnect(int count) {
+    if (count == 100) {
+      testComplete();
+    }
+    client.connect(1234, "localhost", ar2 -> {
+      if (ar2.succeeded()) {
+        fail("Should not connect");
+      } else {
+        System.out.println("failed to connect");
+      }
+      attemptConnect(count + 1);
+    });
   }
 
 //  @Test
