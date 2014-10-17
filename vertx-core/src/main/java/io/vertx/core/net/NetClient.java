@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.metrics.Measured;
 
 /**
  * A TCP/SSL client.<p>
@@ -36,7 +37,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetClient {
+public interface NetClient extends Measured {
 
   /**
    * Attempt to open a connection to a server at the specific {@code port} and {@code host}.
