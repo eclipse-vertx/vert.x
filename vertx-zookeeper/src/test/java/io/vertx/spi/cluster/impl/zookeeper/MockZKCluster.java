@@ -20,7 +20,7 @@ public class MockZKCluster {
 
   public MockZKCluster() {
     try {
-      server = new TestingServer(new InstanceSpec(null, -1, -1, -1, true, -1, -1, 200), true);
+      server = new TestingServer(new InstanceSpec(null, -1, -1, -1, true, -1, -1, 100), true);
       timing = new Timing();
     } catch (Exception e) {
       e.printStackTrace();

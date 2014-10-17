@@ -177,6 +177,7 @@
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
               <excludes>
                 <exclude>**/Hazelcast*.java</exclude>
+                <exclude>**/ZKClustered*.java</exclude>
               </excludes>
             <systemPropertyVariables>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>

@@ -78,7 +78,6 @@ class ZKAsyncMap<K, V> extends ZKMap<K, V> implements AsyncMap<K, V> {
       if (getEvent.succeeded()) {
         if (v.equals(getEvent.result())) {
           delete(k, v, deleteEvent -> forwardAsyncResult(resultHandler, deleteEvent, true));
-
         } else {
           vertx.runOnContext(event -> resultHandler.handle(Future.completedFuture(false)));
         }
@@ -120,7 +119,7 @@ class ZKAsyncMap<K, V> extends ZKMap<K, V> implements AsyncMap<K, V> {
   }
 
   /**
-   * just remove parent node which is map path
+   * just remove parent node
    */
   @Override
   public void clear(Handler<AsyncResult<Void>> resultHandler) {

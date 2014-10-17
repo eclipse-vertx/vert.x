@@ -98,11 +98,7 @@ abstract class ZKMap<K, V> {
   }
 
   protected void checkExists(K k, AsyncResultHandler<Boolean> handler) {
-    try {
-      checkExists(keyPath(k), handler);
-    } catch (Exception ex) {
-      vertx.runOnContext(event -> handler.handle(Future.completedFuture(ex)));
-    }
+    checkExists(keyPath(k), handler);
   }
 
   protected void checkExists(String path, AsyncResultHandler<Boolean> handler) {
@@ -123,11 +119,7 @@ abstract class ZKMap<K, V> {
   }
 
   protected void create(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
-    try {
-      create(keyPath(k), v, completionHandler);
-    } catch (Exception ex) {
-      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
-    }
+    create(keyPath(k), v, completionHandler);
   }
 
   protected void create(String path, V v, Handler<AsyncResult<Void>> completionHandler) {
@@ -144,11 +136,7 @@ abstract class ZKMap<K, V> {
   }
 
   protected void setData(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
-    try {
-      setData(keyPath(k), v, completionHandler);
-    } catch (Exception ex) {
-      vertx.runOnContext(event -> completionHandler.handle(Future.completedFuture(ex)));
-    }
+    setData(keyPath(k), v, completionHandler);
   }
 
   protected void setData(String path, V v, Handler<AsyncResult<Void>> completionHandler) {
@@ -165,11 +153,7 @@ abstract class ZKMap<K, V> {
   }
 
   protected void getData(K k, Class<V> clazz, AsyncResultHandler<V> asyncResultHandler) {
-    try {
-      getData(keyPath(k), clazz, asyncResultHandler);
-    } catch (Exception ex) {
-      vertx.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(ex)));
-    }
+    getData(keyPath(k), clazz, asyncResultHandler);
   }
 
   protected void getData(String path, Class<V> clazz, AsyncResultHandler<V> asyncResultHandler) {
