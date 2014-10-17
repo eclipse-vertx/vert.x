@@ -54,6 +54,9 @@ public class SSLHelper {
 
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
+  // Make sure SSLv3 is NOT enabled due to POODLE issue
+  private static final String[] ENABLED_PROTOCOLS = {"TLSv1.1", "TLSv1.2"};
+
   private boolean ssl;
   private KeyStoreHelper keyStoreHelper;
   private KeyStoreHelper trustStoreHelper;
@@ -224,16 +227,13 @@ public class SSLHelper {
       sslContext = createContext(vertx);
     }
     SSLEngine engine = sslContext.createSSLEngine();
-//    String[] current = engine.getSupportedCipherSuites();
-//    System.out.println("Enabled cipher suites:");
-//    for (String str: current) {
-//      System.out.println("\"" + str+ "\",");
-//    }
 
     if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
       engine.setEnabledCipherSuites(toUse);
     }
+
+    engine.setEnabledProtocols(ENABLED_PROTOCOLS);
 
     engine.setUseClientMode(client);
 
