@@ -972,14 +972,22 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testExceptionWhenDeliveringBufferedMessage() {
+  public void testExceptionWhenDeliveringBufferedMessageWithMessageStream() {
+    testExceptionWhenDeliveringBufferedMessage((consumer, handler) -> consumer.handler(message -> handler.handle(message.body())));
+  }
+
+  @Test
+  public void testExceptionWhenDeliveringBufferedMessageWithBodyStream() {
+    testExceptionWhenDeliveringBufferedMessage((consumer, handler) -> consumer.bodyStream().handler(handler));
+  }
+
+  private void testExceptionWhenDeliveringBufferedMessage(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> register) {
     String[] data = new String[11];
     for (int i = 0;i < data.length;i++) {
       data[i] = TestUtils.randomAlphaString(10);
     }
     Set<String> expected = new HashSet<>();
-    Handler<Message<String>> handler = message -> {
-      String body = message.body();
+    Handler<String> handler = body -> {
       if ("end".equals(body)) {
         assertEquals(Collections.emptySet(), expected);
         testComplete();
@@ -989,14 +997,14 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     };
     MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
+    ReadStream<?> controller = register.apply(reg, handler);
     ((EventBusImpl.HandlerRegistration<String>) reg).discardHandler(msg -> {
       assertEquals(data[10], msg.body());
       expected.addAll(Arrays.asList(data).subList(0, 10));
-      reg.resume();
+      controller.resume();
       eb.send(ADDRESS1, "end");
     });
-    reg.handler(handler);
-    reg.pause();
+    controller.pause();
     for (String msg : data) {
       eb.publish(ADDRESS1, msg);
     }
@@ -1004,8 +1012,18 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testUnregisterRegisteredConsumerCallsEndHandler() {
+  public void testUnregisterationOfRegisteredConsumerCallsEndHandlerWithMessaqgeStream() {
     MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testUnregisterationOfRegisteredConsumerCallsEndHandler(consumer, consumer);
+  }
+
+  @Test
+  public void testUnregisterationOfRegisteredConsumerCallsEndHandlerWithBodyStream() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testUnregisterationOfRegisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
+  }
+
+  private void testUnregisterationOfRegisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     consumer.handler(msg -> {});
     consumer.endHandler(v -> testComplete());
     consumer.unregister();
@@ -1013,16 +1031,36 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testUnregisterUnregisteredConsumerCallsEndHandler() {
+  public void testUnregistrationOfUnregisteredConsumerCallsEndHandlerWithMessageStream() {
     MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testUnregistrationOfUnregisteredConsumerCallsEndHandler(consumer, consumer);
+  }
+
+  @Test
+  public void testUnregistrationOfUnregisteredConsumerCallsEndHandlerWithBodyStream() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testUnregistrationOfUnregisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
+  }
+
+  private void testUnregistrationOfUnregisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     consumer.endHandler(v -> testComplete());
     consumer.unregister();
     await();
   }
 
   @Test
-  public void testCompletionUnregisterRegisteredConsumerCallsEndHandler() {
+  public void testCompletingUnregistrationOfRegisteredConsumerCallsEndHandlerWithMessageStream() {
     MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testCompletingUnregistrationOfRegisteredConsumerCallsEndHandler(consumer, consumer);
+  }
+
+  @Test
+  public void testCompletingUnregistrationOfRegisteredConsumerCallsEndHandlerWithBodyStream() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testCompletingUnregistrationOfRegisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
+  }
+
+  private void testCompletingUnregistrationOfRegisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     AtomicInteger count = new AtomicInteger(0);
     consumer.handler(msg -> {});
     consumer.endHandler(v -> {
@@ -1040,10 +1078,20 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testCompletionUnregisterUnregisteredConsumerCallsEndHandler() {
+  public void testCompletingUnregistrationUnregisteredConsumerCallsEndHandlerWithMessageStream() {
     MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testCompletingUnregistrationUnregisteredConsumerCallsEndHandler(consumer, consumer);
+  }
+
+  @Test
+  public void testCompletingUnregistrationUnregisteredConsumerCallsEndHandlerWithBodyStream() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testCompletingUnregistrationUnregisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
+  }
+
+  private void testCompletingUnregistrationUnregisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     AtomicInteger count = new AtomicInteger(0);
-    consumer.endHandler(v -> {
+    readStream.endHandler(v -> {
       if (count.incrementAndGet() == 2) {
         testComplete();
       }
@@ -1054,6 +1102,29 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     });
+    await();
+  }
+
+  @Test
+  public void testUnregistrationWhenSettingNullHandlerWithConsumer() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testUnregistrationWhenSettingNullHandler(consumer, consumer);
+  }
+
+  @Test
+  public void testUnregistrationWhenSettingNullHandlerWithBodyStream() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    testUnregistrationWhenSettingNullHandler(consumer, consumer.bodyStream());
+  }
+
+  private void testUnregistrationWhenSettingNullHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
+    readStream.handler(msg -> {});
+    readStream.endHandler(v -> {
+      assertFalse(consumer.isRegistered());
+      testComplete();
+    });
+    assertTrue(consumer.isRegistered());
+    readStream.handler(null);
     await();
   }
 

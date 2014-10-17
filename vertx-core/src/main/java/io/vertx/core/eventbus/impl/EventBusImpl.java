@@ -1050,6 +1050,9 @@ public class EventBusImpl implements EventBus {
       if (this.handler != null && !registered) {
         registered = true;
         registerHandler(address, this, replyHandler, localOnly, timeoutID);
+      } else if (this.handler == null && registered) {
+        registered = false;
+        unregister();
       }
       return this;
     }
@@ -1057,6 +1060,11 @@ public class EventBusImpl implements EventBus {
     @Override
     public ReadStream<T> bodyStream() {
       return new BodyReadStream<>(this);
+    }
+
+    @Override
+    public boolean isRegistered() {
+      return registered;
     }
 
     @Override

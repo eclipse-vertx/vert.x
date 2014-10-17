@@ -29,7 +29,8 @@ import io.vertx.core.streams.ReadStream;
  * create a new consumer, the returned consumer is not yet registered against the event bus. Registration
  * is effective after the {@link #handler(io.vertx.core.Handler)} method is invoked.<p>
  *
- * The consumer is unregistered from the event bus using the {@link #unregister()} method.
+ * The consumer is unregistered from the event bus using the {@link #unregister()} method or by calling the
+ * {@link #handler(io.vertx.core.Handler)} with a null value..
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
@@ -55,6 +56,11 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    * @return a read stream for the body of the message stream.
    */
   ReadStream<T> bodyStream();
+
+  /**
+   * @return true if the current consumer is registered
+   */
+  boolean isRegistered();
 
 
   /**
