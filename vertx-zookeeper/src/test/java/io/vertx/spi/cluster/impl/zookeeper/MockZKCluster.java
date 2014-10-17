@@ -1,7 +1,6 @@
-package io.vertx.test.core;
+package io.vertx.spi.cluster.impl.zookeeper;
 
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.spi.cluster.impl.zookeeper.ZookeeperClusterManager;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -11,27 +10,25 @@ import org.apache.curator.test.TestingServer;
 import org.apache.curator.test.Timing;
 
 /**
- * Mock ZooKeeper Server.
- * Created by stream.Liu
+ * Created by Stream.Liu
  */
-class ZKMockServer {
+public class MockZKCluster {
 
-  private RetryPolicy retryPolicy = new ExponentialBackoffRetry(100, 3);
+  private RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 5);
   private Timing timing;
   private TestingServer server;
 
-  public ZKMockServer() {
+  public MockZKCluster() {
     try {
-      server = new TestingServer(new InstanceSpec(null, -1, -1, -1, true, -1, -1, 200));
+      server = new TestingServer(new InstanceSpec(null, -1, -1, -1, true, -1, -1, 200), true);
       timing = new Timing();
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
-  ClusterManager getClusterManager() {
-    CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("io.vertx").sessionTimeoutMs(10000).connectionTimeoutMs(timing.connection()).connectString(server.getConnectString()).retryPolicy(retryPolicy).build();
+  public ClusterManager getClusterManager() {
+    CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("io.vertx").sessionTimeoutMs(60000).connectionTimeoutMs(timing.connection()).connectString(server.getConnectString()).retryPolicy(retryPolicy).build();
     return new ZookeeperClusterManager(retryPolicy, curator);
   }
-
 }

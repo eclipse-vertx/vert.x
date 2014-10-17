@@ -12,12 +12,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- *
+ * Created by Stream.Liu
  */
 class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
 
   ZKSyncMap(CuratorFramework curator, String mapName) {
-    super(curator, null, "syncMap", mapName);
+    super(curator, null, ZK_PATH_SYNC_MAP, mapName);
   }
 
   @Override
@@ -26,7 +26,7 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
       checkState();
       return curator.getChildren().forPath(mapPath).size();
     } catch (Exception e) {
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
@@ -36,7 +36,7 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
       checkState();
       return curator.getChildren().forPath(mapPath).isEmpty();
     } catch (Exception e) {
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
@@ -46,7 +46,7 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
       checkState();
       return curator.getChildren().forPath(mapPath).stream().anyMatch(e -> e.equals(key));
     } catch (Exception e) {
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
@@ -60,11 +60,11 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
           KeyValue<K, V> keyValue = asObject(bytes, KeyValue.class);
           return keyValue.getValue().equals(value);
         } catch (Exception ex) {
-          throw new VertxException(ex.getMessage());
+          throw new VertxException(ex);
         }
       });
     } catch (Exception e) {
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
@@ -81,7 +81,7 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
       }
     } catch (Exception e) {
       if (!(e instanceof KeeperException.NodeExistsException)) {
-        throw new VertxException(e.getMessage());
+        throw new VertxException(e);
       }
     }
     return null;
@@ -102,7 +102,7 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
       return value;
     } catch (Exception e) {
       e.printStackTrace();
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
@@ -114,7 +114,7 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
       if (result != null) curator.delete().deletingChildrenIfNeeded().forPath(keyPath((K) key));
       return result;
     } catch (Exception e) {
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
@@ -131,7 +131,7 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
       curator.delete().deletingChildrenIfNeeded().forPath(mapPath);
       curator.create().creatingParentsIfNeeded().forPath(mapPath);
     } catch (Exception e) {
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 
@@ -144,11 +144,11 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
           KeyValue<K, V> keyValue = asObject(curator.getData().forPath(keyPath((K) e)), KeyValue.class);
           return keyValue.getKey();
         } catch (Exception ex) {
-          throw new VertxException(ex.getMessage());
+          throw new VertxException(ex);
         }
       }).collect(Collectors.toSet());
     } catch (Exception ex) {
-      throw new VertxException(ex.getMessage());
+      throw new VertxException(ex);
     }
   }
 
@@ -162,12 +162,12 @@ class ZKSyncMap<K, V> extends ZKMap<K, V> implements Map<K, V> {
                   KeyValue<K, V> keyValue = asObject(curator.getData().forPath(keyPath((K) e)), KeyValue.class);
                   return keyValue.getValue();
                 } catch (Exception ex) {
-                  throw new VertxException(ex.getMessage());
+                  throw new VertxException(ex);
                 }
               }
           ).collect(Collectors.toSet());
     } catch (Exception e) {
-      throw new VertxException(e.getMessage());
+      throw new VertxException(e);
     }
   }
 

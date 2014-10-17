@@ -28,7 +28,6 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
     curator.start();
 
     VertxSPI vertxSPI = (VertxInternal) vertx;
-
     asyncMultiMap = new ZKAsyncMultiMap<>(vertxSPI, curator, "multiMapTest");
     asyncMultiMap.add("myKey", "myValue", event -> {
       if (event.failed()) event.cause().printStackTrace();
@@ -37,34 +36,6 @@ public class ZKAsyncMultiMapTest extends VertxTestBase {
     });
     await();
   }
-
-
-  @Test
-  public void multiAdd() throws Exception {
-    Timing timing = new Timing();
-    TestingServer server = new TestingServer();
-
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(100, 3);
-    CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("io.vertx").sessionTimeoutMs(10000).connectionTimeoutMs(timing.connection()).connectString(server.getConnectString()).retryPolicy(retryPolicy).build();
-    curator.start();
-
-    asyncMultiMap = new ZKAsyncMultiMap<>((VertxSPI) vertx, curator, "multiMapTest");
-    asyncMultiMap.add("myKey", "myValue", event -> {
-      if (event.failed()) event.cause().printStackTrace();
-      Assert.assertTrue(event.succeeded());
-    });
-
-    //get data immediately.
-    asyncMultiMap.get("myKey", e -> {
-      if (e.failed()) e.cause().printStackTrace();
-      Assert.assertTrue(e.succeeded());
-      Assert.assertNotNull(e.result());
-      Assert.assertFalse(e.result().isEmpty());
-      testComplete();
-    });
-    await();
-  }
-
 
   private void asyncMultiMapRemove() {
     asyncMultiMap.get("myKey", ev -> {

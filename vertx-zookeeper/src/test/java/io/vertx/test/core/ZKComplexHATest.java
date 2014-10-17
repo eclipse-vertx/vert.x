@@ -1,13 +1,14 @@
 package io.vertx.test.core;
 
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.spi.cluster.impl.zookeeper.MockZKCluster;
 
 /**
  * Created by stream.Liu
  */
 public class ZKComplexHATest extends ComplexHATest {
 
-  private ZKMockServer zkClustered = new ZKMockServer();
+  private MockZKCluster zkClustered = new MockZKCluster();
 
   @Override
   protected ClusterManager getClusterManager() {

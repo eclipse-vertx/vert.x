@@ -11,8 +11,6 @@ import io.vertx.core.spi.cluster.*;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.api.BackgroundCallback;
-import org.apache.curator.framework.api.CuratorEvent;
 import org.apache.curator.framework.api.CuratorEventType;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
@@ -51,22 +49,29 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
   private String nodeID;
   private CuratorFramework curator;
   private RetryPolicy retryPolicy;
-  //TODO should we cache it.
   private Map<String, ZKLock> locks = new ConcurrentHashMap<>();
-  private Map<String, ZKCounter> counters = new ConcurrentHashMap<>();
-  private Map<String, ZKAsyncMap> asyncMaps = new ConcurrentHashMap<>();
-  private Map<String, ZKAsyncMultiMap> asyncMultiMaps = new ConcurrentHashMap<>();
-
   // zookeeper config file
   private static final String DEFAULT_CONFIG_FILE = "default-zookeeper.properties";
   private static final String CONFIG_FILE = "zookeeper.properties";
-  private Properties conf = new Properties();
+  private Properties conf;
+
+  private static final String ZK_PATH_LOCKS = "/locks/";
+  private static final String ZK_PATH_COUNTERS = "/counters/";
+  private static final String ZK_PATH_CLUSTER_NODE = "/cluster/nodes/";
 
   public ZookeeperClusterManager() {
-    loadConfig();
+    if (conf == null) {
+      InputStream is = getConfigStream();
+      try {
+        conf.load(is);
+      } catch (IOException e) {
+        log.error("Failed to load zookeeper config", e);
+      }
+    }
   }
 
-  public ZookeeperClusterManager(RetryPolicy retryPolicy, CuratorFramework curator) {
+  //just for unit testing
+  ZookeeperClusterManager(RetryPolicy retryPolicy, CuratorFramework curator) {
     this.retryPolicy = retryPolicy;
     this.curator = curator;
   }
@@ -90,21 +95,6 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
     return is;
   }
 
-  /**
-   * Get the zookeeper config
-   */
-  protected void loadConfig() {
-    if (conf == null) {
-      InputStream is = getConfigStream();
-      try {
-        conf.load(is);
-      } catch (IOException e) {
-        log.error("Failed to read zookeeper config", e);
-      }
-    }
-  }
-
-
   @Override
   public void setVertx(VertxSPI vertx) {
     this.vertxSPI = vertx;
@@ -127,22 +117,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
 
   @Override
   public <K, V> void getAsyncMap(String name, MapOptions options, Handler<AsyncResult<AsyncMap<K, V>>> asyncResultHandler) {
-    final ZKAsyncMap<K, V> map = asyncMaps.get(name);
-    if (map == null) {
-      ZKAsyncMap<K, V> newMap = new ZKAsyncMap<>(vertxSPI, curator, name);
-      try {
-        newMap.createMapNode((client, event) -> {
-          if (event.getType() == CuratorEventType.CREATE) {
-            asyncMaps.put(name, newMap);
-            vertxSPI.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(newMap)));
-          }
-        });
-      } catch (Exception ex) {
-        vertxSPI.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(ex)));
-      }
-    } else {
-      vertxSPI.runOnContext(e -> asyncResultHandler.handle(Future.completedFuture(map)));
-    }
+    vertxSPI.runOnContext(event -> asyncResultHandler.handle(Future.completedFuture(new ZKAsyncMap<>(vertxSPI, curator, name))));
   }
 
   @Override
@@ -155,7 +130,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
     vertxSPI.executeBlocking(() -> {
       ZKLock lock = locks.get(name);
       if (lock == null) {
-        InterProcessSemaphoreMutex mutexLock = new InterProcessSemaphoreMutex(curator, "/locks/" + name);
+        InterProcessSemaphoreMutex mutexLock = new InterProcessSemaphoreMutex(curator, ZK_PATH_LOCKS + name);
         lock = new ZKLock(mutexLock);
       }
       try {
@@ -166,7 +141,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
           throw new VertxException("Timed out waiting to get lock " + name);
         }
       } catch (Exception e) {
-        throw new VertxException("quire Lock exception " + e.getMessage());
+        throw new VertxException("get lock exception", e);
       }
     }, resultHandler);
   }
@@ -174,12 +149,11 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
   @Override
   public void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
     vertxSPI.executeBlocking(() -> {
-      ZKCounter zkCounter = counters.get(name);
-      if (zkCounter == null) {
-        zkCounter = new ZKCounter(name, retryPolicy);
+      try {
+        return new ZKCounter(name, retryPolicy);
+      } catch (Exception e) {
+        throw new VertxException(e);
       }
-      counters.put(name, zkCounter);
-      return zkCounter;
     }, resultHandler);
   }
 
@@ -205,19 +179,23 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
       else {
         active = true;
         if (curator == null) {
-          retryPolicy = new ExponentialBackoffRetry(1000, 3);
-          curator = CuratorFrameworkFactory.builder().connectString("127.0.0.1").namespace("io.vertx").retryPolicy(retryPolicy).build();
+          retryPolicy = new ExponentialBackoffRetry(Integer.valueOf(conf.getProperty("retry.initialSleepTime")), Integer.valueOf(conf.getProperty("retry.maxTimes")), Integer.valueOf(conf.getProperty("retry.intervalTimes")));
+          curator = CuratorFrameworkFactory.builder().connectString(conf.getProperty("hosts.zookeeper"))
+              .namespace(conf.getProperty("path.root"))
+              .sessionTimeoutMs(Integer.valueOf(conf.getProperty("timeout.session")))
+              .connectionTimeoutMs(Integer.valueOf(conf.getProperty("timeout.connect")))
+              .retryPolicy(retryPolicy).build();
         }
         curator.start();
         nodeID = UUID.randomUUID().toString();
-        clusterNodes = new PathChildrenCache(curator, "/cluster/nodes", true);
+        clusterNodes = new PathChildrenCache(curator, ZK_PATH_CLUSTER_NODE.substring(0, ZK_PATH_CLUSTER_NODE.length() - 1), true);
         clusterNodes.getListenable().addListener(this);
         try {
           clusterNodes.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
-          //join to the cluster
-          curator.create().withMode(CreateMode.EPHEMERAL).forPath("/cluster/nodes/" + nodeID, nodeID.getBytes());
+          //Join to the cluster
+          curator.create().withMode(CreateMode.EPHEMERAL).forPath(ZK_PATH_CLUSTER_NODE + nodeID, nodeID.getBytes());
         } catch (Exception e) {
-          throw new VertxException(e.getMessage());
+          throw new VertxException(e);
         }
         return null;
       }
@@ -235,9 +213,9 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
             if (event.getType() == CuratorEventType.DELETE) {
               clusterNodes.getListenable().removeListener(ZookeeperClusterManager.this);
             }
-          }).forPath("/cluster/nodes/" + nodeID);
+          }).forPath(ZK_PATH_CLUSTER_NODE + nodeID);
         } catch (Exception e) {
-          e.printStackTrace();
+          log.error(e);
         }
         return null;
       }
@@ -319,8 +297,8 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
     private DistributedAtomicLong atomicLong;
     private String counterPath;
 
-    public ZKCounter(String nodeName, RetryPolicy retryPolicy) {
-      this.counterPath = "/counters/" + nodeName;
+    public ZKCounter(String nodeName, RetryPolicy retryPolicy) throws Exception {
+      this.counterPath = ZK_PATH_COUNTERS + nodeName;
       this.atomicLong = new DistributedAtomicLong(curator, counterPath, retryPolicy);
     }
 
@@ -330,7 +308,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
         try {
           return atomicLong.get().preValue();
         } catch (Exception e) {
-          throw new VertxException(e.getMessage());
+          throw new VertxException(e);
         }
       }, resultHandler);
     }
@@ -356,7 +334,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
             throw new VertxException("increment value failed.");
           }
         } catch (Exception e) {
-          throw new VertxException(e.getMessage());
+          throw new VertxException(e);
         }
       }, resultHandler);
     }
@@ -371,7 +349,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
             throw new VertxException("decrement value failed.");
           }
         } catch (Exception e) {
-          throw new VertxException(e.getMessage());
+          throw new VertxException(e);
         }
       }, resultHandler);
     }
@@ -397,7 +375,7 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
             throw new VertxException("add value failed.");
           }
         } catch (Exception e) {
-          throw new VertxException(e.getMessage());
+          throw new VertxException(e);
         }
       }, resultHandler);
     }
@@ -406,15 +384,11 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
     public void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
       vertxSPI.executeBlocking(() -> {
         try {
-          if (atomicLong.get().preValue() == expected) {
-            atomicLong.forceSet(value);
-            return true;
-          } else {
-            return false;
-          }
+          if (atomicLong.get().succeeded() && atomicLong.get().preValue() == 0)
+            this.atomicLong.initialize(0L);
+          return atomicLong.compareAndSet(expected, value).succeeded();
         } catch (Exception e) {
-          e.printStackTrace();
-          return false;
+          throw new VertxException(e);
         }
       }, resultHandler);
     }

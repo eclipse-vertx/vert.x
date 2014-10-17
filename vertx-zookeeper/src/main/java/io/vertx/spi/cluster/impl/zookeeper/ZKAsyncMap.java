@@ -6,19 +6,14 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.BackgroundCallback;
 
 /**
- * There have async API in Curator, so we don't need VertxSPI.
+ * Created by Stream.Liu
  */
 class ZKAsyncMap<K, V> extends ZKMap<K, V> implements AsyncMap<K, V> {
 
   ZKAsyncMap(Vertx vertx, CuratorFramework curator, String mapName) {
-    super(curator, vertx, "asyncMap", mapName);
-  }
-
-  public void createMapNode(BackgroundCallback callback) throws Exception {
-    this.curator.create().creatingParentsIfNeeded().inBackground(callback).forPath(this.mapPath);
+    super(curator, vertx, ZK_PATH_ASYNC_MAP, mapName);
   }
 
   @Override
@@ -98,7 +93,6 @@ class ZKAsyncMap<K, V> extends ZKMap<K, V> implements AsyncMap<K, V> {
     get(k, getEvent -> {
       if (getEvent.succeeded()) {
         final V oldValue = getEvent.result();
-        //TODO how to deal null value
         if (oldValue != null) {
           put(k, v, putEvent -> forwardAsyncResult(asyncResultHandler, putEvent, oldValue));
         } else {
@@ -112,7 +106,6 @@ class ZKAsyncMap<K, V> extends ZKMap<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
-    //TODO should we transaction
     get(k, getEvent -> {
       if (getEvent.succeeded()) {
         if (getEvent.result().equals(oldValue)) {

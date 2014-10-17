@@ -19,6 +19,10 @@ abstract class ZKMap<K, V> {
   protected final AtomicBoolean nodeSplit = new AtomicBoolean(false);
   protected final String mapPath;
 
+  protected static final String ZK_PATH_ASYNC_MAP = "asyncMap";
+  protected static final String ZK_PATH_ASYNC_MULTI_MAP = "asyncMultiMap";
+  protected static final String ZK_PATH_SYNC_MAP = "syncMap";
+
   protected ZKMap(CuratorFramework curator, Vertx vertx, String mapType, String mapPath) {
     this.curator = curator;
     this.vertx = vertx;
