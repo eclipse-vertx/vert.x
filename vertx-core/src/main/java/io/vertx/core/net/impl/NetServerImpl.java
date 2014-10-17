@@ -97,7 +97,7 @@ public class NetServerImpl implements NetServer, Closeable {
       }
       creatingContext.addCloseHook(this);
     }
-    this.metrics = vertx.metricsSPI().register(this, options);
+    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -365,7 +365,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cg -> {
-      metrics.closed();
+      metrics.close();
       executeCloseDone(closeContext, done, fut.cause());
     });
 

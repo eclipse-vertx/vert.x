@@ -18,11 +18,11 @@ package io.vertx.core.spi;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.metrics.spi.Metrics;
+import io.vertx.core.metrics.spi.VertxMetrics;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface MetricsFactory {
-  Metrics metrics(Vertx vertx, VertxOptions options);
+public interface VertxMetricsFactory {
+  VertxMetrics metrics(Vertx vertx, VertxOptions options);
 }

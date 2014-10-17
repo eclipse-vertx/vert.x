@@ -111,7 +111,7 @@ public class HttpClientImpl implements HttpClient {
     pool.setKeepAlive(options.isKeepAlive());
     pool.setPipelining(options.isPipelining());
     pool.setMaxSockets(options.getMaxPoolSize());
-    this.metrics = vertx.metricsSPI().register(this, options);
+    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -176,7 +176,7 @@ public class HttpClientImpl implements HttpClient {
       creatingContext.removeCloseHook(closeHook);
     }
     closed = true;
-    metrics.closed();
+    metrics.close();
   }
 
   @Override

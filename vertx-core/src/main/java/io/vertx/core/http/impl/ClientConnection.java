@@ -70,13 +70,13 @@ class ClientConnection extends ConnectionBase {
   private final String host;
   private final int port;
   private final ConnectionLifeCycleListener listener;
-  final HttpClientMetrics metrics;
   private WebSocketClientHandshaker handshaker;
   private volatile HttpClientRequestImpl currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private volatile HttpClientResponseImpl currentResponse;
   private volatile HttpClientRequestImpl requestForResponse;
+  final HttpClientMetrics metrics;
 
   private WebSocketImpl ws;
 

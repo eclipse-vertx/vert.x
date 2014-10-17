@@ -156,7 +156,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       }
     };
     this.subProtocols = options.getWebsocketSubProtocols();
-    this.metrics = vertx.metricsSPI().register(this, options);
+    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -457,7 +457,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
     } catch (InterruptedException e) {
     }
 
-    metrics.closed();
+    metrics.close();
 
     executeCloseDone(closeContext, done, fut.cause());
   }

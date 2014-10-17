@@ -80,7 +80,7 @@ public class NetClientImpl implements NetClient {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    this.metrics = vertx.metricsSPI().register(this, options);
+    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -100,7 +100,7 @@ public class NetClientImpl implements NetClient {
         creatingContext.removeCloseHook(closeHook);
       }
       closed = true;
-      metrics.closed();
+      metrics.close();
     }
   }
 

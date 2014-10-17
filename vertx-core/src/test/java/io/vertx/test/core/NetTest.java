@@ -1202,11 +1202,6 @@ public class NetTest extends VertxTestBase {
     socket.write(buff);
   }
 
-  @Rule
-  public RepeatRule repeatRule = new RepeatRule();
-
-
-
   @Test
   // Need to:
   // sudo sysctl -w net.core.somaxconn=10000

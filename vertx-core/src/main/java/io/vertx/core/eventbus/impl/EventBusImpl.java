@@ -131,7 +131,7 @@ public class EventBusImpl implements EventBus {
     this.subs = null;
     this.clusterMgr = null;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-    this.metrics = vertx.metricsSPI().register(this);
+    this.metrics = vertx.metricsSPI().createMetrics(this);
     setPingHandler();
     putStandardCodecs();
   }
@@ -141,7 +141,7 @@ public class EventBusImpl implements EventBus {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
-    this.metrics = vertx.metricsSPI().register(this);
+    this.metrics = vertx.metricsSPI().createMetrics(this);
     clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
       if (ar.succeeded()) {
         subs = ar.result();

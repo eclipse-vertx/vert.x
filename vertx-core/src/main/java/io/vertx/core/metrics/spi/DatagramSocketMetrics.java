@@ -21,7 +21,8 @@ import io.vertx.core.net.SocketAddress;
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface DatagramMetrics extends NetMetrics {
+public interface DatagramSocketMetrics extends NetMetrics {
+
   // There should probably be a TcpMetrics that has the connected/disconnected characteristics, but since datagram
   // uses a tcp like connection class, it's easier to do it this way
 
@@ -32,8 +33,9 @@ public interface DatagramMetrics extends NetMetrics {
 
   @Override
   default void disconnected(SocketAddress remoteAddress) {
-    closed();
+    close();
   }
 
+  // What does this represent?
   void newSocket();
 }

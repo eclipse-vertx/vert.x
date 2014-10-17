@@ -47,7 +47,8 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.Metrics;
+import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.core.metrics.spi.VertxMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -58,6 +59,7 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
 
@@ -91,7 +93,7 @@ public class VertxImpl implements VertxInternal {
   private final FileSystem fileSystem = getFileSystem();
   private EventBus eventBus;
   private final SharedData sharedData;
-  private final Metrics metrics;
+  private final VertxMetrics metrics;
 
   private ExecutorService workerPool;
   private ExecutorService internalBlockingPool;
@@ -121,7 +123,7 @@ public class VertxImpl implements VertxInternal {
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     configurePools(options);
     this.deploymentManager = new DeploymentManager(this);
-    this.metrics = Metrics.metrics(this, options);
+    this.metrics = initialiseMetrics(options);
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
       this.clusterManager.setVertx(this);
@@ -271,6 +273,21 @@ public class VertxImpl implements VertxInternal {
     return new DnsClientImpl(this, port, host);
   }
 
+  private VertxMetrics initialiseMetrics(VertxOptions options) {
+    if (options.isMetricsEnabled()) {
+      ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
+      if (factories.iterator().hasNext()) {
+        VertxMetricsFactory factory = factories.iterator().next();
+        return factory.metrics(this, options);
+      } else {
+        log.warn("Metrics has been set to enabled but no VertxMetricsFactory found on classpath");
+        return new DummyVertxMetrics();
+      }
+    } else {
+      return new DummyVertxMetrics();
+    }
+  }
+
   private ClusterManager getClusterManager(VertxOptions options) {
     if (options.isClustered()) {
       if (options.getClusterManager() != null) {
@@ -400,7 +417,9 @@ public class VertxImpl implements VertxInternal {
           eventLoopGroup.shutdownNow();
         }
 
-        metrics.stop();
+        if (metrics != null) {
+          metrics.close();
+        }
 
         checker.close();
 
@@ -534,7 +553,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public Metrics metricsSPI() {
+  public VertxMetrics metricsSPI() {
     return metrics;
   }
 

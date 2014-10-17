@@ -215,7 +215,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
-    assertEquals(metricsEnabled, options.isMetricsEnabled());
+    assertEquals(metricsEnabled || jmxEnabled, options.isMetricsEnabled());
     assertEquals(jmxEnabled, options.isJmxEnabled());
     assertEquals(jmxDomain, options.getJmxDomain());
   }

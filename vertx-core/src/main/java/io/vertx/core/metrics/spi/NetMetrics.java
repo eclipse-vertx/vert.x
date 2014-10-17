@@ -34,6 +34,4 @@ public interface NetMetrics extends BaseMetrics {
   void bytesWritten(SocketAddress remoteAddress, long numberOfBytes);
 
   void exceptionOccurred(SocketAddress remoteAddress, Throwable t);
-
-  void closed();
 }

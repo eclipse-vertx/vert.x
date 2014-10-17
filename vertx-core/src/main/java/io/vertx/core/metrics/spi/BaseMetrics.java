@@ -20,7 +20,10 @@ package io.vertx.core.metrics.spi;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface BaseMetrics {
+
   String baseName();
 
   boolean isEnabled();
+
+  void close();
 }
