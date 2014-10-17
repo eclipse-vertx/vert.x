@@ -1030,6 +1030,7 @@ public class EventBusImpl implements EventBus {
         };
       }
       if (registered) {
+        registered = false;
         unregisterHandler(address, this, completionHandler);
         metrics.handlerUnregistered(address);
       } else {
@@ -1082,8 +1083,8 @@ public class EventBusImpl implements EventBus {
         registered = true;
         registerHandler(address, this, replyHandler, localOnly, timeoutID);
       } else if (this.handler == null && registered) {
-        registered = false;
-        unregister();
+        // This will set registered to false
+        this.unregister();
       }
       return this;
     }
