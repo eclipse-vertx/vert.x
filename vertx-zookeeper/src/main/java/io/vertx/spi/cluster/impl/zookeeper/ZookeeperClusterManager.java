@@ -95,6 +95,14 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
     return is;
   }
 
+  public void setConfig(Properties conf) {
+    this.conf = conf;
+  }
+
+  public Properties getConfig() {
+    return conf;
+  }
+
   @Override
   public void setVertx(VertxSPI vertx) {
     this.vertxSPI = vertx;
@@ -179,11 +187,15 @@ public class ZookeeperClusterManager implements ClusterManager, PathChildrenCach
       else {
         active = true;
         if (curator == null) {
-          retryPolicy = new ExponentialBackoffRetry(Integer.valueOf(conf.getProperty("retry.initialSleepTime")), Integer.valueOf(conf.getProperty("retry.maxTimes")), Integer.valueOf(conf.getProperty("retry.intervalTimes")));
-          curator = CuratorFrameworkFactory.builder().connectString(conf.getProperty("hosts.zookeeper"))
-              .namespace(conf.getProperty("path.root"))
-              .sessionTimeoutMs(Integer.valueOf(conf.getProperty("timeout.session")))
-              .connectionTimeoutMs(Integer.valueOf(conf.getProperty("timeout.connect")))
+          retryPolicy = new ExponentialBackoffRetry(
+              Integer.valueOf(conf.getProperty("retry.initialSleepTime", "3000")),
+              Integer.valueOf(conf.getProperty("retry.maxTimes", "5")),
+              Integer.valueOf(conf.getProperty("retry.intervalTimes", "100000")));
+          curator = CuratorFrameworkFactory.builder()
+              .connectString(conf.getProperty("hosts.zookeeper", "127.0.0.1"))
+              .namespace(conf.getProperty("path.root", "io.vertx"))
+              .sessionTimeoutMs(Integer.valueOf(conf.getProperty("timeout.session", "60000")))
+              .connectionTimeoutMs(Integer.valueOf(conf.getProperty("timeout.connect", "15000")))
               .retryPolicy(retryPolicy).build();
         }
         curator.start();
