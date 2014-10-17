@@ -68,11 +68,7 @@
   <modules>
     <module>vertx-core</module>
     <module>vertx-hazelcast</module>
-<<<<<<< HEAD
-    <module>vertx-dist</module>
     <module>vertx-zookeeper</module>
-=======
->>>>>>> master
   </modules>
 
   <dependencyManagement>
