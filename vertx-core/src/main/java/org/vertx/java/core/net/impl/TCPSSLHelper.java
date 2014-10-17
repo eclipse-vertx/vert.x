@@ -372,11 +372,15 @@ public class TCPSSLHelper {
     return ks;
   }
 
+  // Make sure SSLv3 is NOT enabled due to POODLE issue
+  private static final String[] ENABLED_PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2"};
+
   public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
     if (sslContext == null) {
       sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
     }
     SSLEngine engine = getSSLContext().createSSLEngine();
+    engine.setEnabledProtocols(ENABLED_PROTOCOLS);
     engine.setUseClientMode(client);
     if (!client) {
       switch (getClientAuth()) {
