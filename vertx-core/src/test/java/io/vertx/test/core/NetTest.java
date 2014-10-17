@@ -46,7 +46,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.ReadStream;
-import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -1201,11 +1200,6 @@ public class NetTest extends VertxTestBase {
     sent.appendBuffer(buff);
     socket.write(buff);
   }
-
-  @Rule
-  public RepeatRule repeatRule = new RepeatRule();
-
-
 
   @Test
   // Need to:

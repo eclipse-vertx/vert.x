@@ -46,6 +46,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.spi.HttpClientMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
@@ -75,12 +76,13 @@ class ClientConnection extends ConnectionBase {
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private volatile HttpClientResponseImpl currentResponse;
   private volatile HttpClientRequestImpl requestForResponse;
+  final HttpClientMetrics metrics;
 
   private WebSocketImpl ws;
 
   ClientConnection(VertxInternal vertx, HttpClientImpl client, Channel channel, boolean ssl, String host,
-                   int port, ContextImpl context, ConnectionLifeCycleListener listener) {
-    super(vertx, channel, context);
+                   int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
+    super(vertx, channel, context, metrics);
     this.client = client;
     this.ssl = ssl;
     this.host = host;
@@ -91,6 +93,7 @@ class ClientConnection extends ConnectionBase {
       this.hostHeader = host + ':' + port;
     }
     this.listener = listener;
+    this.metrics = metrics;
   }
 
   void toWebSocket(String requestURI,
@@ -309,6 +312,7 @@ class ClientConnection extends ConnectionBase {
     }
     this.currentRequest = req;
     this.requests.add(req);
+    client.httpClientMetrics().requestBegin(req);
   }
 
   void endRequest() {
@@ -333,7 +337,7 @@ class ClientConnection extends ConnectionBase {
 
   NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 

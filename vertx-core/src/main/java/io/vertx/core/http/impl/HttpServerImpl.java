@@ -64,14 +64,17 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.spi.HttpServerMetrics;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
 import io.vertx.core.streams.ReadStream;
 
@@ -86,6 +89,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.*;
@@ -103,6 +107,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private final HttpServerOptions options;
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
+  private final HttpServerMetrics metrics;
   private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
@@ -151,6 +156,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
       }
     };
     this.subProtocols = options.getWebsocketSubProtocols();
+    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -262,6 +268,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
             public void operationComplete(ChannelFuture channelFuture) throws Exception {
               if (!channelFuture.isSuccess()) {
                 vertx.sharedHttpServers().remove(id);
+              } else {
+                metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
               }
             }
           });
@@ -282,6 +290,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         addHandlers(actualServer, listenContext);
+        metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
       }
       actualServer.bindFuture.addListener(new ChannelFutureListener() {
         @Override
@@ -371,6 +380,19 @@ public class HttpServerImpl implements HttpServer, Closeable {
     }
   }
 
+  @Override
+  public String metricBaseName() {
+    return metrics.baseName();
+  }
+
+  @Override
+  public Map<String, JsonObject> metrics() {
+    String name = metricBaseName();
+    return vertx.metrics().entrySet().stream()
+      .filter(e -> e.getKey().startsWith(name))
+      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  }
+
   SSLHelper getSslHelper() {
     return sslHelper;
   }
@@ -434,6 +456,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
       latch.await(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
     }
+
+    metrics.close();
 
     executeCloseDone(closeContext, done, fut.cause());
   }
@@ -518,7 +542,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
             if (reqHandler != null) {
               // We need to set the context manually as this is executed directly, not via context.execute()
               vertx.setContext(reqHandler.context);
-              conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, null);
+              conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, null, metrics);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
               conn.handleMessage(msg);
@@ -620,7 +644,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         }
 
         final ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-                                                             serverOrigin, shake);
+                                                             serverOrigin, shake, metrics);
         wsConn.wsHandler(wsHandler.handler);
 
         Runnable connectRunnable = () -> {

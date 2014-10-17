@@ -355,6 +355,7 @@ public class DeploymentManager {
         verticle.start(startFuture);
         startFuture.setHandler(ar -> {
           if (ar.succeeded()) {
+            vertx.metricsSPI().verticleDeployed(verticle);
             deployments.put(deploymentID, deployment);
             reportSuccess(deploymentID, currentContext, completionHandler);
           } else {
@@ -417,6 +418,7 @@ public class DeploymentManager {
           Future<Void> stopFuture = Future.future();
           stopFuture.setHandler(ar -> {
             deployments.remove(id);
+            vertx.metricsSPI().verticleUndeployed(verticle);
             context.runCloseHooks(ar2 -> {
               if (ar2.failed()) {
                 // Log error but we report success anyway

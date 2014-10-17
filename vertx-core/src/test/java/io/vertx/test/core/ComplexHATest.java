@@ -46,9 +46,6 @@ public class ComplexHATest extends VertxTestBase {
     return new FakeClusterManager();
   }
 
-  @Rule
-  public RepeatRule repeatRule = new RepeatRule();
-
   private Random random = new Random();
 
   protected int maxVerticlesPerNode = 20;

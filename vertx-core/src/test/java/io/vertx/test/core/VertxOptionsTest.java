@@ -151,6 +151,20 @@ public class VertxOptionsTest extends VertxTestBase {
     randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHAGroup(randString));
     assertEquals(randString, options.getHAGroup());
+
+    assertFalse(options.isMetricsEnabled());
+    assertEquals(options, options.setMetricsEnabled(true));
+    assertTrue(options.isMetricsEnabled());
+
+    // Test metrics get enabled if jmx is set to true
+    options.setMetricsEnabled(false);
+    assertFalse(options.isJmxEnabled());
+    assertEquals(options, options.setJmxEnabled(true));
+    assertTrue(options.isJmxEnabled());
+    assertTrue(options.isMetricsEnabled());
+
+    assertNull(options.getJmxDomain());
+    assertEquals("foo", options.setJmxDomain("foo").getJmxDomain());
   }
 
   @Test
@@ -168,8 +182,11 @@ public class VertxOptionsTest extends VertxTestBase {
     int proxyOperationTimeout = TestUtils.randomPositiveInt();
     Random rand = new Random();
     boolean haEnabled = rand.nextBoolean();
+    boolean metricsEnabled = rand.nextBoolean();
+    boolean jmxEnabled = rand.nextBoolean();
     int quorumSize = 51214;
     String haGroup = TestUtils.randomAlphaString(100);
+    String jmxDomain = TestUtils.randomAlphaString(100);
     options.setClusterPort(clusterPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
     options.setInternalBlockingPoolSize(internalBlockingPoolSize);
@@ -182,6 +199,9 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setHAEnabled(haEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
+    options.setMetricsEnabled(metricsEnabled);
+    options.setJmxEnabled(jmxEnabled);
+    options.setJmxDomain(jmxDomain);
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
@@ -195,6 +215,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
+    assertEquals(metricsEnabled || jmxEnabled, options.isMetricsEnabled());
+    assertEquals(jmxEnabled, options.isJmxEnabled());
+    assertEquals(jmxDomain, options.getJmxDomain());
   }
 
   @Test
@@ -232,6 +255,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
     assertNull(options.getHAGroup());
+    assertFalse(options.isMetricsEnabled());
+    assertFalse(options.isJmxEnabled());
+    assertNull(options.getJmxDomain());
 
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
@@ -246,6 +272,9 @@ public class VertxOptionsTest extends VertxTestBase {
     boolean haEnabled = rand.nextBoolean();
     int quorumSize = TestUtils.randomShort() + 1;
     String haGroup = TestUtils.randomAlphaString(100);
+    boolean metricsEnabled = rand.nextBoolean();
+    boolean jmxEnabled = rand.nextBoolean();
+    String jmxDomain = TestUtils.randomAlphaString(100);
     options = new VertxOptions(new JsonObject().
         putNumber("clusterPort", clusterPort).
         putNumber("eventLoopPoolSize", eventLoopPoolSize).
@@ -258,7 +287,10 @@ public class VertxOptionsTest extends VertxTestBase {
         putNumber("proxyOperationTimeout", proxyOperationTimeout).
         putBoolean("haEnabled", haEnabled).
         putNumber("quorumSize", quorumSize).
-        putString("haGroup", haGroup)
+        putString("haGroup", haGroup).
+        putBoolean("metricsEnabled", metricsEnabled).
+        putBoolean("jmxEnabled", jmxEnabled).
+        putString("jmxDomain", jmxDomain)
     );
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
@@ -273,5 +305,8 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
+    assertEquals(metricsEnabled, options.isMetricsEnabled());
+    assertEquals(jmxEnabled, options.isJmxEnabled());
+    assertEquals(jmxDomain, options.getJmxDomain());
   }
 }

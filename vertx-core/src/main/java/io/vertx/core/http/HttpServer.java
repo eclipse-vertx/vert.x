@@ -22,6 +22,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.metrics.Measured;
 
 /**
  * An HTTP and WebSockets server<p>
@@ -35,7 +36,7 @@ import io.vertx.core.streams.ReadStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpServer {
+public interface HttpServer extends Measured {
 
   /**
    * Return the request stream for the server. As HTTP requests are received by the server,
@@ -82,7 +83,7 @@ public interface HttpServer {
 
   @Fluent
   HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler);
-  
+
   /**
    * Close the server. Any open HTTP connections will be closed.
    */
