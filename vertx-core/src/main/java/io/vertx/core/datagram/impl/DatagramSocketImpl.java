@@ -47,12 +47,11 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
 
-  public DatagramSocketImpl(VertxInternal vertx,
-                            DatagramSocketOptions options) {
+  public DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
-          DatagramSocketOptions.copiedOptions(options)), vertx.getOrCreateContext());
+          new DatagramSocketOptions(options)), vertx.getOrCreateContext());
     ContextImpl creatingContext = vertx.getContext();
-    if (creatingContext != null && creatingContext.isMultithreaded()) {
+    if (creatingContext != null && creatingContext.isMultiThreaded()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
     }
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
@@ -72,7 +71,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket listenMulticastGroupUsingNetworkInterface(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -99,7 +98,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket unlistenMulticastGroupUsingNetworkInterface(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -116,7 +115,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket blockMulticastGroupUsingNetworkInterface(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       InetAddress sourceAddress;
       if (sourceToBlock == null) {
@@ -187,20 +186,20 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   @Override
   @SuppressWarnings("unchecked")
-  public DatagramSocket sendBuffer(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
     return this;
   }
 
   @Override
-  public DatagramSocket sendString(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
-    return sendBuffer(Buffer.buffer(str), port, host, handler);
+  public DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    return send(Buffer.buffer(str), port, host, handler);
   }
 
   @Override
-  public DatagramSocket sendStringWithEncoding(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
-    return sendBuffer(Buffer.buffer(str, enc), port, host, handler);
+  public DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    return send(Buffer.buffer(str, enc), port, host, handler);
   }
 
   @Override

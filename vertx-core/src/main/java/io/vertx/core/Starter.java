@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
  *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * You may elect to redistribute this code under either of these licenses.
  */
 
 package io.vertx.core;
@@ -121,7 +121,7 @@ public class Starter {
     };
   }
 
-  private Vertx startVertx(boolean clustered, Args args) {
+  private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     Vertx vertx;
     if (clustered) {
       log.info("Starting clustering...");
@@ -142,7 +142,17 @@ public class Starter {
       }
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
-      Vertx.vertxAsync(VertxOptions.options().setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true), ar -> {
+      VertxOptions options = new VertxOptions();
+      options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
+      if (ha) {
+        String haGroup = args.map.get("-hagroup");
+        int quorumSize = args.getInt("-quorum");
+        options.setHAEnabled(true).setHAGroup(haGroup);
+        if (quorumSize != -1) {
+          options.setQuorumSize(quorumSize);
+        }
+      }
+      Vertx.vertxAsync(options, ar -> {
         result.set(ar);
         latch.countDown();
       });
@@ -168,8 +178,10 @@ public class Starter {
   }
 
   private void runVerticle(String main, Args args) {
-    boolean clustered = args.map.get("-cluster") != null;
-    Vertx vertx = startVertx(clustered, args);
+    boolean ha = args.map.get("-ha") != null;
+    boolean clustered = args.map.get("-cluster") != null || ha;
+
+    Vertx vertx = startVertx(clustered, ha, args);
 
     String sinstances = args.map.get("-instances");
     int instances;
@@ -190,21 +202,25 @@ public class Starter {
       instances = 1;
     }
 
-    String configFile = args.map.get("-conf");
+    String confArg = args.map.get("-conf");
     JsonObject conf;
 
-    if (configFile != null) {
-      try (Scanner scanner = new Scanner(new File(configFile)).useDelimiter("\\A")){
+    if (confArg != null) {
+      try (Scanner scanner = new Scanner(new File(confArg)).useDelimiter("\\A")){
         String sconf = scanner.next();
         try {
           conf = new JsonObject(sconf);
         } catch (DecodeException e) {
-          log.error("Configuration file does not contain a valid JSON object");
+          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
           return;
         }
       } catch (FileNotFoundException e) {
-        log.error("Config file " + configFile + " does not exist");
-        return;
+        try {
+          conf = new JsonObject(confArg);
+        } catch (DecodeException e2) {
+          log.error("-conf option does not point to a file and is not valid JSON: " + confArg);
+          return;
+        }
       }
     } else {
       conf = null;
@@ -213,7 +229,7 @@ public class Starter {
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     for (int i = 0; i < instances; i++) {
-      vertx.deployVerticleWithOptions(main, DeploymentOptions.options().setConfig(conf).setWorker(worker), createLoggingHandler(message, res -> {
+      vertx.deployVerticle(main, new DeploymentOptions().setConfig(conf).setWorker(worker).setHA(ha), createLoggingHandler(message, res -> {
         if (res.failed()) {
           // Failed to deploy
           unblock();
@@ -319,6 +335,9 @@ public class Starter {
 
   private void displaySyntax() {
 
+    // TODO
+    // Update usage string for ha
+    // Also for vertx version
     String usage =
 
       "    vertx run <main> [-options]                                                \n" +
@@ -329,7 +348,8 @@ public class Starter {
         "        -conf <config_file>    Specifies configuration that should be provided \n" +
         "                               to the verticle. <config_file> should reference \n" +
         "                               a text file containing a valid JSON object      \n" +
-        "                               which represents the configuration.             \n" +
+        "                               which represents the configuration OR should be \n" +
+        "                               a string that contains valid JSON.              \n" +
         "        -instances <instances> specifies how many instances of the verticle    \n" +
         "                               will be deployed. Defaults to 1                 \n" +
         "        -worker                if specified then the verticle is a worker      \n" +
@@ -338,7 +358,7 @@ public class Starter {
         "                               a cluster with any other vert.x instances on    \n" +
         "                               the network.                                    \n" +
         "        -cluster-port          port to use for cluster communication.          \n" +
-        "                               Default is 0 which means chose a spare          \n" +
+        "                               Default is 0 which means choose a spare          \n" +
         "                               random port.                                    \n" +
         "        -cluster-host          host to bind to for cluster communication.      \n" +
         "                               If this is not specified vert.x will attempt    \n" +

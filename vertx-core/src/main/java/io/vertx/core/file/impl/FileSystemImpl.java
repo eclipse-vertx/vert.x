@@ -55,6 +55,7 @@ import java.nio.file.attribute.UserPrincipalLookupService;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -239,22 +240,22 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdirWithPermissions(String path, String perms, Handler<AsyncResult<Void>> handler) {
+  public FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, perms, handler).run();
     return this;
   }
 
-  public FileSystem mkdirWithPermissionsSync(String path, String perms) {
+  public FileSystem mkdirSync(String path, String perms) {
     mkdirInternal(path, perms, null).perform();
     return this;
   }
 
-  public FileSystem mkdirsWithPermissions(String path, String perms, Handler<AsyncResult<Void>> handler) {
+  public FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, perms, true, handler).run();
     return this;
   }
 
-  public FileSystem mkdirsWithPermissionsSync(String path, String perms) {
+  public FileSystem mkdirsSync(String path, String perms) {
     mkdirInternal(path, perms, true, null).perform();
     return this;
   }
@@ -268,12 +269,12 @@ public class FileSystemImpl implements FileSystem {
     return readDirInternal(path, null).perform();
   }
 
-  public FileSystem readDirWithFilter(String path, String filter, Handler<AsyncResult<List<String>>> handler) {
+  public FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler) {
     readDirInternal(path, filter, handler).run();
     return this;
   }
 
-  public List<String> readDirWithFilterSync(String path, String filter) {
+  public List<String> readDirSync(String path, String filter) {
     return readDirInternal(path, filter, null).perform();
   }
 
@@ -315,12 +316,12 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem createFileWithPerms(String path, String perms, Handler<AsyncResult<Void>> handler) {
+  public FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler) {
     createFileInternal(path, perms, handler).run();
     return this;
   }
 
-  public FileSystem createFileWithPermsSync(String path, String perms) {
+  public FileSystem createFileSync(String path, String perms) {
     createFileInternal(path, perms, null).perform();
     return this;
   }
@@ -702,6 +703,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<Void> writeFileInternal(String path, final Buffer data, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(data, "no null data accepted");
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<Void>(handler) {
       public Void perform() {
@@ -716,6 +718,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<AsyncFile> openInternal(String p, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler) {
+    Objects.requireNonNull(options, "no null options accepted");
     final String path = PathAdjuster.adjust(vertx, p);
     return new BlockingAction<AsyncFile>(handler) {
       public AsyncFile perform() {

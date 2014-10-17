@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -62,7 +62,19 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
+public interface HttpClientRequest extends WriteStream<Buffer> {
+
+  @Override
+  HttpClientRequest exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  HttpClientRequest write(Buffer data);
+
+  @Override
+  HttpClientRequest setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  HttpClientRequest drainHandler(Handler<Void> handler);
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
@@ -82,7 +94,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    * @return The HTTP headers
    */
   @CacheReturn
-  Headers headers();
+  MultiMap headers();
 
   /**
    * Put an HTTP header - fluent API
@@ -110,20 +122,12 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
-   * Write a {@link Buffer} to the request body.
-   *
-   * @return A reference to this, so multiple method calls can be chained.
-   */
-  @Fluent
-  HttpClientRequest writeBuffer(Buffer chunk);
-
-  /**
    * Write a {@link String} to the request body, encoded in UTF-8.
    *
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  HttpClientRequest writeString(String chunk);
+  HttpClientRequest write(String chunk);
 
   /**
    * Write a {@link String} to the request body, encoded using the encoding {@code enc}.
@@ -131,7 +135,7 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  HttpClientRequest writeString(String chunk, String enc);
+  HttpClientRequest write(String chunk, String enc);
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
@@ -155,20 +159,20 @@ public interface HttpClientRequest extends WriteStream<HttpClientRequest> {
   HttpClientRequest sendHead();
 
   /**
-   * Same as {@link #writeBufferAndEnd(Buffer)} but writes a String with the default encoding
+   * Same as {@link #end(Buffer)} but writes a String with the default encoding
    */
-  void writeStringAndEnd(String chunk);
+  void end(String chunk);
 
   /**
-   * Same as {@link #writeBufferAndEnd(Buffer)} but writes a String with the specified encoding
+   * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    */
-  void writeStringAndEnd(String chunk, String enc);
+  void end(String chunk, String enc);
 
   /**
    * Same as {@link #end()} but writes some data to the request body before ending. If the request is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
    */
-  void writeBufferAndEnd(Buffer chunk);
+  void end(Buffer chunk);
 
   /**
    * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then

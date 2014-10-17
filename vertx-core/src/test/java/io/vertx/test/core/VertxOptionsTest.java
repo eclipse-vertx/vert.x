@@ -31,7 +31,7 @@ public class VertxOptionsTest extends VertxTestBase {
 
   @Test
   public void testOptions() {
-    VertxOptions options = VertxOptions.options();
+    VertxOptions options = new VertxOptions();
     assertEquals(2 * Runtime.getRuntime().availableProcessors(), options.getEventLoopPoolSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setEventLoopPoolSize(rand));
@@ -155,7 +155,7 @@ public class VertxOptionsTest extends VertxTestBase {
 
   @Test
   public void testCopyOptions() {
-    VertxOptions options = VertxOptions.options();
+    VertxOptions options = new VertxOptions();
 
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
@@ -182,7 +182,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setHAEnabled(haEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
-    options = VertxOptions.copiedOptions(options);
+    options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
     assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
@@ -199,8 +199,8 @@ public class VertxOptionsTest extends VertxTestBase {
 
   @Test
   public void testDefaultJsonOptions() {
-    VertxOptions def = VertxOptions.options();
-    VertxOptions json = VertxOptions.optionsFromJson(new JsonObject());
+    VertxOptions def = new VertxOptions();
+    VertxOptions json = new VertxOptions(new JsonObject());
     assertEquals(def.getEventLoopPoolSize(), json.getEventLoopPoolSize());
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
     assertEquals(def.isClustered(), json.isClustered());
@@ -217,7 +217,7 @@ public class VertxOptionsTest extends VertxTestBase {
 
   @Test
   public void testJsonOptions() {
-    VertxOptions options = VertxOptions.optionsFromJson(new JsonObject());
+    VertxOptions options = new VertxOptions(new JsonObject());
 
     assertEquals(0, options.getClusterPort());
     assertEquals(2 * Runtime.getRuntime().availableProcessors(), options.getEventLoopPoolSize());
@@ -246,7 +246,7 @@ public class VertxOptionsTest extends VertxTestBase {
     boolean haEnabled = rand.nextBoolean();
     int quorumSize = TestUtils.randomShort() + 1;
     String haGroup = TestUtils.randomAlphaString(100);
-    options = VertxOptions.optionsFromJson(new JsonObject().
+    options = new VertxOptions(new JsonObject().
         putNumber("clusterPort", clusterPort).
         putNumber("eventLoopPoolSize", eventLoopPoolSize).
         putNumber("internalBlockingPoolSize", internalBlockingPoolSize).

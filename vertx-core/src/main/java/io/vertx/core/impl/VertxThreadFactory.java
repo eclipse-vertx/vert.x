@@ -37,8 +37,8 @@ public class VertxThreadFactory implements ThreadFactory {
 
   public Thread newThread(Runnable runnable) {
     VertxThread t = new VertxThread(runnable, prefix + threadCount.getAndIncrement(), worker);
-    // All vert.x threads are daemons
-    t.setDaemon(true);
+    // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embededd user doesn't
+    // have to explicitly prevent JVM from exiting.
     if (checker != null) {
       checker.registerThread(t);
     }

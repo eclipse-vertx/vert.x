@@ -24,7 +24,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.EventLoopContext;
@@ -40,9 +40,13 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
+import io.vertx.core.streams.ReadStream;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -63,18 +67,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static io.vertx.test.core.TestUtils.*;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetTest extends NetTestBase {
+public class NetTest extends VertxTestBase {
 
   private NetServer server;
   private NetClient client;
 
   public void setUp() throws Exception {
     super.setUp();
-    client = vertx.createNetClient(NetClientOptions.options().setConnectTimeout(1000));
-    server = vertx.createNetServer(NetServerOptions.options().setPort(1234).setHost("localhost"));
+    client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost"));
   }
 
   protected void awaitClose(NetServer server) throws InterruptedException {
@@ -97,62 +103,32 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testClientOptions() {
-    NetClientOptions options = NetClientOptions.options();
+    NetClientOptions options = new NetClientOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -168,12 +144,7 @@ public class NetTest extends NetTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -189,12 +160,12 @@ public class NetTest extends NetTestBase {
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -203,11 +174,13 @@ public class NetTest extends NetTestBase {
     assertTrue(options.isTrustAll());
 
     assertEquals(0, options.getReconnectAttempts());
+    assertIllegalArgumentException(() -> options.setReconnectAttempts(-2));
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReconnectAttempts(rand));
     assertEquals(rand, options.getReconnectAttempts());
 
     assertEquals(1000, options.getReconnectInterval());
+    assertIllegalArgumentException(() -> options.setReconnectInterval(0));
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReconnectInterval(rand));
     assertEquals(rand, options.getReconnectInterval());
@@ -222,66 +195,34 @@ public class NetTest extends NetTestBase {
     testComplete();
   }
 
-
-
   @Test
   public void testServerOptions() {
-    NetServerOptions options = NetServerOptions.options();
+    NetServerOptions options = new NetServerOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -297,12 +238,7 @@ public class NetTest extends NetTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -312,25 +248,19 @@ public class NetTest extends NetTestBase {
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(rand));
     assertEquals(rand, options.getIdleTimeout());
-
-    try {
-      options.setIdleTimeout(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -342,18 +272,8 @@ public class NetTest extends NetTestBase {
     assertEquals(0, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    try {
-      options.setPort(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(65536);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setPort(-1));
+    assertIllegalArgumentException(() -> options.setPort(65536));
 
     assertEquals("0.0.0.0", options.getHost());
     String randString = TestUtils.randomUnicodeString(100);
@@ -372,7 +292,7 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testCopyClientOptions() {
-    NetClientOptions options = NetClientOptions.options();
+    NetClientOptions options = new NetClientOptions();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -384,10 +304,10 @@ public class NetTest extends NetTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -416,7 +336,7 @@ public class NetTest extends NetTestBase {
     options.addCrlValue(crlValue);
     options.setReconnectAttempts(reconnectAttempts);
     options.setReconnectInterval(reconnectInterval);
-    NetClientOptions copy = NetClientOptions.copiedOptions(options);
+    NetClientOptions copy = new NetClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -445,11 +365,19 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testDefaultClientOptionsJson() {
-    NetClientOptions def = NetClientOptions.options();
-    NetClientOptions json = NetClientOptions.optionsFromJson(new JsonObject());
+    NetClientOptions def = new NetClientOptions();
+    NetClientOptions json = new NetClientOptions(new JsonObject());
     assertEquals(def.getReconnectAttempts(), json.getReconnectAttempts());
     assertEquals(def.getReconnectInterval(), json.getReconnectInterval());
-    testDefaultClientOptions(def, json);
+    assertEquals(def.isTrustAll(), json.isTrustAll());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getConnectTimeout(), json.getConnectTimeout());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
@@ -465,12 +393,12 @@ public class NetTest extends NetTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -502,7 +430,7 @@ public class NetTest extends NetTestBase {
         .putNumber("reconnectAttempts", reconnectAttempts)
         .putNumber("reconnectInterval", reconnectInterval);
 
-    NetClientOptions options = NetClientOptions.optionsFromJson(json);
+    NetClientOptions options = new NetClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -531,37 +459,27 @@ public class NetTest extends NetTestBase {
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = NetClientOptions.optionsFromJson(json);
+    options = new NetClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = NetClientOptions.optionsFromJson(json);
+    options = new NetClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
-
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new NetClientOptions(json));
+
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new NetClientOptions(json));
   }
 
   @Test
   public void testCopyServerOptions() {
-    NetServerOptions options = NetServerOptions.options();
+    NetServerOptions options = new NetServerOptions();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -572,10 +490,10 @@ public class NetTest extends NetTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -602,7 +520,7 @@ public class NetTest extends NetTestBase {
     options.setPort(port);
     options.setHost(host);
     options.setAcceptBacklog(acceptBacklog);
-    NetServerOptions copy = NetServerOptions.copiedOptions(options);
+    NetServerOptions copy = new NetServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -630,15 +548,25 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testDefaultServerOptionsJson() {
-    NetServerOptions def = NetServerOptions.options();
-    NetServerOptions json = NetServerOptions.optionsFromJson(new JsonObject());
+    NetServerOptions def = new NetServerOptions();
+    NetServerOptions json = new NetServerOptions(new JsonObject());
     assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
     assertEquals(def.getPort(), json.getPort());
     assertEquals(def.getHost(), json.getHost());
-    testDefaultNetServerOptionsBase(def, json);
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
+    assertEquals(def.getPort(), json.getPort());
+    assertEquals(def.getHost(), json.getHost());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
@@ -654,12 +582,12 @@ public class NetTest extends NetTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -689,7 +617,7 @@ public class NetTest extends NetTestBase {
       .putString("host", host)
       .putNumber("acceptBacklog", acceptBacklog);
 
-    NetServerOptions options = NetServerOptions.optionsFromJson(json);
+    NetServerOptions options = new NetServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -717,45 +645,44 @@ public class NetTest extends NetTestBase {
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = NetServerOptions.optionsFromJson(json);
+    options = new NetServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = NetServerOptions.optionsFromJson(json);
+    options = new NetServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
 
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new NetServerOptions(json));
+
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      NetServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new NetServerOptions(json));
+  }
+
+  @Test
+  public void testSocketAddress() throws Exception {
+    assertNullPointerException(() -> new SocketAddressImpl(0, null));
+    assertIllegalArgumentException(() -> new SocketAddressImpl(0, ""));
+    assertIllegalArgumentException(() -> new SocketAddressImpl(-1, "someHost"));
+    assertIllegalArgumentException(() -> new SocketAddressImpl(65536, "someHost"));
   }
 
   @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
-    testEcho(sock -> sock.writeBuffer(sent), buff -> assertEquals(sent, buff), sent.length());
+    testEcho(sock -> sock.write(sent), buff -> assertEquals(sent, buff), sent.length());
   }
 
   @Test
   public void testEchoString() {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = Buffer.buffer(sent);
-    testEcho(sock -> sock.writeString(sent), buff -> assertEquals(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.write(sent), buff -> assertEquals(buffSent, buff), buffSent.length());
   }
 
   @Test
@@ -771,7 +698,7 @@ public class NetTest extends NetTestBase {
   void testEchoStringWithEncoding(String encoding) {
     String sent = TestUtils.randomUnicodeString(100);
     Buffer buffSent = Buffer.buffer(sent, encoding);
-    testEcho(sock -> sock.writeString(sent, encoding), buff -> assertEquals(buffSent, buff), buffSent.length());
+    testEcho(sock -> sock.write(sent, encoding), buff -> assertEquals(buffSent, buff), buffSent.length());
   }
 
   void testEcho(Consumer<NetSocket> writer, Consumer<Buffer> dataChecker, int length) {
@@ -779,7 +706,7 @@ public class NetTest extends NetTestBase {
       if (asyncResult.succeeded()) {
         NetSocket sock = asyncResult.result();
         Buffer buff = Buffer.buffer();
-        sock.dataHandler((buffer) -> {
+        sock.handler((buffer) -> {
           buff.appendBuffer(buffer);
           if (buff.length() == length) {
             dataChecker.accept(buff);
@@ -799,7 +726,7 @@ public class NetTest extends NetTestBase {
   }
 
   void startEchoServer(Handler<AsyncResult<NetServer>> listenHandler) {
-    Handler<NetSocket> serverHandler = socket -> socket.dataHandler(socket::writeBuffer);
+    Handler<NetSocket> serverHandler = socket -> socket.handler(socket::write);
     server.connectHandler(serverHandler).listen(listenHandler);
   }
 
@@ -829,6 +756,8 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testConnectInvalidPort() {
+    assertIllegalArgumentException(() -> client.connect(-1, "localhost", res -> {}));
+    assertIllegalArgumentException(() -> client.connect(65536, "localhost", res -> {}));
     client.connect(9998, "localhost", res -> {
       assertTrue(res.failed());
       assertFalse(res.succeeded());
@@ -840,6 +769,7 @@ public class NetTest extends NetTestBase {
 
   @Test
   public void testConnectInvalidHost() {
+    assertNullPointerException(() -> client.connect(80, null, res -> {}));
     client.connect(1234, "127.0.0.2", res -> {
       assertTrue(res.failed());
       assertFalse(res.succeeded());
@@ -850,9 +780,14 @@ public class NetTest extends NetTestBase {
   }
 
   @Test
+  public void testConnectInvalidConnectHandler() throws Exception {
+    assertNullPointerException(() -> client.connect(80, "localhost", null));
+  }
+
+  @Test
   public void testListenInvalidPort() {
     server.close();
-    server = vertx.createNetServer(NetServerOptions.options().setPort(80));
+    server = vertx.createNetServer(new NetServerOptions().setPort(80));
     server.connectHandler((netSocket) -> {
     }).listen(ar -> {
       assertTrue(ar.failed());
@@ -866,7 +801,7 @@ public class NetTest extends NetTestBase {
   @Test
   public void testListenInvalidHost() {
     server.close();
-    server = vertx.createNetServer(NetServerOptions.options().setPort(1234).setHost("uhqwduhqwudhqwuidhqwiudhqwudqwiuhd"));
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("uhqwduhqwudhqwuidhqwiudhqwudqwiuhd"));
     server.connectHandler(netSocket -> {
     }).listen(ar -> {
       assertTrue(ar.failed());
@@ -880,7 +815,7 @@ public class NetTest extends NetTestBase {
   @Test
   public void testListenOnWildcardPort() {
     server.close();
-    server = vertx.createNetServer(NetServerOptions.options().setPort(0));
+    server = vertx.createNetServer(new NetServerOptions().setPort(0));
     server.connectHandler((netSocket) -> {
     }).listen(ar -> {
       assertFalse(ar.failed());
@@ -955,7 +890,7 @@ public class NetTest extends NetTestBase {
         sock.setWriteQueueMaxSize(1000);
         Buffer buff = TestUtils.randomBuffer(10000);
         vertx.setPeriodic(1, id -> {
-          sock.writeBuffer(buff.copy());
+          sock.write(buff.copy());
           if (sock.writeQueueFull()) {
             vertx.cancelTimer(id);
             sock.drainHandler(v -> {
@@ -975,7 +910,7 @@ public class NetTest extends NetTestBase {
     server.connectHandler(sock -> {
       sock.pause();
       Handler<Message<Buffer>> resumeHandler = (m) -> sock.resume();
-      Registration reg = vertx.eventBus().registerHandler("server_resume", resumeHandler);
+      MessageConsumer reg = vertx.eventBus().<Buffer>consumer("server_resume").handler(resumeHandler);
       sock.closeHandler(v -> reg.unregister());
     }).listen(listenHandler);
   }
@@ -987,7 +922,7 @@ public class NetTest extends NetTestBase {
         NetSocket sock = ar.result();
         sock.pause();
         setHandlers(sock);
-        sock.dataHandler(buf -> {
+        sock.handler(buf -> {
         });
       });
     });
@@ -996,7 +931,7 @@ public class NetTest extends NetTestBase {
 
   void setHandlers(NetSocket sock) {
     Handler<Message<Buffer>> resumeHandler = m -> sock.resume();
-    Registration reg = vertx.eventBus().registerHandler("client_resume", resumeHandler);
+    MessageConsumer reg = vertx.eventBus().<Buffer>consumer("client_resume").handler(resumeHandler);
     sock.closeHandler(v -> reg.unregister());
   }
 
@@ -1008,7 +943,7 @@ public class NetTest extends NetTestBase {
       Buffer buff = TestUtils.randomBuffer(10000);
       //Send data until the buffer is full
       vertx.setPeriodic(1, id -> {
-        sock.writeBuffer(buff.copy());
+        sock.write(buff.copy());
         if (sock.writeQueueFull()) {
           vertx.cancelTimer(id);
           sock.drainHandler(v -> {
@@ -1036,7 +971,7 @@ public class NetTest extends NetTestBase {
 
   void reconnectAttempts(int attempts) {
     client.close();
-    client = vertx.createNetClient(NetClientOptions.options().setReconnectAttempts(attempts).setReconnectInterval(10));
+    client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(attempts).setReconnectInterval(10));
 
     //The server delays starting for a a few seconds, but it should still connect
     client.connect(1234, "localhost", (res) -> {
@@ -1055,7 +990,7 @@ public class NetTest extends NetTestBase {
   @Test
   public void testReconnectAttemptsNotEnough() {
     client.close();
-    client = vertx.createNetClient(NetClientOptions.options().setReconnectAttempts(100).setReconnectInterval(10));
+    client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(100).setReconnectInterval(10));
 
     client.connect(1234, "localhost", (res) -> {
       assertFalse(res.succeeded());
@@ -1069,7 +1004,7 @@ public class NetTest extends NetTestBase {
   @Test
   public void testServerIdleTimeout() {
     server.close();
-    server = vertx.createNetServer(NetServerOptions.options().setPort(1234).setHost("localhost").setIdleTimeout(1));
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost").setIdleTimeout(1));
     server.connectHandler(s -> {}).listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", res -> {
@@ -1084,9 +1019,10 @@ public class NetTest extends NetTestBase {
   @Test
   public void testClientIdleTimeout() {
     client.close();
-    client = vertx.createNetClient(NetClientOptions.options().setIdleTimeout(1));
+    client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(1));
 
-    server.connectHandler(s -> {}).listen(ar -> {
+    server.connectHandler(s -> {
+    }).listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", res -> {
         assertTrue(res.succeeded());
@@ -1159,15 +1095,15 @@ public class NetTest extends NetTestBase {
                boolean shouldPass, boolean startTLS,
                String... enabledCipherSuites) throws Exception {
     server.close();
-    NetServerOptions options = NetServerOptions.options();
+    NetServerOptions options = new NetServerOptions();
     if (!startTLS) {
       options.setSsl(true);
     }
     if (serverTrust) {
-      options.setTrustStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
+      options.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
     }
     if (serverCert) {
-      options.setKeyStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
+      options.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
     }
     if (requireClientAuth) {
       options.setClientAuthRequired(true);
@@ -1180,8 +1116,8 @@ public class NetTest extends NetTestBase {
     server = vertx.createNetServer(options);
     Handler<NetSocket> serverHandler = socket -> {
       AtomicBoolean upgradedServer = new AtomicBoolean();
-      socket.dataHandler(buff -> {
-        socket.writeBuffer(buff); // echo the data
+      socket.handler(buff -> {
+        socket.write(buff); // echo the data
         if (startTLS && !upgradedServer.get()) {
           assertFalse(socket.isSsl());
           socket.upgradeToSsl(v -> assertTrue(socket.isSsl()));
@@ -1193,17 +1129,17 @@ public class NetTest extends NetTestBase {
     };
     server.connectHandler(serverHandler).listen(ar -> {
       client.close();
-      NetClientOptions clientOptions = NetClientOptions.options();
+      NetClientOptions clientOptions = new NetClientOptions();
       if (!startTLS) {
         clientOptions.setSsl(true);
         if (clientTrustAll) {
           clientOptions.setTrustAll(true);
         }
         if (clientTrust) {
-          clientOptions.setTrustStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
+          clientOptions.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
         }
         if (clientCert) {
-          clientOptions.setKeyStoreOptions(JKSOptions.options().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
+          clientOptions.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
         }
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);
@@ -1223,7 +1159,7 @@ public class NetTest extends NetTestBase {
           final NetSocket socket = ar2.result();
 
           final AtomicBoolean upgradedClient = new AtomicBoolean();
-          socket.dataHandler(buffer -> {
+          socket.handler(buffer -> {
             received.appendBuffer(buffer);
             if (received.length() == sent.length()) {
               assertEquals(sent, received);
@@ -1263,14 +1199,23 @@ public class NetTest extends NetTestBase {
   void sendBuffer(NetSocket socket, Buffer sent, int chunkSize) {
     Buffer buff = TestUtils.randomBuffer(chunkSize);
     sent.appendBuffer(buff);
-    socket.writeBuffer(buff);
+    socket.write(buff);
   }
 
+  @Rule
+  public RepeatRule repeatRule = new RepeatRule();
+
+
+
   @Test
+  // Need to:
+  // sudo sysctl -w net.core.somaxconn=10000
+  // sudo sysctl -w net.ipv4.tcp_max_syn_backlog=10000
+  // To get this to reliably pass with a lot of connections.
   public void testSharedServersRoundRobin() throws Exception {
 
     int numServers = 5;
-    int numConnections = numServers * 100;
+    int numConnections = numServers * 20;
 
     List<NetServer> servers = new ArrayList<>();
     Set<NetServer> connectedServers = new ConcurrentHashSet<>();
@@ -1279,7 +1224,7 @@ public class NetTest extends NetTestBase {
     CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numConnections);
     for (int i = 0; i < numServers; i++) {
-      NetServer theServer = vertx.createNetServer(NetServerOptions.options().setHost("localhost").setPort(1234));
+      NetServer theServer = vertx.createNetServer(new NetServerOptions().setHost("localhost").setPort(1234));
       servers.add(theServer);
       theServer.connectHandler(sock -> {
         connectedServers.add(theServer);
@@ -1300,15 +1245,12 @@ public class NetTest extends NetTestBase {
 
     // Create a bunch of connections
     client.close();
-    client = vertx.createNetClient(NetClientOptions.options());
+    client = vertx.createNetClient(new NetClientOptions());
     CountDownLatch latchClient = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", res -> {
         if (res.succeeded()) {
-          res.result().closeHandler(v -> {
-            latchClient.countDown();
-          });
-          res.result().close();
+          latchClient.countDown();
         } else {
           res.cause().printStackTrace();
           fail("Failed to connect");
@@ -1347,7 +1289,7 @@ public class NetTest extends NetTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     // Have a server running on a different port to make sure it doesn't interact
     server.close();
-    server = vertx.createNetServer(NetServerOptions.options().setPort(4321));
+    server = vertx.createNetServer(new NetServerOptions().setPort(4321));
     server.connectHandler(sock -> {
       fail("Should not connect");
     }).listen(ar2 -> {
@@ -1366,7 +1308,7 @@ public class NetTest extends NetTestBase {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
     server.close();
     CountDownLatch latch = new CountDownLatch(1);
-    server = vertx.createNetServer(NetServerOptions.options().setPort(1234));
+    server = vertx.createNetServer(new NetServerOptions().setPort(1234));
     server.connectHandler(sock -> {
       fail("Should not connect");
     }).listen(ar -> {
@@ -1395,7 +1337,7 @@ public class NetTest extends NetTestBase {
     Set<String> connections = new ConcurrentHashSet<>();
     server.connectHandler(socket -> {
       connections.add(socket.writeHandlerID());
-      socket.dataHandler(buffer -> {
+      socket.handler(buffer -> {
         for (String actorID : connections) {
           vertx.eventBus().publish(actorID, buffer);
         }
@@ -1416,7 +1358,7 @@ public class NetTest extends NetTestBase {
     for (int i = 0; i < numConnections; i++) {
       client.connect(1234, "localhost", res -> {
         connectLatch.countDown();
-        res.result().dataHandler(data -> {
+        res.result().handler(data -> {
           receivedLatch.countDown();
         });
       });
@@ -1425,7 +1367,7 @@ public class NetTest extends NetTestBase {
 
     // Send some data
     client.connect(1234, "localhost", res -> {
-      res.result().writeString("foo");
+      res.result().write("foo");
     });
     assertTrue(receivedLatch.await(10, TimeUnit.SECONDS));
 
@@ -1439,7 +1381,7 @@ public class NetTest extends NetTestBase {
       assertEquals("127.0.0.1", addr.hostAddress());
     }).listen(ar -> {
       assertTrue(ar.succeeded());
-      vertx.createNetClient(NetClientOptions.options()).connect(1234, "localhost", result -> {
+      vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", result -> {
         NetSocket socket = result.result();
         SocketAddress addr = socket.remoteAddress();
         assertEquals("127.0.0.1", addr.hostAddress());
@@ -1454,7 +1396,7 @@ public class NetTest extends NetTestBase {
   public void testWriteSameBufferMoreThanOnce() throws Exception {
     server.connectHandler(socket -> {
       Buffer received = Buffer.buffer();
-      socket.dataHandler(buff -> {
+      socket.handler(buff -> {
         received.appendBuffer(buff);
         if (received.toString().equals("foofoo")) {
           testComplete();
@@ -1465,8 +1407,8 @@ public class NetTest extends NetTestBase {
       client.connect(1234, "localhost", result -> {
         NetSocket socket = result.result();
         Buffer buff = Buffer.buffer("foo");
-        socket.writeBuffer(buff);
-        socket.writeBuffer(buff);
+        socket.write(buff);
+        socket.write(buff);
       });
     });
     await();
@@ -1480,7 +1422,7 @@ public class NetTest extends NetTestBase {
     Buffer expected = Buffer.buffer(content);
     Buffer received = Buffer.buffer();
     server.connectHandler(sock -> {
-      sock.dataHandler(buff -> {
+      sock.handler(buff -> {
         received.appendBuffer(buff);
         if (received.length() == expected.length()) {
           assertEquals(expected, received);
@@ -1488,14 +1430,14 @@ public class NetTest extends NetTestBase {
         }
       });
       // Send some data to the client to trigger the sendfile
-      sock.writeString("foo");
+      sock.write("foo");
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket sock = ar2.result();
-        sock.dataHandler(buf -> {
+        sock.handler(buf -> {
           sock.sendFile(file.getAbsolutePath());
         });
       });
@@ -1512,7 +1454,7 @@ public class NetTest extends NetTestBase {
     Buffer expected = Buffer.buffer(content);
     Buffer received = Buffer.buffer();
     server.connectHandler(sock -> {
-      sock.dataHandler(buf -> {
+      sock.handler(buf -> {
         sock.sendFile(file.getAbsolutePath());
       });
     });
@@ -1521,14 +1463,14 @@ public class NetTest extends NetTestBase {
       client.connect(1234, "localhost", ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket sock = ar2.result();
-        sock.dataHandler(buff -> {
+        sock.handler(buff -> {
           received.appendBuffer(buff);
           if (received.length() == expected.length()) {
             assertEquals(expected, received);
             testComplete();
           }
         });
-        sock.writeString("foo");
+        sock.write("foo");
       });
     });
 
@@ -1562,7 +1504,7 @@ public class NetTest extends NetTestBase {
   @Test
   public void testServerOptionsCopiedBeforeUse() {
     server.close();
-    NetServerOptions options = NetServerOptions.options().setPort(1234);
+    NetServerOptions options = new NetServerOptions().setPort(1234);
     NetServer server = vertx.createNetServer(options);
     // Now change something - but server should still listen at previous port
     options.setPort(1235);
@@ -1581,7 +1523,7 @@ public class NetTest extends NetTestBase {
   @Test
   public void testClientOptionsCopiedBeforeUse() {
     client.close();
-    NetClientOptions options = NetClientOptions.options();
+    NetClientOptions options = new NetClientOptions();
     client = vertx.createNetClient(options);
     options.setSsl(true);
     // Now change something - but server should ignore this
@@ -1707,7 +1649,7 @@ public class NetTest extends NetTestBase {
     Thread[] threads = new Thread[numThreads];
     CountDownLatch latch = new CountDownLatch(numThreads);
     server.connectHandler(socket -> {
-      socket.dataHandler(socket::writeBuffer);
+      socket.handler(socket::write);
     }).listen(ar -> {
       assertTrue(ar.succeeded());
       for (int i = 0; i < numThreads; i++) {
@@ -1717,9 +1659,9 @@ public class NetTest extends NetTestBase {
               assertTrue(result.succeeded());
               Buffer buff = TestUtils.randomBuffer(100000);
               NetSocket sock = result.result();
-              sock.writeBuffer(buff);
+              sock.write(buff);
               Buffer received = Buffer.buffer();
-              sock.dataHandler(rec -> {
+              sock.handler(rec -> {
                 received.appendBuffer(rec);
                 if (received.length() == buff.length()) {
                   assertEquals(buff, received);
@@ -1755,42 +1697,42 @@ public class NetTest extends NetTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.currentContext();
+        ctx = vertx.context();
         if (worker) {
           assertTrue(ctx instanceof WorkerContext);
         } else {
           assertTrue(ctx instanceof EventLoopContext);
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createNetServer(NetServerOptions.options().setPort(1234));
+        server = vertx.createNetServer(new NetServerOptions().setPort(1234));
         server.connectHandler(sock -> {
-          sock.dataHandler(buff -> {
-            sock.writeBuffer(buff);
+          sock.handler(buff -> {
+            sock.write(buff);
           });
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          client = vertx.createNetClient(NetClientOptions.options());
+          client = vertx.createNetClient(new NetClientOptions());
           client.connect(1234, "localhost", ar2 -> {
-            assertSame(ctx, vertx.currentContext());
+            assertSame(ctx, vertx.context());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
             assertTrue(ar2.succeeded());
             NetSocket sock = ar2.result();
             Buffer buff = TestUtils.randomBuffer(10000);
-            sock.writeBuffer(buff);
+            sock.write(buff);
             Buffer brec = Buffer.buffer();
-            sock.dataHandler(rec -> {
-              assertSame(ctx, vertx.currentContext());
+            sock.handler(rec -> {
+              assertSame(ctx, vertx.context());
               if (!worker) {
                 assertSame(thr, Thread.currentThread());
               }
@@ -1804,7 +1746,7 @@ public class NetTest extends NetTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(worker));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker));
     await();
   }
 
@@ -1814,13 +1756,13 @@ public class NetTest extends NetTestBase {
       @Override
       public void start() {
         try {
-          server = vertx.createNetServer(NetServerOptions.options());
+          server = vertx.createNetServer(new NetServerOptions());
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK
         }
         try {
-          client = vertx.createNetClient(NetClientOptions.options());
+          client = vertx.createNetClient(new NetClientOptions());
           fail("Should throw exception");
         } catch (IllegalStateException e) {
           // OK
@@ -1829,7 +1771,7 @@ public class NetTest extends NetTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
   }
 
@@ -1840,7 +1782,7 @@ public class NetTest extends NetTestBase {
     AtomicReference<ContextImpl> serverConnectContext = new AtomicReference<>();
     // Server connect handler should always be called with same context
     server.connectHandler(sock -> {
-      sock.dataHandler(sock::writeBuffer);
+      sock.handler(sock::write);
       ContextImpl serverContext = ((VertxInternal) vertx).getContext();
       if (serverConnectContext.get() != null) {
         assertSame(serverConnectContext.get(), serverContext);
@@ -1884,6 +1826,84 @@ public class NetTest extends NetTestBase {
     await();
   }
 
+  //@Test
+  public void testReadStreamPaused() {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
+    ReadStream<NetSocket> stream = server.connectStream();
+    stream.handler(sock -> {});
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      // We pause the stream - this causes channel.setAutoRead(false) to be called so there should ne no
+      // more connects after this
+      stream.pause();
+      attemptConnect(0);
+    });
+    await();
+  }
+
+  // The stream is paused so it should NEVER connect
+  private void attemptConnect(int count) {
+    if (count == 100) {
+      testComplete();
+    }
+    client.connect(1234, "localhost", ar2 -> {
+      if (ar2.succeeded()) {
+        fail("Should not connect");
+      } else {
+        System.out.println("failed to connect");
+      }
+      attemptConnect(count + 1);
+    });
+  }
+
+// FIXME
+// commented out because intermittently fails until this netty issue is addressed:
+// https://github.com/netty/netty/issues/3007
+//  @Test
+//  public void testReadStreamPauseResume() {
+//
+//    server.close();
+//    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
+//    NetStream stream = server.connectStream();
+//    AtomicBoolean paused = new AtomicBoolean();
+//    stream.handler(so -> {
+//      assert(!paused.get());
+//      so.write("hello");
+//      so.close();
+//    });
+//    server.listen(ar -> {
+//      assertTrue(ar.succeeded());
+//      paused.set(true);
+//      stream.pause();
+//      AtomicInteger count = new AtomicInteger();
+//      Runnable[] r = new Runnable[1];
+//      (r[0] = () -> {
+//        client.connect(1234, "localhost", ar2 -> {
+//          if (ar2.succeeded()) {
+//            // We connect clients until one is rejected
+//            // because we cannot assume a precise number of connections that will succeed
+//            count.incrementAndGet();
+//            r[0].run();
+//            NetSocket so = ar2.result();
+//            so.handler(buffer -> {
+//              assertEquals("hello", buffer.toString("utf-8"));
+//              so.closeHandler(v -> {
+//                if (count.decrementAndGet() == 0) {
+//                  testComplete();
+//                }
+//              });
+//            });
+//          } else {
+//            // When we succeed
+//            paused.set(false);
+//            stream.resume();
+//          }
+//        });
+//      }).run();
+//    });
+//    await();
+//  }
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);

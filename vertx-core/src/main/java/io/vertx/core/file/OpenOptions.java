@@ -1,15 +1,15 @@
 /*
- * Copyright 2014 Red Hat, Inc.
- *
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * and Apache License v2.0 which accompanies this distribution.
  *
- * The Eclipse Public License is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
  *
- * The Apache License v2.0 is available at
- * http://www.opensource.org/licenses/apache2.0.php
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
  *
  * You may elect to redistribute this code under either of these licenses.
  */
@@ -17,64 +17,153 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.Options;
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.OpenOptionsFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Options
-public interface OpenOptions {
+public class OpenOptions {
 
-  static OpenOptions options() {
-    return factory.options();
+  private static final String DEFAULT_PERMS = null;
+  private static final boolean DEFAULT_READ = true;
+  private static final boolean DEFAULT_WRITE = true;
+  private static final boolean DEFAULT_CREATE = true;
+  private static final boolean DEFAULT_CREATENEW = false;
+  private static final boolean DEFAULT_DSYNC = false;
+  private static final boolean DEFAULT_SYNC = false;
+  private static final boolean DEFAULT_DELETEONCLOSE = false;
+  private static final boolean DEFAULT_TRUNCATEEXISTING = false;
+  private static final boolean DEFAULT_SPARSE = false;
+
+  private String perms = DEFAULT_PERMS;
+  private boolean read = DEFAULT_READ;
+  private boolean write = DEFAULT_WRITE;
+  private boolean create = DEFAULT_CREATE;
+  private boolean createNew = DEFAULT_CREATENEW;
+  private boolean dsync = DEFAULT_DSYNC;
+  private boolean sync = DEFAULT_SYNC;
+  private boolean deleteOnClose = DEFAULT_DELETEONCLOSE;
+  private boolean truncateExisting = DEFAULT_TRUNCATEEXISTING;
+  private boolean sparse = DEFAULT_SPARSE;
+
+  public OpenOptions() {
+    super();
   }
 
-  static OpenOptions optionsFromJson(JsonObject json) {
-    return factory.options(json);
+  public OpenOptions(OpenOptions other) {
+    this.perms = other.perms;
+    this.read = other.read;
+    this.write = other.write;
+    this.create = other.create;
+    this.createNew = other.createNew;
+    this.dsync = other.dsync;
+    this.sync = other.sync;
+    this.deleteOnClose = other.deleteOnClose;
+    this.truncateExisting = other.truncateExisting;
+    this.sparse = other.sparse;
   }
 
-  String getPerms();
+  public OpenOptions(JsonObject json) {
+    this.perms = json.getString("perms", DEFAULT_PERMS);
+    this.read = json.getBoolean("read", DEFAULT_READ);
+    this.write = json.getBoolean("write", DEFAULT_WRITE);
+    this.create = json.getBoolean("create", DEFAULT_CREATE);
+    this.createNew = json.getBoolean("createNew", DEFAULT_CREATENEW);
+    this.dsync = json.getBoolean("dsync", DEFAULT_DSYNC);
+    this.sync = json.getBoolean("sync", DEFAULT_SYNC);
+    this.deleteOnClose = json.getBoolean("deleteOnClose", DEFAULT_DELETEONCLOSE);
+    this.truncateExisting = json.getBoolean("truncateExisting", DEFAULT_TRUNCATEEXISTING);
+    this.sparse = json.getBoolean("sparse", DEFAULT_SPARSE);
+  }
 
-  OpenOptions setPerms(String perms);
+  public String getPerms() {
+    return perms;
+  }
 
-  boolean isRead();
+  public OpenOptions setPerms(String perms) {
+    this.perms = perms;
+    return this;
+  }
 
-  OpenOptions setRead(boolean read);
+  public boolean isRead() {
+    return read;
+  }
 
-  boolean isWrite();
+  public OpenOptions setRead(boolean read) {
+    this.read = read;
+    return this;
+  }
 
-  OpenOptions setWrite(boolean write);
+  public boolean isWrite() {
+    return write;
+  }
 
-  boolean isCreate();
+  public OpenOptions setWrite(boolean write) {
+    this.write = write;
+    return this;
+  }
 
-  OpenOptions setCreate(boolean create);
+  public boolean isCreate() {
+    return create;
+  }
 
-  boolean isCreateNew();
+  public OpenOptions setCreate(boolean create) {
+    this.create = create;
+    return this;
+  }
 
-  OpenOptions setCreateNew(boolean createNew);
+  public boolean isCreateNew() {
+    return createNew;
+  }
 
-  boolean isDeleteOnClose();
+  public OpenOptions setCreateNew(boolean createNew) {
+    this.createNew = createNew;
+    return this;
+  }
 
-  OpenOptions setDeleteOnClose(boolean deleteOnClose);
+  public boolean isDeleteOnClose() {
+    return deleteOnClose;
+  }
 
-  boolean isTruncateExisting();
+  public OpenOptions setDeleteOnClose(boolean deleteOnClose) {
+    this.deleteOnClose = deleteOnClose;
+    return this;
+  }
 
-  OpenOptions setTruncateExisting(boolean truncateExisting);
+  public boolean isTruncateExisting() {
+    return truncateExisting;
+  }
 
-  boolean isSparse();
+  public OpenOptions setTruncateExisting(boolean truncateExisting) {
+    this.truncateExisting = truncateExisting;
+    return this;
+  }
 
-  OpenOptions setSparse(boolean sparse);
+  public boolean isSparse() {
+    return sparse;
+  }
 
-  boolean isSync();
+  public OpenOptions setSparse(boolean sparse) {
+    this.sparse = sparse;
+    return this;
+  }
 
-  OpenOptions setSync(boolean sync);
+  public boolean isSync() {
+    return sync;
+  }
 
-  boolean isDSync();
+  public OpenOptions setSync(boolean sync) {
+    this.sync = sync;
+    return this;
+  }
 
-  OpenOptions setDSync(boolean dsync);
+  public boolean isDSync() {
+    return dsync;
+  }
 
-  static final OpenOptionsFactory factory = ServiceHelper.loadFactory(OpenOptionsFactory.class);
-
+  public OpenOptions setDSync(boolean dsync) {
+    this.dsync = dsync;
+    return this;
+  }
 }

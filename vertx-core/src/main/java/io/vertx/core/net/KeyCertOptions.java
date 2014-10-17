@@ -1,27 +1,26 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
  *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * You may elect to redistribute this code under either of these licenses.
  */
+
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.Options;
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.KeyCertOptionsFactory;
 
 /**
+ * /**
  * Key store options configuring a private key and its certificate based on
  * <i>Privacy-enhanced Electronic Email</i> (PEM) files.<p>
  *
@@ -48,8 +47,8 @@ import io.vertx.core.spi.KeyCertOptionsFactory;
  *
  * The key and certificate can either be loaded by Vert.x from the filesystem:<p>
  * <pre>
- * HttpServerOptions options = HttpServerOptions.httpServerOptions();
- * options.setKeyStore(KeyCertOptions.options().setKeyPath("/mykey.pem").setCertPath("/mycert.pem"));
+ * HttpServerOptions options = new HttpServerOptions();
+ * options.setKeyStore(new KeyCertOptions().setKeyPath("/mykey.pem").setCertPath("/mycert.pem"));
  * </pre>
  *
  * Or directly provided as a buffer:<p>
@@ -57,46 +56,79 @@ import io.vertx.core.spi.KeyCertOptionsFactory;
  * <pre>
  * Buffer key = vertx.fileSystem().readFileSync("/mykey.pem");
  * Buffer cert = vertx.fileSystem().readFileSync("/mycert.pem");
- * options.setKeyStore(KeyCertOptions.options().setKeyValue(key).setCertValue(cert));
+ * options.setKeyStore(new KeyCertOptions().setKeyValue(key).setCertValue(cert));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
-public interface KeyCertOptions extends KeyStoreOptions {
+public class KeyCertOptions implements KeyStoreOptions, Cloneable {
 
-  static KeyCertOptions options() {
-    return factory.options();
+  private String keyPath;
+  private Buffer keyValue;
+  private String certPath;
+  private Buffer certValue;
+
+  public KeyCertOptions() {
+    super();
   }
 
-  static KeyCertOptions copiedOptions(KeyCertOptions other) {
-    return factory.options(other);
+  public KeyCertOptions(KeyCertOptions other) {
+    super();
+    this.keyPath = other.getKeyPath();
+    this.keyValue = other.getKeyValue();
+    this.certPath = other.getCertPath();
+    this.certValue = other.getCertValue();
   }
 
-  static KeyCertOptions optionsFromJson(JsonObject json) {
-    return factory.options(json);
+  public KeyCertOptions(JsonObject json) {
+    super();
+    keyPath = json.getString("keyPath");
+    byte[] keyValue = json.getBinary("keyValue");
+    this.keyValue = keyValue != null ? Buffer.buffer(keyValue) : null;
+    certPath = json.getString("certPath");
+    byte[] certValue = json.getBinary("certValue");
+    this.certValue = certValue != null ? Buffer.buffer(certValue) : null;
   }
 
+  public String getKeyPath() {
+    return keyPath;
+  }
 
-  String getKeyPath();
+  public KeyCertOptions setKeyPath(String keyPath) {
+    this.keyPath = keyPath;
+    return this;
+  }
 
-  KeyCertOptions setKeyPath(String keyPath);
+  public String getCertPath() {
+    return certPath;
+  }
 
-  String getCertPath();
+  public Buffer getKeyValue() {
+    return keyValue;
+  }
 
-  Buffer getKeyValue();
+  public KeyCertOptions setKeyValue(Buffer keyValue) {
+    this.keyValue = keyValue;
+    return this;
+  }
 
-  KeyCertOptions setKeyValue(Buffer keyValue);
+  public KeyCertOptions setCertPath(String certPath) {
+    this.certPath = certPath;
+    return this;
+  }
 
-  KeyCertOptions setCertPath(String certPath);
+  public Buffer getCertValue() {
+    return certValue;
+  }
 
-  Buffer getCertValue();
-
-  KeyCertOptions setCertValue(Buffer certValue);
+  public KeyCertOptions setCertValue(Buffer certValue) {
+    this.certValue = certValue;
+    return this;
+  }
 
   @Override
-  KeyCertOptions clone();
-
-  static final KeyCertOptionsFactory factory = ServiceHelper.loadFactory(KeyCertOptionsFactory.class);
-
+  public KeyCertOptions clone() {
+    return new KeyCertOptions(this);
+  }
 }

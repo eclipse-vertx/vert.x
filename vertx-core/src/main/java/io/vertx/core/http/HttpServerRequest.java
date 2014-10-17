@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -34,7 +34,7 @@ import javax.security.cert.X509Certificate;
  * Represents a server-side HTTP request.<p>
  * Instances are created for each request that is handled by the server
  * and is passed to the user via the {@link io.vertx.core.Handler} instance
- * registered with the {@link HttpServer} using the method {@link HttpServer#requestHandler(io.vertx.core.Handler)}.<p>
+ * registered with the {@link HttpServer} using the request stream {@link io.vertx.core.http.HttpServer#requestStream()}.<p>
  * Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via
  * the {@code response} field.<p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
@@ -44,17 +44,32 @@ import javax.security.cert.X509Certificate;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
+public interface HttpServerRequest extends ReadStream<Buffer> {
+
+  @Override
+  HttpServerRequest exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  HttpServerRequest handler(Handler<Buffer> handler);
+
+  @Override
+  HttpServerRequest pause();
+
+  @Override
+  HttpServerRequest resume();
+
+  @Override
+  HttpServerRequest endHandler(Handler<Void> endHandler);
 
   /**
    * The HTTP version of the request
    */
-  String version();
+  HttpVersion version();
 
   /**
    * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
    */
-  String method();
+  HttpMethod method();
 
   /**
    * The uri of the request. For example
@@ -86,13 +101,13 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * The headers will be automatically lower-cased when they reach the server
    */
   @CacheReturn
-  Headers headers();
+  MultiMap headers();
 
   /**
    * Returns a map of all the parameters in the request
    */
   @CacheReturn
-  Headers params();
+  MultiMap params();
 
   /**
    * Return the remote (client side) address of the request
@@ -161,6 +176,6 @@ public interface HttpServerRequest extends ReadStream<HttpServerRequest> {
    * {@link #setExpectMultipart(boolean)} must be called first before trying to get the formAttributes
    */
   @CacheReturn
-  Headers formAttributes();
+  MultiMap formAttributes();
 
 }

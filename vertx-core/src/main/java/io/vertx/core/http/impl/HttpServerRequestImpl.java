@@ -30,12 +30,13 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -64,8 +65,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private final HttpRequest request;
   private final HttpServerResponse response;
 
-  private String version;
-  private String method;
+  private io.vertx.core.http.HttpVersion version;
+  private io.vertx.core.http.HttpMethod method;
   private String uri;
   private String path;
   private String query;
@@ -74,14 +75,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private Handler<Throwable> exceptionHandler;
 
   //Cache this for performance
-  private Headers params;
-  private Headers headers;
+  private MultiMap params;
+  private MultiMap headers;
   private String absoluteURI;
 
   private NetSocket netSocket;
   private Handler<HttpServerFileUpload> uploadHandler;
   private Handler<Void> endHandler;
-  private Headers attributes;
+  private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
 
@@ -94,13 +95,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String version() {
+  public io.vertx.core.http.HttpVersion version() {
     if (version == null) {
       io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
       if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
-        version = "HTTP/1.0";
+        version = HttpVersion.HTTP_1_0;
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-        version = "HTTP/1.1";
+        version = HttpVersion.HTTP_1_1;
       } else {
         throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
       }
@@ -109,9 +110,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String method() {
+  public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
-      method = request.getMethod().toString();
+      method = io.vertx.core.http.HttpMethod.valueOf(request.getMethod().toString());
     }
     return method;
   }
@@ -146,7 +147,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(request.headers());
     }
@@ -154,7 +155,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public Headers params() {
+  public MultiMap params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
       Map<String, List<String>> prms = queryStringDecoder.parameters();
@@ -169,7 +170,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest dataHandler(Handler<Buffer> dataHandler) {
+  public HttpServerRequest handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
@@ -229,7 +230,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
     final Buffer body = Buffer.buffer();
-    dataHandler(body::appendBuffer);
+    handler(body::appendBuffer);
     endHandler(v -> bodyHandler.handle(body));
     return this;
   }
@@ -249,7 +250,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public Headers formAttributes() {
+  public MultiMap formAttributes() {
     if (decoder == null) {
       throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
     }
@@ -333,7 +334,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  private Headers attributes() {
+  private MultiMap attributes() {
     // Create it lazily
     if (attributes == null) {
       attributes = new CaseInsensitiveHeaders();

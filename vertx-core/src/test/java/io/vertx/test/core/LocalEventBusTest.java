@@ -21,15 +21,16 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -37,8 +38,14 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.MultiThreadedWorkerContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +53,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -76,7 +84,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testRegisterUnregister() {
     String str = TestUtils.randomUnicodeString(100);
     Handler<Message<String>> handler = msg -> fail("Should not receive message");
-    Registration reg = eb.registerHandler(ADDRESS1, handler);
+    MessageConsumer reg = eb.<String>consumer(ADDRESS1).handler(handler);
     reg.unregister();
     eb.send(ADDRESS1, str);
     vertx.setTimer(1000, id -> testComplete());
@@ -86,7 +94,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testUnregisterTwice() {
     Handler<Message<String>> handler = msg -> {};
-    Registration reg = eb.registerHandler(ADDRESS1, handler);
+    MessageConsumer reg = eb.<String>consumer(ADDRESS1).handler(handler);
     reg.unregister();
     reg.unregister(); // Ok to unregister twice
     testComplete();
@@ -95,7 +103,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testRegisterLocal() {
     String str = TestUtils.randomUnicodeString(100);
-    eb.registerLocalHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>localConsumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
     });
@@ -106,7 +114,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testRegisterWithCompletionHandler() {
     String str = TestUtils.randomUnicodeString(100);
-    Registration reg = eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
     });
@@ -141,7 +149,7 @@ public class LocalEventBusTest extends EventBusTestBase {
           testComplete();
         }
       };
-      eb.registerHandler(ADDRESS1, handlers[i]);
+      eb.<String>consumer(ADDRESS1).handler(handlers[i]);
     }
 
     for (int i = 0; i < numMessages; i++) {
@@ -169,9 +177,9 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     };
 
-    Registration reg = eb.registerHandler(ADDRESS1, handler1);
-    eb.registerHandler(ADDRESS1, handler2);
-    eb.registerHandler(ADDRESS1, handler3);
+    MessageConsumer reg = eb.<String>consumer(ADDRESS1).handler(handler1);
+    eb.<String>consumer(ADDRESS1).handler(handler2);
+    eb.<String>consumer(ADDRESS1).handler(handler3);
     reg.unregister();
     eb.send(ADDRESS1, str);
     eb.send(ADDRESS1, str);
@@ -189,9 +197,9 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     };
-    eb.registerHandler(ADDRESS1, handler);
-    eb.registerHandler(ADDRESS1, handler);
-    eb.registerHandler(ADDRESS1, handler);
+    eb.<String>consumer(ADDRESS1).handler(handler);
+    eb.<String>consumer(ADDRESS1).handler(handler);
+    eb.<String>consumer(ADDRESS1).handler(handler);
 
     eb.send(ADDRESS1, str);
     eb.send(ADDRESS1, str);
@@ -210,10 +218,10 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendMultipleAddresses() {
     String str = TestUtils.randomUnicodeString(100);
     AtomicInteger cnt = new AtomicInteger();
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       fail("Should not receive message");
     });
-    eb.registerHandler(ADDRESS2, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS2).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       if (cnt.incrementAndGet() == 2) {
         testComplete();
@@ -227,12 +235,12 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSendWithTimeoutNoTimeoutNoReply() {
     String str = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
     });
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), ar -> {
     });
     await();
   }
@@ -241,7 +249,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithReply() {
     String str = TestUtils.randomUnicodeString(1000);
     String reply = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.reply(reply);
     });
@@ -257,7 +265,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = TestUtils.randomUnicodeString(1000);
     String reply = TestUtils.randomUnicodeString(1000);
     String replyReply = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.reply(reply, onSuccess((Message<String> rep) -> {
         assertEquals(replyReply, rep.body());
@@ -275,11 +283,11 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendReplyWithTimeout() {
     String str = TestUtils.randomUnicodeString(1000);
     String reply = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       long start = System.currentTimeMillis();
       long timeout = 1000;
-      msg.replyWithOptions(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+      msg.reply(reply, new DeliveryOptions().setSendTimeout(timeout), ar -> {
         long now = System.currentTimeMillis();
         assertFalse(ar.succeeded());
         Throwable cause = ar.cause();
@@ -303,10 +311,10 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = TestUtils.randomUnicodeString(1000);
     String reply = TestUtils.randomUnicodeString(1000);
     String replyReply = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       long timeout = 1000;
-      msg.replyWithOptions(reply, DeliveryOptions.options().setSendTimeout(timeout), ar -> {
+      msg.reply(reply, new DeliveryOptions().setSendTimeout(timeout), ar -> {
         assertTrue(ar.succeeded());
         assertEquals(replyReply, ar.result().body());
         testComplete();
@@ -322,12 +330,12 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSendWithTimeoutNoTimeoutReply() {
     String str = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.reply(23);
     });
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertEquals(23, (int) ar.result().body());
       testComplete();
@@ -338,17 +346,17 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testSendWithTimeoutNoReply() {
     String str = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
     });
     long timeout = 1000;
     long start = System.currentTimeMillis();
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       long now = System.currentTimeMillis();
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.TIMEOUT, re.failureType());
       assertTrue(now - start >= timeout);
@@ -361,11 +369,11 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithTimeoutNoHandlers() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.NO_HANDLERS, re.failureType());
       testComplete();
@@ -378,16 +386,16 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = TestUtils.randomUnicodeString(1000);
     String failureMsg = TestUtils.randomUnicodeString(1000);
     int failureCode = 123;
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.fail(failureCode, failureMsg);
     });
     long timeout = 1000;
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(failureCode, re.failureCode());
       assertEquals(failureMsg, re.getMessage());
       assertEquals(ReplyFailure.RECIPIENT_FAILURE, re.failureType());
@@ -400,17 +408,17 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithTimeoutReplyAfterTimeout() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       vertx.setTimer((int)(timeout * 1.5), id -> {
         msg.reply("too late!");
       });
     });
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
-      ReplyException re = (ReplyException)cause;
+      ReplyException re = (ReplyException) cause;
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.TIMEOUT, re.failureType());
       testComplete();
@@ -422,12 +430,12 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithTimeoutNoTimeoutAfterReply() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       msg.reply("a reply");
     });
     AtomicBoolean received = new AtomicBoolean();
-    eb.sendWithOptions(ADDRESS1, str, DeliveryOptions.options().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.send(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertFalse(received.get());
       received.set(true);
@@ -444,7 +452,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testPublish() {
     String str = TestUtils.randomUnicodeString(100);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
     });
@@ -456,13 +464,13 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testPublishMultipleHandlers() {
     String str = TestUtils.randomUnicodeString(100);
     AtomicInteger count = new AtomicInteger();
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       if (count.incrementAndGet() == 2) {
         testComplete();
       }
     });
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       if (count.incrementAndGet() == 2) {
         testComplete();
@@ -482,8 +490,8 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     };
-    eb.registerHandler(ADDRESS1, handler);
-    eb.registerHandler(ADDRESS1, handler);
+    eb.<String>consumer(ADDRESS1).handler(handler);
+    eb.<String>consumer(ADDRESS1).handler(handler);
     eb.publish(ADDRESS1, str);
     await();
   }
@@ -499,8 +507,8 @@ public class LocalEventBusTest extends EventBusTestBase {
       fail("Should not be called");
     };
 
-    eb.registerHandler(ADDRESS1, handler1);
-    Registration reg = eb.registerHandler(ADDRESS1, handler2);
+    eb.<String>consumer(ADDRESS1).handler(handler1);
+    MessageConsumer reg = eb.<String>consumer(ADDRESS1).handler(handler2);
     reg.unregister();
     eb.publish(ADDRESS1, str);
 
@@ -510,11 +518,11 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testPublishMultipleHandlersDifferentAddresses() {
     String str = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
     });
-    eb.registerHandler(ADDRESS2, (Message<String> msg) -> {
+    eb.<String>consumer(ADDRESS2).handler((Message<String> msg) -> {
       fail("Should not receive message");
     });
     eb.publish(ADDRESS1, str);
@@ -525,7 +533,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testNonRegisteredCodecType() {
     class Boom {
     }
-    eb.registerHandler("foo", msg -> {
+    eb.consumer("foo").handler(msg -> {
       fail("Should not have gotten here");
     });
 
@@ -568,7 +576,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.currentContext();
+        ctx = vertx.context();
         if (worker) {
           if (multiThreaded) {
             assertTrue(ctx instanceof MultiThreadedWorkerContext);
@@ -579,8 +587,8 @@ public class LocalEventBusTest extends EventBusTestBase {
           assertTrue(ctx instanceof EventLoopContext);
         }
         Thread thr = Thread.currentThread();
-        Registration reg = vertx.eventBus().registerHandler(ADDRESS1, msg -> {
-          assertSame(ctx, vertx.currentContext());
+        MessageConsumer<?> reg = vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
@@ -588,12 +596,12 @@ public class LocalEventBusTest extends EventBusTestBase {
         });
         reg.completionHandler(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           vertx.eventBus().send(ADDRESS1, "foo", onSuccess((Message<Object> reply) -> {
-            assertSame(ctx, vertx.currentContext());
+            assertSame(ctx, vertx.context());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
@@ -604,7 +612,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(worker).setMultiThreaded(multiThreaded));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker).setMultiThreaded(multiThreaded));
     await();
   }
 
@@ -612,7 +620,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testContextsSend() throws Exception {
     Set<ContextImpl> contexts = new ConcurrentHashSet<>();
     CountDownLatch latch = new CountDownLatch(2);
-    vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+    vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("bar");
       contexts.add(((VertxInternal) vertx).getContext());
       latch.countDown();
@@ -632,7 +640,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     AtomicInteger cnt = new AtomicInteger();
     int numHandlers = 10;
     for (int i = 0; i < numHandlers; i++) {
-      vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+      vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
         contexts.add(((VertxInternal) vertx).getContext());
         if (cnt.incrementAndGet() == numHandlers) {
           assertEquals(numHandlers, contexts.size());
@@ -646,14 +654,14 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testHeadersCopiedAfterSend() throws Exception {
-    Headers headers = new CaseInsensitiveHeaders();
+    MultiMap headers = new CaseInsensitiveHeaders();
     headers.add("foo", "bar");
-    vertx.eventBus().registerHandler(ADDRESS1, msg -> {
+    vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
       assertNotSame(headers, msg.headers());
       assertEquals("bar", msg.headers().get("foo"));
       testComplete();
     });
-    vertx.eventBus().sendWithOptions(ADDRESS1, "foo", DeliveryOptions.options().setHeaders(headers));
+    vertx.eventBus().send(ADDRESS1, "foo", new DeliveryOptions().setHeaders(headers));
     headers.remove("foo");
     await();
   }
@@ -663,7 +671,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testSend(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -671,7 +679,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testReply(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -680,7 +688,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testSend(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -689,13 +697,13 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testReply(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
   public void testNoRegisteredDecoder() throws Exception {
     try {
-      vertx.eventBus().sendWithOptions(ADDRESS1, "foo", DeliveryOptions.options().setCodecName("iqwjdoqiwd"));
+      vertx.eventBus().send(ADDRESS1, "foo", new DeliveryOptions().setCodecName("iqwjdoqiwd"));
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -718,7 +726,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.eventBus().registerCodec(codec);
     vertx.eventBus().unregisterCodec(codec.name());
     try {
-      vertx.eventBus().sendWithOptions(ADDRESS1, new MyPOJO("foo"), DeliveryOptions.options().setCodecName(codec.name()));
+      vertx.eventBus().send(ADDRESS1, new MyPOJO("foo"), new DeliveryOptions().setCodecName(codec.name()));
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
@@ -839,7 +847,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Override
   protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
-    eb.registerHandler(ADDRESS1, (Message<T> msg) -> {
+    eb.<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(received, msg.body());
         if (options != null && options.getHeaders() != null) {
@@ -855,7 +863,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     if (options != null) {
-      eb.sendWithOptions(ADDRESS1, val, options);
+      eb.send(ADDRESS1, val, options);
     } else {
       eb.send(ADDRESS1, val);
     }
@@ -876,10 +884,10 @@ public class LocalEventBusTest extends EventBusTestBase {
   protected <T, R> void testReply(T val, R received, Consumer<R> consumer, DeliveryOptions options) {
 
     String str = TestUtils.randomUnicodeString(1000);
-    eb.registerHandler(ADDRESS1, msg -> {
+    eb.consumer(ADDRESS1).handler(msg -> {
       assertEquals(str, msg.body());
       if (options != null) {
-        msg.replyWithOptions(val, options);
+        msg.reply(val, options);
       } else {
         msg.reply(val);
       }
@@ -918,10 +926,155 @@ public class LocalEventBusTest extends EventBusTestBase {
         }
       }
     }
-    eb.registerHandler(ADDRESS1, new MyHandler());
-    eb.registerHandler(ADDRESS1, new MyHandler());
-    eb.publish(ADDRESS1, (T) val);
+    eb.<T>consumer(ADDRESS1).handler(new MyHandler());
+    eb.<T>consumer(ADDRESS1).handler(new MyHandler());
+    eb.publish(ADDRESS1, val);
     await();
+  }
+
+  @Test
+  public void testPauseResumeMessageStream() {
+    testPauseResume((consumer, handler) -> consumer.handler(message -> handler.handle(message.body())));
+  }
+
+  @Test
+  public void testPauseResumeBodyStream() {
+    testPauseResume((consumer, handler) -> consumer.bodyStream().handler(handler));
+  }
+
+  private void testPauseResume(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> register) {
+    String[] data = new String[11];
+    for (int i = 0;i < data.length;i++) {
+      data[i] = TestUtils.randomAlphaString(10);
+    }
+    Set<String> expected = new HashSet<>();
+    Handler<String> handler = body -> {
+      if ("end".equals(body)) {
+        assertEquals(Collections.emptySet(), expected);
+        testComplete();
+      } else {
+        assertTrue("Was expecting " + expected + " to contain " + body, expected.remove(body));
+      }
+    };
+    MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
+    ReadStream<?> controller = register.apply(reg, handler);
+    ((EventBusImpl.HandlerRegistration<String>) reg).discardHandler(msg -> {
+      assertEquals(data[10], msg.body());
+      expected.addAll(Arrays.asList(data).subList(0, 10));
+      controller.resume();
+      eb.send(ADDRESS1, "end");
+    });
+    controller.pause();
+    for (String msg : data) {
+      eb.publish(ADDRESS1, msg);
+    }
+    await();
+  }
+
+  @Test
+  public void testExceptionWhenDeliveringBufferedMessage() {
+    String[] data = new String[11];
+    for (int i = 0;i < data.length;i++) {
+      data[i] = TestUtils.randomAlphaString(10);
+    }
+    Set<String> expected = new HashSet<>();
+    Handler<Message<String>> handler = message -> {
+      String body = message.body();
+      if ("end".equals(body)) {
+        assertEquals(Collections.emptySet(), expected);
+        testComplete();
+      } else {
+        assertTrue("Was expecting " + expected + " to contain " + body, expected.remove(body));
+        throw new RuntimeException();
+      }
+    };
+    MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
+    ((EventBusImpl.HandlerRegistration<String>) reg).discardHandler(msg -> {
+      assertEquals(data[10], msg.body());
+      expected.addAll(Arrays.asList(data).subList(0, 10));
+      reg.resume();
+      eb.send(ADDRESS1, "end");
+    });
+    reg.handler(handler);
+    reg.pause();
+    for (String msg : data) {
+      eb.publish(ADDRESS1, msg);
+    }
+    await();
+  }
+
+  @Test
+  public void testSender() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> sender = eb.sender(ADDRESS1);
+    eb.consumer(ADDRESS1).handler(message -> {
+      if (message.body().equals(str)) {
+        testComplete();
+      }
+    });
+    sender.write(str);
+    await();
+  }
+
+  @Test
+  public void testSenderWithOptions() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> sender = eb.sender(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    eb.consumer(ADDRESS1).handler(message -> {
+      if (message.body().equals(str) && "foo_value".equals(message.headers().get("foo"))) {
+        testComplete();
+      }
+    });
+    sender.write(str);
+    await();
+  }
+
+  @Test
+  public void testPublisher() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> publisher = eb.publisher(ADDRESS1);
+    AtomicInteger count = new AtomicInteger();
+    int n = 2;
+    for (int i = 0;i < n;i++) {
+      eb.consumer(ADDRESS1).handler(message -> {
+        if (message.body().equals(str) && count.incrementAndGet() == n) {
+          testComplete();
+        }
+      });
+    }
+    publisher.write(str);
+    await();
+  }
+
+  @Test
+  public void testPublisherWithOptions() {
+    String str = TestUtils.randomUnicodeString(100);
+    WriteStream<String> publisher = eb.publisher(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    AtomicInteger count = new AtomicInteger();
+    int n = 2;
+    for (int i = 0;i < n;i++) {
+      eb.consumer(ADDRESS1).handler(message -> {
+        if (message.body().equals(str) && "foo_value".equals(message.headers().get("foo")) && count.incrementAndGet() == n) {
+          testComplete();
+        }
+      });
+    }
+    publisher.write(str);
+    await();
+  }
+
+  @Test
+  public void testPump() {
+    String str = TestUtils.randomUnicodeString(100);
+    ReadStream<String> consumer = eb.<String>consumer(ADDRESS1).bodyStream();
+    consumer.handler(message -> {
+      if (message.equals(str)) {
+        testComplete();
+      }
+    });
+    WriteStream<String> producer = eb.sender(ADDRESS2);
+    Pump.pump(consumer, producer);
+    producer.write(str);
   }
 }
 

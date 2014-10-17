@@ -28,15 +28,15 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -47,7 +47,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
-  private final RequestOptions options;
+  private final String host;
+  private final int port;
   private final HttpClientImpl client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
@@ -65,15 +66,17 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private boolean writeHead;
   private long written;
   private long currentTimeoutTimerId = -1;
-  private Headers headers;
+  private MultiMap headers;
   private boolean exceptionOccurred;
   private long lastDataReceived;
 
-  HttpClientRequestImpl(HttpClientImpl client, String method, RequestOptions options,
+  HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
+                        String relativeURI,
                         Handler<HttpClientResponse> respHandler, VertxInternal vertx) {
-    this.options = options;
+    this.host = host;
+    this.port = port;
     this.client = client;
-    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method), options.getRequestURI(), false);
+    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method.toString()), relativeURI, false);
     this.chunked = false;
     this.respHandler = respHandler;
     this.vertx = vertx;
@@ -95,7 +98,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(request.headers());
     }
@@ -117,7 +120,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequestImpl writeBuffer(Buffer chunk) {
+  public HttpClientRequestImpl write(Buffer chunk) {
     check();
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false);
@@ -125,15 +128,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequestImpl writeString(String chunk) {
+  public HttpClientRequestImpl write(String chunk) {
     check();
-    return writeBuffer(Buffer.buffer(chunk));
+    return write(Buffer.buffer(chunk));
   }
 
   @Override
-  public HttpClientRequestImpl writeString(String chunk, String enc) {
+  public HttpClientRequestImpl write(String chunk, String enc) {
+    Objects.requireNonNull(enc, "no null encoding accepted");
     check();
-    return writeBuffer(Buffer.buffer(chunk, enc));
+    return write(Buffer.buffer(chunk, enc));
   }
 
   @Override
@@ -199,17 +203,18 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public void writeStringAndEnd(String chunk) {
-    writeBufferAndEnd(Buffer.buffer(chunk));
+  public void end(String chunk) {
+    end(Buffer.buffer(chunk));
   }
 
   @Override
-  public void writeStringAndEnd(String chunk, String enc) {
-    writeBufferAndEnd(Buffer.buffer(chunk, enc));
+  public void end(String chunk, String enc) {
+    Objects.requireNonNull(enc, "no null encoding accepted");
+    end(Buffer.buffer(chunk, enc));
   }
 
   @Override
-  public void writeBufferAndEnd(Buffer chunk) {
+  public void end(Buffer chunk) {
     check();
     if (!chunked && !contentLengthSet()) {
       headers().set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
@@ -321,7 +326,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnection(options.getPort(), options.getHost(), conn -> {
+      client.getConnection(port, host, conn -> {
         if (exceptionOccurred) {
           // The request already timed out before it has left the pool waiter queue
           // So return it
@@ -386,16 +391,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private void writeHead() {
     prepareHeaders();
-    conn.write(request);
+    conn.writeToChannel(request);
     headWritten = true;
   }
 
   private void writeHeadWithContent(ByteBuf buf, boolean end) {
     prepareHeaders();
     if (end) {
-      conn.write(new AssembledFullHttpRequest(request, buf));
+      conn.writeToChannel(new AssembledFullHttpRequest(request, buf));
     } else {
-      conn.write(new AssembledHttpRequest(request, buf));
+      conn.writeToChannel(new AssembledHttpRequest(request, buf));
     }
     headWritten = true;
   }
@@ -463,14 +468,14 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   private void sendChunk(ByteBuf buff) {
-    conn.write(new DefaultHttpContent(buff));
+    conn.writeToChannel(new DefaultHttpContent(buff));
   }
 
   private void writeEndChunk(ByteBuf buf) {
     if (buf.isReadable()) {
-      conn.write(new DefaultLastHttpContent(buf, false));
+      conn.writeToChannel(new DefaultLastHttpContent(buf, false));
     } else {
-      conn.write(LastHttpContent.EMPTY_LAST_CONTENT);
+      conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
     }
   }
 

@@ -61,12 +61,12 @@ public interface VertxInternal extends VertxSPI {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(String deploymentID, JsonObject config);
+  EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl);
 
   /**
    * @return worker loop context
    */
-  ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config);
+  ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config, ClassLoader tccl);
 
   void simulateKill();
 

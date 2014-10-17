@@ -37,6 +37,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Closeable;
@@ -47,9 +48,11 @@ import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,7 +72,6 @@ public class NetServerImpl implements NetServer, Closeable {
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
-  private Handler<NetSocket> connectHandler;
   private ChannelGroup serverChannelGroup;
   private boolean listening;
   private volatile ServerID id;
@@ -79,14 +81,15 @@ public class NetServerImpl implements NetServer, Closeable {
   private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
   private boolean listenersRun;
   private ContextImpl listenContext;
+  private NetReadStream connectStream = new NetReadStream();
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
-    this.options = NetServerOptions.copiedOptions(options);
+    this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isMultithreaded()) {
+      if (creatingContext.isMultiThreaded()) {
         throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(this);
@@ -94,16 +97,19 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
-  public synchronized NetServer connectHandler(Handler<NetSocket> connectHandler) {
-    if (listening) {
-      throw new IllegalStateException("Cannot set connectHandler when server is listening");
-    }
-    this.connectHandler = connectHandler;
+  public NetServer connectHandler(Handler<NetSocket> handler) {
+    connectStream.handler(handler);
     return this;
   }
 
-  public synchronized Handler<NetSocket> connectHandler() {
-    return connectHandler;
+  @Override
+  public Handler<NetSocket> connectHandler() {
+    return connectStream.handler;
+  }
+
+  @Override
+  public ReadStream<NetSocket> connectStream() {
+    return connectStream;
   }
 
   @Override
@@ -114,7 +120,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   @Override
   public synchronized NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
-    if (connectHandler == null) {
+    if (connectStream.handler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
     if (listening) {
@@ -157,8 +163,8 @@ public class NetServerImpl implements NetServer, Closeable {
 
         applyConnectionOptions(bootstrap);
 
-        if (connectHandler != null) {
-          handlerManager.addHandler(connectHandler, listenContext);
+        if (connectStream.handler != null) {
+          handlerManager.addHandler(connectStream, listenContext);
         }
 
         try {
@@ -200,8 +206,8 @@ public class NetServerImpl implements NetServer, Closeable {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
-        if (connectHandler != null) {
-          actualServer.handlerManager.addHandler(connectHandler, listenContext);
+        if (connectStream.handler != null) {
+          actualServer.handlerManager.addHandler(connectStream, listenContext);
         }
       }
 
@@ -234,7 +240,22 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
-  public synchronized void close(final Handler<AsyncResult<Void>> done) {
+  public synchronized void close(Handler<AsyncResult<Void>> done) {
+    if (connectStream.endHandler != null) {
+      Handler<AsyncResult<Void>> next = done;
+      done = new AsyncResultHandler<Void>() {
+        @Override
+        public void handle(AsyncResult<Void> event) {
+          if (event.succeeded()) {
+            connectStream.endHandler.handle(event.result());
+          }
+          if (next != null) {
+            next.handle(event);
+          }
+        }
+      };
+    }
+
     ContextImpl context = vertx.getOrCreateContext();
     if (!listening) {
       if (done != null) {
@@ -246,7 +267,7 @@ public class NetServerImpl implements NetServer, Closeable {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectHandler, listenContext);
+        actualServer.handlerManager.removeHandler(connectStream, listenContext);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -388,5 +409,79 @@ public class NetServerImpl implements NetServer, Closeable {
     // which could make the JVM run out of file handles.
     close();
     super.finalize();
+  }
+
+  class NetReadStream implements Handler<NetSocket>, ReadStream<NetSocket> {
+
+    protected Handler<NetSocket> handler;
+    private final Queue<NetSocket> pending = new ArrayDeque<>(8);
+    private boolean paused;
+    private Handler<Void> endHandler;
+
+    @Override
+    public void handle(NetSocket event) {
+      if (paused) {
+        event.pause();
+        pending.add(event);
+      } else {
+        checkNextTick();
+        handler.handle(event);
+      }
+    }
+
+    @Override
+    public NetReadStream handler(Handler<NetSocket> handler) {
+      if (listening) {
+        throw new IllegalStateException("Cannot set connectHandler when server is listening");
+      }
+      this.handler = handler;
+      return this;
+    }
+
+    @Override
+    public NetReadStream pause() {
+      if (!paused) {
+        NetServerImpl.this.bindFuture.channel().config().setAutoRead(false);
+        paused = true;
+      }
+      return this;
+    }
+
+    @Override
+    public NetReadStream resume() {
+      if (paused) {
+        NetServerImpl.this.bindFuture.channel().config().setAutoRead(true);
+        paused = false;
+        checkNextTick();
+      }
+      return this;
+    }
+
+    @Override
+    public NetReadStream endHandler(Handler<Void> endHandler) {
+      this.endHandler = endHandler;
+      return this;
+    }
+
+    @Override
+    public NetReadStream exceptionHandler(Handler<Throwable> handler) {
+      // Should we use it in the server close exception handler ?
+      return this;
+    }
+
+    private void checkNextTick() {
+      // Check if there are more pending messages in the queue that can be processed next time around
+      if (!pending.isEmpty()) {
+        vertx.runOnContext(v -> {
+          if (!paused) {
+            NetSocket event = pending.poll();
+            if (event != null) {
+              event.resume();
+              NetReadStream.this.handle(event);
+            }
+          }
+        });
+      }
+    }
   }
 }

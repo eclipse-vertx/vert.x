@@ -17,7 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -40,7 +40,22 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
+public interface HttpClientResponse extends ReadStream<Buffer> {
+
+  @Override
+  HttpClientResponse resume();
+
+  @Override
+  HttpClientResponse exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  HttpClientResponse handler(Handler<Buffer> handler);
+
+  @Override
+  HttpClientResponse pause();
+
+  @Override
+  HttpClientResponse endHandler(Handler<Void> endHandler);
 
   /**
    * The HTTP status code of the response
@@ -56,13 +71,13 @@ public interface HttpClientResponse extends ReadStream<HttpClientResponse> {
    * @return The HTTP headers
    */
   @CacheReturn
-  Headers headers();
+  MultiMap headers();
 
   /**
    * @return The HTTP trailers
    */
   @CacheReturn
-  Headers trailers();
+  MultiMap trailers();
 
   /**
    * @return The Set-Cookie headers (including trailers)

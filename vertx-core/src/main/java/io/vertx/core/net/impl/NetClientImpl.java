@@ -43,6 +43,7 @@ import io.vertx.core.net.NetSocket;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -62,7 +63,7 @@ public class NetClientImpl implements NetClient {
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
     this.vertx = vertx;
-    this.options = NetClientOptions.copiedOptions(options);
+    this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
     this.closeHook = completionHandler -> {
       NetClientImpl.this.close();
@@ -70,7 +71,7 @@ public class NetClientImpl implements NetClient {
     };
     creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isMultithreaded()) {
+      if (creatingContext.isMultiThreaded()) {
         throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(closeHook);
@@ -123,6 +124,8 @@ public class NetClientImpl implements NetClient {
 
   private void connect(final int port, final String host, final Handler<AsyncResult<NetSocket>> connectHandler,
                        final int remainingAttempts) {
+    Objects.requireNonNull(host, "No null host accepted");
+    Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextImpl context = vertx.getOrCreateContext();
     sslHelper.checkSSL(vertx);
     Bootstrap bootstrap = new Bootstrap();

@@ -134,7 +134,7 @@ public interface Vertx {
   /**
    * @return The current context
    */
-  Context currentContext();
+  Context context();
 
   /**
    * Put the handler on the event queue for the current loop (or worker context) so it will be run asynchronously ASAP after this event has
@@ -159,20 +159,22 @@ public interface Vertx {
   void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler);
 
   @GenIgnore
-  void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options);
+  void deployVerticle(Verticle verticle, DeploymentOptions options);
 
   @GenIgnore
-  void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
 
 
-  void deployVerticle(String verticleName);
+  void deployVerticle(String identifier);
 
-  void deployVerticle(String verticleName, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(String identifier, Handler<AsyncResult<String>> completionHandler);
 
-  void deployVerticleWithOptions(String verticleName, DeploymentOptions options);
+  void deployVerticle(String identifier, DeploymentOptions options);
 
-  void deployVerticleWithOptions(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+  void deployVerticle(String identifier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
+
+  void undeployVerticle(String deploymentID);
 
   void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler);
 

@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -37,7 +38,31 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket> {
+public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
+
+  @Override
+  NetSocket exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  NetSocket handler(Handler<Buffer> handler);
+
+  @Override
+  NetSocket pause();
+
+  @Override
+  NetSocket resume();
+
+  @Override
+  NetSocket endHandler(Handler<Void> endHandler);
+
+  @Override
+  NetSocket write(Buffer data);
+
+  @Override
+  NetSocket setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  NetSocket drainHandler(Handler<Void> handler);
 
   /**
    * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
@@ -53,14 +78,14 @@ public interface NetSocket extends ReadStream<NetSocket>, WriteStream<NetSocket>
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  NetSocket writeString(String str);
+  NetSocket write(String str);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
    * @return A reference to this, so multiple method calls can be chained.
    */
   @Fluent
-  NetSocket writeString(String str, String enc);
+  NetSocket write(String str, String enc);
 
   /**
    * Tell the kernel to stream a file as specified by {@code filename} directly from disk to the outgoing connection,

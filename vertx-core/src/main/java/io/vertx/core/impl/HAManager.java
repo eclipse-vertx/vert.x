@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Red Hat, Inc.
- *  
- *   Red Hat licenses this file to you under the Apache License, version 2.0
- *   (the "License"); you may not use this file except in compliance with the
- *   License.  You may obtain a copy of the License at:
- *  
- *   http://www.apache.org/licenses/LICENSE-2.0
- *  
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- *   License for the specific language governing permissions and limitations
- *   under the License.
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
+ *
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
+ *
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
+ *
+ * You may elect to redistribute this code under either of these licenses.
  */
 
 package io.vertx.core.impl;
@@ -25,7 +25,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
@@ -291,30 +290,23 @@ public class HAManager {
     if (clusterMap.containsKey(nodeID)) {
       checkQuorum();
     } else {
-      vertx.setTimer(200, new Handler<Long>() {
-        @Override
-        public void handle(Long event) {
-
-          // This can block on a monitor so it needs to run as a worker
-          vertx.executeBlocking(new Action<Void>() {
-            @Override
-            public Void perform() {
-              if (System.currentTimeMillis() - start > 10000) {
-                log.warn("Timed out waiting for group information to appear");
-              } else if (!stopped) {
-                ContextImpl context = vertx.getContext();
-                try {
-                  // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
-                  vertx.setContext(null);
-                  checkQuorumWhenAdded(nodeID, start);
-                } finally {
-                  vertx.setContext(context);
-                }
-              }
-              return null;
+      vertx.setTimer(200, tid -> {
+        // This can block on a monitor so it needs to run as a worker
+        vertx.executeBlocking(() -> {
+          if (System.currentTimeMillis() - start > 10000) {
+            log.warn("Timed out waiting for group information to appear");
+          } else if (!stopped) {
+            ContextImpl context = vertx.getContext();
+            try {
+              // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
+              vertx.setContext(null);
+              checkQuorumWhenAdded(nodeID, start);
+            } finally {
+              vertx.setContext(context);
             }
-          }, null);
-        }
+          }
+          return null;
+        }, null);
       });
     }
   }
@@ -400,14 +392,14 @@ public class HAManager {
               @Override
               public void handle(AsyncResult<Void> result) {
                 if (result.succeeded()) {
-                  log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleName() + " as there is no quorum");
-                  addToHADeployList(dep.verticleName(), dep.deploymentOptions(), new AsyncResultHandler<String>() {
+                  log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.identifier() + " as there is no quorum");
+                  addToHADeployList(dep.identifier(), dep.deploymentOptions(), new AsyncResultHandler<String>() {
                     @Override
                     public void handle(AsyncResult<String> result) {
                       if (result.succeeded()) {
-                        log.info("Successfully redeployed verticle " + dep.verticleName() + " after quorum was re-attained");
+                        log.info("Successfully redeployed verticle " + dep.identifier() + " after quorum was re-attained");
                       } else {
-                        log.error("Failed to redeploy verticle " + dep.verticleName() + " after quorum was re-attained", result.cause());
+                        log.error("Failed to redeploy verticle " + dep.identifier() + " after quorum was re-attained", result.cause());
                       }
                     }
                   });
@@ -492,20 +484,17 @@ public class HAManager {
     ContextImpl ctx = vertx.getContext();
     vertx.setContext(null);
     JsonObject options = failedVerticle.getObject("options");
-    doDeployVerticle(verticleName, DeploymentOptions.optionsFromJson(options), new Handler<AsyncResult<String>>() {
-      @Override
-      public void handle(AsyncResult<String> result) {
-        if (result.succeeded()) {
-          log.info("Successfully redeployed verticle " + verticleName + " after failover");
-        } else {
-          log.error("Failed to redeploy verticle after failover", result.cause());
-          err.set(result.cause());
-        }
-        latch.countDown();
-        Throwable t = err.get();
-        if (t != null) {
-          throw new VertxException(t);
-        }
+    doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
+      if (result.succeeded()) {
+        log.info("Successfully redeployed verticle " + verticleName + " after failover");
+      } else {
+        log.error("Failed to redeploy verticle after failover", result.cause());
+        err.set(result.cause());
+      }
+      latch.countDown();
+      Throwable t = err.get();
+      if (t != null) {
+        throw new VertxException(t);
       }
     });
     vertx.setContext(ctx);

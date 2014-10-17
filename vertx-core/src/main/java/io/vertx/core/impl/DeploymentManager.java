@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
  *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * You may elect to redistribute this code under either of these licenses.
  */
 
 package io.vertx.core.impl;
@@ -22,7 +22,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
-import io.vertx.core.impl.verticle.SimpleJavaVerticleFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -57,8 +56,8 @@ public class DeploymentManager {
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
-  private Map<String, VerticleFactory> verticleFactories = new ConcurrentHashMap<>();
-  private static final VerticleFactory DEFAULT_VERTICLE_FACTORY = new SimpleJavaVerticleFactory();
+  private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
+  private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
   public DeploymentManager(VertxInternal vertx) {
     this.vertx = vertx;
@@ -67,54 +66,65 @@ public class DeploymentManager {
 
   private void loadVerticleFactories() {
     ServiceLoader<VerticleFactory> factories = ServiceLoader.load(VerticleFactory.class);
-    Iterator<VerticleFactory> iter = factories.iterator();
-    while (iter.hasNext()) {
-      VerticleFactory factory = iter.next();
-      factory.init(vertx);
-      String prefix = factory.prefix();
-      if (verticleFactories.containsKey(prefix)) {
-        log.warn("Not loading verticle factory: " + factory + " as prefix " + prefix + " is already in use");
-      } else {
-        verticleFactories.put(prefix, factory);
-      }
+    for (VerticleFactory factory: factories) {
+      registerVerticleFactory(factory);
     }
+    VerticleFactory defaultFactory = new JavaVerticleFactory();
+    defaultFactory.init(vertx);
+    defaultFactories.add(defaultFactory);
   }
 
   public void deployVerticle(Verticle verticle, DeploymentOptions options,
                              Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
-    doDeploy("java:" + verticle.getClass().getName(), verticle, options, currentContext, completionHandler);
+    doDeploy("java:" + verticle.getClass().getName(), verticle, options, currentContext, completionHandler,
+             getCurrentClassLoader());
   }
 
-  public void deployVerticle(String verticleName,
+  public void deployVerticle(String identifier,
                              DeploymentOptions options,
                              Handler<AsyncResult<String>> completionHandler) {
+    doDeployVerticle(identifier, options, completionHandler);
+  }
+
+  private void doDeployVerticle(String identifier,
+                                DeploymentOptions options,
+                                Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(options.getIsolationGroup(), options);
-    int pos = verticleName.indexOf(':');
-    if (pos == -1) {
-      throw new IllegalArgumentException("verticleName must start with prefix");
-    }
-    String prefix = verticleName.substring(0, pos);
-    if (pos + 1 >= verticleName.length()) {
-      throw new IllegalArgumentException("Invalid name: " + verticleName);
-    }
-    String actualName = verticleName.substring(pos + 1);
-    VerticleFactory verticleFactory = verticleFactories.get(prefix);
-    if (verticleFactory == null) {
-      // Use default Java verticle factory
-      verticleFactory = DEFAULT_VERTICLE_FACTORY;
-    }
-    try {
-      Verticle verticle = verticleFactory.createVerticle(actualName, cl);
-      if (verticle == null) {
-        reportFailure(new NullPointerException("VerticleFactory::createVerticle returned null"), currentContext, completionHandler);
-      } else {
-        doDeploy(verticleName, verticle, options, currentContext, completionHandler);
+    ClassLoader cl = getClassLoader(options);
+    List<VerticleFactory> verticleFactories = resolveFactories(identifier);
+    Iterator<VerticleFactory> iter = verticleFactories.iterator();
+    while (iter.hasNext()) {
+      try {
+        VerticleFactory verticleFactory = iter.next();
+        if (verticleFactory.requiresResolve()) {
+          String resolvedName = verticleFactory.resolve(identifier, options, cl);
+          if (!resolvedName.equals(identifier)) {
+            deployVerticle(resolvedName, options, completionHandler);
+            return;
+          }
+        }
+        Verticle verticle = verticleFactory.createVerticle(identifier, cl);
+        if (verticle == null) {
+          throw new NullPointerException("VerticleFactory::createVerticle returned null");
+        } else {
+          doDeploy(identifier, verticle, options, currentContext, completionHandler, cl);
+          return;
+        }
+      } catch (Exception e) {
+        if (!iter.hasNext()) {
+          // Report failure if there are no more factories to try otherwise try the next one
+          reportFailure(e, currentContext, completionHandler);
+        }
       }
-    } catch (Exception e) {
-      reportFailure(e, currentContext, completionHandler);
     }
+  }
+
+  private String getSuffix(int pos, String str) {
+    if (pos + 1 >= str.length()) {
+      throw new IllegalArgumentException("Invalid name: " + str);
+    }
+    return str.substring(pos + 1);
   }
 
   public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
@@ -165,26 +175,90 @@ public class DeploymentManager {
   }
 
   public void registerVerticleFactory(VerticleFactory factory) {
-    if (factory.prefix() == null) {
+    String prefix = factory.prefix();
+    if (prefix == null) {
       throw new IllegalArgumentException("factory.prefix() cannot be null");
     }
-    if (verticleFactories.containsKey(factory.prefix())) {
-      throw new IllegalArgumentException("There is already a registered verticle factory with prefix " + factory.prefix());
+    List<VerticleFactory> facts = verticleFactories.get(prefix);
+    if (facts == null) {
+      facts = new ArrayList<>();
+      verticleFactories.put(prefix, facts);
     }
-    verticleFactories.put(factory.prefix(), factory);
+    if (facts.contains(factory)) {
+      throw new IllegalArgumentException("Factory already registered");
+    }
+    facts.add(factory);
+    // Sort list in ascending order
+    facts.sort((fact1, fact2) -> fact1.order() - fact2.order());
+    factory.init(vertx);
   }
 
   public void unregisterVerticleFactory(VerticleFactory factory) {
-    if (verticleFactories.remove(factory.prefix()) == null) {
-      throw new IllegalArgumentException("Factory " + factory + " is not registered");
+    String prefix = factory.prefix();
+    if (prefix == null) {
+      throw new IllegalArgumentException("factory.prefix() cannot be null");
+    }
+    List<VerticleFactory> facts = verticleFactories.get(prefix);
+    boolean removed = false;
+    if (facts != null) {
+      if (facts.remove(factory)) {
+        removed = true;
+      }
+      if (facts.isEmpty()) {
+        verticleFactories.remove(prefix);
+      }
+    }
+    if (!removed) {
+      throw new IllegalArgumentException("factory isn't registered");
     }
   }
 
   public Set<VerticleFactory> verticleFactories() {
-    return new HashSet<>(verticleFactories.values());
+    Set<VerticleFactory> facts = new HashSet<>();
+    for (List<VerticleFactory> list: verticleFactories.values()) {
+      facts.addAll(list);
+    }
+    return facts;
   }
 
-  private ClassLoader getClassLoader(String isolationGroup, DeploymentOptions options) {
+  private List<VerticleFactory> resolveFactories(String identifier) {
+    /*
+      We resolve the verticle factory list to use as follows:
+      1. We look for a prefix in the identifier.
+      E.g. the identifier might be "js:app.js" <-- the prefix is "js"
+      If it exists we use that to lookup the verticle factory list
+      2. We look for a suffix (like a file extension),
+      E.g. the identifier might be just "app.js"
+      If it exists we use that to lookup the factory list
+      3. If there is no prefix or suffix OR there is no match then defaults will be used
+    */
+    List<VerticleFactory> factoryList = null;
+    int pos = identifier.indexOf(':');
+    String lookup = null;
+    if (pos != -1) {
+      // Infer factory from prefix, e.g. "java:" or "js:"
+      lookup = identifier.substring(0, pos);
+    } else {
+      // Try and infer name from extension
+      pos = identifier.lastIndexOf('.');
+      if (pos != -1) {
+        lookup = getSuffix(pos, identifier);
+      } else {
+        // No prefix, no extension - use defaults
+        factoryList = defaultFactories;
+      }
+    }
+    if (factoryList == null) {
+      factoryList = verticleFactories.get(lookup);
+      if (factoryList == null) {
+        factoryList = defaultFactories;
+      }
+    }
+    return factoryList;
+  }
+
+  private ClassLoader getClassLoader(DeploymentOptions options) {
+    String isolationGroup = options.getIsolationGroup();
     ClassLoader cl;
     if (isolationGroup == null) {
       cl = getCurrentClassLoader();
@@ -255,18 +329,19 @@ public class DeploymentManager {
     });
   }
 
-  private void doDeploy(String verticleName, Verticle verticle, DeploymentOptions options,
+  private void doDeploy(String identifier, Verticle verticle, DeploymentOptions options,
                         ContextImpl currentContext,
-                        Handler<AsyncResult<String>> completionHandler) {
+                        Handler<AsyncResult<String>> completionHandler,
+                        ClassLoader tccl) {
     if (options.isMultiThreaded() && !options.isWorker()) {
       throw new IllegalArgumentException("If multi-threaded then must be worker too");
     }
     String deploymentID = UUID.randomUUID().toString();
     JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
-    ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, conf) :
-                                               vertx.createEventLoopContext(deploymentID, conf);
+    ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, conf, tccl) :
+                                               vertx.createEventLoopContext(deploymentID, conf, tccl);
 
-    DeploymentImpl deployment = new DeploymentImpl(deploymentID, context, verticleName, verticle, options);
+    DeploymentImpl deployment = new DeploymentImpl(deploymentID, context, identifier, verticle, options);
     context.setDeployment(deployment);
     Deployment parent = currentContext.getDeployment();
     if (parent != null) {
@@ -296,17 +371,17 @@ public class DeploymentManager {
 
     private final String id;
     private final ContextImpl context;
-    private final String verticleName;
+    private final String identifier;
     private final Verticle verticle;
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private final DeploymentOptions options;
     private boolean undeployed;
     private volatile boolean child;
 
-    private DeploymentImpl(String id, ContextImpl context, String verticleName, Verticle verticle, DeploymentOptions options) {
+    private DeploymentImpl(String id, ContextImpl context, String identifier, Verticle verticle, DeploymentOptions options) {
       this.id = id;
       this.context = context;
-      this.verticleName = verticleName;
+      this.identifier = identifier;
       this.verticle = verticle;
       this.options = options;
     }
@@ -357,15 +432,15 @@ public class DeploymentManager {
           try {
             verticle.stop(stopFuture);
           } catch (Throwable t) {
-            stopFuture.setFailure(t);
+            stopFuture.fail(t);
           }
         });
       }
     }
 
     @Override
-    public String verticleName() {
-      return verticleName;
+    public String identifier() {
+      return identifier;
     }
 
     @Override

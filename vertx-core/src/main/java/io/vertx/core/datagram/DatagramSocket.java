@@ -50,7 +50,7 @@ public interface DatagramSocket {
    * @return self     itself for method chaining
    */
   @Fluent
-  DatagramSocket sendBuffer(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
+  DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using UTF8 encoding. The {@link Handler} will be notified once the
@@ -64,7 +64,7 @@ public interface DatagramSocket {
    * @return self     itself for method chaining
    */
   @Fluent
-  DatagramSocket sendString(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
+  DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using the given encoding. The {@link Handler} will be notified once the
@@ -79,7 +79,7 @@ public interface DatagramSocket {
    * @return self     itself for method chaining
    */
   @Fluent
-  DatagramSocket sendStringWithEncoding(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
+  DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
    * Close the {@link DatagramSocket} implementation asynchronous and notifies the handler once done.
@@ -120,7 +120,7 @@ public interface DatagramSocket {
    * @return  this              returns itself for method-chaining
    */
   @Fluent
-  DatagramSocket listenMulticastGroupUsingNetworkInterface(
+  DatagramSocket listenMulticastGroup(
     String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
@@ -148,7 +148,7 @@ public interface DatagramSocket {
    * @return  this              returns itself for method-chaining
    */
   @Fluent
-  DatagramSocket unlistenMulticastGroupUsingNetworkInterface(
+  DatagramSocket unlistenMulticastGroup(
     String multicastAddress, String networkInterface, String source,
     Handler<AsyncResult<DatagramSocket>> handler);
 
@@ -180,7 +180,7 @@ public interface DatagramSocket {
    * @return  this              returns itself for method-chaining
    */
   @Fluent
-  DatagramSocket blockMulticastGroupUsingNetworkInterface(
+  DatagramSocket blockMulticastGroup(
     String multicastAddress, String networkInterface,
     String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler);
 

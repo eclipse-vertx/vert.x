@@ -16,6 +16,7 @@
 
 package io.vertx.core.spi;
 
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 
@@ -24,11 +25,38 @@ import io.vertx.core.Vertx;
  */
 public interface VerticleFactory {
 
-  void init(Vertx vertx);
+  static String removePrefix(String identifer) {
+    int pos = identifer.indexOf(':');
+    if (pos != -1) {
+      if (pos == identifer.length() - 1) {
+        throw new IllegalArgumentException("Invalid identifier: " + identifer);
+      }
+      return identifer.substring(pos + 1);
+    } else {
+      return identifer;
+    }
+  }
+
+  default int order() {
+    return 0;
+  }
+
+  default boolean requiresResolve() {
+    return false;
+  }
+
+  default String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader) throws Exception {
+    return identifier;
+  }
+
+  default void init(Vertx vertx) {
+  }
+
+  default void close() {
+  }
 
   String prefix();
 
   Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception;
 
-  void close();
 }

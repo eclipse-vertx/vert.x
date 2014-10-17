@@ -128,8 +128,8 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  public ChannelFuture write(Object obj) {
-    return lastWriteFuture = super.write(obj);
+  public ChannelFuture writeToChannel(Object obj) {
+    return lastWriteFuture = super.writeToChannel(obj);
   }
 
   NetSocket createNetSocket() {

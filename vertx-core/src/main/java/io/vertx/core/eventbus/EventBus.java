@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
  *
- *   Red Hat licenses this file to you under the Apache License, version 2.0
- *   (the "License"); you may not use this file except in compliance with the
- *   License.  You may obtain a copy of the License at:
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- *   License for the specific language governing permissions and limitations
- *   under the License.
+ * You may elect to redistribute this code under either of these licenses.
  */
 
 package io.vertx.core.eventbus;
@@ -21,14 +21,12 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.eventbus.impl.EventBusImpl;
-
-import java.util.Objects;
+import io.vertx.core.streams.WriteStream;
 
 /**
  * A distributed lightweight event bus which can encompass multiple vert.x instances.
  * The event bus implements publish / subscribe, point to point messaging and request-response messaging.<p>
- * Messages sent over the event bus are represented by instances of the {@link io.vertx.core.eventbus.impl.old.Message} class.<p>
+ * Messages sent over the event bus are represented by instances of the {@link io.vertx.core.eventbus.Message} class.<p>
  * For publish / subscribe, messages can be published to an address using one of the {@link #publish} methods. An
  * address is a simple {@code String} instance.<p>
  * Handlers are registered against an address. There can be multiple handlers registered against each address, and a particular handler can
@@ -82,10 +80,10 @@ public interface EventBus {
   <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
 
   @Fluent
-  <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options);
+  <T> EventBus send(String address, Object message, DeliveryOptions options);
 
   @Fluent
-  <T> EventBus sendWithOptions(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
+  <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Publish a message
@@ -96,24 +94,68 @@ public interface EventBus {
   EventBus publish(String address, Object message);
 
   @Fluent
-  EventBus publishWithOptions(String address, Object message, DeliveryOptions options);
+  EventBus publish(String address, Object message, DeliveryOptions options);
 
   /**
-   * Registers a handler against the specified address
-   * @param address The address to register it at
-   * @param handler The handler
-   * @return the event bus registration
+   * Create a message consumer against the specified address. The returned consumer is not yet registered
+   * at the address, registration will be effective when {@link MessageConsumer#handler(io.vertx.core.Handler)}
+   * is called.
+   *
+   * @param address The address that will register it at
+   * @return the event bus message consumer
    */
-  <T> Registration registerHandler(String address, Handler<Message<T>> handler);
+  <T> MessageConsumer<T> consumer(String address);
 
   /**
-   * Registers a local handler against the specified address. The handler info won't
-   * be propagated across the cluster
+   * Create a local message consumer against the specified address. The handler info won't
+   * be propagated across the cluster. The returned consumer is not yet registered at the
+   * address, registration will be effective when {@link MessageConsumer#handler(io.vertx.core.Handler)}
+   * is called.
+   *
    * @param address The address to register it at
-   * @param handler The handler
-   * @return the event bus registration
+   * @return the event bus message consumer
    */
-  <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler);
+  <T> MessageConsumer<T> localConsumer(String address);
+
+  /**
+   * Create a message sender against the specified address. The returned sender will invoke the {@link #send(String, Object)}
+   * method when the stream {@link io.vertx.core.streams.WriteStream#write(Object)} method is called with the sender
+   * address and the provided data.
+   *
+   * @param address The address to send it to
+   * @return The sender
+   */
+  <T> WriteStream<T> sender(String address);
+
+  /**
+   * Create a message sender against the specified address. The returned sender will invoke the {@link #send(String, Object, DeliveryOptions)}
+   * method when the stream {@link io.vertx.core.streams.WriteStream#write(Object)} method is called with the sender
+   * address, the provided data and the sender delivery options.
+   *
+   * @param address The address to send it to
+   * @return The sender
+   */
+  <T> WriteStream<T> sender(String address, DeliveryOptions options);
+
+  /**
+   * Create a message publisher against the specified address. The returned publisher will invoke the {@link #publish(String, Object)}
+   * method when the stream {@link io.vertx.core.streams.WriteStream#write(Object)} method is called with the publisher
+   * address and the provided data.
+   *
+   * @param address The address to publish it to
+   * @return The publisher
+   */
+  <T> WriteStream<T> publisher(String address);
+
+  /**
+   * Create a message publisher against the specified address. The returned publisher will invoke the {@link #publish(String, Object, DeliveryOptions)}
+   * method when the stream {@link io.vertx.core.streams.WriteStream#write(Object)} method is called with the publisher
+   * address, the provided data and the publisher delivery options.
+   *
+   * @param address The address to publish it to
+   * @return The publisher
+   */
+  <T> WriteStream<T> publisher(String address, DeliveryOptions options);
 
   @GenIgnore
   EventBus registerCodec(MessageCodec codec);
@@ -131,7 +173,7 @@ public interface EventBus {
   <T> T createProxy(Class<T> clazz, String address);
 
   @GenIgnore
-  <T> Registration registerService(T service, String address);
+  <T> MessageConsumer registerService(T service, String address);
 
 }
 

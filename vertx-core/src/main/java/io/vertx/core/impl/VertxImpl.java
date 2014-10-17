@@ -108,7 +108,7 @@ public class VertxImpl implements VertxInternal {
   private HAManager haManager;
 
   VertxImpl() {
-    this(VertxOptions.options());
+    this(new VertxOptions());
   }
 
   VertxImpl(VertxOptions options) {
@@ -204,7 +204,7 @@ public class VertxImpl implements VertxInternal {
     context.runOnContext(task);
   }
 
-  public Context currentContext() {
+  public Context context() {
     return getOrCreateContext();
   }
 
@@ -221,7 +221,7 @@ public class VertxImpl implements VertxInternal {
     ContextImpl ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext(null, new JsonObject());
+      ctx = createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
     }
     return ctx;
   }
@@ -244,8 +244,8 @@ public class VertxImpl implements VertxInternal {
     }
   }
 
-  public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config) {
-    return new EventLoopContext(this, workerOrderedFact.getExecutor(), deploymentID, config);
+  public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl) {
+    return new EventLoopContext(this, workerOrderedFact.getExecutor(), deploymentID, config, tccl);
   }
 
   @Override
@@ -302,11 +302,13 @@ public class VertxImpl implements VertxInternal {
     return timerId;
   }
 
-  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config) {
+  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config,
+                                         ClassLoader tccl) {
     if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config);
+      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config, tccl);
     } else {
-      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID, config);
+      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
+                               config, tccl);
     }
   }
 
@@ -394,51 +396,56 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticle(Verticle verticle) {
-    deployVerticleWithOptions(verticle, DeploymentOptions.options(), null);
+    deployVerticle(verticle, new DeploymentOptions(), null);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticleWithOptions(verticle, DeploymentOptions.options(), completionHandler);
+    deployVerticle(verticle, new DeploymentOptions(), completionHandler);
   }
 
   @Override
-  public void deployVerticle(String verticleName, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticleWithOptions(verticleName, DeploymentOptions.options(), completionHandler);
+  public void deployVerticle(String identifier, Handler<AsyncResult<String>> completionHandler) {
+    deployVerticle(identifier, new DeploymentOptions(), completionHandler);
   }
 
   @Override
-  public void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options) {
-    deployVerticleWithOptions(verticle, options, null);
+  public void deployVerticle(Verticle verticle, DeploymentOptions options) {
+    deployVerticle(verticle, options, null);
   }
 
   @Override
-  public void deployVerticleWithOptions(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+  public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     deploymentManager.deployVerticle(verticle, options, completionHandler);
   }
 
   @Override
-  public void deployVerticle(String verticleName) {
-    deployVerticleWithOptions(verticleName, DeploymentOptions.options(), null);
+  public void deployVerticle(String identifier) {
+    deployVerticle(identifier, new DeploymentOptions(), null);
   }
 
   @Override
-  public void deployVerticleWithOptions(String verticleName, DeploymentOptions options) {
-    deployVerticleWithOptions(verticleName, options, null);
+  public void deployVerticle(String identifier, DeploymentOptions options) {
+    deployVerticle(identifier, options, null);
   }
 
   @Override
-  public void deployVerticleWithOptions(String verticleName, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+  public void deployVerticle(String identifier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     if (options.isHA() && haManager != null) {
-      haManager.deployVerticle(verticleName, options, completionHandler);
+      haManager.deployVerticle(identifier, options, completionHandler);
     } else {
-      deploymentManager.deployVerticle(verticleName, options, completionHandler);
+      deploymentManager.deployVerticle(identifier, options, completionHandler);
     }
   }
 
   @Override
   public String getNodeID() {
     return clusterManager.getNodeID();
+  }
+
+  @Override
+  public void undeployVerticle(String deploymentID) {
+    undeployVerticle(deploymentID, res -> {});
   }
 
   @Override

@@ -30,7 +30,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -54,7 +54,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private Registration registration;
+  private MessageConsumer registration;
   private Queue<Buffer> pendingData;
   private boolean paused = false;
   private SSLHelper helper;
@@ -66,8 +66,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     this.helper = helper;
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
-    Handler<Message<Buffer>> writeHandler = msg -> writeBuffer(msg.body());
-    registration = vertx.eventBus().registerLocalHandler(writeHandlerID, writeHandler);
+    Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
+    registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }
 
   @Override
@@ -76,22 +76,22 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket writeBuffer(Buffer data) {
+  public NetSocket write(Buffer data) {
     ByteBuf buf = data.getByteBuf();
     write(buf);
     return this;
   }
 
   @Override
-  public NetSocket writeString(String str) {
+  public NetSocket write(String str) {
     write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
     return this;
   }
 
   @Override
-  public NetSocket writeString(String str, String enc) {
+  public NetSocket write(String str, String enc) {
     if (enc == null) {
-      writeString(str);
+      write(str);
     } else {
       write(Unpooled.copiedBuffer(str, Charset.forName(enc)));
     }
@@ -99,7 +99,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket dataHandler(Handler<Buffer> dataHandler) {
+  public NetSocket handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
@@ -293,7 +293,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   private void write(ByteBuf buff) {
-    writeFuture = super.write(buff);
+    writeFuture = super.writeToChannel(buff);
   }
 
   private void callDrainHandler() {

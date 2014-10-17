@@ -15,6 +15,8 @@
  */
 package io.vertx.core.dns;
 
+import java.util.Objects;
+
 /**
  * Exception which is used to notify the {@link io.vertx.core.AsyncResult}
  * if the DNS query returns a {@link DnsResponseCode} which indicates and error.
@@ -26,9 +28,7 @@ public final class DnsException extends Exception {
   private DnsResponseCode code;
 
   public DnsException(DnsResponseCode code) {
-    if (code == null) {
-      throw new NullPointerException("code");
-    }
+    Objects.requireNonNull(code, "code");
     this.code = code;
   }
 

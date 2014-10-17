@@ -101,7 +101,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public HttpServerFileUpload dataHandler(Handler<Buffer> handler) {
+  public HttpServerFileUpload handler(Handler<Buffer> handler) {
     this.dataHandler = handler;
     return this;
   }
@@ -144,7 +144,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   @Override
   public HttpServerFileUpload streamToFileSystem(String filename) {
     pause();
-    vertx.fileSystem().open(filename, OpenOptions.options(), ar -> {
+    vertx.fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
 

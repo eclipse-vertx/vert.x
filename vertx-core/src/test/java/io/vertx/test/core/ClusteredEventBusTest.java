@@ -21,7 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.Registration;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       startNodes(2);
     }
 
-    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, (Message<T> msg) -> {
+    MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(received, msg.body());
         if (options != null && options.getHeaders() != null) {
@@ -68,7 +68,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       if (options == null) {
         vertices[0].eventBus().send(ADDRESS1, val);
       } else {
-        vertices[0].eventBus().sendWithOptions(ADDRESS1, val, options);
+        vertices[0].eventBus().send(ADDRESS1, val, options);
       }
     });
     await();
@@ -90,12 +90,12 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       startNodes(2);
     }
     String str = TestUtils.randomUnicodeString(1000);
-    Registration reg = vertices[1].eventBus().registerHandler(ADDRESS1, msg -> {
+    MessageConsumer<?> reg = vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       assertEquals(str, msg.body());
       if (options == null) {
         msg.reply(val);
       } else {
-        msg.replyWithOptions(val, options);
+        msg.reply(val, options);
       }
     });
     reg.completionHandler(ar -> {
@@ -148,18 +148,18 @@ public class ClusteredEventBusTest extends EventBusTestBase {
         }
       }
     }
-    Registration reg = vertices[2].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    MessageConsumer reg = vertices[2].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
     reg.completionHandler(new MyRegisterHandler());
-    reg = vertices[1].eventBus().registerHandler(ADDRESS1, new MyHandler());
+    reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
     reg.completionHandler(new MyRegisterHandler());
-    vertices[0].eventBus().publish(ADDRESS1, (T)val);
+    vertices[0].eventBus().publish(ADDRESS1, val);
     await();
   }
 
   @Test
   public void testLocalHandlerNotReceive() throws Exception {
     startNodes(2);
-    vertices[1].eventBus().registerLocalHandler(ADDRESS1, msg -> {
+    vertices[1].eventBus().localConsumer(ADDRESS1).handler(msg -> {
       fail("Should not receive message");
     });
     vertices[0].eventBus().send(ADDRESS1, "foo");
@@ -174,7 +174,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[0].eventBus().registerCodec(codec);
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testSend(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -184,7 +184,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[0].eventBus().registerCodec(codec);
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
-    testReply(new MyPOJO(str), str, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -195,7 +195,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testSend(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testSend(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test
@@ -206,7 +206,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
-    testReply(pojo, pojo, null, DeliveryOptions.options().setCodecName(codec.name()));
+    testReply(pojo, pojo, null, new DeliveryOptions().setCodecName(codec.name()));
   }
 
   @Test

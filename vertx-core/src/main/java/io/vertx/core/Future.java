@@ -39,24 +39,26 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Has it completed?
    */
-  boolean complete();
+  boolean isComplete();
 
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  Future<T> setHandler(Handler<AsyncResult<T>> handler);
+  void setHandler(Handler<AsyncResult<T>> handler);
 
   /**
    * Set the result. Any handler will be called, if there is one
    *
    * @throws IllegalStateException when the future is already completed
    */
-  Future<T> setResult(T result) throws IllegalStateException;
+  void complete(T result);
+
+  void complete();
 
   /**
    * Set the failure. Any handler will be called, if there is one
    */
-  Future<T> setFailure(Throwable throwable);
+  void fail(Throwable throwable);
 
   static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 

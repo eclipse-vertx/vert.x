@@ -17,7 +17,45 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 
 @VertxGen
-public interface WebSocket extends WebSocketBase<WebSocket> {
+public interface WebSocket extends WebSocketBase {
+
+  @Override
+  WebSocket exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  WebSocket handler(Handler<Buffer> handler);
+
+  @Override
+  WebSocket pause();
+
+  @Override
+  WebSocket resume();
+
+  @Override
+  WebSocket endHandler(Handler<Void> endHandler);
+
+  @Override
+  WebSocket write(Buffer data);
+
+  @Override
+  WebSocket setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  WebSocket drainHandler(Handler<Void> handler);
+
+  @Override
+  WebSocket writeFrame(WebSocketFrame frame);
+
+  @Override
+  WebSocket writeMessage(Buffer data);
+
+  @Override
+  WebSocket closeHandler(Handler<Void> handler);
+
+  @Override
+  WebSocket frameHandler(Handler<WebSocketFrame> handler);
 }

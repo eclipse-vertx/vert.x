@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
  *
- *   Red Hat licenses this file to you under the Apache License, version 2.0
- *   (the "License"); you may not use this file except in compliance with the
- *   License.  You may obtain a copy of the License at:
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- *   License for the specific language governing permissions and limitations
- *   under the License.
+ * You may elect to redistribute this code under either of these licenses.
  */
 
 package io.vertx.core.eventbus.impl;
@@ -19,7 +19,7 @@ package io.vertx.core.eventbus.impl;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -47,7 +47,7 @@ public class MessageImpl<U, V> implements Message<V> {
   private ServerID sender;
   private String address;
   private String replyAddress;
-  private Headers headers;
+  private MultiMap headers;
   private U sentBody;
   private V receivedBody;
   private MessageCodec<U, V> messageCodec;
@@ -59,7 +59,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public MessageImpl() {
   }
 
-  public MessageImpl(ServerID sender, String address, String replyAddress, Headers headers, U sentBody,
+  public MessageImpl(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec, boolean send) {
     this.sender = sender;
     this.address = address;
@@ -105,7 +105,7 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   @Override
-  public Headers headers() {
+  public MultiMap headers() {
     // Lazily decode headers
     if (headers == null) {
       // The message has been read from the wire
@@ -286,27 +286,27 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   @Override
-  public void forwardWithOptions(String address, DeliveryOptions options) {
+  public void forward(String address, DeliveryOptions options) {
 
   }
 
   @Override
   public void reply(Object message) {
-    replyWithOptions(message, DeliveryOptions.options(), null);
+    reply(message, new DeliveryOptions(), null);
   }
 
   @Override
   public <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    replyWithOptions(message, DeliveryOptions.options(), replyHandler);
+    reply(message, new DeliveryOptions(), replyHandler);
   }
 
   @Override
-  public void replyWithOptions(Object message, DeliveryOptions options) {
-    replyWithOptions(message, options, null);
+  public void reply(Object message, DeliveryOptions options) {
+    reply(message, options, null);
   }
 
   @Override
-  public <R> void replyWithOptions(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
+  public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
   }
 

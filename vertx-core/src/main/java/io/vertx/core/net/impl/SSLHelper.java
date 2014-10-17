@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (c) 2011-2014 The original author or authors
+ * ------------------------------------------------------
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Apache License v2.0 which accompanies this distribution.
  *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
+ *     The Eclipse Public License is available at
+ *     http://www.eclipse.org/legal/epl-v10.html
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     The Apache License v2.0 is available at
+ *     http://www.opensource.org/licenses/apache2.0.php
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+ * You may elect to redistribute this code under either of these licenses.
  */
 
 package io.vertx.core.net.impl;
@@ -21,12 +21,12 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptionsBase;
+import io.vertx.core.net.NetServerOptions;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -65,31 +65,43 @@ public class SSLHelper {
 
   private SSLContext sslContext;
 
-  public SSLHelper(NetClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
-    this((ClientOptions) options, keyStoreHelper, trustStoreHelper);
-  }
-
   public SSLHelper(HttpClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
-    this((ClientOptions) options, keyStoreHelper, trustStoreHelper);
-  }
-
-  public SSLHelper(ClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.trustAll = options.isTrustAll();
-    this.crlPaths = new ArrayList<String>(options.getCrlPaths());
-    this.crlValues = new ArrayList<Buffer>(options.getCrlValues());
+    this.crlPaths = new ArrayList<>(options.getCrlPaths());
+    this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
-  public SSLHelper(NetServerOptionsBase options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+  public SSLHelper(HttpServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
-    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<String>(options.getCrlPaths()) : null;
-    this.crlValues = options.getCrlValues() != null ? new ArrayList<Buffer>(options.getCrlValues()) : null;
+    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
+    this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
+    this.enabledCipherSuites = options.getEnabledCipherSuites();
+  }
+
+  public SSLHelper(NetClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+    this.ssl = options.isSsl();
+    this.keyStoreHelper = keyStoreHelper;
+    this.trustStoreHelper = trustStoreHelper;
+    this.trustAll = options.isTrustAll();
+    this.crlPaths = new ArrayList<>(options.getCrlPaths());
+    this.crlValues = new ArrayList<>(options.getCrlValues());
+    this.enabledCipherSuites = options.getEnabledCipherSuites();
+  }
+
+  public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
+    this.ssl = options.isSsl();
+    this.keyStoreHelper = keyStoreHelper;
+    this.trustStoreHelper = trustStoreHelper;
+    this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
+    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
+    this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 

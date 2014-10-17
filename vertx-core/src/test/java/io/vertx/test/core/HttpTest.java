@@ -23,22 +23,20 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
-import io.vertx.core.Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.Registration;
-import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.RequestOptionsBase;
-import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextImpl;
@@ -48,20 +46,17 @@ import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.ClientOptions;
 import io.vertx.core.net.JKSOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetServerOptionsBase;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.PKCS12Options;
-import io.vertx.core.net.TCPOptions;
 import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -89,6 +84,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static io.vertx.test.core.TestUtils.*;
+
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -102,68 +99,38 @@ public class HttpTest extends HttpTestBase {
     super.setUp();
     testDir = Files.createTempDirectory("vertx-test").toFile();
     testDir.deleteOnExit();
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
-    client = vertx.createHttpClient(HttpClientOptions.options());
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    client = vertx.createHttpClient(new HttpClientOptions());
   }
 
   @Test
   public void testClientOptions() {
-    HttpClientOptions options = HttpClientOptions.options();
+    HttpClientOptions options = new HttpClientOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -179,12 +146,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -193,24 +155,19 @@ public class HttpTest extends HttpTestBase {
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(10));
     assertEquals(10, options.getIdleTimeout());
-    try {
-      options.setIdleTimeout(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -226,18 +183,8 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setMaxPoolSize(rand));
     assertEquals(rand, options.getMaxPoolSize());
-    try {
-      options.setMaxPoolSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setMaxPoolSize(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setMaxPoolSize(0));
+    assertIllegalArgumentException(() -> options.setMaxPoolSize(-1));
 
     assertTrue(options.isKeepAlive());
     assertEquals(options, options.setKeepAlive(false));
@@ -251,12 +198,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setConnectTimeout(rand));
     assertEquals(rand, options.getConnectTimeout());
-    try {
-      options.setConnectTimeout(-2);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setConnectTimeout(-2));
 
     assertFalse(options.isTryUseCompression());
     assertEquals(options, options.setTryUseCompression(true));
@@ -275,62 +217,32 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerOptions() {
-    HttpServerOptions options = HttpServerOptions.options();
+    HttpServerOptions options = new HttpServerOptions();
 
-    assertEquals(-1, options.getSendBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSendBufferSize(rand));
     assertEquals(rand, options.getSendBufferSize());
-    try {
-      options.setSendBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setSendBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSendBufferSize(0));
+    assertIllegalArgumentException(() -> options.setSendBufferSize(-123));
 
-    assertEquals(-1, options.getReceiveBufferSize());
+    assertEquals(NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setReceiveBufferSize(rand));
     assertEquals(rand, options.getReceiveBufferSize());
-    try {
-      options.setReceiveBufferSize(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setReceiveBufferSize(-123);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(0));
+    assertIllegalArgumentException(() -> options.setReceiveBufferSize(-123));
 
     assertTrue(options.isReuseAddress());
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
-    assertEquals(-1, options.getTrafficClass());
+    assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    try {
-      options.setTrafficClass(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setTrafficClass(256);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
     assertEquals(options, options.setTcpNoDelay(false));
@@ -346,12 +258,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    try {
-      options.setSoLinger(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -360,24 +267,19 @@ public class HttpTest extends HttpTestBase {
     assertEquals(0, options.getIdleTimeout());
     assertEquals(options, options.setIdleTimeout(10));
     assertEquals(10, options.getIdleTimeout());
-    try {
-      options.setIdleTimeout(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
     assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
     assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyStoreOptions());
 
     assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = JKSOptions.options().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustStoreOptions());
 
@@ -398,30 +300,17 @@ public class HttpTest extends HttpTestBase {
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    try {
-      options.setPort(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(65536);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> options.setPort(-1));
+    assertIllegalArgumentException(() -> options.setPort(65536));
 
     assertEquals("0.0.0.0", options.getHost());
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
 
-    assertTrue(options.getWebsocketSubProtocols().isEmpty());
-    assertEquals(options, options.addWebsocketSubProtocol("foo"));
-    assertEquals(options, options.addWebsocketSubProtocol("bar"));
-    assertNotNull(options.getWebsocketSubProtocols());
-    assertTrue(options.getWebsocketSubProtocols().contains("foo"));
-    assertTrue(options.getWebsocketSubProtocols().contains("bar"));
+    assertNull(options.getWebsocketSubProtocols());
+    assertEquals(options, options.setWebsocketSubProtocol("foo"));
+    assertEquals("foo", options.getWebsocketSubProtocols());
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -430,28 +319,27 @@ public class HttpTest extends HttpTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
-
     testComplete();
   }
 
   @Test
   public void testCopyClientOptions() {
-    HttpClientOptions options = HttpClientOptions.options();
+    HttpClientOptions options = new HttpClientOptions();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
-    int trafficClass = TestUtils.randomByte() + 127;
+    int trafficClass = TestUtils.randomByte() + 128;
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -488,7 +376,7 @@ public class HttpTest extends HttpTestBase {
     options.setKeepAlive(keepAlive);
     options.setPipelining(pipelining);
     options.setTryUseCompression(tryUseCompression);
-    HttpClientOptions copy = HttpClientOptions.copiedOptions(options);
+    HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -520,14 +408,22 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testDefaultClientOptionsJson() {
-    HttpClientOptions def = HttpClientOptions.options();
-    HttpClientOptions json = HttpClientOptions.optionsFromJson(new JsonObject());
+    HttpClientOptions def = new HttpClientOptions();
+    HttpClientOptions json = new HttpClientOptions(new JsonObject());
     assertEquals(def.getMaxPoolSize(), json.getMaxPoolSize());
     assertEquals(def.isKeepAlive(), json.isKeepAlive());
     assertEquals(def.isPipelining(), json.isPipelining());
     assertEquals(def.isVerifyHost(), json.isVerifyHost());
     assertEquals(def.isTryUseCompression(), json.isTryUseCompression());
-    testDefaultClientOptions(def, json);
+    assertEquals(def.isTrustAll(), json.isTrustAll());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getConnectTimeout(), json.getConnectTimeout());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
@@ -543,12 +439,12 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -586,7 +482,7 @@ public class HttpTest extends HttpTestBase {
       .putBoolean("pipelining", pipelining)
       .putBoolean("tryUseCompression", tryUseCompression);
 
-    HttpClientOptions options = HttpClientOptions.optionsFromJson(json);
+    HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -618,37 +514,26 @@ public class HttpTest extends HttpTestBase {
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = HttpClientOptions.optionsFromJson(json);
+    options = new HttpClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = HttpClientOptions.optionsFromJson(json);
+    options = new HttpClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
-
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new HttpClientOptions(json));
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpClientOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new HttpClientOptions(json));
   }
 
   @Test
   public void testCopyServerOptions() {
-    HttpServerOptions options = HttpServerOptions.options();
+    HttpServerOptions options = new HttpServerOptions();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -659,10 +544,10 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -694,8 +579,8 @@ public class HttpTest extends HttpTestBase {
     options.setAcceptBacklog(acceptBacklog);
     options.setCompressionSupported(compressionSupported);
     options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
-    options.addWebsocketSubProtocol(wsSubProtocol);
-    HttpServerOptions copy = HttpServerOptions.copiedOptions(options);
+    options.setWebsocketSubProtocol(wsSubProtocol);
+    HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
     assertEquals(reuseAddress, copy.isReuseAddress());
@@ -721,17 +606,27 @@ public class HttpTest extends HttpTestBase {
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
     assertEquals(compressionSupported, copy.isCompressionSupported());
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
-    assertTrue(options.getWebsocketSubProtocols().contains(wsSubProtocol));
+    assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
   }
 
   @Test
   public void testDefaultServerOptionsJson() {
-    HttpServerOptions def = HttpServerOptions.options();
-    HttpServerOptions json = HttpServerOptions.optionsFromJson(new JsonObject());
+    HttpServerOptions def = new HttpServerOptions();
+    HttpServerOptions json = new HttpServerOptions(new JsonObject());
     assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
     assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
     assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
-    testDefaultNetServerOptionsBase(def, json);
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
+    assertEquals(def.getCrlPaths(), json.getCrlPaths());
+    assertEquals(def.getCrlValues(), json.getCrlValues());
+    assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
+    assertEquals(def.getPort(), json.getPort());
+    assertEquals(def.getHost(), json.getHost());
+    assertEquals(def.isTcpNoDelay(), json.isTcpNoDelay());
+    assertEquals(def.isTcpKeepAlive(), json.isTcpKeepAlive());
+    assertEquals(def.getSoLinger(), json.getSoLinger());
+    assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
+    assertEquals(def.isSsl(), json.isSsl());
   }
 
   @Test
@@ -747,12 +642,12 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = JKSOptions.options();
+    JKSOptions keyStoreOptions = new JKSOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = JKSOptions.options();
+    JKSOptions trustStoreOptions = new JKSOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -786,9 +681,9 @@ public class HttpTest extends HttpTestBase {
       .putNumber("acceptBacklog", acceptBacklog)
       .putBoolean("compressionSupported", compressionSupported)
       .putNumber("maxWebsocketFrameSize", maxWebsocketFrameSize)
-      .putArray("websocketSubProtocols", new JsonArray().addString(wsSubProtocol));
+      .putString("websocketSubProtocols", wsSubProtocol);
 
-    HttpServerOptions options = HttpServerOptions.optionsFromJson(json);
+    HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
     assertEquals(receiverBufferSize, options.getReceiveBufferSize());
     assertEquals(reuseAddress, options.isReuseAddress());
@@ -814,50 +709,39 @@ public class HttpTest extends HttpTestBase {
     assertEquals(acceptBacklog, options.getAcceptBacklog());
     assertEquals(compressionSupported, options.isCompressionSupported());
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
-    assertTrue(options.getWebsocketSubProtocols().contains(wsSubProtocol));
+    assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
 
     // Test other keystore/truststore types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
-    options = HttpServerOptions.optionsFromJson(json);
+    options = new HttpServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
       .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
-    options = HttpServerOptions.optionsFromJson(json);
+    options = new HttpServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
-
     // Invalid types
     json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new HttpServerOptions(json));
     json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
-    try {
-      HttpServerOptions.optionsFromJson(json);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
+    assertIllegalArgumentException(() -> new HttpServerOptions(json));
   }
 
   @Test
   public void testServerChaining() {
     server.requestHandler(req -> {
       assertTrue(req.response().setChunked(true) == req.response());
-      assertTrue(req.response().writeString("foo", "UTF-8") == req.response());
-      assertTrue(req.response().writeString("foo") == req.response());
+      assertTrue(req.response().write("foo", "UTF-8") == req.response());
+      assertTrue(req.response().write("foo") == req.response());
       testComplete();
     });
 
     server.listen(onSuccess(server -> {
-      client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler()).end();
+      client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
     }));
 
     await();
@@ -873,10 +757,27 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler()).end();
+      client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
     }));
 
     await();
+  }
+
+  @Test
+  public void testClientRequestArguments() throws Exception {
+    HttpClientRequest req = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
+    assertNullPointerException(() -> req.putHeader((String) null, "someValue"));
+    assertNullPointerException(() -> req.putHeader((CharSequence) null, "someValue"));
+    assertNullPointerException(() -> req.putHeader("someKey", (Iterable<String>) null));
+    assertNullPointerException(() -> req.write((Buffer) null));
+    assertNullPointerException(() -> req.write((String) null));
+    assertNullPointerException(() -> req.write(null, "UTF-8"));
+    assertNullPointerException(() -> req.write("someString", null));
+    assertNullPointerException(() -> req.end((Buffer) null));
+    assertNullPointerException(() -> req.end((String) null));
+    assertNullPointerException(() -> req.end(null, "UTF-8"));
+    assertNullPointerException(() -> req.end("someString", null));
+    assertIllegalArgumentException(() -> req.setTimeout(0));
   }
 
   @Test
@@ -884,12 +785,12 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
 
     server.listen(onSuccess(server -> {
-      HttpClientRequest req = client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+      HttpClientRequest req = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       assertTrue(req.setChunked(true) == req);
       assertTrue(req.sendHead() == req);
-      assertTrue(req.writeString("foo", "UTF-8") == req);
-      assertTrue(req.writeString("foo") == req);
-      assertTrue(req.writeBuffer(Buffer.buffer("foo")) == req);
+      assertTrue(req.write("foo", "UTF-8") == req);
+      assertTrue(req.write("foo") == req);
+      assertTrue(req.write(Buffer.buffer("foo")) == req);
       testComplete();
     }));
 
@@ -919,7 +820,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals("quux", resp.headers().get("Quux"));
         assertEquals("quux", resp.headers().get("quux"));
         assertEquals("quux", resp.headers().get("qUUX"));
@@ -943,151 +844,168 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+
   @Test
-  public void testHeadersOnRequestOptions() {
+  public void testPutHeadersOnRequest() {
     server.requestHandler(req -> {
       assertEquals("bar", req.headers().get("foo"));
       req.response().end();
     });
     server.listen(onSuccess(server -> {
-      Headers headers = new CaseInsensitiveHeaders();
-      headers.add("foo", "bar");
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).setHeaders(headers), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
-      });
+      }).putHeader("foo", "bar").end();
     }));
     await();
   }
 
   @Test
-  public void testPutHeadersOnRequestOptions() {
-    server.requestHandler(req -> {
-      assertEquals("bar", req.headers().get("foo"));
-      req.response().end();
-    });
-    server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI).addHeader("foo", "bar"), resp -> {
-        assertEquals(200, resp.statusCode());
-        testComplete();
-      });
-    }));
-    await();
+  public void testRequestNPE() {
+    String uri = "/some-uri?foo=bar";
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, null));
+    TestUtils.assertNullPointerException(() -> client.request((HttpMethod)null, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, resp -> {}));
+    TestUtils.assertNullPointerException(() -> client.request((HttpMethod)null, "http://someuri", resp -> {}));
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", "/somepath", null));
+    TestUtils.assertNullPointerException(() -> client.request((HttpMethod)null, 8080, "localhost", "/somepath", resp -> {}));
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, null, "/somepath", resp -> {}));
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", null, resp -> {}));
+  }
+
+  @Test
+  public void testInvalidAbsoluteURI() {
+    try {
+      client.request(HttpMethod.GET, "ijdijwidjqwoijd192d192192ej12d", resp -> {
+      }).end();
+      fail("Should throw exception");
+    } catch (VertxException e) {
+      //OK
+    }
   }
 
   @Test
   public void testSimpleGET() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "GET", client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.GET, resp -> testComplete());
   }
 
   @Test
   public void testSimplePUT() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "PUT", client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.PUT, resp -> testComplete());
   }
 
   @Test
   public void testSimplePOST() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "POST", client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.POST, resp -> testComplete());
   }
 
   @Test
   public void testSimpleDELETE() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "DELETE", client.delete(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.DELETE, resp -> testComplete());
   }
 
   @Test
   public void testSimpleHEAD() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "HEAD", client.head(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.HEAD, resp -> testComplete());
   }
 
   @Test
   public void testSimpleTRACE() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "TRACE", client.trace(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.TRACE, resp -> testComplete());
   }
 
   @Test
   public void testSimpleCONNECT() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "CONNECT", client.connect(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.CONNECT, resp -> testComplete());
   }
 
   @Test
   public void testSimpleOPTIONS() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "OPTIONS", client.options(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.OPTIONS, resp -> testComplete());
   }
 
   @Test
   public void testSimplePATCH() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "PATCH", client.patch(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete()));
+    testSimpleRequest(uri, HttpMethod.PATCH, resp -> testComplete());
   }
 
   @Test
-  public void testSimpleGETNonSpecific() {
+  public void testSimpleGETAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "GET", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.GET, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimplePUTNonSpecific() {
+  public void testSimplePUTAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "PUT", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.PUT, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimplePOSTNonSpecific() {
+  public void testSimplePOSTAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "POST", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.POST, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimpleDELETENonSpecific() {
+  public void testSimpleDELETEAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "DELETE", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.DELETE, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimpleHEADNonSpecific() {
+  public void testSimpleHEADAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "HEAD", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.HEAD, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimpleTRACENonSpecific() {
+  public void testSimpleTRACEAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "TRACE", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.TRACE, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimpleCONNECTNonSpecific() {
+  public void testSimpleCONNECTAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "CONNECT", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.CONNECT, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimpleOPTIONSNonSpecific() {
+  public void testSimpleOPTIONSAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "OPTIONS", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.OPTIONS, true, resp -> testComplete());
   }
 
   @Test
-  public void testSimplePATCHNonSpecific() {
+  public void testSimplePATCHAbsolute() {
     String uri = "/some-uri?foo=bar";
-    testSimpleRequest(uri, "PATCH", resp -> testComplete());
+    testSimpleRequest(uri, HttpMethod.PATCH, true, resp -> testComplete());
   }
 
-  private void testSimpleRequest(String uri, String method, Handler<HttpClientResponse> handler) {
-    testSimpleRequest(uri, method, client.request(method, RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), handler));
+  private void testSimpleRequest(String uri, HttpMethod method, Handler<HttpClientResponse> handler) {
+    testSimpleRequest(uri, method, false, handler);
   }
 
-  private void testSimpleRequest(String uri, String method, HttpClientRequest request) {
+  private void testSimpleRequest(String uri, HttpMethod method, boolean absolute, Handler<HttpClientResponse> handler) {
+    HttpClientRequest req;
+    if (absolute) {
+      req = client.request(method, "http://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + uri, handler);
+    } else {
+      req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, handler);
+    }
+    testSimpleRequest(uri, method, req);
+  }
+
+  private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request) {
     String path = uri.indexOf('?') == -1 ? uri : uri.substring(0, uri.indexOf('?'));
     server.requestHandler(req -> {
       assertEquals(path, req.path());
@@ -1096,6 +1014,18 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> request.end()));
+
+    await();
+  }
+
+  private void testGetNow(Runnable runner) {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+
+    server.listen(onSuccess(s -> {
+      runner.run();
+    }));
 
     await();
   }
@@ -1133,7 +1063,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(uri), resp -> testComplete());
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, resp -> testComplete()).end();
     }));
 
     await();
@@ -1163,7 +1093,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("some-uri/?" + query), resp -> testComplete());
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "some-uri/?" + query, resp -> testComplete()).end();
     }));
 
     await();
@@ -1178,7 +1108,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete());
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete()).end();
     }));
 
     await();
@@ -1193,7 +1123,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete());
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete()).end();
     }));
 
     await();
@@ -1210,7 +1140,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testRequestHeaders(boolean individually) {
-    Headers headers = getHeaders(10);
+    MultiMap headers = getHeaders(10);
 
     server.requestHandler(req -> {
       assertEquals(headers.size() + 1, req.headers().size());
@@ -1221,7 +1151,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete());
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete());
       if (individually) {
         for (Map.Entry<String, String> header : headers) {
           req.headers().add(header.getKey(), header.getValue());
@@ -1246,7 +1176,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testResponseHeaders(boolean individually) {
-    Headers headers = getHeaders(10);
+    MultiMap headers = getHeaders(10);
 
     server.requestHandler(req -> {
       if (individually) {
@@ -1260,13 +1190,13 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(headers.size() + 1, resp.headers().size());
         for (Map.Entry<String, String> entry : headers) {
           assertEquals(entry.getValue(), resp.headers().get(entry.getKey()));
         }
         testComplete();
-      });
+      }).end();
     }));
 
     await();
@@ -1310,7 +1240,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.endHandler(v -> {
           assertEquals(cookies.size(), resp.cookies().size());
           for (int i = 0; i < cookies.size(); ++i) {
@@ -1318,7 +1248,7 @@ public class HttpTest extends HttpTestBase {
           }
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -1329,100 +1259,25 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
 
     server.listen(onSuccess(server -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.end();
 
       Buffer buff = Buffer.buffer();
-      try {
-        req.end();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.continueHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.drainHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeStringAndEnd("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeBufferAndEnd(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeStringAndEnd("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.exceptionHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.sendHead();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.setChunked(false);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.setWriteQueueMaxSize(123);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeBuffer(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeString("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeString("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeBuffer(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        req.writeQueueFull();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
+      assertIllegalStateException(() -> req.end());
+      assertIllegalStateException(() -> req.continueHandler(noOpHandler()));
+      assertIllegalStateException(() -> req.drainHandler(noOpHandler()));
+      assertIllegalStateException(() -> req.end("foo"));
+      assertIllegalStateException(() -> req.end(buff));
+      assertIllegalStateException(() -> req.end("foo", "UTF-8"));
+      assertIllegalStateException(() -> req.exceptionHandler(noOpHandler()));
+      assertIllegalStateException(() -> req.sendHead());
+      assertIllegalStateException(() -> req.setChunked(false));
+      assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
+      assertIllegalStateException(() -> req.write(buff));
+      assertIllegalStateException(() -> req.write("foo"));
+      assertIllegalStateException(() -> req.write("foo", "UTF-8"));
+      assertIllegalStateException(() -> req.write(buff));
+      assertIllegalStateException(() -> req.writeQueueFull());
 
       testComplete();
     }));
@@ -1439,7 +1294,7 @@ public class HttpTest extends HttpTestBase {
     }));
 
     server.listen(onSuccess(server -> {
-      client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete()).writeBufferAndEnd(body);
+      client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete()).end(body);
     }));
 
     await();
@@ -1478,11 +1333,11 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       if (encoding == null) {
-        req.writeStringAndEnd(body);
+        req.end(body);
       } else {
-        req.writeStringAndEnd(body, encoding);
+        req.end(body, encoding);
       }
     }));
 
@@ -1510,7 +1365,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete());
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete());
       int numWrites = 10;
       int chunkSize = 100;
 
@@ -1522,7 +1377,7 @@ public class HttpTest extends HttpTestBase {
       for (int i = 0; i < numWrites; i++) {
         Buffer b = TestUtils.randomBuffer(chunkSize);
         body.appendBuffer(b);
-        req.writeBuffer(b);
+        req.write(b);
       }
       req.end();
     }));
@@ -1578,7 +1433,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(server -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
 
       if (chunked) {
         req.setChunked(true);
@@ -1587,9 +1442,9 @@ public class HttpTest extends HttpTestBase {
       }
 
       if (encoding == null) {
-        req.writeString(body);
+        req.write(body);
       } else {
-        req.writeString(body, encoding);
+        req.write(body, encoding);
       }
       req.end();
     }));
@@ -1609,9 +1464,9 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.setChunked(true);
-      req.writeBuffer(body);
+      req.write(body);
       req.end();
     }));
 
@@ -1651,7 +1506,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         int theCode;
         if (code == -1) {
           // Default code - 200
@@ -1666,7 +1521,7 @@ public class HttpTest extends HttpTestBase {
           assertEquals(HttpResponseStatus.valueOf(theCode).reasonPhrase(), resp.statusMessage());
         }
         testComplete();
-      });
+      }).end();
     }));
 
     await();
@@ -1683,7 +1538,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testResponseTrailers(boolean individually) {
-    Headers trailers = getHeaders(10);
+    MultiMap trailers = getHeaders(10);
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -1698,7 +1553,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.endHandler(v -> {
           assertEquals(trailers.size(), resp.trailers().size());
           for (Map.Entry<String, String> entry : trailers) {
@@ -1706,7 +1561,7 @@ public class HttpTest extends HttpTestBase {
           }
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -1720,12 +1575,12 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.endHandler(v -> {
           assertTrue(resp.trailers().isEmpty());
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -1738,100 +1593,26 @@ public class HttpTest extends HttpTestBase {
       HttpServerResponse resp = req.response();
       resp.end();
 
-      try {
-        resp.drainHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.end();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.writeStringAndEnd("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.writeBufferAndEnd(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.writeStringAndEnd("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.exceptionHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.setChunked(false);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.setWriteQueueMaxSize(123);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.writeBuffer(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.writeString("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-      try {
-        resp.writeString("foo", "UTF-8");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.writeBuffer(buff);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.writeQueueFull();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
-
-      try {
-        resp.sendFile("asokdasokd");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-      }
+      assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
+      assertIllegalStateException(() -> resp.end());
+      assertIllegalStateException(() -> resp.end("foo"));
+      assertIllegalStateException(() -> resp.end(buff));
+      assertIllegalStateException(() -> resp.end("foo", "UTF-8"));
+      assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
+      assertIllegalStateException(() -> resp.setChunked(false));
+      assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
+      assertIllegalStateException(() -> resp.write(buff));
+      assertIllegalStateException(() -> resp.write("foo"));
+      assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
+      assertIllegalStateException(() -> resp.write(buff));
+      assertIllegalStateException(() -> resp.writeQueueFull());
+      assertIllegalStateException(() -> resp.sendFile("asokdasokd"));
 
       testComplete();
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
     }));
 
     await();
@@ -1842,16 +1623,16 @@ public class HttpTest extends HttpTestBase {
     Buffer body = TestUtils.randomBuffer(1000);
 
     server.requestHandler(req -> {
-      req.response().writeBufferAndEnd(body);
+      req.response().end(body);
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.bodyHandler(buff -> {
           assertEquals(body, buff);
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -1884,19 +1665,19 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       if (encoding == null) {
-        req.response().writeStringAndEnd(body);
+        req.response().end(body);
       } else {
-        req.response().writeStringAndEnd(body, encoding);
+        req.response().end(body, encoding);
       }
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.bodyHandler(buff -> {
           assertEquals(bodyBuff, buff);
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -1905,17 +1686,12 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testResponseBodyWriteStringNonChunked() {
     server.requestHandler(req -> {
-      try {
-        req.response().writeString("foo");
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //OK
-        testComplete();
-      }
+      assertIllegalStateException(() -> req.response().write("foo"));
+      testComplete();
     });
 
     server.listen(onSuccess(s -> {
-      client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler()).end();
+      client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
     }));
 
     await();
@@ -1947,18 +1723,18 @@ public class HttpTest extends HttpTestBase {
       for (int i = 0; i < numWrites; i++) {
         Buffer b = TestUtils.randomBuffer(chunkSize);
         body.appendBuffer(b);
-        req.response().writeBuffer(b);
+        req.response().write(b);
       }
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.bodyHandler(buff -> {
           assertEquals(body, buff);
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -2011,20 +1787,20 @@ public class HttpTest extends HttpTestBase {
         req.response().headers().set("Content-Length", String.valueOf(bodyBuff.length()));
       }
       if (encoding == null) {
-        req.response().writeString(body);
+        req.response().write(body);
       } else {
-        req.response().writeString(body, encoding);
+        req.response().write(body, encoding);
       }
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.bodyHandler(buff -> {
           assertEquals(bodyBuff, buff);
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -2036,12 +1812,12 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
-      req.response().writeBuffer(body);
+      req.response().write(body);
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.bodyHandler(buff -> {
           assertEquals(body, buff);
           testComplete();
@@ -2055,7 +1831,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testPipeliningOrder() throws Exception {
     client.close();
-    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
     int requests = 100;
 
     AtomicInteger reqCount = new AtomicInteger(0);
@@ -2070,7 +1846,7 @@ public class HttpTest extends HttpTestBase {
         // wrong order if we didn't implement pipelining correctly
         vertx.setTimer(1 + (long) (10 * Math.random()), id -> {
           req.response().headers().set("count", String.valueOf(theCount));
-          req.response().writeBuffer(buff);
+          req.response().write(buff);
           req.response().end();
         });
       });
@@ -2084,7 +1860,7 @@ public class HttpTest extends HttpTestBase {
       vertx.setTimer(500, id -> {
         for (int count = 0; count < requests; count++) {
           int theCount = count;
-          HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+          HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
             assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
             resp.bodyHandler(buff -> {
               assertEquals("This is content " + theCount, buff.toString());
@@ -2093,7 +1869,7 @@ public class HttpTest extends HttpTestBase {
           });
           req.setChunked(true);
           req.headers().set("count", String.valueOf(count));
-          req.writeString("This is content " + count);
+          req.write("This is content " + count);
           req.end();
         }
       });
@@ -2117,7 +1893,7 @@ public class HttpTest extends HttpTestBase {
   private void testKeepAlive(boolean keepAlive, int poolSize, int numServers, int expectedConnectedServers) throws Exception {
     client.close();
     server.close();
-    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(keepAlive).setPipelining(false).setMaxPoolSize(poolSize));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(false).setMaxPoolSize(poolSize));
     int requests = 100;
 
     // Start the servers
@@ -2125,7 +1901,7 @@ public class HttpTest extends HttpTestBase {
     CountDownLatch startServerLatch = new CountDownLatch(numServers);
     Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
     for (int i = 0; i < numServers; i++) {
-      HttpServer server = vertx.createHttpServer(HttpServerOptions.options().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+      HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
       server.requestHandler(req -> {
         connectedServers.add(server);
         req.response().end();
@@ -2141,10 +1917,10 @@ public class HttpTest extends HttpTestBase {
 
     CountDownLatch reqLatch = new CountDownLatch(requests);
     for (int count = 0; count < requests; count++) {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(200, resp.statusCode());
         reqLatch.countDown();
-      });
+      }).end();
     }
 
     awaitLatch(reqLatch);
@@ -2230,7 +2006,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         if (sendFile != null) {
           assertEquals(200, resp.statusCode());
         } else {
@@ -2245,7 +2021,7 @@ public class HttpTest extends HttpTestBase {
           }
           latch.countDown();
         });
-      });
+      }).end();
     }));
 
     assertTrue("Timed out waiting for test to complete.", latch.await(10, TimeUnit.SECONDS));
@@ -2264,7 +2040,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
         assertEquals("wibble", resp.headers().get("content-type"));
         resp.bodyHandler(buff -> {
@@ -2272,7 +2048,7 @@ public class HttpTest extends HttpTestBase {
           file.delete();
           testComplete();
         });
-      });
+      }).end();
     }));
 
     await();
@@ -2290,13 +2066,13 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.endHandler(v -> testComplete());
       });
       req.headers().set("Expect", "100-continue");
       req.setChunked(true);
       req.continueHandler(v -> {
-        req.writeBuffer(toSend);
+        req.write(toSend);
         req.end();
       });
       req.sendHead();
@@ -2317,13 +2093,13 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.put(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.endHandler(v -> testComplete());
       });
       req.headers().set("Expect", "100-continue");
       req.setChunked(true);
       req.continueHandler(v -> {
-        req.writeBuffer(toSend);
+        req.write(toSend);
         req.end();
       });
       req.sendHead();
@@ -2335,13 +2111,13 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testClientDrainHandler() {
     pausingServer(s -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), noOpHandler());
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.setChunked(true);
       assertFalse(req.writeQueueFull());
       req.setWriteQueueMaxSize(1000);
       Buffer buff = TestUtils.randomBuffer(10000);
       vertx.setPeriodic(1, id -> {
-        req.writeBuffer(buff);
+        req.write(buff);
         if (req.writeQueueFull()) {
           vertx.cancelTimer(id);
           req.drainHandler(v -> {
@@ -2361,12 +2137,12 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testServerDrainHandler() {
     drainingServer(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.pause();
         Handler<Message<Buffer>> resumeHandler = msg -> resp.resume();
-        Registration reg = vertx.eventBus().registerHandler("client_resume", resumeHandler);
+        MessageConsumer reg = vertx.eventBus().<Buffer>consumer("client_resume").handler(resumeHandler);
         resp.endHandler(v -> reg.unregister());
-      });
+      }).end();
     });
 
     await();
@@ -2397,7 +2173,7 @@ public class HttpTest extends HttpTestBase {
     int numGets = 100;
     int maxPoolSize = 10;
     client.close();
-    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(keepAlive).setPipelining(pipelining).setMaxPoolSize(maxPoolSize));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(pipelining).setMaxPoolSize(maxPoolSize));
 
     server.requestHandler(req -> {
       String cnt = req.headers().get("count");
@@ -2412,7 +2188,7 @@ public class HttpTest extends HttpTestBase {
       AtomicInteger cnt = new AtomicInteger(0);
       for (int i = 0; i < numGets; i++) {
         int theCount = i;
-        HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(path), resp -> {
+        HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, resp -> {
           assertEquals(200, resp.statusCode());
           assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
           if (cnt.incrementAndGet() == numGets) {
@@ -2452,12 +2228,12 @@ public class HttpTest extends HttpTestBase {
     });
 
     // This one should cause an error in the Client Exception handler, because it has no exception handler set specifically.
-    HttpClientRequest req1 = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setPort(9998).setRequestURI("someurl1"), resp -> {
+    HttpClientRequest req1 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl1", resp -> {
       fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
     });
     // No exception handler set on request!
 
-    HttpClientRequest req2 = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setPort(9998).setRequestURI("someurl2"), resp -> {
+    HttpClientRequest req2 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl2", resp -> {
       fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
     });
 
@@ -2466,7 +2242,7 @@ public class HttpTest extends HttpTestBase {
       latch.countDown();
     });
 
-    HttpClientRequest req3 = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setPort(9998).setRequestURI("someurl2"), resp -> {
+    HttpClientRequest req3 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl2", resp -> {
       fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
     });
 
@@ -2488,7 +2264,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler()); // No response handler so timeout triggers
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("timeoutTest"), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         fail("End should not be called because the request should timeout");
       });
       req.exceptionHandler(t -> {
@@ -2512,7 +2288,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().setChunked(true);
       vertx.setPeriodic(interval, timerID -> {
-        req.response().writeString("foo");
+        req.response().write("foo");
         if (count.incrementAndGet() == numChunks) {
           req.response().end();
           vertx.cancelTimer(timerID);
@@ -2521,7 +2297,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("timeoutTest"), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(200, resp.statusCode());
         resp.endHandler(v -> testComplete());
       });
@@ -2537,7 +2313,7 @@ public class HttpTest extends HttpTestBase {
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
-    HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("timeoutTest"), resp -> {
+    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       fail("End should not be called because the request should fail to connect");
     });
     req.exceptionHandler(exception::set);
@@ -2561,7 +2337,7 @@ public class HttpTest extends HttpTestBase {
       AtomicReference<Throwable> exception = new AtomicReference<>();
 
       // There is no server running, should fail to connect
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("timeoutTest"), noOpHandler());
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.exceptionHandler(exception::set);
       req.setTimeout(500);
       req.end();
@@ -2580,12 +2356,12 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       vertx.setTimer(500, id -> {
         req.response().setStatusCode(200);
-        req.response().writeStringAndEnd("OK");
+        req.response().end("OK");
       });
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("timeoutTest"), resp -> fail("Response should not be handled"));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Response should not be handled"));
       req.exceptionHandler(t -> {
         assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
         //Delay a bit to let any response come back
@@ -2601,10 +2377,10 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testServerWebsocketIdleTimeout() {
     server.close();
-    server = vertx.createHttpServer(HttpServerOptions.options().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
     server.websocketHandler(ws -> {}).listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
+      client.connectWebsocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", ws -> {
         ws.closeHandler(v -> testComplete());
       });
     });
@@ -2616,9 +2392,9 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testClientWebsocketIdleTimeout() {
     client.close();
-    client = vertx.createHttpClient(HttpClientOptions.options().setIdleTimeout(1));
+    client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
     server.websocketHandler(ws -> {}).listen(ar -> {
-      client.connectWebsocket(WebSocketConnectOptions.options().setPort(DEFAULT_HTTP_PORT), ws -> {
+      client.connectWebsocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", ws -> {
         ws.closeHandler(v -> testComplete());
       });
 
@@ -2766,7 +2542,7 @@ public class HttpTest extends HttpTestBase {
                        String... enabledCipherSuites) throws Exception {
     client.close();
     server.close();
-    HttpClientOptions options = HttpClientOptions.options();
+    HttpClientOptions options = new HttpClientOptions();
     options.setSsl(true);
     if (clientTrustAll) {
       options.setTrustAll(true);
@@ -2780,7 +2556,7 @@ public class HttpTest extends HttpTestBase {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
-    HttpServerOptions serverOptions = HttpServerOptions.options();
+    HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
     serverOptions.setTrustStoreOptions(getServerTrustOptions(serverTrust));
     serverOptions.setKeyStoreOptions(getServerCertOptions(serverCert));
@@ -2797,7 +2573,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.bodyHandler(buffer -> {
         assertEquals("foo", buffer.toString());
-        req.response().writeStringAndEnd("bar");
+        req.response().end("bar");
       });
     });
     server.listen(ar -> {
@@ -2810,11 +2586,11 @@ public class HttpTest extends HttpTestBase {
           testComplete();
         }
       });
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setPort(4043).setRequestURI(DEFAULT_TEST_URI), response -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, 4043, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, response -> {
         response.bodyHandler(data -> assertEquals("bar", data.toString()));
         testComplete();
       });
-      req.writeStringAndEnd("foo");
+      req.end("foo");
     });
     await();
   }
@@ -2894,7 +2670,7 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(CaOptions.options().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidTrustStore(new CaOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
@@ -2916,12 +2692,12 @@ public class HttpTest extends HttpTestBase {
       file.toFile().deleteOnExit();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidTrustStore(CaOptions.options().addCertPath(file.toString()), expectedMessage);
+      testInvalidTrustStore(new CaOptions().addCertPath(file.toString()), expectedMessage);
     }
   }
 
   private void testInvalidKeyStore(KeyStoreOptions ksOptions, String expectedMessage) {
-    HttpServerOptions serverOptions = HttpServerOptions.options();
+    HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setKeyStoreOptions(ksOptions);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
@@ -2929,7 +2705,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testInvalidTrustStore(TrustStoreOptions tsOptions, String expectedMessage) {
-    HttpServerOptions serverOptions = HttpServerOptions.options();
+    HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setTrustStoreOptions(tsOptions);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
@@ -2951,12 +2727,12 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testCrlInvalidPath() throws Exception {
-    HttpClientOptions clientOptions = HttpClientOptions.options();
+    HttpClientOptions clientOptions = new HttpClientOptions();
     clientOptions.setTrustStoreOptions(getClientTrustOptions(TS.PEM_CA));
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
-    HttpClientRequest req = client.connect(RequestOptions.options(), (handler) -> {});
+    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {});
     try {
       req.end();
       fail("Was expecting a failure");
@@ -2969,7 +2745,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testConnectInvalidPort() {
     client.exceptionHandler(t -> testComplete());
-    client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setPort(9998).setRequestURI(DEFAULT_TEST_URI), resp -> fail("Connect should not be called"));
+    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).end();
 
     await();
   }
@@ -2977,7 +2753,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testConnectInvalidHost() {
     client.exceptionHandler(t -> testComplete());
-    client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setHost("255.255.255.255").setRequestURI(DEFAULT_TEST_URI), resp -> fail("Connect should not be called"));
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).end();
 
     await();
   }
@@ -2987,18 +2763,8 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
 
     server.listen(onSuccess(s -> {
-      try {
-        server.requestHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //Ok
-      }
-      try {
-        server.websocketHandler(noOpHandler());
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //Ok
-      }
+      assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
+      assertIllegalStateException(() -> server.websocketHandler(noOpHandler()));
       testComplete();
     }));
 
@@ -3010,51 +2776,25 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
 
     server.listen();
-    try {
-      server.requestHandler(noOpHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
-    try {
-      server.websocketHandler(noOpHandler());
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
+    assertIllegalStateException(() -> server.websocketHandler(noOpHandler()));
   }
 
   @Test
   public void testListenNoHandlers() throws Exception {
-    try {
-      server.listen(ar -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.listen(ar -> {}));
   }
 
   @Test
   public void testListenNoHandlers2() throws Exception {
-    try {
-      server.listen();
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.listen());
   }
 
   @Test
   public void testListenTwice() throws Exception {
     server.requestHandler(noOpHandler());
     server.listen();
-    try {
-      server.listen();
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //Ok
-    }
+    assertIllegalStateException(() -> server.listen());
   }
 
   @Test
@@ -3062,12 +2802,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler());
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      try {
-        server.listen();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        //Ok
-      }
+      assertIllegalStateException(() -> server.listen());
       testComplete();
     });
     await();
@@ -3077,7 +2812,7 @@ public class HttpTest extends HttpTestBase {
   public void testSharedServersRoundRobin() throws Exception {
     client.close();
     server.close();
-    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(false));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false));
     int numServers = 5;
     int numRequests = numServers * 100;
 
@@ -3089,11 +2824,11 @@ public class HttpTest extends HttpTestBase {
     CountDownLatch latchConns = new CountDownLatch(numRequests);
     Set<Context> contexts = new ConcurrentHashSet<>();
     for (int i = 0; i < numServers; i++) {
-      HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT));
+      HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
       servers.add(theServer);
       final AtomicReference<Context> context = new AtomicReference<>();
       theServer.requestHandler(req -> {
-        Context ctx = vertx.currentContext();
+        Context ctx = vertx.context();
         if (context.get() != null) {
           assertSame(ctx, context.get());
         } else {
@@ -3115,7 +2850,7 @@ public class HttpTest extends HttpTestBase {
     // Create a bunch of connections
     CountDownLatch latchClient = new CountDownLatch(numRequests);
     for (int i = 0; i < numRequests; i++) {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), res -> latchClient.countDown());
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, res -> latchClient.countDown()).end();
     }
 
     assertTrue(latchClient.await(10, TimeUnit.SECONDS));
@@ -3149,7 +2884,7 @@ public class HttpTest extends HttpTestBase {
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
     // Have a server running on a different port to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(8081));
+    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
     theServer.requestHandler(req -> {
       fail("Should not process request");
     }).listen(onSuccess(s -> latch.countDown()));
@@ -3162,7 +2897,7 @@ public class HttpTest extends HttpTestBase {
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    HttpServer theServer = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT));
+    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     theServer.requestHandler(req -> {
       fail("Should not process request");
     }).listen(onSuccess(s -> latch.countDown()));
@@ -3181,7 +2916,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testHeadNoBody() {
     server.requestHandler(req -> {
-      assertEquals("HEAD", req.method());
+      assertEquals(HttpMethod.HEAD, req.method());
       // Head never contains a body but it can contain a Content-Length header
       // Since headers from HEAD must correspond EXACTLY with corresponding headers for GET
       req.response().headers().set("Content-Length", String.valueOf(41));
@@ -3189,7 +2924,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.head(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.HEAD, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(41, Integer.parseInt(resp.headers().get("Content-Length")));
         resp.endHandler(v -> testComplete());
       }).end();
@@ -3206,7 +2941,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> resp.endHandler(v -> testComplete()));
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> resp.endHandler(v -> testComplete())).end();
     }));
 
     await();
@@ -3220,7 +2955,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("/foo/bar"), resp -> resp.endHandler(v -> testComplete()));
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/foo/bar", resp -> resp.endHandler(v -> testComplete())).end();
     }));
 
     await();
@@ -3229,7 +2964,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidPort() {
     server.close();
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(7));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(7));
     server.requestHandler(noOpHandler()).listen(onFailure(server -> {
       testComplete();
     }));
@@ -3239,7 +2974,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidHost() {
     server.close();
-    server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
     server.requestHandler(noOpHandler());
     server.listen(onFailure(s -> testComplete()));
   }
@@ -3252,17 +2987,17 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       // Send back a big response in several chunks
       for (int i = 0; i < numWrites; i++) {
-        req.response().writeBuffer(TestUtils.randomBuffer(numBytes));
+        req.response().write(TestUtils.randomBuffer(numBytes));
       }
       req.response().end();
     });
 
     AtomicBoolean paused = new AtomicBoolean();
     Buffer totBuff = Buffer.buffer();
-    HttpClientRequest clientRequest = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+    HttpClientRequest clientRequest = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       resp.pause();
       paused.set(true);
-      resp.dataHandler(chunk -> {
+      resp.handler(chunk -> {
         if (paused.get()) {
           fail("Shouldn't receive chunks when paused");
         } else {
@@ -3291,12 +3026,12 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testHttpVersion() {
     server.requestHandler(req -> {
-      assertEquals("HTTP/1.1", req.version());
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> resp.endHandler(v -> testComplete()));
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> resp.endHandler(v -> testComplete())).end();
     }));
 
     await();
@@ -3308,12 +3043,12 @@ public class HttpTest extends HttpTestBase {
     String content = "Vert.x rocks!";
 
     server.requestHandler(req -> {
-      if (req.method().equals("POST")) {
+      if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
         req.uploadHandler(upload -> {
-          upload.dataHandler(buffer -> {
+          upload.handler(buffer -> {
             assertEquals(content, buffer.toString("UTF-8"));
           });
           assertEquals("file", upload.name());
@@ -3325,7 +3060,7 @@ public class HttpTest extends HttpTestBase {
           });
         });
         req.endHandler(v -> {
-          Headers attrs = req.formAttributes();
+          MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           req.response().end();
         });
@@ -3333,7 +3068,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("/form"), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/form", resp -> {
         // assert the response
         assertEquals(200, resp.statusCode());
         resp.bodyHandler(body -> {
@@ -3356,7 +3091,7 @@ public class HttpTest extends HttpTestBase {
       buffer.appendString(body);
       req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
-      req.writeBuffer(buffer).end();
+      req.write(buffer).end();
     }));
 
     await();
@@ -3366,15 +3101,15 @@ public class HttpTest extends HttpTestBase {
   public void testFormUploadAttributes() throws Exception {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
-      if (req.method().equals("POST")) {
+      if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
-        req.uploadHandler(upload -> upload.dataHandler(buffer -> {
+        req.uploadHandler(upload -> upload.handler(buffer -> {
           fail("Should get here");
         }));
         req.endHandler(v -> {
-          Headers attrs = req.formAttributes();
+          MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("vert x", attrs.get("framework"));
           assertEquals("jvm", attrs.get("runson"));
@@ -3384,7 +3119,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("/form"), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/form", resp -> {
         // assert the response
         assertEquals(200, resp.statusCode());
         resp.bodyHandler(body -> {
@@ -3399,7 +3134,7 @@ public class HttpTest extends HttpTestBase {
         buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
         req.headers().set("content-length", String.valueOf(buffer.length()));
         req.headers().set("content-type", "application/x-www-form-urlencoded");
-        req.writeBuffer(buffer).end();
+        req.write(buffer).end();
       } catch (UnsupportedEncodingException e) {
         fail(e.getMessage());
       }
@@ -3412,14 +3147,14 @@ public class HttpTest extends HttpTestBase {
   public void testFormUploadAttributes2() throws Exception {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
-      if (req.method().equals("POST")) {
+      if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.setExpectMultipart(true);
-        req.uploadHandler(event -> event.dataHandler(buffer -> {
+        req.uploadHandler(event -> event.handler(buffer -> {
           fail("Should not get here");
         }));
         req.endHandler(v -> {
-          Headers attrs = req.formAttributes();
+          MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("junit-testUserAlias", attrs.get("origin"));
           assertEquals("admin@foo.bar", attrs.get("login"));
@@ -3430,7 +3165,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.post(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI("/form"), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/form", resp -> {
         // assert the response
         assertEquals(200, resp.statusCode());
         resp.bodyHandler(body -> {
@@ -3443,7 +3178,7 @@ public class HttpTest extends HttpTestBase {
       buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
       req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "application/x-www-form-urlencoded");
-      req.writeBuffer(buffer).end();
+      req.write(buffer).end();
     }));
 
     await();
@@ -3462,14 +3197,14 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.endHandler(v -> {
           assertNotNull(resp.netSocket());
           testComplete();
         });
       });
       req.headers().set("content-length", String.valueOf(toSend.length()));
-      req.writeBuffer(toSend);
+      req.write(toSend);
     }));
 
     await();
@@ -3483,7 +3218,7 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> testComplete());
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete());
       req.putHeader("Host", "localhost:4444");
       req.end();
     }));
@@ -3498,12 +3233,12 @@ public class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
-      req.response().writeString(body);
+      req.response().write(body);
       req.response().end();
     });
 
     server.listen(onSuccess(s -> {
-      client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.bodyHandler(buff -> {
           assertEquals(bodyBuff, buff);
           testComplete();
@@ -3518,11 +3253,11 @@ public class HttpTest extends HttpTestBase {
   public void testHttpConnect() {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
-    vertx.createNetServer(NetServerOptions.options().setPort(1235)).connectHandler(socket -> {
-      socket.dataHandler(socket::writeBuffer);
+    vertx.createNetServer(new NetServerOptions().setPort(1235)).connectHandler(socket -> {
+      socket.handler(socket::write);
     }).listen(onSuccess(netServer -> {
       server.requestHandler(req -> {
-        vertx.createNetClient(NetClientOptions.options()).connect(netServer.actualPort(), "localhost", onSuccess(socket -> {
+        vertx.createNetClient(new NetClientOptions()).connect(netServer.actualPort(), "localhost", onSuccess(socket -> {
           req.response().setStatusCode(200);
           req.response().setStatusMessage("Connection established");
           req.response().end();
@@ -3534,10 +3269,10 @@ public class HttpTest extends HttpTestBase {
         }));
       });
       server.listen(onSuccess(s -> {
-        client.connect(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+        client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
           assertEquals(200, resp.statusCode());
           NetSocket socket = resp.netSocket();
-          socket.dataHandler(buff -> {
+          socket.handler(buff -> {
             received.appendBuffer(buff);
             if (received.length() == buffer.length()) {
               netServer.close();
@@ -3545,7 +3280,7 @@ public class HttpTest extends HttpTestBase {
               testComplete();
             }
           });
-          socket.writeBuffer(buffer);
+          socket.write(buffer);
         }).end();
       }));
     }));
@@ -3563,12 +3298,12 @@ public class HttpTest extends HttpTestBase {
     });
 
     client.close();
-    client = vertx.createHttpClient(HttpClientOptions.options().setKeepAlive(false).setMaxPoolSize(1));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setMaxPoolSize(1));
 
     server.listen(onSuccess(s -> {
       // Add a few requests that should all timeout
       for (int i = 0; i < 5; i++) {
-        HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+        HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
           fail("Should not be called");
         });
         req.exceptionHandler(t -> assertTrue(t instanceof TimeoutException));
@@ -3576,7 +3311,7 @@ public class HttpTest extends HttpTestBase {
         req.end();
       }
       // Now another request that should not timeout
-      HttpClientRequest req = client.get(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
       });
@@ -3598,10 +3333,10 @@ public class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).setRequestURI(DEFAULT_TEST_URI), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         assertEquals(403, resp.statusCode());
         vertx.fileSystem().delete(file.getAbsolutePath(), v -> testComplete());
-      });
+      }).end();
     }));
 
     await();
@@ -3610,7 +3345,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testServerOptionsCopiedBeforeUse() {
     server.close();
-    HttpServerOptions options = HttpServerOptions.options().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT);
+    HttpServerOptions options = new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT);
     HttpServer server = vertx.createHttpServer(options);
     // Now change something - but server should still listen at previous port
     options.setPort(DEFAULT_HTTP_PORT + 1);
@@ -3619,10 +3354,10 @@ public class HttpTest extends HttpTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.getNow(RequestOptions.options().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setRequestURI("/uri"), res -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/uri", res -> {
         assertEquals(200, res.statusCode());
         testComplete();
-      });
+      }).end();
     });
     await();
   }
@@ -3635,104 +3370,16 @@ public class HttpTest extends HttpTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      HttpClientOptions options = HttpClientOptions.options();
+      HttpClientOptions options = new HttpClientOptions();
       client = vertx.createHttpClient(options);
       // Now change something - but server should ignore this
       options.setSsl(true);
-      client.getNow(RequestOptions.options().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setRequestURI("/uri"), res -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/uri", res -> {
         assertEquals(200, res.statusCode());
         testComplete();
-      });
+      }).end();
     });
     await();
-  }
-
-  @Test
-  public void testRequestOptions() {
-    RequestOptions options = RequestOptions.options();
-    assertEquals(80, options.getPort());
-    assertEquals(options, options.setPort(1234));
-    assertEquals(1234, options.getPort());
-    try {
-      options.setPort(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(-1);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    try {
-      options.setPort(65536);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-    assertEquals("localhost", options.getHost());
-    String randString = TestUtils.randomUnicodeString(100);
-    assertEquals(options, options.setHost(randString));
-    assertEquals(randString, options.getHost());
-    Headers headers = new CaseInsensitiveHeaders();
-    assertNull(options.getHeaders());
-    assertEquals(options, options.setHeaders(headers));
-    assertSame(headers, options.getHeaders());
-    randString = TestUtils.randomUnicodeString(100);
-    assertEquals("/", options.getRequestURI());
-    assertEquals(options, options.setRequestURI(randString));
-    assertEquals(randString, options.getRequestURI());
-    options.addHeader("foo", "bar");
-    assertNotNull(options.getHeaders());
-    assertEquals("bar", options.getHeaders().get("foo"));
-    testComplete();
-  }
-
-  @Test
-  public void testCopyRequestOptions() {
-    int port = 4523;
-    String host = TestUtils.randomAlphaString(100);
-    Headers headers = new CaseInsensitiveHeaders();
-    headers.add("foo", "bar");
-    String uri = TestUtils.randomAlphaString(100);
-    RequestOptions options = RequestOptions.options().setPort(port).setHost(host).setHeaders(headers).setRequestURI(uri);
-    RequestOptions copy = RequestOptions.copiedOptions(options);
-    assertEquals(port, copy.getPort());
-    assertEquals(host, copy.getHost());
-    assertEquals(uri, copy.getRequestURI());
-    assertSame(headers, copy.getHeaders());
-    assertEquals("bar", copy.getHeaders().get("foo"));
-    testComplete();
-  }
-
-  @Test
-  public void testDefaultRequestOptionsJson() {
-    RequestOptions def = RequestOptions.options();
-    RequestOptions json = RequestOptions.optionsFromJson(new JsonObject());
-    testDefaultRequestOptionsBaseJson(def, json);
-  }
-
-  @Test
-  public void testCopyRequestOptionsJson() {
-    int port = 4523;
-    String host = TestUtils.randomAlphaString(100);
-    Headers headers = new CaseInsensitiveHeaders();
-    headers.add("foo", "bar");
-    String uri = TestUtils.randomAlphaString(100);
-    JsonObject json = new JsonObject();
-    json.putNumber("port", port);
-    json.putString("host", host);
-    json.putString("requestURI", uri);
-    JsonObject jheaders = new JsonObject();
-    jheaders.putString("foo", "bar");
-    json.putObject("headers", jheaders);
-    RequestOptions copy = RequestOptions.optionsFromJson(json);
-    assertEquals(port, copy.getPort());
-    assertEquals(host, copy.getHost());
-    assertEquals(uri, copy.getRequestURI());
-    assertEquals("bar", copy.getHeaders().get("foo"));
-    testComplete();
   }
 
   @Test
@@ -3749,11 +3396,11 @@ public class HttpTest extends HttpTestBase {
         int index = i;
         threads[i] = new Thread() {
           public void run() {
-            client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT).addHeader("count", String.valueOf(index)), res -> {
+            client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
               assertEquals(200, res.statusCode());
               assertEquals(String.valueOf(index), res.headers().get("count"));
               latch.countDown();
-            });
+            }).putHeader("count", String.valueOf(index)).end();
           }
         };
         threads[i].start();
@@ -3782,41 +3429,41 @@ public class HttpTest extends HttpTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.currentContext();
+        ctx = vertx.context();
         if (worker) {
           assertTrue(ctx instanceof WorkerContext);
         } else {
           assertTrue(ctx instanceof EventLoopContext);
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createHttpServer(HttpServerOptions.options().setPort(DEFAULT_HTTP_PORT));
+        server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.currentContext());
+          assertSame(ctx, vertx.context());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          client = vertx.createHttpClient(HttpClientOptions.options());
-          client.getNow(RequestOptions.options().setPort(DEFAULT_HTTP_PORT), res -> {
-            assertSame(ctx, vertx.currentContext());
+          client = vertx.createHttpClient(new HttpClientOptions());
+          client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+            assertSame(ctx, vertx.context());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
             assertEquals(200, res.statusCode());
             testComplete();
-          });
+          }).end();
         });
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(worker));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker));
     await();
   }
 
@@ -3825,23 +3472,13 @@ public class HttpTest extends HttpTestBase {
     class MyVerticle extends AbstractVerticle {
       @Override
       public void start() {
-        try {
-          server = vertx.createHttpServer(HttpServerOptions.options());
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
-        try {
-          client = vertx.createHttpClient(HttpClientOptions.options());
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
+        assertIllegalStateException(() -> server = vertx.createHttpServer(new HttpServerOptions()));
+        assertIllegalStateException(() -> client = vertx.createHttpClient(new HttpClientOptions()));
         testComplete();
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticleWithOptions(verticle, DeploymentOptions.options().setWorker(true).setMultiThreaded(true));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
     await();
   }
 
@@ -3873,9 +3510,9 @@ public class HttpTest extends HttpTestBase {
     int numConns = 8;
     // There should be a context per *connection*
     client.close();
-    client = vertx.createHttpClient(HttpClientOptions.options().setMaxPoolSize(numConns));
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(numConns));
     for (int i = 0; i < numReqs; i++) {
-      client.getNow(RequestOptions.options().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT), resp -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
         assertEquals(200, resp.statusCode());
         contexts.add(((VertxInternal) vertx).getContext());
         if (cnt.incrementAndGet() == numReqs) {
@@ -3883,7 +3520,7 @@ public class HttpTest extends HttpTestBase {
           assertTrue(contexts.size() >= numConns);
           latch2.countDown();
         }
-      });
+      }).end();
     }
     awaitLatch(latch2);
     // Close should be in own context
@@ -3907,15 +3544,15 @@ public class HttpTest extends HttpTestBase {
       fail();
     });
     server.listen(onSuccess(s -> {
-      vertx.createNetClient(NetClientOptions.options()).connect(8080, "127.0.0.1", result -> {
+      vertx.createNetClient(new NetClientOptions()).connect(8080, "127.0.0.1", result -> {
         NetSocket socket = result.result();
         socket.closeHandler(r -> {
           testComplete();
         });
-        socket.writeString("GET HTTP1/1\r\n");
+        socket.write("GET HTTP1/1\r\n");
 
         // trigger another write to be sure we detect that the other peer has closed the connection.
-        socket.writeString("X-Header: test\r\n");
+        socket.write("X-Header: test\r\n");
       });
     }));
     await();
@@ -3926,11 +3563,11 @@ public class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.pause();
       Handler<Message<Buffer>> resumeHandler = msg -> req.resume();
-      Registration reg = vertx.eventBus().registerHandler("server_resume", resumeHandler);
+      MessageConsumer reg = vertx.eventBus().<Buffer>consumer("server_resume").handler(resumeHandler);
       req.endHandler(v -> reg.unregister());
 
-      req.dataHandler(buff -> {
-        req.response().writeBuffer(buff);
+      req.handler(buff -> {
+        req.response().write(buff);
       });
     });
 
@@ -3946,7 +3583,7 @@ public class HttpTest extends HttpTestBase {
       Buffer buff = TestUtils.randomBuffer(10000);
       //Send data until the buffer is full
       vertx.setPeriodic(1, id -> {
-        req.response().writeBuffer(buff);
+        req.response().write(buff);
         if (req.response().writeQueueFull()) {
           vertx.cancelTimer(id);
           req.response().drainHandler(v -> {
@@ -3963,9 +3600,9 @@ public class HttpTest extends HttpTestBase {
     server.listen(onSuccess(consumer));
   }
 
-  private static Headers getHeaders(int num) {
+  private static MultiMap getHeaders(int num) {
     Map<String, String> map = genMap(num);
-    Headers headers = new HeadersAdaptor(new DefaultHttpHeaders());
+    MultiMap headers = new HeadersAdaptor(new DefaultHttpHeaders());
     for (Map.Entry<String, String> entry : map.entrySet()) {
       headers.add(entry.getKey(), entry.getValue());
     }
