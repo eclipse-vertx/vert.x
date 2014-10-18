@@ -389,16 +389,16 @@ public class Starter {
     // Also for vertx version
     String usage =
 
-      "    vertx run <main> [-options]                                                \n" +
+        "    vertx run <main> [-options]                                                \n" +
         "        runs a verticle called <main> in its own instance of vert.x.           \n" +
         "        <main> can be a JavaScript script, a Ruby script, A Groovy script,     \n" +
         "        a Java class, a Java source file, or a Python Script.\n\n" +
         "    valid options are:\n" +
-        "        -conf <config_file>    Specifies configuration that should be provided \n" +
-        "                               to the verticle. <config_file> should reference \n" +
-        "                               a text file containing a valid JSON object      \n" +
-        "                               which represents the configuration OR should be \n" +
-        "                               a string that contains valid JSON.              \n" +
+        "        -conf <config>         Specifies configuration that should be provided \n" +
+        "                               to the verticle. <config> should reference      \n" +
+        "                               either a text file containing a valid JSON      \n" +
+        "                               object which represents the configuration OR    \n" +
+        "                               be a JSON string.                               \n" +
         "        -instances <instances> specifies how many instances of the verticle    \n" +
         "                               will be deployed. Defaults to 1                 \n" +
         "        -worker                if specified then the verticle is a worker      \n" +
@@ -412,8 +412,20 @@ public class Starter {
         "        -cluster-host          host to bind to for cluster communication.      \n" +
         "                               If this is not specified vert.x will attempt    \n" +
         "                               to choose one from the available interfaces.  \n\n" +
+        "        -ha                    if specified the verticle will be deployed as a \n" +
+        "                               high availability (HA) deployment.              \n" +
+        "                               This means it can fail over to any other nodes \n" +
+        "                               in the cluster started with the same HA group   \n" +
+        "        -quorum                used in conjunction with -ha this specifies the \n" +
+        "                               minimum number of nodes in the cluster for any  \n" +
+        "                               HA deployments to be active. Defaults to 0      \n" +
+        "        -hagroup               used in conjunction with -ha this specifies the \n" +
+        "                               HA group this node will join. There can be      \n" +
+        "                               multiple HA groups in a cluster. Nodes will only\n" +
+        "                               failover to other nodes in the same group.      \n" +
+        "                               Defaults to __DEFAULT__                       \n\n" +
 
-        "    vertx version                                                              \n" +
+        "    vertx -version                                                             \n" +
         "        displays the version";
 
     log.info(usage);
