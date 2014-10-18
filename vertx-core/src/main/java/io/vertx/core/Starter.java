@@ -431,10 +431,4 @@ public class Starter {
     log.info(usage);
   }
 
-  /*
-  TODO - allow Vert.x to be configured on the command line:
-
-  vertx run <main> -vertx.cluster-host somehost -vertx.cluster-port someport -vertx.ha-enabled true -deploy.worker
-  false
-   */
 }
