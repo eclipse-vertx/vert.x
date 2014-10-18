@@ -26,33 +26,33 @@ import io.vertx.core.spi.cluster.ClusterManager;
 @Options
 public class VertxOptions {
 
-  public static final int DEFAULT_EVENTLOOPPOOLSIZE = 2 * Runtime.getRuntime().availableProcessors();
-  public static final int DEFAULT_WORKERPOOLSIZE = 20;
-  public static final int DEFAULT_INTERNALBLOCKINGPOOLSIZE = 20;
+  public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 2 * Runtime.getRuntime().availableProcessors();
+  public static final int DEFAULT_WORKER_POOL_SIZE = 20;
+  public static final int DEFAULT_INTERNAL_BLOCKING_POOL_SIZE = 20;
   public static final boolean DEFAULT_CLUSTERED = false;
-  public static final String DEFAULT_CLUSTERHOST = "localhost";
-  public static final int DEFAULT_CLUSTERPORT = 0;
-  public static final int DEFAULT_BLOCKEDTHREADCHECKPERIOD = 1000;
-  public static final long DEFAULT_MAXEVENTLOOPEXECUTETIME = 2000l * 1000000;
-  public static final long DEFAULT_MAXWORKEREXECUTETIME = 1l * 60 * 1000 * 1000000;
-  public static final int DEFAULT_PROXYOPERATIONTIMEOUT = 10 * 1000;
-  public static final int DEFAULT_QUORUMSIZE = 1;
+  public static final String DEFAULT_CLUSTER_HOST = "localhost";
+  public static final int DEFAULT_CLUSTER_PORT = 0;
+  public static final int DEFAULT_BLOCKED_THREAD_CHECK_PERIOD = 1000;
+  public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2000l * 1000000;
+  public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = 1l * 60 * 1000 * 1000000;
+  public static final int DEFAULT_PROXY_OPERATION_TIMEOUT = 10 * 1000;
+  public static final int DEFAULT_QUORUM_SIZE = 1;
   public static final boolean DEFAULT_METRICS_ENABLED = false;
   public static final boolean DEFAULT_JMX_ENABLED = false;
 
-  private int eventLoopPoolSize = DEFAULT_EVENTLOOPPOOLSIZE;
-  private int workerPoolSize = DEFAULT_WORKERPOOLSIZE;
-  private int internalBlockingPoolSize = DEFAULT_INTERNALBLOCKINGPOOLSIZE;
+  private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
+  private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
+  private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
   private boolean clustered = DEFAULT_CLUSTERED;
-  private String clusterHost = DEFAULT_CLUSTERHOST;
-  private int clusterPort = DEFAULT_CLUSTERPORT;
-  private long blockedThreadCheckPeriod = DEFAULT_BLOCKEDTHREADCHECKPERIOD;
-  private long maxEventLoopExecuteTime = DEFAULT_MAXEVENTLOOPEXECUTETIME;
-  private long maxWorkerExecuteTime = DEFAULT_MAXWORKEREXECUTETIME;
+  private String clusterHost = DEFAULT_CLUSTER_HOST;
+  private int clusterPort = DEFAULT_CLUSTER_PORT;
+  private long blockedThreadCheckPeriod = DEFAULT_BLOCKED_THREAD_CHECK_PERIOD;
+  private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
+  private long maxWorkerExecuteTime = DEFAULT_MAX_WORKER_EXECUTE_TIME;
   private ClusterManager clusterManager;
-  private long proxyOperationTimeout = DEFAULT_PROXYOPERATIONTIMEOUT;
+  private long proxyOperationTimeout = DEFAULT_PROXY_OPERATION_TIMEOUT;
   private boolean haEnabled;
-  private int quorumSize = DEFAULT_QUORUMSIZE;
+  private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup;
   private boolean metricsEnabled = DEFAULT_METRICS_ENABLED;
   private boolean jmxEnabled = DEFAULT_JMX_ENABLED;
@@ -82,18 +82,18 @@ public class VertxOptions {
   }
 
   public VertxOptions(JsonObject json) {
-    this.proxyOperationTimeout = json.getInteger("proxyOperationTimeout", DEFAULT_PROXYOPERATIONTIMEOUT);
-    this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENTLOOPPOOLSIZE);
-    this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKERPOOLSIZE);
+    this.proxyOperationTimeout = json.getInteger("proxyOperationTimeout", DEFAULT_PROXY_OPERATION_TIMEOUT);
+    this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENT_LOOP_POOL_SIZE);
+    this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKER_POOL_SIZE);
     this.clustered = json.getBoolean("clustered", DEFAULT_CLUSTERED);
-    this.clusterHost = json.getString("clusterHost", DEFAULT_CLUSTERHOST);
-    this.clusterPort = json.getInteger("clusterPort", DEFAULT_CLUSTERPORT);
-    this.internalBlockingPoolSize = json.getInteger("internalBlockingPoolSize", DEFAULT_INTERNALBLOCKINGPOOLSIZE);
-    this.blockedThreadCheckPeriod = json.getLong("blockedThreadCheckPeriod", DEFAULT_BLOCKEDTHREADCHECKPERIOD);
-    this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAXEVENTLOOPEXECUTETIME);
-    this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAXWORKEREXECUTETIME);
+    this.clusterHost = json.getString("clusterHost", DEFAULT_CLUSTER_HOST);
+    this.clusterPort = json.getInteger("clusterPort", DEFAULT_CLUSTER_PORT);
+    this.internalBlockingPoolSize = json.getInteger("internalBlockingPoolSize", DEFAULT_INTERNAL_BLOCKING_POOL_SIZE);
+    this.blockedThreadCheckPeriod = json.getLong("blockedThreadCheckPeriod", DEFAULT_BLOCKED_THREAD_CHECK_PERIOD);
+    this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME);
+    this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAX_WORKER_EXECUTE_TIME);
     this.haEnabled = json.getBoolean("haEnabled", false);
-    this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUMSIZE);
+    this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUM_SIZE);
     this.haGroup = json.getString("haGroup", null);
     this.metricsEnabled = json.getBoolean("metricsEnabled", DEFAULT_METRICS_ENABLED);
     this.jmxEnabled = json.getBoolean("jmxEnabled", DEFAULT_JMX_ENABLED);

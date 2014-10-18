@@ -29,6 +29,11 @@ import java.util.List;
 @Options
 public class DeploymentOptions {
 
+  public static final boolean DEFAULT_WORKER = false;
+  public static final boolean DEFAULT_MULTI_THREADED = false;
+  public static final String DEFAULT_ISOLATION_GROUP = null;
+  public static final boolean DEFAULT_HA = false;
+
   private JsonObject config;
   private boolean worker;
   private boolean multiThreaded;
@@ -37,6 +42,11 @@ public class DeploymentOptions {
   private List<String> extraClasspath;
 
   public DeploymentOptions() {
+    this.worker = DEFAULT_WORKER;
+    this.config = null;
+    this.multiThreaded = DEFAULT_MULTI_THREADED;
+    this.isolationGroup = DEFAULT_ISOLATION_GROUP;
+    this.ha = DEFAULT_HA;
   }
 
   public DeploymentOptions(DeploymentOptions other) {
