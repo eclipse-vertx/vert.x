@@ -81,7 +81,7 @@ public class VertxImpl implements VertxInternal {
 
   static {
     // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
-    ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
+ //   ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     // Use the JDK deflater/inflater by default
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }

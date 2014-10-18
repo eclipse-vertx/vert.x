@@ -224,6 +224,8 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   private void encodeHeaders(Buffer buffer) {
+    
+    //Headers exist, have been decoded from the wire, and need to be reencoded
     if (headers != null && !headers.isEmpty()) {
       int headersLengthPos = buffer.getByteBuf().writerIndex();
       buffer.appendInt(0);
@@ -235,7 +237,14 @@ public class MessageImpl<U, V> implements Message<V> {
       }
       int headersEndPos = buffer.getByteBuf().writerIndex();
       buffer.setInt(headersLengthPos, headersEndPos - headersLengthPos);
-    } else {
+    }else if(headers == null && headersPos != 0){            
+      //headers could exist, just have never been read
+      int length = wireBuffer.getInt(headersPos);            
+      buffer.appendInt(length);
+      buffer.appendInt(headersPos + 4);            
+      byte[] rawHeaders = wireBuffer.getBytes(headersPos + 8, (headersPos + 8) + length);
+      buffer.appendBytes(rawHeaders);                  
+    }else {
       buffer.appendInt(4);
     }
   }
@@ -265,7 +274,20 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   private void writeBody(Buffer buff) {
-    messageCodec.encodeToWire(buff, sentBody);
+    
+    if(sentBody != null){
+      messageCodec.encodeToWire(buff, sentBody);          
+    }else if(receivedBody == null && bodyPos != 0){
+      int length = wireBuffer.getInt(bodyPos);
+      byte[] bytes = wireBuffer.getBytes(bodyPos + 4, length);
+      buff.appendInt(bytes.length);
+      buff.appendBytes(bytes);
+    }else if(receivedBody != null && bodyPos == 0){
+      //Here is the tricky case where we need to write the receivedBody
+      //To the wire, but we have no convenient way of doing so
+      //due to the MessageCodec not allowing for it
+    }
+      
   }
 
   private void writeString(Buffer buff, String str) {

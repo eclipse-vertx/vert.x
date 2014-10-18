@@ -28,6 +28,7 @@ import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -183,6 +184,50 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   
   }
+  
+  @Override
+  protected <T> void testForward(T val, DeliveryOptions options) {
+
+    int expectedHeaders = options.getHeaders().size();
+    final String FIRST_KEY = "first";
+    final String SEC_KEY = "second";    
+    final AtomicBoolean forwarded = new AtomicBoolean(false);
+    
+    startNodes(2);
+    
+    vertices[0].eventBus().registerHandler(ADDRESS1, new Handler<Message<String>>(){
+
+      @Override
+      public void handle(Message<String> event) {
+        
+        assertEquals(val, event.body());
+        
+        if(!forwarded.getAndSet(true)){        
+          event.forward(ADDRESS2);
+        }else{
+          assertTrue(event.headers().size() == expectedHeaders);
+          assertEquals(event.headers().get(FIRST_KEY), "first");
+          assertEquals(event.headers().get(SEC_KEY), "second");
+          testComplete();
+        }          
+      }
+
+    });
+    
+    vertices[1].eventBus().registerHandler(ADDRESS2, new Handler<Message<String>>(){
+
+      @Override
+      public void handle(Message<String> event) {
+        assertEquals(val, event.body());
+        event.forward(ADDRESS1);
+      }
+    });
+    
+    vertices[0].eventBus().send(ADDRESS1, val, options);
+    await();
+    
+  }
+    
   @Test
   public void testLocalHandlerNotReceive() throws Exception {
     startNodes(2);

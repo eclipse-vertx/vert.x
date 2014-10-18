@@ -950,5 +950,32 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.send(ADDRESS1, val);
     await();
   }
+
+  @Override
+  protected <T> void testForward(T val, DeliveryOptions options) {
+    eb.registerHandler(ADDRESS1, new Handler<Message<String>>() {
+
+      @Override
+      public void handle(Message<String> event) {
+        assertEquals(val, event.body());
+        event.forward(ADDRESS2);
+      }
+
+    });
+
+    eb.registerHandler(ADDRESS2, new Handler<Message<String>>() {
+
+      @Override
+      public void handle(Message<String> event) {
+        assertEquals(val, event.body());
+        testComplete();
+      }
+    });
+
+    eb.send(ADDRESS1, val, options);
+    await();
+    
+  }
+
 }
 
