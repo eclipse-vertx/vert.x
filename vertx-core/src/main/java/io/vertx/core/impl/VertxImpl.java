@@ -305,7 +305,7 @@ public class VertxImpl implements VertxInternal {
         return options.getClusterManager();
       } else {
         ClusterManager mgr;
-        String clusterManagerClassName = System.getProperty("vertx.clusterManager");
+        String clusterManagerClassName = System.getProperty("vertx.cluster.managerClass");
         if (clusterManagerClassName != null) {
           // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
           try {

@@ -17,24 +17,35 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Starter;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class StarterTest extends VertxTestBase {
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     TestVerticle.instanceCount.set(0);
     TestVerticle.processArgs = null;
     TestVerticle.conf = null;
+  }
+
+  @Override
+  public void tearDown() throws Exception {
+    clearProperties();
+    super.tearDown();
   }
 
   @Test
@@ -151,5 +162,57 @@ public class StarterTest extends VertxTestBase {
       Files.delete(tempFile);
       Files.delete(tempDir);
     }
+  }
+
+  @Test
+  public void testConfigureFromSystemProperties() throws Exception {
+    VertxOptions opts = new VertxOptions();
+
+    // One for each type that we support
+    System.setProperty("vertx.options.eventLoopPoolSize", "123");
+    System.setProperty("vertx.options.maxEventLoopExecuteTime", "123767667");
+    System.setProperty("vertx.options.clustered", "true");
+    System.setProperty("vertx.options.clusterHost", "foohost");
+
+    Starter.configureFromSystemProperties(opts, "vertx.options.");
+    assertEquals(123, opts.getEventLoopPoolSize(), 0);
+    assertEquals(123767667l, opts.getMaxEventLoopExecuteTime());
+    assertEquals(true, opts.isClustered());
+    assertEquals("foohost", opts.getClusterHost());
+  }
+
+  private void clearProperties() {
+    Set<String> toClear = new HashSet<>();
+    Enumeration e = System.getProperties().propertyNames();
+    // Uhh, properties suck
+    while (e.hasMoreElements()) {
+      String propName = (String) e.nextElement();
+      if (propName.startsWith("vertx.options")) {
+        toClear.add(propName);
+      }
+    }
+    for (String propName: toClear) {
+      System.clearProperty(propName);
+    }
+  }
+
+  @Test
+  public void testConfigureFromSystemPropertiesInvalidPropertyName() throws Exception {
+
+    VertxOptions opts = new VertxOptions();
+    System.setProperty("vertx.options.nosuchproperty", "123");
+    // Should be ignored
+    Starter.configureFromSystemProperties(opts, "vertx.options.");
+    assertEquals(new VertxOptions(), opts);
+  }
+
+  @Test
+  public void testConfigureFromSystemPropertiesInvalidPropertyType() throws Exception {
+    VertxOptions opts = new VertxOptions();
+    // One for each type that we support
+    System.setProperty("vertx.options.eventLoopPoolSize", "sausages");
+    // Should be ignored
+    Starter.configureFromSystemProperties(opts, "vertx.options.");
+    assertEquals(new VertxOptions(), opts);
   }
 }

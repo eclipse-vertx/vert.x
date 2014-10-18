@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class LoggerFactory {
 
-  public static final String LOGGER_DELEGATE_FACTORY_CLASS_NAME = "io.vertx.logger-delegate-factory-class-name";
+  public static final String LOGGER_DELEGATE_FACTORY_CLASS_NAME = "vertx.logger-delegate-factory-class-name";
 
   private static volatile LogDelegateFactory delegateFactory;
 

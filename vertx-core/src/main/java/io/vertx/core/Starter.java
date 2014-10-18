@@ -26,16 +26,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,9 @@ import java.util.jar.Manifest;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Starter {
+
+  public static final String VERTX_OPTIONS_PROP_PREFIX = "vertx.options";
+  public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options";
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
 
@@ -89,16 +93,6 @@ public class Starter {
 
   private final CountDownLatch stopLatch = new CountDownLatch(1);
 
-  private String[] removeOptions(String[] args) {
-    List<String> munged = new ArrayList<>();
-    for (String arg: args) {
-      if (!arg.startsWith("-")) {
-        munged.add(arg);
-      }
-    }
-    return munged.toArray(new String[munged.size()]);
-  }
-
   private static <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
     return res -> {
       if (res.failed()) {
@@ -119,6 +113,58 @@ public class Starter {
         completionHandler.handle(res);
       }
     };
+  }
+
+  public static void configureFromSystemProperties(Object options, String prefix) {
+    Properties props = System.getProperties();
+    Enumeration e = props.propertyNames();
+    // Uhh, properties suck
+    while (e.hasMoreElements()) {
+      String propName = (String)e.nextElement();
+      String propVal = props.getProperty(propName);
+      if (propName.startsWith(prefix)) {
+        String fieldName = propName.substring(prefix.length());
+        Method setter = getSetter(fieldName, VertxOptions.class);
+        if (setter == null) {
+          log.warn("No such property to configure on options: " + options.getClass().getName() + "." + fieldName);
+          continue;
+        }
+        Class<?> argType = setter.getParameterTypes()[0];
+        Object arg;
+        try {
+          if (argType.equals(String.class)) {
+            arg = propVal;
+          } else if (argType.equals(int.class)) {
+            arg = Integer.valueOf(propVal);
+          } else if (argType.equals(long.class)) {
+            arg = Long.valueOf(propVal);
+          } else if (argType.equals(boolean.class)) {
+            arg = Boolean.valueOf(propVal);
+          } else {
+            log.warn("Invalid type for setter: " + argType);
+            continue;
+          }
+        } catch (IllegalArgumentException e2) {
+          log.warn("Invalid argtype:" + argType + " on options: " + options.getClass().getName() + "." + fieldName);
+          continue;
+        }
+        try {
+          setter.invoke(options, arg);
+        } catch (Exception ex) {
+          throw new VertxException("Failed to invoke setter: " + setter, ex);
+        }
+      }
+    }
+  }
+
+  private static Method getSetter(String fieldName, Class<?> clazz) {
+    Method[] meths = clazz.getDeclaredMethods();
+    for (Method meth: meths) {
+      if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {
+        return meth;
+      }
+    }
+    return null;
   }
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
@@ -143,6 +189,7 @@ public class Starter {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
       VertxOptions options = new VertxOptions();
+      configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
       options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
       if (ha) {
         String haGroup = args.map.get("-hagroup");
@@ -228,8 +275,10 @@ public class Starter {
 
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
+    DeploymentOptions deploymentOptions = new DeploymentOptions();
+    configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
     for (int i = 0; i < instances; i++) {
-      vertx.deployVerticle(main, new DeploymentOptions().setConfig(conf).setWorker(worker).setHA(ha), createLoggingHandler(message, res -> {
+      vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHA(ha), createLoggingHandler(message, res -> {
         if (res.failed()) {
           // Failed to deploy
           unblock();
@@ -369,4 +418,11 @@ public class Starter {
 
     log.info(usage);
   }
+
+  /*
+  TODO - allow Vert.x to be configured on the command line:
+
+  vertx run <main> -vertx.cluster-host somehost -vertx.cluster-port someport -vertx.ha-enabled true -deploy.worker
+  false
+   */
 }
