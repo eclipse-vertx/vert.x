@@ -209,6 +209,14 @@ public class EventBusImpl implements EventBus {
     return this;
   }
 
+  EventBus forward(String address, Object message) {
+    return forward(address, message, null);
+  }
+
+  EventBus forward(String address, Object message, DeliveryOptions options) {
+    sendOrPub(null, (MessageImpl)message, options, null);
+    return this;
+  }
   @Override
   public <T> MessageConsumer<T> consumer(String address) {
     return new HandlerRegistration<>(address, false, false, -1);
@@ -709,7 +717,7 @@ public class EventBusImpl implements EventBus {
         cleanupConnection(holder.theServerID, holder, true);
       });
       MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new NullMessageCodec(), true);
-      holder.socket.write(pingMessage.encodeToWire());
+      holder.socket.write(pingMessage.writeToWire());
     });
   }
 
@@ -846,11 +854,11 @@ public class EventBusImpl implements EventBus {
 
     void writeMessage(MessageImpl message) {
       if (connected) {
-        socket.write(message.encodeToWire());
+        socket.write(message.writeToWire());
       } else {
         synchronized (this) {
           if (connected) {
-            socket.write(message.encodeToWire());
+            socket.write(message.writeToWire());
           } else {
             pending.add(message);
           }
@@ -872,7 +880,7 @@ public class EventBusImpl implements EventBus {
       // Start a pinger
       schedulePing(ConnectionHolder.this);
       for (MessageImpl message : pending) {
-        socket.write(message.encodeToWire());
+        socket.write(message.writeToWire());
       }
       pending.clear();
     }

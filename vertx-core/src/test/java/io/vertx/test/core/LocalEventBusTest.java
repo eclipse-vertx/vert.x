@@ -1201,5 +1201,42 @@ public class LocalEventBusTest extends EventBusTestBase {
     Pump.pump(consumer, producer);
     producer.write(str);
   }
-}
 
+  @Override
+  protected <T> void testForward(T val) {
+
+    eb.<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
+        assertEquals(val, msg.body());
+        msg.forward(ADDRESS2);
+
+    });
+
+    eb.<T>consumer(ADDRESS2).handler((Message<T> msg) -> {
+      
+        assertEquals(val, msg.body());
+        testComplete();     
+    });
+
+    eb.send(ADDRESS1, val);
+    await();
+  }
+
+  @Override
+  protected <T> void testForward(T val, DeliveryOptions options) {
+    
+    eb.<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
+        assertEquals(val, msg.body());
+        msg.forward(ADDRESS2);
+    });
+
+    eb.<T>consumer(ADDRESS2).handler((Message<T> msg) -> {
+
+        assertEquals(val, msg.body());
+        testComplete();
+    });
+
+    eb.send(ADDRESS1, val, options);
+    await();
+    
+  }
+}

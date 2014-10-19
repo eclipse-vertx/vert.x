@@ -55,6 +55,9 @@ public class MessageImpl<U, V> implements Message<V> {
   private Buffer wireBuffer;
   private int bodyPos;
   private int headersPos;
+  private int absoluteBodyPos;
+  private int absoluteHeaderPos;
+  private boolean isForwarded;
 
   public MessageImpl() {
   }
@@ -91,8 +94,12 @@ public class MessageImpl<U, V> implements Message<V> {
       this.wireBuffer = other.wireBuffer;
       this.bodyPos = other.bodyPos;
       this.headersPos = other.headersPos;
+      this.headersPos = other.headersPos;
+      this.absoluteBodyPos = other.absoluteBodyPos;
+      this.absoluteHeaderPos = other.absoluteHeaderPos;
     }
     this.send = other.send;
+    this.isForwarded = other.isForwarded;
   }
 
   public MessageImpl<U, V> copyBeforeReceive() {
@@ -110,7 +117,7 @@ public class MessageImpl<U, V> implements Message<V> {
     if (headers == null) {
       // The message has been read from the wire
       if (headersPos != 0) {
-        decodeHeaders();
+        readHeaders();
       }
       if (headers == null) {
         headers = new CaseInsensitiveHeaders();
@@ -124,7 +131,7 @@ public class MessageImpl<U, V> implements Message<V> {
     // Lazily decode the body
     if (receivedBody == null && bodyPos != 0) {
       // The message has been read from the wire
-      decodeBody();
+      readBody();
     }
     return receivedBody;
   }
@@ -134,8 +141,8 @@ public class MessageImpl<U, V> implements Message<V> {
     return replyAddress;
   }
 
-  public Buffer encodeToWire() {
-    int length = 1024; // TODO make this configurable
+  public Buffer writeToWire() {
+    int length = 1024; 
     Buffer buffer = Buffer.buffer(length);
     buffer.appendInt(0);
     buffer.appendByte(WIRE_PROTOCOL_VERSION);
@@ -154,12 +161,10 @@ public class MessageImpl<U, V> implements Message<V> {
     }
     buffer.appendInt(sender.port);
     writeString(buffer, sender.host);
-    encodeHeaders(buffer);
+    buffer.appendByte(isForwarded ? (byte)0 : (byte)1);
+    writeHeaders(buffer);
     writeBody(buffer);
     buffer.setInt(0, buffer.length() - 4);
-//    if (buffer.length()> length) {
-//      log.warn("Overshot length " + length + " actual " + buffer.length());
-//    }
     return buffer;
   }
 
@@ -210,20 +215,25 @@ public class MessageImpl<U, V> implements Message<V> {
     bytes = buffer.getBytes(pos, pos + length);
     String senderHost = new String(bytes, CharsetUtil.UTF_8);
     pos += length;
-    headersPos = pos;
+    
+    isForwarded = (buffer.getByte(pos) == 0);    
+    pos++;
+    
+    headersPos = absoluteHeaderPos = pos;
     int headersLength = buffer.getInt(pos);
     pos += headersLength;
-    bodyPos = pos;
+    bodyPos = absoluteBodyPos = pos;
     sender = new ServerID(senderPort, senderHost);
     wireBuffer = buffer;
   }
 
-  private void decodeBody() {
+  private void readBody() {
     receivedBody = messageCodec.decodeFromWire(bodyPos, wireBuffer);
     bodyPos = 0;
   }
 
-  private void encodeHeaders(Buffer buffer) {
+  private void writeHeaders(Buffer buffer) {
+    //Headers exist, have been decoded from the wire, and need to be reencoded
     if (headers != null && !headers.isEmpty()) {
       int headersLengthPos = buffer.getByteBuf().writerIndex();
       buffer.appendInt(0);
@@ -235,12 +245,20 @@ public class MessageImpl<U, V> implements Message<V> {
       }
       int headersEndPos = buffer.getByteBuf().writerIndex();
       buffer.setInt(headersLengthPos, headersEndPos - headersLengthPos);
-    } else {
+    }else if((headers == null && headersPos != 0) || (headers != null && headersPos == 0)){                        
+      //headers could exist, just have never been read
+      int length = wireBuffer.getInt(headersPos);            
+      buffer.appendInt(length);
+      int numHeaders = wireBuffer.getInt(headersPos + 4);
+      buffer.appendInt(numHeaders);                  
+      byte[] rawHeaders = wireBuffer.getBytes(headersPos + 8, (headersPos) + length);
+      buffer.appendBytes(rawHeaders);                  
+    }else {
       buffer.appendInt(4);
     }
   }
 
-  private void decodeHeaders() {
+  private void readHeaders() {
     int length = wireBuffer.getInt(headersPos);
     if (length != 0) {
       headersPos += 4;
@@ -265,7 +283,14 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   private void writeBody(Buffer buff) {
-    messageCodec.encodeToWire(buff, sentBody);
+    if(sentBody != null){
+      messageCodec.encodeToWire(buff, sentBody);          
+    }else if((receivedBody == null && bodyPos != 0)  || (receivedBody != null && bodyPos == 0)){      
+      int length = wireBuffer.getInt(absoluteBodyPos);
+      byte[] bytes = wireBuffer.getBytes(absoluteBodyPos + 4, absoluteBodyPos + 4 + length);
+      buff.appendInt(bytes.length);
+      buff.appendBytes(bytes);
+    }      
   }
 
   private void writeString(Buffer buff, String str) {
@@ -282,12 +307,14 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public void forward(String address) {
-
+    forward(address, null);
   }
 
   @Override
   public void forward(String address, DeliveryOptions options) {
-
+    this.address = address;
+    this.isForwarded = true;
+    bus.forward(address, this, options);
   }
 
   @Override
@@ -330,6 +357,11 @@ public class MessageImpl<U, V> implements Message<V> {
     if (bus != null && replyAddress != null) {
       bus.sendReply(sender, msg, options, replyHandler);
     }
+  }
+
+  @Override
+  public boolean isForward() {
+    return this.isForwarded;
   }
 
 
