@@ -175,7 +175,8 @@ public class ClusteredEventBusTest extends EventBusTestBase {
 
       @Override
       public void handle(Message<String> event) {
-        assertEquals(val, event.body());
+        assertEquals(val, event.body());        
+        assertTrue(event.isForward());
         testComplete();
       }
     });
@@ -191,20 +192,18 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     int expectedHeaders = options.getHeaders().size();
     final String FIRST_KEY = "first";
     final String SEC_KEY = "second";    
-    final AtomicBoolean forwarded = new AtomicBoolean(false);
     
     startNodes(2);
     
     vertices[0].eventBus().registerHandler(ADDRESS1, new Handler<Message<String>>(){
 
       @Override
-      public void handle(Message<String> event) {
-        
-        assertEquals(val, event.body());
-        
-        if(!forwarded.getAndSet(true)){        
+      public void handle(Message<String> event) {                
+        assertEquals(val, event.body());        
+        if(!event.isForward()){        
           event.forward(ADDRESS2);
         }else{
+          assertTrue(event.isForward());
           assertTrue(event.headers().size() == expectedHeaders);
           assertEquals(event.headers().get(FIRST_KEY), "first");
           assertEquals(event.headers().get(SEC_KEY), "second");
@@ -219,6 +218,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       @Override
       public void handle(Message<String> event) {
         assertEquals(val, event.body());
+        assertTrue(event.isForward());
         event.forward(ADDRESS1);
       }
     });

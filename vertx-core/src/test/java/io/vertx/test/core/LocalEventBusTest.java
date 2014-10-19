@@ -953,6 +953,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Override
   protected <T> void testForward(T val, DeliveryOptions options) {
+    
     eb.registerHandler(ADDRESS1, new Handler<Message<String>>() {
 
       @Override

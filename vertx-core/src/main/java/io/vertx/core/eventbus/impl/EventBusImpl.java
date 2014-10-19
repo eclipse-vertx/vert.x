@@ -668,7 +668,7 @@ public class EventBusImpl implements EventBus {
         cleanupConnection(holder.theServerID, holder, true);
       });
       MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new NullMessageCodec(), true);
-      holder.socket.write(pingMessage.encodeToWire());
+      holder.socket.write(pingMessage.writeToWire());
     });
   }
 
@@ -803,11 +803,11 @@ public class EventBusImpl implements EventBus {
 
     void writeMessage(MessageImpl message) {
       if (connected) {
-        socket.write(message.encodeToWire());
+        socket.write(message.writeToWire());
       } else {
         synchronized (this) {
           if (connected) {
-            socket.write(message.encodeToWire());
+            socket.write(message.writeToWire());
           } else {
             pending.add(message);
           }
@@ -829,7 +829,7 @@ public class EventBusImpl implements EventBus {
       // Start a pinger
       schedulePing(ConnectionHolder.this);
       for (MessageImpl message : pending) {
-        socket.write(message.encodeToWire());
+        socket.write(message.writeToWire());
       }
       pending.clear();
     }
