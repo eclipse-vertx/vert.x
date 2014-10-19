@@ -326,6 +326,23 @@ public abstract class EventBusTestBase extends VertxTestBase {
     testReply("foo", "foo", null, new DeliveryOptions().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
 
+  @Test
+  public void testForward(){
+    testForward(TestUtils.randomUnicodeString(100));
+  }
+  
+  @Test
+  public void testForwardWithHeaders(){
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("first", "first");
+    options.addHeader("second", "second");
+    testForward("Test body", options);
+  }
+    
+  protected abstract <T> void testForward(T val);
+  
+  protected abstract <T> void testForward(T val, DeliveryOptions options);
+  
   protected <T> void testSend(T val) {
     testSend(val, null);
   }

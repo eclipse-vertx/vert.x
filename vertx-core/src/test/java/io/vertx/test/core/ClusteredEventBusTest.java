@@ -155,6 +155,60 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertices[0].eventBus().publish(ADDRESS1, val);
     await();
   }
+  
+  @Override
+  protected <T> void testForward(T val) {
+    startNodes(2);
+    
+    vertices[0].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {        
+        assertEquals(val, msg.body());
+        msg.forward(ADDRESS2);
+    });
+
+    vertices[1].eventBus().<T>consumer(ADDRESS2).handler((Message<T> msg) -> {        
+      assertEquals(val, msg.body());        
+      assertTrue(msg.isForward());
+      testComplete();
+    });
+
+    vertices[0].eventBus().send(ADDRESS1, val);
+    await();
+  
+  }
+  
+  @Override
+  protected <T> void testForward(T val, DeliveryOptions options) {
+    
+    startNodes(2);
+    int expectedHeaders = options.getHeaders().size();
+    final String FIRST_KEY = "first";
+    final String SEC_KEY = "second";    
+        
+    vertices[0].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
+        assertEquals(val, msg.body());        
+        if(!msg.isForward()){        
+           msg.forward(ADDRESS2);
+        }else{
+          assertTrue(msg.isForward());
+          assertTrue(msg.headers().size() == expectedHeaders);
+          assertEquals(msg.headers().get(FIRST_KEY), "first");
+          assertEquals(msg.headers().get(SEC_KEY), "second");
+          testComplete();
+        }                
+
+    });
+    
+    vertices[1].eventBus().<T>consumer(ADDRESS2).handler((Message<T> msg) -> {
+        assertEquals(val, msg.body());
+        assertTrue(msg.isForward());
+        msg.forward(ADDRESS1);
+    });
+    
+    vertices[0].eventBus().send(ADDRESS1, val, options);
+    await();
+    
+  }
+
 
   @Test
   public void testLocalHandlerNotReceive() throws Exception {
