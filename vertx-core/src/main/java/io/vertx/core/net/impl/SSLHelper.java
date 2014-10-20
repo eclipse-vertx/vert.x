@@ -54,8 +54,8 @@ public class SSLHelper {
 
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
-  // Make sure SSLv3 is NOT enabled due to POODLE issue
-  private static final String[] ENABLED_PROTOCOLS = {"TLSv1.1", "TLSv1.2"};
+  // Make sure SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
+  private static final String[] ENABLED_PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2"};
 
   private boolean ssl;
   private KeyStoreHelper keyStoreHelper;
