@@ -245,7 +245,7 @@ public class MessageImpl<U, V> implements Message<V> {
       }
       int headersEndPos = buffer.getByteBuf().writerIndex();
       buffer.setInt(headersLengthPos, headersEndPos - headersLengthPos);
-    }else if((headers == null && headersPos != 0) || (headers != null && headersPos == 0)){                        
+    } else if((headers == null && headersPos != 0) || (headers != null && headersPos == 0)){                        
       //headers could exist, just have never been read
       int length = wireBuffer.getInt(headersPos);            
       buffer.appendInt(length);
@@ -285,7 +285,7 @@ public class MessageImpl<U, V> implements Message<V> {
   private void writeBody(Buffer buff) {
     if(sentBody != null){
       messageCodec.encodeToWire(buff, sentBody);          
-    }else if((receivedBody == null && bodyPos != 0)  || (receivedBody != null && bodyPos == 0)){      
+    } else if((receivedBody == null && bodyPos != 0)  || (receivedBody != null && bodyPos == 0)){      
       int length = wireBuffer.getInt(absoluteBodyPos);
       byte[] bytes = wireBuffer.getBytes(absoluteBodyPos + 4, absoluteBodyPos + 4 + length);
       buff.appendInt(bytes.length);

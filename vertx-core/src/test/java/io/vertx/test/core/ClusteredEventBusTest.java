@@ -177,39 +177,190 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   }
   
   @Override
-  protected <T> void testForward(T val, DeliveryOptions options) {
-    
+  protected <T> void testForwardWithHeaders(T val, DeliveryOptions options) {
+
     startNodes(2);
     int expectedHeaders = options.getHeaders().size();
     final String FIRST_KEY = "first";
-    final String SEC_KEY = "second";    
-        
-    vertices[0].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
-        assertEquals(val, msg.body());        
-        if(!msg.isForward()){        
-           msg.forward(ADDRESS2);
-        }else{
-          assertTrue(msg.isForward());
-          assertTrue(msg.headers().size() == expectedHeaders);
-          assertEquals(msg.headers().get(FIRST_KEY), "first");
-          assertEquals(msg.headers().get(SEC_KEY), "second");
-          testComplete();
-        }                
+    final String SEC_KEY = "second";
+
+    vertices[0].eventBus().<T> consumer(ADDRESS1).handler((Message<T> msg) -> {
+      assertEquals(val, msg.body());
+      if (!msg.isForward()) {
+        msg.forward(ADDRESS2);
+      } else {
+        assertTrue(msg.isForward());
+        assertTrue(msg.headers().size() == expectedHeaders);
+        assertEquals(msg.headers().get(FIRST_KEY), "first");
+        assertEquals(msg.headers().get(SEC_KEY), "second");
+        testComplete();
+      }
 
     });
-    
-    vertices[1].eventBus().<T>consumer(ADDRESS2).handler((Message<T> msg) -> {
-        assertEquals(val, msg.body());
-        assertTrue(msg.isForward());
-        msg.forward(ADDRESS1);
+
+    vertices[1].eventBus().<T> consumer(ADDRESS2).handler((Message<T> msg) -> {
+      assertEquals(val, msg.body());
+      assertTrue(msg.isForward());
+      msg.forward(ADDRESS1);
     });
-    
+
     vertices[0].eventBus().send(ADDRESS1, val, options);
     await();
-    
+
   }
+  
+  @Test
+  public <T> void testForwardNoReadBodyOrHeaders(){
+    startNodes(2);
+    
+    final String body = "Test Body";
+    final String FIRST_KEY = "first";
+    final String SEC_KEY = "second";
 
+    vertices[0].eventBus().<T> consumer(ADDRESS1).handler((Message<T> msg) -> {
 
+      if (!msg.isForward()) {
+        msg.forward(ADDRESS2);
+      } else {
+        assertTrue(msg.isForward());
+        assertEquals(msg.headers().get(FIRST_KEY), "first");
+        assertEquals(msg.headers().get(SEC_KEY), "second");
+        testComplete();
+      }
+
+    });
+
+    vertices[1].eventBus().<T> consumer(ADDRESS2).handler((Message<T> msg) -> {
+      assertTrue(msg.isForward());
+      assertEquals(body, msg.body());
+      msg.forward(ADDRESS1);
+    });
+
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("first", "first");
+    options.addHeader("second", "second");    
+    vertices[0].eventBus().send(ADDRESS1, body, options);
+    await();
+
+  }
+  
+  @Test
+  public <T> void testForwardReadBodyNoHeader(){
+    startNodes(2);
+    
+    final String body = "Test Body";
+    final String FIRST_KEY = "first";
+    final String SEC_KEY = "second";
+
+    vertices[0].eventBus().<T> consumer(ADDRESS1).handler((Message<T> msg) -> {
+
+      if (!msg.isForward()) {
+        assertEquals(body, msg.body());
+        msg.forward(ADDRESS2);
+      } else {
+        assertTrue(msg.isForward());
+        assertEquals(msg.headers().get(FIRST_KEY), "first");
+        assertEquals(msg.headers().get(SEC_KEY), "second");
+        testComplete();
+      }
+
+    });
+
+    vertices[1].eventBus().<T> consumer(ADDRESS2).handler((Message<T> msg) -> {
+      assertTrue(msg.isForward());
+      assertEquals(body, msg.body());
+      msg.forward(ADDRESS1);
+    });
+
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("first", "first");
+    options.addHeader("second", "second");    
+    vertices[0].eventBus().send(ADDRESS1, body, options);
+    await();
+
+  }
+  
+  @Test
+  public <T> void testForwardReadHeadersNoBody(){
+    startNodes(2);
+    
+    final String body = "Test Body";
+    final String FIRST_KEY = "first";
+    final String SEC_KEY = "second";
+
+    vertices[0].eventBus().<T> consumer(ADDRESS1).handler((Message<T> msg) -> {
+
+      if (!msg.isForward()) {
+        assertEquals(msg.headers().get(FIRST_KEY), "first");
+        assertEquals(msg.headers().get(SEC_KEY), "second");
+        msg.forward(ADDRESS2);
+
+      } else {
+        assertTrue(msg.isForward());
+        assertEquals(msg.headers().get(FIRST_KEY), "first");
+        assertEquals(msg.headers().get(SEC_KEY), "second");
+        testComplete();
+      }
+
+    });
+
+    vertices[1].eventBus().<T> consumer(ADDRESS2).handler((Message<T> msg) -> {
+      assertTrue(msg.isForward());
+      assertEquals(body, msg.body());
+      assertEquals(msg.headers().get(FIRST_KEY), "first");
+      assertEquals(msg.headers().get(SEC_KEY), "second");
+      msg.forward(ADDRESS1);
+    });
+
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("first", "first");
+    options.addHeader("second", "second");    
+    vertices[0].eventBus().send(ADDRESS1, body, options);
+    await();
+
+  }
+ 
+  @Test
+  public <T> void testForwardModifyHeaders(){
+    startNodes(2);
+    
+    final String body = "Test Body";
+    final String FIRST_KEY = "first";
+    final String SEC_KEY = "second";
+
+    vertices[0].eventBus().<T> consumer(ADDRESS1).handler((Message<T> msg) -> {
+
+      if (!msg.isForward()) {
+        msg.headers().remove("first");
+        msg.headers().remove("second");
+        msg.headers().add("third", "third");
+        msg.headers().add("fourth", "fourth");
+        msg.forward(ADDRESS2);
+
+      } else {
+        testComplete();
+      }
+
+    });
+
+    vertices[1].eventBus().<T> consumer(ADDRESS2).handler((Message<T> msg) -> {
+      assertTrue(msg.isForward());
+      assertEquals(body, msg.body());
+      assertNull(msg.headers().get(FIRST_KEY));
+      assertNull(msg.headers().get(SEC_KEY));      
+      assertEquals(msg.headers().get("third"), "third");
+      assertEquals(msg.headers().get("fourth"), "fourth");
+
+      msg.forward(ADDRESS1);
+    });
+
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("first", "first");
+    options.addHeader("second", "second");    
+    vertices[0].eventBus().send(ADDRESS1, body, options);
+    await();
+
+  }
   @Test
   public void testLocalHandlerNotReceive() throws Exception {
     startNodes(2);
@@ -221,6 +372,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
 
+  
   @Test
   public void testDecoderSendAsymmetric() throws Exception {
     startNodes(2);
