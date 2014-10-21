@@ -256,13 +256,11 @@ public class MessageImpl<U, V> implements Message<V> {
       for (int i = 0; i < numHeaders; i++) {
         int keyLength = wireBuffer.getInt(headersPos);
         headersPos += 4;
-        byte[] bytes = wireBuffer.getBytes(headersPos, headersPos + keyLength);
-        String key = new String(bytes, CharsetUtil.UTF_8);
+        String key = wireBuffer.getString(headersPos, headersPos + keyLength);
         headersPos += keyLength;
         int valLength = wireBuffer.getInt(headersPos);
         headersPos += 4;
-        bytes = wireBuffer.getBytes(headersPos, headersPos + valLength);
-        String val = new String(bytes, CharsetUtil.UTF_8);
+        String val = wireBuffer.getString(headersPos, headersPos + valLength);
         headersPos += valLength;
         headers.add(key, val);
       }
@@ -274,9 +272,8 @@ public class MessageImpl<U, V> implements Message<V> {
       messageCodec.encodeToWire(buff, sentBody);
     } else if (bodyPos != 0) {
       int length = wireBuffer.getInt(bodyPos);
-      byte[] bytes = wireBuffer.getBytes(bodyPos + 4, bodyPos + 4 + length);
-      buff.appendInt(bytes.length);
-      buff.appendBytes(bytes);
+      Buffer bytes = wireBuffer.slice(bodyPos, bodyPos + 4 + length);
+      buff.appendBuffer(bytes);
     }
   }
 
