@@ -27,8 +27,6 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.CaseInsensitiveHeaders;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.impl.ServerID;
 
 import java.util.List;
@@ -38,8 +36,6 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class MessageImpl<U, V> implements Message<V> {
-
-  private static final Logger log = LoggerFactory.getLogger(MessageImpl.class);
 
   private static final byte WIRE_PROTOCOL_VERSION = 1;
 
@@ -55,9 +51,8 @@ public class MessageImpl<U, V> implements Message<V> {
   private Buffer wireBuffer;
   private int bodyPos;
   private int headersPos;
-  private int absoluteBodyPos;
-  private int absoluteHeaderPos;
   private boolean isForwarded;
+  private boolean readBody;
 
   public MessageImpl() {
   }
@@ -95,8 +90,7 @@ public class MessageImpl<U, V> implements Message<V> {
       this.bodyPos = other.bodyPos;
       this.headersPos = other.headersPos;
       this.headersPos = other.headersPos;
-      this.absoluteBodyPos = other.absoluteBodyPos;
-      this.absoluteHeaderPos = other.absoluteHeaderPos;
+      this.readBody = other.readBody;
     }
     this.send = other.send;
     this.isForwarded = other.isForwarded;
@@ -118,8 +112,7 @@ public class MessageImpl<U, V> implements Message<V> {
       // The message has been read from the wire
       if (headersPos != 0) {
         readHeaders();
-      }
-      if (headers == null) {
+      } else {
         headers = new CaseInsensitiveHeaders();
       }
     }
@@ -129,7 +122,7 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public V body() {
     // Lazily decode the body
-    if (receivedBody == null && bodyPos != 0) {
+    if (receivedBody == null && bodyPos != 0 && !readBody) {
       // The message has been read from the wire
       readBody();
     }
@@ -215,26 +208,24 @@ public class MessageImpl<U, V> implements Message<V> {
     bytes = buffer.getBytes(pos, pos + length);
     String senderHost = new String(bytes, CharsetUtil.UTF_8);
     pos += length;
-
     isForwarded = (buffer.getByte(pos) == 0);
     pos++;
-
-    headersPos = absoluteHeaderPos = pos;
+    headersPos = pos;
     int headersLength = buffer.getInt(pos);
     pos += headersLength;
-    bodyPos = absoluteBodyPos = pos;
+    bodyPos = pos;
     sender = new ServerID(senderPort, senderHost);
     wireBuffer = buffer;
   }
 
   private void readBody() {
     receivedBody = messageCodec.decodeFromWire(bodyPos, wireBuffer);
-    bodyPos = 0;
+    readBody = true;
   }
 
   private void writeHeaders(Buffer buffer) {
-    //Headers exist, have been decoded from the wire, and need to be reencoded
     if (headers != null && !headers.isEmpty()) {
+      // Headers exist, have been decoded from the wire, or are new and need to be encoded
       int headersLengthPos = buffer.getByteBuf().writerIndex();
       buffer.appendInt(0);
       buffer.appendInt(headers.size());
@@ -245,15 +236,12 @@ public class MessageImpl<U, V> implements Message<V> {
       }
       int headersEndPos = buffer.getByteBuf().writerIndex();
       buffer.setInt(headersLengthPos, headersEndPos - headersLengthPos);
-    } else if((headers == null && headersPos != 0) || (headers != null && headersPos == 0)){
-      //headers could exist, just have never been read
+    } else if (headers == null && headersPos != 0) {
+      // Headers are in undecoded form in the buffer
       int length = wireBuffer.getInt(headersPos);
-      buffer.appendInt(length);
-      int numHeaders = wireBuffer.getInt(headersPos + 4);
-      buffer.appendInt(numHeaders);
-      byte[] rawHeaders = wireBuffer.getBytes(headersPos + 8, (headersPos) + length);
-      buffer.appendBytes(rawHeaders);
-    }else {
+      Buffer sliced = wireBuffer.slice(headersPos, headersPos + length);
+      buffer.appendBuffer(sliced);
+    } else {
       buffer.appendInt(4);
     }
   }
@@ -279,15 +267,14 @@ public class MessageImpl<U, V> implements Message<V> {
         headers.add(key, val);
       }
     }
-    headersPos = 0;
   }
 
   private void writeBody(Buffer buff) {
-    if(sentBody != null){
+    if (sentBody != null) {
       messageCodec.encodeToWire(buff, sentBody);
-    } else if((receivedBody == null && bodyPos != 0)  || (receivedBody != null && bodyPos == 0)){
-      int length = wireBuffer.getInt(absoluteBodyPos);
-      byte[] bytes = wireBuffer.getBytes(absoluteBodyPos + 4, absoluteBodyPos + 4 + length);
+    } else if (bodyPos != 0) {
+      int length = wireBuffer.getInt(bodyPos);
+      byte[] bytes = wireBuffer.getBytes(bodyPos + 4, bodyPos + 4 + length);
       buff.appendInt(bytes.length);
       buff.appendBytes(bytes);
     }
@@ -314,7 +301,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public void forward(String address, DeliveryOptions options) {
     this.address = address;
     this.isForwarded = true;
-    bus.forward(address, this, options);
+    bus.forward(this, options);
   }
 
   @Override

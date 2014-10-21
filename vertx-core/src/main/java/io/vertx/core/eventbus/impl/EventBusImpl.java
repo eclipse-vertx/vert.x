@@ -209,11 +209,11 @@ public class EventBusImpl implements EventBus {
     return this;
   }
 
-  EventBus forward(String address, Object message) {
-    return forward(address, message, null);
+  EventBus forward(Object message) {
+    return forward(message, null);
   }
 
-  EventBus forward(String address, Object message, DeliveryOptions options) {
+  EventBus forward(Object message, DeliveryOptions options) {
     sendOrPub(null, (MessageImpl)message, options, null);
     return this;
   }
