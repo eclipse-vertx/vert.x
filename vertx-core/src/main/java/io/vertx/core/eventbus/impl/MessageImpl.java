@@ -142,7 +142,7 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   public Buffer writeToWire() {
-    int length = 1024; 
+    int length = 1024;
     Buffer buffer = Buffer.buffer(length);
     buffer.appendInt(0);
     buffer.appendByte(WIRE_PROTOCOL_VERSION);
@@ -215,10 +215,10 @@ public class MessageImpl<U, V> implements Message<V> {
     bytes = buffer.getBytes(pos, pos + length);
     String senderHost = new String(bytes, CharsetUtil.UTF_8);
     pos += length;
-    
-    isForwarded = (buffer.getByte(pos) == 0);    
+
+    isForwarded = (buffer.getByte(pos) == 0);
     pos++;
-    
+
     headersPos = absoluteHeaderPos = pos;
     int headersLength = buffer.getInt(pos);
     pos += headersLength;
@@ -245,14 +245,14 @@ public class MessageImpl<U, V> implements Message<V> {
       }
       int headersEndPos = buffer.getByteBuf().writerIndex();
       buffer.setInt(headersLengthPos, headersEndPos - headersLengthPos);
-    } else if((headers == null && headersPos != 0) || (headers != null && headersPos == 0)){                        
+    } else if((headers == null && headersPos != 0) || (headers != null && headersPos == 0)){
       //headers could exist, just have never been read
-      int length = wireBuffer.getInt(headersPos);            
+      int length = wireBuffer.getInt(headersPos);
       buffer.appendInt(length);
       int numHeaders = wireBuffer.getInt(headersPos + 4);
-      buffer.appendInt(numHeaders);                  
+      buffer.appendInt(numHeaders);
       byte[] rawHeaders = wireBuffer.getBytes(headersPos + 8, (headersPos) + length);
-      buffer.appendBytes(rawHeaders);                  
+      buffer.appendBytes(rawHeaders);
     }else {
       buffer.appendInt(4);
     }
@@ -284,13 +284,13 @@ public class MessageImpl<U, V> implements Message<V> {
 
   private void writeBody(Buffer buff) {
     if(sentBody != null){
-      messageCodec.encodeToWire(buff, sentBody);          
-    } else if((receivedBody == null && bodyPos != 0)  || (receivedBody != null && bodyPos == 0)){      
+      messageCodec.encodeToWire(buff, sentBody);
+    } else if((receivedBody == null && bodyPos != 0)  || (receivedBody != null && bodyPos == 0)){
       int length = wireBuffer.getInt(absoluteBodyPos);
       byte[] bytes = wireBuffer.getBytes(absoluteBodyPos + 4, absoluteBodyPos + 4 + length);
       buff.appendInt(bytes.length);
       buff.appendBytes(bytes);
-    }      
+    }
   }
 
   private void writeString(Buffer buff, String str) {

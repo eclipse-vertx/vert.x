@@ -1224,7 +1224,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Override
   protected <T> void testForwardWithHeaders(T val, DeliveryOptions options) {
-    
+
     eb.<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
         assertEquals(val, msg.body());
         msg.forward(ADDRESS2);
@@ -1240,7 +1240,6 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
     
   }
-
 
   @Test
   public <T> void testForwardNoReadBodyOrHeaders(){
