@@ -105,10 +105,11 @@ public class EventBusImpl implements EventBus {
   private static final MessageCodec<String, String> NULL_MESSAGE_CODEC = new NullMessageCodec();
 
   private static final String PING_ADDRESS = "__vertx.ping";
-  private static final long PING_INTERVAL = 20000;
-  private static final long PING_REPLY_INTERVAL = 20000;
+  private static final Buffer PONG = Buffer.buffer(new byte[] { (byte)1 });
 
   private final VertxInternal vertx;
+  private final long pingInterval;
+  private final long pingReplyInterval;
   private ServerID serverID;
   private NetServer server;
   private AsyncMultiMap<String, ServerID> subs;
@@ -125,6 +126,8 @@ public class EventBusImpl implements EventBus {
   public EventBusImpl(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
+    this.pingInterval = -1;
+    this.pingReplyInterval = -1;
     this.serverID = new ServerID(-1, "localhost");
     this.server = null;
     this.subs = null;
@@ -134,11 +137,13 @@ public class EventBusImpl implements EventBus {
     putStandardCodecs();
   }
 
-  public EventBusImpl(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
+  public EventBusImpl(VertxInternal vertx, long pingInterval, long pingReplyInterval, int port, String hostname, ClusterManager clusterManager,
                       Handler<AsyncResult<Void>> listenHandler) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.metrics = vertx.metricsSPI().createMetrics(this);
+    this.pingInterval = pingInterval;
+    this.pingReplyInterval = pingReplyInterval;
     clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
       if (ar.succeeded()) {
         subs = ar.result();
@@ -378,7 +383,8 @@ public class EventBusImpl implements EventBus {
 
   private void setPingHandler() {
     pingRegistration = consumer(PING_ADDRESS).handler(msg -> {
-      msg.reply(null);
+      MessageImpl impl = (MessageImpl) msg;
+      impl.getSocket().write(PONG);
     });
   }
 
@@ -394,7 +400,7 @@ public class EventBusImpl implements EventBus {
             parser.fixedSizeMode(size);
           } else {
             MessageImpl received = new MessageImpl();
-            received.readFromWire(buff, userCodecMap, systemCodecs);
+            received.readFromWire(socket, buff, userCodecMap, systemCodecs);
             receiveMessage(received, -1, null, null);
             parser.fixedSizeMode(4);
             size = -1;
@@ -696,9 +702,9 @@ public class EventBusImpl implements EventBus {
   }
 
   private void schedulePing(ConnectionHolder holder) {
-    holder.pingTimeoutID = vertx.setTimer(PING_INTERVAL, id1 -> {
+    holder.pingTimeoutID = vertx.setTimer(pingInterval, id1 -> {
       // If we don't get a pong back in time we close the connection
-      holder.timeoutID = vertx.setTimer(PING_REPLY_INTERVAL, id2 -> {
+      holder.timeoutID = vertx.setTimer(pingReplyInterval, id2 -> {
         // Didn't get pong in time - consider connection dead
         log.warn("No pong from server " + serverID + " - will consider it dead");
         cleanupConnection(holder.theServerID, holder, true);

@@ -116,6 +116,18 @@ public class TestUtils {
   }
 
   /**
+   * @return a random positive long
+   */
+  public static long randomPositiveLong() {
+    while (true) {
+      long rand = random.nextLong();
+      if (rand > 0) {
+        return rand;
+      }
+    }
+  }
+
+  /**
    * @return a random long
    */
   public static long randomLong() {

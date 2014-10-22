@@ -27,6 +27,7 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ServerID;
 
 import java.util.List;
@@ -39,6 +40,7 @@ public class MessageImpl<U, V> implements Message<V> {
 
   private static final byte WIRE_PROTOCOL_VERSION = 1;
 
+  private NetSocket socket;
   private EventBusImpl bus;
   private ServerID sender;
   private String address;
@@ -69,6 +71,7 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   private MessageImpl(MessageImpl<U, V> other) {
+    this.socket = other.socket;
     this.bus = other.bus;
     this.sender = other.sender;
     this.address = other.address;
@@ -94,6 +97,10 @@ public class MessageImpl<U, V> implements Message<V> {
     }
     this.send = other.send;
     this.isForwarded = other.isForwarded;
+  }
+
+  NetSocket getSocket() {
+    return socket;
   }
 
   public MessageImpl<U, V> copyBeforeReceive() {
@@ -161,7 +168,7 @@ public class MessageImpl<U, V> implements Message<V> {
     return buffer;
   }
 
-  public void readFromWire(Buffer buffer, Map<String, MessageCodec> codecMap, MessageCodec[] systemCodecs) {
+  public void readFromWire(NetSocket socket, Buffer buffer, Map<String, MessageCodec> codecMap, MessageCodec[] systemCodecs) {
     int pos = 0;
     // Overall Length already read when passed in here
     byte protocolVersion = buffer.getByte(pos);
@@ -216,6 +223,7 @@ public class MessageImpl<U, V> implements Message<V> {
     bodyPos = pos;
     sender = new ServerID(senderPort, senderHost);
     wireBuffer = buffer;
+    this.socket = socket;
   }
 
   private void readBody() {

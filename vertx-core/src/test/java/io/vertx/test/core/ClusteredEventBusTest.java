@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
@@ -27,6 +28,7 @@ import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -458,4 +460,24 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     testReply(pojo, pojo, null, null);
   }
 
+  @Test
+  public void testClusteredPong() throws Exception {
+    startNodes(2, new VertxOptions().setClusterPingInterval(500).setClusterPingReplyInterval(500));
+    AtomicBoolean sending = new AtomicBoolean();
+    MessageConsumer<String> consumer = vertices[0].eventBus().<String>consumer("foobar").handler(msg -> {
+      if (!sending.get()) {
+        sending.set(true);
+        vertx.setTimer(6000, id -> {
+          vertices[1].eventBus().send("foobar", "whatever2");
+        });
+      } else {
+        testComplete();
+      }
+    });
+    consumer.completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      vertices[1].eventBus().send("foobar", "whatever");
+    });
+    await();
+  }
 }

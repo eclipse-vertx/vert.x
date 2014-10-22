@@ -136,7 +136,8 @@ public class VertxImpl implements VertxInternal {
           haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
         }
         Vertx inst = this;
-        eventBus = new EventBusImpl(this, options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
+        eventBus = new EventBusImpl(this, options.getClusterPingInterval(),
+            options.getClusterPingReplyInterval(),  options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
           if (resultHandler != null) {
             if (res.succeeded()) {
               resultHandler.handle(Future.completedFuture(inst));
