@@ -31,6 +31,7 @@ import io.vertx.core.net.NetServerOptions;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
@@ -65,6 +66,7 @@ public class SSLHelper {
   private ArrayList<Buffer> crlValues;
   private ClientAuth clientAuth = ClientAuth.NONE;
   private Set<String> enabledCipherSuites;
+  private boolean verifyHost;
 
   private SSLContext sslContext;
 
@@ -76,6 +78,7 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.verifyHost = options.isVerifyHost();
   }
 
   public SSLHelper(HttpServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -106,12 +109,6 @@ public class SSLHelper {
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
-  }
-
-  public synchronized void checkSSL(VertxInternal vertx) {
-    if (ssl && sslContext == null) {
-      sslContext = createContext(vertx);
-    }
   }
 
   public enum ClientAuth {
@@ -222,21 +219,13 @@ public class SSLHelper {
     };
   }
 
-  public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
-    if (sslContext == null) {
-      sslContext = createContext(vertx);
-    }
-    SSLEngine engine = sslContext.createSSLEngine();
-
+  private SslHandler createHandler(SSLEngine engine, boolean client) {
     if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
       engine.setEnabledCipherSuites(toUse);
     }
-
     engine.setEnabledProtocols(ENABLED_PROTOCOLS);
-
     engine.setUseClientMode(client);
-
     if (!client) {
       switch (getClientAuth()) {
         case REQUEST: {
@@ -252,11 +241,36 @@ public class SSLHelper {
           break;
         }
       }
+    } else if (verifyHost) {
+      SSLParameters sslParameters = engine.getSSLParameters();
+      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+      engine.setSSLParameters(sslParameters);
     }
     return new SslHandler(engine);
   }
 
-  public SSLContext getSslContext() {
+  private SSLContext getContext(VertxInternal vertx) {
+    if (sslContext == null) {
+      sslContext = createContext(vertx);
+    }
     return sslContext;
   }
+
+  // This is called to validate some of the SSL params as that only happens when the context is created
+  public synchronized void validate(VertxInternal vertx) {
+    if (ssl) {
+      getContext(vertx);
+    }
+  }
+
+  public SslHandler createSslHandler(VertxInternal vertx, boolean client, String host, int port) {
+    SSLEngine engine = getContext(vertx).createSSLEngine(host, port);
+    return createHandler(engine, client);
+  }
+
+  public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
+    SSLEngine engine = getContext(vertx).createSSLEngine();
+    return createHandler(engine, client);
+  }
+
 }

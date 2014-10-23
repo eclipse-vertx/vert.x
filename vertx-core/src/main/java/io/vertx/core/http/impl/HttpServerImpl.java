@@ -78,7 +78,6 @@ import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
 import io.vertx.core.streams.ReadStream;
 
-import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -217,29 +216,13 @@ public class HttpServerImpl implements HttpServer, Closeable {
         bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
         applyConnectionOptions(bootstrap);
-        sslHelper.checkSSL(vertx);
+        sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                SSLEngine engine = sslHelper.getSslContext().createSSLEngine();
-                engine.setUseClientMode(false);
-                switch (sslHelper.getClientAuth()) {
-                  case REQUEST: {
-                    engine.setWantClientAuth(true);
-                    break;
-                  }
-                  case REQUIRED: {
-                    engine.setNeedClientAuth(true);
-                    break;
-                  }
-                  case NONE: {
-                    engine.setNeedClientAuth(false);
-                    break;
-                  }
-                }
-                pipeline.addLast("ssl", new SslHandler(engine));
+                pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, false));
               }
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));

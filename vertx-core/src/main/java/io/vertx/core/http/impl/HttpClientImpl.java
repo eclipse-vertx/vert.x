@@ -59,9 +59,7 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -251,20 +249,13 @@ public class HttpClientImpl implements HttpClient {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.getEventLoop());
     bootstrap.channel(NioSocketChannel.class);
-    sslHelper.checkSSL(vertx);
+    sslHelper.validate(vertx);
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
         if (options.isSsl()) {
-          SSLEngine engine = sslHelper.getSslContext().createSSLEngine(host, port);
-          engine.setUseClientMode(true); // We are on the client side of the connection
-          if (options.isVerifyHost()) {
-            SSLParameters sslParameters = engine.getSSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-            engine.setSSLParameters(sslParameters);
-          }
-          pipeline.addLast("ssl", new SslHandler(engine));
+          pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, true, host, port));
         }
 
         pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));

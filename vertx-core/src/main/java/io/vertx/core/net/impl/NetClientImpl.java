@@ -146,7 +146,7 @@ public class NetClientImpl implements NetClient {
     Objects.requireNonNull(host, "No null host accepted");
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextImpl context = vertx.getOrCreateContext();
-    sslHelper.checkSSL(vertx);
+    sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.getEventLoop());
     bootstrap.channel(NioSocketChannel.class);

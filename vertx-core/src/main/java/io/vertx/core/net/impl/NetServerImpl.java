@@ -144,7 +144,7 @@ public class NetServerImpl implements NetServer, Closeable {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
         bootstrap.channel(NioServerSocketChannel.class);
-        sslHelper.checkSSL(vertx);
+        sslHelper.validate(vertx);
 
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
