@@ -170,11 +170,5 @@ public interface EventBus extends Measured {
   @GenIgnore
   EventBus unregisterDefaultCodec(Class clazz);
 
-  @GenIgnore
-  <T> T createProxy(Class<T> clazz, String address);
-
-  @GenIgnore
-  <T> MessageConsumer registerService(T service, String address);
-
 }
 

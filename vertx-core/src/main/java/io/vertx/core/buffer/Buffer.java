@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.ServiceHelper;
+import io.vertx.core.LoaderHelper;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
 
@@ -368,6 +368,6 @@ public interface Buffer extends ClusterSerializable {
   @GenIgnore
   ByteBuf getByteBuf();
 
-  static final BufferFactory factory = ServiceHelper.loadFactory(BufferFactory.class);
+  static final BufferFactory factory = LoaderHelper.loadFactory(BufferFactory.class);
 
 }

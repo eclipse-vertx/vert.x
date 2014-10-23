@@ -60,6 +60,6 @@ public interface Future<T> extends AsyncResult<T> {
    */
   void fail(Throwable throwable);
 
-  static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
+  static FutureFactory factory = LoaderHelper.loadFactory(FutureFactory.class);
 
 }

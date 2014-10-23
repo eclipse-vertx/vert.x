@@ -21,7 +21,7 @@ import java.util.ServiceLoader;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServiceHelper {
+public class LoaderHelper {
 
   public static <T> T loadFactory(Class<T> clazz) {
     ServiceLoader<T> factories = ServiceLoader.load(clazz);

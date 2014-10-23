@@ -118,16 +118,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertNull(options.getClusterManager());
     assertEquals(options, options.setClusterManager(mgr));
     assertSame(mgr, options.getClusterManager());
-    assertEquals(10 * 1000, options.getProxyOperationTimeout());
-    rand  = TestUtils.randomPositiveInt();
-    assertEquals(options, options.setProxyOperationTimeout(rand));
-    assertEquals(rand, options.getProxyOperationTimeout());
-    try {
-      options.setProxyOperationTimeout(0);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
     assertFalse(options.isHAEnabled());
     assertEquals(options, options.setHAEnabled(true));
     assertTrue(options.isHAEnabled());
@@ -195,7 +185,6 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setClusterHost(clusterHost);
     options.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
-    options.setProxyOperationTimeout(proxyOperationTimeout);
     options.setHAEnabled(haEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
@@ -211,7 +200,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(clusterHost, options.getClusterHost());
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
-    assertEquals(proxyOperationTimeout, options.getProxyOperationTimeout());
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
@@ -232,7 +220,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getMaxEventLoopExecuteTime(), json.getMaxEventLoopExecuteTime());
     assertEquals(def.getMaxWorkerExecuteTime(), json.getMaxWorkerExecuteTime());
     assertEquals(def.getInternalBlockingPoolSize(), json.getInternalBlockingPoolSize());
-    assertEquals(def.getProxyOperationTimeout(), json.getProxyOperationTimeout());
     assertEquals(def.isHAEnabled(), json.isHAEnabled());
     assertEquals(def.getQuorumSize(), json.getQuorumSize());
     assertEquals(def.getHAGroup(), json.getHAGroup());
@@ -251,7 +238,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(null, options.getClusterManager());
     assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime());
     assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime());
-    assertEquals(10 * 1000, options.getProxyOperationTimeout());
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
     assertNull(options.getHAGroup());
@@ -301,7 +287,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(null, options.getClusterManager());
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
-    assertEquals(proxyOperationTimeout, options.getProxyOperationTimeout());
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());

@@ -136,7 +136,7 @@ public class VertxImpl implements VertxInternal {
           haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
         }
         Vertx inst = this;
-        eventBus = new EventBusImpl(this, options.getProxyOperationTimeout(), options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
+        eventBus = new EventBusImpl(this, options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
           if (resultHandler != null) {
             if (res.succeeded()) {
               resultHandler.handle(Future.completedFuture(inst));
@@ -152,7 +152,7 @@ public class VertxImpl implements VertxInternal {
     } else {
       this.clusterManager = null;
       this.sharedData = new SharedDataImpl(this, clusterManager);
-      this.eventBus = new EventBusImpl(this, options.getProxyOperationTimeout());
+      this.eventBus = new EventBusImpl(this);
       if (resultHandler != null) {
         resultHandler.handle(Future.completedFuture(this));
       }

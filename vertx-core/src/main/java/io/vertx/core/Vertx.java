@@ -212,6 +212,6 @@ public interface Vertx extends Measured {
   @GenIgnore
   Set<VerticleFactory> verticleFactories();
 
-  static final VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
+  static final VertxFactory factory = LoaderHelper.loadFactory(VertxFactory.class);
 
 }

@@ -35,7 +35,6 @@ public class VertxOptions {
   public static final int DEFAULT_BLOCKED_THREAD_CHECK_PERIOD = 1000;
   public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2000l * 1000000;
   public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = 1l * 60 * 1000 * 1000000;
-  public static final int DEFAULT_PROXY_OPERATION_TIMEOUT = 10 * 1000;
   public static final int DEFAULT_QUORUM_SIZE = 1;
   public static final boolean DEFAULT_METRICS_ENABLED = false;
   public static final boolean DEFAULT_JMX_ENABLED = false;
@@ -50,7 +49,6 @@ public class VertxOptions {
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
   private long maxWorkerExecuteTime = DEFAULT_MAX_WORKER_EXECUTE_TIME;
   private ClusterManager clusterManager;
-  private long proxyOperationTimeout = DEFAULT_PROXY_OPERATION_TIMEOUT;
   private boolean haEnabled;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup;
@@ -71,7 +69,6 @@ public class VertxOptions {
     this.maxEventLoopExecuteTime = other.getMaxEventLoopExecuteTime();
     this.maxWorkerExecuteTime = other.getMaxWorkerExecuteTime();
     this.internalBlockingPoolSize = other.getInternalBlockingPoolSize();
-    this.proxyOperationTimeout = other.getProxyOperationTimeout();
     this.clusterManager = other.getClusterManager();
     this.haEnabled = other.isHAEnabled();
     this.quorumSize = other.getQuorumSize();
@@ -82,7 +79,6 @@ public class VertxOptions {
   }
 
   public VertxOptions(JsonObject json) {
-    this.proxyOperationTimeout = json.getInteger("proxyOperationTimeout", DEFAULT_PROXY_OPERATION_TIMEOUT);
     this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENT_LOOP_POOL_SIZE);
     this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKER_POOL_SIZE);
     this.clustered = json.getBoolean("clustered", DEFAULT_CLUSTERED);
@@ -211,18 +207,6 @@ public class VertxOptions {
     return this;
   }
 
-  public long getProxyOperationTimeout() {
-    return proxyOperationTimeout;
-  }
-
-  public VertxOptions setProxyOperationTimeout(long proxyOperationTimeout) {
-    if (proxyOperationTimeout < 1) {
-      throw new IllegalArgumentException("proxyOperationTimeout must be > 0");
-    }
-    this.proxyOperationTimeout = proxyOperationTimeout;
-    return this;
-  }
-
   public boolean isHAEnabled() {
     return haEnabled;
   }
@@ -296,7 +280,6 @@ public class VertxOptions {
     if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
     if (maxEventLoopExecuteTime != that.maxEventLoopExecuteTime) return false;
     if (maxWorkerExecuteTime != that.maxWorkerExecuteTime) return false;
-    if (proxyOperationTimeout != that.proxyOperationTimeout) return false;
     if (quorumSize != that.quorumSize) return false;
     if (workerPoolSize != that.workerPoolSize) return false;
     if (clusterHost != null ? !clusterHost.equals(that.clusterHost) : that.clusterHost != null) return false;
@@ -319,7 +302,6 @@ public class VertxOptions {
     result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
     result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);
-    result = 31 * result + (int) (proxyOperationTimeout ^ (proxyOperationTimeout >>> 32));
     result = 31 * result + (haEnabled ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);

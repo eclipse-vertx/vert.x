@@ -18,7 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.ServiceHelper;
+import io.vertx.core.LoaderHelper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.spi.WebSocketFrameFactory;
 
@@ -75,5 +75,5 @@ public interface WebSocketFrame {
    */
   boolean isFinal();
 
-  static final WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
+  static final WebSocketFrameFactory factory = LoaderHelper.loadFactory(WebSocketFrameFactory.class);
 }

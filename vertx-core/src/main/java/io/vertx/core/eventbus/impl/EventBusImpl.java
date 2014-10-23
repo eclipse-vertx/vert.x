@@ -118,29 +118,26 @@ public class EventBusImpl implements EventBus {
   private final ConcurrentMap<Class, MessageCodec> defaultCodecMap = new ConcurrentHashMap<>();
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
-  private final ProxyFactory proxyFactory;
   private MessageConsumer pingRegistration;
   private final EventBusMetrics metrics;
   private MessageCodec[] systemCodecs;
 
-  public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout) {
+  public EventBusImpl(VertxInternal vertx) {
     // Just some dummy server ID
     this.vertx = vertx;
     this.serverID = new ServerID(-1, "localhost");
     this.server = null;
     this.subs = null;
     this.clusterMgr = null;
-    this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
     this.metrics = vertx.metricsSPI().createMetrics(this);
     setPingHandler();
     putStandardCodecs();
   }
 
-  public EventBusImpl(VertxInternal vertx, long proxyOperationTimeout, int port, String hostname, ClusterManager clusterManager,
+  public EventBusImpl(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
                       Handler<AsyncResult<Void>> listenHandler) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
-    this.proxyFactory = new ProxyFactory(this, proxyOperationTimeout);
     this.metrics = vertx.metricsSPI().createMetrics(this);
     clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
       if (ar.succeeded()) {
@@ -271,16 +268,6 @@ public class EventBusImpl implements EventBus {
       userCodecMap.remove(codec.name());
     }
     return this;
-  }
-
-  @Override
-  public <T> T createProxy(Class<T> clazz, String address) {
-    return proxyFactory.createProxy(clazz, address);
-  }
-
-  @Override
-  public <T> MessageConsumer registerService(T service, String address) {
-    return proxyFactory.registerService(service, address);
   }
 
   @Override
