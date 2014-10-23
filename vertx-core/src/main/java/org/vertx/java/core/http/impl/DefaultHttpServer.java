@@ -169,23 +169,8 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             protected void initChannel(Channel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
               if (tcpHelper.isSSL()) {
-                SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
-                engine.setUseClientMode(false);
-                switch (tcpHelper.getClientAuth()) {
-                  case REQUEST: {
-                    engine.setWantClientAuth(true);
-                    break;
-                  }
-                  case REQUIRED: {
-                    engine.setNeedClientAuth(true);
-                    break;
-                  }
-                  case NONE: {
-                    engine.setNeedClientAuth(false);
-                    break;
-                  }
-                }
-                pipeline.addLast("ssl", new SslHandler(engine));
+                SslHandler sslHandler = tcpHelper.createSslHandler(vertx, false);
+                pipeline.addLast("ssl", sslHandler);
               }
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
