@@ -16,12 +16,17 @@
 
 package io.vertx.core;
 
+import io.vertx.core.json.JsonObject;
+
+import java.util.List;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class AbstractVerticle implements Verticle {
+public abstract class AbstractVerticle implements Verticle, Context {
 
   protected Vertx vertx;
+  protected Context context;
 
   @Override
   public Vertx getVertx() {
@@ -29,8 +34,44 @@ public abstract class AbstractVerticle implements Verticle {
   }
 
   @Override
-  public void setVertx(Vertx vertx) {
+  public void init(Vertx vertx, Context context) {
     this.vertx = vertx;
+    this.context = context;
+  }
+
+  @Override
+  public void runOnContext(Handler<Void> action) {
+    context.runOnContext(action);
+  }
+
+  @Override
+  public String deploymentID() {
+    return context.deploymentID();
+  }
+
+  @Override
+  public JsonObject config() {
+    return context.config();
+  }
+
+  @Override
+  public List<String> processArgs() {
+    return context.processArgs();
+  }
+
+  @Override
+  public boolean isEventLoopContext() {
+    return context.isEventLoopContext();
+  }
+
+  @Override
+  public boolean isWorker() {
+    return context.isWorker();
+  }
+
+  @Override
+  public boolean isMultiThreaded() {
+    return context.isMultiThreaded();
   }
 
   @Override

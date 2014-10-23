@@ -25,7 +25,7 @@ public interface Verticle {
 
   Vertx getVertx();
 
-  void setVertx(Vertx vertx);
+  void init(Vertx vertx, Context context);
 
   void start(Future<Void> startFuture) throws Exception;
 

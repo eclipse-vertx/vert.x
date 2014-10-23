@@ -350,7 +350,7 @@ public class DeploymentManager {
     }
     context.runOnContext(v -> {
       try {
-        verticle.setVertx(vertx);
+        verticle.init(vertx, context);
         Future<Void> startFuture = Future.future();
         verticle.start(startFuture);
         startFuture.setHandler(ar -> {

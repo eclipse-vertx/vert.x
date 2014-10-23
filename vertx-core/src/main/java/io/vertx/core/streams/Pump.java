@@ -18,7 +18,7 @@ package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.LoaderHelper;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.spi.PumpFactory;
 
 /**
@@ -81,7 +81,7 @@ public interface Pump {
    */
   int numberPumped();
 
-  static final PumpFactory factory = LoaderHelper.loadFactory(PumpFactory.class);
+  static final PumpFactory factory = ServiceHelper.loadFactory(PumpFactory.class);
 
 
 }
