@@ -17,9 +17,18 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -28,7 +37,12 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.MultiMap;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.*;
+import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.http.HttpClientRequest;
+import org.vertx.java.core.http.HttpClientResponse;
+import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.http.WebSocketFrame;
+import org.vertx.java.core.http.WebSocketVersion;
 import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
 import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.Closeable;
@@ -40,9 +54,7 @@ import org.vertx.java.core.net.impl.TCPSSLHelper;
 import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLParameters;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +97,8 @@ public class DefaultHttpClient implements HttpClient {
     this.vertx = vertx;
     actualCtx = vertx.getOrCreateContext();
     actualCtx.addCloseHook(closeHook);
+    // Default value of verifyHost for an HTTP client is true
+    tcpHelper.setVerifyHost(true);
   }
 
   // @Override
@@ -715,16 +729,8 @@ public class DefaultHttpClient implements HttpClient {
         protected void initChannel(Channel ch) throws Exception {
           ChannelPipeline pipeline = ch.pipeline();
           if (tcpHelper.isSSL()) {
-            SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine(host, port);
-            engine.setUseClientMode(true); // We are on the client side of the connection
-            if (tcpHelper.isVerifyHost()) {
-              SSLParameters sslParameters = engine.getSSLParameters();
-              sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-              engine.setSSLParameters(sslParameters);
-            }
-            pipeline.addLast("ssl", new SslHandler(engine));
+            pipeline.addLast("ssl", tcpHelper.createSslHandler(vertx, true, host, port));
           }
-
           pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
           if (tryUseCompression) {
             pipeline.addLast("inflater", new HttpContentDecompressor(true));

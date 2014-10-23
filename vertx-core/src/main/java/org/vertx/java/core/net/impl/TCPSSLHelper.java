@@ -26,7 +26,14 @@ import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -46,7 +53,7 @@ public class TCPSSLHelper {
   private static final Logger log = LoggerFactory.getLogger(TCPSSLHelper.class);
 
   private boolean ssl;
-  private boolean verifyHost = true;
+  private boolean verifyHost = false;
   private String keyStorePath;
   private String keyStorePassword;
   private String trustStorePath;
@@ -217,10 +224,6 @@ public class TCPSSLHelper {
     return trustAll;
   }
 
-  public SSLContext getSSLContext() {
-    return sslContext;
-  }
-
   public void setSSL(boolean ssl) {
     this.ssl = ssl;
   }
@@ -375,11 +378,7 @@ public class TCPSSLHelper {
   // Make sure SSLv3 is NOT enabled due to POODLE issue http://en.wikipedia.org/wiki/POODLE
   private static final String[] ENABLED_PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2"};
 
-  public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
-    if (sslContext == null) {
-      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
-    }
-    SSLEngine engine = getSSLContext().createSSLEngine();
+  private SslHandler createHandler(SSLEngine engine, boolean client) {
     engine.setEnabledProtocols(ENABLED_PROTOCOLS);
     engine.setUseClientMode(client);
     if (!client) {
@@ -397,7 +396,28 @@ public class TCPSSLHelper {
           break;
         }
       }
+    } else if (verifyHost) {
+      SSLParameters sslParameters = engine.getSSLParameters();
+      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+      engine.setSSLParameters(sslParameters);
     }
     return new SslHandler(engine);
+  }
+
+  private SSLContext getContext(VertxInternal vertx) {
+    if (sslContext == null) {
+      sslContext = createContext(vertx, keyStorePath, keyStorePassword, trustStorePath, trustStorePassword, trustAll);
+    }
+    return sslContext;
+  }
+
+  public SslHandler createSslHandler(VertxInternal vertx, boolean client, String host, int port) {
+    SSLEngine engine = getContext(vertx).createSSLEngine(host, port);
+    return createHandler(engine, client);
+  }
+
+  public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
+    SSLEngine engine = getContext(vertx).createSSLEngine();
+    return createHandler(engine, client);
   }
 }

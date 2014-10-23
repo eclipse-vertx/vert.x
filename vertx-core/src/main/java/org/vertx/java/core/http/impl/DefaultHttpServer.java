@@ -17,14 +17,29 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.ChannelGroupFutureListener;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
@@ -48,21 +63,29 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
-import org.vertx.java.core.net.impl.*;
+import org.vertx.java.core.net.impl.HandlerHolder;
+import org.vertx.java.core.net.impl.HandlerManager;
+import org.vertx.java.core.net.impl.ServerID;
+import org.vertx.java.core.net.impl.TCPSSLHelper;
+import org.vertx.java.core.net.impl.VertxEventLoopGroup;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static io.netty.handler.codec.http.HttpVersion.*;
 
 /**
  *
@@ -169,23 +192,7 @@ public class DefaultHttpServer implements HttpServer, Closeable {
             protected void initChannel(Channel ch) throws Exception {
               ChannelPipeline pipeline = ch.pipeline();
               if (tcpHelper.isSSL()) {
-                SSLEngine engine = tcpHelper.getSSLContext().createSSLEngine();
-                engine.setUseClientMode(false);
-                switch (tcpHelper.getClientAuth()) {
-                  case REQUEST: {
-                    engine.setWantClientAuth(true);
-                    break;
-                  }
-                  case REQUIRED: {
-                    engine.setNeedClientAuth(true);
-                    break;
-                  }
-                  case NONE: {
-                    engine.setNeedClientAuth(false);
-                    break;
-                  }
-                }
-                pipeline.addLast("ssl", new SslHandler(engine));
+                pipeline.addLast("ssl", tcpHelper.createSslHandler(vertx, false));
               }
               pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
