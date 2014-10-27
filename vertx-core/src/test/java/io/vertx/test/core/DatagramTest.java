@@ -448,12 +448,12 @@ public class DatagramTest extends VertxTestBase {
     String multicastNetworkInterface = TestUtils.randomAlphaString(100);
     boolean reuseAddress = rand.nextBoolean();
     boolean ipV6 = rand.nextBoolean();
-    JsonObject json = new JsonObject().putBoolean("broadcast", broadcast)
-      .putBoolean("loopbackModeDisabled", loopbackModeDisabled)
-      .putNumber("multicastTimeToLive", multicastTimeToLive)
-      .putString("multicastNetworkInterface", multicastNetworkInterface)
-      .putBoolean("reuseAddress", reuseAddress)
-      .putBoolean("ipV6", ipV6);
+    JsonObject json = new JsonObject().put("broadcast", broadcast)
+      .put("loopbackModeDisabled", loopbackModeDisabled)
+      .put("multicastTimeToLive", multicastTimeToLive)
+      .put("multicastNetworkInterface", multicastNetworkInterface)
+      .put("reuseAddress", reuseAddress)
+      .put("ipV6", ipV6);
     DatagramSocketOptions copy = new DatagramSocketOptions(json);
     assertEquals(broadcast, copy.isBroadcast());
     assertEquals(loopbackModeDisabled, copy.isLoopbackModeDisabled());

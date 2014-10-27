@@ -62,7 +62,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testOptions() {
     DeploymentOptions options = new DeploymentOptions();
     assertNull(options.getConfig());
-    JsonObject config = new JsonObject().putString("foo", "bar").putObject("obj", new JsonObject().putNumber("quux", 123));
+    JsonObject config = new JsonObject().put("foo", "bar").put("obj", new JsonObject().put("quux", 123));
     assertEquals(options, options.setConfig(config));
     assertEquals(config, options.getConfig());
     assertFalse(options.isWorker());
@@ -87,7 +87,7 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testCopyOptions() {
     DeploymentOptions options = new DeploymentOptions();
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     Random rand = new Random();
     boolean worker = rand.nextBoolean();
     boolean multiThreaded = rand.nextBoolean();
@@ -125,7 +125,7 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testJsonOptions() {
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     Random rand = new Random();
     boolean worker = rand.nextBoolean();
     boolean multiThreaded = rand.nextBoolean();
@@ -133,27 +133,25 @@ public class DeploymentTest extends VertxTestBase {
     boolean ha = rand.nextBoolean();
     List<String> cp = Arrays.asList("foo", "bar");
     JsonObject json = new JsonObject();
-    json.putObject("config", config);
-    json.putBoolean("worker", worker);
-    json.putBoolean("multiThreaded", multiThreaded);
-    json.putString("isolationGroup", isolationGroup);
-    json.putBoolean("ha", ha);
-    json.putArray("extraClasspath", new JsonArray(cp));
-    DeploymentOptions copy = new DeploymentOptions(json);
-    assertEquals(worker, copy.isWorker());
-    assertEquals(multiThreaded, copy.isMultiThreaded());
-    assertEquals(isolationGroup, copy.getIsolationGroup());
-    assertNotSame(config, copy.getConfig());
-    assertEquals("bar", copy.getConfig().getString("foo"));
-    assertEquals(ha, copy.isHA());
-    assertEquals(cp, copy.getExtraClasspath());
-    assertNotSame(cp, copy.getExtraClasspath());
+    json.put("config", config);
+    json.put("worker", worker);
+    json.put("multiThreaded", multiThreaded);
+    json.put("isolationGroup", isolationGroup);
+    json.put("ha", ha);
+    json.put("extraClasspath", new JsonArray(cp));
+    DeploymentOptions options = new DeploymentOptions(json);
+    assertEquals(worker, options.isWorker());
+    assertEquals(multiThreaded, options.isMultiThreaded());
+    assertEquals(isolationGroup, options.getIsolationGroup());
+    assertEquals("bar", options.getConfig().getString("foo"));
+    assertEquals(ha, options.isHA());
+    assertEquals(cp, options.getExtraClasspath());
   }
 
   @Test
   public void testToJson() {
     DeploymentOptions options = new DeploymentOptions();
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     Random rand = new Random();
     boolean worker = rand.nextBoolean();
     boolean multiThreaded = rand.nextBoolean();
@@ -171,11 +169,9 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
     assertEquals(isolationGroup, copy.getIsolationGroup());
-    assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHA());
     assertEquals(cp, copy.getExtraClasspath());
-    assertNotSame(cp, copy.getExtraClasspath());
   }
 
   @Test
@@ -932,8 +928,8 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   private JsonObject generateJSONObject() {
-    return new JsonObject().putString("foo", "bar").putNumber("blah", 123)
-      .putObject("obj", new JsonObject().putString("quux", "flip"));
+    return new JsonObject().put("foo", "bar").put("blah", 123)
+      .put("obj", new JsonObject().put("quux", "flip"));
   }
 
   public class MyVerticle extends AbstractVerticle {

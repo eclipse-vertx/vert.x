@@ -130,8 +130,8 @@ public class HAManager {
     this.quorumSize = quorumSize;
     this.group = group == null ? "__DEFAULT__" : group;
     this.haInfo = new JsonObject();
-    haInfo.putArray("verticles", new JsonArray());
-    haInfo.putString("group", this.group);
+    haInfo.put("verticles", new JsonArray());
+    haInfo.put("group", this.group);
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
     clusterManager.nodeListener(new NodeListener() {
@@ -170,7 +170,7 @@ public class HAManager {
       return;
     }
     synchronized (haInfo) {
-      JsonArray haMods = haInfo.getArray("verticles");
+      JsonArray haMods = haInfo.getJsonArray("verticles");
       Iterator<Object> iter = haMods.iterator();
       while (iter.hasNext()) {
         Object obj = iter.next();
@@ -341,11 +341,11 @@ public class HAManager {
   private void addToHA(String deploymentID, String verticleName, DeploymentOptions deploymentOptions) {
     String encoded;
     synchronized (haInfo) {
-      JsonObject verticleConf = new JsonObject().putString("dep_id", deploymentID);
-      verticleConf.putString("verticle_name", verticleName);
-      verticleConf.putObject("options", deploymentOptions.toJson());
-      JsonArray haMods = haInfo.getArray("verticles");
-      haMods.addObject(verticleConf);
+      JsonObject verticleConf = new JsonObject().put("dep_id", deploymentID);
+      verticleConf.put("verticle_name", verticleName);
+      verticleConf.put("options", deploymentOptions.toJson());
+      JsonArray haMods = haInfo.getJsonArray("verticles");
+      haMods.add(verticleConf);
       encoded = haInfo.encode();
       clusterMap.put(nodeID, encoded);
     }
@@ -435,7 +435,7 @@ public class HAManager {
   // Handle failover
   private void checkFailover(String failedNodeID, JsonObject theHAInfo) {
     try {
-      JsonArray deployments = theHAInfo.getArray("verticles");
+      JsonArray deployments = theHAInfo.getJsonArray("verticles");
       String group = theHAInfo.getString("group");
       String chosen = chooseHashedNode(group, failedNodeID.hashCode());
       if (chosen != null && chosen.equals(this.nodeID)) {
@@ -483,7 +483,7 @@ public class HAManager {
     // Now deploy this verticle on this node
     ContextImpl ctx = vertx.getContext();
     vertx.setContext(null);
-    JsonObject options = failedVerticle.getObject("options");
+    JsonObject options = failedVerticle.getJsonObject("options");
     doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
       if (result.succeeded()) {
         log.info("Successfully redeployed verticle " + verticleName + " after failover");

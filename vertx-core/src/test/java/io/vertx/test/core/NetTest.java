@@ -410,24 +410,24 @@ public class NetTest extends VertxTestBase {
     long reconnectInterval = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
-    json.putNumber("sendBufferSize", sendBufferSize)
-        .putNumber("receiveBufferSize", receiverBufferSize)
-        .putBoolean("reuseAddress", reuseAddress)
-        .putNumber("trafficClass", trafficClass)
-        .putBoolean("tcpNoDelay", tcpNoDelay)
-        .putBoolean("tcpKeepAlive", tcpKeepAlive)
-        .putNumber("soLinger", soLinger)
-        .putBoolean("usePooledBuffers", usePooledBuffers)
-        .putNumber("idleTimeout", idleTimeout)
-        .putBoolean("ssl", ssl)
-        .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
-        .putNumber("connectTimeout", connectTimeout)
-        .putBoolean("trustAll", trustAll)
-        .putArray("crlPaths", new JsonArray().addString(crlPath))
-        .putObject("keyStoreOptions", new JsonObject().putString("type", "jks").putString("password", ksPassword).putString("path", ksPath))
-        .putObject("trustStoreOptions", new JsonObject().putString("type", "jks").putString("password", tsPassword).putString("path", tsPath))
-        .putNumber("reconnectAttempts", reconnectAttempts)
-        .putNumber("reconnectInterval", reconnectInterval);
+    json.put("sendBufferSize", sendBufferSize)
+        .put("receiveBufferSize", receiverBufferSize)
+        .put("reuseAddress", reuseAddress)
+        .put("trafficClass", trafficClass)
+        .put("tcpNoDelay", tcpNoDelay)
+        .put("tcpKeepAlive", tcpKeepAlive)
+        .put("soLinger", soLinger)
+        .put("usePooledBuffers", usePooledBuffers)
+        .put("idleTimeout", idleTimeout)
+        .put("ssl", ssl)
+        .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
+        .put("connectTimeout", connectTimeout)
+        .put("trustAll", trustAll)
+        .put("crlPaths", new JsonArray().add(crlPath))
+        .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
+        .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+        .put("reconnectAttempts", reconnectAttempts)
+        .put("reconnectInterval", reconnectInterval);
 
     NetClientOptions options = new NetClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -456,23 +456,23 @@ public class NetTest extends VertxTestBase {
     assertEquals(reconnectInterval, options.getReconnectInterval());
 
     // Test other keystore/truststore types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
+    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
+      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
     options = new NetClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
+      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
     options = new NetClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
     // Invalid types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new NetClientOptions(json));
 
-    json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new NetClientOptions(json));
   }
 
@@ -598,23 +598,23 @@ public class NetTest extends VertxTestBase {
     int acceptBacklog = TestUtils.randomPortInt();
 
     JsonObject json = new JsonObject();
-    json.putNumber("sendBufferSize", sendBufferSize)
-      .putNumber("receiveBufferSize", receiverBufferSize)
-      .putBoolean("reuseAddress", reuseAddress)
-      .putNumber("trafficClass", trafficClass)
-      .putBoolean("tcpNoDelay", tcpNoDelay)
-      .putBoolean("tcpKeepAlive", tcpKeepAlive)
-      .putNumber("soLinger", soLinger)
-      .putBoolean("usePooledBuffers", usePooledBuffers)
-      .putNumber("idleTimeout", idleTimeout)
-      .putBoolean("ssl", ssl)
-      .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
-      .putArray("crlPaths", new JsonArray().addString(crlPath))
-      .putObject("keyStoreOptions", new JsonObject().putString("type", "jks").putString("password", ksPassword).putString("path", ksPath))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "jks").putString("password", tsPassword).putString("path", tsPath))
-      .putNumber("port", port)
-      .putString("host", host)
-      .putNumber("acceptBacklog", acceptBacklog);
+    json.put("sendBufferSize", sendBufferSize)
+      .put("receiveBufferSize", receiverBufferSize)
+      .put("reuseAddress", reuseAddress)
+      .put("trafficClass", trafficClass)
+      .put("tcpNoDelay", tcpNoDelay)
+      .put("tcpKeepAlive", tcpKeepAlive)
+      .put("soLinger", soLinger)
+      .put("usePooledBuffers", usePooledBuffers)
+      .put("idleTimeout", idleTimeout)
+      .put("ssl", ssl)
+      .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
+      .put("crlPaths", new JsonArray().add(crlPath))
+      .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
+      .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+      .put("port", port)
+      .put("host", host)
+      .put("acceptBacklog", acceptBacklog);
 
     NetServerOptions options = new NetServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -642,24 +642,24 @@ public class NetTest extends VertxTestBase {
     assertEquals(acceptBacklog, options.getAcceptBacklog());
 
     // Test other keystore/truststore types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
+    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
+      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
     options = new NetServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
+      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
     options = new NetServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
 
     // Invalid types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new NetServerOptions(json));
 
-    json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new NetServerOptions(json));
   }
 

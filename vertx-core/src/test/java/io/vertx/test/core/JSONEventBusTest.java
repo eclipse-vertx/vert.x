@@ -43,11 +43,11 @@ public class JSONEventBusTest extends VertxTestBase {
   public void testChangesNotVisibleObject1() {
     JsonObject obj = new JsonObject();
     eb.<JsonObject>consumer("foo").handler((Message<JsonObject> msg) -> {
-      assertFalse(msg.body().containsField("b"));
+      assertFalse(msg.body().containsKey("b"));
       testComplete();
     });
     eb.send("foo", obj);
-    obj.putString("b", "blurrgg");
+    obj.put("b", "blurrgg");
     await();
   }
 
@@ -55,11 +55,11 @@ public class JSONEventBusTest extends VertxTestBase {
   public void testChangesNotVisibleObject2() {
     final JsonObject obj = new JsonObject();
     eb.<JsonObject>consumer("foo").handler((Message<JsonObject> msg) -> {
-      msg.body().putString("b", "uqwduihwqd");
+      msg.body().put("b", "uqwduihwqd");
     });
     eb.send("foo", obj);
     vertx.setTimer(1000, id -> {
-      assertFalse(obj.containsField("b"));
+      assertFalse(obj.containsKey("b"));
       testComplete();
     });
     await();
@@ -71,7 +71,7 @@ public class JSONEventBusTest extends VertxTestBase {
     final JsonObject obj = new JsonObject(map);
     eb.<JsonObject>consumer("foo").handler((Message<JsonObject> msg) -> {
       vertx.setTimer(1000, id -> {
-        assertFalse(msg.body().containsField("b"));
+        assertFalse(msg.body().containsKey("b"));
         testComplete();
       });
     });

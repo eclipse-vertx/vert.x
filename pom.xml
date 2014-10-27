@@ -180,8 +180,6 @@
               </excludes>
             <systemPropertyVariables>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
-              <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
-              <java.util.logging.config.file>${project.basedir}/src/test/conf/logging.properties</java.util.logging.config.file>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <argLine>-Xmx1200M</argLine>

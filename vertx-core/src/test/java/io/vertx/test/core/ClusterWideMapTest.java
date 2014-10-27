@@ -96,7 +96,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapPutGetJsonObject() {
-    testMapPutGet(new JsonObject().putString("foo", "bar"), new JsonObject().putString("uihwqduh", "qiwiojw"));
+    testMapPutGet(new JsonObject().put("foo", "bar"), new JsonObject().put("uihwqduh", "qiwiojw"));
   }
 
   @Test
@@ -156,7 +156,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapPutIfAbsentGetJsonObject() {
-    testMapPutIfAbsentGet(new JsonObject().putString("foo", "bar"), new JsonObject().putString("uihwqduh", "qiwiojw"));
+    testMapPutIfAbsentGet(new JsonObject().put("foo", "bar"), new JsonObject().put("uihwqduh", "qiwiojw"));
   }
 
   @Test
@@ -218,7 +218,7 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapRemoveJsonObject() {
-    testMapRemove(new JsonObject().putString("foo", "bar"), new JsonObject().putString("uihwqduh", "qiwiojw"));
+    testMapRemove(new JsonObject().put("foo", "bar"), new JsonObject().put("uihwqduh", "qiwiojw"));
   }
 
   @Test
@@ -278,8 +278,8 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapRemoveIfPresentJsonObject() {
-    testMapRemoveIfPresent(new JsonObject().putString("foo", "bar"), new JsonObject().putString("uihwqduh", "qiwiojw"),
-                           new JsonObject().putString("regerg", "wfwef"));
+    testMapRemoveIfPresent(new JsonObject().put("foo", "bar"), new JsonObject().put("uihwqduh", "qiwiojw"),
+                           new JsonObject().put("regerg", "wfwef"));
   }
 
   @Test
@@ -340,8 +340,8 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapReplaceJsonObject() {
-    testMapReplace(new JsonObject().putString("foo", "bar"), new JsonObject().putString("uihwqduh", "qiwiojw"),
-      new JsonObject().putString("regerg", "wfwef"));
+    testMapReplace(new JsonObject().put("foo", "bar"), new JsonObject().put("uihwqduh", "qiwiojw"),
+      new JsonObject().put("regerg", "wfwef"));
   }
 
   @Test
@@ -402,8 +402,8 @@ public class ClusterWideMapTest extends VertxTestBase {
 
   @Test
   public void testMapReplaceIfPresentJsonObject() {
-    testMapReplaceIfPresent(new JsonObject().putString("foo", "bar"), new JsonObject().putString("uihwqduh", "qiwiojw"),
-      new JsonObject().putString("regerg", "wfwef"));
+    testMapReplaceIfPresent(new JsonObject().put("foo", "bar"), new JsonObject().put("uihwqduh", "qiwiojw"),
+      new JsonObject().put("regerg", "wfwef"));
   }
 
   @Test
@@ -579,21 +579,21 @@ public class ClusterWideMapTest extends VertxTestBase {
     getVertx().sharedData().<K, V>getClusterWideMap("foo", ar -> {
       assertTrue(ar.succeeded());
       AsyncMap<K, V> map = ar.result();
-      map.putIfAbsent(k, v, ar2 -> {
-        assertTrue(ar2.succeeded());
-        assertNull(ar2.result());
-        getVertx().sharedData().<K, V>getClusterWideMap("foo", ar3 -> {
-          AsyncMap<K, V> map2 = ar.result();
-          map2.get(k, ar4 -> {
-            assertEquals(v, ar4.result());
-            map.putIfAbsent(k, v, ar5 -> {
-              assertTrue(ar5.succeeded()); 
-              assertEquals(v, ar5.result());
-              testComplete();
-            });                                    
+        map.putIfAbsent(k, v, ar2 -> {
+          assertTrue(ar2.succeeded());
+          assertNull(ar2.result());
+          getVertx().sharedData().<K, V>getClusterWideMap("foo", ar3 -> {
+            AsyncMap<K, V> map2 = ar.result();
+            map2.get(k, ar4 -> {
+              assertEquals(v, ar4.result());
+              map.putIfAbsent(k, v, ar5 -> {
+                assertTrue(ar5.succeeded());
+                assertEquals(v, ar5.result());
+                testComplete();
+              });
+            });
           });
         });
-      });
     });
     await();
   }

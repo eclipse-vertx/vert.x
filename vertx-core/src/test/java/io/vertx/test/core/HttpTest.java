@@ -460,27 +460,27 @@ public class HttpTest extends HttpTestBase {
     boolean tryUseCompression = rand.nextBoolean();
 
     JsonObject json = new JsonObject();
-    json.putNumber("sendBufferSize", sendBufferSize)
-      .putNumber("receiveBufferSize", receiverBufferSize)
-      .putBoolean("reuseAddress", reuseAddress)
-      .putNumber("trafficClass", trafficClass)
-      .putBoolean("tcpNoDelay", tcpNoDelay)
-      .putBoolean("tcpKeepAlive", tcpKeepAlive)
-      .putNumber("soLinger", soLinger)
-      .putBoolean("usePooledBuffers", usePooledBuffers)
-      .putNumber("idleTimeout", idleTimeout)
-      .putBoolean("ssl", ssl)
-      .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
-      .putNumber("connectTimeout", connectTimeout)
-      .putBoolean("trustAll", trustAll)
-      .putArray("crlPaths", new JsonArray().addString(crlPath))
-      .putObject("keyStoreOptions", new JsonObject().putString("type", "jks").putString("password", ksPassword).putString("path", ksPath))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "jks").putString("password", tsPassword).putString("path", tsPath))
-      .putBoolean("verifyHost", verifyHost)
-      .putNumber("maxPoolSize", maxPoolSize)
-      .putBoolean("keepAlive", keepAlive)
-      .putBoolean("pipelining", pipelining)
-      .putBoolean("tryUseCompression", tryUseCompression);
+    json.put("sendBufferSize", sendBufferSize)
+      .put("receiveBufferSize", receiverBufferSize)
+      .put("reuseAddress", reuseAddress)
+      .put("trafficClass", trafficClass)
+      .put("tcpNoDelay", tcpNoDelay)
+      .put("tcpKeepAlive", tcpKeepAlive)
+      .put("soLinger", soLinger)
+      .put("usePooledBuffers", usePooledBuffers)
+      .put("idleTimeout", idleTimeout)
+      .put("ssl", ssl)
+      .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
+      .put("connectTimeout", connectTimeout)
+      .put("trustAll", trustAll)
+      .put("crlPaths", new JsonArray().add(crlPath))
+      .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
+      .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+      .put("verifyHost", verifyHost)
+      .put("maxPoolSize", maxPoolSize)
+      .put("keepAlive", keepAlive)
+      .put("pipelining", pipelining)
+      .put("tryUseCompression", tryUseCompression);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -512,22 +512,22 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tryUseCompression, options.isTryUseCompression());
 
     // Test other keystore/truststore types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
+    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
+      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
     options = new HttpClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
+      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
     options = new HttpClientOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
     // Invalid types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new HttpClientOptions(json));
-    json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new HttpClientOptions(json));
   }
 
@@ -662,26 +662,26 @@ public class HttpTest extends HttpTestBase {
     String wsSubProtocol = TestUtils.randomAlphaString(10);
 
     JsonObject json = new JsonObject();
-    json.putNumber("sendBufferSize", sendBufferSize)
-      .putNumber("receiveBufferSize", receiverBufferSize)
-      .putBoolean("reuseAddress", reuseAddress)
-      .putNumber("trafficClass", trafficClass)
-      .putBoolean("tcpNoDelay", tcpNoDelay)
-      .putBoolean("tcpKeepAlive", tcpKeepAlive)
-      .putNumber("soLinger", soLinger)
-      .putBoolean("usePooledBuffers", usePooledBuffers)
-      .putNumber("idleTimeout", idleTimeout)
-      .putBoolean("ssl", ssl)
-      .putArray("enabledCipherSuites", new JsonArray().addString(enabledCipher))
-      .putArray("crlPaths", new JsonArray().addString(crlPath))
-      .putObject("keyStoreOptions", new JsonObject().putString("type", "jks").putString("password", ksPassword).putString("path", ksPath))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "jks").putString("password", tsPassword).putString("path", tsPath))
-      .putNumber("port", port)
-      .putString("host", host)
-      .putNumber("acceptBacklog", acceptBacklog)
-      .putBoolean("compressionSupported", compressionSupported)
-      .putNumber("maxWebsocketFrameSize", maxWebsocketFrameSize)
-      .putString("websocketSubProtocols", wsSubProtocol);
+    json.put("sendBufferSize", sendBufferSize)
+      .put("receiveBufferSize", receiverBufferSize)
+      .put("reuseAddress", reuseAddress)
+      .put("trafficClass", trafficClass)
+      .put("tcpNoDelay", tcpNoDelay)
+      .put("tcpKeepAlive", tcpKeepAlive)
+      .put("soLinger", soLinger)
+      .put("usePooledBuffers", usePooledBuffers)
+      .put("idleTimeout", idleTimeout)
+      .put("ssl", ssl)
+      .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
+      .put("crlPaths", new JsonArray().add(crlPath))
+      .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
+      .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+      .put("port", port)
+      .put("host", host)
+      .put("acceptBacklog", acceptBacklog)
+      .put("compressionSupported", compressionSupported)
+      .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
+      .put("websocketSubProtocols", wsSubProtocol);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -712,22 +712,22 @@ public class HttpTest extends HttpTestBase {
     assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
 
     // Test other keystore/truststore types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", ksPassword))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "pkcs12").putString("password", tsPassword));
+    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
+      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
     options = new HttpServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
     assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
 
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "keyCert"))
-      .putObject("trustStoreOptions", new JsonObject().putString("type", "ca"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
+      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
     options = new HttpServerOptions(json);
     assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
     assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
 
     // Invalid types
-    json.putObject("keyStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new HttpServerOptions(json));
-    json.putObject("trustStoreOptions", new JsonObject().putString("type", "foo"));
+    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
     assertIllegalArgumentException(() -> new HttpServerOptions(json));
   }
 

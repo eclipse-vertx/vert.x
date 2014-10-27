@@ -65,10 +65,13 @@ public class Logger {
   }
 
   public void error(final Object message) {
+    //System.out.println("error: " + message);
     delegate.error(message);
   }
 
   public void error(final Object message, final Throwable t) {
+//    System.out.println("error: " + message);
+//    t.printStackTrace();
     delegate.error(message, t);
   }
 

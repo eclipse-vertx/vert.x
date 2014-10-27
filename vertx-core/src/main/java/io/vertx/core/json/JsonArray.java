@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
+ * Copyright (c) 2011-2014 The original author or authors
  * ------------------------------------------------------
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -16,165 +16,246 @@
 
 package io.vertx.core.json;
 
-import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.Json;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
- * Represents a JSON array.<p>
- * Instances of this class are not thread-safe.<p>
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonArray extends JsonElement implements Iterable<Object> {
+public class JsonArray implements Iterable<Object>, ClusterSerializable {
 
-  protected List list;
+  private List<Object> list;
 
-  public JsonArray(List list) {
-    this(list, true);
-  }
-
-  public JsonArray(Object[] array) {
-    this(new ArrayList<>(Arrays.asList(array)), true);
-  }
-
-  protected JsonArray(List list, boolean copy) {
-    this.list = copy ? convertList(list): list;
+  public JsonArray(String json) {
+    fromJson(json);
   }
 
   public JsonArray() {
-    this.list = new ArrayList<>();
+    list = new ArrayList<>();
   }
 
-  public JsonArray(String jsonString) {
-    list = Json.decodeValue(jsonString, List.class);
+  public JsonArray(List list) {
+    this.list = list;
   }
 
-  public JsonArray addString(String str) {
-    list.add(str);
-    return this;
+  public String getString(int pos) {
+    CharSequence cs = (CharSequence)list.get(pos);
+    return cs == null ? null : cs.toString();
   }
 
-  public JsonArray addObject(JsonObject value) {
-    list.add(value == null ? null : value.map);
-    return this;
-  }
-
-  public JsonArray addArray(JsonArray value) {
-    list.add(value == null ? null : value.list);
-    return this;
-  }
-
-  public JsonArray addElement(JsonElement value) {
-    if (value == null) {
-      list.add(null);
-      return this;
-    }
-    if (value.isArray()) {
-      return addArray(value.asArray());
-    }
-    return addObject(value.asObject());
-  }
-
-  public JsonArray addNumber(Number value) {
-    list.add(value);
-    return this;
-  }
-
-  public JsonArray addBoolean(Boolean value) {
-    list.add(value);
-    return this;
-  }
-
-  public JsonArray addBinary(byte[] value) {
-    String encoded = (value == null) ? null : Base64.getEncoder().encodeToString(value);
-    list.add(encoded);
-    return this;
-  }
-
-  public JsonArray add(Object value) {
-    if (value == null) {
-      list.add(null);
-    } else if (value instanceof JsonObject) {
-      addObject((JsonObject) value);
-    } else if (value instanceof JsonArray) {
-      addArray((JsonArray) value);
-    } else if (value instanceof String) {
-      addString((String) value);
-    } else if (value instanceof Number) {
-      addNumber((Number) value);
-    } else if (value instanceof Boolean) {
-      addBoolean((Boolean)value);
-    } else if (value instanceof byte[]) {
-      addBinary((byte[])value);
-    } else if (value instanceof Character) {
-      addString(value.toString());
+  public Integer getInteger(int pos) {
+    Number number = (Number)list.get(pos);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Integer) {
+      return (Integer)number; // Avoids unnecessary unbox/box
     } else {
-      throw new VertxException("Cannot add objects of class " + value.getClass() +" to JsonArray");
+      return number.intValue();
     }
+  }
+
+  public Long getLong(int pos) {
+    Number number = (Number)list.get(pos);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Long) {
+      return (Long)number; // Avoids unnecessary unbox/box
+    } else {
+      return number.longValue();
+    }
+  }
+
+  public Double getDouble(int pos) {
+    Number number = (Number)list.get(pos);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Double) {
+      return (Double)number; // Avoids unnecessary unbox/box
+    } else {
+      return number.doubleValue();
+    }
+  }
+
+  public Float getFloat(int pos) {
+    Number number = (Number)list.get(pos);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Float) {
+      return (Float)number; // Avoids unnecessary unbox/box
+    } else {
+      return number.floatValue();
+    }
+  }
+
+  public Boolean getBoolean(int pos) {
+    return (Boolean)list.get(pos);
+  }
+
+  public JsonObject getJsonObject(int pos) {
+    Object val = list.get(pos);
+    if (val instanceof Map) {
+      val = new JsonObject((Map)val);
+    }
+    return (JsonObject)val;
+  }
+
+  public JsonArray getJsonArray(int pos) {
+    Object val = list.get(pos);
+    if (val instanceof List) {
+      val = new JsonArray((List)val);
+    }
+    return (JsonArray)val;
+  }
+
+  public byte[] getBinary(int pos) {
+    String val = (String)list.get(pos);
+    if (val == null) {
+      return null;
+    } else {
+      return Base64.getDecoder().decode(val);
+    }
+  }
+
+  public Object getValue(int pos) {
+    return list.get(pos);
+  }
+
+  public boolean hasNull(int pos) {
+    return list.get(pos) == null;
+  }
+
+  public JsonArray add(CharSequence value) {
+    Objects.requireNonNull(value);
+    list.add(value.toString());
     return this;
   }
 
-  public int size() {
-    return list.size();
+  public JsonArray add(String value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
   }
 
-  public <T> T get(final int index) {
-    return convertObject(list.get(index));
+  public JsonArray add(Integer value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
   }
 
-  @Override
-  public Iterator<Object> iterator() {
-    return new Iterator<Object>() {
+  public JsonArray add(Long value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
+  }
 
-      Iterator<Object> iter = list.iterator();
+  public JsonArray add(Double value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
+  }
 
-      @Override
-      public boolean hasNext() {
-        return iter.hasNext();
-      }
+  public JsonArray add(Float value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
+  }
 
-      @Override
-      public Object next() {
-        return convertObject(iter.next());
-      }
+  public JsonArray add(Boolean value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
+  }
 
-      @Override
-      public void remove() {
-        iter.remove();
-      }
-    };
+  public JsonArray addNull() {
+    list.add(null);
+    return this;
+  }
+
+  public JsonArray add(JsonObject value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
+  }
+
+  public JsonArray add(JsonArray value) {
+    Objects.requireNonNull(value);
+    list.add(value);
+    return this;
+  }
+
+  public JsonArray add(byte[] value) {
+    Objects.requireNonNull(value);
+    list.add(Base64.getEncoder().encodeToString(value));
+    return this;
   }
 
   public boolean contains(Object value) {
     return list.contains(value);
   }
 
-  public String encode() throws EncodeException {
-    return Json.encode(this.list);
+  public boolean remove(Object value) {
+    return list.remove(value);
   }
 
-  public String encodePrettily() throws EncodeException {
-    return Json.encodePrettily(this.list);
+  public Object remove(int pos) {
+    return list.remove(pos);
   }
 
-  /**
-   *
-   * @return a copy of the JsonArray
-   */
-  public JsonArray copy() {
-    return new JsonArray(list, true);
+  public int size() {
+    return list.size();
+  }
+
+  public boolean isEmpty() {
+    return list.isEmpty();
+  }
+
+  public List getList() {
+    return list;
+  }
+
+  public JsonArray clear() {
+    list.clear();
+    return this;
+  }
+
+  @Override
+  public Iterator<Object> iterator() {
+    return new Iter(list.iterator());
+  }
+
+  public String encode() {
+    return Json.encode(list);
+  }
+
+  public String encodePrettily() {
+    return Json.encodePrettily(list);
   }
 
   @Override
   public String toString() {
     return encode();
+  }
+
+  public JsonArray copy() {
+    List<Object> copiedList = new ArrayList<>(list.size());
+    for (Object val: list) {
+      val = Json.checkAndCopy(val, true);
+      copiedList.add(val);
+    }
+    return new JsonArray(copiedList);
+  }
+
+  public Stream<Object> stream() {
+    return list.stream();
   }
 
   @Override
@@ -192,24 +273,56 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
     return list.hashCode();
   }
 
-  public Object[] toArray() {
-    return convertList(list).toArray();
+  @Override
+  public Buffer writeToBuffer() {
+    String encoded = encode();
+    byte[] bytes = encoded.getBytes();
+    Buffer buffer = Buffer.buffer(bytes.length + 4);
+    buffer.appendInt(bytes.length);
+    buffer.appendBytes(bytes);
+    return buffer;
   }
 
-  public List toList() {
-    return convertList(list);
+  @Override
+  public void readFromBuffer(Buffer buffer) {
+    int length = buffer.getInt(0);
+    String encoded = buffer.getString(4, 4 + length);
+    fromJson(encoded);
   }
 
-  @SuppressWarnings("unchecked")
-  private <T> T convertObject(final Object obj) {
-    Object retVal = obj;
-    if (obj != null) {
-      if (obj instanceof List) {
-        retVal = new JsonArray((List)obj, false);
-      } else if (obj instanceof Map) {
-        retVal = new JsonObject((Map<String, Object>) obj, false);
-      }
+  private void fromJson(String json) {
+    list = Json.decodeValue(json, List.class);
+  }
+
+  private class Iter implements Iterator<Object> {
+
+    final Iterator<Object> listIter;
+
+    Iter(Iterator<Object> listIter) {
+      this.listIter = listIter;
     }
-    return (T)retVal;
+
+    @Override
+    public boolean hasNext() {
+      return listIter.hasNext();
+    }
+
+    @Override
+    public Object next() {
+      Object val = listIter.next();
+      if (val instanceof Map) {
+        val = new JsonObject((Map)val);
+      } else if (val instanceof List) {
+        val = new JsonArray((List)val);
+      }
+      return val;
+    }
+
+    @Override
+    public void remove() {
+      listIter.remove();
+    }
   }
+
+
 }

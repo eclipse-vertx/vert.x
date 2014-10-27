@@ -221,7 +221,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     vertx.registerVerticleFactory(fact);
     TestVerticleFactory factResolve = new TestVerticleFactory("resolve", "actual:myverticle");
     vertx.registerVerticleFactory(factResolve);
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     DeploymentOptions original = new DeploymentOptions().setWorker(false).setConfig(config).setIsolationGroup("somegroup");
     DeploymentOptions options = new DeploymentOptions(original);
     vertx.deployVerticle("resolve:someid", options, res -> {
@@ -235,7 +235,7 @@ public class VerticleFactoryTest extends VertxTestBase {
       Deployment dep = ((VertxInternal)vertx).getDeployment(res.result());
       assertNotNull(dep);
       assertFalse(original.equals(dep.deploymentOptions()));
-      assertFalse(dep.deploymentOptions().getConfig().containsField("foo"));
+      assertFalse(dep.deploymentOptions().getConfig().containsKey("foo"));
       assertEquals("quux", dep.deploymentOptions().getConfig().getString("wibble"));
       assertTrue(dep.deploymentOptions().isWorker());
       assertEquals("othergroup", dep.deploymentOptions().getIsolationGroup());
@@ -475,7 +475,7 @@ public class VerticleFactoryTest extends VertxTestBase {
       identifierToResolve = identifier;
       deploymentOptionsToResolve = deploymentOptions;
       // Now we change the deployment options
-      deploymentOptions.setConfig(new JsonObject().putString("wibble", "quux"));
+      deploymentOptions.setConfig(new JsonObject().put("wibble", "quux"));
       deploymentOptions.setWorker(true);
       deploymentOptions.setIsolationGroup("othergroup");
       return resolvedIdentifier;

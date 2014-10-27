@@ -125,7 +125,7 @@ public class StarterTest extends VertxTestBase {
   @Test
   public void testRunVerticleWithConfString() throws Exception {
     Starter starter = new Starter();
-    JsonObject conf = new JsonObject().putString("foo", "bar").putNumber("wibble", 123);
+    JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
     String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", conf.encode()};
     Thread t = new Thread(() -> {
       starter.run(args);
@@ -145,7 +145,7 @@ public class StarterTest extends VertxTestBase {
     Path tempFile = Files.createTempFile(tempDir, "conf", "json");
     try {
       Starter starter = new Starter();
-      JsonObject conf = new JsonObject().putString("foo", "bar").putNumber("wibble", 123);
+      JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
       Files.write(tempFile, conf.encode().getBytes());
       String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
       Thread t = new Thread(() -> {

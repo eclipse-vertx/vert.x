@@ -42,7 +42,7 @@ public class TestVerticle extends AbstractVerticle {
       throw new IllegalStateException("Wrong tccl!");
     }
     vertx.eventBus().send("testcounts",
-      new JsonObject().putString("deploymentID", vertx.context().deploymentID()).putNumber("count", instanceCount.incrementAndGet()));
+      new JsonObject().put("deploymentID", vertx.context().deploymentID()).put("count", instanceCount.incrementAndGet()));
   }
 
   @Override

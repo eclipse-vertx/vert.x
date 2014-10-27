@@ -289,7 +289,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testSendJsonObject() {
     JsonObject obj = new JsonObject();
-    obj.putString(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).putNumber(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
+    obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testSend(obj, (received) -> {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied
@@ -299,7 +299,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testReplyJsonObject() {
     JsonObject obj = new JsonObject();
-    obj.putString(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).putNumber(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
+    obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testReply(obj, (received) -> {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied
@@ -309,7 +309,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testPublishJsonObject() {
     JsonObject obj = new JsonObject();
-    obj.putString(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).putNumber(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
+    obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied

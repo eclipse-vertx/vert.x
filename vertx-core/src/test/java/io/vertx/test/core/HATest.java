@@ -46,7 +46,7 @@ public class HATest extends VertxTestBase {
   public void testSimpleFailover() throws Exception {
     startNodes(2, new VertxOptions().setHAEnabled(true));
     DeploymentOptions options = new DeploymentOptions().setHA(true);
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
     CountDownLatch latch = new CountDownLatch(1);
     vertices[0].deployVerticle("java:" + HAVerticle1.class.getName(), options, ar -> {
@@ -65,7 +65,7 @@ public class HATest extends VertxTestBase {
   public void testQuorum() throws Exception {
     Vertx vertx1 = startVertx(2);
     DeploymentOptions options = new DeploymentOptions().setHA(true);
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
     vertx1.deployVerticle("java:" + HAVerticle1.class.getName(), options, ar -> {
       assertTrue(ar.succeeded());
@@ -91,7 +91,7 @@ public class HATest extends VertxTestBase {
     Vertx vertx2 = startVertx(3);
     Vertx vertx3 = startVertx(3);
     DeploymentOptions options = new DeploymentOptions().setHA(true);
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
     vertx1.deployVerticle("java:" + HAVerticle1.class.getName(), options, ar -> {
       assertTrue(ar.succeeded());
@@ -123,7 +123,7 @@ public class HATest extends VertxTestBase {
     Vertx vertx1 = startVertx();
     Vertx vertx2 = startVertx();
     DeploymentOptions options = new DeploymentOptions().setHA(true);
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
     vertx2.deployVerticle("java:" + HAVerticle1.class.getName(), options, ar -> {
       assertTrue(ar.succeeded());

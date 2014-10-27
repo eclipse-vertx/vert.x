@@ -81,10 +81,10 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
     super();
     this.certPaths = new ArrayList<>();
     this.certValues = new ArrayList<>();
-    for (Object certPath : json.getArray("certPaths", new JsonArray())) {
+    for (Object certPath : json.getJsonArray("certPaths", new JsonArray())) {
       certPaths.add((String) certPath);
     }
-    for (Object certValue : json.getArray("certValues", new JsonArray())) {
+    for (Object certValue : json.getJsonArray("certValues", new JsonArray())) {
       certValues.add(Buffer.buffer(Base64.getDecoder().decode((String) certValue)));
     }
   }

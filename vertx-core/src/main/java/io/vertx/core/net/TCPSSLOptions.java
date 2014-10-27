@@ -74,7 +74,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
     this.idleTimeout = json.getInteger("idleTimeout", 0);
     this.ssl = json.getBoolean("ssl", false);
-    JsonObject keyStoreJson = json.getObject("keyStoreOptions");
+    JsonObject keyStoreJson = json.getJsonObject("keyStoreOptions");
     if (keyStoreJson != null) {
       String type = keyStoreJson.getString("type", null);
       switch (type != null ? type.toLowerCase() : "jks") {
@@ -91,7 +91,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
           throw new IllegalArgumentException("Invalid key store type: " + type);
       }
     }
-    JsonObject trustStoreJson = json.getObject("trustStoreOptions");
+    JsonObject trustStoreJson = json.getJsonObject("trustStoreOptions");
     if (trustStoreJson != null) {
       String type = trustStoreJson.getString("type", null);
       switch (type != null ? type.toLowerCase() : "jks") {
@@ -108,14 +108,14 @@ public abstract class TCPSSLOptions extends NetworkOptions {
           throw new IllegalArgumentException("Invalid trust store type: " + type);
       }
     }
-    JsonArray arr = json.getArray("enabledCipherSuites");
-    this.enabledCipherSuites = arr == null ? null : new HashSet<String>(arr.toList());
-    arr = json.getArray("crlPaths");
-    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.toList());
+    JsonArray arr = json.getJsonArray("enabledCipherSuites");
+    this.enabledCipherSuites = arr == null ? null : new HashSet<String>(arr.getList());
+    arr = json.getJsonArray("crlPaths");
+    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.getList());
     this.crlValues = new ArrayList<>();
-    arr = json.getArray("crlValues");
+    arr = json.getJsonArray("crlValues");
     if (arr != null) {
-      ((List<byte[]>) arr.toList()).stream().map(Buffer::buffer).forEach(crlValues::add);
+      ((List<byte[]>) arr.getList()).stream().map(Buffer::buffer).forEach(crlValues::add);
     }
   }
 

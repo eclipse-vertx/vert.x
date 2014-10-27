@@ -30,7 +30,7 @@ public class AbstractVerticleTest extends VertxTestBase {
 
   @Test
   public void testFieldsSet() {
-    JsonObject config = new JsonObject().putString("foo", "bar");
+    JsonObject config = new JsonObject().put("foo", "bar");
     vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(config), onSuccess(res -> {
       assertEquals(res, verticle.getDeploymentID());
       assertEquals(config, verticle.getConfig());

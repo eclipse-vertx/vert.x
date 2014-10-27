@@ -32,7 +32,7 @@ public class VertxOptions {
   public static final boolean DEFAULT_CLUSTERED = false;
   public static final String DEFAULT_CLUSTER_HOST = "localhost";
   public static final int DEFAULT_CLUSTER_PORT = 0;
-  public static final int DEFAULT_BLOCKED_THREAD_CHECK_PERIOD = 1000;
+  public static final long DEFAULT_BLOCKED_THREAD_CHECK_PERIOD = 1000;
   public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2000l * 1000000;
   public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = 1l * 60 * 1000 * 1000000;
   public static final int DEFAULT_QUORUM_SIZE = 1;

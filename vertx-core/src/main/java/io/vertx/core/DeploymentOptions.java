@@ -63,14 +63,14 @@ public class DeploymentOptions {
   }
 
   public void fromJson(JsonObject json) {
-    this.config = json.getObject("config");
+    this.config = json.getJsonObject("config");
     this.worker = json.getBoolean("worker", false);
     this.multiThreaded = json.getBoolean("multiThreaded", false);
     this.isolationGroup = json.getString("isolationGroup", null);
     this.ha = json.getBoolean("ha", false);
-    JsonArray arr = json.getArray("extraClasspath", null);
+    JsonArray arr = json.getJsonArray("extraClasspath", null);
     if (arr != null) {
-      this.extraClasspath = arr.toList();
+      this.extraClasspath = arr.getList();
     }
   }
 
@@ -112,12 +112,12 @@ public class DeploymentOptions {
 
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
-    if (worker) json.putBoolean("worker", true);
-    if (multiThreaded) json.putBoolean("multiThreaded", true);
-    if (isolationGroup != null) json.putString("isolationGroup", isolationGroup);
-    if (ha) json.putBoolean("ha", true);
-    if (config != null) json.putObject("config", config);
-    if (extraClasspath != null) json.putArray("extraClasspath", new JsonArray(extraClasspath));
+    if (worker) json.put("worker", true);
+    if (multiThreaded) json.put("multiThreaded", true);
+    if (isolationGroup != null) json.put("isolationGroup", isolationGroup);
+    if (ha) json.put("ha", true);
+    if (config != null) json.put("config", config);
+    if (extraClasspath != null) json.put("extraClasspath", new JsonArray(extraClasspath));
     return json;
   }
 

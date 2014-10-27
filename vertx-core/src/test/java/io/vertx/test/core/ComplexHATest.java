@@ -87,7 +87,7 @@ public class ComplexHATest extends VertxTestBase {
       int ii = pos;
       for (int j = 0; j < numToDeploy; j++) {
         JsonObject config = new JsonObject();
-        config.putString("foo", TestUtils.randomAlphaString(100));
+        config.put("foo", TestUtils.randomAlphaString(100));
         DeploymentOptions options = new DeploymentOptions().setHA(true).setConfig(config);
         String verticleName = "java:io.vertx.test.core.HAVerticle" + (random.nextInt(3) + 1);
         toDeploy++;

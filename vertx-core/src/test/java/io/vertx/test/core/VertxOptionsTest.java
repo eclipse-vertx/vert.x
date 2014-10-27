@@ -262,21 +262,21 @@ public class VertxOptionsTest extends VertxTestBase {
     boolean jmxEnabled = rand.nextBoolean();
     String jmxDomain = TestUtils.randomAlphaString(100);
     options = new VertxOptions(new JsonObject().
-        putNumber("clusterPort", clusterPort).
-        putNumber("eventLoopPoolSize", eventLoopPoolSize).
-        putNumber("internalBlockingPoolSize", internalBlockingPoolSize).
-        putNumber("workerPoolSize", workerPoolSize).
-        putNumber("blockedThreadCheckPeriod", blockedThreadCheckPeriod).
-        putString("clusterHost", clusterHost).
-        putNumber("maxEventLoopExecuteTime", maxEventLoopExecuteTime).
-        putNumber("maxWorkerExecuteTime", maxWorkerExecuteTime).
-        putNumber("proxyOperationTimeout", proxyOperationTimeout).
-        putBoolean("haEnabled", haEnabled).
-        putNumber("quorumSize", quorumSize).
-        putString("haGroup", haGroup).
-        putBoolean("metricsEnabled", metricsEnabled).
-        putBoolean("jmxEnabled", jmxEnabled).
-        putString("jmxDomain", jmxDomain)
+        put("clusterPort", clusterPort).
+        put("eventLoopPoolSize", eventLoopPoolSize).
+        put("internalBlockingPoolSize", internalBlockingPoolSize).
+        put("workerPoolSize", workerPoolSize).
+        put("blockedThreadCheckPeriod", blockedThreadCheckPeriod).
+        put("clusterHost", clusterHost).
+        put("maxEventLoopExecuteTime", maxEventLoopExecuteTime).
+        put("maxWorkerExecuteTime", maxWorkerExecuteTime).
+        put("proxyOperationTimeout", proxyOperationTimeout).
+        put("haEnabled", haEnabled).
+        put("quorumSize", quorumSize).
+        put("haGroup", haGroup).
+        put("metricsEnabled", metricsEnabled).
+        put("jmxEnabled", jmxEnabled).
+        put("jmxDomain", jmxDomain)
     );
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());

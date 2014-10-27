@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 The original author or authors
+ * Copyright (c) 2011-2014 The original author or authors
  * ------------------------------------------------------
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -16,251 +16,309 @@
 
 package io.vertx.core.json;
 
-
-import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.Json;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
- * 
- * Represents a JSON object.<p>
- * Instances of this class are not thread-safe.<p>
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonObject extends JsonElement {
+public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterSerializable {
 
-  protected Map<String, Object> map;
+  private Map<String, Object> map;
 
-  /**
-   * Create a JSON object based on the specified Map
-   * @param map
-   */
-  public JsonObject(Map<String, Object> map) {
-    this(map, true);
+  public JsonObject(String json) {
+    fromJson(json);
   }
 
-  /**
-   * Create an empty JSON object
-   */
   public JsonObject() {
-    this.map = new LinkedHashMap<>();
+    map = new LinkedHashMap<>();
   }
 
-  protected JsonObject(Map<String, Object> map, boolean copy) {
-    this.map = copy ? convertMap(map) : map;
+  public JsonObject(Map<String, Object> map) {
+    this.map = map;
   }
 
-
-  /**
-   * Create a JSON object from a string form of a JSON object
-   * 
-   * @param jsonString
-   *          The string form of a JSON object
-   */
-  public JsonObject(String jsonString) {
-    map = Json.decodeValue(jsonString, Map.class);
+  public String getString(String key) {
+    Objects.requireNonNull(key);
+    CharSequence cs = (CharSequence)map.get(key);
+    return cs == null ? null : cs.toString();
   }
 
-  public JsonObject putString(String fieldName, String value) {
-    map.put(fieldName, value);
-    return this;
-  }
-
-  public JsonObject putObject(String fieldName, JsonObject value) {
-    map.put(fieldName, value == null ? null : value.map);
-    return this;
-  }
-
-  public JsonObject putArray(String fieldName, JsonArray value) {
-    map.put(fieldName, value == null ? null : value.list);
-    return this;
-  }
-
-  public JsonObject putElement(String fieldName, JsonElement value) {
-    if (value == null) {
-      map.put(fieldName, null);
-      return this;
-    } else if (value.isArray()) {
-      return putArray(fieldName, value.asArray());
+  public Integer getInteger(String key) {
+    Objects.requireNonNull(key);
+    Number number = (Number)map.get(key);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Integer) {
+      return (Integer)number;  // Avoids unnecessary unbox/box
     } else {
-      return putObject(fieldName, value.asObject());
+      return number.intValue();
     }
   }
 
-  public JsonObject putNumber(String fieldName, Number value) {
-    map.put(fieldName, value);
-    return this;
-  }
-
-  public JsonObject putBoolean(String fieldName, Boolean value) {
-    map.put(fieldName, value);
-    return this;
-  }
-
-  public JsonObject putBinary(String fieldName, byte[] binary) {
-    map.put(fieldName, binary == null ? null : Base64.getEncoder().encodeToString(binary));
-    return this;
-  }
-
-  public JsonObject putValue(String fieldName, Object value) {
-    if (value == null) {
-      putObject(fieldName, null);
-    } else if (value instanceof JsonObject) {
-      putObject(fieldName, (JsonObject)value);
-    } else if (value instanceof JsonArray) {
-      putArray(fieldName, (JsonArray)value);
-    } else if (value instanceof String) {
-      putString(fieldName, (String)value);
-    } else if (value instanceof Number) {
-      putNumber(fieldName, (Number)value);
-    } else if (value instanceof Boolean) {
-      putBoolean(fieldName, (Boolean)value);
-    } else if (value instanceof byte[]) {
-      putBinary(fieldName, (byte[])value);
+  public Long getLong(String key) {
+    Objects.requireNonNull(key);
+    Number number = (Number)map.get(key);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Long) {
+      return (Long)number;  // Avoids unnecessary unbox/box
     } else {
-      throw new VertxException("Cannot put objects of class " + value.getClass() +" in JsonObject");
+      return number.longValue();
     }
-    return this;
   }
 
-  public String getString(String fieldName) {
-    return (String) map.get(fieldName);
-  }
-
-  @SuppressWarnings("unchecked")
-  public JsonObject getObject(String fieldName) {
-    Map<String, Object> m = (Map<String, Object>) map.get(fieldName);
-    return m == null ? null : new JsonObject(m, false);
-  }
-
-  @SuppressWarnings("unchecked")
-  public JsonArray getArray(String fieldName) {
-    List<Object> l = (List<Object>) map.get(fieldName);
-    return l == null ? null : new JsonArray(l, false);
-  }
-
-  public JsonElement getElement(String fieldName) {
-    Object element = map.get(fieldName);
-    if (element == null) return null;
-
-    if (element instanceof Map<?,?>){
-      return getObject(fieldName);
+  public Double getDouble(String key) {
+    Objects.requireNonNull(key);
+    Number number = (Number)map.get(key);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Double) {
+      return (Double)number;  // Avoids unnecessary unbox/box
+    } else {
+      return number.doubleValue();
     }
-    if (element instanceof List<?>){
-      return getArray(fieldName);
+  }
+
+  public Float getFloat(String key) {
+    Objects.requireNonNull(key);
+    Number number = (Number)map.get(key);
+    if (number == null) {
+      return null;
+    } else if (number instanceof Float) {
+      return (Float)number;  // Avoids unnecessary unbox/box
+    } else {
+      return number.floatValue();
     }
-    throw new ClassCastException();
   }
 
-  public Number getNumber(String fieldName) {
-    return (Number) map.get(fieldName);
+  public Boolean getBoolean(String key) {
+    Objects.requireNonNull(key);
+    return (Boolean)map.get(key);
   }
 
-  public Long getLong(String fieldName) {
-    Number num = (Number) map.get(fieldName);
-    return num == null ? null : num.longValue();
+  public JsonObject getJsonObject(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    if (val instanceof Map) {
+      val = new JsonObject((Map)val);
+    }
+    return (JsonObject)val;
   }
 
-  public Integer getInteger(String fieldName) {
-    Number num = (Number) map.get(fieldName);
-    return num == null ? null : num.intValue();
+  public JsonArray getJsonArray(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    if (val instanceof List) {
+      val = new JsonArray((List)val);
+    }
+    return (JsonArray)val;
   }
 
-  public Boolean getBoolean(String fieldName) {
-    return (Boolean) map.get(fieldName);
-  }
-
-  public byte[] getBinary(String fieldName) {
-    String encoded = (String) map.get(fieldName);
+  public byte[] getBinary(String key) {
+    Objects.requireNonNull(key);
+    String encoded = (String) map.get(key);
     return encoded == null ? null : Base64.getDecoder().decode(encoded);
   }
 
-  public String getString(String fieldName, String def) {
-    String str = getString(fieldName);
-    return str == null ? def : str;
+  public Object getValue(String key) {
+    Objects.requireNonNull(key);
+    return map.get(key);
   }
 
-  public JsonObject getObject(String fieldName, JsonObject def) {
-    JsonObject obj = getObject(fieldName);
-    return obj == null ? def : obj;
+  public String getString(String key, String def) {
+    Objects.requireNonNull(key);
+    CharSequence cs = (CharSequence)map.get(key);
+    return cs != null || map.containsKey(key) ? cs == null ? null : cs.toString() : def;
   }
 
-  public JsonArray getArray(String fieldName, JsonArray def) {
-    JsonArray arr = getArray(fieldName);
-    return arr == null ? def : arr;
+  public Integer getInteger(String key, Integer def) {
+    Objects.requireNonNull(key);
+    Number val = (Number)map.get(key);
+    if (val == null) {
+      if (map.containsKey(key)) {
+        return null;
+      } else {
+        return def;
+      }
+    } else if (val instanceof Integer) {
+      return (Integer)val;  // Avoids unnecessary unbox/box
+    } else {
+      return val.intValue();
+    }
   }
 
-  public JsonElement getElement(String fieldName, JsonElement def) {
-    JsonElement elem = getElement(fieldName);
-    return elem == null ? def : elem;
+  public Long getLong(String key, Long def) {
+    Objects.requireNonNull(key);
+    Number val = (Number)map.get(key);
+    if (val == null) {
+      if (map.containsKey(key)) {
+        return null;
+      } else {
+        return def;
+      }
+    } else if (val instanceof Long) {
+      return (Long)val;  // Avoids unnecessary unbox/box
+    } else {
+      return val.longValue();
+    }
   }
 
-  public boolean getBoolean(String fieldName, boolean def) {
-    Boolean b = getBoolean(fieldName);
-    return b == null ? def : b;
+  public Double getDouble(String key, Double def) {
+    Objects.requireNonNull(key);
+    Number val = (Number)map.get(key);
+    if (val == null) {
+      if (map.containsKey(key)) {
+        return null;
+      } else {
+        return def;
+      }
+    } else if (val instanceof Double) {
+      return (Double)val;  // Avoids unnecessary unbox/box
+    } else {
+      return val.doubleValue();
+    }
   }
 
-  public Number getNumber(String fieldName, int def) {
-    Number n = getNumber(fieldName);
-    return n == null ? def : n;
+  public Float getFloat(String key, Float def) {
+    Objects.requireNonNull(key);
+    Number val = (Number)map.get(key);
+    if (val == null) {
+      if (map.containsKey(key)) {
+        return null;
+      } else {
+        return def;
+      }
+    } else if (val instanceof Float) {
+      return (Float)val;  // Avoids unnecessary unbox/box
+    } else {
+      return val.floatValue();
+    }
   }
 
-  public Long getLong(String fieldName, long def) {
-    Number num = (Number) map.get(fieldName);
-    return num == null ? def : num.longValue();
+  public Boolean getBoolean(String key, Boolean def) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    return val != null || map.containsKey(key) ? (Boolean)val : def;
   }
 
-  public Integer getInteger(String fieldName, int def) {
-    Number num = (Number) map.get(fieldName);
-    return num == null ? def : num.intValue();
+  public JsonObject getJsonObject(String key, JsonObject def) {
+    JsonObject val = getJsonObject(key);
+    return val != null || map.containsKey(key) ? val : def;
   }
 
-  public byte[] getBinary(String fieldName, byte[] def) {
-    byte[] b = getBinary(fieldName);
-    return b == null ? def : b;
+  public JsonArray getJsonArray(String key, JsonArray def) {
+    JsonArray val = getJsonArray(key);
+    return val != null || map.containsKey(key) ? val : def;
   }
 
-  public Set<String> getFieldNames() {
+  public byte[] getBinary(String key, byte[] def) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    return val != null || map.containsKey(key) ? (val == null ? null : Base64.getDecoder().decode((String)val)) : def;
+  }
+
+  public Object getValue(String key, Object def) {
+    Objects.requireNonNull(key);
+    Object val = getValue(key);
+    return val != null || map.containsKey(key) ? val : def;
+  }
+
+  public boolean containsKey(String key) {
+    Objects.requireNonNull(key);
+    return map.containsKey(key);
+  }
+
+  public Set<String> fieldNames() {
     return map.keySet();
   }
 
-  @SuppressWarnings("unchecked")
-  public <T> T getValue(String fieldName) {
-    return getField(fieldName);
+  public JsonObject put(String key, CharSequence value) {
+    Objects.requireNonNull(key);
+    map.put(key, value == null ? null : value.toString());
+    return this;
   }
 
-  @SuppressWarnings("unchecked")
-  public <T> T getField(String fieldName) {
-    Object obj = map.get(fieldName);
-    if (obj instanceof Map) {
-      obj = new JsonObject((Map)obj, false);
-    } else if (obj instanceof List) {
-      obj = new JsonArray((List)obj, false);
-    }
-    return (T)obj;
+  public JsonObject put(String key, String value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
   }
 
-  public Object removeField(String fieldName) {
-    return map.remove(fieldName);
+  public JsonObject put(String key, Integer value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
   }
 
-  /**
-    * The containsField() method returns a boolean indicating whether the object has the specified property.
-    * @param fieldName to lookup
-    * @return true if property exist (null value is also considered to exist).
-    */
-  public boolean containsField(String fieldName) {
-    return map.containsKey(fieldName);
+  public JsonObject put(String key, Long value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
   }
 
-  public int size() {
-    return map.size();
+  public JsonObject put(String key, Double value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
+  }
+
+  public JsonObject put(String key, Float value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
+  }
+
+  public JsonObject put(String key, Boolean value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
+  }
+
+  public JsonObject putNull(String key) {
+    Objects.requireNonNull(key);
+    map.put(key, null);
+    return this;
+  }
+
+  public JsonObject put(String key, JsonObject value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
+  }
+
+  public JsonObject put(String key, JsonArray value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
+  }
+
+  public JsonObject put(String key, byte[] value) {
+    Objects.requireNonNull(key);
+    map.put(key, value == null ? null : Base64.getEncoder().encodeToString(value));
+    return this;
+  }
+
+  public JsonObject put(String key, Object value) {
+    Objects.requireNonNull(key);
+    value = Json.checkAndCopy(value, false);
+    map.put(key, value);
+    return this;
+  }
+
+  public Object remove(String key) {
+    return map.remove(key);
   }
 
   public JsonObject mergeIn(JsonObject other) {
@@ -269,19 +327,47 @@ public class JsonObject extends JsonElement {
   }
 
   public String encode() {
-    return Json.encode(this.map);
+    return Json.encode(map);
   }
 
   public String encodePrettily() {
-    return Json.encodePrettily(this.map);
+    return Json.encodePrettily(map);
   }
 
-  /**
-   * @return a copy of this JsonObject such that changes in the original are not reflected in the copy, and
-   * vice versa
-   */
   public JsonObject copy() {
-    return new JsonObject(map, true);
+    Map<String, Object> copiedMap = new HashMap<>(map.size());
+    for (Map.Entry<String, Object> entry: map.entrySet()) {
+      Object val = entry.getValue();
+      val = Json.checkAndCopy(val, true);
+      copiedMap.put(entry.getKey(), val);
+    }
+    return new JsonObject(copiedMap);
+  }
+
+  public Map<String, Object> getMap() {
+    return map;
+  }
+
+  public Stream<Map.Entry<String, Object>> stream() {
+    return map.entrySet().stream();
+  }
+
+  @Override
+  public Iterator<Map.Entry<String, Object>> iterator() {
+    return new Iter(map.entrySet().iterator());
+  }
+
+  public int size() {
+    return map.size();
+  }
+
+  public JsonObject clear() {
+    map.clear();
+    return this;
+  }
+
+  public boolean isEmpty() {
+    return map.isEmpty();
   }
 
   @Override
@@ -304,12 +390,55 @@ public class JsonObject extends JsonElement {
     return map.hashCode();
   }
 
-  /**
-   *
-   * @return the underlying Map for this JsonObject
-   */
-  public Map<String, Object> toMap() {
-    return convertMap(map);
+  @Override
+  public Buffer writeToBuffer() {
+    String encoded = encode();
+    byte[] bytes = encoded.getBytes();
+    Buffer buffer = Buffer.buffer(bytes.length + 4);
+    buffer.appendInt(bytes.length);
+    buffer.appendBytes(bytes);
+    return buffer;
+  }
+
+  @Override
+  public void readFromBuffer(Buffer buffer) {
+    int length = buffer.getInt(0);
+    String encoded = buffer.getString(4, 4 + length);
+    fromJson(encoded);
+  }
+
+  private void fromJson(String json) {
+    map = Json.decodeValue(json, Map.class);
+  }
+
+  private class Iter implements Iterator<Map.Entry<String, Object>> {
+
+    final Iterator<Map.Entry<String, Object>> mapIter;
+
+    Iter(Iterator<Map.Entry<String, Object>> mapIter) {
+      this.mapIter = mapIter;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return mapIter.hasNext();
+    }
+
+    @Override
+    public Map.Entry<String, Object> next() {
+      Map.Entry<String, Object> entry = mapIter.next();
+      if (entry.getValue() instanceof Map) {
+        entry.setValue(new JsonObject((Map)entry.getValue()));
+      } else if (entry.getValue() instanceof List) {
+        entry.setValue(new JsonArray((List) entry.getValue()));
+      }
+      return entry;
+    }
+
+    @Override
+    public void remove() {
+      mapIter.remove();
+    }
   }
 
 }

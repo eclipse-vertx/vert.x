@@ -75,9 +75,9 @@ public class KeyStoreTest extends VertxTestBase {
     String path = TestUtils.randomAlphaString(100);
     String value = TestUtils.randomAlphaString(100);
     options = new JKSOptions(new JsonObject().
-        putString("password", password).
-        putString("path", path).
-        putBinary("value", value.getBytes()));
+        put("password", password).
+        put("path", path).
+        put("value", value.getBytes()));
     assertEquals(password, options.getPassword());
     assertEquals(path, options.getPath());
     assertEquals(Buffer.buffer(value), options.getValue());
@@ -133,9 +133,9 @@ public class KeyStoreTest extends VertxTestBase {
     String path = TestUtils.randomAlphaString(100);
     String value = TestUtils.randomAlphaString(100);
     options = new PKCS12Options(new JsonObject().
-        putString("password", password).
-        putString("path", path).
-        putBinary("value", value.getBytes()));
+        put("password", password).
+        put("path", path).
+        put("value", value.getBytes()));
     assertEquals(password, options.getPassword());
     assertEquals(path, options.getPath());
     assertEquals(Buffer.buffer(value), options.getValue());
@@ -194,10 +194,10 @@ public class KeyStoreTest extends VertxTestBase {
     String certPath = TestUtils.randomAlphaString(100);
     String certValue = TestUtils.randomAlphaString(100);
     options = new KeyCertOptions(new JsonObject().
-        putString("keyPath", keyPath).
-        putBinary("keyValue", keyValue.getBytes()).
-        putString("certPath", certPath).
-        putBinary("certValue", certValue.getBytes()));
+        put("keyPath", keyPath).
+        put("keyValue", keyValue.getBytes()).
+        put("certPath", certPath).
+        put("certValue", certValue.getBytes()));
     assertEquals(keyPath, options.getKeyPath());
     assertEquals(Buffer.buffer(keyValue), options.getKeyValue());
     assertEquals(certPath, options.getCertPath());
@@ -250,8 +250,8 @@ public class KeyStoreTest extends VertxTestBase {
     String certPath = TestUtils.randomAlphaString(100);
     String certValue = TestUtils.randomAlphaString(100);
     JsonObject json = new JsonObject().
-        putArray("certPaths", new JsonArray().addString(certPath)).
-        putArray("certValues", new JsonArray().addBinary(certValue.getBytes()));
+        put("certPaths", new JsonArray().add(certPath)).
+        put("certValues", new JsonArray().add(certValue.getBytes()));
     options = new CaOptions(json);
     assertEquals(Collections.singletonList(certPath), options.getCertPaths());
     assertEquals(Collections.singletonList(Buffer.buffer(certValue)), options.getCertValues());

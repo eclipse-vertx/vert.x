@@ -47,10 +47,10 @@ public class DeliveryOptions {
   public DeliveryOptions(JsonObject json) {
     this.timeout = json.getLong("timeout", DEFAULT_TIMEOUT);
     this.codecName = json.getString("codecName", null);
-    JsonObject hdrs = json.getObject("headers", null);
+    JsonObject hdrs = json.getJsonObject("headers", null);
     if (hdrs != null) {
       headers = new CaseInsensitiveHeaders();
-      for (Map.Entry<String, Object> entry: hdrs.toMap().entrySet()) {
+      for (Map.Entry<String, Object> entry: hdrs) {
         if (!(entry.getValue() instanceof String)) {
           throw new IllegalStateException("Invalid type for message header value " + entry.getValue().getClass());
         }
