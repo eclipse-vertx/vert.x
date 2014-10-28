@@ -196,7 +196,7 @@
               <java.util.logging.config.file>${project.basedir}/src/test/conf/logging.properties</java.util.logging.config.file>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
-            <argLine>-Xmx256M</argLine>
+            <argLine>-Xmx1200M</argLine>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
           </configuration>
