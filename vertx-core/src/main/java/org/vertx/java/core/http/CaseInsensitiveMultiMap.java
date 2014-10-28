@@ -366,6 +366,19 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
     return remove(name.toString());
   }
 
+  public String toString() {
+    StringBuilder sb=new StringBuilder();
+    Iterator<Map.Entry<String, String>> iterator = iterator();
+    while(iterator.hasNext()) {
+      Map.Entry<String, String> entry=iterator.next();
+      sb.append(entry.getKey());
+      sb.append(": ");
+      sb.append(entry.getValue());
+      sb.append("\n");
+    }
+    return sb.toString();
+  }
+
   private static final class MapEntry implements Map.Entry<String, String> {
     final int hash;
     final String key;
