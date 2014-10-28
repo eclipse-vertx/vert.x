@@ -198,6 +198,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     return this;
   }
 
+  public JsonArray add(Object value) {
+    Objects.requireNonNull(value);
+    value = Json.checkAndCopy(value, false);
+    list.add(value);
+    return this;
+  }
+
   public boolean contains(Object value) {
     return list.contains(value);
   }

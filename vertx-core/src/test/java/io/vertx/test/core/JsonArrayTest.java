@@ -23,8 +23,10 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -486,6 +488,50 @@ public class JsonArrayTest {
     } catch (NullPointerException e) {
       // OK
     }
+  }
+
+  @Test
+  public void testAddObject() {
+    jsonArray.add((Object)"bar");
+    jsonArray.add((Object)(Integer.valueOf(123)));
+    jsonArray.add((Object)(Long.valueOf(123l)));
+    jsonArray.add((Object)(Float.valueOf(1.23f)));
+    jsonArray.add((Object)(Double.valueOf(1.23d)));
+    jsonArray.add((Object)true);
+    byte[] bytes = TestUtils.randomByteArray(10);
+    jsonArray.add((Object)(bytes));
+    JsonObject obj = new JsonObject().put("foo", "blah");
+    JsonArray arr = new JsonArray().add("quux");
+    jsonArray.add((Object)obj);
+    jsonArray.add((Object)arr);
+    assertEquals("bar", jsonArray.getString(0));
+    assertEquals(Integer.valueOf(123), jsonArray.getInteger(1));
+    assertEquals(Long.valueOf(123l), jsonArray.getLong(2));
+    assertEquals(Float.valueOf(1.23f), jsonArray.getFloat(3));
+    assertEquals(Double.valueOf(1.23d), jsonArray.getDouble(4));
+    assertEquals(true, jsonArray.getBoolean(5));
+    assertTrue(TestUtils.byteArraysEqual(bytes, jsonArray.getBinary(6)));
+    assertEquals(obj, jsonArray.getJsonObject(7));
+    assertEquals(arr, jsonArray.getJsonArray(8));
+    try {
+      jsonArray.add(new SomeClass());
+      fail();
+    } catch (IllegalStateException e) {
+      // OK
+    }
+    try {
+      jsonArray.add(new BigDecimal(123));
+      fail();
+    } catch (IllegalStateException e) {
+      // OK
+    }
+    try {
+      jsonArray.add(new Date());
+      fail();
+    } catch (IllegalStateException e) {
+      // OK
+    }
+
   }
 
   @Test
