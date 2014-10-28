@@ -75,16 +75,4 @@ public interface Message<T> {
    */
   void fail(int failureCode, String message);
 
-  void forward(String address);
-
-  void forward(String address, DeliveryOptions options);
-
-  /**
-   * Indicates whether or not this message has been received as a result of a forward operation
-   * versus a send or publish.
-   * 
-   * @return whether or not the message has been fowarded
-   */
-  boolean isForward();
-
 }
