@@ -59,13 +59,22 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testRunVerticle() throws Exception {
+    testRunVerticleMultiple(1);
+  }
+
+  @Test
+  public void testRunVerticleMultipleInstances() throws Exception {
+    testRunVerticleMultiple(10);
+  }
+
+  public void testRunVerticleMultiple(int instances) throws Exception {
     Starter starter = new Starter();
-    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
+    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-instances", String.valueOf(instances)};
     Thread t = new Thread(() -> {
       starter.run(args);
     });
     t.start();
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    waitUntil(() -> TestVerticle.instanceCount.get() == instances);
     assertTrue(t.isAlive()); // It's blocked
     List<String> processArgs = TestVerticle.processArgs;
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);

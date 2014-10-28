@@ -481,7 +481,7 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticle(String identifier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    if (options.isHA() && haManager != null) {
+    if (options.isHa() && haManager != null) {
       haManager.deployVerticle(identifier, options, completionHandler);
     } else {
       deploymentManager.deployVerticle(identifier, options, completionHandler);

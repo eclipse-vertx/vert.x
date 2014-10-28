@@ -24,7 +24,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -88,7 +87,7 @@ public class ComplexHATest extends VertxTestBase {
       for (int j = 0; j < numToDeploy; j++) {
         JsonObject config = new JsonObject();
         config.put("foo", TestUtils.randomAlphaString(100));
-        DeploymentOptions options = new DeploymentOptions().setHA(true).setConfig(config);
+        DeploymentOptions options = new DeploymentOptions().setHa(true).setConfig(config);
         String verticleName = "java:io.vertx.test.core.HAVerticle" + (random.nextInt(3) + 1);
         toDeploy++;
         v.deployVerticle(verticleName, options, ar -> {

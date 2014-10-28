@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -77,8 +78,8 @@ public class DeploymentManager {
   public void deployVerticle(Verticle verticle, DeploymentOptions options,
                              Handler<AsyncResult<String>> completionHandler) {
     ContextImpl currentContext = vertx.getOrCreateContext();
-    doDeploy("java:" + verticle.getClass().getName(), verticle, options, currentContext, completionHandler,
-             getCurrentClassLoader());
+    doDeploy("java:" + verticle.getClass().getName(), options, currentContext, completionHandler,
+             getCurrentClassLoader(), verticle);
   }
 
   public void deployVerticle(String identifier,
@@ -104,13 +105,15 @@ public class DeploymentManager {
             return;
           }
         }
-        Verticle verticle = verticleFactory.createVerticle(identifier, cl);
-        if (verticle == null) {
-          throw new NullPointerException("VerticleFactory::createVerticle returned null");
-        } else {
-          doDeploy(identifier, verticle, options, currentContext, completionHandler, cl);
-          return;
+        Verticle[] verticles = new Verticle[options.getInstances()];
+        for (int i = 0; i < options.getInstances(); i++) {
+          verticles[i] = verticleFactory.createVerticle(identifier, cl);
+          if (verticles[i] == null) {
+            throw new NullPointerException("VerticleFactory::createVerticle returned null");
+          }
         }
+        doDeploy(identifier, options, currentContext, completionHandler, cl, verticles);
+        return;
       } catch (Exception e) {
         if (!iter.hasNext()) {
           // Report failure if there are no more factories to try otherwise try the next one
@@ -329,62 +332,81 @@ public class DeploymentManager {
     });
   }
 
-  private void doDeploy(String identifier, Verticle verticle, DeploymentOptions options,
+  private void doDeploy(String identifier, DeploymentOptions options,
                         ContextImpl currentContext,
                         Handler<AsyncResult<String>> completionHandler,
-                        ClassLoader tccl) {
+                        ClassLoader tccl, Verticle... verticles) {
     if (options.isMultiThreaded() && !options.isWorker()) {
       throw new IllegalArgumentException("If multi-threaded then must be worker too");
     }
     String deploymentID = UUID.randomUUID().toString();
     JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
-    ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, conf, tccl) :
-                                               vertx.createEventLoopContext(deploymentID, conf, tccl);
 
-    DeploymentImpl deployment = new DeploymentImpl(deploymentID, context, identifier, verticle, options);
-    context.setDeployment(deployment);
+    DeploymentImpl deployment = new DeploymentImpl(deploymentID, identifier, options);
+
     Deployment parent = currentContext.getDeployment();
     if (parent != null) {
       parent.addChild(deployment);
       deployment.child = true;
     }
-    context.runOnContext(v -> {
-      try {
-        verticle.init(vertx, context);
-        Future<Void> startFuture = Future.future();
-        verticle.start(startFuture);
-        startFuture.setHandler(ar -> {
-          if (ar.succeeded()) {
-            vertx.metricsSPI().verticleDeployed(verticle);
-            deployments.put(deploymentID, deployment);
-            reportSuccess(deploymentID, currentContext, completionHandler);
-          } else {
-            reportFailure(ar.cause(), currentContext, completionHandler);
-          }
-        });
-      } catch (Throwable t) {
-        reportFailure(t, currentContext, completionHandler);
-      }
-    });
+    AtomicInteger deployCount = new AtomicInteger();
+    AtomicBoolean failureReported = new AtomicBoolean();
+    for (Verticle verticle: verticles) {
+      ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, conf, tccl) :
+        vertx.createEventLoopContext(deploymentID, conf, tccl);
+      context.setDeployment(deployment);
+      deployment.addVerticle(new VerticleHolder(verticle, context));
+      context.runOnContext(v -> {
+        try {
+          verticle.init(vertx, context);
+          Future<Void> startFuture = Future.future();
+          verticle.start(startFuture);
+          startFuture.setHandler(ar -> {
+            if (ar.succeeded()) {
+              vertx.metricsSPI().verticleDeployed(verticle);
+              deployments.put(deploymentID, deployment);
+              if (deployCount.incrementAndGet() == verticles.length) {
+                reportSuccess(deploymentID, currentContext, completionHandler);
+              }
+            } else if (!failureReported.get()) {
+              reportFailure(ar.cause(), currentContext, completionHandler);
+            }
+          });
+        } catch (Throwable t) {
+          reportFailure(t, currentContext, completionHandler);
+        }
+      });
+    }
+  }
+
+  static class VerticleHolder {
+    final Verticle verticle;
+    final ContextImpl context;
+
+    VerticleHolder(Verticle verticle, ContextImpl context) {
+      this.verticle = verticle;
+      this.context = context;
+    }
   }
 
   private class DeploymentImpl implements Deployment {
 
     private final String id;
-    private final ContextImpl context;
     private final String identifier;
-    private final Verticle verticle;
+    private List<VerticleHolder> verticles = new ArrayList<>();
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private final DeploymentOptions options;
     private boolean undeployed;
     private volatile boolean child;
 
-    private DeploymentImpl(String id, ContextImpl context, String identifier, Verticle verticle, DeploymentOptions options) {
+    private DeploymentImpl(String id, String identifier, DeploymentOptions options) {
       this.id = id;
-      this.context = context;
       this.identifier = identifier;
-      this.verticle = verticle;
       this.options = options;
+    }
+
+    public void addVerticle(VerticleHolder holder) {
+      verticles.add(holder);
     }
 
     @Override
@@ -414,29 +436,35 @@ public class DeploymentManager {
         }
       } else {
         undeployed = true;
-        context.runOnContext(v -> {
-          Future<Void> stopFuture = Future.future();
-          stopFuture.setHandler(ar -> {
-            deployments.remove(id);
-            vertx.metricsSPI().verticleUndeployed(verticle);
-            context.runCloseHooks(ar2 -> {
-              if (ar2.failed()) {
-                // Log error but we report success anyway
-                log.error("Failed to run close hook", ar2.cause());
-              }
-              if (ar.succeeded()) {
-                reportSuccess(null, undeployingContext, completionHandler);
-              } else {
-                reportFailure(ar.cause(), undeployingContext, completionHandler);
-              }
+        AtomicInteger undeployCount = new AtomicInteger();
+        for (VerticleHolder verticleHolder: verticles) {
+          ContextImpl context = verticleHolder.context;
+          context.runOnContext(v -> {
+            Future<Void> stopFuture = Future.future();
+            AtomicBoolean failureReported = new AtomicBoolean();
+            stopFuture.setHandler(ar -> {
+              deployments.remove(id);
+              vertx.metricsSPI().verticleUndeployed(verticleHolder.verticle);
+              context.runCloseHooks(ar2 -> {
+                if (ar2.failed()) {
+                  // Log error but we report success anyway
+                  log.error("Failed to run close hook", ar2.cause());
+                }
+                if (ar.succeeded() && undeployCount.incrementAndGet() == verticles.size()) {
+                  reportSuccess(null, undeployingContext, completionHandler);
+                } else if (ar.failed() && !failureReported.get()) {
+                  failureReported.set(true);
+                  reportFailure(ar.cause(), undeployingContext, completionHandler);
+                }
+              });
             });
+            try {
+              verticleHolder.verticle.stop(stopFuture);
+            } catch (Throwable t) {
+              stopFuture.fail(t);
+            }
           });
-          try {
-            verticle.stop(stopFuture);
-          } catch (Throwable t) {
-            stopFuture.fail(t);
-          }
-        });
+        }
       }
     }
 
@@ -456,8 +484,12 @@ public class DeploymentManager {
     }
 
     @Override
-    public Verticle getVerticle() {
-      return verticle;
+    public Set<Verticle> getVerticles() {
+      Set<Verticle> verts = new HashSet<>();
+      for (VerticleHolder holder: verticles) {
+        verts.add(holder.verticle);
+      }
+      return verts;
     }
 
     @Override

@@ -225,7 +225,7 @@ public class MessageImpl<U, V> implements Message<V> {
 
   private void encodeHeaders(Buffer buffer) {
     if (headers != null && !headers.isEmpty()) {
-      int headersLengthPos = buffer.getByteBuf().writerIndex();
+      int headersLengthPos = buffer.length();
       buffer.appendInt(0);
       buffer.appendInt(headers.size());
       List<Map.Entry<String, String>> entries = headers.entries();
@@ -233,7 +233,7 @@ public class MessageImpl<U, V> implements Message<V> {
         writeString(buffer, entry.getKey());
         writeString(buffer, entry.getValue());
       }
-      int headersEndPos = buffer.getByteBuf().writerIndex();
+      int headersEndPos = buffer.length();
       buffer.setInt(headersLengthPos, headersEndPos - headersLengthPos);
     } else {
       buffer.appendInt(4);

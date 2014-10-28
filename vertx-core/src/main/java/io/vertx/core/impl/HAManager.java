@@ -166,7 +166,7 @@ public class HAManager {
   // Remove the information on the deployment from the cluster - this is called when an HA module is undeployed
   public void removeFromHA(String depID) {
     Deployment dep = deploymentManager.getDeployment(depID);
-    if (dep == null || !dep.deploymentOptions().isHA()) {
+    if (dep == null || !dep.deploymentOptions().isHa()) {
       return;
     }
     synchronized (haInfo) {
@@ -384,7 +384,7 @@ public class HAManager {
     for (String deploymentID: deploymentManager.deployments()) {
       Deployment dep = deploymentManager.getDeployment(deploymentID);
       if (dep != null) {
-        if (dep.deploymentOptions().isHA()) {
+        if (dep.deploymentOptions().isHa()) {
           ContextImpl ctx = vertx.getContext();
           try {
             vertx.setContext(null);

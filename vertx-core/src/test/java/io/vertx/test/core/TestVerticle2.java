@@ -14,31 +14,36 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.impl;
+package io.vertx.test.core;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.Verticle;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface Deployment {
+public class TestVerticle2 extends AbstractVerticle {
 
-  void addChild(Deployment deployment);
+  private static Set<Context> contexts = new HashSet<>();
 
-  void undeploy(Handler<AsyncResult<Void>> completionHandler);
+  @Override
+  public void start() throws Exception {
+    synchronized (contexts) {
+      if (contexts.contains(vertx.context())) {
+        throw new IllegalStateException("Same context!");
+      } else {
+        contexts.add(vertx.context());
+        vertx.eventBus().send("tvstarted", "started");
+      }
+    }
+  }
 
-  void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler);
+  @Override
+  public void stop() throws Exception {
+    vertx.eventBus().send("tvstopped", "stopped");
+  }
 
-  String identifier();
-
-  DeploymentOptions deploymentOptions();
-
-  Set<Verticle> getVerticles();
-
-  boolean isChild();
 }

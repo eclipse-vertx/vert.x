@@ -277,14 +277,12 @@ public class Starter {
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     DeploymentOptions deploymentOptions = new DeploymentOptions();
     configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
-    for (int i = 0; i < instances; i++) {
-      vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHA(ha), createLoggingHandler(message, res -> {
-        if (res.failed()) {
-          // Failed to deploy
-          unblock();
-        }
-      }));
-    }
+    vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances), createLoggingHandler(message, res -> {
+      if (res.failed()) {
+        // Failed to deploy
+        unblock();
+      }
+    }));
 
     addShutdownHook(vertx);
     block();
