@@ -516,6 +516,7 @@ public class DeploymentTest extends VertxTestBase {
     });
     vertx.eventBus().<String>consumer("tvstopped").handler(msg -> {
       undeployCount.incrementAndGet();
+      msg.reply("whatever");
     });
     CountDownLatch deployLatch = new CountDownLatch(1);
     vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options, onSuccess(depID -> {
