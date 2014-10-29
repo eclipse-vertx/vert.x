@@ -15,8 +15,10 @@
   ~  You may elect to redistribute this code under either of these licenses.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -54,16 +56,26 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <java.version>1.8</java.version>
 
     <netty.version>4.0.23.Final</netty.version>
-    <jackson.version>2.4.0</jackson.version>
-    <hazelcast.version>3.2.5</hazelcast.version>
+    <jackson.version>2.4.3</jackson.version>
+    <hazelcast.version>3.3.1</hazelcast.version>
     <metrics.version>3.0.2</metrics.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.7</slf4j.version>
     <junit.version>4.11</junit.version>
-    <asciidoclet.version>0.1.4</asciidoclet.version>
+    <asciidoclet.version>1.5.1</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
+
+    <maven.compiler.plugin.version>3.2</maven.compiler.plugin.version>
+    <maven.jar.plugin.version>2.5</maven.jar.plugin.version>
+    <maven.source.plugin.version>2.4</maven.source.plugin.version>
+    <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
+    <maven.surefire.plugin.version>2.17</maven.surefire.plugin.version>
+    <maven.surefire.report.plugin.version>2.17</maven.surefire.report.plugin.version>
   </properties>
 
   <modules>
@@ -148,19 +160,19 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.1</version>
+          <version>${maven.compiler.plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
+          <version>${maven.source.plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.9.1</version>
+          <version>${maven.javadoc.plugin.version}</version>
           <configuration>
-            <source>1.8</source>
+            <source>${java.version}</source>
             <doclet>org.asciidoctor.Asciidoclet</doclet>
             <docletArtifact>
               <groupId>org.asciidoctor</groupId>
@@ -172,14 +184,16 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.14</version>
+          <version>${maven.surefire.plugin.version}</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-              <excludes>
-                <exclude>**/Hazelcast*.java</exclude>
-              </excludes>
+            <excludes>
+              <exclude>**/Hazelcast*.java</exclude>
+            </excludes>
             <systemPropertyVariables>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
+              <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
+              <java.util.logging.config.file>${project.basedir}/src/test/conf/logging.properties</java.util.logging.config.file>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <argLine>-Xmx1200M</argLine>
@@ -187,11 +201,11 @@
             <reuseForks>true</reuseForks>
           </configuration>
         </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-report-plugin</artifactId>
-            <version>2.17</version>
-          </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-report-plugin</artifactId>
+          <version>${maven.surefire.report.plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -199,9 +213,9 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <encoding>${project.build.sourceEncoding}</encoding>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+          <optimize>true</optimize>
         </configuration>
       </plugin>
       <plugin>

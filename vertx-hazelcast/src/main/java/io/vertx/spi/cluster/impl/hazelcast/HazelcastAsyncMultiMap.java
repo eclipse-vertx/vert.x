@@ -18,6 +18,7 @@ package io.vertx.spi.cluster.impl.hazelcast;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -169,6 +170,14 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
     entryRemoved(entry);
   }
 
+  @Override
+  public void mapEvicted(MapEvent mapEvent) {
+    cache.clear();
+  }
 
+  @Override
+  public void mapCleared(MapEvent mapEvent) {
+    cache.clear();
+  }
 
 }
