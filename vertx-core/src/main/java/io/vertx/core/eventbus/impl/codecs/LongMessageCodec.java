@@ -47,6 +47,6 @@ public class LongMessageCodec implements MessageCodec<Long, Long> {
 
   @Override
   public byte systemCodecID() {
-    return 4;
+    return 6;
   }
 }

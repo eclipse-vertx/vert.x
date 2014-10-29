@@ -74,6 +74,6 @@ public class ReplyExceptionMessageCodec implements MessageCodec<ReplyException, 
 
   @Override
   public byte systemCodecID() {
-    return 14;
+    return 15;
   }
 }

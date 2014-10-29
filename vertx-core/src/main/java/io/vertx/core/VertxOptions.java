@@ -32,6 +32,8 @@ public class VertxOptions {
   public static final boolean DEFAULT_CLUSTERED = false;
   public static final String DEFAULT_CLUSTER_HOST = "localhost";
   public static final int DEFAULT_CLUSTER_PORT = 0;
+  public static final long DEFAULT_CLUSTER_PING_INTERVAL = 20000;
+  public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = 20000;
   public static final long DEFAULT_BLOCKED_THREAD_CHECK_PERIOD = 1000;
   public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2000l * 1000000;
   public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = 1l * 60 * 1000 * 1000000;
@@ -45,6 +47,8 @@ public class VertxOptions {
   private boolean clustered = DEFAULT_CLUSTERED;
   private String clusterHost = DEFAULT_CLUSTER_HOST;
   private int clusterPort = DEFAULT_CLUSTER_PORT;
+  private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
+  private long clusterPingReplyInterval = DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
   private long blockedThreadCheckPeriod = DEFAULT_BLOCKED_THREAD_CHECK_PERIOD;
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
   private long maxWorkerExecuteTime = DEFAULT_MAX_WORKER_EXECUTE_TIME;
@@ -65,6 +69,8 @@ public class VertxOptions {
     this.clustered = other.isClustered();
     this.clusterHost = other.getClusterHost();
     this.clusterPort = other.getClusterPort();
+    this.clusterPingInterval = other.getClusterPingInterval();
+    this.clusterPingReplyInterval = other.getClusterPingReplyInterval();
     this.blockedThreadCheckPeriod = other.getBlockedThreadCheckPeriod();
     this.maxEventLoopExecuteTime = other.getMaxEventLoopExecuteTime();
     this.maxWorkerExecuteTime = other.getMaxWorkerExecuteTime();
@@ -84,6 +90,8 @@ public class VertxOptions {
     this.clustered = json.getBoolean("clustered", DEFAULT_CLUSTERED);
     this.clusterHost = json.getString("clusterHost", DEFAULT_CLUSTER_HOST);
     this.clusterPort = json.getInteger("clusterPort", DEFAULT_CLUSTER_PORT);
+    this.clusterPingInterval = json.getLong("clusterPingInterval", DEFAULT_CLUSTER_PING_INTERVAL);
+    this.clusterPingReplyInterval = json.getLong("clusterPingReplyInterval", DEFAULT_CLUSTER_PING_REPLY_INTERVAL);
     this.internalBlockingPoolSize = json.getInteger("internalBlockingPoolSize", DEFAULT_INTERNAL_BLOCKING_POOL_SIZE);
     this.blockedThreadCheckPeriod = json.getLong("blockedThreadCheckPeriod", DEFAULT_BLOCKED_THREAD_CHECK_PERIOD);
     this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME);
@@ -147,6 +155,30 @@ public class VertxOptions {
       throw new IllegalArgumentException("clusterPort p must be in range 0 <= p <= 65535");
     }
     this.clusterPort = clusterPort;
+    return this;
+  }
+
+  public long getClusterPingInterval() {
+    return clusterPingInterval;
+  }
+
+  public VertxOptions setClusterPingInterval(long clusterPingInterval) {
+    if (clusterPingInterval < 1) {
+      throw new IllegalArgumentException("clusterPingInterval must be greater than 0");
+    }
+    this.clusterPingInterval = clusterPingInterval;
+    return this;
+  }
+
+  public long getClusterPingReplyInterval() {
+    return clusterPingReplyInterval;
+  }
+
+  public VertxOptions setClusterPingReplyInterval(long clusterPingReplyInterval) {
+    if (clusterPingReplyInterval < 1) {
+      throw new IllegalArgumentException("clusterPingReplyInterval must be greater than 0");
+    }
+    this.clusterPingReplyInterval = clusterPingReplyInterval;
     return this;
   }
 

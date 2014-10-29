@@ -47,6 +47,6 @@ public class DoubleMessageCodec implements MessageCodec<Double, Double> {
 
   @Override
   public byte systemCodecID() {
-    return 6;
+    return 8;
   }
 }

@@ -56,6 +56,6 @@ public class JsonObjectMessageCodec implements MessageCodec<JsonObject, JsonObje
 
   @Override
   public byte systemCodecID() {
-    return 12;
+    return 13;
   }
 }

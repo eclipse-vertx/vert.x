@@ -47,6 +47,6 @@ public class ShortMessageCodec implements MessageCodec<Short, Short> {
 
   @Override
   public byte systemCodecID() {
-    return 2;
+    return 4;
   }
 }

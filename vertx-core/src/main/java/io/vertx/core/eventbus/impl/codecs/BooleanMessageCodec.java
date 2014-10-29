@@ -47,6 +47,6 @@ public class BooleanMessageCodec implements MessageCodec<Boolean, Boolean> {
 
   @Override
   public byte systemCodecID() {
-    return 0;
+    return 3;
   }
 }

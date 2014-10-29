@@ -51,6 +51,6 @@ public class ByteArrayMessageCodec implements MessageCodec<byte[], byte[]> {
 
   @Override
   public byte systemCodecID() {
-    return 10;
+    return 12;
   }
 }

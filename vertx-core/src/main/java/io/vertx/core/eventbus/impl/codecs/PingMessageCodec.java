@@ -22,31 +22,29 @@ import io.vertx.core.eventbus.MessageCodec;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class IntMessageCodec implements MessageCodec<Integer, Integer> {
+public class PingMessageCodec implements MessageCodec<String, String> {
 
   @Override
-  public void encodeToWire(Buffer buffer, Integer i) {
-    buffer.appendInt(i);
+  public void encodeToWire(Buffer buffer, String s) {
   }
 
   @Override
-  public Integer decodeFromWire(int pos, Buffer buffer) {
-    return buffer.getInt(pos);
+  public String decodeFromWire(int pos, Buffer buffer) {
+    return null;
   }
 
   @Override
-  public Integer transform(Integer i) {
-    // Integers are immutable so just return it
-    return i;
+  public String transform(String s) {
+    return null;
   }
 
   @Override
   public String name() {
-    return "int";
+    return "ping";
   }
 
   @Override
   public byte systemCodecID() {
-    return 5;
+    return 1;
   }
 }

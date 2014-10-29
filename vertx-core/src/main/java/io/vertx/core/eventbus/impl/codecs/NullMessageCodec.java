@@ -45,6 +45,6 @@ public class NullMessageCodec implements MessageCodec<String, String> {
 
   @Override
   public byte systemCodecID() {
-    return 9;
+    return 0;
   }
 }
