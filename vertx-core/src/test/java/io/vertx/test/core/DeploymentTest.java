@@ -516,6 +516,7 @@ public class DeploymentTest extends VertxTestBase {
     });
     vertx.eventBus().<String>consumer("tvstopped").handler(msg -> {
       undeployCount.incrementAndGet();
+      msg.reply("whatever");
     });
     vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options, ar -> {
       assertTrue(ar.succeeded());

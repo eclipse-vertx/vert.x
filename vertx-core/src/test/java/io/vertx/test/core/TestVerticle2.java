@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -42,8 +43,9 @@ public class TestVerticle2 extends AbstractVerticle {
   }
 
   @Override
-  public void stop() throws Exception {
-    vertx.eventBus().send("tvstopped", "stopped");
+  public void stop(Future<Void> stopFuture) throws Exception {
+    vertx.eventBus().send("tvstopped", "stopped", reply -> {
+      stopFuture.complete(null);
+    });
   }
-
 }
