@@ -57,7 +57,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerRequestStream;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -111,8 +113,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private ChannelGroup serverChannelGroup;
-  private HttpStreamHandler<ServerWebSocket> wsStream;
-  private HttpStreamHandler<HttpServerRequest> requestStream;
+  private ServerWebSocketStreamImpl wsStream;
+  private HttpServerRequestStreamImpl requestStream;
   private boolean listening;
   private String serverOrigin;
   private String subProtocols;
@@ -134,26 +136,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
-    this.wsStream = new HttpStreamHandler<ServerWebSocket>() {
-      @Override
-      public ReadStream<ServerWebSocket> handler(Handler<ServerWebSocket> handler) {
-        if (listening) {
-          throw new IllegalStateException("Please set handler before server is listening");
-        }
-        this.handler = handler;
-        return this;
-      }
-    };
-    this.requestStream = new HttpStreamHandler<HttpServerRequest>() {
-      @Override
-      public ReadStream<HttpServerRequest> handler(Handler<HttpServerRequest> handler) {
-        if (listening) {
-          throw new IllegalStateException("Please set handler before server is listening");
-        }
-        this.handler = handler;
-        return this;
-      }
-    };
+    this.wsStream = new ServerWebSocketStreamImpl();
+    this.requestStream = new HttpServerRequestStreamImpl();
     this.subProtocols = options.getWebsocketSubProtocols();
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
@@ -165,7 +149,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   }
 
   @Override
-  public ReadStream<HttpServerRequest> requestStream() {
+  public HttpServerRequestStream requestStream() {
     return requestStream;
   }
 
@@ -186,7 +170,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   }
 
   @Override
-  public ReadStream<ServerWebSocket> websocketStream() {
+  public ServerWebSocketStream websocketStream() {
     return wsStream;
   }
 
@@ -672,12 +656,12 @@ public class HttpServerImpl implements HttpServer, Closeable {
     super.finalize();
   }
 
-  abstract class HttpStreamHandler<C extends ReadStream<?>> implements Handler<C>, ReadStream<C> {
+  abstract class HttpStreamHandler<R extends ReadStream<C>, C extends ReadStream<?>> implements Handler<C>, ReadStream<C> {
 
     protected Handler<C> handler;
     private final Queue<C> pending = new ArrayDeque<>(8);
     private boolean paused;
-    private Handler<Void> endHandler;
+    Handler<Void> endHandler;
 
     @Override
     public void handle(C event) {
@@ -691,34 +675,34 @@ public class HttpServerImpl implements HttpServer, Closeable {
     }
 
     @Override
-    public ReadStream<C> pause() {
+    public R pause() {
       if (!paused) {
         HttpServerImpl.this.bindFuture.channel().config().setAutoRead(false);
         paused = true;
       }
-      return this;
+      return (R) this;
     }
 
     @Override
-    public ReadStream<C> resume() {
+    public R resume() {
       if (paused) {
         paused = false;
         HttpServerImpl.this.bindFuture.channel().config().setAutoRead(true);
         checkNextTick();
       }
-      return this;
+      return (R) this;
     }
 
     @Override
-    public ReadStream<C> endHandler(Handler<Void> endHandler) {
+    public R endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
-      return this;
+      return (R) this;
     }
 
     @Override
-    public ReadStream<C> exceptionHandler(Handler<Throwable> handler) {
+    public R exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
-      return this;
+      return (R) this;
     }
 
     private void checkNextTick() {
@@ -734,6 +718,28 @@ public class HttpServerImpl implements HttpServer, Closeable {
           }
         });
       }
+    }
+  }
+
+  class HttpServerRequestStreamImpl extends HttpStreamHandler<HttpServerRequestStream, HttpServerRequest> implements HttpServerRequestStream {
+    @Override
+    public HttpServerRequestStream handler(Handler<HttpServerRequest> handler) {
+      if (listening) {
+        throw new IllegalStateException("Please set handler before server is listening");
+      }
+      this.handler = handler;
+      return this;
+    }
+  }
+
+  class ServerWebSocketStreamImpl extends HttpStreamHandler<ServerWebSocketStream, ServerWebSocket> implements ServerWebSocketStream {
+    @Override
+    public ServerWebSocketStream handler(Handler<ServerWebSocket> handler) {
+      if (listening) {
+        throw new IllegalStateException("Please set handler before server is listening");
+      }
+      this.handler = handler;
+      return this;
     }
   }
 }

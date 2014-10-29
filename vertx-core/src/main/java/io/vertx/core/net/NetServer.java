@@ -45,7 +45,7 @@ public interface NetServer extends Measured {
    *
    * @return the connect stream
    */
-  ReadStream<NetSocket> connectStream();
+  NetSocketStream connectStream();
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
