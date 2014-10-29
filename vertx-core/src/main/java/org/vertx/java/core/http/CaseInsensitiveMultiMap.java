@@ -367,10 +367,8 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   }
 
   public String toString() {
-    StringBuilder sb=new StringBuilder();
-    Iterator<Map.Entry<String, String>> iterator = iterator();
-    while(iterator.hasNext()) {
-      Map.Entry<String, String> entry=iterator.next();
+    StringBuilder sb = new StringBuilder();
+    for (Map.Entry<String, String> entry: this) {
       sb.append(entry.getKey());
       sb.append(": ");
       sb.append(entry.getValue());
