@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
+import io.vertx.core.TimeoutStream;
 import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
@@ -170,6 +171,19 @@ public class TimerTest extends VertxTestBase {
       testComplete();
     });
     timer.handler(null);
+    await();
+  }
+
+  @Test
+  public void testTimerStreamCancellation() throws Exception {
+    TimeoutStream timer = vertx.timerStream(10);
+    timer.handler(l -> {
+      fail();
+    });
+    timer.endHandler(v -> {
+      testComplete();
+    });
+    timer.cancel();
     await();
   }
 

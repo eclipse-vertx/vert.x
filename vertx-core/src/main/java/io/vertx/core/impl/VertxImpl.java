@@ -25,6 +25,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.TimeoutStream;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -205,8 +206,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public ReadStream<Long> periodicStream(long delay) {
-    return new TimeoutStream(delay, true);
+  public TimeoutStream periodicStream(long delay) {
+    return new TimeoutStreamImpl(delay, true);
   }
 
   public long setTimer(long delay, Handler<Long> handler) {
@@ -214,8 +215,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public ReadStream<Long> timerStream(long delay) {
-    return new TimeoutStream(delay, false);
+  public TimeoutStream timerStream(long delay) {
+    return new TimeoutStreamImpl(delay, false);
   }
 
   public void runOnContext(Handler<Void> task) {
@@ -633,7 +634,7 @@ public class VertxImpl implements VertxInternal {
 
   }
 
-  private class TimeoutStream implements ReadStream<Long>, Handler<Long> {
+  private class TimeoutStreamImpl implements TimeoutStream, Handler<Long> {
 
     private final long delay;
     private final boolean periodic;
@@ -642,7 +643,7 @@ public class VertxImpl implements VertxInternal {
     private Handler<Long> handler;
     private Handler<Void> endHandler;
 
-    public TimeoutStream(long delay, boolean periodic) {
+    public TimeoutStreamImpl(long delay, boolean periodic) {
       this.delay = delay;
       this.periodic = periodic;
     }
@@ -662,12 +663,17 @@ public class VertxImpl implements VertxInternal {
     }
 
     @Override
-    public ReadStream<Long> exceptionHandler(Handler<Throwable> handler) {
+    public TimeoutStream exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
 
     @Override
-    public ReadStream<Long> handler(Handler<Long> handler) {
+    public void cancel() {
+      handler(null);
+    }
+
+    @Override
+    public TimeoutStream handler(Handler<Long> handler) {
       if (handler != null) {
         if (id != null) {
           throw new IllegalStateException();
@@ -686,19 +692,19 @@ public class VertxImpl implements VertxInternal {
     }
 
     @Override
-    public ReadStream<Long> pause() {
+    public TimeoutStream pause() {
       this.paused = true;
       return this;
     }
 
     @Override
-    public ReadStream<Long> resume() {
+    public TimeoutStream resume() {
       this.paused = false;
       return null;
     }
 
     @Override
-    public ReadStream<Long> endHandler(Handler<Void> endHandler) {
+    public TimeoutStream endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
       return this;
     }

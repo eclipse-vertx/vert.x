@@ -123,13 +123,11 @@ public interface Vertx extends Measured {
 
   /**
    * Returns a one-shot timer as a read stream. The timer will be fired after {@code delay} milliseconds after
-   * the {@link ReadStream#handler} has been called. The {@link ReadStream#endHandler(Handler)} will be called
-   * after the timer handler has been called. Setting a null handler before the timer handler callback will
-   * cancel the timer. Pausing the timer inhibits the timer shot and does not delay it.
+   * the {@link ReadStream#handler} has been called.
    *
    * @return the timer stream
    */
-  ReadStream<Long> timerStream(long delay);
+  TimeoutStream timerStream(long delay);
 
   /**
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
@@ -140,13 +138,11 @@ public interface Vertx extends Measured {
 
   /**
    * Returns a periodic timer as a read stream. The timer will be fired every {@code delay} milliseconds after
-   * the {@link ReadStream#handler} has been called. The {@link ReadStream#endHandler(Handler)} will be called
-   * after the timer handler has been called. Setting a null handler callback cancels the timer. Pausing
-   * the timer inhibits the timer shots until the stream is resumed.
+   * the {@link ReadStream#handler} has been called.
    *
    * @return the periodic stream
    */
-  ReadStream<Long> periodicStream(long delay);
+  TimeoutStream periodicStream(long delay);
 
   /**
    * Cancel the timer with the specified {@code id}. Returns {@code} true if the timer was successfully cancelled, or

@@ -49,7 +49,7 @@ import io.vertx.core.metrics.spi.NetMetrics;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.streams.ReadStream;
+import io.vertx.core.net.NetSocketStream;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -84,7 +84,7 @@ public class NetServerImpl implements NetServer, Closeable {
   private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
   private boolean listenersRun;
   private ContextImpl listenContext;
-  private NetReadStream connectStream = new NetReadStream();
+  private NetSocketStreamImpl connectStream = new NetSocketStreamImpl();
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
@@ -112,7 +112,7 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
-  public ReadStream<NetSocket> connectStream() {
+  public NetSocketStream connectStream() {
     return connectStream;
   }
 
@@ -433,7 +433,7 @@ public class NetServerImpl implements NetServer, Closeable {
     super.finalize();
   }
 
-  class NetReadStream implements Handler<NetSocket>, ReadStream<NetSocket> {
+  class NetSocketStreamImpl implements Handler<NetSocket>, NetSocketStream {
 
     protected Handler<NetSocket> handler;
     private final Queue<NetSocket> pending = new ArrayDeque<>(8);
@@ -452,7 +452,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetReadStream handler(Handler<NetSocket> handler) {
+    public NetSocketStreamImpl handler(Handler<NetSocket> handler) {
       if (listening) {
         throw new IllegalStateException("Cannot set connectHandler when server is listening");
       }
@@ -461,7 +461,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetReadStream pause() {
+    public NetSocketStreamImpl pause() {
       if (!paused) {
         NetServerImpl.this.bindFuture.channel().config().setAutoRead(false);
         paused = true;
@@ -470,7 +470,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetReadStream resume() {
+    public NetSocketStreamImpl resume() {
       if (paused) {
         NetServerImpl.this.bindFuture.channel().config().setAutoRead(true);
         paused = false;
@@ -480,13 +480,13 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     @Override
-    public NetReadStream endHandler(Handler<Void> endHandler) {
+    public NetSocketStreamImpl endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
       return this;
     }
 
     @Override
-    public NetReadStream exceptionHandler(Handler<Throwable> handler) {
+    public NetSocketStreamImpl exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
       return this;
     }
@@ -499,7 +499,7 @@ public class NetServerImpl implements NetServer, Closeable {
             NetSocket event = pending.poll();
             if (event != null) {
               event.resume();
-              NetReadStream.this.handle(event);
+              NetSocketStreamImpl.this.handle(event);
             }
           }
         });

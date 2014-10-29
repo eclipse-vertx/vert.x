@@ -27,6 +27,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.datagram.PacketWritestream;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -209,8 +210,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public WriteStream<Buffer> sender(int port, String host) {
-    return new PacketWriteStream(this, port, host);
+  public PacketWritestream sender(int port, String host) {
+    return new PacketWriteStreamImpl(this, port, host);
   }
 
   @Override
