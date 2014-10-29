@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
@@ -41,14 +40,15 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
   }
 
   @Override
-  public void get(final K k, Handler<AsyncResult<V>> asyncResultHandler) {
-    vertx.executeBlocking(() -> map.get(k), asyncResultHandler);
+  public void get(K k, Handler<AsyncResult<V>> asyncResultHandler) {
+    K kk = convertParam(k);
+    vertx.executeBlocking(() -> convertReturn(map.get(kk)), asyncResultHandler);
   }
 
   @Override
   public void put(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
-    final K kk = convertObject(k);
-    final V vv = convertObject(v);
+    K kk = convertParam(k);
+    V vv = convertParam(v);
     vertx.executeBlocking(() -> {
       map.put(kk, HazelcastServerID.convertServerID(vv));
       return null;
@@ -57,29 +57,37 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
 
   @Override
   public void putIfAbsent(K k, V v, Handler<AsyncResult<V>> resultHandler) {
-    final K kk = convertObject(k);
-    final V vv = convertObject(v);
-    vertx.executeBlocking(() ->  map.putIfAbsent(kk, HazelcastServerID.convertServerID(vv)), resultHandler);
+    K kk = convertParam(k);
+    V vv = convertParam(v);
+    vertx.executeBlocking(() ->  convertReturn(map.putIfAbsent(kk, HazelcastServerID.convertServerID(vv))), resultHandler);
   }
 
   @Override
-  public void remove(final K k, Handler<AsyncResult<V>> resultHandler) {
-    vertx.executeBlocking(() -> map.remove(k), resultHandler);
+  public void remove(K k, Handler<AsyncResult<V>> resultHandler) {
+    K kk = convertParam(k);
+    vertx.executeBlocking(() -> convertReturn(map.remove(kk)), resultHandler);
   }
 
   @Override
   public void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
-    vertx.executeBlocking(() -> map.remove(k, v), resultHandler);
+    K kk = convertParam(k);
+    V vv = convertParam(v);
+    vertx.executeBlocking(() -> map.remove(kk, vv), resultHandler);
   }
 
   @Override
   public void replace(K k, V v, Handler<AsyncResult<V>> resultHandler) {
-    vertx.executeBlocking(() -> map.replace(k, v), resultHandler);
+    K kk = convertParam(k);
+    V vv = convertParam(v);
+    vertx.executeBlocking(() -> convertReturn(map.replace(kk, vv)), resultHandler);
   }
 
   @Override
   public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
-    vertx.executeBlocking(() -> map.replace(k, oldValue, newValue), resultHandler);
+    K kk = convertParam(k);
+    V vv = convertParam(oldValue);
+    V vvv = convertParam(newValue);
+    vertx.executeBlocking(() -> map.replace(kk, vv, vvv), resultHandler);
   }
 
   @Override
@@ -90,7 +98,8 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
     }, resultHandler);
   }
 
-  private <T> T convertObject(T obj) {
+  @SuppressWarnings("unchecked")
+  private <T> T convertParam(T obj) {
     if (obj instanceof ClusterSerializable) {
       ClusterSerializable cobj = (ClusterSerializable)obj;
       return (T)(new DataSerializableHolder(cobj));
@@ -99,9 +108,22 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  private <T> T convertReturn(Object obj) {
+    if (obj instanceof DataSerializableHolder) {
+      DataSerializableHolder cobj = (DataSerializableHolder)obj;
+      return (T)cobj.clusterSerializable();
+    } else {
+      return (T)obj;
+    }
+  }
+
   private static final class DataSerializableHolder implements DataSerializable {
 
     private ClusterSerializable clusterSerializable;
+
+    public DataSerializableHolder() {
+    }
 
     private DataSerializableHolder(ClusterSerializable clusterSerializable) {
       this.clusterSerializable = clusterSerializable;
@@ -144,6 +166,10 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
     @Override
     public int hashCode() {
       return clusterSerializable != null ? clusterSerializable.hashCode() : 0;
+    }
+
+    public ClusterSerializable clusterSerializable() {
+      return clusterSerializable;
     }
   }
 

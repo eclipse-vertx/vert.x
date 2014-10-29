@@ -168,7 +168,6 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
       IMap<K, V> map = hazelcast.getMap(name);
       return map;
     }, ar -> {
-      System.out.println("Calling result handler on thread: " + Thread.currentThread());
       if (ar.succeeded()) {
         resultHandler.handle(Future.completedFuture(new HazelcastAsyncMap<>(vertx, ar.result())));
       } else {
