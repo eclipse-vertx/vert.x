@@ -223,7 +223,7 @@ public class ComplexHATest extends VertxTestBase {
     for (Deployment prev: prevSet) {
       boolean contains = false;
       for (Deployment curr: currSet) {
-        if (curr.identifier().equals(prev.identifier()) && curr.deploymentOptions().equals(prev.deploymentOptions())) {
+        if (curr.verticleIdentifier().equals(prev.verticleIdentifier()) && curr.deploymentOptions().equals(prev.deploymentOptions())) {
           contains = true;
           break;
         }

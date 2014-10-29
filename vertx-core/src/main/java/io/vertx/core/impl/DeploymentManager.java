@@ -392,7 +392,7 @@ public class DeploymentManager {
   private class DeploymentImpl implements Deployment {
 
     private final String id;
-    private final String identifier;
+    private final String verticleIdentifier;
     private List<VerticleHolder> verticles = new ArrayList<>();
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private final DeploymentOptions options;
@@ -401,7 +401,7 @@ public class DeploymentManager {
 
     private DeploymentImpl(String id, String identifier, DeploymentOptions options) {
       this.id = id;
-      this.identifier = identifier;
+      this.verticleIdentifier = identifier;
       this.options = options;
     }
 
@@ -469,8 +469,8 @@ public class DeploymentManager {
     }
 
     @Override
-    public String identifier() {
-      return identifier;
+    public String verticleIdentifier() {
+      return verticleIdentifier;
     }
 
     @Override
@@ -497,6 +497,10 @@ public class DeploymentManager {
       return child;
     }
 
+    @Override
+    public String deploymentID() {
+      return id;
+    }
   }
 
 }

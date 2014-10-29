@@ -392,14 +392,14 @@ public class HAManager {
               @Override
               public void handle(AsyncResult<Void> result) {
                 if (result.succeeded()) {
-                  log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.identifier() + " as there is no quorum");
-                  addToHADeployList(dep.identifier(), dep.deploymentOptions(), new AsyncResultHandler<String>() {
+                  log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
+                  addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), new AsyncResultHandler<String>() {
                     @Override
                     public void handle(AsyncResult<String> result) {
                       if (result.succeeded()) {
-                        log.info("Successfully redeployed verticle " + dep.identifier() + " after quorum was re-attained");
+                        log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
                       } else {
-                        log.error("Failed to redeploy verticle " + dep.identifier() + " after quorum was re-attained", result.cause());
+                        log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained", result.cause());
                       }
                     }
                   });

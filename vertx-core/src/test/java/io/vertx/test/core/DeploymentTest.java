@@ -517,22 +517,26 @@ public class DeploymentTest extends VertxTestBase {
     vertx.eventBus().<String>consumer("tvstopped").handler(msg -> {
       undeployCount.incrementAndGet();
     });
-    vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options, ar -> {
-      assertTrue(ar.succeeded());
+    CountDownLatch deployLatch = new CountDownLatch(1);
+    vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options, onSuccess(depID -> {
       assertEquals(1, deployHandlerCount.incrementAndGet());
-      Deployment deployment = ((VertxInternal) vertx).getDeployment(ar.result());
-      Set<Verticle> verticles = deployment.getVerticles();
-      assertEquals(numInstances, verticles.size());
-      assertEquals(numInstances, deployCount.get());
-      vertx.undeployVerticle(ar.result(), ar2 -> {
-        assertTrue(ar2.succeeded());
-        assertEquals(1, undeployHandlerCount.incrementAndGet());
-        assertNull(((VertxInternal) vertx).getDeployment(ar.result()));
-        assertEquals(numInstances, undeployCount.get());
-        testComplete();
-      });
-    });
-    await();
+      deployLatch.countDown();
+    }));
+    awaitLatch(deployLatch);
+    waitUntil(() -> deployCount.get() == numInstances);
+    assertEquals(1, vertx.deployments().size());
+    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deployments().iterator().next());
+    Set<Verticle> verticles = deployment.getVerticles();
+    assertEquals(numInstances, verticles.size());
+    CountDownLatch undeployLatch = new CountDownLatch(1);
+    assertEquals(numInstances, deployCount.get());
+    vertx.undeployVerticle(deployment.deploymentID(), onSuccess(v -> {
+      assertEquals(1, undeployHandlerCount.incrementAndGet());
+      undeployLatch.countDown();
+    }));
+    awaitLatch(undeployLatch);
+    waitUntil(() -> deployCount.get() == numInstances);
+    assertTrue(vertx.deployments().isEmpty());
   }
 
   @Test

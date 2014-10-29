@@ -34,7 +34,9 @@ public interface Deployment {
 
   void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler);
 
-  String identifier();
+  String deploymentID();
+
+  String verticleIdentifier();
 
   DeploymentOptions deploymentOptions();
 
