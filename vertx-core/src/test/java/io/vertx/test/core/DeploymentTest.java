@@ -83,6 +83,40 @@ public class DeploymentTest extends VertxTestBase {
     List<String> cp = Arrays.asList("foo", "bar");
     assertEquals(options, options.setExtraClasspath(cp));
     assertSame(cp, options.getExtraClasspath());
+    assertFalse(options.isRedeploy());
+    assertSame(options, options.setRedeploy(true));
+    assertTrue(options.isRedeploy());
+    assertEquals(DeploymentOptions.DEFAULT_REDEPLOY_GRACE_PERIOD, options.getRedeployGracePeriod());
+    int randInt = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setRedeployGracePeriod(randInt));
+    assertEquals(randInt, options.getRedeployGracePeriod());
+    randInt = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setRedeployScanPeriod(randInt));
+    assertEquals(randInt, options.getRedeployScanPeriod());
+    try {
+      options.setRedeployGracePeriod(-1);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setRedeployScanPeriod(-1);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setRedeployGracePeriod(0);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setRedeployScanPeriod(0);
+      fail();
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
   }
 
   @Test
@@ -94,6 +128,8 @@ public class DeploymentTest extends VertxTestBase {
     boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
     boolean ha = rand.nextBoolean();
+    long gracePeriod = 7236;
+    long scanPeriod = 7812673;
     List<String> cp = Arrays.asList("foo", "bar");
     options.setConfig(config);
     options.setWorker(worker);
@@ -101,6 +137,9 @@ public class DeploymentTest extends VertxTestBase {
     options.setIsolationGroup(isolationGroup);
     options.setHa(ha);
     options.setExtraClasspath(cp);
+    options.setRedeploy(true);
+    options.setRedeployGracePeriod(gracePeriod);
+    options.setRedeployScanPeriod(scanPeriod);
     DeploymentOptions copy = new DeploymentOptions(options);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
@@ -110,6 +149,9 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(ha, copy.isHa());
     assertEquals(cp, copy.getExtraClasspath());
     assertNotSame(cp, copy.getExtraClasspath());
+    assertTrue(options.isRedeploy());
+    assertEquals(gracePeriod, options.getRedeployGracePeriod());
+    assertEquals(scanPeriod, options.getRedeployScanPeriod());
   }
 
   @Test
@@ -122,6 +164,7 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(def.getIsolationGroup(), json.getIsolationGroup());
     assertEquals(def.isHa(), json.isHa());
     assertEquals(def.getExtraClasspath(), json.getExtraClasspath());
+    assertEquals(def.isRedeploy(), json.isRedeploy());
   }
 
   @Test
@@ -140,6 +183,9 @@ public class DeploymentTest extends VertxTestBase {
     json.put("isolationGroup", isolationGroup);
     json.put("ha", ha);
     json.put("extraClasspath", new JsonArray(cp));
+    json.put("redeploy", true);
+    json.put("redeployGracePeriod", 1234);
+    json.put("redeployScanPeriod", 4567);
     DeploymentOptions options = new DeploymentOptions(json);
     assertEquals(worker, options.isWorker());
     assertEquals(multiThreaded, options.isMultiThreaded());
@@ -147,6 +193,9 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals("bar", options.getConfig().getString("foo"));
     assertEquals(ha, options.isHa());
     assertEquals(cp, options.getExtraClasspath());
+    assertTrue(options.isRedeploy());
+    assertEquals(1234, options.getRedeployGracePeriod());
+    assertEquals(4567, options.getRedeployScanPeriod());
   }
 
   @Test
@@ -158,6 +207,8 @@ public class DeploymentTest extends VertxTestBase {
     boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
     boolean ha = rand.nextBoolean();
+    long gracePeriod = 521445;
+    long scanPeriod = 234234;
     List<String> cp = Arrays.asList("foo", "bar");
     options.setConfig(config);
     options.setWorker(worker);
@@ -165,6 +216,9 @@ public class DeploymentTest extends VertxTestBase {
     options.setIsolationGroup(isolationGroup);
     options.setHa(ha);
     options.setExtraClasspath(cp);
+    options.setRedeploy(true);
+    options.setRedeployGracePeriod(gracePeriod);
+    options.setRedeployScanPeriod(scanPeriod);
     JsonObject json = options.toJson();
     DeploymentOptions copy = new DeploymentOptions(json);
     assertEquals(worker, copy.isWorker());
@@ -173,6 +227,8 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHa());
     assertEquals(cp, copy.getExtraClasspath());
+    assertEquals(gracePeriod, copy.getRedeployGracePeriod());
+    assertEquals(scanPeriod, copy.getRedeployScanPeriod());
   }
 
   @Test
@@ -1048,3 +1104,4 @@ public class DeploymentTest extends VertxTestBase {
 
 
 }
+

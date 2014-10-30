@@ -217,9 +217,11 @@
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <excludes>
               <exclude>**/Hazelcast*.java</exclude>
+              <exclude>**/RedeploySourceVerticle.java</exclude>
             </excludes>
             <systemPropertyVariables>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
+              <buildDirectory>${project.build.directory}</buildDirectory>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <argLine>-Xmx1200M</argLine>
