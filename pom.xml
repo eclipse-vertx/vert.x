@@ -48,6 +48,34 @@
     </license>
   </licenses>
 
+  <!-- Temporary for using surefire 2.18-SNAPSHOT -->
+  <pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Maven Plugin Repository</name>
+      <url>http://repo1.maven.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+    <pluginRepository>
+      <id>apache-snapshots</id>
+      <name>Apache Plugin Repository</name>
+      <url>http://repository.apache.org/snapshots/</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>daily</updatePolicy>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+
   <scm>
     <connection>scm:git:git@github.com:eclipse/vert.x.git</connection>
     <developerConnection>scm:git:git@github.com:eclipse/vert.x.git</developerConnection>
@@ -74,8 +102,8 @@
     <maven.jar.plugin.version>2.5</maven.jar.plugin.version>
     <maven.source.plugin.version>2.4</maven.source.plugin.version>
     <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
-    <maven.surefire.plugin.version>2.17</maven.surefire.plugin.version>
-    <maven.surefire.report.plugin.version>2.17</maven.surefire.report.plugin.version>
+    <maven.surefire.plugin.version>2.18-SNAPSHOT</maven.surefire.plugin.version>
+    <maven.surefire.report.plugin.version>2.18-SNAPSHOT</maven.surefire.report.plugin.version>
   </properties>
 
   <modules>
