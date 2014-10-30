@@ -60,7 +60,7 @@
 
     <java.version>1.8</java.version>
 
-    <netty.version>4.0.23.Final</netty.version>
+    <netty.version>4.0.24.Final</netty.version>
     <jackson.version>2.4.3</jackson.version>
     <hazelcast.version>3.3.1</hazelcast.version>
     <metrics.version>3.0.2</metrics.version>

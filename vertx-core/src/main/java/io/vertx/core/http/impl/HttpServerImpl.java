@@ -270,7 +270,19 @@ public class HttpServerImpl implements HttpServer, Closeable {
               res = Future.completedFuture(future.cause());
               listening = false;
             }
-            listenContext.execute(() -> listenHandler.handle(res), true);
+            // FIXME - workaround for https://github.com/netty/netty/issues/2586
+            // If listen already succeeded on a different event loop, and then addListener is called again
+            // on the completed future from a different event loop then the handler will be called on the original
+            // event loop not on the when that called addListener.
+            // To reproduce set the boolean parameter on execute (below) to true.
+            // Then run Httptest.testTwoServersSameAddressDifferentContext()
+            try {
+              listenContext.execute(() -> {
+                listenHandler.handle(res);
+              }, false);
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
           } else if (!future.isSuccess()) {
             listening  = false;
             // No handler - log so user can see failure

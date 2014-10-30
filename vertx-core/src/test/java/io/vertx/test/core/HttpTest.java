@@ -3558,6 +3558,15 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testTwoServersSameAddressDifferentContext() throws Exception {
+    server.close();
+    vertx.deployVerticle(SimpleServer.class.getName(), new DeploymentOptions().setInstances(2), onSuccess(id -> {
+      testComplete();
+    }));
+    await();
+  }
+
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
       req.response().setChunked(true);
