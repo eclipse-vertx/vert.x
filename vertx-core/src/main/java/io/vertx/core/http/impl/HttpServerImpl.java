@@ -88,8 +88,6 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -425,20 +423,10 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
     vertx.setContext(closeContext);
 
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    ChannelGroupFuture fut = serverChannelGroup.close();
-    fut.addListener(cgf -> latch.countDown());
-
-    // Always sync
-    try {
-      latch.await(10, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-    }
-
     metrics.close();
 
-    executeCloseDone(closeContext, done, fut.cause());
+    ChannelGroupFuture fut = serverChannelGroup.close();
+    fut.addListener(cgf -> executeCloseDone(closeContext, done, fut.cause()));
   }
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {

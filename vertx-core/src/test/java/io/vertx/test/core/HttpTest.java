@@ -3560,7 +3560,6 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testTwoServersSameAddressDifferentContext() throws Exception {
-    server.close();
     vertx.deployVerticle(SimpleServer.class.getName(), new DeploymentOptions().setInstances(2), onSuccess(id -> {
       testComplete();
     }));
