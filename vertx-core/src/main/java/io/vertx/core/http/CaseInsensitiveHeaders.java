@@ -365,18 +365,10 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   }
 
   public String toString() {
-    StringBuilder sb=new StringBuilder();
-
-    Iterator<Map.Entry<String, String>> iterator = iterator();
-
-    while(iterator.hasNext()) {
-      Map.Entry<String, String> entry=iterator.next();
-      sb.append(entry.getKey());
-      sb.append(": ");
-      sb.append(entry.getValue());
-      sb.append("\n");
+    StringBuilder sb = new StringBuilder();
+    for (Map.Entry<String, String> entry: this) {
+      sb.append(entry).append('\n');
     }
-
     return sb.toString();
   }
 
@@ -425,7 +417,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
     @Override
     public String toString() {
-      return getKey() + '=' + getValue();
+      return getKey() + ": " + getValue();
     }
   }
 }

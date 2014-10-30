@@ -25,7 +25,7 @@ public class CaseInsensitiveHeadersTest {
   public void testCaseInsensitiveHeaders()
       throws Exception {
 
-    CaseInsensitiveHeaders result = new CaseInsensitiveHeaders();
+    MultiMap result = new CaseInsensitiveHeaders();
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
@@ -34,295 +34,295 @@ public class CaseInsensitiveHeadersTest {
   }
 
   @Test
-  public void testAdd_test1()
+  public void testAddTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     HashMap<String, String> map = new HashMap<String, String>();
     map.put("a", "b");
 
-    MultiMap result = cimap.addAll(map);
+    MultiMap result = mmap.addAll(map);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("a: b\n",result.toString());
+    assertEquals("a: b\n", result.toString());
   }
 
   @Test
-  public void testAdd_test2()
+  public void testAddTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     HashMap<String, String> map = new HashMap<String, String>();
     map.put("a", "b");
     map.put("c", "d");
 
-    assertEquals("a: b\nc: d\n",cimap.addAll(map).toString());
+    assertEquals("a: b\nc: d\n", mmap.addAll(map).toString());
   }
 
   @Test
-  public void testAdd_test3()
+  public void testAddTest3()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     HashMap<String, String> map = new HashMap<String, String>();
     map.put("a", "b");
 
-    assertEquals("a: b\n",cimap.addAll(map).toString());
+    assertEquals("a: b\n", mmap.addAll(map).toString());
   }
 
   @Test
-  public void testAdd_test4()
+  public void testAddTest4()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     Map<String, String> map = new HashMap<String, String>();
 
-    assertEquals("",cimap.addAll(map).toString());
+    assertEquals("", mmap.addAll(map).toString());
   }
 
   @Test
-  public void testAdd_test5()
+  public void testAddTest5()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     MultiMap headers = new CaseInsensitiveHeaders();
 
-    assertEquals("",cimap.addAll(headers).toString());
+    assertEquals("", mmap.addAll(headers).toString());
   }
 
   @Test
-  public void testAdd_test7()
+  public void testAddTest7()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = "name";
     CharSequence value = "value";
 
-    assertEquals("name: value\n",cimap.add(name, value).toString());
+    assertEquals("name: value\n", mmap.add(name, value).toString());
   }
 
   @Test
-  public void testAdd_test8()
+  public void testAddTest8()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = "name";
     ArrayList<CharSequence> values = new ArrayList<CharSequence>();
     values.add("somevalue");
 
-    assertEquals("name: somevalue\n",cimap.add(name, values).toString());
+    assertEquals("name: somevalue\n", mmap.add(name, values).toString());
   }
 
   @Test
-  public void testAdd_test9()
+  public void testAddTest9()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "";
     ArrayList<CharSequence> values = new ArrayList<CharSequence>();
     values.add("somevalue");
 
-    assertEquals(": somevalue\n",cimap.add(name, values).toString());
+    assertEquals(": somevalue\n", mmap.add(name, values).toString());
   }
 
   @Test
-  public void testAdd_test10()
+  public void testAddTest10()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "a";
     ArrayList<CharSequence> values = new ArrayList<CharSequence>();
     values.add("somevalue");
 
-    assertEquals("a: somevalue\n",cimap.add(name, values).toString());
+    assertEquals("a: somevalue\n", mmap.add(name, values).toString());
   }
 
   @Test
-  public void testAdd_test11()
+  public void testAddTest11()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "";
     String strVal = "";
 
-    assertEquals(": \n",cimap.add(name, strVal).toString());
+    assertEquals(": \n", mmap.add(name, strVal).toString());
   }
 
   @Test
-  public void testAdd_test12()
+  public void testAddTest12()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "a";
     String strVal = "b";
 
-    assertEquals("a: b\n",cimap.add(name, strVal).toString());
+    assertEquals("a: b\n", mmap.add(name, strVal).toString());
   }
 
   @Test
-  public void testAdd_test13()
+  public void testAddTest13()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "aaa";
     String strVal = "";
 
-    assertEquals("aaa: \n",cimap.add(name, strVal).toString());
+    assertEquals("aaa: \n", mmap.add(name, strVal).toString());
   }
 
   @Test
-  public void testAdd_test14()
+  public void testAddTest14()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "";
     String strVal = "aaa";
 
-    assertEquals(": aaa\n",cimap.add(name, strVal).toString());
+    assertEquals(": aaa\n", mmap.add(name, strVal).toString());
   }
 
   @Test
   public void testAddIterable()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "name";
-    List<String> values=new ArrayList<String>();
+    List<String> values = new ArrayList<String>();
     values.add("value1");
     values.add("value2");
 
-    MultiMap result = cimap.add(name, values);
+    MultiMap result = mmap.add(name, values);
 
     assertEquals(1, result.size());
-    assertEquals("name: value1\nname: value2\n",result.toString());
+    assertEquals("name: value1\nname: value2\n", result.toString());
   }
 
   @Test
   public void testAddMultiMap()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    MultiMap mm=new CaseInsensitiveHeaders();
-    mm.add("Header1","value1");
-    mm.add("Header2","value2");
+    MultiMap mm = new CaseInsensitiveHeaders();
+    mm.add("Header1", "value1");
+    mm.add("Header2", "value2");
 
-    MultiMap result = cimap.addAll(mm);
+    MultiMap result = mmap.addAll(mm);
 
     assertEquals(2, result.size());
-    assertEquals("Header1: value1\nHeader2: value2\n",result.toString());
+    assertEquals("Header1: value1\nHeader2: value2\n", result.toString());
   }
 
   @Test
-  public void testClear_test1()
+  public void testClearTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    MultiMap result = cimap.clear();
+    MultiMap result = mmap.clear();
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
     assertEquals(0, result.size());
-    assertEquals("",result.toString());
+    assertEquals("", result.toString());
   }
 
   @Test
-  public void testContains_test1()
+  public void testContainsTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = String.valueOf(new Object());
 
-    assertFalse(cimap.contains(name));
+    assertFalse(mmap.contains(name));
   }
 
   @Test
-  public void testContains_test2()
+  public void testContainsTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "";
 
-    assertFalse(cimap.contains(name));
+    assertFalse(mmap.contains(name));
   }
 
   @Test
-  public void testContains_test3()
+  public void testContainsTest3()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "0123456789";
 
-    boolean result = cimap.contains(name);
+    boolean result = mmap.contains(name);
 
     assertFalse(result);
-    cimap.add(name,"");
-    result = cimap.contains(name);
+    mmap.add(name, "");
+    result = mmap.contains(name);
     assertTrue(result);
   }
 
   @Test
-  public void testEntries_test1()
+  public void testEntriesTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    List<Map.Entry<String, String>> result = cimap.entries();
+    List<Map.Entry<String, String>> result = mmap.entries();
 
     assertNotNull(result);
     assertEquals(0, result.size());
   }
 
   @Test
-  public void testGet_test1()
+  public void testGetTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = String.valueOf(new Object());
 
-    assertNull(cimap.get(name));
+    assertNull(mmap.get(name));
   }
 
   @Test
-  public void testGet_test2()
+  public void testGetTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "1";
 
-    assertNull(cimap.get(name));
+    assertNull(mmap.get(name));
   }
 
   @Test
-  public void testGet_test3()
+  public void testGetTest3()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "name";
 
-    String result = cimap.get(name);
+    String result = mmap.get(name);
     assertNull(result);
-    cimap.add(name,"value");
-    result = cimap.get(name);
-    assertEquals("value",result);
+    mmap.add(name, "value");
+    result = mmap.get(name);
+    assertEquals("value", result);
   }
 
-  @Test(expected=NullPointerException.class)
+  @Test(expected = NullPointerException.class)
   public void testGetNPE() {
     new CaseInsensitiveHeaders().get(null);
   }
 
   @Test
-  public void testGetAll_test1()
+  public void testGetAllTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = String.valueOf(new Object());
 
-    List<String> result = cimap.getAll(name);
+    List<String> result = mmap.getAll(name);
 
     assertNotNull(result);
     assertEquals(0, result.size());
   }
 
   @Test
-  public void testGetAll_test2()
+  public void testGetAllTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "1";
 
-    List<String> result = cimap.getAll(name);
+    List<String> result = mmap.getAll(name);
 
     assertNotNull(result);
     assertEquals(0, result.size());
   }
 
   @Test
-  public void testGetAll_test3()
+  public void testGetAllTest3()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "name";
 
-    List<String> result = cimap.getAll(name);
+    List<String> result = mmap.getAll(name);
 
     assertNotNull(result);
     assertEquals(0, result.size());
@@ -331,105 +331,101 @@ public class CaseInsensitiveHeadersTest {
   @Test
   public void testGetAll()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "name";
-    cimap.add(name,"value1");
-    cimap.add(name,"value2");
+    mmap.add(name, "value1");
+    mmap.add(name, "value2");
 
-    List<String> result = cimap.getAll(name);
+    List<String> result = mmap.getAll(name);
 
     assertNotNull(result);
-    assertEquals(2,result.size());
+    assertEquals(2, result.size());
     assertEquals("value1", result.get(0));
   }
 
-  @Test(expected=NullPointerException.class)
+  @Test(expected = NullPointerException.class)
   public void testGetAllNPE()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
-
-    cimap.getAll(null);
+    new CaseInsensitiveHeaders().getAll(null);
   }
 
   @Test
-  public void testIsEmpty_test1()
+  public void testIsEmptyTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    assertTrue(cimap.isEmpty());
+    assertTrue(mmap.isEmpty());
   }
 
   @Test
-  public void testIsEmpty_test2()
+  public void testIsEmptyTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
-    cimap.add("a","b");
+    MultiMap mmap = new CaseInsensitiveHeaders();
+    mmap.add("a", "b");
 
-    assertFalse(cimap.isEmpty());
+    assertFalse(mmap.isEmpty());
   }
 
   @Test
-  public void testIterator_test1()
+  public void testIteratorTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    Iterator<Map.Entry<String, String>> result = cimap.iterator();
+    Iterator<Map.Entry<String, String>> result = mmap.iterator();
 
     assertNotNull(result);
     assertFalse(result.hasNext());
   }
 
   @Test
-  public void testIterator_test2()
+  public void testIteratorTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
-    cimap.add("a", "b");
+    MultiMap mmap = new CaseInsensitiveHeaders();
+    mmap.add("a", "b");
 
-    Iterator<Map.Entry<String, String>> result = cimap.iterator();
+    Iterator<Map.Entry<String, String>> result = mmap.iterator();
 
     assertNotNull(result);
     assertTrue(result.hasNext());
   }
 
   @Test
-  public void testNames_test1()
+  public void testNamesTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    Set<String> result = cimap.names();
+    Set<String> result = mmap.names();
 
     assertNotNull(result);
     assertEquals(0, result.size());
   }
 
   @Test
-  public void testRemove_test1()
+  public void testRemoveTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = String.valueOf(new Object());
 
-    MultiMap result = cimap.remove(name);
+    MultiMap result = mmap.remove(name);
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
     assertEquals(0, result.size());
   }
 
-  @Test(expected=NullPointerException.class)
+  @Test(expected = NullPointerException.class)
   public void testRemoveNPE()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
-
-    cimap.remove(null);
+    new CaseInsensitiveHeaders().remove(null);
   }
 
   @Test
-  public void testRemove_test2()
+  public void testRemoveTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "1";
 
-    MultiMap result = cimap.remove(name);
+    MultiMap result = mmap.remove(name);
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
@@ -437,12 +433,12 @@ public class CaseInsensitiveHeadersTest {
   }
 
   @Test
-  public void testRemove_test3()
+  public void testRemoveTest3()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "name";
 
-    MultiMap result = cimap.remove(name);
+    MultiMap result = mmap.remove(name);
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
@@ -450,263 +446,261 @@ public class CaseInsensitiveHeadersTest {
   }
 
   @Test
-  public void testRemove_test4()
+  public void testRemoveTest4()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "name";
-    String value= "value";
-    cimap.add(name, value);
+    String value = "value";
+    mmap.add(name, value);
 
-    assertTrue(cimap.contains(name));
+    assertTrue(mmap.contains(name));
 
-    MultiMap result = cimap.remove(name);
+    MultiMap result = mmap.remove(name);
 
     assertFalse(result.contains(name));
   }
 
   @Test
-  public void testSet_test1()
+  public void testSetTest1()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     HashMap<String, String> headers = new HashMap<String, String>();
     headers.put("", "");
 
-    MultiMap result = cimap.setAll(headers);
+    MultiMap result = mmap.setAll(headers);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals(": \n",result.toString());
+    assertEquals(": \n", result.toString());
   }
 
   @Test
-  public void testSet_test2()
+  public void testSetTest2()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     HashMap<String, String> headers = new HashMap<String, String>();
     headers.put("", "");
     headers.put("aaa", "bbb");
 
-    MultiMap result = cimap.setAll(headers);
+    MultiMap result = mmap.setAll(headers);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(2, result.size());
-    assertEquals(": \naaa: bbb\n",result.toString());
+    assertEquals(": \naaa: bbb\n", result.toString());
   }
 
   @Test
-  public void testSet_test3()
+  public void testSetTest3()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     HashMap<String, String> headers = new HashMap<String, String>();
     headers.put("aaa", "bbb");
 
-    MultiMap result = cimap.setAll(headers);
+    MultiMap result = mmap.setAll(headers);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("aaa: bbb\n",result.toString());
+    assertEquals("aaa: bbb\n", result.toString());
   }
 
   @Test
-  public void testSet_test4()
+  public void testSetTest4()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     Map<String, String> headers = new HashMap<String, String>();
 
-    MultiMap result = cimap.setAll(headers);
+    MultiMap result = mmap.setAll(headers);
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
     assertEquals(0, result.size());
-    assertEquals("",result.toString());
+    assertEquals("", result.toString());
   }
 
   @Test
-  public void testSet_test5()
+  public void testSetTest5()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     MultiMap headers = new CaseInsensitiveHeaders();
 
-    MultiMap result = cimap.setAll(headers);
+    MultiMap result = mmap.setAll(headers);
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
     assertEquals(0, result.size());
-    assertEquals("",result.toString());
+    assertEquals("", result.toString());
   }
 
   @Test
-  public void testSet_test7()
+  public void testSetTest7()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = "name";
     CharSequence value = "value";
 
-    MultiMap result = cimap.set(name, value);
+    MultiMap result = mmap.set(name, value);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("name: value\n",result.toString());
+    assertEquals("name: value\n", result.toString());
   }
 
   @Test
-  public void testSet_test8()
+  public void testSetTest8()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     CharSequence name = "name";
     ArrayList<CharSequence> values = new ArrayList<CharSequence>();
     values.add("somevalue");
 
-    assertEquals("name: somevalue\n",cimap.set(name, values).toString());
+    assertEquals("name: somevalue\n", mmap.set(name, values).toString());
   }
 
   @Test
-  public void testSet_test9()
+  public void testSetTest9()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "";
     ArrayList<CharSequence> values = new ArrayList<CharSequence>();
     values.add("somevalue");
 
-    assertEquals(": somevalue\n",cimap.set(name, values).toString());
+    assertEquals(": somevalue\n", mmap.set(name, values).toString());
   }
 
   @Test
-  public void testSet_test10()
+  public void testSetTest10()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "aaa";
     ArrayList<CharSequence> values = new ArrayList<CharSequence>();
     values.add("somevalue");
 
-    assertEquals("aaa: somevalue\n",cimap.set(name, values).toString());
+    assertEquals("aaa: somevalue\n", mmap.set(name, values).toString());
   }
 
   @Test
-  public void testSet_test11()
+  public void testSetTest11()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "";
     String strVal = "";
 
-    MultiMap result = cimap.set(name, strVal);
+    MultiMap result = mmap.set(name, strVal);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals(": \n",result.toString());
+    assertEquals(": \n", result.toString());
   }
 
   @Test
-  public void testSet_test12()
+  public void testSetTest12()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "aaa";
     String strVal = "bbb";
 
-    MultiMap result = cimap.set(name, strVal);
+    MultiMap result = mmap.set(name, strVal);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("aaa: bbb\n",result.toString());
+    assertEquals("aaa: bbb\n", result.toString());
   }
 
   @Test
-  public void testSet_test13()
+  public void testSetTest13()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "aaa";
     String strVal = "";
 
-    MultiMap result = cimap.set(name, strVal);
+    MultiMap result = mmap.set(name, strVal);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("aaa: \n",result.toString());
+    assertEquals("aaa: \n", result.toString());
   }
 
   @Test
-  public void testSet_test14()
+  public void testSetTest14()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
     String name = "";
     String strVal = "bbb";
 
-    MultiMap result = cimap.set(name, strVal);
+    MultiMap result = mmap.set(name, strVal);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals(": bbb\n",result.toString());
+    assertEquals(": bbb\n", result.toString());
   }
 
-  @Test(expected=NullPointerException.class)
+  @Test(expected = NullPointerException.class)
   public void testSetIterableNPE()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
-
-    cimap.set("name", (Iterable<String>)null);
+    new CaseInsensitiveHeaders().set("name", (Iterable<String>) null);
   }
 
   @Test
   public void testSetIterableEmpty()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
     String name = "name";
-    List<String> values=new ArrayList<String>();
+    List<String> values = new ArrayList<String>();
 
-    MultiMap result = cimap.set(name, values);
+    MultiMap result = mmap.set(name, values);
 
     assertNotNull(result);
     assertTrue(result.isEmpty());
     assertEquals(0, result.size());
-    assertEquals("",result.toString());
+    assertEquals("", result.toString());
   }
 
   @Test
   public void testSetIterable()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
     String name = "name";
-    List<String> values=new ArrayList<String>();
+    List<String> values = new ArrayList<String>();
     values.add("value1");
     values.add(null);
 
-    MultiMap result = cimap.set(name, values);
+    MultiMap result = mmap.set(name, values);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("name: value1\n",result.toString());
+    assertEquals("name: value1\n", result.toString());
   }
 
   @Test
-  public void testSize_fixture3()
+  public void testSize()
       throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    assertEquals(0, cimap.size());
-    cimap.add("header","value");
-    assertEquals(1, cimap.size());
-    cimap.add("header2","value2");
-    assertEquals(2, cimap.size());
-    cimap.add("header","value3");
-    assertEquals(2, cimap.size());
+    assertEquals(0, mmap.size());
+    mmap.add("header", "value");
+    assertEquals(1, mmap.size());
+    mmap.add("header2", "value2");
+    assertEquals(2, mmap.size());
+    mmap.add("header", "value3");
+    assertEquals(2, mmap.size());
   }
 
   @Test
   public void testGetHashColl() {
-    CaseInsensitiveHeaders mm = new CaseInsensitiveHeaders();
-    String name1="!~AZ";
-    String name2="!~\u0080Y";
+    MultiMap mm = new CaseInsensitiveHeaders();
+    String name1 = "!~AZ";
+    String name2 = "!~\u0080Y";
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -714,8 +708,8 @@ public class CaseInsensitiveHeadersTest {
     assertEquals("value2", mm.get(name2));
 
     mm = new CaseInsensitiveHeaders();
-    name1="";
-    name2="\0";
+    name1 = "";
+    name2 = "\0";
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -723,8 +717,8 @@ public class CaseInsensitiveHeadersTest {
     assertEquals("value2", mm.get(name2));
 
     mm = new CaseInsensitiveHeaders();
-    name1="AZa";
-    name2="\u0080YA";
+    name1 = "AZa";
+    name2 = "\u0080YA";
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -732,9 +726,9 @@ public class CaseInsensitiveHeadersTest {
     assertEquals("value2", mm.get(name2));
 
     mm = new CaseInsensitiveHeaders();
-    name1=" !";
-    name2="? ";
-    assertTrue("hash error",hash(name1)==hash(name2));
+    name1 = " !";
+    name2 = "? ";
+    assertTrue("hash error", hash(name1) == hash(name2));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -742,9 +736,9 @@ public class CaseInsensitiveHeadersTest {
     assertEquals("value2", mm.get(name2));
 
     mm = new CaseInsensitiveHeaders();
-    name1="\u0080a";
-    name2="Ab";
-    assertTrue("hash error",hash(name1)==hash(name2));
+    name1 = "\u0080a";
+    name2 = "Ab";
+    assertTrue("hash error", hash(name1) == hash(name2));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -753,9 +747,9 @@ public class CaseInsensitiveHeadersTest {
 
     // same bucket, different hash
     mm = new CaseInsensitiveHeaders();
-    name1="A";
-    name2="R";
-    assertTrue("hash error",index(hash(name1))==index(hash(name2)));
+    name1 = "A";
+    name2 = "R";
+    assertTrue("hash error", index(hash(name1)) == index(hash(name2)));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -765,10 +759,10 @@ public class CaseInsensitiveHeadersTest {
 
   @Test
   public void testGetAllHashColl() {
-    CaseInsensitiveHeaders mm = new CaseInsensitiveHeaders();
-    String name1="AZ";
-    String name2="\u0080Y";
-    assertTrue("hash error",hash(name1)==hash(name2));
+    MultiMap mm = new CaseInsensitiveHeaders();
+    String name1 = "AZ";
+    String name2 = "\u0080Y";
+    assertTrue("hash error", hash(name1) == hash(name2));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -776,9 +770,9 @@ public class CaseInsensitiveHeadersTest {
     assertEquals("[value2]", mm.getAll(name2).toString());
 
     mm = new CaseInsensitiveHeaders();
-    name1="A";
-    name2="R";
-    assertTrue("hash error",index(hash(name1))==index(hash(name2)));
+    name1 = "A";
+    name2 = "R";
+    assertTrue("hash error", index(hash(name1)) == index(hash(name2)));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -788,11 +782,11 @@ public class CaseInsensitiveHeadersTest {
 
   @Test
   public void testRemoveHashColl() {
-    CaseInsensitiveHeaders mm = new CaseInsensitiveHeaders();
-    String name1="AZ";
-    String name2="\u0080Y";
-    String name3="RZ";
-    assertTrue("hash error",hash(name1)==hash(name2));
+    MultiMap mm = new CaseInsensitiveHeaders();
+    String name1 = "AZ";
+    String name2 = "\u0080Y";
+    String name3 = "RZ";
+    assertTrue("hash error", hash(name1) == hash(name2));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     mm.add(name3, "value3");
@@ -805,9 +799,9 @@ public class CaseInsensitiveHeadersTest {
     assertEquals(1, mm.size());
 
     mm = new CaseInsensitiveHeaders();
-    name1="A";
-    name2="R";
-    assertTrue("hash error",index(hash(name1))==index(hash(name2)));
+    name1 = "A";
+    name2 = "R";
+    assertTrue("hash error", index(hash(name1)) == index(hash(name2)));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -819,7 +813,7 @@ public class CaseInsensitiveHeadersTest {
   // hash function copied from method under test
   private static int hash(String name) {
     int h = 0;
-    for (int i = name.length() - 1; i >= 0; i --) {
+    for (int i = name.length() - 1; i >= 0; i--) {
       char c = name.charAt(i);
       if (c >= 'A' && c <= 'Z') {
         c += 32;
@@ -848,33 +842,33 @@ public class CaseInsensitiveHeadersTest {
   @Test
   public void testHashMININT() {
     CaseInsensitiveHeaders mm = new CaseInsensitiveHeaders();
-    String name1="";
-    long value=Integer.MAX_VALUE;
+    String name1 = "";
+    long value = Integer.MAX_VALUE;
     value++;
-    int base=31;
-    long pow=1;
+    int base = 31;
+    long pow = 1;
 
-    while(value>pow*base) {
-      pow*=base;
+    while (value > pow * base) {
+      pow *= base;
     }
 
-    while(pow!=0) {
-      long mul=value/pow;
-      name1=((char)mul)+name1;
-      value-=pow*mul;
-      pow/=base;
+    while (pow != 0) {
+      long mul = value / pow;
+      name1 = ((char) mul) + name1;
+      value -= pow * mul;
+      pow /= base;
     }
-    name1=((char)value)+name1;
-    mm.add(name1,"value");
-    assertEquals("value",mm.get(name1));
+    name1 = ((char) value) + name1;
+    mm.add(name1, "value");
+    assertEquals("value", mm.get(name1));
   }
 
   // we have to sort the string since a map doesn't do sorting
   private String sortByLine(String str) {
-    String lines[]=str.split("\n");
+    String[] lines = str.split("\n");
     Arrays.sort(lines);
-    StringBuilder sb=new StringBuilder();
-    for(String s:lines) {
+    StringBuilder sb = new StringBuilder();
+    for (String s:lines) {
       sb.append(s);
       sb.append("\n");
     }
@@ -883,24 +877,24 @@ public class CaseInsensitiveHeadersTest {
 
   @Test
   public void testToString() {
-    MultiMap mm=new CaseInsensitiveHeaders();
-    assertEquals("",mm.toString());
-    mm.add("Header1","Value1");
+    MultiMap mm = new CaseInsensitiveHeaders();
+    assertEquals("", mm.toString());
+    mm.add("Header1", "Value1");
     assertEquals("Header1: Value1\n",
         sortByLine(mm.toString()));
-    mm.add("Header2","Value2");
-    assertEquals("Header1: Value1\n" +
-        "Header2: Value2\n",
+    mm.add("Header2", "Value2");
+    assertEquals("Header1: Value1\n"
+        + "Header2: Value2\n",
         sortByLine(mm.toString()));
-    mm.add("Header1","Value3");
-    assertEquals("Header1: Value1\n" + 
-        "Header1: Value3\n" + 
-        "Header2: Value2\n",
+    mm.add("Header1", "Value3");
+    assertEquals("Header1: Value1\n"
+        + "Header1: Value3\n"
+        + "Header2: Value2\n",
         sortByLine(mm.toString()));
     mm.remove("Header1");
     assertEquals("Header2: Value2\n",
         sortByLine(mm.toString()));
-    mm.set("Header2","Value4");
+    mm.set("Header2", "Value4");
     assertEquals("Header2: Value4\n",
         sortByLine(mm.toString()));
   }
@@ -912,34 +906,33 @@ public class CaseInsensitiveHeadersTest {
 
   @Test
   public void testMapEntrySetValue() throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    cimap.add("Header","oldvalue");
+    mmap.add("Header", "oldvalue");
 
-    for(Map.Entry<String, String> me:cimap) {
+    for (Map.Entry<String, String> me:mmap) {
       me.setValue("newvalue");
     }
-    assertEquals("newvalue",cimap.get("Header"));
+    assertEquals("newvalue", mmap.get("Header"));
   }
 
   @Test
   public void testMapEntryToString() throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    cimap.add("Header","value");
+    mmap.add("Header", "value");
 
-    assertEquals("Header=value", cimap.iterator().next().toString());
+    assertEquals("Header: value", mmap.iterator().next().toString());
   }
 
-  @Test(expected=NullPointerException.class)
+  @Test(expected = NullPointerException.class)
   public void testMapEntrySetValueNull() throws Exception {
-    CaseInsensitiveHeaders cimap = new CaseInsensitiveHeaders();
+    MultiMap mmap = new CaseInsensitiveHeaders();
 
-    cimap.add("Header","oldvalue");
+    mmap.add("Header", "oldvalue");
 
-    for(Map.Entry<String, String> me:cimap) {
+    for (Map.Entry<String, String> me:mmap) {
       me.setValue(null);
     }
   }
-
 }
