@@ -369,10 +369,7 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     for (Map.Entry<String, String> entry: this) {
-      sb.append(entry.getKey());
-      sb.append(": ");
-      sb.append(entry.getValue());
-      sb.append("\n");
+      sb.append(entry).append('\n');
     }
     return sb.toString();
   }
@@ -424,7 +421,8 @@ public final class CaseInsensitiveMultiMap implements MultiMap {
 
     @Override
     public String toString() {
-      return getKey() + '=' + getValue();
+      return getKey() + ": " + getValue();
     }
   }
+
 }
