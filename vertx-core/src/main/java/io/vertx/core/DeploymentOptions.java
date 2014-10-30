@@ -34,6 +34,7 @@ public class DeploymentOptions {
   public static final String DEFAULT_ISOLATION_GROUP = null;
   public static final boolean DEFAULT_HA = false;
   public static final int DEFAULT_INSTANCES = 1;
+  public static final boolean DEFAULT_ENABLE_REDEPLOY = false;
 
   private JsonObject config;
   private boolean worker;
@@ -42,6 +43,7 @@ public class DeploymentOptions {
   private boolean ha;
   private List<String> extraClasspath;
   private int instances;
+  private boolean enableRedeploy;
 
   public DeploymentOptions() {
     this.worker = DEFAULT_WORKER;
@@ -49,6 +51,7 @@ public class DeploymentOptions {
     this.multiThreaded = DEFAULT_MULTI_THREADED;
     this.isolationGroup = DEFAULT_ISOLATION_GROUP;
     this.ha = DEFAULT_HA;
+    this.enableRedeploy = DEFAULT_ENABLE_REDEPLOY;
     this.instances = DEFAULT_INSTANCES;
   }
 
@@ -60,6 +63,7 @@ public class DeploymentOptions {
     this.ha = other.isHa();
     this.extraClasspath = other.getExtraClasspath() == null ? null : new ArrayList<>(other.getExtraClasspath());
     this.instances = other.instances;
+    this.enableRedeploy = other.enableRedeploy;
   }
 
   public DeploymentOptions(JsonObject json) {
@@ -77,6 +81,7 @@ public class DeploymentOptions {
       this.extraClasspath = arr.getList();
     }
     this.instances = json.getInteger("instances", DEFAULT_INSTANCES);
+    this.enableRedeploy = json.getBoolean("enableRedeploy", DEFAULT_ENABLE_REDEPLOY);
   }
 
   public JsonObject getConfig() {
@@ -126,6 +131,9 @@ public class DeploymentOptions {
     if (instances != DEFAULT_INSTANCES) {
       json.put("instances", instances);
     }
+    if (enableRedeploy != DEFAULT_ENABLE_REDEPLOY) {
+      json.put("enableRedeploy", enableRedeploy);
+    }
     return json;
   }
 
@@ -156,6 +164,15 @@ public class DeploymentOptions {
     return this;
   }
 
+  public boolean isEnableRedeploy() {
+    return enableRedeploy;
+  }
+
+  public DeploymentOptions setEnableRedeploy(boolean enableRedeploy) {
+    this.enableRedeploy = enableRedeploy;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -172,6 +189,7 @@ public class DeploymentOptions {
     if (isolationGroup != null ? !isolationGroup.equals(that.isolationGroup) : that.isolationGroup != null)
       return false;
     if (instances != that.instances) return false;
+    if (enableRedeploy != that.enableRedeploy) return false;
 
     return true;
   }
@@ -185,6 +203,7 @@ public class DeploymentOptions {
     result = 31 * result + (ha ? 1 : 0);
     result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);
     result = 31 * result + instances;
+    result = 31 * result + (enableRedeploy ? 1 : 0);
     return result;
   }
 }
