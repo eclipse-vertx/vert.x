@@ -780,26 +780,16 @@ public class WebsocketTest extends VertxTestBase {
   private void testInvalidSubProtocol(WebsocketVersion version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
-    Buffer buff = Buffer.buffer("AAA");
-
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
-      assertEquals(path, ws.path());
-      ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
+    server.listen(onSuccess(ar -> {
       client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol, ws -> {
-        final Buffer received = Buffer.buffer();
-        ws.handler(data -> {
-          received.appendBuffer(data);
-          if (received.length() == buff.length()) {
-            assertEquals(buff, received);
-            ws.close();
-            testComplete();
-          }
-        });
       });
-    });
+      client.exceptionHandler(t -> {
+        // Should fail
+        testComplete();
+      });
+    }));
     await();
   }
 
