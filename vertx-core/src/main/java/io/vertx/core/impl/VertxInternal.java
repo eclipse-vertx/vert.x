@@ -73,6 +73,8 @@ public interface VertxInternal extends VertxSPI {
 
   void simulateKill();
 
+  void simulateEventBusUnresponsive();
+
   Deployment getDeployment(String deploymentID);
 
   void failoverCompleteHandler(Handler<Boolean> failoverCompleteHandler);

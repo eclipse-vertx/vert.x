@@ -124,6 +124,7 @@ public class EventBusImpl implements EventBus {
   private final AtomicLong replySequence = new AtomicLong(0);
   private final EventBusMetrics metrics;
   private MessageCodec[] systemCodecs;
+  private volatile boolean sendPong = true;
 
   public EventBusImpl(VertxInternal vertx) {
     // Just some dummy server ID
@@ -303,6 +304,11 @@ public class EventBusImpl implements EventBus {
     }
   }
 
+  // Used in testing
+  public void simulateUnresponsive() {
+    sendPong = false;
+  }
+
   MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     MessageCodec codec;
     if (codecName != null) {
@@ -388,7 +394,9 @@ public class EventBusImpl implements EventBus {
             size = -1;
             if (received.codec() == PING_MESSAGE_CODEC) {
               // Just send back pong directly on connection
-              socket.write(PONG);
+              if (sendPong) {
+                socket.write(PONG);
+              }
             } else {
               receiveMessage(received, -1, null, null);
             }

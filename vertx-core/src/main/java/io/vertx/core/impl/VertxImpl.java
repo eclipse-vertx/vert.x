@@ -93,7 +93,7 @@ public class VertxImpl implements VertxInternal {
   }
 
   private final FileSystem fileSystem = getFileSystem();
-  private EventBus eventBus;
+  private EventBusImpl eventBus;
   private final SharedData sharedData;
   private final VertxMetrics metrics;
 
@@ -539,6 +539,11 @@ public class VertxImpl implements VertxInternal {
     if (haManager != null) {
       haManager.simulateKill();
     }
+  }
+
+  @Override
+  public void simulateEventBusUnresponsive() {
+    eventBus.simulateUnresponsive();
   }
 
   @Override

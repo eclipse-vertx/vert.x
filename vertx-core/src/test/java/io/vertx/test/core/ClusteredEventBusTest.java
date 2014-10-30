@@ -23,6 +23,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -279,7 +280,9 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   @Test
   public void testConnectionTimesOutNoPong() throws Exception {
     // Set an unreasonably quick reply time so it's bound to timeout
-    startNodes(2, new VertxOptions().setClusterPingInterval(2).setClusterPingReplyInterval(1));
+    startNodes(2, new VertxOptions().setClusterPingInterval(1).setClusterPingReplyInterval(1));
+    VertxInternal vertxI = (VertxInternal)vertices[0];
+    vertxI.simulateEventBusUnresponsive();
     AtomicBoolean sending = new AtomicBoolean();
     MessageConsumer<String> consumer = vertices[0].eventBus().<String>consumer("foobar").handler(msg -> {
       if (!sending.get()) {
