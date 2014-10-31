@@ -17,6 +17,7 @@
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import org.junit.Test;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -34,5 +35,10 @@ public class RedeploySourceVerticle extends AbstractVerticle {
   public void stop() throws Exception {
     vertx.eventBus().publish("vertstopped", vertx.context().deploymentID());
     System.out.println(vertx.context().deploymentID() + ": stopped");
+  }
+
+  @Test
+  public void testDummy() {
+
   }
 }

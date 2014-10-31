@@ -46,6 +46,7 @@ public class RedeploymentTest extends VertxTestBase {
   protected File cpDir;
   protected File jarFile;
   protected DeploymentOptions options;
+  protected File projectBaseDir;
 
   @Override
   public void setUp() throws Exception {
@@ -56,12 +57,9 @@ public class RedeploymentTest extends VertxTestBase {
     assertTrue(cpDir.mkdir());
     // Copy one jar into that directory
     URLClassLoader urlc = (URLClassLoader)getClass().getClassLoader();
-    System.out.println("Urlc is " + urlc + " size " + urlc.getURLs().length);
-
     int count = 0;
     for (URL url: urlc.getURLs()) {
       String surl = url.toString();
-      System.out.println(surl);
       if (surl.endsWith(".jar") && surl.startsWith("file:")) {
         File file = new File(url.toURI());
         File dest = new File(tempDir.getAbsoluteFile(), file.getName());
@@ -79,6 +77,10 @@ public class RedeploymentTest extends VertxTestBase {
     extraCP.add(jarFile.getAbsolutePath());    
     extraCP.add(cpDir.getAbsolutePath());
     options.setExtraClasspath(extraCP);
+    String baseDir = System.getProperty("project.basedir");
+    if (baseDir == null) {
+
+    }
   }
 
   @Override
@@ -162,19 +164,19 @@ public class RedeploymentTest extends VertxTestBase {
 
   @Test
   public void testRedeploySourceVerticle() throws Exception {
-    Files.copy(Paths.get("vertx-core/src/redeployverticles/RedeploySourceVerticle.java"),
+    Files.copy(Paths.get(resolvePath("src/redeployverticles/RedeploySourceVerticle.java")),
                new File(cpDir, "RedeploySourceVerticle.java").toPath());
     testRedeploy("java:RedeploySourceVerticle.java", () -> touchFile(cpDir, "RedeploySourceVerticle.java"), 1, 0, 1);
   }
 
   @Test
   public void testRedeployBrokenSourceVerticleThenFixIt() throws Exception {
-    Files.copy(Paths.get("vertx-core/src/redeployverticles/RedeploySourceVerticle.java"),
+    Files.copy(Paths.get(resolvePath("src/redeployverticles/RedeploySourceVerticle.java")),
       new File(cpDir, "RedeploySourceVerticle.java").toPath());
     testRedeploy("java:RedeploySourceVerticle.java", () -> {
       // Replace with broken source flile
       try {
-        Files.copy(Paths.get("vertx-core/src/redeployverticles/BrokenRedeploySourceVerticle.java"),
+        Files.copy(Paths.get(resolvePath("src/redeployverticles/BrokenRedeploySourceVerticle.java")),
           new File(cpDir, "RedeploySourceVerticle.java").toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (Exception e) {
         throw new VertxException(e);
@@ -182,7 +184,7 @@ public class RedeploymentTest extends VertxTestBase {
       vertx.setTimer(2000, id -> {
         // Copy back the fixed file
         try {
-          Files.copy(Paths.get("vertx-core/src/redeployverticles/RedeploySourceVerticle.java"),
+          Files.copy(Paths.get(resolvePath("src/redeployverticles/RedeploySourceVerticle.java")),
             new File(cpDir, "RedeploySourceVerticle.java").toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
           throw new VertxException(e);
@@ -314,7 +316,6 @@ public class RedeploymentTest extends VertxTestBase {
 
     vertx.deployVerticle(verticleID, options, onSuccess(depID -> {
       depRef.set(depID);
-      System.out.println("Deployed");
       deployLatch.countDown();
     }));
 
@@ -383,5 +384,13 @@ public class RedeploymentTest extends VertxTestBase {
   protected void deleteDirectory(File directory)  {
     vertx.fileSystem().deleteSyncRecursive(directory.getAbsolutePath(), true);
   }
+
+  // Make sure resources are found when running in IDE and on command line
+  protected String resolvePath(String path) {
+    String buildDir = System.getProperty("buildDirectory");
+    String prefix = buildDir != null ? buildDir + "/../" : "";
+    return prefix + path;
+  }
+
 }
 
