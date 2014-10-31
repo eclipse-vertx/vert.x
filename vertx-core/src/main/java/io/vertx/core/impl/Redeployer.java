@@ -18,6 +18,7 @@ package io.vertx.core.impl;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.cluster.Action;
 
 import java.io.File;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Redeployer {
+public class Redeployer implements Action<Boolean> {
 
   private static final Logger log = LoggerFactory.getLogger(Redeployer.class);
 
@@ -45,6 +46,7 @@ public class Redeployer {
   }
 
   private void addFileToWatch(File file) {
+    // log.trace("Adding file to watch: " + file);
     filesToWatch.add(file);
     Map<File, FileInfo> map = new HashMap<>();
     if (file.isDirectory()) {
@@ -65,9 +67,7 @@ public class Redeployer {
     fileMap.put(file, map);
   }
 
-
-
-  public boolean changesHaveOccurred() {
+  private boolean changesHaveOccurred() {
 
     boolean changed = false;
     for (File toWatch : new HashSet<>(filesToWatch)) {
@@ -128,6 +128,11 @@ public class Redeployer {
     }
 
     return false;
+  }
+
+  @Override
+  public Boolean perform() {
+    return changesHaveOccurred();
   }
 
   private static final class FileInfo {

@@ -158,8 +158,11 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void waitUntil(BooleanSupplier supplier) {
+    waitUntil(supplier, 10000);
+  }
+
+  protected void waitUntil(BooleanSupplier supplier, long timeout) {
     long start = System.currentTimeMillis();
-    long timeout = 10000;
     while (true) {
       if (supplier.getAsBoolean()) {
         break;
