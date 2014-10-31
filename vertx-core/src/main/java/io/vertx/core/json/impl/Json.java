@@ -56,6 +56,7 @@ public class Json {
     prettyMapper.registerModule(module);
   }
 
+  @SuppressWarnings("unchecked")
   public static Object checkAndCopy(Object val, boolean copy) {
     if (val == null) {
       // OK
@@ -90,7 +91,7 @@ public class Json {
     } else if (val instanceof byte[]) {
       val = Base64.getEncoder().encodeToString((byte[])val);
     } else {
-      throw new IllegalStateException("Illegal value in JsonObject: " + val);
+      throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
     }
     return val;
   }
