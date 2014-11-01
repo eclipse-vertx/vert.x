@@ -31,7 +31,6 @@ import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -171,7 +170,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public NetSocket sendFile(String filename, final Handler<AsyncResult<Void>> resultHandler) {
-    File f = new File(PathAdjuster.adjust(vertx, filename));
+    File f = vertx.resolveFile(filename);
     if (f.isDirectory()) {
       throw new IllegalArgumentException("filename must point to a file and not to a directory");
     }

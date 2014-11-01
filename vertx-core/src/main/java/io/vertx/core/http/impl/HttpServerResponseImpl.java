@@ -34,7 +34,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextImpl;
@@ -347,11 +346,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       throw new IllegalStateException("Head already written");
     }
     checkWritten();
-    File file = new File(PathAdjuster.adjust(vertx, filename));
+    File file = vertx.resolveFile(filename);
     if (!file.exists()) {
       if (notFoundResource != null) {
         setStatusCode(HttpResponseStatus.NOT_FOUND.code());
-        sendFile(notFoundResource, (String) null, resultHandler);
+        sendFile(notFoundResource, null, resultHandler);
       } else {
         sendNotFound();
       }

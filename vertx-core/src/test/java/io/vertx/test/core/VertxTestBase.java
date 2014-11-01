@@ -19,8 +19,8 @@ package io.vertx.test.core;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.file.impl.ClasspathPathResolver;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.CaOptions;
@@ -33,8 +33,9 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -131,8 +132,12 @@ public class VertxTestBase extends AsyncTestBase {
     if (url == null) {
       throw new IllegalArgumentException("Cannot find file " + fileName + " on classpath");
     }
-    Path path = ClasspathPathResolver.urlToPath(url).toAbsolutePath();
-    return path.toString();
+    try {
+      File file = new File(url.toURI());
+      return file.getAbsolutePath();
+    } catch (URISyntaxException e) {
+      throw new VertxException(e);
+    }
   }
 
   protected <T> Handler<AsyncResult<T>> onSuccess(Consumer<T> consumer) {

@@ -19,7 +19,6 @@ package io.vertx.core.net.impl;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.impl.PathAdjuster;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
@@ -144,7 +143,7 @@ public class SSLHelper {
       if (trustMgrs != null && crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
         Stream<Buffer> tmp = crlPaths.
             stream().
-            map(path -> PathAdjuster.adjust(vertx, path)).
+            map(path -> vertx.resolveFile(path).getAbsolutePath()).
             map(vertx.fileSystem()::readFileSync);
         tmp = Stream.concat(tmp, crlValues.stream());
         CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");

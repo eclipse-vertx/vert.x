@@ -63,8 +63,8 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.streams.ReadStream;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -111,6 +111,7 @@ public class VertxImpl implements VertxInternal {
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
   private final DeploymentManager deploymentManager;
+  private final FileResolver fileResolver;
   private boolean closed;
   private HAManager haManager;
 
@@ -124,6 +125,7 @@ public class VertxImpl implements VertxInternal {
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     configurePools(options);
+    this.fileResolver = new FileResolver(this);
     this.deploymentManager = new DeploymentManager(this);
     this.metrics = initialiseMetrics(options);
     if (options.isClustered()) {
@@ -415,33 +417,30 @@ public class VertxImpl implements VertxInternal {
           sharedNetServers.clear();
         }
 
-        if (workerPool != null) {
-          workerPool.shutdown();
-          try {
-            if (workerPool != null) {
-              workerPool.awaitTermination(20, TimeUnit.SECONDS);
-            }
-          } catch (InterruptedException ex) {
-            // ignore
+        fileResolver.deleteCacheDir(res -> {
+
+          if (workerPool != null) {
+            workerPool.shutdownNow();
           }
-        }
 
-        if (eventLoopGroup != null) {
-          eventLoopGroup.shutdownNow();
-        }
+          if (eventLoopGroup != null) {
+            eventLoopGroup.shutdownNow();
+          }
 
-        if (metrics != null) {
-          metrics.close();
-        }
+          if (metrics != null) {
+            metrics.close();
+          }
 
-        checker.close();
+          checker.close();
 
-        setContext(null);
+          setContext(null);
 
-        if (completionHandler != null) {
-          // Call directly - we have no context
-          completionHandler.handle(Future.completedFuture());
-        }
+          if (completionHandler != null) {
+            // Call directly - we have no context
+            completionHandler.handle(Future.completedFuture());
+          }
+        });
+
       });
     });
   }
@@ -497,7 +496,8 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void undeployVerticle(String deploymentID) {
-    undeployVerticle(deploymentID, res -> {});
+    undeployVerticle(deploymentID, res -> {
+    });
   }
 
   @Override
@@ -573,6 +573,11 @@ public class VertxImpl implements VertxInternal {
   @Override
   public VertxMetrics metricsSPI() {
     return metrics;
+  }
+
+  @Override
+  public File resolveFile(String fileName) {
+    return fileResolver.resolveFile(fileName);
   }
 
   private void configurePools(VertxOptions options) {

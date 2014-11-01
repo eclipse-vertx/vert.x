@@ -26,6 +26,7 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.cluster.VertxSPI;
 
+import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -84,4 +85,6 @@ public interface VertxInternal extends VertxSPI {
   void failDuringFailover(boolean fail);
 
   String getNodeID();
+
+  File resolveFile(String fileName);
 }

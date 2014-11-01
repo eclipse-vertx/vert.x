@@ -23,7 +23,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Starter;
-import io.vertx.core.file.impl.PathResolver;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -80,11 +79,6 @@ public abstract class ContextImpl implements Context {
 
   public Deployment getDeployment() {
     return deployment;
-  }
-
-  // FIXME - can we get rid of this?
-  public PathResolver getPathResolver() {
-    return null;
   }
 
   public void addCloseHook(Closeable hook) {
