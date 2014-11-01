@@ -22,8 +22,6 @@ import io.vertx.core.TimeoutStream;
 import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -255,23 +253,20 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testPeriodicPauseResume() throws Exception {
-    ReadStream<Long> timer1 = vertx.periodicStream(10);
-    ReadStream<Long> timer2 = vertx.periodicStream(10);
-    AtomicInteger count1 = new AtomicInteger();
-    AtomicInteger count2 = new AtomicInteger();
-    timer1.handler(l -> count1.incrementAndGet());
-    timer2.handler(l -> {
-      int value2 = count2.incrementAndGet();
-      if (value2 == 3) {
-        timer1.resume();
-      } else if (value2 == 5) {
-        int value1 = count1.get();
-        assertTrue("Was expecting " + value1 + " to be > 0", value1 > 0);
-        assertTrue("Was expecting " + value1 + " to be < 2", value1 < 3);
+    ReadStream<Long> timer = vertx.periodicStream(10);
+    AtomicInteger count = new AtomicInteger();
+    timer.handler(id -> {
+      int cnt = count.incrementAndGet();
+      if (cnt == 2) {
+        timer.pause();
+        vertx.setTimer(500, id2 -> {
+          assertEquals(2, count.get());
+          timer.resume();
+        });
+      } else if (cnt == 3) {
         testComplete();
       }
     });
-    timer1.pause();
     await();
   }
 }
