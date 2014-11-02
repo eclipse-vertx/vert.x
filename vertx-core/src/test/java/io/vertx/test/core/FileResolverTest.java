@@ -78,10 +78,9 @@ public class FileResolverTest extends VertxTestBase {
   @Test
   public void testCacheDirDeletedOnVertxClose() {
     VertxInternal vertx2 = (VertxInternal)Vertx.vertx();
-    String fileName = FileResolverTest.class.getName().replace('.', '/') + ".class";
-    File file = vertx2.resolveFile(fileName);
+    File file = vertx2.resolveFile(fileName1);
     assertTrue(file.exists());
-    File cacheDir = file.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
+    File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
     vertx2.close(onSuccess(v -> {
       assertFalse(cacheDir.exists());
