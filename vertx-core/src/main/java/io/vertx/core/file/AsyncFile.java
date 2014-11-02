@@ -16,13 +16,12 @@
 
 package io.vertx.core.file;
 
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.StreamBase;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -107,5 +106,11 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   AsyncFile flush(Handler<AsyncResult<Void>> handler);
+
+  @Fluent
+  AsyncFile setReadPos(long readPos);
+
+  @Fluent
+  AsyncFile setWritePos(long readPos);
 
 }

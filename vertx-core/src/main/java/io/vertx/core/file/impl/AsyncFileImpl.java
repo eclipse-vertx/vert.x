@@ -307,6 +307,18 @@ public class AsyncFileImpl implements AsyncFile {
     return this;
   }
 
+  @Override
+  public AsyncFile setReadPos(long readPos) {
+    this.readPos = readPos;
+    return this;
+  }
+
+  @Override
+  public AsyncFile setWritePos(long writePos) {
+    this.writePos = writePos;
+    return this;
+  }
+
   private void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
     checkContext();
