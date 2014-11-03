@@ -73,7 +73,7 @@ public class FatJarStarter implements Runnable {
     String classFilename=FatJarStarter.class.getName().replace(".", "/")+".class";
     // class url in the form jar:file:/jarfile.jar!/classFilename.class
     URL classURL = urlc.getResource(classFilename);
-    if(!classURL.getProtocol().equals("jar")) {
+    if (!classURL.getProtocol().equals("jar")) {
       throw new IllegalStateException("Failed to find jar file, classURL is "+classURL.toString());
     }
     // string of the jar filename in the form /jarfile.jar!/classFilename
