@@ -16,6 +16,9 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -24,10 +27,8 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
-import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,11 +39,15 @@ public class HttpRequestStreamTest extends VertxTestBase {
 
   private HttpServer server;
   private NetClient netClient;
+  private HttpClient client;
 
   @Override
   protected void tearDown() throws Exception {
     if (netClient != null) {
       netClient.close();
+    }
+    if (client != null) {
+      client.close();
     }
     if (server != null) {
       CountDownLatch latch = new CountDownLatch(1);
@@ -55,116 +60,38 @@ public class HttpRequestStreamTest extends VertxTestBase {
     super.tearDown();
   }
 
-  @Rule
-  public RepeatRule repeatRule = new RepeatRule();
-
-
-
-  //@Test
-  //@Repeat(times = 10000)
-  // FIXME - this intermittently fails (uncomment he above to run in a loop)
-  // Commented out until this issue is addressed:
-  // https://github.com/netty/netty/issues/3007
-//  public void testPausedRequestStreamWithFilledBacklogFailsConnecting() {
-//    String path = "/some/path";
-//    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-//    ReadStream<HttpServerRequest> stream = server.requestStream();
-//    AtomicInteger count = new AtomicInteger();
-//    AtomicBoolean paused = new AtomicBoolean();
-//    stream.handler(req -> {
-//      assertFalse(paused.get());
-//      HttpServerResponse response = req.response();
-//      response.setStatusCode(200).end();
-//      response.close();
-//    });
-//    server.listen(listenAR -> {
-//      assertTrue(listenAR.succeeded());
-//      paused.set(true);
-//      stream.pause();
-//      netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
-//      Runnable[] r = new Runnable[1];
-//      (r[0] = () -> {
-//        netClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", socketAR -> {
-//          if (socketAR.succeeded()) {
-//            NetSocket socket = socketAR.result();
-//            socket.write(Buffer.buffer(
-//              "GET " + path + " HTTP/1.1\r\n" +
-//              "Host: localhost:8080\r\n" +
-//              "\r\n"
-//            ));
-//            count.incrementAndGet();
-//            StringBuilder sb = new StringBuilder();
-//            socket.handler(data -> sb.append(data.toString("UTF-8")));
-//            socket.closeHandler(v2 -> {
-//              String expectedPrefix = "HTTP/1.1 200 OK\r\n";
-//              assertTrue("Was expecting <" + sb + "> to start with <" + expectedPrefix + ">", sb.toString().startsWith(expectedPrefix));
-//              if (count.decrementAndGet() == 0) {
-//                testComplete();
-//              }
-//            });
-//            r[0].run();
-//          } else {
-//            paused.set(false);
-//            stream.resume();
-//          }
-//        });
-//      }).run();
-//    });
-//    await();
-//  }
-
   @Test
-  public void testResumePausedRequestStream() {
+  public void testReadStreamPauseResume() {
     String path = "/some/path";
-    ArrayList<String> messages = new ArrayList<>();
-    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-    ReadStream<HttpServerRequest> stream = server.requestStream();
-    stream.handler(req -> {
-      StringBuilder data = new StringBuilder();
-      req.handler(event -> {
-        data.append(event.toString("UTF-8"));
-      });
-      req.endHandler(v -> {
-        String expectedData = messages.stream().reduce(String::concat).get();
-        if (!data.toString().equals(expectedData)) {
-          fail("Not same data");
-        }
-        HttpServerResponse response = req.response();
-        response.setStatusCode(200).end();
-        response.close();
-        testComplete();
-      });
+    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    ReadStream<HttpServerRequest> httpStream = server.requestStream();
+    AtomicBoolean paused = new AtomicBoolean();
+    httpStream.handler(req -> {
+      assertFalse(paused.get());
+      HttpServerResponse response = req.response();
+      response.setStatusCode(200).end();
+      response.close();
     });
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
-      stream.pause();
-      netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(100));
+    server.listen(listenAR -> {
+      assertTrue(listenAR.succeeded());
+      paused.set(true);
+      httpStream.pause();
+      netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
       netClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", socketAR -> {
         assertTrue(socketAR.succeeded());
         NetSocket socket = socketAR.result();
-        socket.write(Buffer.buffer(
-            "PUT " + path + " HTTP/1.1\r\n" +
-            "Content-Type: text/plain; charset=utf-8\r\n" +
-            "Host: localhost:8080\r\n" +
-            "Transfer-Encoding: chunked\r\n" +
-            "\r\n"
-        ));
-        // We do PUT and write in the socket until it is full
-        while (true) {
-          if (socket.writeQueueFull()) {
-            // When the socket is full we resume the stream and we finish the PUT
-            stream.resume();
-            socket.write("0\r\n\r\n");
-            break;
-          } else {
-            String message = TestUtils.randomAlphaString(30);
-            messages.add(message);
-            socket.write(Integer.toHexString(message.length()));
-            socket.write("\r\n");
-            socket.write(message, "UTF-8");
-            socket.write("\r\n");
-          }
-        }
+        Buffer buffer = Buffer.buffer();
+        socket.handler(buffer::appendBuffer);
+        socket.closeHandler(v -> {
+          assertEquals(0, buffer.length());
+          paused.set(false);
+          httpStream.resume();
+          client = vertx.createHttpClient(new HttpClientOptions());
+          client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", path, resp -> {
+            assertEquals(200, resp.statusCode());
+            testComplete();
+          }).end();
+        });
       });
     });
     await();

@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -876,56 +877,41 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
-// Commented out until underlying Netty issue is fixed
-//  @Test
-//  public void testWebsocketPauseAndResume() {
-//    client.close();
-//    client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
-//    String path = "/some/path";
-//    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
-//    ReadStream<ServerWebSocket> stream = server.websocketStream();
-//    stream.handler(ws -> {
-//      ws.writeMessage(Buffer.buffer("whatever"));
-//      ws.close();
-//    });
-//    server.listen(listenAR -> {
-//      assertTrue(listenAR.succeeded());
-//      stream.pause();
-//      AtomicBoolean rejected = new AtomicBoolean();
-//      AtomicInteger connections = new AtomicInteger();
-//      client.exceptionHandler(event -> {
-//        if (!rejected.getAndSet(true)) {
-//          // Resume
-//          rejected.set(true);
-//          stream.resume();
-//        }
-//        if (connections.decrementAndGet() == 0) {
-//          testComplete();
-//        }
-//      });
-//      Runnable[] r = new Runnable[1];
-//      // Connect until we get the first rejection
-//      (r[0] = () -> {
-//        connections.incrementAndGet();
-//        client.connectWebsocket(new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setRequestURI(path), ws -> {
-//          ws.handler(buffer -> {
-//            assertEquals("whatever", buffer.toString("UTF-8"));
-//            ws.closeHandler(v2 -> {
-//              if (connections.decrementAndGet() == 0) {
-//                testComplete();
-//              }
-//            });
-//          });
-//        });
-//        if (!rejected.get()) {
-//          vertx.setTimer(100, l -> {
-//            r[0].run();
-//          });
-//        }
-//      }).run();
-//    });
-//    await();
-//  }
+  @Test
+  public void testWebsocketPauseAndResume() {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
+    String path = "/some/path";
+    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    AtomicBoolean paused = new AtomicBoolean();
+    ReadStream<ServerWebSocket> stream = server.websocketStream();
+    stream.handler(ws -> {
+      assertFalse(paused.get());
+      ws.writeMessage(Buffer.buffer("whatever"));
+      ws.close();
+    });
+    server.listen(listenAR -> {
+      assertTrue(listenAR.succeeded());
+      stream.pause();
+      paused.set(true);
+      client.exceptionHandler(err -> {
+        assertTrue(paused.get());
+        assertTrue(err instanceof WebSocketHandshakeException);
+        paused.set(false);
+        stream.resume();
+        client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+          ws.handler(buffer -> {
+            assertEquals("whatever", buffer.toString("UTF-8"));
+            ws.closeHandler(v2 -> {
+              testComplete();
+            });
+          });
+        });
+      });
+      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> fail());
+    });
+    await();
+  }
 
   @Test
   public void testClosingServerClosesWebSocketStreamEndHandler() {
