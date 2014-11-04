@@ -84,9 +84,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayDeque;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -202,6 +200,10 @@ public class HttpServerImpl implements HttpServer, Closeable {
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
+              if (requestStream.paused || wsStream.paused) {
+                ch.close();
+                return;
+              }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
                 pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, false));
@@ -656,28 +658,29 @@ public class HttpServerImpl implements HttpServer, Closeable {
     super.finalize();
   }
 
-  abstract class HttpStreamHandler<R extends ReadStream<C>, C extends ReadStream<?>> implements Handler<C>, ReadStream<C> {
+  class HttpStreamHandler<R extends ReadStream<C>, C extends ReadStream<?>> implements Handler<C>, ReadStream<C> {
 
     protected Handler<C> handler;
-    private final Queue<C> pending = new ArrayDeque<>(8);
-    private boolean paused;
+    protected boolean paused;
     Handler<Void> endHandler;
 
     @Override
-    public void handle(C event) {
-      if (paused) {
-        event.pause();
-        pending.add(event);
-      } else {
-        checkNextTick();
-        handler.handle(event);
+    public R handler(Handler<C> handler) {
+      if (listening) {
+        throw new IllegalStateException("Please set handler before server is listening");
       }
+      this.handler = handler;
+      return (R) this;
+    }
+
+    @Override
+    public void handle(C conn) {
+      handler.handle(conn);
     }
 
     @Override
     public R pause() {
       if (!paused) {
-        HttpServerImpl.this.bindFuture.channel().config().setAutoRead(false);
         paused = true;
       }
       return (R) this;
@@ -687,8 +690,6 @@ public class HttpServerImpl implements HttpServer, Closeable {
     public R resume() {
       if (paused) {
         paused = false;
-        HttpServerImpl.this.bindFuture.channel().config().setAutoRead(true);
-        checkNextTick();
       }
       return (R) this;
     }
@@ -704,42 +705,11 @@ public class HttpServerImpl implements HttpServer, Closeable {
       // Should we use it in the server close exception handler ?
       return (R) this;
     }
-
-    private void checkNextTick() {
-      // Check if there are more pending messages in the queue that can be processed next time around
-      if (!pending.isEmpty()) {
-        vertx.runOnContext(v -> {
-          if (!paused) {
-            C event = pending.poll();
-            if (event != null) {
-              event.resume();
-              HttpStreamHandler.this.handle(event);
-            }
-          }
-        });
-      }
-    }
   }
 
   class HttpServerRequestStreamImpl extends HttpStreamHandler<HttpServerRequestStream, HttpServerRequest> implements HttpServerRequestStream {
-    @Override
-    public HttpServerRequestStream handler(Handler<HttpServerRequest> handler) {
-      if (listening) {
-        throw new IllegalStateException("Please set handler before server is listening");
-      }
-      this.handler = handler;
-      return this;
-    }
   }
 
   class ServerWebSocketStreamImpl extends HttpStreamHandler<ServerWebSocketStream, ServerWebSocket> implements ServerWebSocketStream {
-    @Override
-    public ServerWebSocketStream handler(Handler<ServerWebSocket> handler) {
-      if (listening) {
-        throw new IllegalStateException("Please set handler before server is listening");
-      }
-      this.handler = handler;
-      return this;
-    }
   }
 }

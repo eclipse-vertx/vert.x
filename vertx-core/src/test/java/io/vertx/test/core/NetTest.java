@@ -40,12 +40,12 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetSocketStream;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
-import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
@@ -1820,84 +1820,45 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
-  //@Test
-  public void testReadStreamPaused() {
+  @Test
+  public void testReadStreamPauseResume() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
-    ReadStream<NetSocket> stream = server.connectStream();
-    stream.handler(sock -> {});
+    NetSocketStream socketStream = server.connectStream();
+    AtomicBoolean paused = new AtomicBoolean();
+    socketStream.handler(so -> {
+      assertTrue(!paused.get());
+      so.write("hello");
+      so.close();
+    });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      // We pause the stream - this causes channel.setAutoRead(false) to be called so there should ne no
-      // more connects after this
-      stream.pause();
-      attemptConnect(0);
+      paused.set(true);
+      socketStream.pause();
+      client.connect(1234, "localhost", ar2 -> {
+        assertTrue(ar2.succeeded());
+        NetSocket so2 = ar2.result();
+        so2.handler(buffer -> {
+          fail();
+        });
+        so2.closeHandler(v -> {
+          paused.set(false);
+          socketStream.resume();
+          client.connect(1234, "localhost", ar3 -> {
+            assertTrue(ar3.succeeded());
+            NetSocket so3 = ar3.result();
+            Buffer buffer = Buffer.buffer();
+            so3.handler(buffer::appendBuffer);
+            so3.closeHandler(v3 -> {
+              assertEquals("hello", buffer.toString("utf-8"));
+              testComplete();
+            });
+          });
+        });
+      });
     });
     await();
   }
-
-  // The stream is paused so it should NEVER connect
-  private void attemptConnect(int count) {
-    if (count == 100) {
-      testComplete();
-    }
-    client.connect(1234, "localhost", ar2 -> {
-      if (ar2.succeeded()) {
-        fail("Should not connect");
-      } else {
-        System.out.println("failed to connect");
-      }
-      attemptConnect(count + 1);
-    });
-  }
-
-// FIXME
-// commented out because intermittently fails until this netty issue is addressed:
-// https://github.com/netty/netty/issues/3007
-//  @Test
-//  public void testReadStreamPauseResume() {
-//
-//    server.close();
-//    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1).setPort(1234).setHost("localhost"));
-//    NetStream stream = server.connectStream();
-//    AtomicBoolean paused = new AtomicBoolean();
-//    stream.handler(so -> {
-//      assert(!paused.get());
-//      so.write("hello");
-//      so.close();
-//    });
-//    server.listen(ar -> {
-//      assertTrue(ar.succeeded());
-//      paused.set(true);
-//      stream.pause();
-//      AtomicInteger count = new AtomicInteger();
-//      Runnable[] r = new Runnable[1];
-//      (r[0] = () -> {
-//        client.connect(1234, "localhost", ar2 -> {
-//          if (ar2.succeeded()) {
-//            // We connect clients until one is rejected
-//            // because we cannot assume a precise number of connections that will succeed
-//            count.incrementAndGet();
-//            r[0].run();
-//            NetSocket so = ar2.result();
-//            so.handler(buffer -> {
-//              assertEquals("hello", buffer.toString("utf-8"));
-//              so.closeHandler(v -> {
-//                if (count.decrementAndGet() == 0) {
-//                  testComplete();
-//                }
-//              });
-//            });
-//          } else {
-//            // When we succeed
-//            paused.set(false);
-//            stream.resume();
-//          }
-//        });
-//      }).run();
-//    });
-//    await();
-//  }
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
