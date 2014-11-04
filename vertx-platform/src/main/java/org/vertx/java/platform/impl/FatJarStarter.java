@@ -70,11 +70,11 @@ public class FatJarStarter implements Runnable {
     URLClassLoader urlc = (URLClassLoader)FatJarStarter.class.getClassLoader();
 
     // file name representing this class inside the jar
-    String classFilename=FatJarStarter.class.getName().replace(".", "/")+".class";
+    String classFilename = FatJarStarter.class.getName().replace(".", "/") + ".class";
     // class url in the form jar:file:/jarfile.jar!/classFilename.class
     URL classURL = urlc.getResource(classFilename);
     if (!classURL.getProtocol().equals("jar")) {
-      throw new IllegalStateException("Failed to find jar file, classURL is "+classURL.toString());
+      throw new IllegalStateException("Failed to find jar file, classURL is " + classURL.toString());
     }
     // string of the jar filename in the form /jarfile.jar!/classFilename
     String jarName = new URL(classURL.getFile()).getPath();
@@ -220,7 +220,7 @@ public class FatJarStarter implements Runnable {
         URL url = new File(part).toURI().toURL();
         classpath.add(url);
       } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
+        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp);
       }
     }
     return classpath;
