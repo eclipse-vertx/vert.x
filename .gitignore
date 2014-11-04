@@ -12,6 +12,7 @@ out
 *.iml
 *.ipr
 *.iws
+.vertx
 test-output
 Scratch.java
 ScratchTest.java
