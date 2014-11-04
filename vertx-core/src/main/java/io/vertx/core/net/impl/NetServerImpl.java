@@ -53,7 +53,6 @@ import io.vertx.core.net.NetSocketStream;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -149,6 +148,10 @@ public class NetServerImpl implements NetServer, Closeable {
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
+            if (connectStream.paused) {
+              ch.close();
+              return;
+            }
             ChannelPipeline pipeline = ch.pipeline();
             if (sslHelper.isSSL()) {
               SslHandler sslHandler = sslHelper.createSslHandler(vertx, false);
@@ -436,19 +439,12 @@ public class NetServerImpl implements NetServer, Closeable {
   class NetSocketStreamImpl implements Handler<NetSocket>, NetSocketStream {
 
     protected Handler<NetSocket> handler;
-    private final Queue<NetSocket> pending = new ArrayDeque<>(8);
     private boolean paused;
     private Handler<Void> endHandler;
 
     @Override
     public void handle(NetSocket event) {
-      if (paused) {
-        event.pause();
-        pending.add(event);
-      } else {
-        checkNextTick();
-        handler.handle(event);
-      }
+      handler.handle(event);
     }
 
     @Override
@@ -463,7 +459,6 @@ public class NetServerImpl implements NetServer, Closeable {
     @Override
     public NetSocketStreamImpl pause() {
       if (!paused) {
-        NetServerImpl.this.bindFuture.channel().config().setAutoRead(false);
         paused = true;
       }
       return this;
@@ -472,9 +467,7 @@ public class NetServerImpl implements NetServer, Closeable {
     @Override
     public NetSocketStreamImpl resume() {
       if (paused) {
-        NetServerImpl.this.bindFuture.channel().config().setAutoRead(true);
         paused = false;
-        checkNextTick();
       }
       return this;
     }
@@ -489,21 +482,6 @@ public class NetServerImpl implements NetServer, Closeable {
     public NetSocketStreamImpl exceptionHandler(Handler<Throwable> handler) {
       // Should we use it in the server close exception handler ?
       return this;
-    }
-
-    private void checkNextTick() {
-      // Check if there are more pending messages in the queue that can be processed next time around
-      if (!pending.isEmpty()) {
-        vertx.runOnContext(v -> {
-          if (!paused) {
-            NetSocket event = pending.poll();
-            if (event != null) {
-              event.resume();
-              NetSocketStreamImpl.this.handle(event);
-            }
-          }
-        });
-      }
     }
   }
 }
