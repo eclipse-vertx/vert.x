@@ -27,9 +27,7 @@ import io.netty.handler.stream.ChunkedFile;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.ContextImpl;
-
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -46,11 +44,25 @@ import java.net.InetSocketAddress;
 /**
  * Abstract base class for TCP connections.
  *
+ * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
+
+  protected final VertxInternal vertx;
+  protected final Channel channel;
+  protected final ContextImpl context;
+  protected final NetMetrics metrics;
+  protected Handler<Throwable> exceptionHandler;
+  protected Handler<Void> closeHandler;
+  private boolean read;
+  private boolean needsFlush;
 
   protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetMetrics metrics) {
     this.vertx = vertx;
@@ -60,31 +72,12 @@ public abstract class ConnectionBase {
     metrics.connected(remoteAddress());
   }
 
-  protected final VertxInternal vertx;
-  protected final Channel channel;
-  protected final ContextImpl context;
-  protected final NetMetrics metrics;
-
-  protected Handler<Throwable> exceptionHandler;
-  protected Handler<Void> closeHandler;
-  private boolean writable = true;
-
-  private boolean read;
-  private boolean needsFlush;
-
-  protected void checkContext() {
-    // Sanity check
-    if (context != vertx.getContext()) {
-      throw new IllegalStateException("Wrong context!");
-    }
-  }
-
-  public final void startRead() {
+  protected synchronized final void startRead() {
     checkContext();
     read = true;
   }
 
-  public final void endReadAndFlush() {
+  protected synchronized final void endReadAndFlush() {
     read = false;
     if (needsFlush) {
       needsFlush = false;
@@ -93,12 +86,12 @@ public abstract class ConnectionBase {
     }
   }
 
-  public ChannelFuture queueForWrite(final Object obj) {
+  public synchronized ChannelFuture queueForWrite(final Object obj) {
     needsFlush = true;
     return channel.write(obj);
   }
 
-  public ChannelFuture writeToChannel(Object obj) {
+  public synchronized ChannelFuture writeToChannel(Object obj) {
     if (read) {
       return queueForWrite(obj);
     }
@@ -107,6 +100,11 @@ public abstract class ConnectionBase {
     } else {
       return null;
     }
+  }
+
+  // This is a volatile read inside the Netty channel implementation
+  public boolean isNotWritable() {
+    return !channel.isWritable();
   }
 
   /**
@@ -131,19 +129,19 @@ public abstract class ConnectionBase {
     channel.config().setWriteBufferHighWaterMark(size);
   }
 
-  public boolean isNotWritable() {
-    return !writable;
+  protected void checkContext() {
+    // Sanity check
+    if (context != vertx.getContext()) {
+      throw new IllegalStateException("Wrong context!");
+    }
   }
 
-  protected void setWritable(boolean writable) {
-    this.writable = writable;
-  }
 
   protected ContextImpl getContext() {
     return context;
   }
 
-  protected void handleException(Throwable t) {
+  protected synchronized void handleException(Throwable t) {
     metrics.exceptionOccurred(remoteAddress(), t);
     if (exceptionHandler != null) {
       context.execute(() -> exceptionHandler.handle(t), false);
@@ -152,12 +150,14 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected void handleClosed() {
+  protected synchronized void handleClosed() {
     metrics.disconnected(remoteAddress());
     if (closeHandler != null) {
       closeHandler.handle(null);
     }
   }
+
+  protected abstract void handleInterestedOpsChanged();
 
   protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
     if (future != null) {
@@ -228,14 +228,12 @@ public abstract class ConnectionBase {
   public SocketAddress remoteAddress() {
     InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
     if (addr == null) return null;
-
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
   public SocketAddress localAddress() {
     InetSocketAddress addr = (InetSocketAddress) channel.localAddress();
     if (addr == null) return null;
-
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
 
@@ -243,6 +241,4 @@ public abstract class ConnectionBase {
     return metrics;
   }
 
-
-  protected abstract void handleInterestedOpsChanged();
 }

@@ -19,7 +19,6 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -28,7 +27,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -50,6 +48,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
+ *
+ * This class is thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetClientImpl implements NetClient {
@@ -75,8 +76,8 @@ public class NetClientImpl implements NetClient {
     };
     creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isMultiThreaded()) {
-        throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
+      if (creatingContext.isWorker()) {
+        throw new IllegalStateException("Cannot use NetClient in a worker verticle");
       }
       creatingContext.addCloseHook(closeHook);
     }
@@ -84,7 +85,7 @@ public class NetClientImpl implements NetClient {
   }
 
   @Override
-  public NetClient connect(int port, String host, final Handler<AsyncResult<NetSocket>> connectHandler) {
+  public synchronized NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {
     checkClosed();
     connect(port, host, connectHandler, options.getReconnectAttempts());
     return this;
@@ -141,8 +142,8 @@ public class NetClientImpl implements NetClient {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
   }
 
-  private void connect(final int port, final String host, final Handler<AsyncResult<NetSocket>> connectHandler,
-                       final int remainingAttempts) {
+  private void connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler,
+                       int remainingAttempts) {
     Objects.requireNonNull(host, "No null host accepted");
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextImpl context = vertx.getOrCreateContext();
@@ -171,44 +172,40 @@ public class NetClientImpl implements NetClient {
 
     applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
-    future.addListener(new ChannelFutureListener() {
-      public void operationComplete(ChannelFuture channelFuture) throws Exception {
-        final Channel ch = channelFuture.channel();
+    future.addListener((ChannelFuture channelFuture) -> {
 
-        if (channelFuture.isSuccess()) {
+      Channel ch = channelFuture.channel();
 
-          if (sslHelper.isSSL()) {
-            // TCP connected, so now we must do the SSL handshake
+      if (channelFuture.isSuccess()) {
 
-            SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
+        if (sslHelper.isSSL()) {
+          // TCP connected, so now we must do the SSL handshake
 
-            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-            fut.addListener(new GenericFutureListener<io.netty.util.concurrent.Future<Channel>>() {
-              @Override
-              public void operationComplete(io.netty.util.concurrent.Future<Channel> future) throws Exception {
-                if (future.isSuccess()) {
-                  connected(context, ch, connectHandler);
-                } else {
-                  failed(context, ch, future.cause(), connectHandler);
-                }
-              }
-            });
-          } else {
-            connected(context, ch, connectHandler);
-          }
+          SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
+
+          io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
+          fut.addListener(future2 -> {
+            if (future2.isSuccess()) {
+              connected(context, ch, connectHandler);
+            } else {
+              failed(context, ch, future2.cause(), connectHandler);
+            }
+          });
         } else {
-          if (remainingAttempts > 0 || remainingAttempts == -1) {
-            context.execute(() -> {
-              log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
-              //Set a timer to retry connection
-              vertx.setTimer(options.getReconnectInterval(), tid -> {
-                connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                    - 1);
-              });
-            }, true);
-          } else {
-            failed(context, ch, channelFuture.cause(), connectHandler);
-          }
+          connected(context, ch, connectHandler);
+        }
+      } else {
+        if (remainingAttempts > 0 || remainingAttempts == -1) {
+          context.execute(() -> {
+            log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
+            //Set a timer to retry connection
+            vertx.setTimer(options.getReconnectInterval(), tid -> {
+              connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
+                  - 1);
+            });
+          }, true);
+        } else {
+          failed(context, ch, channelFuture.cause(), connectHandler);
         }
       }
     });
@@ -218,7 +215,7 @@ public class NetClientImpl implements NetClient {
     context.execute(() -> doConnected(context, ch, connectHandler), true);
   }
 
-  private void doConnected(ContextImpl context, Channel ch, final Handler<AsyncResult<NetSocket>> connectHandler) {
+  private void doConnected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics);
     socketMap.put(ch, sock);
     connectHandler.handle(Future.completedFuture(sock));

@@ -54,6 +54,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -95,7 +100,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public io.vertx.core.http.HttpVersion version() {
+  public synchronized io.vertx.core.http.HttpVersion version() {
     if (version == null) {
       io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
       if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
@@ -110,7 +115,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public io.vertx.core.http.HttpMethod method() {
+  public synchronized io.vertx.core.http.HttpMethod method() {
     if (method == null) {
       method = io.vertx.core.http.HttpMethod.valueOf(request.getMethod().toString());
     }
@@ -118,7 +123,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String uri() {
+  public synchronized String uri() {
     if (uri == null) {
       uri = request.getUri();
     }
@@ -126,7 +131,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String path() {
+  public synchronized String path() {
     if (path == null) {
       path = UriParser.path(uri());
     }
@@ -134,7 +139,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String query() {
+  public synchronized String query() {
     if (query == null) {
       query = UriParser.query(uri());
     }
@@ -147,7 +152,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public MultiMap headers() {
+  public synchronized MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(request.headers());
     }
@@ -155,7 +160,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public MultiMap params() {
+  public synchronized MultiMap params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
       Map<String, List<String>> prms = queryStringDecoder.parameters();
@@ -170,13 +175,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest handler(Handler<Buffer> dataHandler) {
+  public synchronized HttpServerRequest handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
 
   @Override
-  public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
+  public synchronized HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
   }
@@ -194,7 +199,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest endHandler(Handler<Void> handler) {
+  public synchronized HttpServerRequest endHandler(Handler<Void> handler) {
     this.endHandler = handler;
     return this;
   }
@@ -205,7 +210,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String absoluteURI() {
+  public synchronized String absoluteURI() {
     if (absoluteURI == null) {
       try {
         URI uri = new URI(uri());
@@ -229,14 +234,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
-    final Buffer body = Buffer.buffer();
+    Buffer body = Buffer.buffer();
     handler(body::appendBuffer);
     endHandler(v -> bodyHandler.handle(body));
     return this;
   }
 
   @Override
-  public NetSocket netSocket() {
+  public synchronized NetSocket netSocket() {
     if (netSocket == null) {
       netSocket = conn.createNetSocket();
     }
@@ -244,13 +249,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
+  public synchronized HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
     this.uploadHandler = handler;
     return this;
   }
 
   @Override
-  public MultiMap formAttributes() {
+  public synchronized MultiMap formAttributes() {
     if (decoder == null) {
       throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
     }
@@ -258,7 +263,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest setExpectMultipart(boolean expect) {
+  public synchronized HttpServerRequest setExpectMultipart(boolean expect) {
     if (expect && decoder == null) {
       String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
       if (contentType != null) {
@@ -277,11 +282,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public boolean isExpectMultipart() {
+  public synchronized boolean isExpectMultipart() {
     return decoder != null;
   }
 
-  void handleData(Buffer data) {
+  synchronized void handleData(Buffer data) {
     if (decoder != null) {
       try {
         decoder.offer(new DefaultHttpContent(data.getByteBuf().duplicate()));
@@ -294,8 +299,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-
-  void handleEnd() {
+  synchronized void handleEnd() {
     if (decoder != null) {
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -328,7 +332,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  void handleException(Throwable t) {
+  synchronized void handleException(Throwable t) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     }
@@ -345,11 +349,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private final static class NettyFileUpload implements FileUpload {
 
     private final HttpServerFileUploadImpl upload;
-
-
-    private String name;
-    private String filename;
+    private final String name;
     private String contentType;
+    private String filename;
     private String contentTransferEncoding;
     private Charset charset;
     private boolean completed;

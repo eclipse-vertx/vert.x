@@ -62,6 +62,7 @@ import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.Action;
+import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.io.File;
@@ -93,27 +94,25 @@ public class VertxImpl implements VertxInternal {
   }
 
   private final FileSystem fileSystem = getFileSystem();
-  private EventBusImpl eventBus;
   private final SharedData sharedData;
   private final VertxMetrics metrics;
-
-  private ExecutorService workerPool;
-  private ExecutorService internalBlockingPool;
-  private OrderedExecutorFactory workerOrderedFact;
-  private OrderedExecutorFactory internalOrderedFact;
-  private EventLoopGroup eventLoopGroup;
-  private BlockedThreadChecker checker;
-
-  private Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
-  private Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
-
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
   private final DeploymentManager deploymentManager;
   private final FileResolver fileResolver;
-  private boolean closed;
+  private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
+  private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
+  private final ExecutorService workerPool;
+  private final ExecutorService internalBlockingPool;
+  private final OrderedExecutorFactory workerOrderedFact;
+  private final OrderedExecutorFactory internalOrderedFact;
+  private final EventLoopGroup eventLoopGroup;
+  private final BlockedThreadChecker checker;
+  private final boolean haEnabled;
+  private EventBusImpl eventBus;
   private HAManager haManager;
+  private boolean closed;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -124,10 +123,20 @@ public class VertxImpl implements VertxInternal {
   }
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    configurePools(options);
+    checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime(),
+                                       options.getMaxWorkerExecuteTime());
+    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
+                                           new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
+    workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
+                                              new VertxThreadFactory("vert.x-worker-thread-", checker, true));
+    internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
+                                                        new VertxThreadFactory("vert.x-internal-blocking-", checker, true));
+    workerOrderedFact = new OrderedExecutorFactory(workerPool);
+    internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
     this.fileResolver = new FileResolver(this);
     this.deploymentManager = new DeploymentManager(this);
     this.metrics = initialiseMetrics(options);
+    this.haEnabled = options.isClustered() && options.isHAEnabled();
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
       this.clusterManager.setVertx(this);
@@ -136,26 +145,55 @@ public class VertxImpl implements VertxInternal {
           log.error("Failed to join cluster", ar.cause());
         }
         if (options.isHAEnabled()) {
-          haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
+          // Provide a memory barrier as we are setting from a different thread
+          synchronized (VertxImpl.this) {
+            haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
+          }
         }
-        Vertx inst = this;
-        eventBus = new EventBusImpl(this, options.getClusterPingInterval(),
-            options.getClusterPingReplyInterval(),  options.getClusterPort(), options.getClusterHost(), clusterManager, res -> {
-          if (resultHandler != null) {
-            if (res.succeeded()) {
-              resultHandler.handle(Future.completedFuture(inst));
+        clusterManager.<String, ServerID>getAsyncMultiMap("subs", null, ar2 -> {
+          if (ar2.succeeded()) {
+            AsyncMultiMap<String, ServerID> subs = ar2.result();
+            NetServer server = createNetServer(new NetServerOptions().setPort(options.getClusterPort()).setHost(options.getClusterHost()));
+            EventBusImpl.EventBusNetServer ebServer = new EventBusImpl.EventBusNetServer(server);
+            server.listen(asyncResult -> {
+              if (asyncResult.succeeded()) {
+                // Obtain system configured public host/port
+                int publicPort = Integer.getInteger("vertx.cluster.public.port", -1);
+                String publicHost = System.getProperty("vertx.cluster.public.host", null);
+
+                // If using a wilcard port (0) then we ask the server for the actual port:
+                int serverPort = publicPort == -1 ? server.actualPort() : publicPort;
+                String serverHost = publicHost == null ? options.getClusterHost() : publicHost;
+                ServerID serverID = new ServerID(serverPort, serverHost);
+                // Provide a memory barrier as we are setting from a different thread
+                synchronized (VertxImpl.this) {
+                  eventBus = new EventBusImpl(this, options.getClusterPingInterval(), options.getClusterPingReplyInterval(),
+                    clusterManager, subs, serverID, ebServer);
+                }
+                if (resultHandler != null) {
+                  resultHandler.handle(Future.completedFuture(this));
+                }
+              } else {
+                if (resultHandler != null) {
+                  resultHandler.handle(Future.completedFuture(ar.cause()));
+                } else {
+                  log.error(ar.cause());
+                }
+             }
+            });
+          } else {
+            if (resultHandler != null) {
+              resultHandler.handle(Future.completedFuture(ar.cause()));
             } else {
-              resultHandler.handle(Future.completedFuture(res.cause()));
+              log.error(ar.cause());
             }
-          } else if (res.failed()) {
-            log.error("Failed to start event bus", res.cause());
           }
         });
       });
       this.sharedData = new SharedDataImpl(this, clusterManager);
     } else {
       this.clusterManager = null;
-      this.sharedData = new SharedDataImpl(this, clusterManager);
+      this.sharedData = new SharedDataImpl(this, null);
       this.eventBus = new EventBusImpl(this);
       if (resultHandler != null) {
         resultHandler.handle(Future.completedFuture(this));
@@ -200,6 +238,13 @@ public class VertxImpl implements VertxInternal {
   }
 
   public EventBus eventBus() {
+    if (eventBus == null) {
+      // If reading from different thread possibility that it's been set but not visible - so provide
+      // memory barrier
+      synchronized (this) {
+        return eventBus;
+      }
+    }
     return eventBus;
   }
 
@@ -337,16 +382,7 @@ public class VertxImpl implements VertxInternal {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
     long timerId = timeoutCounter.getAndIncrement();
-    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
-    Runnable toRun = () -> context.execute(task, false);
-    EventLoop el = context.getEventLoop();
-    java.util.concurrent.Future<?> future;
-    if (periodic) {
-      future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
-    } else {
-      future = el.schedule(toRun, delay, TimeUnit.MILLISECONDS);
-    }
-    task.future = future;
+    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, delay, context);
     timeouts.put(timerId, task);
     context.addCloseHook(task);
     return timerId;
@@ -396,8 +432,8 @@ public class VertxImpl implements VertxInternal {
     }
     closed = true;
     deploymentManager.undeployAll(ar -> {
-      if (haManager != null) {
-        haManager.stop();
+      if (haManager() != null) {
+        haManager().stop();
       }
       eventBus.close(ar2 -> {
 
@@ -419,13 +455,9 @@ public class VertxImpl implements VertxInternal {
 
         fileResolver.deleteCacheDir(res -> {
 
-          if (workerPool != null) {
-            workerPool.shutdownNow();
-          }
-
-          if (eventLoopGroup != null) {
-            eventLoopGroup.shutdownNow();
-          }
+          workerPool.shutdownNow();
+          internalBlockingPool.shutdownNow();
+          eventLoopGroup.shutdownNow();
 
           if (metrics != null) {
             metrics.close();
@@ -482,8 +514,8 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void deployVerticle(String identifier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    if (options.isHa() && haManager != null) {
-      haManager.deployVerticle(identifier, options, completionHandler);
+    if (options.isHa() && haManager() != null) {
+      haManager().deployVerticle(identifier, options, completionHandler);
     } else {
       deploymentManager.deployVerticle(identifier, options, completionHandler);
     }
@@ -502,8 +534,8 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void undeployVerticle(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    if (haManager != null) {
-      haManager.removeFromHA(deploymentID);
+    if (haManager() != null) {
+      haManager().removeFromHA(deploymentID);
     }
     deploymentManager.undeployVerticle(deploymentID, completionHandler);
   }
@@ -536,8 +568,8 @@ public class VertxImpl implements VertxInternal {
 
   // For testing
   public void simulateKill() {
-    if (haManager != null) {
-      haManager.simulateKill();
+    if (haManager() != null) {
+      haManager().simulateKill();
     }
   }
 
@@ -553,20 +585,20 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public void failoverCompleteHandler(Handler<Boolean> failoverCompleteHandler) {
-    if (haManager != null) {
-      haManager.failoverCompleteHandler(failoverCompleteHandler);
+    if (haManager() != null) {
+      haManager().failoverCompleteHandler(failoverCompleteHandler);
     }
   }
 
   @Override
   public boolean isKilled() {
-    return haManager.isKilled();
+    return haManager().isKilled();
   }
 
   @Override
   public void failDuringFailover(boolean fail) {
-    if (haManager != null) {
-      haManager.failDuringFailover(fail);
+    if (haManager() != null) {
+      haManager().failDuringFailover(fail);
     }
   }
 
@@ -580,17 +612,16 @@ public class VertxImpl implements VertxInternal {
     return fileResolver.resolveFile(fileName);
   }
 
-  private void configurePools(VertxOptions options) {
-    checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime(),
-                                       options.getMaxWorkerExecuteTime());
-    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
-                                           new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
-    workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
-      new VertxThreadFactory("vert.x-worker-thread-", checker, true));
-    internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
-      new VertxThreadFactory("vert.x-internal-blocking-", checker, true));
-    workerOrderedFact = new OrderedExecutorFactory(workerPool);
-    internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
+  private HAManager haManager() {
+    // If reading from different thread possibility that it's been set but not visible - so provide
+    // memory barrier
+    if (haManager == null && haEnabled) {
+      synchronized (this) {
+        return haManager;
+      }
+    } else {
+      return haManager;
+    }
   }
 
   private class InternalTimerHandler implements ContextTask, Closeable {
@@ -598,32 +629,35 @@ public class VertxImpl implements VertxInternal {
     final boolean periodic;
     final long timerID;
     final ContextImpl context;
-    volatile java.util.concurrent.Future<?> future;
-    boolean cancelled;
+    final java.util.concurrent.Future<?> future;
 
     boolean cancel() {
-      cancelled = true;
       metrics.timerEnded(timerID, true);
       return future.cancel(false);
     }
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, ContextImpl context) {
+    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextImpl context) {
       this.context = context;
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
+      EventLoop el = context.getEventLoop();
+      Runnable toRun = () -> context.execute(this, false);
+      if (periodic) {
+        future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
+      } else {
+        future = el.schedule(toRun, delay, TimeUnit.MILLISECONDS);
+      }
       metrics.timerCreated(timerID);
     }
 
     public void run() throws Exception {
-      if (!cancelled) {
-        try {
-          handler.handle(timerID);
-        } finally {
-          if (!periodic) {
-            // Clean up after it's fired
-            cleanupNonPeriodic();
-          }
+      try {
+        handler.handle(timerID);
+      } finally {
+        if (!periodic) {
+          // Clean up after it's fired
+          cleanupNonPeriodic();
         }
       }
     }
@@ -644,10 +678,20 @@ public class VertxImpl implements VertxInternal {
 
   }
 
+  /*
+   *
+   * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+   * However it can be used safely from other threads.
+   *
+   * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+   * we benefit from biased locking which makes the overhead of synchronized near zero.
+   *
+   */
   private class TimeoutStreamImpl implements TimeoutStream, Handler<Long> {
 
     private final long delay;
     private final boolean periodic;
+
     private boolean paused;
     private Long id;
     private Handler<Long> handler;
@@ -658,9 +702,8 @@ public class VertxImpl implements VertxInternal {
       this.periodic = periodic;
     }
 
-
     @Override
-    public void handle(Long event) {
+    public synchronized void handle(Long event) {
       try {
         if (!paused) {
           handler.handle(event);
@@ -683,7 +726,7 @@ public class VertxImpl implements VertxInternal {
     }
 
     @Override
-    public TimeoutStream handler(Handler<Long> handler) {
+    public synchronized TimeoutStream handler(Handler<Long> handler) {
       if (handler != null) {
         if (id != null) {
           throw new IllegalStateException();
@@ -702,19 +745,19 @@ public class VertxImpl implements VertxInternal {
     }
 
     @Override
-    public TimeoutStream pause() {
+    public synchronized TimeoutStream pause() {
       this.paused = true;
       return this;
     }
 
     @Override
-    public TimeoutStream resume() {
+    public synchronized TimeoutStream resume() {
       this.paused = false;
       return null;
     }
 
     @Override
-    public TimeoutStream endHandler(Handler<Void> endHandler) {
+    public synchronized TimeoutStream endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
       return this;
     }

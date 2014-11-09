@@ -56,7 +56,6 @@ import io.vertx.core.metrics.spi.EventBusMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
@@ -73,7 +72,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,6 +80,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
+ * This class is thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>                                                                                        T
  */
@@ -107,16 +106,12 @@ public class EventBusImpl implements EventBus {
   private static final MessageCodec<Byte, Byte> BYTE_MESSAGE_CODEC = new ByteMessageCodec();
   private static final MessageCodec<ReplyException, ReplyException> REPLY_EXCEPTION_MESSAGE_CODEC = new ReplyExceptionMessageCodec();
 
-
   private static final Buffer PONG = Buffer.buffer(new byte[] { (byte)1 });
   private static final String PING_ADDRESS = "__vertx_ping";
 
   private final VertxInternal vertx;
   private final long pingInterval;
   private final long pingReplyInterval;
-  private ServerID serverID;
-  private NetServer server;
-  private AsyncMultiMap<String, ServerID> subs;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
@@ -124,42 +119,38 @@ public class EventBusImpl implements EventBus {
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
   private final EventBusMetrics metrics;
-  private MessageCodec[] systemCodecs;
+  private final AsyncMultiMap<String, ServerID> subs;
+  private final MessageCodec[] systemCodecs;
+  private final ServerID serverID;
+  private final NetServer server;
   private volatile boolean sendPong = true;
 
   public EventBusImpl(VertxInternal vertx) {
-    // Just some dummy server ID
     this.vertx = vertx;
     this.pingInterval = -1;
     this.pingReplyInterval = -1;
+    // Just some dummy server ID
     this.serverID = new ServerID(-1, "localhost");
     this.server = null;
     this.subs = null;
     this.clusterMgr = null;
     this.metrics = vertx.metricsSPI().createMetrics(this);
-    putSystemCodecs();
+    this.systemCodecs = systemCodecs();
   }
 
-  public EventBusImpl(VertxInternal vertx, long pingInterval, long pingReplyInterval, int port, String hostname, ClusterManager clusterManager,
-                      Handler<AsyncResult<Void>> listenHandler) {
+  public EventBusImpl(VertxInternal vertx, long pingInterval, long pingReplyInterval, ClusterManager clusterManager,
+                      AsyncMultiMap<String, ServerID> subs, ServerID serverID,
+                      EventBusNetServer server) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
     this.metrics = vertx.metricsSPI().createMetrics(this);
     this.pingInterval = pingInterval;
     this.pingReplyInterval = pingReplyInterval;
-    clusterMgr.<String, ServerID>getAsyncMultiMap("subs", null, ar -> {
-      if (ar.succeeded()) {
-        subs = ar.result();
-        this.server = setServer(port, hostname, listenHandler);
-      } else {
-        if (listenHandler != null) {
-          listenHandler.handle(Future.completedFuture(ar.cause()));
-        } else {
-          log.error(ar.cause());
-        }
-      }
-    });
-    putSystemCodecs();
+    this.subs = subs;
+    this.systemCodecs = systemCodecs();
+    this.serverID = serverID;
+    this.server = server.netServer;
+    setServerHandler(server);
   }
 
   @Override
@@ -388,8 +379,8 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private NetServer setServer(int port, String hostName, Handler<AsyncResult<Void>> listenHandler) {
-    NetServer server = vertx.createNetServer(new NetServerOptions().setPort(port).setHost(hostName)).connectHandler(socket -> {
+  private void setServerHandler(EventBusNetServer server) {
+    Handler<NetSocket> sockHandler = socket -> {
       RecordParser parser = RecordParser.newFixed(4, null);
       Handler<Buffer> handler = new Handler<Buffer>() {
         int size = -1;
@@ -415,30 +406,8 @@ public class EventBusImpl implements EventBus {
       };
       parser.setOutput(handler);
       socket.handler(parser);
-    });
-
-    server.listen(asyncResult -> {
-      if (asyncResult.succeeded()) {
-        // Obtain system configured public host/port
-        int publicPort = Integer.getInteger("vertx.cluster.public.port", -1);
-        String publicHost = System.getProperty("vertx.cluster.public.host", null);
-
-        // If using a wilcard port (0) then we ask the server for the actual port:
-        int serverPort = (publicPort == -1) ? server.actualPort() : publicPort;
-        String serverHost = (publicHost == null) ? hostName : publicHost;
-        EventBusImpl.this.serverID = new ServerID(serverPort, serverHost);
-      }
-      if (listenHandler != null) {
-        if (asyncResult.succeeded()) {
-          listenHandler.handle(Future.completedFuture());
-        } else {
-          listenHandler.handle(Future.completedFuture(asyncResult.cause()));
-        }
-      } else if (asyncResult.failed()) {
-        log.error("Failed to listen", asyncResult.cause());
-      }
-    });
-    return server;
+    };
+    server.setHandler(sockHandler);
   }
 
   private <T> void sendToSubs(ChoosableIterable<ServerID> subs, MessageImpl message,
@@ -465,17 +434,18 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private void putSystemCodecs() {
-    putCodecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
+  private MessageCodec[] systemCodecs() {
+    return codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
       BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC);
   }
 
-  private void putCodecs(MessageCodec... codecs) {
-    systemCodecs = new MessageCodec[codecs.length];
+  private MessageCodec[] codecs(MessageCodec... codecs) {
+    MessageCodec[] arr = new MessageCodec[codecs.length];
     for (MessageCodec codec: codecs) {
-      systemCodecs[codec.systemCodecID()] = codec;
+      arr[codec.systemCodecID()] = codec;
     }
+    return arr;
   }
 
   private String generateReplyAddress() {
@@ -621,7 +591,7 @@ public class EventBusImpl implements EventBus {
               vertx.cancelTimer(holder.timeoutID);
             }
             handlers.list.remove(i);
-            holder.removed = true;
+            holder.setRemoved();
             if (handlers.list.isEmpty()) {
               handlerMap.remove(address);
               if (subs != null && !holder.localOnly) {
@@ -655,31 +625,6 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private void cleanupConnection(ServerID theServerID,
-                                 ConnectionHolder holder,
-                                 boolean failed) {
-    if (holder.timeoutID != -1) {
-      vertx.cancelTimer(holder.timeoutID);
-    }
-    if (holder.pingTimeoutID != -1) {
-      vertx.cancelTimer(holder.pingTimeoutID);
-    }
-    try {
-      holder.socket.close();
-    } catch (Exception ignore) {
-    }
-
-    // The holder can be null or different if the target server is restarted with same serverid
-    // before the cleanup for the previous one has been processed
-    // So we only actually remove the entry if no new entry has been added
-    if (connections.remove(theServerID, holder)) {
-      log.debug("Cluster connection closed: " + theServerID + " holder " + holder);
-
-      if (failed) {
-        cleanSubsForServerID(theServerID);
-      }
-    }
-  }
 
   private void sendRemote(ServerID theServerID, MessageImpl message) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
@@ -689,33 +634,18 @@ public class EventBusImpl implements EventBus {
     // tricky
     ConnectionHolder holder = connections.get(theServerID);
     if (holder == null) {
-      NetClient client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(60 * 1000));
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
-      holder = new ConnectionHolder(client);
+      holder = new ConnectionHolder(theServerID);
       ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
       if (prevHolder != null) {
         // Another one sneaked in
         holder = prevHolder;
-      }
-      else {
-        holder.connect(client, theServerID);
+      } else {
+        holder.connect();
       }
     }
     holder.writeMessage(message);
-  }
-
-  private void schedulePing(ConnectionHolder holder) {
-    holder.pingTimeoutID = vertx.setTimer(pingInterval, id1 -> {
-      // If we don't get a pong back in time we close the connection
-      holder.timeoutID = vertx.setTimer(pingReplyInterval, id2 -> {
-        // Didn't get pong in time - consider connection dead
-        log.warn("No pong from server " + serverID + " - will consider it dead");
-        cleanupConnection(holder.theServerID, holder, true);
-      });
-      MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true);
-      holder.socket.write(pingMessage.encodeToWire());
-    });
   }
 
   private void removeSub(String subName, ServerID theServerID, Handler<AsyncResult<Void>> completionHandler) {
@@ -780,7 +710,7 @@ public class EventBusImpl implements EventBus {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
       try {
-        if (!holder.removed) {
+        if (!holder.isRemoved()) {
           metrics.messageReceived(msg.address());
           holder.handler.handle(copied);
         }
@@ -813,6 +743,17 @@ public class EventBusImpl implements EventBus {
     final long timeoutID;
     boolean removed;
 
+    // We use a synchronized block to protect removed as it can be unregistered from a different thread
+    synchronized void setRemoved() {
+      removed = true;
+    }
+
+    // Because of biased locks the overhead of the synchronized lock should be very low as it's almost always
+    // called by the same event loop
+    synchronized boolean isRemoved() {
+      return removed;
+    }
+
     HandlerHolder(Handler<Message<T>> handler, boolean replyHandler, boolean localOnly, ContextImpl context, long timeoutID) {
       this.context = context;
       this.handler = handler;
@@ -838,15 +779,52 @@ public class EventBusImpl implements EventBus {
 
   private class ConnectionHolder {
     final NetClient client;
+    final Queue<MessageImpl> pending = new ArrayDeque<>();
+    final ServerID theServerID;
     volatile NetSocket socket;
-    final Queue<MessageImpl> pending = new ConcurrentLinkedQueue<>();
     volatile boolean connected;
     long timeoutID = -1;
     long pingTimeoutID = -1;
-    ServerID theServerID;
 
-    private ConnectionHolder(NetClient client) {
-      this.client = client;
+    private ConnectionHolder(ServerID serverID) {
+      this.theServerID = serverID;
+      client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(60 * 1000));
+    }
+
+    void close(boolean failed) {
+      if (timeoutID != -1) {
+        vertx.cancelTimer(timeoutID);
+      }
+      if (pingTimeoutID != -1) {
+        vertx.cancelTimer(pingTimeoutID);
+      }
+      try {
+        client.close();
+      } catch (Exception ignore) {
+      }
+
+      // The holder can be null or different if the target server is restarted with same serverid
+      // before the cleanup for the previous one has been processed
+      // So we only actually remove the entry if no new entry has been added
+      if (connections.remove(theServerID, this)) {
+        log.debug("Cluster connection closed: " + theServerID + " holder " + this);
+        if (failed) {
+          cleanSubsForServerID(theServerID);
+        }
+      }
+    }
+
+    void schedulePing() {
+      pingTimeoutID = vertx.setTimer(pingInterval, id1 -> {
+        // If we don't get a pong back in time we close the connection
+        timeoutID = vertx.setTimer(pingReplyInterval, id2 -> {
+          // Didn't get pong in time - consider connection dead
+          log.warn("No pong from server " + serverID + " - will consider it dead");
+          close(true);
+        });
+        MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true);
+        socket.write(pingMessage.encodeToWire());
+      });
     }
 
     void writeMessage(MessageImpl message) {
@@ -863,31 +841,30 @@ public class EventBusImpl implements EventBus {
       }
     }
 
-    synchronized void connected(ServerID theServerID, NetSocket socket) {
+    synchronized void connected(NetSocket socket) {
       this.socket = socket;
-      this.theServerID = theServerID;
       connected = true;
-      socket.exceptionHandler(t -> cleanupConnection(theServerID, ConnectionHolder.this, true));
-      socket.closeHandler(v -> cleanupConnection(theServerID, ConnectionHolder.this, false));
+      socket.exceptionHandler(t -> close(true));
+      socket.closeHandler(v -> close(false));
       socket.handler(data -> {
         // Got a pong back
         vertx.cancelTimer(timeoutID);
-        schedulePing(ConnectionHolder.this);
+        schedulePing();
       });
       // Start a pinger
-      schedulePing(ConnectionHolder.this);
+      schedulePing();
       for (MessageImpl message : pending) {
         socket.write(message.encodeToWire());
       }
       pending.clear();
     }
 
-    void connect(NetClient client, ServerID theServerID) {
+    void connect() {
       client.connect(theServerID.port, theServerID.host, res -> {
         if (res.succeeded()) {
-          connected(theServerID, res.result());
+          connected(res.result());
         } else {
-          cleanupConnection(theServerID, ConnectionHolder.this, true);
+          close(true);
         }
       });
     }
@@ -961,12 +938,21 @@ public class EventBusImpl implements EventBus {
     super.finalize();
   }
 
+  /*
+   * This class is optimised for performance when used on the same event loop it was created on.
+   * However it can be used safely from other threads.
+   *
+   * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+   * we benefit from biased locking which makes the overhead of synchronized near zero.
+   */
   public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Message<T>> {
-    private boolean registered;
+
     private final String address;
     private final boolean replyHandler;
     private final boolean localOnly;
     private final long timeoutID;
+
+    private boolean registered;
     private Handler<Message<T>> handler;
     private AsyncResult<Void> result;
     private Handler<AsyncResult<Void>> completionHandler;
@@ -985,7 +971,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
+    public synchronized MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
       Arguments.require(maxBufferedMessages >= 0, "Max buffered messages cannot be negative");
       while (pending.size() > maxBufferedMessages) {
         pending.poll();
@@ -1020,7 +1006,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public void unregister(Handler<AsyncResult<Void>> completionHandler) {
+    public synchronized void unregister(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
       if (endHandler != null) {
         Handler<AsyncResult<Void>> handler = completionHandler;
@@ -1057,7 +1043,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public void handle(Message<T> event) {
+    public synchronized void handle(Message<T> event) {
       if (paused) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(event);
@@ -1075,12 +1061,12 @@ public class EventBusImpl implements EventBus {
     /*
      * Internal API for testing purposes.
      */
-    public void discardHandler(Handler<Message<T>> handler) {
+    public synchronized void discardHandler(Handler<Message<T>> handler) {
       this.discardHandler = handler;
     }
 
     @Override
-    public MessageConsumer<T> handler(Handler<Message<T>> handler) {
+    public synchronized MessageConsumer<T> handler(Handler<Message<T>> handler) {
       this.handler = handler;
       if (this.handler != null && !registered) {
         registered = true;
@@ -1098,12 +1084,12 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public boolean isRegistered() {
+    public synchronized boolean isRegistered() {
       return registered;
     }
 
     @Override
-    public MessageConsumer<T> pause() {
+    public synchronized MessageConsumer<T> pause() {
       if (!paused) {
         paused = true;
       }
@@ -1111,7 +1097,7 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public MessageConsumer<T> resume() {
+    public synchronized MessageConsumer<T> resume() {
       if (paused) {
         paused = false;
         checkNextTick();
@@ -1120,13 +1106,13 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public MessageConsumer<T> endHandler(Handler<Void> endHandler) {
+    public synchronized MessageConsumer<T> endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
       return this;
     }
 
     @Override
-    public MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
+    public synchronized MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
       this.exceptionHandler = handler;
       return this;
     }
@@ -1143,6 +1129,27 @@ public class EventBusImpl implements EventBus {
           }
         });
       }
+    }
+  }
+
+  public static class EventBusNetServer {
+
+    private final NetServer netServer;
+    private Handler<NetSocket> handler;
+
+    public EventBusNetServer(NetServer netServer) {
+      this.netServer = netServer;
+      netServer.connectHandler(conn -> {
+        // The lock will almost always be obtained by the same thread so biased locking will mean there
+        // is almost zero overhead to this synchronized block
+        synchronized (EventBusNetServer.this) {
+          handler.handle(conn);
+        }
+      });
+    }
+
+    public synchronized void setHandler(Handler<NetSocket> handler) {
+      this.handler = handler;
     }
   }
 

@@ -64,9 +64,10 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class DnsClientImpl implements DnsClient {
 
+  private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
+
   private final Bootstrap bootstrap;
   private final InetSocketAddress dnsServer;
-  private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
   private final ContextImpl actualCtx;
 
   public DnsClientImpl(VertxInternal vertx, int port, String host) {

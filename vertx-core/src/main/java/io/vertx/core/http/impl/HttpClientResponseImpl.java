@@ -34,6 +34,11 @@ import java.util.List;
 import java.util.Queue;
 
 /**
+ * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -44,11 +49,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final HttpClientRequestImpl request;
   private final Vertx vertx;
   private final ClientConnection conn;
+  private final HttpResponse response;
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
-  private final HttpResponse response;
   private LastHttpContent trailer;
   private boolean paused;
   private Queue<Buffer> pausedChunks;
@@ -84,7 +89,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public MultiMap headers() {
+  public synchronized MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(response.headers());
     }
@@ -92,7 +97,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public MultiMap trailers() {
+  public synchronized MultiMap trailers() {
     if (trailers == null) {
       trailers = new HeadersAdaptor(new DefaultHttpHeaders());
     }
@@ -100,7 +105,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public List<String> cookies() {
+  public synchronized List<String> cookies() {
     if (cookies == null) {
       cookies = new ArrayList<>();
       cookies.addAll(response.headers().getAll(HttpHeaders.SET_COOKIE));
@@ -112,32 +117,32 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public HttpClientResponse handler(Handler<Buffer> dataHandler) {
+  public synchronized HttpClientResponse handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
 
   @Override
-  public HttpClientResponse endHandler(Handler<Void> endHandler) {
+  public synchronized HttpClientResponse endHandler(Handler<Void> endHandler) {
     this.endHandler = endHandler;
     return this;
   }
 
   @Override
-  public HttpClientResponse exceptionHandler(Handler<Throwable> exceptionHandler) {
+  public synchronized HttpClientResponse exceptionHandler(Handler<Throwable> exceptionHandler) {
     this.exceptionHandler = exceptionHandler;
     return this;
   }
 
   @Override
-  public HttpClientResponse pause() {
+  public synchronized HttpClientResponse pause() {
     paused = true;
     conn.doPause();
     return this;
   }
 
   @Override
-  public HttpClientResponse resume() {
+  public synchronized HttpClientResponse resume() {
     paused = false;
     doResume();
     conn.doResume();
@@ -146,7 +151,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse bodyHandler(final Handler<Buffer> bodyHandler) {
-    final BodyHandler handler = new BodyHandler();
+    BodyHandler handler = new BodyHandler();
     handler(handler);
     endHandler(new VoidHandler() {
       public void handle() {
@@ -182,8 +187,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleChunk(Buffer data) {
-    if (conn.metrics.isEnabled()) {
+  synchronized void handleChunk(Buffer data) {
+    if (conn.metrics().isEnabled()) {
       this.bytesRead += data.length();
     }
     if (paused) {
@@ -199,10 +204,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleEnd(LastHttpContent trailer) {
-    if (conn.metrics.isEnabled()) conn.metrics.bytesRead(conn.remoteAddress(), bytesRead);
+  synchronized void handleEnd(LastHttpContent trailer) {
+    if (conn.metrics().isEnabled()) conn.metrics().bytesRead(conn.remoteAddress(), bytesRead);
     bytesRead = 0;
-    conn.metrics.responseEnd(request, this);
+    conn.metrics().responseEnd(request, this);
     if (paused) {
       hasPausedEnd = true;
       pausedTrailer = trailer;
@@ -215,20 +220,19 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleException(Throwable e) {
+  synchronized void handleException(Throwable e) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(e);
     }
   }
 
   @Override
-  public NetSocket netSocket() {
+  public synchronized NetSocket netSocket() {
     if (netSocket == null) {
       netSocket = conn.createNetSocket();
     }
     return netSocket;
   }
-
 
   private static final class BodyHandler implements Handler<Buffer> {
     private Buffer body;

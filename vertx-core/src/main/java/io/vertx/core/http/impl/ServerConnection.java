@@ -57,6 +57,12 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
+ *
+ * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class ServerConnection extends ConnectionBase {
@@ -65,24 +71,26 @@ class ServerConnection extends ConnectionBase {
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
+  private final Queue<Object> pending = new ArrayDeque<>(8);
+  private final String serverOrigin;
+  private final HttpServerImpl server;
+  private final WebSocketServerHandshaker handshaker;
+  private final HttpServerMetrics metrics;
+
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private HttpServerRequestImpl currentRequest;
   private HttpServerResponseImpl pendingResponse;
   private ServerWebSocketImpl ws;
+  private ChannelFuture lastWriteFuture;
   private boolean channelPaused;
   private boolean paused;
   private boolean sentCheck;
-  private final Queue<Object> pending = new ArrayDeque<>(8);
-  private final String serverOrigin;
-  private final HttpServerImpl server;
-  private final WebSocketServerHandshaker handshaker;
-  private ChannelFuture lastWriteFuture;
-  private final HttpServerMetrics metrics;
   private long bytesRead;
   private long bytesWritten;
 
-  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin, WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
+  ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
+                   WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
     super(vertx, channel, context, metrics);
     this.serverOrigin = serverOrigin;
     this.server = server;
@@ -90,20 +98,20 @@ class ServerConnection extends ConnectionBase {
     this.metrics = metrics;
   }
 
-  public void pause() {
+  public synchronized void pause() {
     if (!paused) {
       paused = true;
     }
   }
 
-  public void resume() {
+  public synchronized void resume() {
     if (paused) {
       paused = false;
       checkNextTick();
     }
   }
 
-  void handleMessage(Object msg) {
+  synchronized void handleMessage(Object msg) {
     if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
@@ -118,7 +126,7 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  void responseComplete() {
+  synchronized void responseComplete() {
     if (metrics.isEnabled()) {
       metrics.bytesWritten(remoteAddress(), bytesWritten);
       bytesWritten = 0;
@@ -128,18 +136,17 @@ class ServerConnection extends ConnectionBase {
     checkNextTick();
   }
 
-  void requestHandler(Handler<HttpServerRequest> handler) {
+  synchronized void requestHandler(Handler<HttpServerRequest> handler) {
     this.requestHandler = handler;
   }
 
-  void wsHandler(Handler<ServerWebSocket> handler) {
+  synchronized void wsHandler(Handler<ServerWebSocket> handler) {
     this.wsHandler = handler;
   }
 
   String getServerOrigin() {
     return serverOrigin;
   }
-
 
   Vertx vertx() {
     return vertx;
@@ -244,7 +251,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  public void handleInterestedOpsChanged() {
+  public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
       if (pendingResponse != null) {
         pendingResponse.handleDrained();
@@ -254,20 +261,20 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  void handleWebsocketConnect(ServerWebSocketImpl ws) {
+  synchronized void handleWebsocketConnect(ServerWebSocketImpl ws) {
     if (wsHandler != null) {
       wsHandler.handle(ws);
       this.ws = ws;
     }
   }
 
-  private void handleWsFrame(WebSocketFrameInternal frame) {
+  synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
       ws.handleFrame(frame);
     }
   }
 
-  protected void handleClosed() {
+  synchronized protected void handleClosed() {
     super.handleClosed();
     if (ws != null) {
       ws.handleClosed();
@@ -282,7 +289,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  protected void handleException(Throwable t) {
+  protected synchronized void handleException(Throwable t) {
     super.handleException(t);
     if (currentRequest != null) {
       currentRequest.handleException(t);

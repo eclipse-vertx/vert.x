@@ -108,7 +108,7 @@ public class HAManager {
   private static final long QUORUM_CHECK_PERIOD = 1000;
 
   private final VertxInternal vertx;
-  private DeploymentManager deploymentManager;
+  private final DeploymentManager deploymentManager;
   private final ClusterManager clusterManager;
   private final int quorumSize;
   private final String group;
@@ -116,6 +116,7 @@ public class HAManager {
   private final Map<String, String> clusterMap;
   private final String nodeID;
   private final Queue<Runnable> toDeployOnQuorum = new ConcurrentLinkedQueue<>();
+
   private long quorumTimerID;
   private volatile boolean attainedQuorum;
   private volatile Handler<Boolean> failoverCompleteHandler;
@@ -158,11 +159,6 @@ public class HAManager {
     }
   }
 
-  // Ugly circular reference
-  public void setDeploymentManager(DeploymentManager deploymentManager) {
-    this.deploymentManager = deploymentManager;
-  }
-
   // Remove the information on the deployment from the cluster - this is called when an HA module is undeployed
   public void removeFromHA(String depID) {
     Deployment dep = deploymentManager.getDeployment(depID);
@@ -192,25 +188,6 @@ public class HAManager {
       log.info("Quorum not attained. Deployment of verticle will be delayed until there's a quorum.");
       addToHADeployList(verticleName, deploymentOptions, doneHandler);
     }
-  }
-
-  private void doDeployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
-                                final Handler<AsyncResult<String>> doneHandler) {
-    final Handler<AsyncResult<String>> wrappedHandler = new Handler<AsyncResult<String>>() {
-      @Override
-      public void handle(AsyncResult<String> asyncResult) {
-        if (asyncResult.succeeded()) {
-          // Tell the other nodes of the cluster about the verticle for HA purposes
-          addToHA(asyncResult.result(), verticleName, deploymentOptions);
-        }
-        if (doneHandler != null) {
-          doneHandler.handle(asyncResult);
-        } else if (asyncResult.failed()) {
-          log.error("Failed to deploy verticle", asyncResult.cause());
-        }
-      }
-    };
-    deploymentManager.deployVerticle(verticleName, deploymentOptions, wrappedHandler);
   }
 
   public void stop() {
@@ -248,6 +225,25 @@ public class HAManager {
   // For testing:
   public void failDuringFailover(boolean fail) {
     failDuringFailover = fail;
+  }
+
+  private void doDeployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
+                                final Handler<AsyncResult<String>> doneHandler) {
+    final Handler<AsyncResult<String>> wrappedHandler = new Handler<AsyncResult<String>>() {
+      @Override
+      public void handle(AsyncResult<String> asyncResult) {
+        if (asyncResult.succeeded()) {
+          // Tell the other nodes of the cluster about the verticle for HA purposes
+          addToHA(asyncResult.result(), verticleName, deploymentOptions);
+        }
+        if (doneHandler != null) {
+          doneHandler.handle(asyncResult);
+        } else if (asyncResult.failed()) {
+          log.error("Failed to deploy verticle", asyncResult.cause());
+        }
+      }
+    };
+    deploymentManager.deployVerticle(verticleName, deploymentOptions, wrappedHandler);
   }
 
   // A node has joined the cluster

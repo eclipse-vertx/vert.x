@@ -45,11 +45,19 @@ import java.util.Iterator;
 import java.util.Objects;
 
 /**
+ *
+ * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AsyncFileImpl implements AsyncFile {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
+
   public static final int BUFFER_SIZE = 8192;
 
   private final VertxInternal vertx;
@@ -58,14 +66,11 @@ public class AsyncFileImpl implements AsyncFile {
   private boolean closed;
   private Runnable closedDeferred;
   private long writesOutstanding;
-
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> drainHandler;
-
   private long writePos;
   private int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
   private int lwm = maxWrites / 2;
-
   private boolean paused;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -112,7 +117,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile write(Buffer buffer, long position,  Handler<AsyncResult<Void>> handler) {
+  public synchronized AsyncFile write(Buffer buffer, long position,  Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(buffer, "buffer");
     Objects.requireNonNull(handler, "handler");
     Arguments.require(position >= 0, "position must be >= 0");
@@ -128,23 +133,9 @@ public class AsyncFileImpl implements AsyncFile {
     return this;
   }
 
-  private void doWrite( Iterator<ByteBuffer> buffers, long position, Handler<AsyncResult<Void>> handler) {
-    ByteBuffer b = buffers.next();
-    int limit = b.limit();
-    doWrite(b, position, limit, ar -> {
-      if (ar.failed()) {
-        handler.handle(ar);
-      } else {
-        if (buffers.hasNext()) {
-          doWrite(buffers, position + limit, handler);
-        } else {
-          handler.handle(ar);
-        }
-      }
-    });
-  }
+
   @Override
-  public AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
+  public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
     Objects.requireNonNull(buffer, "buffer");
     Objects.requireNonNull(handler, "handler");
     Arguments.require(offset >= 0, "offset must be >= 0");
@@ -157,7 +148,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile write(Buffer buffer) {
+  public synchronized AsyncFile write(Buffer buffer) {
     check();
     int length = buffer.length();
     Handler<AsyncResult<Void>> handler = ar -> {
@@ -184,16 +175,8 @@ public class AsyncFileImpl implements AsyncFile {
     return this;
   }
 
-  private void checkDrained() {
-    if (drainHandler != null && writesOutstanding <= lwm) {
-      Handler<Void> handler = drainHandler;
-      drainHandler = null;
-      handler.handle(null);
-    }
-  }
-
   @Override
-  public AsyncFile setWriteQueueMaxSize(int maxSize) {
+  public synchronized AsyncFile setWriteQueueMaxSize(int maxSize) {
     Arguments.require(maxSize >= 2, "maxSize must be >= 2");
     check();
     this.maxWrites = maxSize;
@@ -202,13 +185,13 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public boolean writeQueueFull() {
+  public synchronized boolean writeQueueFull() {
     check();
     return writesOutstanding >= maxWrites;
   }
 
   @Override
-  public AsyncFile drainHandler(Handler<Void> handler) {
+  public synchronized AsyncFile drainHandler(Handler<Void> handler) {
     check();
     this.drainHandler = handler;
     checkDrained();
@@ -216,10 +199,79 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile exceptionHandler(Handler<Throwable> handler) {
+  public synchronized AsyncFile exceptionHandler(Handler<Throwable> handler) {
     check();
     this.exceptionHandler = handler;
     return this;
+  }
+
+  @Override
+  public synchronized AsyncFile handler(Handler<Buffer> handler) {
+    check();
+    this.dataHandler = handler;
+    if (dataHandler != null && !paused && !closed) {
+      doRead();
+    }
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile endHandler(Handler<Void> handler) {
+    check();
+    this.endHandler = handler;
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile pause() {
+    check();
+    paused = true;
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile resume() {
+    check();
+    if (paused && !closed) {
+      paused = false;
+      if (dataHandler != null) {
+        doRead();
+      }
+    }
+    return this;
+  }
+
+
+  @Override
+  public AsyncFile flush() {
+    doFlush(null);
+    return this;
+  }
+
+  @Override
+  public AsyncFile flush(Handler<AsyncResult<Void>> handler) {
+    doFlush(handler);
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile setReadPos(long readPos) {
+    this.readPos = readPos;
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile setWritePos(long writePos) {
+    this.writePos = writePos;
+    return this;
+  }
+
+  private synchronized void checkDrained() {
+    if (drainHandler != null && writesOutstanding <= lwm) {
+      Handler<Void> handler = drainHandler;
+      drainHandler = null;
+      handler.handle(null);
+    }
   }
 
   private void handleException(Throwable t) {
@@ -231,7 +283,23 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  private void doRead() {
+  private synchronized void doWrite(Iterator<ByteBuffer> buffers, long position, Handler<AsyncResult<Void>> handler) {
+    ByteBuffer b = buffers.next();
+    int limit = b.limit();
+    doWrite(b, position, limit, ar -> {
+      if (ar.failed()) {
+        handler.handle(ar);
+      } else {
+        if (buffers.hasNext()) {
+          doWrite(buffers, position + limit, handler);
+        } else {
+          handler.handle(ar);
+        }
+      }
+    });
+  }
+
+  private synchronized void doRead() {
     if (!readInProgress) {
       readInProgress = true;
       Buffer buff = Buffer.buffer(BUFFER_SIZE);
@@ -256,81 +324,21 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  @Override
-  public AsyncFile handler(Handler<Buffer> handler) {
-    check();
-    this.dataHandler = handler;
-    if (dataHandler != null && !paused && !closed) {
-      doRead();
-    }
-    return this;
-  }
-
-  @Override
-  public AsyncFile endHandler(Handler<Void> handler) {
-    check();
-    this.endHandler = handler;
-    return this;
-  }
-
-  @Override
-  public AsyncFile pause() {
-    check();
-    paused = true;
-    return this;
-  }
-
-  @Override
-  public AsyncFile resume() {
-    check();
-    if (paused && !closed) {
-      paused = false;
-      if (dataHandler != null) {
-        doRead();
-      }
-    }
-    return this;
-  }
-
-  private void handleData(Buffer buffer) {
+  private synchronized void handleData(Buffer buffer) {
     if (dataHandler != null) {
       checkContext();
       dataHandler.handle(buffer);
     }
   }
 
-  private void handleEnd() {
+  private synchronized void handleEnd() {
     if (endHandler != null) {
       checkContext();
       endHandler.handle(null);
     }
   }
 
-  @Override
-  public AsyncFile flush() {
-    doFlush(null);
-    return this;
-  }
-
-  @Override
-  public AsyncFile flush(Handler<AsyncResult<Void>> handler) {
-    doFlush(handler);
-    return this;
-  }
-
-  @Override
-  public AsyncFile setReadPos(long readPos) {
-    this.readPos = readPos;
-    return this;
-  }
-
-  @Override
-  public AsyncFile setWritePos(long writePos) {
-    this.writePos = writePos;
-    return this;
-  }
-
-  private void doFlush(Handler<AsyncResult<Void>> handler) {
+  private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
     checkContext();
     context.executeBlocking(() -> {
@@ -446,7 +454,7 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  private void closeInternal(Handler<AsyncResult<Void>> handler) {
+  private synchronized void closeInternal(Handler<AsyncResult<Void>> handler) {
     check();
 
     closed = true;

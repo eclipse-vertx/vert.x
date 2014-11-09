@@ -40,6 +40,11 @@ import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 /**
+ * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -52,11 +57,10 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private final HttpClientImpl client;
   private final HttpRequest request;
   private final Handler<HttpClientResponse> respHandler;
-  private Handler<Void> continueHandler;
   private final VertxInternal vertx;
+  private final io.vertx.core.http.HttpMethod method;
   private boolean chunked;
-  private String method;
-  private String uri;
+  private Handler<Void> continueHandler;
   private ClientConnection conn;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
@@ -78,17 +82,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.host = host;
     this.port = port;
     this.client = client;
-    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(method.toString()), relativeURI, false);
+    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, toNettyHttpMethod(method), relativeURI, false);
     this.chunked = false;
-    this.method = request.getMethod().toString();
-    this.uri = request.getUri();
+    this.method = method;
     this.respHandler = respHandler;
     this.vertx = vertx;
   }
 
   @Override
-  public HttpClientRequestImpl setChunked(boolean chunked) {
-    check();
+  public synchronized HttpClientRequestImpl setChunked(boolean chunked) {
+    checkComplete();
     if (written > 0) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
@@ -97,22 +100,22 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public boolean isChunked() {
+  public synchronized boolean isChunked() {
     return chunked;
   }
 
   @Override
-  public String method() {
+  public io.vertx.core.http.HttpMethod method() {
     return method;
   }
 
   @Override
   public String uri() {
-    return uri;
+    return request.getUri();
   }
 
   @Override
-  public MultiMap headers() {
+  public synchronized MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(request.headers());
     }
@@ -120,43 +123,43 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest putHeader(String name, String value) {
-    check();
+  public synchronized HttpClientRequest putHeader(String name, String value) {
+    checkComplete();
     headers().set(name, value);
     return this;
   }
 
   @Override
-  public HttpClientRequest putHeader(String name, Iterable<String> values) {
-    check();
+  public synchronized HttpClientRequest putHeader(String name, Iterable<String> values) {
+    checkComplete();
     headers().set(name, values);
     return this;
   }
 
   @Override
-  public HttpClientRequestImpl write(Buffer chunk) {
-    check();
+  public synchronized HttpClientRequestImpl write(Buffer chunk) {
+    checkComplete();
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false);
     return this;
   }
 
   @Override
-  public HttpClientRequestImpl write(String chunk) {
-    check();
+  public synchronized HttpClientRequestImpl write(String chunk) {
+    checkComplete();
     return write(Buffer.buffer(chunk));
   }
 
   @Override
-  public HttpClientRequestImpl write(String chunk, String enc) {
+  public synchronized HttpClientRequestImpl write(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    check();
+    checkComplete();
     return write(Buffer.buffer(chunk, enc));
   }
 
   @Override
-  public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
-    check();
+  public synchronized HttpClientRequest setWriteQueueMaxSize(int maxSize) {
+    checkComplete();
     if (conn != null) {
       conn.doSetWriteQueueMaxSize(maxSize);
     } else {
@@ -166,8 +169,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public boolean writeQueueFull() {
-    check();
+  public synchronized boolean writeQueueFull() {
+    checkComplete();
     if (conn != null) {
       return conn.isNotWritable();
     } else {
@@ -176,8 +179,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest drainHandler(Handler<Void> handler) {
-    check();
+  public synchronized HttpClientRequest drainHandler(Handler<Void> handler) {
+    checkComplete();
     this.drainHandler = handler;
     if (conn != null) {
       conn.getContext().execute(conn::handleInterestedOpsChanged, false);
@@ -186,8 +189,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    check();
+  public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
+    checkComplete();
     this.exceptionHandler = t -> {
       cancelOutstandingTimeoutTimer();
       handler.handle(t);
@@ -196,15 +199,15 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest continueHandler(Handler<Void> handler) {
-    check();
+  public synchronized HttpClientRequest continueHandler(Handler<Void> handler) {
+    checkComplete();
     this.continueHandler = handler;
     return this;
   }
 
   @Override
-  public HttpClientRequestImpl sendHead() {
-    check();
+  public synchronized HttpClientRequestImpl sendHead() {
+    checkComplete();
     if (conn != null) {
       if (!headWritten) {
         writeHead();
@@ -217,19 +220,19 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public void end(String chunk) {
+  public synchronized void end(String chunk) {
     end(Buffer.buffer(chunk));
   }
 
   @Override
-  public void end(String chunk, String enc) {
+  public synchronized void end(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
     end(Buffer.buffer(chunk, enc));
   }
 
   @Override
-  public void end(Buffer chunk) {
-    check();
+  public synchronized void end(Buffer chunk) {
+    checkComplete();
     if (!chunked && !contentLengthSet()) {
       headers().set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
@@ -237,52 +240,51 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public void end() {
-    check();
+  public synchronized void end() {
+    checkComplete();
     write(Unpooled.EMPTY_BUFFER, true);
   }
 
   @Override
-  public HttpClientRequest setTimeout(long timeoutMs) {
+  public synchronized HttpClientRequest setTimeout(long timeoutMs) {
     cancelOutstandingTimeoutTimer();
     currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id ->  handleTimeout(timeoutMs));
     return this;
   }
 
   @Override
-  public HttpClientRequest putHeader(CharSequence name, CharSequence value) {
-    check();
+  public synchronized HttpClientRequest putHeader(CharSequence name, CharSequence value) {
+    checkComplete();
     headers().set(name, value);
     return this;
   }
 
   @Override
-  public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) {
-    check();
+  public synchronized HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) {
+    checkComplete();
     headers().set(name, values);
     return this;
   }
 
-  // Data has been received on the response
-  void dataReceived() {
+  synchronized void dataReceived() {
     if (currentTimeoutTimerId != -1) {
       lastDataReceived = System.currentTimeMillis();
     }
   }
 
-  void handleDrained() {
+  synchronized void handleDrained() {
     if (drainHandler != null) {
       drainHandler.handle(null);
     }
   }
 
-  void handleException(Throwable t) {
+  synchronized void handleException(Throwable t) {
     cancelOutstandingTimeoutTimer();
     exceptionOccurred = true;
     getExceptionHandler().handle(t);
   }
 
-  void handleResponse(HttpClientResponseImpl resp) {
+  synchronized void handleResponse(HttpClientResponseImpl resp) {
     // If an exception occurred (e.g. a timeout fired) we won't receive the response.
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();
@@ -300,7 +302,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  HttpRequest getRequest() {
+  synchronized HttpRequest getRequest() {
     return request;
   }
 
@@ -341,17 +343,19 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
       client.getConnection(port, host, conn -> {
-        if (exceptionOccurred) {
-          // The request already timed out before it has left the pool waiter queue
-          // So return it
-          conn.close();
-        } else if (!conn.isClosed()) {
-          connected(conn);
-        } else {
-          // The connection has been closed - closed connections can be in the pool
-          // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-          // that is done asynchronously in the connection closeHandler()
-          connect();
+        synchronized (this) {
+          if (exceptionOccurred) {
+            // The request already timed out before it has left the pool waiter queue
+            // So return it
+            conn.close();
+          } else if (!conn.isClosed()) {
+            connected(conn);
+          } else {
+            // The connection has been closed - closed connections can be in the pool
+            // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
+            // that is done asynchronously in the connection closeHandler()
+            connect();
+          }
         }
       }, exceptionHandler, vertx.getOrCreateContext());
 
@@ -359,7 +363,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  private synchronized void connected(ClientConnection conn) {
+  private void connected(ClientConnection conn) {
     conn.setCurrentRequest(this);
     this.conn = conn;
 
@@ -378,7 +382,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(pending, true);
 
-        if (conn.metrics.isEnabled()) conn.metrics.bytesWritten(conn.remoteAddress(), written);
+        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
 
         conn.endRequest();
       } else {
@@ -389,7 +393,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
 
-        if (conn.metrics.isEnabled()) conn.metrics.bytesWritten(conn.remoteAddress(), written);
+        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
 
         conn.endRequest();
       } else {
@@ -428,7 +432,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     HttpHeaders headers = request.headers();
     headers.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
     if (!headers.contains(io.vertx.core.http.HttpHeaders.HOST)) {
-      request.headers().set(io.vertx.core.http.HttpHeaders.HOST, conn.hostHeader);
+      request.headers().set(io.vertx.core.http.HttpHeaders.HOST, conn.hostHeader());
     }
     if (chunked) {
       HttpHeaders.setTransferEncodingChunked(request);
@@ -439,7 +443,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  private synchronized void write(ByteBuf buff, boolean end) {
+  private void write(ByteBuf buff, boolean end) {
     int readableBytes = buff.readableBytes();
     if (readableBytes == 0 && !end) {
       // nothing to write to the connection just return
@@ -475,38 +479,59 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         writeHeadWithContent(buff, end);
       } else {
         if (end) {
-          writeEndChunk(buff);
+          if (buff.isReadable()) {
+            conn.writeToChannel(new DefaultLastHttpContent(buff, false));
+          } else {
+            conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+          }
         } else {
-          sendChunk(buff);
+          conn.writeToChannel(new DefaultHttpContent(buff));
         }
       }
       if (end) {
-        if (conn.metrics.isEnabled()) conn.metrics.bytesWritten(conn.remoteAddress(), written);
+        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
 
         conn.endRequest();
       }
     }
   }
 
-  private void sendChunk(ByteBuf buff) {
-    conn.writeToChannel(new DefaultHttpContent(buff));
-  }
-
-  private void writeEndChunk(ByteBuf buf) {
-    if (buf.isReadable()) {
-      conn.writeToChannel(new DefaultLastHttpContent(buf, false));
-    } else {
-      conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
-    }
-  }
-
-  private void check() {
-    checkComplete();
-  }
-
   private void checkComplete() {
     if (completed) {
       throw new IllegalStateException("Request already complete");
+    }
+  }
+
+  private HttpMethod toNettyHttpMethod(io.vertx.core.http.HttpMethod method) {
+    switch (method) {
+      case CONNECT: {
+        return HttpMethod.CONNECT;
+      }
+      case GET: {
+        return HttpMethod.GET;
+      }
+      case PUT: {
+        return HttpMethod.PUT;
+      }
+      case POST: {
+        return HttpMethod.POST;
+      }
+      case DELETE: {
+        return HttpMethod.DELETE;
+      }
+      case HEAD: {
+        return HttpMethod.HEAD;
+      }
+      case OPTIONS: {
+        return HttpMethod.OPTIONS;
+      }
+      case TRACE: {
+        return HttpMethod.TRACE;
+      }
+      case PATCH: {
+        return HttpMethod.PATCH;
+      }
+      default: throw new IllegalArgumentException();
     }
   }
 
