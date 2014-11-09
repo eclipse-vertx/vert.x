@@ -91,9 +91,8 @@ import java.util.stream.Collectors;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.*;
 
-//import io.netty.handler.codec.http.
-
 /**
+ * This class is thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -108,17 +107,18 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
+  private final HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private final ServerWebSocketStreamImpl wsStream = new ServerWebSocketStreamImpl();
+  private final HttpServerRequestStreamImpl requestStream = new HttpServerRequestStreamImpl();
+  private final String subProtocols;
+  private final String serverOrigin;
+
   private ChannelGroup serverChannelGroup;
-  private ServerWebSocketStreamImpl wsStream;
-  private HttpServerRequestStreamImpl requestStream;
-  private boolean listening;
-  private String serverOrigin;
-  private String subProtocols;
+  private volatile boolean listening;
   private ChannelFuture bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
-  private HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
-  private HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
   private ContextImpl listenContext;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
@@ -126,20 +126,19 @@ public class HttpServerImpl implements HttpServer, Closeable {
     this.vertx = vertx;
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isMultiThreaded()) {
-        throw new IllegalStateException("Cannot use HttpServer in a multi-threaded worker verticle");
+      if (creatingContext.isWorker()) {
+        throw new IllegalStateException("Cannot use HttpServer in a worker verticle");
       }
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
-    this.wsStream = new ServerWebSocketStreamImpl();
-    this.requestStream = new HttpServerRequestStreamImpl();
     this.subProtocols = options.getWebsocketSubProtocols();
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
+    this.serverOrigin = (options.isSsl() ? "https" : "http") + "://" + options.getHost() + ":" + options.getPort();
   }
 
   @Override
-  public HttpServer requestHandler(Handler<HttpServerRequest> handler) {
+  public synchronized HttpServer requestHandler(Handler<HttpServerRequest> handler) {
     requestStream.handler(handler);
     return this;
   }
@@ -157,12 +156,12 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   @Override
   public Handler<HttpServerRequest> requestHandler() {
-    return requestStream.handler;
+    return requestStream.handler();
   }
 
   @Override
   public Handler<ServerWebSocket> websocketHandler() {
-    return wsStream.handler;
+    return wsStream.handler();
   }
 
   @Override
@@ -174,8 +173,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
     return listen(null);
   }
 
-  public synchronized  HttpServer listen(final Handler<AsyncResult<HttpServer>> listenHandler) {
-    if (requestStream.handler == null && wsStream.handler == null) {
+  public synchronized HttpServer listen(final Handler<AsyncResult<HttpServer>> listenHandler) {
+    if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
     if (listening) {
@@ -183,12 +182,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
     }
     listenContext = vertx.getOrCreateContext();
     listening = true;
-
     synchronized (vertx.sharedHttpServers()) {
       id = new ServerID(options.getPort(), options.getHost());
-
-      serverOrigin = (options.isSsl() ? "https" : "http") + "://" + options.getHost() + ":" + options.getPort();
-
       HttpServerImpl shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
@@ -200,7 +195,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
-              if (requestStream.paused || wsStream.paused) {
+              if (requestStream.isPaused() || wsStream.isPaused()) {
                 ch.close();
                 return;
               }
@@ -230,16 +225,13 @@ public class HttpServerImpl implements HttpServer, Closeable {
           bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(options.getHost()), options.getPort()));
           Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
-          bindFuture.addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture) throws Exception {
+          bindFuture.addListener(channelFuture -> {
               if (!channelFuture.isSuccess()) {
                 vertx.sharedHttpServers().remove(id);
               } else {
                 metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
               }
-            }
-          });
+            });
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
@@ -259,35 +251,32 @@ public class HttpServerImpl implements HttpServer, Closeable {
         addHandlers(actualServer, listenContext);
         metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
       }
-      actualServer.bindFuture.addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(final ChannelFuture future) throws Exception {
-          if (listenHandler != null) {
-            final AsyncResult<HttpServer> res;
-            if (future.isSuccess()) {
-              res = Future.completedFuture(HttpServerImpl.this);
-            } else {
-              res = Future.completedFuture(future.cause());
-              listening = false;
-            }
-            // FIXME - workaround for https://github.com/netty/netty/issues/2586
-            // If listen already succeeded on a different event loop, and then addListener is called again
-            // on the completed future from a different event loop then the handler will be called on the original
-            // event loop not on the when that called addListener.
-            // To reproduce set the boolean parameter on execute (below) to true.
-            // Then run Httptest.testTwoServersSameAddressDifferentContext()
-            try {
-              listenContext.execute(() -> {
-                listenHandler.handle(res);
-              }, false);
-            } catch (Exception e) {
-              e.printStackTrace();
-            }
-          } else if (!future.isSuccess()) {
-            listening  = false;
-            // No handler - log so user can see failure
-            log.error(future.cause());
+      actualServer.bindFuture.addListener(future -> {
+        if (listenHandler != null) {
+          final AsyncResult<HttpServer> res;
+          if (future.isSuccess()) {
+            res = Future.completedFuture(HttpServerImpl.this);
+          } else {
+            res = Future.completedFuture(future.cause());
+            listening = false;
           }
+          // FIXME - workaround for https://github.com/netty/netty/issues/2586
+          // If listen already succeeded on a different event loop, and then addListener is called again
+          // on the completed future from a different event loop then the handler will be called on the original
+          // event loop not on the when that called addListener.
+          // To reproduce set the boolean parameter on execute (below) to true.
+          // Then run Httptest.testTwoServersSameAddressDifferentContext()
+          try {
+            listenContext.execute(() -> {
+              listenHandler.handle(res);
+            }, false);
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        } else if (!future.isSuccess()) {
+          listening  = false;
+          // No handler - log so user can see failure
+          log.error(future.cause());
         }
       });
     }
@@ -301,17 +290,17 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> done) {
-    if (wsStream.endHandler != null || requestStream.endHandler != null) {
+    if (wsStream.endHandler() != null || requestStream.endHandler() != null) {
       Handler<AsyncResult<Void>> next = done;
       done = new AsyncResultHandler<Void>() {
         @Override
         public void handle(AsyncResult<Void> event) {
           if (event.succeeded()) {
-            if (wsStream.endHandler != null) {
-              wsStream.endHandler.handle(event.result());
+            if (wsStream.endHandler() != null) {
+              wsStream.endHandler().handle(event.result());
             }
-            if (requestStream.endHandler != null) {
-              requestStream.endHandler.handle(event.result());
+            if (requestStream.endHandler() != null) {
+              requestStream.endHandler().handle(event.result());
             }
           }
           if (next != null) {
@@ -332,11 +321,11 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
       if (actualServer != null) {
 
-        if (requestStream.handler != null) {
-          actualServer.reqHandlerManager.removeHandler(requestStream, listenContext);
+        if (requestStream.handler() != null) {
+          actualServer.reqHandlerManager.removeHandler(requestStream.handler(), listenContext);
         }
-        if (wsStream.handler != null) {
-          actualServer.wsHandlerManager.removeHandler(wsStream, listenContext);
+        if (wsStream.handler() != null) {
+          actualServer.wsHandlerManager.removeHandler(wsStream.handler(), listenContext);
         }
 
         if (actualServer.reqHandlerManager.hasHandlers() || actualServer.wsHandlerManager.hasHandlers()) {
@@ -352,8 +341,6 @@ public class HttpServerImpl implements HttpServer, Closeable {
         }
       }
     }
-    requestStream.handler = null;
-    wsStream.handler = null;
     if (creatingContext != null) {
       creatingContext.removeCloseHook(this);
     }
@@ -403,11 +390,11 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
 
   private void addHandlers(HttpServerImpl server, ContextImpl context) {
-    if (requestStream.handler != null) {
-      server.reqHandlerManager.addHandler(requestStream, context);
+    if (requestStream.handler() != null) {
+      server.reqHandlerManager.addHandler(requestStream.handler(), context);
     }
-    if (wsStream.handler != null) {
-      server.wsHandlerManager.addHandler(wsStream, context);
+    if (wsStream.handler() != null) {
+      server.wsHandlerManager.addHandler(wsStream.handler(), context);
     }
   }
 
@@ -434,12 +421,6 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
       closeContext.execute(() -> done.handle(Future.completedFuture(e)), false);
-    }
-  }
-
-  private void checkListening() {
-    if (listening) {
-      throw new IllegalStateException("Can't set property when server is listening");
     }
   }
 
@@ -629,7 +610,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
         final ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
-            connectRunnable);
+            connectRunnable, options.getMaxWebsocketFrameSize());
         wsConn.handleWebsocketConnect(ws);
         if (ws.isRejected()) {
           if (firstHandler == null) {
@@ -658,46 +639,72 @@ public class HttpServerImpl implements HttpServer, Closeable {
     super.finalize();
   }
 
-  class HttpStreamHandler<R extends ReadStream<C>, C extends ReadStream<?>> implements Handler<C>, ReadStream<C> {
+  /*
+    Needs to be protected using the HttpServerImpl monitor as that protects the listening variable
+    In practice synchronized overhead should be close to zero assuming most access is from the same thread due
+    to biased locks
+  */
+  private class HttpStreamHandler<R extends ReadStream<C>, C extends ReadStream<?>> implements ReadStream<C> {
 
-    protected Handler<C> handler;
-    protected boolean paused;
-    Handler<Void> endHandler;
+    private Handler<C> handler;
+    private boolean paused;
+    private Handler<Void> endHandler;
 
-    @Override
-    public R handler(Handler<C> handler) {
-      if (listening) {
-        throw new IllegalStateException("Please set handler before server is listening");
+    Handler<C> handler() {
+      synchronized (HttpServerImpl.this) {
+        return handler;
       }
-      this.handler = handler;
-      return (R) this;
+    }
+
+    boolean isPaused() {
+      synchronized (HttpServerImpl.this) {
+        return paused;
+      }
+    }
+
+    Handler<Void> endHandler() {
+      synchronized (HttpServerImpl.this) {
+        return endHandler;
+      }
     }
 
     @Override
-    public void handle(C conn) {
-      handler.handle(conn);
+    public R handler(Handler<C> handler) {
+      synchronized (HttpServerImpl.this) {
+        if (listening) {
+          throw new IllegalStateException("Please set handler before server is listening");
+        }
+        this.handler = handler;
+        return (R) this;
+      }
     }
 
     @Override
     public R pause() {
-      if (!paused) {
-        paused = true;
+      synchronized (HttpServerImpl.this) {
+        if (!paused) {
+          paused = true;
+        }
+        return (R) this;
       }
-      return (R) this;
     }
 
     @Override
     public R resume() {
-      if (paused) {
-        paused = false;
+      synchronized (HttpServerImpl.this) {
+        if (paused) {
+          paused = false;
+        }
+        return (R) this;
       }
-      return (R) this;
     }
 
     @Override
     public R endHandler(Handler<Void> endHandler) {
-      this.endHandler = endHandler;
-      return (R) this;
+      synchronized (HttpServerImpl.this) {
+        this.endHandler = endHandler;
+        return (R) this;
+      }
     }
 
     @Override

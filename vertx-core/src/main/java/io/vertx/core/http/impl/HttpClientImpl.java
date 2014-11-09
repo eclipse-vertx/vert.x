@@ -69,21 +69,26 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ *
+ * This class is thread-safe
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class HttpClientImpl implements HttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
-
 
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
   private final ContextImpl creatingContext;
   private final ConnectionManager pool;
-  private Handler<Throwable> exceptionHandler;
   private final Closeable closeHook;
-  private boolean closed;
   private final SSLHelper sslHelper;
   private final HttpClientMetrics metrics;
+  private Handler<Throwable> exceptionHandler;
+  private volatile boolean closed;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
@@ -95,20 +100,17 @@ public class HttpClientImpl implements HttpClient {
       completionHandler.handle(Future.completedFuture());
     };
     if (creatingContext != null) {
-      if (creatingContext.isMultiThreaded()) {
-        throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
+      if (creatingContext.isWorker()) {
+        throw new IllegalStateException("Cannot use HttpClient in a worker verticle");
       }
       creatingContext.addCloseHook(closeHook);
     }
-    pool = new ConnectionManager()  {
+    pool = new ConnectionManager(options.getMaxPoolSize(), options.isKeepAlive(), options.isPipelining())  {
       protected void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                              ConnectionLifeCycleListener listener) {
         internalConnect(context, port, host, connectHandler, connectErrorHandler, listener);
       }
     };
-    pool.setKeepAlive(options.isKeepAlive());
-    pool.setPipelining(options.isPipelining());
-    pool.setMaxSockets(options.getMaxPoolSize());
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
@@ -161,7 +163,6 @@ public class HttpClientImpl implements HttpClient {
     checkConnect(method, responseHandler);
     return doRequest(method, host, port, path, null, responseHandler);
   }
-
 
   @Override
   public synchronized void close() {
@@ -242,10 +243,11 @@ public class HttpClientImpl implements HttpClient {
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
   }
 
-  private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler,
-                               ConnectionLifeCycleListener listener) {
+  private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler,
+                               Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.getEventLoop());
     bootstrap.channel(NioSocketChannel.class);
@@ -270,37 +272,34 @@ public class HttpClientImpl implements HttpClient {
     });
     applyConnectionOptions(bootstrap);
     ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
-    future.addListener(new ChannelFutureListener() {
-      public void operationComplete(ChannelFuture channelFuture) throws Exception {
-        Channel ch = channelFuture.channel();
-        if (channelFuture.isSuccess()) {
-          if (options.isSsl()) {
-            // TCP connected, so now we must do the SSL handshake
+    future.addListener((ChannelFuture channelFuture) -> {
+      Channel ch = channelFuture.channel();
+      if (channelFuture.isSuccess()) {
+        if (options.isSsl()) {
+          // TCP connected, so now we must do the SSL handshake
 
-            SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
+          SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
 
-            io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-            fut.addListener(future -> {
-              if (future.isSuccess()) {
-                connected(context, port, host, ch, connectHandler, listener);
-              } else {
-                connectionFailed(context, ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
-                                 listener);
-              }
-            });
-          } else {
-            connected(context, port, host, ch, connectHandler, listener);
-          }
+          io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
+          fut.addListener(fut2 -> {
+            if (fut2.isSuccess()) {
+              connected(context, port, host, ch, connectHandler, listener);
+            } else {
+              connectionFailed(context, ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
+                               listener);
+            }
+          });
         } else {
-          connectionFailed(context, ch, connectErrorHandler, channelFuture.cause(), listener);
+          connected(context, port, host, ch, connectHandler, listener);
         }
+      } else {
+        connectionFailed(context, ch, connectErrorHandler, channelFuture.cause(), listener);
       }
     });
   }
 
   private URL parseUrl(String surl) {
     // Note - parsing a URL this way is slower than specifying host, port and relativeURI
-    URL url;
     try {
       return new URL(surl);
     } catch (MalformedURLException e) {
@@ -336,11 +335,13 @@ public class HttpClientImpl implements HttpClient {
     return handler;
   }
 
-  private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {
+  private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
+                         ConnectionLifeCycleListener listener) {
     context.execute(() -> createConn(context, port, host, ch, connectHandler, listener), true);
   }
 
-  private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler, ConnectionLifeCycleListener listener) {
+  private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
+                          ConnectionLifeCycleListener listener) {
     ClientConnection conn = new ClientConnection(vertx, HttpClientImpl.this, ch,
         options.isSsl(), host, port, context, listener, metrics);
     conn.closeHandler(v -> {

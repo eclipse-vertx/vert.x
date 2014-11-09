@@ -45,7 +45,7 @@ public class SharedDataImpl implements SharedData {
   private final ClusterManager clusterManager;
   private final ConcurrentMap<String, AsynchronousLock> localLocks = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Counter> localCounters = new ConcurrentHashMap<>();
-  private ConcurrentMap<Object, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Object, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
 
   public SharedDataImpl(VertxInternal vertx, ClusterManager clusterManager) {
     this.vertx = vertx;

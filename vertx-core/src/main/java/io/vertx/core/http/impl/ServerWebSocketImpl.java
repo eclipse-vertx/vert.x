@@ -24,20 +24,30 @@ import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
+/**
+ * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ */
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
 
   private final String uri;
   private final String path;
   private final String query;
   private final Runnable connectRunnable;
-  private boolean connected;
-  private boolean rejected;
   private final MultiMap headers;
 
-  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
-                             ConnectionBase conn, boolean supportsContinuation, Runnable connectRunnable) {
-    super(vertx, conn, supportsContinuation);
+  private boolean connected;
+  private boolean rejected;
 
+  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
+                             ConnectionBase conn, boolean supportsContinuation, Runnable connectRunnable,
+                             int maxWebSocketFrameSize) {
+    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
     this.uri = uri;
     this.path = path;
     this.query = query;
@@ -66,7 +76,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public ServerWebSocket reject() {
+  public synchronized ServerWebSocket reject() {
     checkClosed();
     if (connectRunnable == null) {
       throw new IllegalStateException("Cannot reject websocket on the client side");
@@ -79,7 +89,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     checkClosed();
     if (connectRunnable != null) {
       // Server side
@@ -94,63 +104,63 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public ServerWebSocket handler(Handler<Buffer> handler) {
+  public synchronized ServerWebSocket handler(Handler<Buffer> handler) {
     checkClosed();
     this.dataHandler = handler;
     return this;
   }
 
   @Override
-  public ServerWebSocket endHandler(Handler<Void> handler) {
+  public synchronized ServerWebSocket endHandler(Handler<Void> handler) {
     checkClosed();
     this.endHandler = handler;
     return this;
   }
 
   @Override
-  public ServerWebSocket exceptionHandler(Handler<Throwable> handler) {
+  public synchronized ServerWebSocket exceptionHandler(Handler<Throwable> handler) {
     checkClosed();
     this.exceptionHandler = handler;
     return this;
   }
 
   @Override
-  public ServerWebSocket closeHandler(Handler<Void> handler) {
+  public synchronized ServerWebSocket closeHandler(Handler<Void> handler) {
     checkClosed();
     this.closeHandler = handler;
     return this;
   }
 
   @Override
-  public ServerWebSocket frameHandler(Handler<WebSocketFrame> handler) {
+  public synchronized ServerWebSocket frameHandler(Handler<WebSocketFrame> handler) {
     checkClosed();
     this.frameHandler = handler;
     return this;
   }
 
   @Override
-  public ServerWebSocket pause() {
+  public synchronized ServerWebSocket pause() {
     checkClosed();
     conn.doPause();
     return this;
   }
 
   @Override
-  public ServerWebSocket resume() {
+  public synchronized ServerWebSocket resume() {
     checkClosed();
     conn.doResume();
     return this;
   }
 
   @Override
-  public ServerWebSocket setWriteQueueMaxSize(int maxSize) {
+  public synchronized ServerWebSocket setWriteQueueMaxSize(int maxSize) {
     checkClosed();
     conn.doSetWriteQueueMaxSize(maxSize);
     return this;
   }
 
   @Override
-  public boolean writeQueueFull() {
+  public synchronized boolean writeQueueFull() {
     checkClosed();
     return conn.isNotWritable();
   }
@@ -162,14 +172,14 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public ServerWebSocket drainHandler(Handler<Void> handler) {
+  public synchronized ServerWebSocket drainHandler(Handler<Void> handler) {
     checkClosed();
     this.drainHandler = handler;
     return this;
   }
 
   @Override
-  public ServerWebSocket writeFrame(WebSocketFrame frame) {
+  public synchronized ServerWebSocket writeFrame(WebSocketFrame frame) {
     if (connectRunnable != null) {
       if (rejected) {
         throw new IllegalStateException("Cannot write to websocket, it has been rejected");
@@ -183,7 +193,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public ServerWebSocket writeMessage(Buffer data) {
+  public synchronized ServerWebSocket writeMessage(Buffer data) {
     checkClosed();
     writeMessageInternal(data);
     return this;
@@ -195,13 +205,13 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   // Connect if not already connected
-  void connectNow() {
+  synchronized void connectNow() {
     if (!connected && !rejected) {
       connect();
     }
   }
 
-  boolean isRejected() {
+  synchronized boolean isRejected() {
     return rejected;
   }
 }
