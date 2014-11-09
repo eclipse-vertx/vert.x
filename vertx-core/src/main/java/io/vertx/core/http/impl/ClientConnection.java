@@ -59,25 +59,32 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
+ *
+ * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class ClientConnection extends ConnectionBase {
+
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  final HttpClientImpl client;
-  final String hostHeader;
+  private final HttpClientImpl client;
+  private final String hostHeader;
   private final boolean ssl;
   private final String host;
   private final int port;
   private final ConnectionLifeCycleListener listener;
-  private WebSocketClientHandshaker handshaker;
-  private volatile HttpClientRequestImpl currentRequest;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private volatile HttpClientResponseImpl currentResponse;
-  private volatile HttpClientRequestImpl requestForResponse;
-  final HttpClientMetrics metrics;
+  private final HttpClientMetrics metrics;
 
+  private WebSocketClientHandshaker handshaker;
+  private HttpClientRequestImpl currentRequest;
+  private HttpClientResponseImpl currentResponse;
+  private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
   ClientConnection(VertxInternal vertx, HttpClientImpl client, Channel channel, boolean ssl, String host,
@@ -96,12 +103,8 @@ class ClientConnection extends ConnectionBase {
     this.metrics = metrics;
   }
 
-  void toWebSocket(String requestURI,
-                   MultiMap headers,
-                   WebsocketVersion vers,
-                   String subProtocols,
-                   int maxWebSocketFrameSize,
-                   final Handler<WebSocket> wsConnect) {
+  synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
+                   int maxWebSocketFrameSize, Handler<WebSocket> wsConnect) {
     if (ws != null) {
       throw new IllegalStateException("Already websocket");
     }
@@ -126,7 +129,7 @@ class ClientConnection extends ConnectionBase {
       }
       handshaker = WebSocketClientHandshakerFactory.newHandshaker(wsuri, version, subProtocols, false,
                                                                   nettyHeaders, maxWebSocketFrameSize);
-      final ChannelPipeline p = channel.pipeline();
+      ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(channel).addListener(future -> {
         if (!future.isSuccess()) {
@@ -139,13 +142,15 @@ class ClientConnection extends ConnectionBase {
   }
 
   private final class HandshakeInboundHandler extends ChannelInboundHandlerAdapter {
+
     private final boolean supportsContinuation;
     private final Handler<WebSocket> wsConnect;
     private final ContextImpl context;
+    private final Queue<Object> buffered = new ArrayDeque<>();
     private FullHttpResponse response;
     private boolean handshaking = true;
-    private final Queue<Object> buffered = new ArrayDeque<>();
-    public HandshakeInboundHandler(final Handler<WebSocket> wsConnect, boolean supportsContinuation) {
+
+    public HandshakeInboundHandler(Handler<WebSocket> wsConnect, boolean supportsContinuation) {
       this.supportsContinuation = supportsContinuation;
       this.wsConnect = wsConnect;
       this.context = vertx.getContext();
@@ -164,43 +169,45 @@ class ClientConnection extends ConnectionBase {
     }
 
     @Override
-    public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
       context.execute(() -> {
-        if (handshaker != null && handshaking) {
-          if (msg instanceof HttpResponse) {
-            HttpResponse resp = (HttpResponse) msg;
-            if (resp.getStatus().code() != 101) {
-              handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
-              return;
+        synchronized (ClientConnection.this) {
+          if (handshaker != null && handshaking) {
+            if (msg instanceof HttpResponse) {
+              HttpResponse resp = (HttpResponse) msg;
+              if (resp.getStatus().code() != 101) {
+                handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
+                return;
+              }
+              response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
+              response.headers().add(resp.headers());
             }
-            response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
-            response.headers().add(resp.headers());
-          }
 
-          if (msg instanceof HttpContent) {
-            if (response != null) {
-              response.content().writeBytes(((HttpContent) msg).content());
-              if (msg instanceof LastHttpContent) {
-                response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
-                try {
-                  handshakeComplete(ctx, response);
-                  channel.pipeline().remove(HandshakeInboundHandler.this);
-                  for (;;) {
-                    Object m = buffered.poll();
-                    if (m == null) {
-                      break;
+            if (msg instanceof HttpContent) {
+              if (response != null) {
+                response.content().writeBytes(((HttpContent) msg).content());
+                if (msg instanceof LastHttpContent) {
+                  response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
+                  try {
+                    handshakeComplete(ctx, response);
+                    channel.pipeline().remove(HandshakeInboundHandler.this);
+                    for (; ; ) {
+                      Object m = buffered.poll();
+                      if (m == null) {
+                        break;
+                      }
+                      ctx.fireChannelRead(m);
                     }
-                    ctx.fireChannelRead(m);
+                  } catch (WebSocketHandshakeException e) {
+                    close();
+                    handleException(e);
                   }
-                } catch (WebSocketHandshakeException e) {
-                  close();
-                  handleException(e);
                 }
               }
             }
+          } else {
+            buffered.add(msg);
           }
-        } else {
-          buffered.add(msg);
         }
       }, true);
     }
@@ -218,7 +225,7 @@ class ClientConnection extends ConnectionBase {
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      ws = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation);
+      ws = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation, client.getOptions().getMaxWebsocketFrameSize());
       handshaker.finishHandshake(channel, response);
       log.debug("WebSocket handshake complete");
       wsConnect.handle(ws);
@@ -229,7 +236,6 @@ class ClientConnection extends ConnectionBase {
     this.closeHandler = handler;
   }
 
-
   boolean isClosed() {
     return !channel.isOpen();
   }
@@ -239,7 +245,7 @@ class ClientConnection extends ConnectionBase {
   }
 
   @Override
-  public void handleInterestedOpsChanged() {
+  public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
       if (currentRequest != null) {
         currentRequest.handleDrained();
@@ -248,7 +254,6 @@ class ClientConnection extends ConnectionBase {
       }
     }
   }
-
 
   void handleResponse(HttpResponse resp) {
     if (resp.getStatus().code() == 100) {
@@ -279,13 +284,13 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  void handleWsFrame(WebSocketFrameInternal frame) {
+  synchronized void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
       ws.handleFrame(frame);
     }
   }
 
-  protected void handleClosed() {
+  protected synchronized void handleClosed() {
     super.handleClosed();
     if (ws != null) {
       ws.handleClosed();
@@ -297,7 +302,7 @@ class ClientConnection extends ConnectionBase {
   }
 
   @Override
-  protected void handleException(Throwable e) {
+  protected synchronized void handleException(Throwable e) {
     super.handleException(e);
     if (currentRequest != null) {
       currentRequest.handleException(e);
@@ -306,7 +311,7 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  void setCurrentRequest(HttpClientRequestImpl req) {
+  synchronized void setCurrentRequest(HttpClientRequestImpl req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }
@@ -315,7 +320,7 @@ class ClientConnection extends ConnectionBase {
     client.httpClientMetrics().requestBegin(req);
   }
 
-  void endRequest() {
+  synchronized void endRequest() {
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
     }
@@ -323,8 +328,16 @@ class ClientConnection extends ConnectionBase {
     listener.requestEnded(this);
   }
 
+  public HttpClientMetrics metrics() {
+    return metrics;
+  }
+
+  public String hostHeader() {
+    return hostHeader;
+  }
+
   @Override
-  public void close() {
+  public synchronized void close() {
     if (handshaker == null) {
       super.close();
     } else {
@@ -343,7 +356,6 @@ class ClientConnection extends ConnectionBase {
 
     // Flush out all pending data
     endReadAndFlush();
-
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     ChannelPipeline pipeline = channel.pipeline();

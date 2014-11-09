@@ -152,19 +152,19 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public DatagramSocket handler(Handler<io.vertx.core.datagram.DatagramPacket> handler) {
+  public synchronized DatagramSocket handler(Handler<io.vertx.core.datagram.DatagramPacket> handler) {
     this.packetHandler = handler;
     return this;
   }
 
   @Override
-  public DatagramSocket endHandler(Handler<Void> endHandler) {
+  public synchronized DatagramSocket endHandler(Handler<Void> endHandler) {
     this.closeHandler = endHandler;
     return this;
   }
 
   @Override
-  public DatagramSocket exceptionHandler(Handler<Throwable> handler) {
+  public synchronized DatagramSocket exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
   }
@@ -318,7 +318,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     super.handleClosed();
   }
 
-  void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
+  synchronized void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
     metrics.bytesRead(packet.sender(), packet.data().length());
     if (packetHandler != null) {
       packetHandler.handle(packet);

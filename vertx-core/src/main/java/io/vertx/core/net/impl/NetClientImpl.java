@@ -48,6 +48,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
+ *
+ * This class is thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetClientImpl implements NetClient {
@@ -73,16 +76,15 @@ public class NetClientImpl implements NetClient {
     };
     creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isMultiThreaded()) {
-        throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
+      if (creatingContext.isWorker()) {
+        throw new IllegalStateException("Cannot use NetClient in a worker verticle");
       }
       creatingContext.addCloseHook(closeHook);
     }
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
-  @Override
-  public NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {
+  public synchronized NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {
     checkClosed();
     connect(port, host, connectHandler, options.getReconnectAttempts());
     return this;

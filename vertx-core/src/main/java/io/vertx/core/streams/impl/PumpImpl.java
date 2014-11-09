@@ -45,9 +45,9 @@ public class PumpImpl<T> implements Pump {
 
   private final ReadStream<T> readStream;
   private final WriteStream<T> writeStream;
-  private int pumped;
   private final Handler<T> dataHandler;
   private final Handler<Void> drainHandler;
+  private int pumped;
 
   /**
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
@@ -64,7 +64,7 @@ public class PumpImpl<T> implements Pump {
     drainHandler = v-> readStream.resume();
     dataHandler = data -> {
       writeStream.write(data);
-      pumped++;
+      incPumped();
       if (writeStream.writeQueueFull()) {
         readStream.pause();
         writeStream.drainHandler(drainHandler);
@@ -104,8 +104,15 @@ public class PumpImpl<T> implements Pump {
    * Return the total number of bytes pumped by this pump.
    */
   @Override
-  public int numberPumped() {
+  public synchronized int numberPumped() {
     return pumped;
+  }
+
+  // Note we synchronize as numberPumped can be called from a different thread however incPumped will always
+  // be called from the same thread so we benefit from bias locked optimisation which should give a very low
+  // overhead
+  private synchronized void incPumped() {
+    pumped++;
   }
 
 

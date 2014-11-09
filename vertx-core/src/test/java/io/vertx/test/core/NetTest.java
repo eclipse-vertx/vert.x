@@ -1679,11 +1679,6 @@ public class NetTest extends VertxTestBase {
     testInVerticle(false);
   }
 
-  @Test
-  public void testInWorkerVerticle() throws Exception {
-    testInVerticle(true);
-  }
-
   private void testInVerticle(boolean worker) throws Exception {
     client.close();
     server.close();

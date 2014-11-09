@@ -93,7 +93,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
    */
-  String method();
+  HttpMethod method();
 
   /**
    * The uri of the request. For example

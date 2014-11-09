@@ -51,13 +51,16 @@ import io.vertx.core.net.NetSocketStream;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /**
+ *
+ * This class is thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetServerImpl implements NetServer, Closeable {
@@ -72,16 +75,16 @@ public class NetServerImpl implements NetServer, Closeable {
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
+  private final Queue<Runnable> bindListeners = new LinkedList<>();
+  private final NetSocketStreamImpl connectStream = new NetSocketStreamImpl();
   private ChannelGroup serverChannelGroup;
-  private boolean listening;
-  private ServerID id;
+  private volatile boolean listening;
+  private volatile ServerID id;
   private NetServerImpl actualServer;
   private ChannelFuture bindFuture;
-  private int actualPort;
-  private Queue<Runnable> bindListeners = new ConcurrentLinkedQueue<>();
+  private volatile int actualPort;
   private boolean listenersRun;
   private ContextImpl listenContext;
-  private NetSocketStreamImpl connectStream = new NetSocketStreamImpl();
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
@@ -89,8 +92,8 @@ public class NetServerImpl implements NetServer, Closeable {
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isMultiThreaded()) {
-        throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
+      if (creatingContext.isWorker()) {
+        throw new IllegalStateException("Cannot use NetServer in a worker verticle");
       }
       creatingContext.addCloseHook(this);
     }
@@ -105,7 +108,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   @Override
   public Handler<NetSocket> connectHandler() {
-    return connectStream.handler;
+    return connectStream.handler();
   }
 
   @Override
@@ -114,14 +117,14 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
-  public synchronized NetServer listen() {
+  public NetServer listen() {
     listen(null);
     return this;
   }
 
   @Override
   public synchronized NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
-    if (connectStream.handler == null) {
+    if (connectStream.handler() == null) {
       throw new IllegalStateException("Set connect handler first");
     }
     if (listening) {
@@ -146,7 +149,7 @@ public class NetServerImpl implements NetServer, Closeable {
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
-            if (connectStream.paused) {
+            if (connectStream.isPaused()) {
               ch.close();
               return;
             }
@@ -168,8 +171,8 @@ public class NetServerImpl implements NetServer, Closeable {
 
         applyConnectionOptions(bootstrap);
 
-        if (connectStream.handler != null) {
-          handlerManager.addHandler(connectStream, listenContext);
+        if (connectStream.handler() != null) {
+          handlerManager.addHandler(connectStream.handler(), listenContext);
         }
 
         try {
@@ -208,8 +211,8 @@ public class NetServerImpl implements NetServer, Closeable {
         actualServer = shared;
         this.actualPort = shared.actualPort();
         metrics.listening(new SocketAddressImpl(id.port, id.host));
-        if (connectStream.handler != null) {
-          actualServer.handlerManager.addHandler(connectStream, listenContext);
+        if (connectStream.handler() != null) {
+          actualServer.handlerManager.addHandler(connectStream.handler(), listenContext);
         }
       }
 
@@ -243,13 +246,13 @@ public class NetServerImpl implements NetServer, Closeable {
 
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> done) {
-    if (connectStream.endHandler != null) {
+    if (connectStream.endHandler() != null) {
       Handler<AsyncResult<Void>> next = done;
       done = new AsyncResultHandler<Void>() {
         @Override
         public void handle(AsyncResult<Void> event) {
           if (event.succeeded()) {
-            connectStream.endHandler.handle(event.result());
+            connectStream.endHandler().handle(event.result());
           }
           if (next != null) {
             next.handle(event);
@@ -269,7 +272,7 @@ public class NetServerImpl implements NetServer, Closeable {
     synchronized (vertx.sharedNetServers()) {
 
       if (actualServer != null) {
-        actualServer.handlerManager.removeHandler(connectStream, listenContext);
+        actualServer.handlerManager.removeHandler(connectStream.handler(), listenContext);
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
@@ -426,46 +429,72 @@ public class NetServerImpl implements NetServer, Closeable {
     super.finalize();
   }
 
-  class NetSocketStreamImpl implements Handler<NetSocket>, NetSocketStream {
+  /*
+    Needs to be protected using the NetServerImpl monitor as that protects the listening variable
+    In practice synchronized overhead should be close to zero assuming most access is from the same thread due
+    to biased locks
+  */
+  private class NetSocketStreamImpl implements NetSocketStream {
 
-    protected Handler<NetSocket> handler;
+    private Handler<NetSocket> handler;
     private boolean paused;
     private Handler<Void> endHandler;
 
-    @Override
-    public void handle(NetSocket event) {
-      handler.handle(event);
+    Handler<NetSocket> handler() {
+      synchronized (NetServerImpl.this) {
+        return handler;
+      }
+    }
+
+    boolean isPaused() {
+      synchronized (NetServerImpl.this) {
+        return paused;
+      }
+    }
+
+     Handler<Void> endHandler() {
+       synchronized (NetServerImpl.this) {
+         return endHandler;
+       }
     }
 
     @Override
     public NetSocketStreamImpl handler(Handler<NetSocket> handler) {
-      if (listening) {
-        throw new IllegalStateException("Cannot set connectHandler when server is listening");
+      synchronized (NetServerImpl.this) {
+        if (listening) {
+          throw new IllegalStateException("Cannot set connectHandler when server is listening");
+        }
+        this.handler = handler;
+        return this;
       }
-      this.handler = handler;
-      return this;
     }
 
     @Override
     public NetSocketStreamImpl pause() {
-      if (!paused) {
-        paused = true;
+      synchronized (NetServerImpl.this) {
+        if (!paused) {
+          paused = true;
+        }
+        return this;
       }
-      return this;
     }
 
     @Override
     public NetSocketStreamImpl resume() {
-      if (paused) {
-        paused = false;
+      synchronized (NetServerImpl.this) {
+        if (paused) {
+          paused = false;
+        }
+        return this;
       }
-      return this;
     }
 
     @Override
     public NetSocketStreamImpl endHandler(Handler<Void> endHandler) {
-      this.endHandler = endHandler;
-      return this;
+      synchronized (NetServerImpl.this) {
+        this.endHandler = endHandler;
+        return this;
+      }
     }
 
     @Override

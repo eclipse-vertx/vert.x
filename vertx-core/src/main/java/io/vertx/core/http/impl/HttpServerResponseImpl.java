@@ -43,6 +43,12 @@ import java.io.File;
 
 /**
  *
+ * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServerResponseImpl implements HttpServerResponse {
@@ -55,6 +61,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private final HttpResponse response;
   private final HttpVersion version;
   private final boolean keepAlive;
+
   private boolean headWritten;
   private boolean written;
   private Handler<Void> drainHandler;
@@ -78,7 +85,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public MultiMap headers() {
+  public synchronized MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(response.headers());
     }
@@ -86,7 +93,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public MultiMap trailers() {
+  public synchronized MultiMap trailers() {
     if (trailers == null) {
       if (trailing == null) {
         trailing = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, false);
@@ -114,14 +121,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse setStatusMessage(String statusMessage) {
+  public synchronized HttpServerResponse setStatusMessage(String statusMessage) {
     this.statusMessage = statusMessage;
     this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), statusMessage));
     return this;
   }
 
   @Override
-  public HttpServerResponseImpl setChunked(boolean chunked) {
+  public synchronized HttpServerResponseImpl setChunked(boolean chunked) {
     checkWritten();
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
     if (version != HttpVersion.HTTP_1_0) {
@@ -131,81 +138,81 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public boolean isChunked() {
+  public synchronized boolean isChunked() {
     return chunked;
   }
 
   @Override
-  public HttpServerResponseImpl putHeader(String key, String value) {
+  public synchronized HttpServerResponseImpl putHeader(String key, String value) {
     checkWritten();
     headers().set(key, value);
     return this;
   }
 
   @Override
-  public HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
+  public synchronized HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
     checkWritten();
     headers().set(key, values);
     return this;
   }
 
   @Override
-  public HttpServerResponseImpl putTrailer(String key, String value) {
+  public synchronized HttpServerResponseImpl putTrailer(String key, String value) {
     checkWritten();
     trailers().set(key, value);
     return this;
   }
 
   @Override
-  public HttpServerResponseImpl putTrailer(String key, Iterable<String> values) {
+  public synchronized HttpServerResponseImpl putTrailer(String key, Iterable<String> values) {
     checkWritten();
     trailers().set(key, values);
     return this;
   }
 
   @Override
-  public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
+  public synchronized HttpServerResponse putHeader(CharSequence name, CharSequence value) {
     checkWritten();
     headers().set(name, value);
     return this;
   }
 
   @Override
-  public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
+  public synchronized HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
     checkWritten();
     headers().set(name, values);
     return this;
   }
 
   @Override
-  public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
+  public synchronized HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
     checkWritten();
     trailers().set(name, value);
     return this;
   }
 
   @Override
-  public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
+  public synchronized HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
     checkWritten();
     trailers().set(name, value);
     return this;
   }
 
   @Override
-  public HttpServerResponse setWriteQueueMaxSize(int size) {
+  public synchronized HttpServerResponse setWriteQueueMaxSize(int size) {
     checkWritten();
     conn.doSetWriteQueueMaxSize(size);
     return this;
   }
 
   @Override
-  public boolean writeQueueFull() {
+  public synchronized boolean writeQueueFull() {
     checkWritten();
     return conn.isNotWritable();
   }
 
   @Override
-  public HttpServerResponse drainHandler(Handler<Void> handler) {
+  public synchronized HttpServerResponse drainHandler(Handler<Void> handler) {
     checkWritten();
     this.drainHandler = handler;
     conn.getContext().execute(conn::handleInterestedOpsChanged, false);
@@ -213,14 +220,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
+  public synchronized HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
     checkWritten();
     this.exceptionHandler = handler;
     return this;
   }
 
   @Override
-  public HttpServerResponse closeHandler(Handler<Void> handler) {
+  public synchronized HttpServerResponse closeHandler(Handler<Void> handler) {
     checkWritten();
     this.closeHandler = handler;
     return this;
@@ -253,7 +260,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end(Buffer chunk) {
+  public synchronized void end(Buffer chunk) {
     if (!chunked && !contentLengthSet()) {
       headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
@@ -262,7 +269,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     if (!closed) {
       if (headWritten) {
         closeConnAfterWrite();
@@ -274,7 +281,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end() {
+  public synchronized void end() {
     end0(Unpooled.EMPTY_BUFFER);
   }
 
@@ -351,7 +358,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return headWritten;
   }
 
-  private void doSendFile(String filename, String notFoundResource, final Handler<AsyncResult<Void>> resultHandler) {
+  private synchronized void doSendFile(String filename, String notFoundResource, final Handler<AsyncResult<Void>> resultHandler) {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
     }
@@ -409,15 +416,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-
-  private boolean contentLengthSet() {
+  private synchronized boolean contentLengthSet() {
     if (headers == null) {
       return false;
     }
     return response.headers().contains(HttpHeaders.CONTENT_LENGTH);
   }
 
-  private boolean contentTypeSet() {
+  private synchronized boolean contentTypeSet() {
     if (headers == null) {
       return false;
     }
@@ -446,19 +452,19 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     end(NOT_FOUND);
   }
 
-  void handleDrained() {
+  synchronized void handleDrained() {
     if (drainHandler != null) {
       drainHandler.handle(null);
     }
   }
 
-  void handleException(Throwable t) {
+  synchronized void handleException(Throwable t) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     }
   }
 
-  void handleClosed() {
+  synchronized void handleClosed() {
     if (closeHandler != null) {
       closeHandler.handle(null);
     }
@@ -482,7 +488,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
 
-  private HttpServerResponseImpl write(ByteBuf chunk, final Handler<AsyncResult<Void>> completionHandler) {
+  private synchronized HttpServerResponseImpl write(ByteBuf chunk, final Handler<AsyncResult<Void>> completionHandler) {
     checkWritten();
     if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
