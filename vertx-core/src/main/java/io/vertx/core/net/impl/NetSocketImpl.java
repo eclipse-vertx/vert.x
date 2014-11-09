@@ -23,7 +23,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -50,13 +49,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
-
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private MessageConsumer registration;
   private Queue<Buffer> pendingData;
-  private boolean paused = false;
+  private volatile boolean paused = false;
   private SSLHelper helper;
   private boolean client;
   private ChannelFuture writeFuture;
@@ -175,26 +173,17 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       throw new IllegalArgumentException("filename must point to a file and not to a directory");
     }
     ChannelFuture future = super.sendFile(f);
-
     if (resultHandler != null) {
-      future.addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) throws Exception {
-          final AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.completedFuture();
-          } else {
-            res = Future.completedFuture(future.cause());
-          }
-          vertx.runOnContext(new Handler<Void>() {
-            @Override
-            public void handle(Void v) {
-              resultHandler.handle(res);
-            }
-          });
+      future.addListener(fut -> {
+        final AsyncResult<Void> res;
+        if (future.isSuccess()) {
+          res = Future.completedFuture();
+        } else {
+          res = Future.completedFuture(future.cause());
         }
+        vertx.runOnContext(v -> resultHandler.handle(res));
       });
     }
-
     return this;
   }
 
@@ -242,17 +231,14 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       sslHandler = helper.createSslHandler(vertx, client);
       channel.pipeline().addFirst(sslHandler);
     }
-    sslHandler.handshakeFuture().addListener(new GenericFutureListener<io.netty.util.concurrent.Future<Channel>>() {
-      @Override
-      public void operationComplete(final io.netty.util.concurrent.Future<Channel> future) throws Exception {
-        context.execute(() -> {
-          if (future.isSuccess()) {
-            handler.handle(null);
-          } else {
-            log.error(future.cause());
-          }
-        }, true);
-      }
+    sslHandler.handshakeFuture().addListener(future -> {
+      context.execute(() -> {
+        if (future.isSuccess()) {
+          handler.handle(null);
+        } else {
+          log.error(future.cause());
+        }
+      }, true);
     });
     return this;
   }
@@ -276,7 +262,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       registration.unregister();
     }
   }
-
 
   void handleDataReceived(Buffer data) {
     checkContext();
