@@ -135,7 +135,7 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
 
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
-        map.remove(k, v);
+        map.remove(k, HazelcastServerID.convertServerID(v));
         return null;
       }
     }, completionHandler);
