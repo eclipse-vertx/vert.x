@@ -32,6 +32,10 @@ import io.vertx.core.net.impl.ConnectionBase;
 import java.util.UUID;
 
 /**
+ * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -41,6 +45,9 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
   private final String textHandlerID;
   private final String binaryHandlerID;
   private final VertxInternal vertx;
+  private final int maxWebSocketFrameSize;
+  private final MessageConsumer binaryHandlerRegistration;
+  private final MessageConsumer textHandlerRegistration;
   protected final ConnectionBase conn;
 
   protected Handler<WebSocketFrame> frameHandler;
@@ -49,13 +56,10 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   protected Handler<Void> endHandler;
-  protected MessageConsumer binaryHandlerRegistration;
-  protected MessageConsumer textHandlerRegistration;
   protected boolean closed;
 
-  private int maxWebSocketFrameSize = 65536;
-
-  protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation) {
+  protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
+                              int maxWebSocketFrameSize) {
     this.supportsContinuation = supportsContinuation;
     this.vertx = vertx;
     this.textHandlerID = UUID.randomUUID().toString();
@@ -65,6 +69,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
     binaryHandlerRegistration = vertx.eventBus().<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
     Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
     textHandlerRegistration = vertx.eventBus().<String>localConsumer(textHandlerID).handler(textHandler);
+    this.maxWebSocketFrameSize = maxWebSocketFrameSize;
   }
 
   public String binaryHandlerID() {
@@ -75,12 +80,12 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
     return textHandlerID;
   }
 
-  public boolean writeQueueFull() {
+  public synchronized boolean writeQueueFull() {
     checkClosed();
     return conn.isNotWritable();
   }
 
-  public void close() {
+  public synchronized void close() {
     checkClosed();
     conn.close();
     cleanupHandlers();
@@ -137,16 +142,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
     writeFrame(frame);
   }
 
-
-  private void cleanupHandlers() {
-    if (!closed) {
-      binaryHandlerRegistration.unregister();
-      textHandlerRegistration.unregister();
-      closed = true;
-    }
-  }
-
-  protected void writeFrameInternal(WebSocketFrame frame) {
+  protected synchronized void writeFrameInternal(WebSocketFrame frame) {
     checkClosed();
     if (conn.netMetrics().isEnabled()) {
       conn.netMetrics().bytesWritten(remoteAddress(), frame.binaryData().length());
@@ -160,7 +156,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
     }
   }
 
-  void handleFrame(WebSocketFrameInternal frame) {
+  synchronized void handleFrame(WebSocketFrameInternal frame) {
     if (conn.netMetrics().isEnabled()) {
       conn.netMetrics().bytesRead(remoteAddress(), frame.binaryData().length());
     }
@@ -182,13 +178,13 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
     }
   }
 
-  void handleException(Throwable t) {
+  synchronized void handleException(Throwable t) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     }
   }
 
-  void handleClosed() {
+  synchronized void handleClosed() {
     cleanupHandlers();
     if (endHandler != null) {
       endHandler.handle(null);
@@ -197,4 +193,13 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
       closeHandler.handle(null);
     }
   }
+
+  private void cleanupHandlers() {
+    if (!closed) {
+      binaryHandlerRegistration.unregister();
+      textHandlerRegistration.unregister();
+      closed = true;
+    }
+  }
+
 }

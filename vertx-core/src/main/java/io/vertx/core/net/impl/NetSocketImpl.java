@@ -44,19 +44,29 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.UUID;
 
+/**
+ *
+ * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
+  private final MessageConsumer registration;
+  private final SSLHelper helper;
+  private final boolean client;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private MessageConsumer registration;
   private Queue<Buffer> pendingData;
-  private volatile boolean paused = false;
-  private SSLHelper helper;
-  private boolean client;
+  private boolean paused = false;
   private ChannelFuture writeFuture;
 
   public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, NetMetrics metrics) {
@@ -97,20 +107,20 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket handler(Handler<Buffer> dataHandler) {
+  public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
 
   @Override
-  public NetSocket pause() {
+  public synchronized NetSocket pause() {
     paused = true;
     doPause();
     return this;
   }
 
   @Override
-  public NetSocket resume() {
+  public synchronized NetSocket resume() {
     if (!paused) {
       return this;
     }
@@ -145,19 +155,15 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket endHandler(Handler<Void> endHandler) {
+  public synchronized NetSocket endHandler(Handler<Void> endHandler) {
     this.endHandler = endHandler;
     return this;
   }
 
   @Override
-  public NetSocket drainHandler(Handler<Void> drainHandler) {
+  public synchronized NetSocket drainHandler(Handler<Void> drainHandler) {
     this.drainHandler = drainHandler;
-    vertx.runOnContext(new VoidHandler() {
-      public void handle() {
-        callDrainHandler(); //If the channel is already drained, we want to call it immediately
-      }
-    });
+    vertx.runOnContext(v -> callDrainHandler()); //If the channel is already drained, we want to call it immediately
     return this;
   }
 
@@ -197,19 +203,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket exceptionHandler(Handler<Throwable> handler) {
+  public synchronized NetSocket exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
   }
 
   @Override
-  public NetSocket closeHandler(Handler<Void> handler) {
+  public synchronized NetSocket closeHandler(Handler<Void> handler) {
     this.closeHandler = handler;
     return this;
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     if (writeFuture != null) {
       // Close after all data is written
       writeFuture.addListener(ChannelFutureListener.CLOSE);
@@ -219,13 +225,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
   }
 
-  public void handleInterestedOpsChanged() {
-    checkContext();
-    callDrainHandler();
-  }
-
   @Override
-  public NetSocket upgradeToSsl(final Handler<Void> handler) {
+  public synchronized NetSocket upgradeToSsl(final Handler<Void> handler) {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
       sslHandler = helper.createSslHandler(vertx, client);
@@ -248,11 +249,14 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
-  protected ContextImpl getContext() {
-    return super.getContext();
+  @Override
+  protected synchronized void handleInterestedOpsChanged() {
+    checkContext();
+    callDrainHandler();
   }
 
-  protected void handleClosed() {
+  @Override
+  protected synchronized void handleClosed() {
     checkContext();
     if (endHandler != null) {
       endHandler.handle(null);
@@ -263,7 +267,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     }
   }
 
-  void handleDataReceived(Buffer data) {
+  synchronized void handleDataReceived(Buffer data) {
     checkContext();
     if (paused) {
       if (pendingData == null) {
@@ -275,7 +279,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     if (metrics.isEnabled()) {
       metrics.bytesRead(remoteAddress(), data.length());
     }
-
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
@@ -288,7 +291,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     writeFuture = super.writeToChannel(buff);
   }
 
-  private void callDrainHandler() {
+  private synchronized void callDrainHandler() {
     if (drainHandler != null) {
       if (!writeQueueFull()) {
         drainHandler.handle(null);

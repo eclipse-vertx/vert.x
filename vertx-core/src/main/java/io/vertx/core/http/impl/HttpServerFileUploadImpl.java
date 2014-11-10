@@ -29,26 +29,30 @@ import io.vertx.core.streams.Pump;
 import java.nio.charset.Charset;
 
 /**
+ * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
+
+  private final HttpServerRequest req;
+  private final Vertx vertx;
+  private final String name;
+  private final String filename;
+  private final String contentType;
+  private final String contentTransferEncoding;
+  private final Charset charset;
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private AsyncFile file;
   private Handler<Throwable> exceptionHandler;
 
-  private final HttpServerRequest req;
-  private final Vertx vertx;
-
-  private final String name;
-  private final String filename;
-  private final String contentType;
-  private final String contentTransferEncoding;
-  private final Charset charset;
   private long size;
-
   private boolean paused;
   private Buffer pauseBuff;
   private boolean complete;
@@ -96,25 +100,25 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public long size() {
+  public synchronized long size() {
     return size;
   }
 
   @Override
-  public HttpServerFileUpload handler(Handler<Buffer> handler) {
+  public synchronized HttpServerFileUpload handler(Handler<Buffer> handler) {
     this.dataHandler = handler;
     return this;
   }
 
   @Override
-  public HttpServerFileUpload pause() {
+  public synchronized HttpServerFileUpload pause() {
     req.pause();
     paused = true;
     return this;
   }
 
   @Override
-  public HttpServerFileUpload resume() {
+  public synchronized HttpServerFileUpload resume() {
     if (paused) {
       req.resume();
       paused = false;
@@ -130,13 +134,13 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public HttpServerFileUpload exceptionHandler(Handler<Throwable> exceptionHandler) {
+  public synchronized HttpServerFileUpload exceptionHandler(Handler<Throwable> exceptionHandler) {
     this.exceptionHandler = exceptionHandler;
     return this;
   }
 
   @Override
-  public HttpServerFileUpload endHandler(Handler<Void> handler) {
+  public synchronized HttpServerFileUpload endHandler(Handler<Void> handler) {
     this.endHandler = handler;
     return this;
   }
@@ -160,11 +164,11 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public boolean isSizeAvailable() {
+  public synchronized boolean isSizeAvailable() {
     return !lazyCalculateSize;
   }
 
-  void receiveData(Buffer data) {
+  synchronized void receiveData(Buffer data) {
     if (lazyCalculateSize) {
       size += data.length();
     }
@@ -180,7 +184,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     }
   }
 
-  void complete() {
+  synchronized void complete() {
     lazyCalculateSize = false;
     if (paused) {
       complete = true;

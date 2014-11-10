@@ -74,7 +74,6 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
       boolean writable = ctx.channel().isWritable();
       ContextImpl context = getContext(conn);
       context.execute(() -> {
-        conn.setWritable(writable);
         conn.handleInterestedOpsChanged();
       }, true);
     }

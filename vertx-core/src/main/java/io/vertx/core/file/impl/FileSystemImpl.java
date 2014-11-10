@@ -60,6 +60,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
+ *
+ * This class is thread-safe
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystemImpl implements FileSystem {

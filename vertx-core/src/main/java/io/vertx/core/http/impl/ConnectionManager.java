@@ -36,10 +36,16 @@ public abstract class ConnectionManager {
 
   private static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private int maxSockets = 5;
-  private boolean keepAlive = true;
-  private boolean pipelining = false;
+  private final int maxSockets;
+  private final boolean keepAlive;
+  private final boolean pipelining;
   private final Map<TargetAddress, ConnQueue> connQueues = new ConcurrentHashMap<>();
+
+  ConnectionManager(int maxSockets, boolean keepAlive, boolean pipelining) {
+    this.maxSockets = maxSockets;
+    this.keepAlive = keepAlive;
+    this.pipelining = pipelining;
+  }
 
   public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
     if (!keepAlive && pipelining) {
@@ -61,18 +67,6 @@ public abstract class ConnectionManager {
   protected abstract void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                                   ConnectionLifeCycleListener listener);
 
-  public void setMaxSockets(int maxSockets) {
-    this.maxSockets = maxSockets;
-  }
-
-  public void setKeepAlive(boolean keepAlive) {
-    this.keepAlive = keepAlive;
-  }
-
-  public void setPipelining(boolean pipelining) {
-    this.pipelining = pipelining;
-  }
-
   public void close() {
     for (ConnQueue queue: connQueues.values()) {
       queue.closeAllConnections();
@@ -83,9 +77,9 @@ public abstract class ConnectionManager {
   private class ConnQueue implements ConnectionLifeCycleListener {
 
     private final TargetAddress address;
-    private int connCount;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private final Set<ClientConnection> allConnections = new HashSet<>();
+    private int connCount;
 
     ConnQueue(TargetAddress address) {
       this.address = address;
@@ -128,15 +122,20 @@ public abstract class ConnectionManager {
       }
     }
 
-    synchronized void closeAllConnections() {
-      for (ClientConnection conn: new HashSet<>(allConnections)) {
+    void closeAllConnections() {
+      Set<ClientConnection> copy;
+      synchronized (this) {
+        copy = new HashSet<>(allConnections);
+        allConnections.clear();
+      }
+      // Close outside sync block to avoid deadlock
+      for (ClientConnection conn: copy) {
         try {
           conn.close();
         } catch (Throwable t) {
           log.error("Failed to close connection", t);
         }
       }
-      allConnections.clear();
     }
 
     private void checkReuseConnection(ClientConnection conn) {

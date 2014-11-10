@@ -23,28 +23,38 @@ import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
+/**
+ * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
+ *
+ * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ *
+ */
 public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
 
-  public WebSocketImpl(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation) {
-    super(vertx, conn, supportsContinuation);
+  public WebSocketImpl(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
+                       int maxWebSocketFrameSize) {
+    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
   }
 
   @Override
-  public WebSocket handler(Handler<Buffer> handler) {
+  public synchronized WebSocket handler(Handler<Buffer> handler) {
     checkClosed();
     this.dataHandler = handler;
     return this;
   }
 
   @Override
-  public WebSocket endHandler(Handler<Void> handler) {
+  public synchronized WebSocket endHandler(Handler<Void> handler) {
     checkClosed();
     this.endHandler = handler;
     return this;
   }
 
   @Override
-  public WebSocket exceptionHandler(Handler<Throwable> handler) {
+  public synchronized WebSocket exceptionHandler(Handler<Throwable> handler) {
     checkClosed();
     this.exceptionHandler = handler;
     return this;
@@ -63,35 +73,35 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
   }
 
   @Override
-  public WebSocket closeHandler(Handler<Void> handler) {
+  public synchronized WebSocket closeHandler(Handler<Void> handler) {
     checkClosed();
     this.closeHandler = handler;
     return this;
   }
 
   @Override
-  public WebSocket frameHandler(Handler<WebSocketFrame> handler) {
+  public synchronized WebSocket frameHandler(Handler<WebSocketFrame> handler) {
     checkClosed();
     this.frameHandler = handler;
     return this;
   }
 
   @Override
-  public WebSocket pause() {
+  public synchronized WebSocket pause() {
     checkClosed();
     conn.doPause();
     return this;
   }
 
   @Override
-  public WebSocket resume() {
+  public synchronized WebSocket resume() {
     checkClosed();
     conn.doResume();
     return this;
   }
 
   @Override
-  public WebSocket setWriteQueueMaxSize(int maxSize) {
+  public synchronized WebSocket setWriteQueueMaxSize(int maxSize) {
     checkClosed();
     conn.doSetWriteQueueMaxSize(maxSize);
     return this;
@@ -104,7 +114,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
   }
 
   @Override
-  public WebSocket drainHandler(Handler<Void> handler) {
+  public synchronized WebSocket drainHandler(Handler<Void> handler) {
     checkClosed();
     this.drainHandler = handler;
     return this;
