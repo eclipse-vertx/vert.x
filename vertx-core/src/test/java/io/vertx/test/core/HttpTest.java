@@ -752,6 +752,7 @@ public class HttpTest extends HttpTestBase {
     File file = setupFile("test-server-chaining.dat", "blah");
     server.requestHandler(req -> {
       assertTrue(req.response().sendFile(file.getAbsolutePath()) == req.response());
+      assertTrue(req.response().ended());
       file.delete();
       testComplete();
     });
@@ -1591,7 +1592,10 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       Buffer buff = Buffer.buffer();
       HttpServerResponse resp = req.response();
+
+      assertFalse(resp.ended());
       resp.end();
+      assertTrue(resp.ended());
 
       assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
       assertIllegalStateException(() -> resp.end());
@@ -1854,7 +1858,6 @@ public class HttpTest extends HttpTestBase {
 
 
     CountDownLatch latch = new CountDownLatch(requests);
-    AtomicInteger cnt = new AtomicInteger(0);
 
     server.listen(onSuccess(s -> {
       vertx.setTimer(500, id -> {
@@ -3329,6 +3332,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       vertx.fileSystem().mkdir(file.getAbsolutePath(), onSuccess(v -> {
         req.response().sendFile(file.getAbsolutePath());
+        assertTrue(req.response().ended());
       }));
     });
 

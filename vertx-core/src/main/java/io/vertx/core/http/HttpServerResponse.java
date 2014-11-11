@@ -241,4 +241,6 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   void close();
 
+  boolean ended();
+
 }
