@@ -243,4 +243,6 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   boolean ended();
 
+  boolean headWritten();
+
 }

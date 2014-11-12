@@ -1718,18 +1718,21 @@ public class HttpTest extends HttpTestBase {
     int chunkSize = 100;
 
     server.requestHandler(req -> {
+      assertFalse(req.response().headWritten());
       if (chunked) {
         req.response().setChunked(true);
       } else {
         req.response().headers().set("Content-Length", String.valueOf(numWrites * chunkSize));
       }
-
+      assertFalse(req.response().headWritten());
       for (int i = 0; i < numWrites; i++) {
         Buffer b = TestUtils.randomBuffer(chunkSize);
         body.appendBuffer(b);
         req.response().write(b);
+        assertTrue(req.response().headWritten());
       }
       req.response().end();
+      assertTrue(req.response().headWritten());
     });
 
     server.listen(onSuccess(s -> {

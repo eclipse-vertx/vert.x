@@ -34,10 +34,11 @@ public class AsyncTestBase {
 
   private CountDownLatch latch;
   private volatile Throwable throwable;
+  private volatile Thread thrownThread;
   private volatile boolean testCompleteCalled;
   private volatile boolean awaitCalled;
-  private volatile boolean timedOut;
   private boolean threadChecksEnabled = true;
+  private volatile boolean tearingDown;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
 
   protected void setUp() throws Exception {
@@ -45,11 +46,11 @@ public class AsyncTestBase {
     throwable = null;
     testCompleteCalled = false;
     awaitCalled = false;
-    timedOut = false;
     threadNames.clear();
   }
 
   protected void tearDown() throws Exception {
+    tearingDown = true;
     afterAsyncTestBase();
   }
 
@@ -64,6 +65,9 @@ public class AsyncTestBase {
   }
 
   protected void testComplete() {
+    if (tearingDown) {
+      throw new IllegalStateException("testComplete called after test has completed");
+    }
     checkThread();
     if (testCompleteCalled) {
       throw new IllegalStateException("testComplete() already called");
@@ -85,7 +89,6 @@ public class AsyncTestBase {
       boolean ok = latch.await(delay, timeUnit);
       if (!ok) {
         // timed out
-        timedOut = true;
         throw new IllegalStateException("Timed out in waiting for test complete");
       } else {
         if (throwable != null) {
@@ -105,18 +108,15 @@ public class AsyncTestBase {
     }
   }
 
-  private void checkTestCompleteCalled() {
-    if (!testCompleteCalled && !awaitCalled && !timedOut && throwable != null) {
-      throw new IllegalStateException("You either forget to call testComplete() or forgot to await() for an asynchronous test");
-    }
-  }
-
   protected void disableThreadChecks() {
     threadChecksEnabled = false;
   }
 
   protected void afterAsyncTestBase() {
-    checkTestCompleteCalled();
+    if (throwable != null && thrownThread != Thread.currentThread() && !awaitCalled) {
+      // Throwable caught from non main thread
+      throw new IllegalStateException("Assert or failure from non main thread but no await() on main thread");
+    }
     if (threadChecksEnabled) {
       for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
         if (!entry.getKey().equals("main") && !entry.getKey().startsWith("vert.x-")) {
@@ -129,7 +129,11 @@ public class AsyncTestBase {
   }
 
   private void handleThrowable(Throwable t) {
+    if (tearingDown) {
+      throw new IllegalStateException("assert or failure occurred after test has completed");
+    }
     throwable = t;
+    thrownThread = Thread.currentThread();
     latch.countDown();
     if (t instanceof AssertionError) {
       throw (AssertionError)t;

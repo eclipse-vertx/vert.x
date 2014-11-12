@@ -346,6 +346,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return written;
   }
 
+  @Override
+  public boolean headWritten() {
+    return headWritten;
+  }
+
   private void doSendFile(String filename, String notFoundResource, final Handler<AsyncResult<Void>> resultHandler) {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
