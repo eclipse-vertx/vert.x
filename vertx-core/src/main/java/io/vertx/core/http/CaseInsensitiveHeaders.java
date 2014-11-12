@@ -364,6 +364,14 @@ public final class CaseInsensitiveHeaders implements MultiMap {
     return remove(name.toString());
   }
 
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (Map.Entry<String, String> entry: this) {
+      sb.append(entry).append('\n');
+    }
+    return sb.toString();
+  }
+
   private static final class MapEntry implements Map.Entry<String, String> {
     final int hash;
     final String key;
@@ -409,7 +417,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
     @Override
     public String toString() {
-      return getKey() + '=' + getValue();
+      return getKey() + ": " + getValue();
     }
   }
 }
