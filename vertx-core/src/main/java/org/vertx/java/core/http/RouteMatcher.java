@@ -16,11 +16,17 @@
 
 package org.vertx.java.core.http;
 
-import org.vertx.java.core.Handler;
-
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.vertx.java.core.Handler;
 
 /**
  * This class allows you to do route requests based on the HTTP verb and the request URI, in a manner similar
@@ -35,23 +41,35 @@ import java.util.regex.Pattern;
  * parameters do not have a name, so they are put into the HTTP request with names of param0, param1, param2 etc.<p>
  * Multiple matches can be specified for each HTTP verb. In the case there are more than one matching patterns for
  * a particular request, the first matching one will be used.<p>
- * Instances of this class are not thread-safe<p>
+ * Instances of this class are not thread-safe except for updating or removing routes.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Troy Collinsworth
  */
 public class RouteMatcher implements Handler<HttpServerRequest> {
-
-  private final List<PatternBinding> getBindings = new ArrayList<>();
-  private final List<PatternBinding> putBindings = new ArrayList<>();
-  private final List<PatternBinding> postBindings = new ArrayList<>();
-  private final List<PatternBinding> deleteBindings = new ArrayList<>();
-  private final List<PatternBinding> optionsBindings = new ArrayList<>();
-  private final List<PatternBinding> headBindings = new ArrayList<>();
-  private final List<PatternBinding> traceBindings = new ArrayList<>();
-  private final List<PatternBinding> connectBindings = new ArrayList<>();
-  private final List<PatternBinding> patchBindings = new ArrayList<>();
+	
+  private final List<PatternBinding> getBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> putBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> postBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> deleteBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> optionsBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> headBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> traceBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> connectBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> patchBindings = new CopyOnWriteArrayList<>();
   private Handler<HttpServerRequest> noMatchHandler;
 
+  /**
+   * {@inheritDoc}
+   * 
+   * If the RouteMatcher is not being updated the route matching does not
+   * incur any overhead other than checking an AtomicBoolean. If the
+   * RouteMatcher is in the updated state, the route matching incurs a
+   * try/finally and {@link ReentrantReadWriteLock.ReadLock} lock/unlock
+   * overhead. Actual RouteMatcher updates momentarily take a
+   * {@link ReentrantReadWriteLock.WriteLock} and very briefly block route
+   * matching.
+   */
   @Override
   public void handle(HttpServerRequest request) {
     switch (request.method()) {
@@ -311,7 +329,81 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     noMatchHandler = handler;
     return this;
   }
-
+  
+	/**
+	 * Removes all patterns that match for the specified method or all methods if
+	 * ALL is specified.
+	 * 
+	 * @param pattern
+	 * @param method
+	 *          GET, PUT, POST, DELETE, OPTIONS, HEAD, TRACE, CONNECT, PATCH, ALL
+	 * @return the number of patterns removed or zero for none
+	 */
+	public int removePattern(String pattern, String method) {
+		int removedCnt = 0;
+		switch (method.toUpperCase()) {
+		case "GET":
+			removedCnt += removeMatchingBindings(pattern, getBindings);
+			break;
+		case "PUT":
+			removedCnt += removeMatchingBindings(pattern, putBindings);
+			break;
+		case "POST":
+			removedCnt += removeMatchingBindings(pattern, postBindings);
+			break;
+		case "DELETE":
+			removedCnt += removeMatchingBindings(pattern, deleteBindings);
+			break;
+		case "OPTIONS":
+			removedCnt += removeMatchingBindings(pattern, optionsBindings);
+			break;
+		case "HEAD":
+			removedCnt += removeMatchingBindings(pattern, headBindings);
+			break;
+		case "TRACE":
+			removedCnt += removeMatchingBindings(pattern, traceBindings);
+			break;
+		case "PATCH":
+			removedCnt += removeMatchingBindings(pattern, patchBindings);
+			break;
+		case "CONNECT":
+			removedCnt += removeMatchingBindings(pattern, connectBindings);
+			break;
+		case "ALL":
+			removedCnt += removeMatchingBindings(pattern, getBindings);
+			removedCnt += removeMatchingBindings(pattern, putBindings);
+			removedCnt += removeMatchingBindings(pattern, postBindings);
+			removedCnt += removeMatchingBindings(pattern, deleteBindings);
+			removedCnt += removeMatchingBindings(pattern, optionsBindings);
+			removedCnt += removeMatchingBindings(pattern, headBindings);
+			removedCnt += removeMatchingBindings(pattern, traceBindings);
+			removedCnt += removeMatchingBindings(pattern, patchBindings);
+			removedCnt += removeMatchingBindings(pattern, connectBindings);
+			break;
+		default:
+			throw new RuntimeException("Method did not match any known type was: "
+			    + method);
+		}
+		return removedCnt;
+	}
+	
+	private int removeMatchingBindings(String pattern,
+	    List<PatternBinding> bindings) {
+		int removedCnt = 0;
+		again: while (true) {
+			for (int i = 0; i < bindings.size(); i++) {
+				PatternBinding b = bindings.get(i);
+				Matcher m = b.pattern.matcher(pattern);
+				if (m.matches()) {
+					bindings.remove(i);
+					++removedCnt;
+					continue again;
+				}
+			}
+			break again;
+		}
+		return removedCnt;
+	}
 
   private static void addPattern(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
     // We need to search for any :<token name> tokens in the String and replace them with named capture groups
@@ -329,12 +421,12 @@ public class RouteMatcher implements Handler<HttpServerRequest> {
     m.appendTail(sb);
     String regex = sb.toString();
     PatternBinding binding = new PatternBinding(Pattern.compile(regex), groups, handler);
-    bindings.add(binding);
+	bindings.add(binding);
   }
 
   private static void addRegEx(String input, Handler<HttpServerRequest> handler, List<PatternBinding> bindings) {
     PatternBinding binding = new PatternBinding(Pattern.compile(input), null, handler);
-    bindings.add(binding);
+	bindings.add(binding);
   }
 
   private void route(HttpServerRequest request, List<PatternBinding> bindings) {
