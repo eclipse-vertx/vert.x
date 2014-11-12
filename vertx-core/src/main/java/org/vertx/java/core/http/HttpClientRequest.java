@@ -46,8 +46,8 @@ import org.vertx.java.core.streams.WriteStream;
  *   }
  * });
  *
- * req.headers().put("some-header", "hello")
- *     .put("Content-Length", 5)
+ * req.headers().putHeader("some-header", "hello")
+ *     .putHeader("Content-Length", 5)
  *     .write(new Buffer(new byte[]{1, 2, 3, 4, 5}))
  *     .write(new Buffer(new byte[]{6, 7, 8, 9, 10}))
  *     .end();
