@@ -19,6 +19,7 @@ package org.vertx.java.platform.impl;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.FileVisitResult;
@@ -35,7 +36,7 @@ import java.util.zip.ZipInputStream;
 
 
 /**
- * This class is executed whan a Vert.x fat jar is run.
+ * This class is executed when a Vert.x fat jar is run.
  * When it is run there is no access to any libraries other than JDK libs, so we can't depend on any Vert.x
  * or other classes here.
  * The first thing we do is unzip the fat jar into a temporary directory.
@@ -47,7 +48,6 @@ public class FatJarStarter implements Runnable {
 
   private static final String CP_SEPARATOR = System.getProperty("path.separator");
   private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
-  private static final String FILE_SEP = System.getProperty("file.separator");
   private static final String CLUSTERMANAGER_FACTORY_PROP_NAME = "vertx.clusterManagerFactory";
   private static final int BUFFER_SIZE = 4096;
 
@@ -69,8 +69,17 @@ public class FatJarStarter implements Runnable {
   private void go(String[] args) throws Exception {
     URLClassLoader urlc = (URLClassLoader)FatJarStarter.class.getClassLoader();
 
-    final int totalUrlsCount = urlc.getURLs().length;
-    String fileName = urlc.getURLs()[totalUrlsCount - 1].toURI().getPath();
+    // file name representing this class inside the jar
+    String classFilename = FatJarStarter.class.getName().replace(".", "/") + ".class";
+    // class url in the form jar:file:/jarfile.jar!/classFilename.class
+    URL classURL = urlc.getResource(classFilename);
+    if (!classURL.getProtocol().equals("jar")) {
+      throw new IllegalStateException("Failed to find jar file, classURL is " + classURL.toString());
+    }
+    // string of the jar filename in the form /jarfile.jar!/classFilename
+    String jarName = new URL(classURL.getFile()).getPath();
+    // cut off the ! and convert to local filename representation
+    String fileName = new URI(jarName.substring(0, jarName.lastIndexOf('!'))).getPath();
 
     // Look for -cp or -classpath parameter
     String classpath = null;
@@ -211,7 +220,7 @@ public class FatJarStarter implements Runnable {
         URL url = new File(part).toURI().toURL();
         classpath.add(url);
       } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp) ;
+        throw new IllegalArgumentException("Invalid path " + part + " in cp " + cp);
       }
     }
     return classpath;
@@ -227,13 +236,12 @@ public class FatJarStarter implements Runnable {
     }
   }
 
-  private String generateTmpFileName() {
-    return TEMP_DIR + FILE_SEP + "vertx-" + UUID.randomUUID().toString();
+  private File generateTmpFileName() {
+    return new File(TEMP_DIR, "vertx-" + UUID.randomUUID().toString());
   }
 
   private File unzipIntoTmpDir(String fileName) throws Exception {
-    String tdir = generateTmpFileName();
-    File tdest = new File(tdir);
+    File tdest = generateTmpFileName();
     if (!tdest.mkdir()) {
       throw new IllegalStateException("Failed to create directory " + tdest);
     }
@@ -248,8 +256,10 @@ public class FatJarStarter implements Runnable {
         String entryName = entry.getName();
         if (!entryName.isEmpty()) {
           if (entry.isDirectory()) {
-            if (!new File(directory, entryName).mkdir()) {
-              throw new IllegalStateException("Failed to create directory");
+            if (!new File(directory, entryName).exists()) {
+              if (!new File(directory, entryName).mkdir()) {
+                throw new IllegalStateException("Failed to create directory");
+              }
             }
           } else {
             int count;
