@@ -36,7 +36,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
   }
 
   public JsonArray(Object[] array) {
-    this(new ArrayList<>(Arrays.asList(array)), true);
+    this(Arrays.asList(array), true);
   }
 
   protected JsonArray(List list, boolean copy) {
