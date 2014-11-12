@@ -102,8 +102,8 @@
     <maven.jar.plugin.version>2.5</maven.jar.plugin.version>
     <maven.source.plugin.version>2.4</maven.source.plugin.version>
     <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
-    <maven.surefire.plugin.version>2.18-SNAPSHOT</maven.surefire.plugin.version>
-    <maven.surefire.report.plugin.version>2.18-SNAPSHOT</maven.surefire.report.plugin.version>
+    <maven.surefire.plugin.version>2.18</maven.surefire.plugin.version>
+    <maven.surefire.report.plugin.version>2.18</maven.surefire.report.plugin.version>
   </properties>
 
   <modules>
