@@ -429,6 +429,11 @@ public class HttpClientImpl implements HttpClient {
           }
 
           @Override
+          public void closeConnection() {
+            resp.closeConnection();
+          }
+
+          @Override
           public HttpClientResponse endHandler(Handler<Void> endHandler) {
             resp.endHandler(endHandler);
             return this;

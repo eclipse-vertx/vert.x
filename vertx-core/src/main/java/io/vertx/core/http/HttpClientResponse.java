@@ -107,4 +107,9 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   @CacheReturn
   NetSocket netSocket();
 
+  /**
+   * Close the underlying client connection.
+   */
+  void closeConnection();
+
 }

@@ -251,4 +251,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       body = null;
     }
   }
+
+  @Override
+  public void closeConnection() {
+    conn.close();
+  }
 }
