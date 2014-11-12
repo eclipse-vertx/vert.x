@@ -54,12 +54,10 @@ public class ClasspathPathResolver implements PathResolver {
 
   public static Path urlToPath(URL url) {
     if (FILE_SEP == '/') {
-      // *nix - a bit quicker than pissing around with URIs
-      String sfile = url.getFile();
-      if (sfile != null) {
-        return Paths.get(url.getFile());
-      } else {
-        return null;
+      try {
+        return Paths.get(url.toURI());
+      } catch (Exception e) {
+        throw new VertxException(e);
       }
     } else {
       // E.g. windows
