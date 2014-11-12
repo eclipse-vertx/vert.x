@@ -45,20 +45,26 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 /**
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Starter {
 
-  public static final String VERTX_OPTIONS_PROP_PREFIX = "vertx.options";
-  public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options";
+  public static final String VERTX_OPTIONS_PROP_PREFIX = "vertx.options.";
+  public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options.";
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
-
   public static List<String> PROCESS_ARGS;
 
   public static void main(String[] args) {
     new Starter().run(args);
   }
+
+  private final CountDownLatch stopLatch = new CountDownLatch(1);
+  protected Vertx vertx;
+  protected VertxOptions options;
+  protected DeploymentOptions deploymentOptions;
+
 
   public void run(String[] sargs) {
 
@@ -91,85 +97,20 @@ public class Starter {
     }
   }
 
-  private final CountDownLatch stopLatch = new CountDownLatch(1);
-
-  private static <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
-    return res -> {
-      if (res.failed()) {
-        Throwable cause = res.cause();
-        if (cause instanceof VertxException) {
-          VertxException ve = (VertxException)cause;
-          log.error(ve.getMessage());
-          if (ve.getCause() != null) {
-            log.error(ve.getCause());
-          }
-        } else {
-          log.error("Failed in " + message, cause);
-        }
-      } else {
-        log.info("Succeeded in " + message);
-      }
-      if (completionHandler != null) {
-        completionHandler.handle(res);
-      }
-    };
-  }
-
-  public static void configureFromSystemProperties(Object options, String prefix) {
-    Properties props = System.getProperties();
-    Enumeration e = props.propertyNames();
-    // Uhh, properties suck
-    while (e.hasMoreElements()) {
-      String propName = (String)e.nextElement();
-      String propVal = props.getProperty(propName);
-      if (propName.startsWith(prefix)) {
-        String fieldName = propName.substring(prefix.length());
-        Method setter = getSetter(fieldName, options.getClass());
-        if (setter == null) {
-          log.warn("No such property to configure on options: " + options.getClass().getName() + "." + fieldName);
-          continue;
-        }
-        Class<?> argType = setter.getParameterTypes()[0];
-        Object arg;
-        try {
-          if (argType.equals(String.class)) {
-            arg = propVal;
-          } else if (argType.equals(int.class)) {
-            arg = Integer.valueOf(propVal);
-          } else if (argType.equals(long.class)) {
-            arg = Long.valueOf(propVal);
-          } else if (argType.equals(boolean.class)) {
-            arg = Boolean.valueOf(propVal);
-          } else {
-            log.warn("Invalid type for setter: " + argType);
-            continue;
-          }
-        } catch (IllegalArgumentException e2) {
-          log.warn("Invalid argtype:" + argType + " on options: " + options.getClass().getName() + "." + fieldName);
-          continue;
-        }
-        try {
-          setter.invoke(options, arg);
-        } catch (Exception ex) {
-          throw new VertxException("Failed to invoke setter: " + setter, ex);
-        }
-      }
+  public void block() {
+    try {
+      stopLatch.await();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  private static Method getSetter(String fieldName, Class<?> clazz) {
-    Method[] meths = clazz.getDeclaredMethods();
-    for (Method meth: meths) {
-      if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {
-        return meth;
-      }
-    }
-    return null;
+  public void unblock() {
+    stopLatch.countDown();
   }
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
-    Vertx vertx;
-    VertxOptions options = new VertxOptions();
+    options = new VertxOptions();
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     if (clustered) {
       log.info("Starting clustering...");
@@ -276,7 +217,7 @@ public class Starter {
 
     boolean worker = args.map.get("-worker") != null;
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
-    DeploymentOptions deploymentOptions = new DeploymentOptions();
+    deploymentOptions = new DeploymentOptions();
     configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
     vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances), createLoggingHandler(message, res -> {
       if (res.failed()) {
@@ -289,16 +230,79 @@ public class Starter {
     block();
   }
 
-  public void block() {
-    try {
-      stopLatch.await();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+
+  private <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
+    return res -> {
+      if (res.failed()) {
+        Throwable cause = res.cause();
+        if (cause instanceof VertxException) {
+          VertxException ve = (VertxException)cause;
+          log.error(ve.getMessage());
+          if (ve.getCause() != null) {
+            log.error(ve.getCause());
+          }
+        } else {
+          log.error("Failed in " + message, cause);
+        }
+      } else {
+        log.info("Succeeded in " + message);
+      }
+      if (completionHandler != null) {
+        completionHandler.handle(res);
+      }
+    };
+  }
+
+  private void configureFromSystemProperties(Object options, String prefix) {
+    Properties props = System.getProperties();
+    Enumeration e = props.propertyNames();
+    // Uhh, properties suck
+    while (e.hasMoreElements()) {
+      String propName = (String)e.nextElement();
+      String propVal = props.getProperty(propName);
+      if (propName.startsWith(prefix)) {
+        String fieldName = propName.substring(prefix.length());
+        Method setter = getSetter(fieldName, options.getClass());
+        if (setter == null) {
+          log.warn("No such property to configure on options: " + options.getClass().getName() + "." + fieldName);
+          continue;
+        }
+        Class<?> argType = setter.getParameterTypes()[0];
+        Object arg;
+        try {
+          if (argType.equals(String.class)) {
+            arg = propVal;
+          } else if (argType.equals(int.class)) {
+            arg = Integer.valueOf(propVal);
+          } else if (argType.equals(long.class)) {
+            arg = Long.valueOf(propVal);
+          } else if (argType.equals(boolean.class)) {
+            arg = Boolean.valueOf(propVal);
+          } else {
+            log.warn("Invalid type for setter: " + argType);
+            continue;
+          }
+        } catch (IllegalArgumentException e2) {
+          log.warn("Invalid argtype:" + argType + " on options: " + options.getClass().getName() + "." + fieldName);
+          continue;
+        }
+        try {
+          setter.invoke(options, arg);
+        } catch (Exception ex) {
+          throw new VertxException("Failed to invoke setter: " + setter, ex);
+        }
+      }
     }
   }
 
-  public void unblock() {
-    stopLatch.countDown();
+  private Method getSetter(String fieldName, Class<?> clazz) {
+    Method[] meths = clazz.getDeclaredMethods();
+    for (Method meth: meths) {
+      if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {
+        return meth;
+      }
+    }
+    return null;
   }
 
   private void addShutdownHook(Vertx vertx) {
@@ -429,5 +433,4 @@ public class Starter {
 
     log.info(usage);
   }
-
 }
