@@ -124,7 +124,7 @@ public class Starter {
       String propVal = props.getProperty(propName);
       if (propName.startsWith(prefix)) {
         String fieldName = propName.substring(prefix.length());
-        Method setter = getSetter(fieldName, VertxOptions.class);
+        Method setter = getSetter(fieldName, options.getClass());
         if (setter == null) {
           log.warn("No such property to configure on options: " + options.getClass().getName() + "." + fieldName);
           continue;
@@ -169,6 +169,8 @@ public class Starter {
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     Vertx vertx;
+    VertxOptions options = new VertxOptions();
+    configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     if (clustered) {
       log.info("Starting clustering...");
       int clusterPort = args.getInt("-cluster-port");
@@ -188,8 +190,7 @@ public class Starter {
       }
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
-      VertxOptions options = new VertxOptions();
-      configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
+
       options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
       if (ha) {
         String haGroup = args.map.get("-hagroup");
@@ -205,11 +206,11 @@ public class Starter {
       });
       try {
         if (!latch.await(2, TimeUnit.MINUTES)) {
-          log.error("Timed out in forming cluster");
+          log.error("Timed out in starting clustered Vert.x");
           return null;
         }
       } catch (InterruptedException e) {
-        log.error("Thread interrupted in forming cluster");
+        log.error("Thread interrupted in startup");
         return null;
       }
       if (result.get().failed()) {
@@ -219,7 +220,7 @@ public class Starter {
       }
       vertx = result.get().result();
     } else {
-      vertx = Vertx.vertx();
+      vertx = Vertx.vertx(options);
     }
     return vertx;
   }

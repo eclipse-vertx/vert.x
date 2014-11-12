@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Starter;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
@@ -188,6 +189,11 @@ public class StarterTest extends VertxTestBase {
     assertEquals(123767667l, opts.getMaxEventLoopExecuteTime());
     assertEquals(true, opts.isClustered());
     assertEquals("foohost", opts.getClusterHost());
+
+    DeploymentOptions depOptions = new DeploymentOptions();
+    System.setProperty("vertx.deployment.options.redeployScanPeriod", "612536253");
+    Starter.configureFromSystemProperties(depOptions, "vertx.deployment.options.");
+    assertEquals(612536253, depOptions.getRedeployScanPeriod());
   }
 
   private void clearProperties() {
