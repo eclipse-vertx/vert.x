@@ -18,7 +18,12 @@ package org.vertx.java.core.http;
 
 import org.vertx.java.core.Handler;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,15 +46,15 @@ import java.util.regex.Pattern;
  */
 public class RouteMatcher implements Handler<HttpServerRequest> {
 
-  private final List<PatternBinding> getBindings = new ArrayList<>();
-  private final List<PatternBinding> putBindings = new ArrayList<>();
-  private final List<PatternBinding> postBindings = new ArrayList<>();
-  private final List<PatternBinding> deleteBindings = new ArrayList<>();
-  private final List<PatternBinding> optionsBindings = new ArrayList<>();
-  private final List<PatternBinding> headBindings = new ArrayList<>();
-  private final List<PatternBinding> traceBindings = new ArrayList<>();
-  private final List<PatternBinding> connectBindings = new ArrayList<>();
-  private final List<PatternBinding> patchBindings = new ArrayList<>();
+  private final List<PatternBinding> getBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> putBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> postBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> deleteBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> optionsBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> headBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> traceBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> connectBindings = new CopyOnWriteArrayList<>();
+  private final List<PatternBinding> patchBindings = new CopyOnWriteArrayList<>();
   private Handler<HttpServerRequest> noMatchHandler;
 
   @Override
