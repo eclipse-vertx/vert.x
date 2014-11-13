@@ -17,6 +17,9 @@
 package org.vertx.java.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.Message;
@@ -31,7 +34,7 @@ import java.net.InetSocketAddress;
 import java.util.UUID;
 
 /**
- *
+ * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
@@ -50,12 +53,15 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
   protected Handler<Message<Buffer>> binaryHandler;
   protected Handler<Message<String>> textHandler;
   protected boolean closed;
+  
+  private CompositeByteBuf wsFramesCollector;
 
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn) {
     this.vertx = vertx;
     this.textHandlerID = UUID.randomUUID().toString();
     this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
+    wsFramesCollector = Unpooled.compositeBuffer();
     binaryHandler = new Handler<Message<Buffer>>() {
       public void handle(Message<Buffer> msg) {
         writeBinaryFrameInternal(msg.body());
@@ -110,7 +116,6 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
     writeFrame(frame);
   }
 
-
   private void cleanupHandlers() {
     if (!closed) {
       vertx.eventBus().unregisterHandler(binaryHandlerID, binaryHandler);
@@ -132,8 +137,22 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase<T> {
 
   void handleFrame(WebSocketFrameInternal frame) {
     if (dataHandler != null) {
-      Buffer buff = new Buffer(frame.getBinaryData());
-      dataHandler.handle(buff);
+      switch (frame.type()) {
+      case PING:
+      case PONG:
+      case CLOSE:
+      case TEXT:
+      case BINARY:
+        wsFramesCollector.clear();
+        wsFramesCollector.removeComponents(0, wsFramesCollector.numComponents());
+      case CONTINUATION:
+        wsFramesCollector.addComponent(frame.getBinaryData());
+      }
+      if (frame.isFinalFrame()) {
+        wsFramesCollector.writerIndex(wsFramesCollector.capacity());
+        Buffer buff = new Buffer(wsFramesCollector);
+        dataHandler.handle(buff);
+      }
     }
 
     if (frameHandler != null) {
