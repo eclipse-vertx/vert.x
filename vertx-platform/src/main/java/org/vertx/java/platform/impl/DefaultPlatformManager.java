@@ -1165,74 +1165,76 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
 
   private ModuleInfo loadModuleInfo(File modDir, ModuleIdentifier modID) {
 
-      List<URL> cpList = new ArrayList<>();
-      JsonObject modJSON = null;
-      File targetModDir = modDir;
-      // Look for link file
-      File linkFile = new File(modDir, MODULE_LINK_FILE);
-      if (linkFile.exists()) {
-        // Load the path from the file
-        try (Scanner scanner = new Scanner(linkFile, "UTF-8").useDelimiter("\\A")) {
-          String path = scanner.next().trim();
-          File cpFile = new File(path, CLASSPATH_FILE);
-          if (!cpFile.exists()) {
-            throw new PlatformManagerException("Module link file: " + linkFile + " points to path without vertx_classpath.txt");
-          }
-          // Load the cp
-          cpList = new ArrayList<>();
-          try (Scanner scanner2 = new Scanner(cpFile, "UTF-8")) {
-            while (scanner2.hasNextLine()) {
-              String entry = scanner2.nextLine().trim();
-              if (!entry.startsWith("#") && !entry.equals("")) {  // Skip blanks lines and comments
-                File fentry = new File(entry);
-                if (!fentry.isAbsolute()) {
-                  fentry = new File(path, entry);
-                }
-                URL url = fentry.toURI().toURL();
-                cpList.add(url);
-                if (fentry.exists() && fentry.isDirectory()) {
-                  File[] files = fentry.listFiles();
-                  for (File file : files) {
-                    String fPath = file.getCanonicalPath();
-                    if (fPath.endsWith(".jar") || fPath.endsWith(".zip")) {
-                      cpList.add(file.getCanonicalFile().toURI().toURL());
-                    }
+    List<URL> cpList = new ArrayList<>();
+    JsonObject modJSON = null;
+    File targetModDir = modDir;
+    // Look for link file
+    File linkFile = new File(modDir, MODULE_LINK_FILE);
+    if (linkFile.exists()) {
+      // Load the path from the file
+      try (Scanner scanner = new Scanner(linkFile, "UTF-8").useDelimiter("\\A")) {
+        String path = scanner.next().trim();
+        File cpFile = new File(path, CLASSPATH_FILE);
+        if (!cpFile.exists()) {
+          throw new PlatformManagerException("Module link file: " + linkFile + " points to path without vertx_classpath.txt");
+        }
+        // Load the cp
+        cpList = new ArrayList<>();
+        try (Scanner scanner2 = new Scanner(cpFile, "UTF-8")) {
+          while (scanner2.hasNextLine()) {
+            String entry = scanner2.nextLine().trim();
+            if (!entry.startsWith("#") && !entry.equals("")) {  // Skip blanks lines and comments
+              File fentry = new File(entry);
+              if (!fentry.isAbsolute()) {
+                fentry = new File(path, entry);
+              }
+              URL url = fentry.toURI().toURL();
+              cpList.add(url);
+              if (fentry.exists() && fentry.isDirectory()) {
+                File[] files = fentry.listFiles();
+                for (File file : files) {
+                  String fPath = file.getCanonicalPath();
+                  if (fPath.endsWith(".jar") || fPath.endsWith(".zip")) {
+                    cpList.add(file.getCanonicalFile().toURI().toURL());
                   }
                 }
               }
             }
-          } catch (Exception e) {
-            e.printStackTrace();
-            throw new PlatformManagerException(e);
-          }
-          ClassLoader cl = new ModJSONClassLoader(cpList.toArray(new URL[cpList.size()]), platformClassLoader);
-          URL url = cl.getResource(MOD_JSON_FILE);
-          if (url != null) {
-            // Find the file for the url
-            Path p = ClasspathPathResolver.urlToPath(url);
-            Path parent = p.getParent();
-            // And we set the directory where mod.json is as the module directory
-            modDir = parent.toFile();
-            modJSON = loadModJSONFromURL(modID, url);
-          } else {
-            throw new PlatformManagerException("Cannot find mod.json");
           }
         } catch (Exception e) {
+          e.printStackTrace();
           throw new PlatformManagerException(e);
         }
+        ClassLoader cl = new ModJSONClassLoader(cpList.toArray(new URL[cpList.size()]), platformClassLoader);
+        URL url = cl.getResource(MOD_JSON_FILE);
+        if (url != null) {
+          // Find the file for the url
+          Path p = ClasspathPathResolver.urlToPath(url);
+          Path parent = p.getParent();
+          // And we set the directory where mod.json is as the module directory
+          modDir = parent.toFile();
+          modJSON = loadModJSONFromURL(modID, url);
+        } else {
+          throw new PlatformManagerException("Cannot find mod.json");
+        }
+      } catch (Exception e) {
+        throw new PlatformManagerException(e);
       }
+    }
 
+    if (modJSON == null) {
       File modJSONFile = createModJSONFile(targetModDir);
-      if (modJSONFile.exists() && modJSON == null) {
+      if (modJSONFile.exists()) {
         modJSON = loadModuleConfig(modJSONFile, modID);
       }
-      cpList.addAll(getModuleLibClasspath(targetModDir));
+    }
+    cpList.addAll(getModuleLibClasspath(targetModDir));
 
-      if (modJSON == null) {
-          throw new PlatformManagerException("Module directory " + modDir + " contains no mod.json nor module.link file");
-      }
+    if (modJSON == null) {
+      throw new PlatformManagerException("Module directory " + modDir + " contains no mod.json nor module.link file");
+    }
 
-      cpList.addAll(getModuleLibClasspath(modDir));
+    cpList.addAll(getModuleLibClasspath(modDir));
     return new ModuleInfo(modJSON, cpList, modDir);
   }
 
