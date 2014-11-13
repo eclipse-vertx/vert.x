@@ -28,6 +28,8 @@ import org.vertx.java.core.file.FileProps;
 import org.vertx.java.core.file.FileSystemException;
 import org.vertx.java.core.file.FileSystemProps;
 import org.vertx.java.core.file.impl.DefaultAsyncFile;
+import org.vertx.java.core.file.impl.PathAdjuster;
+import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.impl.Windows;
 import org.vertx.java.core.streams.Pump;
 import org.vertx.java.core.streams.ReadStream;
@@ -37,8 +39,16 @@ import org.vertx.java.testframework.TestUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +86,13 @@ public class TestClient extends TestClientBase {
   @Override
   public void stop() {
     super.stop();
+  }
+
+  // Make sure path resolver works ok with spaces in a file name
+  public void testAdjustFileWithSpaces() throws Exception {
+    String adjusted = PathAdjuster.adjust((VertxInternal) vertx, "static/dir1/new file.1");
+    tu.azzert("static/dir1/new file.1".equals(adjusted));
+    tu.testComplete();
   }
 
   public void testSimpleCopy() throws Exception {

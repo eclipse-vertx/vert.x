@@ -55,6 +55,11 @@ public class JavaFileSystemTest extends TestBase {
   }
 
   @Test
+  public void testAdjustFileWithSpaces() {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testSimpleCopy() throws Exception {
     startTest(getMethodName());
   }
