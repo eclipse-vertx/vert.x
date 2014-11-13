@@ -51,6 +51,8 @@ public abstract class HttpResolution {
   private static final String HTTP_BASIC_AUTH_USER_PROP_NAME ="http.authUser";
   private static final String HTTP_BASIC_AUTH_PASSWORD_PROP_NAME ="http.authPass";
 
+  private static final String HTTP_USE_DESTINATION_PROXY_HOST_PROP_NAME = "http.useDestinationProxyHost";
+
   public static boolean suppressDownloadCounter = true;
 
   private final CountDownLatch latch = new CountDownLatch(1);
@@ -128,12 +130,16 @@ public abstract class HttpResolution {
     final String proxyHost = getProxyHost();
     if (proxyHost != null) {
       // We use an absolute URI
-      uri = new StringBuilder().append(scheme).append("://").append(host).append(":").append(port).append(uri).toString();
+      uri = scheme + "://" + host + ":" + port + uri;
     }
 
     HttpClientRequest req = client.get(uri, respHandler);
     if (proxyHost != null){
-      req.putHeader("host", proxyHost);
+      if (isUseDestinationHostHeaderForProxy()) {
+        req.putHeader("host", host);
+      } else {
+        req.putHeader("host", proxyHost);
+      }
     } else {
       req.putHeader("host", host);
     }
@@ -273,6 +279,11 @@ public abstract class HttpResolution {
 
   private static String getProxyHost() {
     return System.getProperty(HTTP_PROXY_HOST_PROP_NAME);
+  }
+
+  // See https://bugs.eclipse.org/bugs/show_bug.cgi?id=445753
+  private static boolean isUseDestinationHostHeaderForProxy() {
+    return System.getProperty(HTTP_USE_DESTINATION_PROXY_HOST_PROP_NAME) != null;
   }
 
   private String getBasicAuth() {
