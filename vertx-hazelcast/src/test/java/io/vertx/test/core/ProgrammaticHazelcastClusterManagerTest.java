@@ -32,10 +32,7 @@ public class ProgrammaticHazelcastClusterManagerTest extends AsyncTestBase {
     System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
   }
 
-  @Test
-  public void testProgrammatic() throws Exception {
-    Config config = new Config();
-    HazelcastClusterManager mgr = new HazelcastClusterManager();
+  private void testProgrammatic(HazelcastClusterManager mgr, Config config) throws Exception {
     mgr.setConfig(config);
     assertEquals(config, mgr.getConfig());
     VertxOptions options = new VertxOptions().setClusterManager(mgr).setClustered(true);
@@ -44,5 +41,20 @@ public class ProgrammaticHazelcastClusterManagerTest extends AsyncTestBase {
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testProgrammaticSetConfig() throws Exception {
+    Config config = new Config();
+    HazelcastClusterManager mgr = new HazelcastClusterManager();
+    mgr.setConfig(config);
+    testProgrammatic(mgr, config);
+  }
+
+  @Test
+  public void testProgrammaticSetWithConstructor() throws Exception {
+    Config config = new Config();
+    HazelcastClusterManager mgr = new HazelcastClusterManager(config);
+    testProgrammatic(mgr, config);
   }
 }
