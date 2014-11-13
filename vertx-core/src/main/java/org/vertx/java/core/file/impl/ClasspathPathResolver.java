@@ -20,6 +20,7 @@ import org.vertx.java.core.VertxException;
 
 import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -53,28 +54,16 @@ public class ClasspathPathResolver implements PathResolver {
   }
 
   public static Path urlToPath(URL url) {
-    if (FILE_SEP == '/') {
-      // *nix - a bit quicker than pissing around with URIs
-      String sfile = url.getFile();
-      if (sfile != null) {
-        return Paths.get(url.getFile());
+    try {
+      URI uri = url.toURI();
+      if (uri.isOpaque()) {
+        // See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4701321
+        return Paths.get(URLDecoder.decode(url.getPath(), "UTF-8"));
       } else {
-        return null;
+        return Paths.get(uri);
       }
-    } else {
-      // E.g. windows
-      // See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4701321
-
-      try {
-        URI uri = url.toURI();
-        if (uri.isOpaque()) {
-          return Paths.get(url.getPath());
-        } else {
-          return Paths.get(uri);
-        }
-      } catch (Exception exc) {
-        throw new VertxException(exc);
-      }
+    } catch (Exception exc) {
+      throw new VertxException(exc);
     }
   }
 
