@@ -268,10 +268,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         parents.add(entry.getKey());
       }
     }
-    
+
     final CountingCompletionHandler<Void> count = new CountingCompletionHandler<>(vertx, parents.size());
     count.setHandler(doneHandler);
-    
+
     for (String name: parents) {
       undeploy(name, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> res) {
@@ -1164,10 +1164,10 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   private ModuleInfo loadModuleInfo(File modDir, ModuleIdentifier modID) {
-    List<URL> cpList;
-    JsonObject modJSON;
-    File modJSONFile = createModJSONFile(modDir);
-    if (!modJSONFile.exists()) {
+
+      List<URL> cpList = new ArrayList<>();
+      JsonObject modJSON = null;
+      File targetModDir = modDir;
       // Look for link file
       File linkFile = new File(modDir, MODULE_LINK_FILE);
       if (linkFile.exists()) {
@@ -1220,13 +1220,19 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         } catch (Exception e) {
           throw new PlatformManagerException(e);
         }
-      } else {
-        throw new PlatformManagerException("Module directory " + modDir + " contains no mod.json nor module.link file");
       }
-    } else {
-      modJSON = loadModuleConfig(modJSONFile, modID);
-      cpList = getModuleClasspath(modDir);
-    }
+
+      File modJSONFile = createModJSONFile(targetModDir);
+      if (modJSONFile.exists() && modJSON == null) {
+        modJSON = loadModuleConfig(modJSONFile, modID);
+      }
+      cpList.addAll(getModuleLibClasspath(targetModDir));
+
+      if (modJSON == null) {
+          throw new PlatformManagerException("Module directory " + modDir + " contains no mod.json nor module.link file");
+      }
+
+      cpList.addAll(getModuleLibClasspath(modDir));
     return new ModuleInfo(modJSON, cpList, modDir);
   }
 
@@ -1327,7 +1333,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     }
   }
 
-  private List<URL> getModuleClasspath(File modDir) {
+  private List<URL> getModuleLibClasspath(File modDir) {
     List<URL> urls = new ArrayList<>();
     // Add the classpath for this module
     try {
