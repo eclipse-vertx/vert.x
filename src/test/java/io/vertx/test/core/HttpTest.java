@@ -1007,10 +1007,13 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request) {
-    String path = uri.indexOf('?') == -1 ? uri : uri.substring(0, uri.indexOf('?'));
+    int index = uri.indexOf('?');
+    String path = index == -1 ? uri : uri.substring(0, index);
+    String query = index == -1 ? null : uri.substring(index + 1);
     server.requestHandler(req -> {
       assertEquals(path, req.path());
       assertEquals(method, req.method());
+      assertEquals(query, req.query());
       req.response().end();
     });
 
