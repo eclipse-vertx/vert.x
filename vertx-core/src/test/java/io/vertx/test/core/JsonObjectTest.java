@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1432,6 +1433,24 @@ public class JsonObjectTest {
       fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " != " +
           value2.getClass().getSimpleName() + ":" + value2);
     }
+  }
+
+  @Test
+  public void testJsonObjectEquality() {
+    JsonObject obj = new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3)));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3))));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3L))));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", new JsonObject().put("def", 3))));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", new JsonObject().put("def", 3L))));
+    assertNotEquals(obj, new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 4))));
+    assertNotEquals(obj, new JsonObject(Collections.singletonMap("abc", new JsonObject().put("def", 4))));
+    JsonArray array = new JsonArray(Collections.singletonList(Collections.singletonMap("def", 3)));
+    assertEquals(array, new JsonArray(Collections.singletonList(Collections.singletonMap("def", 3))));
+    assertEquals(array, new JsonArray(Collections.singletonList(Collections.singletonMap("def", 3L))));
+    assertEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 3))));
+    assertEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 3L))));
+    assertNotEquals(array, new JsonArray(Collections.singletonList(Collections.singletonMap("def", 4))));
+    assertNotEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 4))));
   }
 
   private JsonObject createJsonObject() {
