@@ -66,9 +66,10 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
   public void removeAllForValue(final V val, final Handler<AsyncResult<Void>> completionHandler) {
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
+        V wrappedVal = HazelcastServerID.convertServerID(val);
         for (Map.Entry<K, V> entry : map.entrySet()) {
           V v = entry.getValue();
-          if (val.equals(v)) {
+          if (wrappedVal.equals(v)) {
             map.remove(entry.getKey(), v);
           }
         }
