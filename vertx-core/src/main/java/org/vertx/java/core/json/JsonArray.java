@@ -190,7 +190,7 @@ public class JsonArray extends JsonElement implements Iterable<Object> {
         if (other != null) {
           return false;
         }
-      } else if (!entry.equals(other)) {
+      } else if (!equals(entry, other)) {
         return false;
       }
     }

@@ -379,5 +379,58 @@ public class JavaJsonTest extends TestBase {
     assertFalse(obj.containsField("t"));
   }
 
+  @Test
+  public void testNumberEquality() {
+    assertNumberEquals(4, 4);
+    assertNumberEquals(4, (long)4);
+    assertNumberEquals(4, 4f);
+    assertNumberEquals(4, 4D);
+    assertNumberEquals((long)4, (long)4);
+    assertNumberEquals((long)4, 4f);
+    assertNumberEquals((long)4, 4D);
+    assertNumberEquals(4f, 4f);
+    assertNumberEquals(4f, 4D);
+    assertNumberEquals(4D, 4D);
+    assertNumberEquals(4.1D, 4.1D);
+    assertNumberEquals(4.1f, 4.1f);
+    assertNumberNotEquals(4.1f, 4.1D);
+    assertNumberEquals(4.5D, 4.5D);
+    assertNumberEquals(4.5f, 4.5f);
+    assertNumberEquals(4.5f, 4.5D);
+    assertNumberNotEquals(4, 5);
+    assertNumberNotEquals(4, (long)5);
+    assertNumberNotEquals(4, 5D);
+    assertNumberNotEquals(4, 5f);
+    assertNumberNotEquals((long)4, (long)5);
+    assertNumberNotEquals((long)4, 5D);
+    assertNumberNotEquals((long)4, 5f);
+    assertNumberNotEquals(4f, 5f);
+    assertNumberNotEquals(4f, 5D);
+    assertNumberNotEquals(4D, 5D);
+  }
+
+  private void assertNumberEquals(Number value1, Number value2) {
+    JsonObject o1 = new JsonObject().putNumber("key", value1);
+    JsonObject o2 = new JsonObject().putNumber("key", value2);
+    if (!o1.equals(o2)) {
+      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
+          value2.getClass().getSimpleName() + ":" + value2);
+    }
+    JsonArray a1 = new JsonArray().addNumber(value1);
+    JsonArray a2 = new JsonArray().addNumber(value2);
+    if (!a1.equals(a2)) {
+      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
+          value2.getClass().getSimpleName() + ":" + value2);
+    }
+  }
+
+  private void assertNumberNotEquals(Number value1, Number value2) {
+    JsonObject o1 = new JsonObject().putNumber("key", value1);
+    JsonObject o2 = new JsonObject().putNumber("key", value2);
+    if (o1.equals(o2)) {
+      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " != " +
+          value2.getClass().getSimpleName() + ":" + value2);
+    }
+  }
 
 }

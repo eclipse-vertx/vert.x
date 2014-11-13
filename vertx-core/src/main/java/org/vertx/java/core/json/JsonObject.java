@@ -309,7 +309,7 @@ public class JsonObject extends JsonElement {
           return false;
         }
       } else {
-        if (!entry.getValue().equals(that.map.get(entry.getKey()))) {
+        if (!equals(entry.getValue(), that.map.get(entry.getKey()))) {
           return false;
         }
       }

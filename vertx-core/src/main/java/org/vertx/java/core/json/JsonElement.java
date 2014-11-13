@@ -80,4 +80,26 @@ public abstract class JsonElement implements Serializable {
     return arr;
   }
 
+  /**
+   * Test equality of o1 and o2, {@code java.lang.Number} are specially treated.
+   *
+   * @param o1 the first non null obj
+   * @param o2 the second maybe null obj
+   * @return true if o1 and o2 are equals
+   */
+  protected final boolean equals(Object o1, Object o2) {
+    if (o2 == null) {
+      return false;
+    }
+    if (o1 instanceof Number && o2 instanceof Number && o1.getClass() != o2.getClass()) {
+      Number n1 = (Number) o1;
+      Number n2 = (Number) o2;
+      if (o1 instanceof Float || o1 instanceof Double || o2 instanceof Float || o2 instanceof Double) {
+        return n1.doubleValue() == n2.doubleValue();
+      } else {
+        return n1.longValue() == n2.longValue();
+      }
+    }
+    return o1.equals(o2);
+  }
 }
