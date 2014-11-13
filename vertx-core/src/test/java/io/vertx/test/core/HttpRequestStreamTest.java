@@ -22,6 +22,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerRequestStream;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -31,6 +32,8 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -102,7 +105,9 @@ public class HttpRequestStreamTest extends VertxTestBase {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     ReadStream<HttpServerRequest> stream = server.requestStream();
     AtomicBoolean closed = new AtomicBoolean();
-    stream.endHandler(v -> closed.set(true));
+    stream.endHandler(v -> {
+      closed.set(true);
+    });
     stream.handler(req -> {});
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -111,6 +116,34 @@ public class HttpRequestStreamTest extends VertxTestBase {
         assertTrue(ar.succeeded());
         assertTrue(closed.get());
         testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testRequestStreamCallbackNotUnderLock() {
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    AtomicInteger done = new AtomicInteger();
+    HttpServerRequestStream stream = server.requestStream();
+    stream.handler(req -> {});
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(server));
+      assertFalse(Thread.holdsLock(stream));
+      if (done.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(server));
+      server.close(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertFalse(Thread.holdsLock(server));
+        if (done.incrementAndGet() == 2) {
+          testComplete();
+        }
       });
     });
     await();

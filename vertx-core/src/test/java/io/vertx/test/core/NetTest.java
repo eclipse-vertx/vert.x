@@ -533,7 +533,7 @@ public class NetTest extends VertxTestBase {
     assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
     assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
     assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertEquals(tsPassword, ((JKSOptions) copy.getTrustStoreOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -756,7 +756,8 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testConnectInvalidPort() {
     assertIllegalArgumentException(() -> client.connect(-1, "localhost", res -> {}));
-    assertIllegalArgumentException(() -> client.connect(65536, "localhost", res -> {}));
+    assertIllegalArgumentException(() -> client.connect(65536, "localhost", res -> {
+    }));
     client.connect(9998, "localhost", res -> {
       assertTrue(res.failed());
       assertFalse(res.succeeded());
@@ -768,7 +769,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testConnectInvalidHost() {
-    assertNullPointerException(() -> client.connect(80, null, res -> {}));
+    assertNullPointerException(() -> client.connect(80, null, res -> {
+    }));
     client.connect(1234, "127.0.0.2", res -> {
       assertTrue(res.failed());
       assertFalse(res.succeeded());
@@ -1140,7 +1142,7 @@ public class NetTest extends VertxTestBase {
         if (clientCert) {
           clientOptions.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
         }
-        for (String suite: enabledCipherSuites) {
+        for (String suite : enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);
         }
       }
@@ -1850,6 +1852,34 @@ public class NetTest extends VertxTestBase {
             });
           });
         });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testNetSocketStreamCallbackNotUnderLock() {
+    this.server = vertx.createNetServer(new NetServerOptions());
+    AtomicInteger done = new AtomicInteger();
+    NetSocketStream stream = server.connectStream();
+    stream.handler(req -> {});
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(server));
+      assertFalse(Thread.holdsLock(stream));
+      if (done.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(server));
+      server.close(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertFalse(Thread.holdsLock(server));
+        if (done.incrementAndGet() == 2) {
+          testComplete();
+        }
       });
     });
     await();
