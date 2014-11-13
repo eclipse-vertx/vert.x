@@ -254,7 +254,7 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public TimeoutStream periodicStream(long delay) {
-    return new TimeoutStreamImpl(delay, true);
+    return new TimeoutStreamImpl(this, delay, true);
   }
 
   public long setTimer(long delay, Handler<Long> handler) {
@@ -263,7 +263,7 @@ public class VertxImpl implements VertxInternal {
 
   @Override
   public TimeoutStream timerStream(long delay) {
-    return new TimeoutStreamImpl(delay, false);
+    return new TimeoutStreamImpl(this, delay, false);
   }
 
   public void runOnContext(Handler<Void> task) {
@@ -689,6 +689,7 @@ public class VertxImpl implements VertxInternal {
    */
   private class TimeoutStreamImpl implements TimeoutStream, Handler<Long> {
 
+    private final Vertx vertx;
     private final long delay;
     private final boolean periodic;
 
@@ -697,13 +698,14 @@ public class VertxImpl implements VertxInternal {
     private Handler<Long> handler;
     private Handler<Void> endHandler;
 
-    public TimeoutStreamImpl(long delay, boolean periodic) {
+    public TimeoutStreamImpl(Vertx vertx, long delay, boolean periodic) {
+      this.vertx = vertx;
       this.delay = delay;
       this.periodic = periodic;
     }
 
     @Override
-    public synchronized void handle(Long event) {
+    public void handle(Long event) {
       try {
         if (!paused) {
           handler.handle(event);
@@ -726,20 +728,24 @@ public class VertxImpl implements VertxInternal {
     }
 
     @Override
-    public synchronized TimeoutStream handler(Handler<Long> handler) {
-      if (handler != null) {
-        if (id != null) {
-          throw new IllegalStateException();
-        }
-        this.handler = handler;
-        id = scheduleTimeout(getOrCreateContext(), this, delay, periodic);
-      } else {
-        if (id != null) {
-          VertxImpl.this.cancelTimer(id);
-          if (endHandler != null) {
-            endHandler.handle(null);
+    public TimeoutStream handler(Handler<Long> handler) {
+      Handler<Void> callback = null;
+      synchronized (this) {
+        if (handler != null) {
+          if (id != null) {
+            throw new IllegalStateException();
+          }
+          this.handler = handler;
+          id = scheduleTimeout(getOrCreateContext(), this, delay, periodic);
+        } else {
+          if (id != null) {
+            VertxImpl.this.cancelTimer(id);
+            callback = endHandler;
           }
         }
+      }
+      if (callback != null) {
+        vertx.runOnContext(callback);
       }
       return this;
     }
