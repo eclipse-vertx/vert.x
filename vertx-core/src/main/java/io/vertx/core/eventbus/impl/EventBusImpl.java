@@ -576,7 +576,7 @@ public class EventBusImpl implements EventBus {
     }
   }
 
-  private <T> void unregisterHandler(String address, Handler<Message<T>> handler, Handler<AsyncResult<Void>> completionHandler) {
+  private <T> void unregisterHandler(String address, Handler<Message<T>> handler, Handler<AsyncResult<Void>> doneHandler) {
     checkStarted();
     Handlers handlers = handlerMap.get(address);
     if (handlers != null) {
@@ -595,12 +595,12 @@ public class EventBusImpl implements EventBus {
             if (handlers.list.isEmpty()) {
               handlerMap.remove(address);
               if (subs != null && !holder.localOnly) {
-                removeSub(address, serverID, completionHandler);
-              } else if (completionHandler != null) {
-                callCompletionHandler(completionHandler);
+                removeSub(address, serverID, doneHandler);
+              } else if (doneHandler != null) {
+                callDoneHandler(doneHandler);
               }
-            } else if (completionHandler != null) {
-              callCompletionHandler(completionHandler);
+            } else if (doneHandler != null) {
+              callDoneHandler(doneHandler);
             }
             holder.context.removeCloseHook(new HandlerEntry<T>(address, handler));
             break;
@@ -614,8 +614,8 @@ public class EventBusImpl implements EventBus {
     unregisterHandler(address, handler, emptyHandler());
   }
 
-  private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
-    completionHandler.handle(Future.completedFuture());
+  private void callDoneHandler(Handler<AsyncResult<Void>> doneHandler) {
+    doneHandler.handle(Future.completedFuture());
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -994,51 +994,58 @@ public class EventBusImpl implements EventBus {
     public synchronized void completionHandler(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
       if (result != null) {
-        completionHandler.handle(result);
+        vertx.runOnContext(v -> completionHandler.handle(result));
       } else {
         this.completionHandler = completionHandler;
       }
     }
 
     @Override
-    public void unregister() {
-      unregister(emptyHandler());
-    }
-
-    @Override
-    public synchronized void unregister(Handler<AsyncResult<Void>> completionHandler) {
-      Objects.requireNonNull(completionHandler);
-      if (endHandler != null) {
-        Handler<AsyncResult<Void>> handler = completionHandler;
-        completionHandler = ar -> {
-          if (ar.failed()) {
-            exceptionHandler.handle(ar.cause());
-          }
-          endHandler.handle(null);
-          handler.handle(ar);
+    public synchronized void unregister() {
+      Handler<AsyncResult<Void>> doneHandler;
+      if (exceptionHandler != null || endHandler != null) {
+        doneHandler = ar -> {
+          vertx.runOnContext(v -> {
+            if (exceptionHandler != null && ar.failed()) {
+              exceptionHandler.handle(ar.cause());
+            }
+            if (endHandler != null) {
+              endHandler.handle(null);
+            }
+          });
         };
+      } else {
+        doneHandler = null;
       }
       if (registered) {
         registered = false;
-        unregisterHandler(address, this, completionHandler);
+        unregisterHandler(address, this, doneHandler);
         metrics.handlerUnregistered(address);
       } else {
-        callCompletionHandler(completionHandler);
+        if (doneHandler != null) {
+          callDoneHandler(doneHandler);
+        }
       }
       registered = false;
     }
 
-    private synchronized void setResult(AsyncResult<Void> result) {
-      this.result = result;
-      if (completionHandler != null) {
-        if (result.succeeded()) {
+    private void setResult(AsyncResult<Void> result) {
+      Handler<AsyncResult<Void>> callback = null;
+      synchronized (this) {
+        this.result = result;
+        if (completionHandler != null) {
+          if (result.succeeded()) {
+            metrics.handlerRegistered(address);
+          }
+          callback = completionHandler;
+        } else if (result.failed()) {
+          log.error("Failed to propagate registration for handler " + handler + " and address " + address);
+        } else {
           metrics.handlerRegistered(address);
         }
-        completionHandler.handle(result);
-      } else if (result.failed()) {
-        log.error("Failed to propagate registration for handler " + handler + " and address " + address);
-      } else {
-        metrics.handlerRegistered(address);
+      }
+      if (callback != null) {
+        vertx.runOnContext(v -> completionHandler.handle(result));
       }
     }
 

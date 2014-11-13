@@ -95,11 +95,4 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    */
   void unregister();
 
-  /**
-   * Unregisters the handler which created this registration
-   *
-   * @param completionHandler the handler called when the unregister is done. For example in a cluster when all nodes of the
-   * event bus have been unregistered.
-   */
-  void unregister(Handler<AsyncResult<Void>> completionHandler);
 }
