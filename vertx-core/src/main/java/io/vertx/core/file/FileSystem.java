@@ -205,7 +205,6 @@ public interface FileSystem {
   /**
    * Synchronous version of {@link #readSymlink(String, Handler)}
    */
-  @Fluent
   String readSymlinkSync(String link) ;
 
   /**

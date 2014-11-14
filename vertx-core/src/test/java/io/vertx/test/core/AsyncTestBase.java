@@ -16,6 +16,8 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
@@ -31,6 +33,9 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AsyncTestBase {
+
+  private static final Logger log = LoggerFactory.getLogger(AsyncTestBase.class);
+
 
   private CountDownLatch latch;
   private volatile Throwable throwable;
@@ -66,7 +71,7 @@ public class AsyncTestBase {
 
   protected void testComplete() {
     if (tearingDown) {
-      throw new IllegalStateException("testComplete called after test has completed");
+      log.warn("testComplete called after test has completed");
     }
     checkThread();
     if (testCompleteCalled) {
