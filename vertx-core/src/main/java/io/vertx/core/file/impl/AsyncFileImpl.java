@@ -340,7 +340,6 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
-    checkContext();
     context.executeBlocking(() -> {
       try {
         ch.force(false);
@@ -425,7 +424,6 @@ public class AsyncFileImpl implements AsyncFile {
 
   private void check() {
     checkClosed();
-    checkContext();
   }
 
   private void checkClosed() {
