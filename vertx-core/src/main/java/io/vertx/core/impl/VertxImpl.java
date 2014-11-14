@@ -737,7 +737,7 @@ public class VertxImpl implements VertxInternal {
         if (id != null) {
           VertxImpl.this.cancelTimer(id);
           if (endHandler != null) {
-            endHandler.handle(null);
+            runOnContext(endHandler);
           }
         }
       }

@@ -271,4 +271,37 @@ public class TimerTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testTimeoutStreamEndCallbackAsynchronously1() {
+    TimeoutStream stream = vertx.timerStream(10);
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      testComplete();
+    });
+    stream.handler(id -> {});
+    stack.set(null);
+    await();
+  }
+
+  // This test does not pass 
+  @Test
+  public void testTimeoutStreamEndCallbackAsynchronously2() {
+    TimeoutStream stream = vertx.periodicStream(10);
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      testComplete();
+    });
+    stream.handler(id -> {
+      stack.set(true);
+      stream.cancel();
+      stack.set(null);
+    });
+    await();
+  }
 }

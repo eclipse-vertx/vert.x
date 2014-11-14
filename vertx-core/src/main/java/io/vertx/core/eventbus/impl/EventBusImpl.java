@@ -597,7 +597,7 @@ public class EventBusImpl implements EventBus {
               if (subs != null && !holder.localOnly) {
                 removeSub(address, serverID, completionHandler);
               } else if (completionHandler != null) {
-                callCompletionHandler(completionHandler);
+                callCompletionHandlerAsync(completionHandler);
               }
             } else if (completionHandler != null) {
               callCompletionHandler(completionHandler);
@@ -616,6 +616,12 @@ public class EventBusImpl implements EventBus {
 
   private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
     completionHandler.handle(Future.completedFuture());
+  }
+
+  private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
+    vertx.runOnContext(v -> {
+      completionHandler.handle(Future.completedFuture());
+    });
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -994,7 +1000,8 @@ public class EventBusImpl implements EventBus {
     public synchronized void completionHandler(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
       if (result != null) {
-        completionHandler.handle(result);
+        AsyncResult<Void> value = result;
+        vertx.runOnContext(v -> completionHandler.handle(value));
       } else {
         this.completionHandler = completionHandler;
       }
@@ -1023,7 +1030,7 @@ public class EventBusImpl implements EventBus {
         unregisterHandler(address, this, completionHandler);
         metrics.handlerUnregistered(address);
       } else {
-        callCompletionHandler(completionHandler);
+        callCompletionHandlerAsync(completionHandler);
       }
       registered = false;
     }
@@ -1034,7 +1041,8 @@ public class EventBusImpl implements EventBus {
         if (result.succeeded()) {
           metrics.handlerRegistered(address);
         }
-        completionHandler.handle(result);
+        Handler<AsyncResult<Void>> callback = completionHandler;
+        vertx.runOnContext(v -> callback.handle(result));
       } else if (result.failed()) {
         log.error("Failed to propagate registration for handler " + handler + " and address " + address);
       } else {

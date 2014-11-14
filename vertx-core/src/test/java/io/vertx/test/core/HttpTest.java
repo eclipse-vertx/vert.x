@@ -3571,6 +3571,31 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testMultipleServerClose() {
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    AtomicInteger times = new AtomicInteger();
+    // We assume the endHandler and the close completion handler are invoked in the same context task
+    ThreadLocal stack = new ThreadLocal();
+    stack.set(true);
+    server.requestStream().endHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      times.incrementAndGet();
+    });
+    server.close(ar1 -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      server.close(ar2 -> {
+        server.close(ar3 -> {
+          assertEquals(1, times.get());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
       req.response().setChunked(true);

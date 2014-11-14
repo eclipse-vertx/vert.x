@@ -1858,6 +1858,64 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testNetSocketStreamCallbackIsAsync() {
+    this.server = vertx.createNetServer(new NetServerOptions());
+    AtomicInteger done = new AtomicInteger();
+    NetSocketStream stream = server.connectStream();
+    stream.handler(req -> {});
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      if (done.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      ThreadLocal<Object> stack2 = new ThreadLocal<>();
+      stack2.set(true);
+      server.close(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertNull(stack2.get());
+        if (done.incrementAndGet() == 2) {
+          testComplete();
+        }
+      });
+      stack2.set(null);
+    });
+    stack.set(null);
+    await();
+  }
+
+  @Test
+  public void testMultipleServerClose() {
+    this.server = vertx.createNetServer(new NetServerOptions());
+    AtomicInteger times = new AtomicInteger();
+    // We assume the endHandler and the close completion handler are invoked in the same context task
+    ThreadLocal stack = new ThreadLocal();
+    stack.set(true);
+    server.connectStream().endHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      times.incrementAndGet();
+    });
+    server.close(ar1 -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      server.close(ar2 -> {
+        server.close(ar3 -> {
+          assertEquals(1, times.get());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
     if (file.exists()) {

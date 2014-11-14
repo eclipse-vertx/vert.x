@@ -112,14 +112,19 @@ public class DatagramTest extends VertxTestBase {
 
   @Test
   public void testEndHandler() {
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
     peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
     peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());
       peer2.endHandler(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertNull(stack.get());
         testComplete();
       });
       peer2.close();
     });
+    stack.set(null);
     await();
   }
 
