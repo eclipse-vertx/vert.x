@@ -46,13 +46,14 @@ import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,9 @@ public class NetTest extends VertxTestBase {
 
   private NetServer server;
   private NetClient client;
+
+  @Rule
+  public TemporaryFolder testFolder = new TemporaryFolder();
 
   public void setUp() throws Exception {
     super.setUp();
@@ -1410,7 +1414,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void sendFileClientToServer() throws Exception {
-    File fDir = Files.createTempDirectory("vertx-test").toFile();
+    File fDir = testFolder.newFolder();
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile(fDir.toString(), "some-file.txt", content);
     Buffer expected = Buffer.buffer(content);
@@ -1442,7 +1446,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void sendFileServerToClient() throws Exception {
-    File fDir = Files.createTempDirectory("vertx-test").toFile();
+    File fDir = testFolder.newFolder();
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile(fDir.toString(), "some-file.txt", content);
     Buffer expected = Buffer.buffer(content);
@@ -1473,8 +1477,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSendFileDirectory() throws Exception {
-    File fDir = Files.createTempDirectory("vertx-test").toFile();
-    fDir.deleteOnExit();
+    File fDir = testFolder.newFolder();
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
       assertEquals("127.0.0.1", addr.hostAddress());
@@ -1860,7 +1863,6 @@ public class NetTest extends VertxTestBase {
     if (file.exists()) {
       file.delete();
     }
-    file.deleteOnExit();
     BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
     out.write(content);
     out.close();

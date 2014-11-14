@@ -32,7 +32,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,8 +53,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -65,12 +66,14 @@ public class FileSystemTest extends VertxTestBase {
   private String pathSep;
   private String testDir;
 
+  @Rule
+  public TemporaryFolder testFolder = new TemporaryFolder();
+
   public void setUp() throws Exception {
     super.setUp();
     java.nio.file.FileSystem fs = FileSystems.getDefault();
     pathSep = fs.getSeparator();
-    File ftestDir = Files.createTempDirectory("vertx-test").toFile();
-    ftestDir.deleteOnExit();
+    File ftestDir = testFolder.newFolder();
     testDir = ftestDir.toString();
   }
 

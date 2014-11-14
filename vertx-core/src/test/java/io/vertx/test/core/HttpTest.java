@@ -57,7 +57,9 @@ import io.vertx.core.net.PKCS12Options;
 import io.vertx.core.net.TrustStoreOptions;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -75,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -93,12 +96,14 @@ import static io.vertx.test.core.TestUtils.*;
  */
 public class HttpTest extends HttpTestBase {
 
+  @Rule
+  public TemporaryFolder testFolder = new TemporaryFolder();
+
   private File testDir;
 
   public void setUp() throws Exception {
     super.setUp();
-    testDir = Files.createTempDirectory("vertx-test").toFile();
-    testDir.deleteOnExit();
+    testDir = testFolder.newFolder();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
     client = vertx.createHttpClient(new HttpClientOptions());
   }
@@ -2666,8 +2671,7 @@ public class HttpTest extends HttpTestBase {
         "Input byte[] should at least have 2 bytes for base64 bytes"
     };
     for (int i = 0;i < contents.length;i++) {
-      Path file = Files.createTempFile("vertx", ".pem");
-      file.toFile().deleteOnExit();
+      Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
       testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(file.toString()), expectedMessage);
@@ -2694,8 +2698,7 @@ public class HttpTest extends HttpTestBase {
         "Input byte[] should at least have 2 bytes for base64 bytes"
     };
     for (int i = 0;i < contents.length;i++) {
-      Path file = Files.createTempFile("vertx", ".pem");
-      file.toFile().deleteOnExit();
+      Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
       testInvalidTrustStore(new CaOptions().addCertPath(file.toString()), expectedMessage);
@@ -3648,7 +3651,6 @@ public class HttpTest extends HttpTestBase {
     if (file.exists()) {
       file.delete();
     }
-    file.deleteOnExit();
     BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
     out.write(content);
     out.close();
