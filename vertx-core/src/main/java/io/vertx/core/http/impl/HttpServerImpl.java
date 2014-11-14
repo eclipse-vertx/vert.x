@@ -267,9 +267,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
           // To reproduce set the boolean parameter on execute (below) to true.
           // Then run Httptest.testTwoServersSameAddressDifferentContext()
           try {
-            listenContext.execute(() -> {
-              listenHandler.handle(res);
-            }, false);
+            listenContext.runOnContext((v) -> listenHandler.handle(res));
           } catch (Exception e) {
             e.printStackTrace();
           }
@@ -420,7 +418,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(Future.completedFuture(e)), false);
+      closeContext.runOnContext((v) -> done.handle(Future.completedFuture(e)));
     }
   }
 

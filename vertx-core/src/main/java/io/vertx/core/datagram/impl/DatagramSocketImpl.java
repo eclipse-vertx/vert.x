@@ -185,7 +185,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   @SuppressWarnings("unchecked")
   final void addListener(ChannelFuture future, Handler<AsyncResult<DatagramSocket>> handler) {
     if (handler != null) {
-      future.addListener(new DatagramChannelFutureListener<>(this, handler, vertx, context));
+      future.addListener(new DatagramChannelFutureListener<>(this, handler, context));
     }
   }
 
@@ -236,7 +236,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     metrics.close();
     ChannelFuture future = channel.close();
     if (handler != null) {
-      future.addListener(new DatagramChannelFutureListener<>(null, handler, vertx, context));
+      future.addListener(new DatagramChannelFutureListener<>(null, handler, context));
     }
   }
 
@@ -299,9 +299,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     return channel;
   }
 
-
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
-    context.execute(() -> handler.handle(Future.completedFuture(cause)), true);
+    context.executeSync(() -> handler.handle(Future.completedFuture(cause)));
   }
 
   @Override

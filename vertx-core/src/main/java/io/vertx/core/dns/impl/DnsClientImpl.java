@@ -22,7 +22,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -225,7 +224,7 @@ public final class DnsClientImpl implements DnsClient {
     } catch (UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
-      actualCtx.execute(() -> handler.handle(Future.completedFuture(e)), false);
+      actualCtx.runOnContext((v) -> handler.handle(Future.completedFuture(e)));
     }
     return this;
   }
@@ -266,16 +265,16 @@ public final class DnsClientImpl implements DnsClient {
                     records.add(record);
                   }
 
-                  setResult(result, ctx.channel().eventLoop(), records);
+                  setResult(result, records);
                 } else {
-                  setResult(result, ctx.channel().eventLoop(), new DnsException(code));
+                  setResult(result, new DnsException(code));
                 }
                 ctx.close();
               }
 
               @Override
               public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                setResult(result, ctx.channel().eventLoop(), cause);
+                setResult(result, cause);
                 ctx.close();
               }
             });
@@ -286,17 +285,17 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @SuppressWarnings("unchecked")
-  private void setResult(Future r, EventLoop loop, Object result) {
+  private void setResult(Future r, Object result) {
     if (r.isComplete()) {
       return;
     }
-    actualCtx.execute(() -> {
+    actualCtx.executeSync(() -> {
       if (result instanceof Throwable) {
         r.fail((Throwable) result);
       } else {
         r.complete(result);
       }
-    }, true);
+    });
   }
 
   private static class HandlerAdapter<T> implements Handler<AsyncResult<List<T>>> {

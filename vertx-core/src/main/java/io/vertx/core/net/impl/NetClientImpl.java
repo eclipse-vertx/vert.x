@@ -194,14 +194,14 @@ public class NetClientImpl implements NetClient {
         }
       } else {
         if (remainingAttempts > 0 || remainingAttempts == -1) {
-          context.execute(() -> {
+          context.executeSync(() -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid -> {
               connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                  - 1);
+                - 1);
             });
-          }, true);
+          });
         } else {
           failed(context, ch, channelFuture.cause(), connectHandler);
         }
@@ -210,7 +210,7 @@ public class NetClientImpl implements NetClient {
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
-    context.execute(() -> doConnected(context, ch, connectHandler), true);
+    context.executeSync(() -> doConnected(context, ch, connectHandler));
   }
 
   private void doConnected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
@@ -221,7 +221,7 @@ public class NetClientImpl implements NetClient {
 
   private void failed(ContextImpl context, Channel ch, Throwable t, Handler<AsyncResult<NetSocket>> connectHandler) {
     ch.close();
-    context.execute(() -> doFailed(connectHandler, t), true);
+    context.executeSync(() -> doFailed(connectHandler, t));
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {

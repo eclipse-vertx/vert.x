@@ -370,16 +370,16 @@ public class AsyncFileImpl implements AsyncFile {
           writeInternal(buff, pos, handler);
         } else {
           // It's been fully written
-          context.execute(() -> {
+          context.runOnContext((v) -> {
             writesOutstanding -= buff.limit();
             handler.handle(Future.completedFuture());
-          }, false);
+          });
         }
       }
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          context.execute(() -> handler.handle(Future.completedFuture()), false);
+          context.runOnContext((v) -> handler.handle(Future.completedFuture()));
         } else {
           log.error("Error occurred", exc);
         }
@@ -394,11 +394,11 @@ public class AsyncFileImpl implements AsyncFile {
       long pos = position;
 
       private void done() {
-        context.execute(() -> {
+        context.runOnContext((v) -> {
           buff.flip();
           writeBuff.setBytes(offset, buff);
           handler.handle(Future.completedFuture(writeBuff));
-        }, false);
+        });
       }
 
       public void completed(Integer bytesRead, Object attachment) {
@@ -417,7 +417,7 @@ public class AsyncFileImpl implements AsyncFile {
       }
 
       public void failed(Throwable t, Object attachment) {
-        context.execute(() -> handler.handle(Future.completedFuture(t)), false);
+        context.runOnContext((v) -> handler.handle(Future.completedFuture(t)));
       }
     });
   }

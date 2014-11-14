@@ -22,8 +22,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 
-import io.vertx.core.impl.VertxInternal;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -31,18 +29,16 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
   private final Handler<AsyncResult<T>> handler;
   private final T result;
   private final ContextImpl context;
-  private final VertxInternal vertx;
 
-  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, VertxInternal vertx, ContextImpl context) {
+  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, ContextImpl context) {
     this.handler = handler;
     this.result = result;
     this.context = context;
-    this.vertx = vertx;
   }
 
   @Override
   public void operationComplete(final ChannelFuture future) throws Exception {
-    context.execute(() -> notifyHandler(future), true);
+    context.executeSync(() -> notifyHandler(future));
   }
 
   private void notifyHandler(ChannelFuture future) {

@@ -215,7 +215,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public synchronized HttpServerResponse drainHandler(Handler<Void> handler) {
     checkWritten();
     this.drainHandler = handler;
-    conn.getContext().execute(conn::handleInterestedOpsChanged, false);
+    conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
     return this;
   }
 
@@ -405,7 +405,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           } else {
             res = Future.completedFuture(future.cause());
           }
-          ctx.execute(() -> resultHandler.handle(res), true);
+          ctx.runOnContext((v) -> resultHandler.handle(res));
         });
       }
 

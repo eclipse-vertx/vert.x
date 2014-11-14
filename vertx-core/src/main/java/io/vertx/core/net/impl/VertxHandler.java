@@ -71,11 +71,8 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     Channel ch = ctx.channel();
     C conn = connectionMap.get(ch);
     if (conn != null) {
-      boolean writable = ctx.channel().isWritable();
       ContextImpl context = getContext(conn);
-      context.execute(() -> {
-        conn.handleInterestedOpsChanged();
-      }, true);
+      context.executeSync(conn::handleInterestedOpsChanged);
     }
   }
 
@@ -86,7 +83,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     C connection = connectionMap.get(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
-      context.execute(() ->{
+      context.executeSync(() -> {
         try {
           if (ch.isOpen()) {
             ch.close();
@@ -94,7 +91,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
         } catch (Throwable ignore) {
         }
         connection.handleException(t);
-      }, true);
+      });
     } else {
       ch.close();
     }
@@ -106,7 +103,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     C connection = connectionMap.remove(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
-      context.execute(connection::handleClosed, true);
+      context.executeSync(connection::handleClosed);
     }
   }
 
@@ -115,10 +112,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     C conn = connectionMap.get(ctx.channel());
     if (conn != null) {
       ContextImpl context = getContext(conn);
-      // Only mark end read if its not a WorkerVerticle
-      if (context.isEventLoopContext()) {
-        context.execute(conn::endReadAndFlush, true);
-      }
+      context.executeSync(conn::endReadAndFlush);
     }
   }
 
@@ -130,12 +124,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     ContextImpl context;
     if (connection != null) {
       context = getContext(connection);
-      // Only mark start read if we are on the correct worker. This is needed as while we are in read this may will
-      // delay flushes, which is a problem when we are no on the correct worker. This is mainly a problem as
-      // WorkerVerticle may block.
-      if (context.isEventLoopContext()) {
-        context.execute(connection::startRead, true);
-      }
+      context.executeSync(connection::startRead);
     } else {
       context = null;
     }

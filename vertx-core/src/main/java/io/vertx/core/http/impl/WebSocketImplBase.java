@@ -39,7 +39,7 @@ import java.util.UUID;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class WebSocketImplBase<T> implements WebSocketBase {
+public abstract class WebSocketImplBase implements WebSocketBase {
 
   private final boolean supportsContinuation;
   private final String textHandlerID;
@@ -101,6 +101,8 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
     return conn.remoteAddress();
   }
 
+  public abstract WebSocketBase exceptionHandler(Handler<Throwable> handler);
+
   protected void writeMessageInternal(Buffer data) {
     checkClosed();
     writePartialMessage(data, 0);
@@ -125,9 +127,7 @@ public abstract class WebSocketImplBase<T> implements WebSocketBase {
     writeFrame(frame);
     int newOffset = offset + maxWebSocketFrameSize;
     if (!isFinal) {
-      vertx.runOnContext(v -> {
-        writePartialMessage(data, newOffset);
-      });
+      writePartialMessage(data, newOffset);
     }
   }
 

@@ -183,7 +183,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     checkComplete();
     this.drainHandler = handler;
     if (conn != null) {
-      conn.getContext().execute(conn::handleInterestedOpsChanged, false);
+      conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
     }
     return this;
   }

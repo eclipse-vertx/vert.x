@@ -624,7 +624,7 @@ public class VertxImpl implements VertxInternal {
     }
   }
 
-  private class InternalTimerHandler implements ContextTask, Closeable {
+  private class InternalTimerHandler implements Handler<Void>, Closeable {
     final Handler<Long> handler;
     final boolean periodic;
     final long timerID;
@@ -642,7 +642,7 @@ public class VertxImpl implements VertxInternal {
       this.handler = runnable;
       this.periodic = periodic;
       EventLoop el = context.getEventLoop();
-      Runnable toRun = () -> context.execute(this, false);
+      Runnable toRun = () -> context.runOnContext(this);
       if (periodic) {
         future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
       } else {
@@ -651,7 +651,7 @@ public class VertxImpl implements VertxInternal {
       metrics.timerCreated(timerID);
     }
 
-    public void run() throws Exception {
+    public void handle(Void v) {
       try {
         handler.handle(timerID);
       } finally {

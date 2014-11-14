@@ -123,7 +123,7 @@ public abstract class ContextImpl implements Context {
     }
   }
 
-  public abstract void doExecute(ContextTask task);
+  protected abstract void executeAsync(Handler<Void> task);
 
   public abstract boolean isEventLoopContext();
 
@@ -133,19 +133,18 @@ public abstract class ContextImpl implements Context {
     return !isEventLoopContext();
   }
 
-  public void execute(ContextTask task, boolean expectRightThread) {
-    if (isOnCorrectContextThread(expectRightThread)) {
-      wrapTask(task, true).run();
-    } else {
-      doExecute(task);
-    }
+  // We should already be on the event loop, but check this anyway, then execute directly
+  public void executeSync(ContextTask task) {
+    checkCorrectThread();
+    wrapTask(task, null, true).run();
   }
 
-  protected abstract boolean isOnCorrectContextThread(boolean expectRightThread);
+  protected abstract void checkCorrectThread();
 
-  public void runOnContext(final Handler<Void> task) {
+  // Run the task asynchronously on this same context
+  public void runOnContext(Handler<Void> task) {
     try {
-      execute(() -> task.handle(null), false);
+      executeAsync(task);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
@@ -182,7 +181,7 @@ public abstract class ContextImpl implements Context {
           res.fail(e);
         }
         if (resultHandler != null) {
-          execute(() -> res.setHandler(resultHandler), false);
+          runOnContext(v -> res.setHandler(resultHandler));
         }
       });
     } catch (RejectedExecutionException ignore) {
@@ -218,14 +217,18 @@ public abstract class ContextImpl implements Context {
     contextThread.executeEnd();
   }
 
-  protected Runnable wrapTask(ContextTask task, boolean checkThread) {
+  protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {
     return () -> {
       if (checkThread) {
         executeStart();
       }
       try {
         vertx.setContext(ContextImpl.this);
-        task.run();
+        if (cTask != null) {
+          cTask.run();
+        } else {
+          hTask.handle(null);
+        }
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
       } finally {
