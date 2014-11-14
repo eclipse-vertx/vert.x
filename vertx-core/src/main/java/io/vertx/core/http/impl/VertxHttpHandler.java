@@ -68,9 +68,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       }
     }
     if (connection != null) {
-      // we are reading from the channel
-      // We need to do this since it's possible the server is being used from a worker context
-      context.execute(() -> doMessageReceived(connection, chctx, msg), true);
+      context.executeSync(() -> doMessageReceived(connection, chctx, msg));
     } else {
       // We execute this directly as we don't have a context yet, the context will have to be set manually
       // inside doMessageReceived();

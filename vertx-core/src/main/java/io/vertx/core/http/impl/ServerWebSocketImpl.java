@@ -33,7 +33,7 @@ import io.vertx.core.net.impl.ConnectionBase;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
+public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebSocket {
 
   private final String uri;
   private final String path;

@@ -16,6 +16,7 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 
 import java.util.concurrent.Executor;
@@ -31,8 +32,8 @@ public class MultiThreadedWorkerContext extends WorkerContext {
   }
 
   @Override
-  public void doExecute(ContextTask task) {
-    workerExec.execute(wrapTask(task, false));
+  public void executeAsync(Handler<Void> task) {
+    workerExec.execute(wrapTask(null, task, false));
   }
 
   @Override

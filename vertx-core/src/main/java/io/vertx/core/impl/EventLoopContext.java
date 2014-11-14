@@ -16,6 +16,7 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -34,8 +35,8 @@ public class EventLoopContext extends ContextImpl {
     super(vertx, bgExec, deploymentID, config, tccl);
   }
 
-  public void doExecute(ContextTask task) {
-    getEventLoop().execute(wrapTask(task, true));
+  public void executeAsync(Handler<Void> task) {
+    getEventLoop().execute(wrapTask(null, task, true));
   }
 
   @Override
@@ -49,17 +50,13 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  protected boolean isOnCorrectContextThread(boolean expectRightThread) {
+  protected void checkCorrectThread() {
     Thread current = Thread.currentThread();
-    boolean correct = current == contextThread;
-    if (expectRightThread) {
-      if (!(current instanceof VertxThread)) {
-        throw new IllegalStateException("Expected to be on Vert.x thread, but actually on: " + current);
-      } else if (!correct && contextThread != null) {
-        throw new IllegalStateException("Event delivered on unexpected thread " + current + " expected: " + contextThread);
-      }
+    if (!(current instanceof VertxThread)) {
+      throw new IllegalStateException("Expected to be on Vert.x thread, but actually on: " + current);
+    } else if (contextThread != null && current != contextThread) {
+      throw new IllegalStateException("Event delivered on unexpected thread " + current + " expected: " + contextThread);
     }
-    return correct;
   }
 
 }

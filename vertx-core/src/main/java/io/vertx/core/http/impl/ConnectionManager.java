@@ -101,7 +101,7 @@ public abstract class ConnectionManager {
         // Maybe the connection can be reused
         Waiter waiter = waiters.poll();
         if (waiter != null) {
-          conn.getContext().execute(() -> waiter.handler.handle(conn), true);
+          conn.getContext().executeSync(() -> waiter.handler.handle(conn));
         }
       }
     }
@@ -141,7 +141,7 @@ public abstract class ConnectionManager {
     private void checkReuseConnection(ClientConnection conn) {
       Waiter waiter = waiters.poll();
       if (waiter != null) {
-        conn.getContext().execute(() -> waiter.handler.handle(conn), true);
+        conn.getContext().executeSync(() -> waiter.handler.handle(conn));
       } else {
         // Close it - we don't keep connections hanging around - even keep alive ones if there are
         // no pending requests

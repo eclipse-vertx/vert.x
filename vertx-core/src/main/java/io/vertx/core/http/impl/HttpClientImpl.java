@@ -337,7 +337,7 @@ public class HttpClientImpl implements HttpClient {
 
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
                          ConnectionLifeCycleListener listener) {
-    context.execute(() -> createConn(context, port, host, ch, connectHandler, listener), true);
+    context.executeSync(() -> createConn(context, port, host, ch, connectHandler, listener));
   }
 
   private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
@@ -361,7 +361,7 @@ public class HttpClientImpl implements HttpClient {
     Handler<Throwable> exHandler =
       connectionExceptionHandler == null ? (exceptionHandler == null ? log::error : exceptionHandler ): connectionExceptionHandler;
 
-    context.execute(() -> {
+    context.executeSync(() -> {
       listener.connectionClosed(null);
       try {
         ch.close();
@@ -372,7 +372,7 @@ public class HttpClientImpl implements HttpClient {
       } else {
         log.error(t);
       }
-    }, true);
+    });
   }
 
   private Handler<HttpClientResponse> connectHandler(Handler<HttpClientResponse> responseHandler) {
@@ -421,10 +421,10 @@ public class HttpClientImpl implements HttpClient {
           }
 
           @Override
-          public NetSocket netSocket() {
+          public synchronized NetSocket netSocket() {
             if (!resumed) {
               resumed = true;
-              vertx.getContext().execute(socket::resume, false); // resume the socket now as the user had the chance to register a dataHandler
+              vertx.getContext().runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
             }
             return socket;
           }

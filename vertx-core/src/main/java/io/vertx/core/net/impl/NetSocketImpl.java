@@ -233,13 +233,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       channel.pipeline().addFirst(sslHandler);
     }
     sslHandler.handshakeFuture().addListener(future -> {
-      context.execute(() -> {
+      context.executeSync(() -> {
         if (future.isSuccess()) {
           handler.handle(null);
         } else {
           log.error(future.cause());
         }
-      }, true);
+      });
     });
     return this;
   }

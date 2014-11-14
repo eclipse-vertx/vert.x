@@ -32,7 +32,7 @@ import io.vertx.core.net.impl.ConnectionBase;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
+public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
 
   public WebSocketImpl(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize) {

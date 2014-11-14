@@ -706,7 +706,7 @@ public class EventBusImpl implements EventBus {
     @SuppressWarnings("unchecked")
     Message<T> copied = msg.copyBeforeReceive();
 
-    holder.context.execute(() -> {
+    holder.context.runOnContext((v) -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
       try {
@@ -719,7 +719,7 @@ public class EventBusImpl implements EventBus {
           unregisterHandler(msg.address(), holder.handler);
         }
       }
-    }, false);
+    });
   }
 
   private void checkStarted() {
@@ -981,8 +981,8 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public int getMaxBufferedMessages() {
-      return 0;
+    public synchronized int getMaxBufferedMessages() {
+      return maxBufferedMessages;
     }
 
     @Override
