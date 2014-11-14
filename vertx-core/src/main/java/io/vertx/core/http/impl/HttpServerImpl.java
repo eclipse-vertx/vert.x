@@ -290,17 +290,21 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> done) {
-    if (wsStream.endHandler() != null || requestStream.endHandler() != null) {
+    final Handler<Void> wsEndHandler = wsStream.endHandler();
+    final Handler<Void> requestEndHandler = requestStream.endHandler();
+    if (wsEndHandler != null || requestEndHandler != null) {
+      wsStream.endHandler = null;
+      requestStream.endHandler = null;
       Handler<AsyncResult<Void>> next = done;
       done = new AsyncResultHandler<Void>() {
         @Override
         public void handle(AsyncResult<Void> event) {
           if (event.succeeded()) {
-            if (wsStream.endHandler() != null) {
-              wsStream.endHandler().handle(event.result());
+            if (wsEndHandler != null) {
+              wsEndHandler.handle(event.result());
             }
-            if (requestStream.endHandler() != null) {
-              requestStream.endHandler().handle(event.result());
+            if (requestEndHandler != null) {
+              requestEndHandler.handle(event.result());
             }
           }
           if (next != null) {
@@ -648,7 +652,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
     private Handler<C> handler;
     private boolean paused;
-    private Handler<Void> endHandler;
+    Handler<Void> endHandler;
 
     Handler<C> handler() {
       synchronized (HttpServerImpl.this) {

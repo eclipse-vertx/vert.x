@@ -25,6 +25,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -927,6 +928,33 @@ public class WebsocketTest extends VertxTestBase {
         assertTrue(ar.succeeded());
         assertTrue(closed.get());
         testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testWebsocketStreamCallbackNotUnderLock() {
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    AtomicInteger done = new AtomicInteger();
+    ServerWebSocketStream stream = server.websocketStream();
+    stream.handler(req -> { });
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(stream));
+      assertFalse(Thread.holdsLock(server));
+      if (done.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    server.listen(ar -> {
+      assertFalse(Thread.holdsLock(server));
+      server.close(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertFalse(Thread.holdsLock(server));
+        if (done.incrementAndGet() == 2) {
+          testComplete();
+        }
       });
     });
     await();

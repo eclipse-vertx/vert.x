@@ -116,6 +116,8 @@ public class DatagramTest extends VertxTestBase {
     peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());
       peer2.endHandler(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertFalse(Thread.holdsLock(peer2));
         testComplete();
       });
       peer2.close();

@@ -1074,19 +1074,11 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   private void testCompletingUnregistrationOfRegisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
-    AtomicInteger count = new AtomicInteger(0);
     consumer.handler(msg -> {});
     consumer.endHandler(v -> {
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
+      testComplete();
     });
-    consumer.unregister(ar -> {
-      assertTrue(ar.succeeded());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
+    consumer.unregister();
     await();
   }
 
@@ -1103,18 +1095,10 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   private void testCompletingUnregistrationUnregisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
-    AtomicInteger count = new AtomicInteger(0);
     readStream.endHandler(v -> {
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
+      testComplete();
     });
-    consumer.unregister(ar -> {
-      assertTrue(ar.succeeded());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
+    consumer.unregister();
     await();
   }
 
@@ -1213,6 +1197,57 @@ public class LocalEventBusTest extends EventBusTestBase {
     WriteStream<String> producer = eb.sender(ADDRESS2);
     Pump.pump(consumer, producer);
     producer.write(str);
+  }
+
+  @Test
+  public void testConsumerHandlesCompletionNotUnderLock1() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.completionHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(consumer));
+      testComplete();
+    });
+    consumer.handler(msg -> {
+    });
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesCompletionNotUnderLock2() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+    });
+    consumer.completionHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(consumer));
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesEndNotUnderLock1() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {});
+    consumer.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(consumer));
+      testComplete();
+    });
+    consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesEndNotUnderLock2() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(consumer));
+      testComplete();
+    });
+    consumer.unregister();
+    await();
   }
 }
 

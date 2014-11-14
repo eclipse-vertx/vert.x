@@ -150,10 +150,14 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected synchronized void handleClosed() {
-    metrics.disconnected(remoteAddress());
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+  protected void handleClosed() {
+    Handler<Void> callback = null;
+    synchronized(this) {
+      metrics.disconnected(remoteAddress());
+      callback = closeHandler;
+    }
+    if (callback != null) {
+      callback.handle(null);
     }
   }
 

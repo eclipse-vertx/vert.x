@@ -90,6 +90,7 @@ public class TimerTest extends VertxTestBase {
     final AtomicLong id = new AtomicLong(-1);
     id.set(vertx.setPeriodic(delay, new Handler<Long>() {
       int count;
+
       public void handle(Long timerID) {
         assertEquals(id.get(), timerID.longValue());
         count++;
@@ -110,6 +111,7 @@ public class TimerTest extends VertxTestBase {
     id.set(vertx.setTimer(delay, new Handler<Long>() {
       int count;
       boolean fired;
+
       public void handle(Long timerID) {
         assertFalse(fired);
         fired = true;
@@ -267,6 +269,31 @@ public class TimerTest extends VertxTestBase {
         testComplete();
       }
     });
+    await();
+  }
+
+  @Test
+  public void testTimeoutStreamEndCallbackNotUnderLock1() {
+    TimeoutStream stream = vertx.timerStream(10);
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(stream));
+      testComplete();
+    });
+    stream.handler(id -> {});
+    await();
+  }
+
+  // This test does not pass 
+  @Test
+  public void testTimeoutStreamEndCallbackNotUnderLock2() {
+    TimeoutStream stream = vertx.periodicStream(10);
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertFalse(Thread.holdsLock(stream));
+      testComplete();
+    });
+    stream.handler(id -> stream.cancel());
     await();
   }
 }
