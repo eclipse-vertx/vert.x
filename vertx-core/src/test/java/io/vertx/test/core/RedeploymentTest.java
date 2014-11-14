@@ -19,14 +19,15 @@ package io.vertx.test.core;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -42,6 +43,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class RedeploymentTest extends VertxTestBase {
 
+  @Rule
+  public TemporaryFolder testFolder = new TemporaryFolder();
+
   protected File tempDir;
   protected File cpDir;
   protected File jarFile;
@@ -51,8 +55,7 @@ public class RedeploymentTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    Path path = Files.createTempDirectory("vertx-redeploytest");
-    tempDir = path.toFile();
+    tempDir = testFolder.newFolder();
     cpDir = new File(tempDir, "cpDir");
     assertTrue(cpDir.mkdir());
     // Copy one jar into that directory

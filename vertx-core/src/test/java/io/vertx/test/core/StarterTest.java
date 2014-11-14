@@ -21,7 +21,9 @@ import io.vertx.core.Starter;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -150,29 +152,28 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> !t.isAlive());
   }
 
+  @Rule
+  public TemporaryFolder testFolder = new TemporaryFolder();
+
+
   @Test
   public void testRunVerticleWithConfFile() throws Exception {
-    Path tempDir = Files.createTempDirectory("conf");
+    Path tempDir = testFolder.newFolder().toPath();
     Path tempFile = Files.createTempFile(tempDir, "conf", "json");
-    try {
-      Starter starter = new Starter();
-      JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
-      Files.write(tempFile, conf.encode().getBytes());
-      String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
-      Thread t = new Thread(() -> {
-        starter.run(args);
-      });
-      t.start();
-      waitUntil(() -> TestVerticle.instanceCount.get() == 1);
-      assertTrue(t.isAlive()); // It's blocked
-      assertEquals(conf, TestVerticle.conf);
-      // Now unblock it
-      starter.unblock();
-      waitUntil(() -> !t.isAlive());
-    } finally {
-      Files.delete(tempFile);
-      Files.delete(tempDir);
-    }
+    Starter starter = new Starter();
+    JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
+    Files.write(tempFile, conf.encode().getBytes());
+    String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
+    Thread t = new Thread(() -> {
+      starter.run(args);
+    });
+    t.start();
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertTrue(t.isAlive()); // It's blocked
+    assertEquals(conf, TestVerticle.conf);
+    // Now unblock it
+    starter.unblock();
+    waitUntil(() -> !t.isAlive());
   }
 
   @Test
