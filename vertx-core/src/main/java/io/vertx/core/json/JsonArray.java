@@ -271,8 +271,32 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
-    JsonArray that = (JsonArray) o;
-    return list.equals(that.list);
+    return arrayEquals(list, o);
+  }
+
+  static boolean arrayEquals(List<?> l1, Object o2) {
+    List<?> l2;
+    if (o2 instanceof JsonArray) {
+      l2 = ((JsonArray) o2).list;
+    } else if (o2 instanceof List<?>) {
+      l2 = (List<?>) o2;
+    } else {
+      return false;
+    }
+    if (l1.size() != l2.size())
+      return false;
+    Iterator<?> iter = l2.iterator();
+    for (Object entry : l1) {
+      Object other = iter.next();
+      if (entry == null) {
+        if (other != null) {
+          return false;
+        }
+      } else if (!JsonObject.equals(entry, other)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override

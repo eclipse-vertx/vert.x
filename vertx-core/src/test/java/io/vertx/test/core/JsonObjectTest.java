@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1378,6 +1379,78 @@ public class JsonObjectTest {
     JsonObject deserialized = new JsonObject();
     deserialized.readFromBuffer(buff);
     assertEquals(jsonObject, deserialized);
+  }
+
+  @Test
+  public void testNumberEquality() {
+    assertNumberEquals(4, 4);
+    assertNumberEquals(4, (long)4);
+    assertNumberEquals(4, 4f);
+    assertNumberEquals(4, 4D);
+    assertNumberEquals((long)4, (long)4);
+    assertNumberEquals((long)4, 4f);
+    assertNumberEquals((long)4, 4D);
+    assertNumberEquals(4f, 4f);
+    assertNumberEquals(4f, 4D);
+    assertNumberEquals(4D, 4D);
+    assertNumberEquals(4.1D, 4.1D);
+    assertNumberEquals(4.1f, 4.1f);
+    assertNumberNotEquals(4.1f, 4.1D);
+    assertNumberEquals(4.5D, 4.5D);
+    assertNumberEquals(4.5f, 4.5f);
+    assertNumberEquals(4.5f, 4.5D);
+    assertNumberNotEquals(4, 5);
+    assertNumberNotEquals(4, (long)5);
+    assertNumberNotEquals(4, 5D);
+    assertNumberNotEquals(4, 5f);
+    assertNumberNotEquals((long)4, (long)5);
+    assertNumberNotEquals((long)4, 5D);
+    assertNumberNotEquals((long)4, 5f);
+    assertNumberNotEquals(4f, 5f);
+    assertNumberNotEquals(4f, 5D);
+    assertNumberNotEquals(4D, 5D);
+  }
+
+  private void assertNumberEquals(Number value1, Number value2) {
+    JsonObject o1 = new JsonObject().put("key", value1);
+    JsonObject o2 = new JsonObject().put("key", value2);
+    if (!o1.equals(o2)) {
+      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
+          value2.getClass().getSimpleName() + ":" + value2);
+    }
+    JsonArray a1 = new JsonArray().add(value1);
+    JsonArray a2 = new JsonArray().add(value2);
+    if (!a1.equals(a2)) {
+      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
+          value2.getClass().getSimpleName() + ":" + value2);
+    }
+  }
+
+  private void assertNumberNotEquals(Number value1, Number value2) {
+    JsonObject o1 = new JsonObject().put("key", value1);
+    JsonObject o2 = new JsonObject().put("key", value2);
+    if (o1.equals(o2)) {
+      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " != " +
+          value2.getClass().getSimpleName() + ":" + value2);
+    }
+  }
+
+  @Test
+  public void testJsonObjectEquality() {
+    JsonObject obj = new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3)));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3))));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 3L))));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", new JsonObject().put("def", 3))));
+    assertEquals(obj, new JsonObject(Collections.singletonMap("abc", new JsonObject().put("def", 3L))));
+    assertNotEquals(obj, new JsonObject(Collections.singletonMap("abc", Collections.singletonMap("def", 4))));
+    assertNotEquals(obj, new JsonObject(Collections.singletonMap("abc", new JsonObject().put("def", 4))));
+    JsonArray array = new JsonArray(Collections.singletonList(Collections.singletonMap("def", 3)));
+    assertEquals(array, new JsonArray(Collections.singletonList(Collections.singletonMap("def", 3))));
+    assertEquals(array, new JsonArray(Collections.singletonList(Collections.singletonMap("def", 3L))));
+    assertEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 3))));
+    assertEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 3L))));
+    assertNotEquals(array, new JsonArray(Collections.singletonList(Collections.singletonMap("def", 4))));
+    assertNotEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 4))));
   }
 
   private JsonObject createJsonObject() {

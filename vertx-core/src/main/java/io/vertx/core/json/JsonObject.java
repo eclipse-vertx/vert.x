@@ -381,8 +381,60 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
-    JsonObject that = (JsonObject) o;
-    return map.equals(that.map);
+    return objectEquals(map, o);
+  }
+
+  static boolean objectEquals(Map<?, ?> m1, Object o2) {
+    Map<?, ?> m2;
+    if (o2 instanceof JsonObject) {
+      m2 = ((JsonObject) o2).map;
+    } else if (o2 instanceof Map<?, ?>) {
+      m2 = (Map<?, ?>) o2;
+    } else {
+      return false;
+    }
+    if (m1.size() != m2.size())
+      return false;
+    for (Map.Entry<?, ?> entry : m1.entrySet()) {
+      Object val = entry.getValue();
+      if (val == null) {
+        if (m2.get(entry.getKey()) != null) {
+          return false;
+        }
+      } else {
+        if (!equals(entry.getValue(), m2.get(entry.getKey()))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  static boolean equals(Object o1, Object o2) {
+    if (o1 == o2)
+      return true;
+    if (o1 instanceof JsonObject) {
+      return objectEquals(((JsonObject) o1).map, o2);
+    }
+    if (o1 instanceof Map<?, ?>) {
+      return objectEquals((Map<?, ?>) o1, o2);
+    }
+    if (o1 instanceof JsonArray) {
+      return JsonArray.arrayEquals(((JsonArray) o1).getList(), o2);
+    }
+    if (o1 instanceof List<?>) {
+      return JsonArray.arrayEquals((List<?>) o1, o2);
+    }
+    if (o1 instanceof Number && o2 instanceof Number && o1.getClass() != o2.getClass()) {
+      Number n1 = (Number) o1;
+      Number n2 = (Number) o2;
+      if (o1 instanceof Float || o1 instanceof Double || o2 instanceof Float || o2 instanceof Double) {
+        return n1.doubleValue() == n2.doubleValue();
+      } else {
+        return n1.longValue() == n2.longValue();
+      }
+    }
+    return o1.equals(o2);
   }
 
   @Override
@@ -440,5 +492,4 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       mapIter.remove();
     }
   }
-
 }
