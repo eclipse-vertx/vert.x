@@ -47,6 +47,7 @@ public class AsyncTestBase {
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
 
   protected void setUp() throws Exception {
+    tearingDown = false;
     latch = new CountDownLatch(1);
     throwable = null;
     testCompleteCalled = false;
@@ -71,7 +72,7 @@ public class AsyncTestBase {
 
   protected void testComplete() {
     if (tearingDown) {
-      log.warn("testComplete called after test has completed");
+      throw new IllegalStateException("testComplete called after test has completed");
     }
     checkThread();
     if (testCompleteCalled) {

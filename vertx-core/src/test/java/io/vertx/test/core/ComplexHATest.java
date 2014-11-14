@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -27,10 +28,10 @@ import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
@@ -47,7 +48,7 @@ public class ComplexHATest extends VertxTestBase {
 
   private Random random = new Random();
 
-  protected int maxVerticlesPerNode = 20;
+  protected final int maxVerticlesPerNode = 20;
   protected Set<Deployment>[] deploymentSnapshots;
   protected volatile int totDeployed;
   protected volatile int killedNode;
@@ -157,7 +158,7 @@ public class ComplexHATest extends VertxTestBase {
   }
 
   protected Set<Deployment> takeDeploymentSnapshot(int pos) {
-    Set<Deployment> snapshot = new HashSet<>();
+    Set<Deployment> snapshot = new ConcurrentHashSet<>();
     VertxInternal v = (VertxInternal)vertices[pos];
     for (String depID: v.deployments()) {
       snapshot.add(v.getDeployment(depID));
@@ -181,7 +182,7 @@ public class ComplexHATest extends VertxTestBase {
 
   protected void createNodes(int nodes) {
     startNodes(nodes, new VertxOptions().setHAEnabled(true));
-    aliveNodes = new ArrayList<>();
+    aliveNodes = new CopyOnWriteArrayList<>();
     for (int i = 0; i < nodes; i++) {
       aliveNodes.add(i);
       int pos = i;
@@ -195,7 +196,7 @@ public class ComplexHATest extends VertxTestBase {
   protected void failedOverOnto(int node) {
     checkDeployments();
     checkHasDeployments(node, killedNode);
-    if (aliveNodes.size() >= 2) {
+    if (aliveNodes.size() > 1) {
       undeployRandomVerticles(() -> {
         deployRandomVerticles(() -> {
           killRandom();
