@@ -229,7 +229,7 @@ public class NetServerImpl implements NetServer, Closeable {
           // Call with expectRightThread = false as if server is already listening
           // Netty will call future handler immediately with calling thread
           // which might be a non Vert.x thread (if running embedded)
-          listenContext.execute(() -> listenHandler.handle(res), false);
+          listenContext.runOnContext(v -> listenHandler.handle(res));
         } else if (!actualServer.bindFuture.isSuccess()) {
           // No handler - log so user can see failure
           log.error(actualServer.bindFuture.cause());
@@ -372,7 +372,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   private void executeCloseDone(ContextImpl closeContext, Handler<AsyncResult<Void>> done, Exception e) {
     if (done != null) {
-      closeContext.execute(() -> done.handle(Future.completedFuture(e)), false);
+      closeContext.runOnContext(v -> done.handle(Future.completedFuture(e)));
     }
   }
 
@@ -410,7 +410,7 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     private void connected(Channel ch, HandlerHolder<NetSocket> handler) {
-      handler.context.execute(() -> doConnected(ch, handler), true);
+      handler.context.executeSync(() -> doConnected(ch, handler));
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {

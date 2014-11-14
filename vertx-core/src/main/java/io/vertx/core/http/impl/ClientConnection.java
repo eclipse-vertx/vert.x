@@ -159,18 +159,18 @@ class ClientConnection extends ConnectionBase {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       super.channelInactive(ctx);
-      context.execute(() -> {
+      context.executeSync(() -> {
         // if still handshaking this means we not got any response back from the server and so need to notify the client
         // about it as otherwise the client would never been notified.
         if (handshaking) {
           handleException(new WebSocketHandshakeException("Connection closed while handshake in process"));
         }
-      }, true);
+      });
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      context.execute(() -> {
+      context.executeSync(() -> {
         synchronized (ClientConnection.this) {
           if (handshaker != null && handshaking) {
             if (msg instanceof HttpResponse) {
@@ -209,7 +209,7 @@ class ClientConnection extends ConnectionBase {
             buffered.add(msg);
           }
         }
-      }, true);
+      });
     }
 
     private void handleException(WebSocketHandshakeException e) {

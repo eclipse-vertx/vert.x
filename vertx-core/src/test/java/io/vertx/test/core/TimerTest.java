@@ -208,10 +208,12 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testTimerPause() throws Exception {
-    ReadStream<Long> timer = vertx.timerStream(10);
-    timer.handler(l -> fail());
-    timer.endHandler(l -> testComplete());
-    timer.pause();
+    vertx.runOnContext(v -> {
+      ReadStream<Long> timer = vertx.timerStream(10);
+      timer.handler(l -> fail());
+      timer.endHandler(l -> testComplete());
+      timer.pause();
+    });
     await();
   }
 

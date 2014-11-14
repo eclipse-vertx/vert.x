@@ -16,6 +16,7 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 
 import java.util.concurrent.Executor;
@@ -34,8 +35,8 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  public void doExecute(ContextTask task) {
-    workerExec.execute(wrapTask(task, true));
+  public void executeAsync(Handler<Void> task) {
+    workerExec.execute(wrapTask(null, task, true));
   }
 
   @Override
@@ -49,8 +50,8 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  protected boolean isOnCorrectContextThread(boolean expectRightThread) {
-    return false;
+  protected void checkCorrectThread() {
+    // NOOP
   }
 
 }

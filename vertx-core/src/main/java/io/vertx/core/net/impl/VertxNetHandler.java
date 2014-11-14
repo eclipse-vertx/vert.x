@@ -40,7 +40,7 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
     if (sock != null) {
       ByteBuf buf = (ByteBuf) msg;
       // We need to do this since it's possible the server is being used from a worker context
-      context.execute(() -> sock.handleDataReceived(Buffer.buffer(buf)), true);
+      context.executeSync(() -> sock.handleDataReceived(Buffer.buffer(buf)));
     } else {
       // just discard
     }

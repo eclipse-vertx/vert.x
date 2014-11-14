@@ -144,7 +144,7 @@ public abstract class ConnectionBase {
   protected synchronized void handleException(Throwable t) {
     metrics.exceptionOccurred(remoteAddress(), t);
     if (exceptionHandler != null) {
-      context.execute(() -> exceptionHandler.handle(t), false);
+      exceptionHandler.handle(t);
     } else {
       log.error(t);
     }
@@ -162,17 +162,17 @@ public abstract class ConnectionBase {
   protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
     if (future != null) {
       future.addListener(channelFuture -> {
-        if (completionHandler != null) {
-          context.execute(() -> {
+        context.executeSync(() -> {
+          if (completionHandler != null) {
             if (channelFuture.isSuccess()) {
               completionHandler.handle(Future.completedFuture());
             } else {
               completionHandler.handle(Future.completedFuture(channelFuture.cause()));
             }
-          }, true);
-        } else if (!channelFuture.isSuccess()) {
-          handleException(channelFuture.cause());
-        }
+          } else if (!channelFuture.isSuccess()) {
+            handleException(channelFuture.cause());
+          }
+        });
       });
     }
   }
@@ -209,7 +209,7 @@ public abstract class ConnectionBase {
       });
       return writeFuture;
     } catch (IOException e) {
-      handleException(e);
+      context.runOnContext(v ->  handleException(e));
       return null;
     }
   }
