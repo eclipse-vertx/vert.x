@@ -1257,6 +1257,23 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testConsumerHandlesEndAsynchronously2() {
+    eb.consumer(ADDRESS1).handler(v -> {});
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+    });
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.endHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      testComplete();
+    });
+    consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesEndAsynchronously3() {
     MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);

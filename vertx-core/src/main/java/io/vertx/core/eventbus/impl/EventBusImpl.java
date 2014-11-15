@@ -600,7 +600,7 @@ public class EventBusImpl implements EventBus {
                 callCompletionHandlerAsync(completionHandler);
               }
             } else if (completionHandler != null) {
-              callCompletionHandler(completionHandler);
+              callCompletionHandlerAsync(completionHandler);
             }
             holder.context.removeCloseHook(new HandlerEntry<T>(address, handler));
             break;
@@ -612,10 +612,6 @@ public class EventBusImpl implements EventBus {
 
   private <T> void unregisterHandler(String address, Handler<Message<T>> handler) {
     unregisterHandler(address, handler, emptyHandler());
-  }
-
-  private void callCompletionHandler(Handler<AsyncResult<Void>> completionHandler) {
-    completionHandler.handle(Future.completedFuture());
   }
 
   private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
