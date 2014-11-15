@@ -167,19 +167,19 @@ public class RedeploymentTest extends VertxTestBase {
 
   @Test
   public void testRedeploySourceVerticle() throws Exception {
-    Files.copy(Paths.get(resolvePath("src/redeployverticles/RedeploySourceVerticle.java")),
+    Files.copy(Paths.get(resolvePath("src/test/resources/redeployverticles/RedeploySourceVerticle.java")),
                new File(cpDir, "RedeploySourceVerticle.java").toPath());
     testRedeploy("java:RedeploySourceVerticle.java", () -> touchFile(cpDir, "RedeploySourceVerticle.java"), 1, 0, 1);
   }
 
   @Test
   public void testRedeployBrokenSourceVerticleThenFixIt() throws Exception {
-    Files.copy(Paths.get(resolvePath("src/redeployverticles/RedeploySourceVerticle.java")),
+    Files.copy(Paths.get(resolvePath("src/test/resources/redeployverticles/RedeploySourceVerticle.java")),
       new File(cpDir, "RedeploySourceVerticle.java").toPath());
     testRedeploy("java:RedeploySourceVerticle.java", () -> {
       // Replace with broken source flile
       try {
-        Files.copy(Paths.get(resolvePath("src/redeployverticles/BrokenRedeploySourceVerticle.java")),
+        Files.copy(Paths.get(resolvePath("src/test/resources/redeployverticles/BrokenRedeploySourceVerticle.java")),
           new File(cpDir, "RedeploySourceVerticle.java").toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (Exception e) {
         throw new VertxException(e);
@@ -187,7 +187,7 @@ public class RedeploymentTest extends VertxTestBase {
       vertx.setTimer(2000, id -> {
         // Copy back the fixed file
         try {
-          Files.copy(Paths.get(resolvePath("src/redeployverticles/RedeploySourceVerticle.java")),
+          Files.copy(Paths.get(resolvePath("src/test/resources/redeployverticles/RedeploySourceVerticle.java")),
             new File(cpDir, "RedeploySourceVerticle.java").toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
           throw new VertxException(e);
