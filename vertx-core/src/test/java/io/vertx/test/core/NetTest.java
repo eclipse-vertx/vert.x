@@ -1887,7 +1887,6 @@ public class NetTest extends VertxTestBase {
       });
       stack2.set(null);
     });
-    stack.set(null);
     await();
   }
 

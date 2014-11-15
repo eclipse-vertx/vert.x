@@ -124,7 +124,6 @@ public class DatagramTest extends VertxTestBase {
       });
       peer2.close();
     });
-    stack.set(null);
     await();
   }
 

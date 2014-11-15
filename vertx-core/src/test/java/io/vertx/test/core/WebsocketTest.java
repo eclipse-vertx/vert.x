@@ -962,7 +962,6 @@ public class WebsocketTest extends VertxTestBase {
       });
       stack2.set(null);
     });
-    stack.set(null);
     await();
   }
 

@@ -283,7 +283,6 @@ public class TimerTest extends VertxTestBase {
       testComplete();
     });
     stream.handler(id -> {});
-    stack.set(null);
     await();
   }
 

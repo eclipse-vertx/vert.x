@@ -314,7 +314,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       assertNull(stack.get());
       testComplete();
     });
-    stack.set(null);
     consumer.handler(msg -> {});
     await();
   }
@@ -332,7 +331,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       assertNull(stack.get());
       testComplete();
     });
-    stack.set(null);
     await();
   }
 }

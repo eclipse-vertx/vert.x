@@ -1219,7 +1219,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertTrue(vertx.context().isEventLoopContext());
       testComplete();
     });
-    stack.set(null);
     consumer.handler(msg -> {
     });
     await();
@@ -1237,7 +1236,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertTrue(vertx.context().isEventLoopContext());
       testComplete();
     });
-    stack.set(null);
     await();
   }
 
@@ -1253,7 +1251,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertTrue(vertx.context().isEventLoopContext());
       testComplete();
     });
-    stack.set(null);
     consumer.unregister();
     await();
   }
@@ -1268,7 +1265,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertTrue(vertx.context().isEventLoopContext());
       testComplete();
     });
-    stack.set(null);
     consumer.unregister();
     await();
   }
