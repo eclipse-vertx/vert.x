@@ -21,3 +21,4 @@ test-tmp
 *.class
 ScratchPad.java
 *.swp
+.vertx
