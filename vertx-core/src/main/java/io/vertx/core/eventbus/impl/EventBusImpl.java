@@ -596,10 +596,10 @@ public class EventBusImpl implements EventBus {
               handlerMap.remove(address);
               if (subs != null && !holder.localOnly) {
                 removeSub(address, serverID, completionHandler);
-              } else if (completionHandler != null) {
+              } else {
                 callCompletionHandlerAsync(completionHandler);
               }
-            } else if (completionHandler != null) {
+            } else {
               callCompletionHandlerAsync(completionHandler);
             }
             holder.context.removeCloseHook(new HandlerEntry<T>(address, handler));
@@ -611,13 +611,15 @@ public class EventBusImpl implements EventBus {
   }
 
   private <T> void unregisterHandler(String address, Handler<Message<T>> handler) {
-    unregisterHandler(address, handler, emptyHandler());
+    unregisterHandler(address, handler, null);
   }
 
   private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
-    vertx.runOnContext(v -> {
-      completionHandler.handle(Future.completedFuture());
-    });
+    if (completionHandler != null) {
+      vertx.runOnContext(v -> {
+        completionHandler.handle(Future.completedFuture());
+      });
+    }
   }
 
   private void cleanSubsForServerID(ServerID theServerID) {
@@ -728,13 +730,6 @@ public class EventBusImpl implements EventBus {
     if (serverID == null) {
       throw new IllegalStateException("Event Bus is not started");
     }
-  }
-
-  private static final Handler<?> _emptyHandler = e -> {};
-
-  @SuppressWarnings("unchecked")
-  private static <T> Handler<T> emptyHandler() {
-    return (Handler<T>) _emptyHandler;
   }
 
   private static class HandlerHolder<T> {
@@ -925,7 +920,7 @@ public class EventBusImpl implements EventBus {
 
     // Called by context on undeploy
     public void close(Handler<AsyncResult<Void>> completionHandler) {
-      unregisterHandler(this.address, this.handler, emptyHandler());
+      unregisterHandler(this.address, this.handler, null);
       completionHandler.handle(Future.completedFuture());
     }
 
@@ -1004,13 +999,17 @@ public class EventBusImpl implements EventBus {
     }
 
     @Override
-    public void unregister() {
-      unregister(emptyHandler());
+    public synchronized void unregister() {
+      doUnregister(null);
     }
 
     @Override
     public synchronized void unregister(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
+      doUnregister(completionHandler);
+    }
+
+    private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
       if (endHandler != null) {
         Handler<AsyncResult<Void>> handler = completionHandler;
         completionHandler = ar -> {
@@ -1018,7 +1017,9 @@ public class EventBusImpl implements EventBus {
             exceptionHandler.handle(ar.cause());
           }
           endHandler.handle(null);
-          handler.handle(ar);
+          if (handler != null) {
+            handler.handle(ar);
+          }
         };
       }
       if (registered) {
