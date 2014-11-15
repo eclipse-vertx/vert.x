@@ -48,6 +48,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -327,36 +328,43 @@ public class HazelcastClusterManager implements ClusterManager, MembershipListen
 
     @Override
     public void get(Handler<AsyncResult<Long>> resultHandler) {
+      Objects.requireNonNull(resultHandler, "resultHandler");
       vertx.executeBlocking(atomicLong::get, resultHandler);
     }
 
     @Override
     public void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+      Objects.requireNonNull(resultHandler, "resultHandler");
       vertx.executeBlocking(atomicLong::incrementAndGet, resultHandler);
     }
 
     @Override
     public void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
+      Objects.requireNonNull(resultHandler, "resultHandler");
       vertx.executeBlocking(atomicLong::getAndIncrement, resultHandler);
     }
 
     @Override
     public void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+      Objects.requireNonNull(resultHandler, "resultHandler");
       vertx.executeBlocking(atomicLong::decrementAndGet, resultHandler);
     }
 
     @Override
     public void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
+      Objects.requireNonNull(resultHandler, "resultHandler");
       vertx.executeBlocking(() ->  atomicLong.addAndGet(value), resultHandler);
     }
 
     @Override
     public void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
+      Objects.requireNonNull(resultHandler, "resultHandler");
       vertx.executeBlocking(() ->  atomicLong.getAndAdd(value), resultHandler);
     }
 
     @Override
     public void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
+      Objects.requireNonNull(resultHandler, "resultHandler");
       vertx.executeBlocking(() ->  atomicLong.compareAndSet(expected, value), resultHandler);
     }
   }
