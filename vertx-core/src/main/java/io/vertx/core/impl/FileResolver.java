@@ -44,21 +44,8 @@ import java.util.UUID;
 public class FileResolver {
 
   private final Vertx vertx;
+  private final boolean enableCaching = System.getProperty("vertx.disableFileCaching") == null;
   private File cacheDir;
-
-  private void setupCacheDir() {
-    if (cacheDir == null) {
-      String cacheDirName = ".vertx/file-cache-" + UUID.randomUUID().toString();
-      cacheDir = new File(cacheDirName);
-      if (cacheDir.exists()) {
-        vertx.fileSystem().deleteSyncRecursive(cacheDir.getAbsolutePath(), true);
-      } else {
-        if (!cacheDir.mkdirs()) {
-          throw new IllegalStateException("Failed to create cache dir");
-        }
-      }
-    }
-  }
 
   public FileResolver(Vertx vertx) {
     this.vertx = vertx;
@@ -78,7 +65,7 @@ public class FileResolver {
     if (!file.exists()) {
       // Look for it in local file cache
       File cacheFile = null;
-      if (cacheDir != null) {
+      if (enableCaching && cacheDir != null) {
         cacheFile = new File(cacheDir, fileName);
         if (cacheFile.exists()) {
           return cacheFile;
@@ -92,6 +79,9 @@ public class FileResolver {
         if (cacheFile == null) {
           setupCacheDir();
           cacheFile = new File(cacheDir, fileName);
+          if (!enableCaching && cacheFile.exists()) {
+            cacheFile.delete();
+          }
           cacheFile.getParentFile().mkdirs();
         }
         try {
@@ -101,7 +91,6 @@ public class FileResolver {
         }
         return cacheFile;
       }
-
     }
     return file;
   }
@@ -113,5 +102,20 @@ public class FileResolver {
     }
     return cl;
   }
+
+  private void setupCacheDir() {
+    if (cacheDir == null) {
+      String cacheDirName = ".vertx/file-cache-" + UUID.randomUUID().toString();
+      cacheDir = new File(cacheDirName);
+      if (cacheDir.exists()) {
+        vertx.fileSystem().deleteSyncRecursive(cacheDir.getAbsolutePath(), true);
+      } else {
+        if (!cacheDir.mkdirs()) {
+          throw new IllegalStateException("Failed to create cache dir");
+        }
+      }
+    }
+  }
+
 
 }
