@@ -1208,5 +1208,82 @@ public class LocalEventBusTest extends EventBusTestBase {
     Pump.pump(consumer, producer);
     producer.write(str);
   }
+
+  @Test
+  public void testConsumerHandlesCompletionAsynchronously() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.completionHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      testComplete();
+    });
+    consumer.handler(msg -> {
+    });
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesCompletionAsynchronously2() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+    });
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.completionHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesEndAsynchronously1() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+    });
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.endHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      testComplete();
+    });
+    consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesEndAsynchronously2() {
+    eb.consumer(ADDRESS1).handler(v -> {});
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    consumer.handler(msg -> {
+    });
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.endHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      testComplete();
+    });
+    consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesEndAsynchronously3() {
+    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.endHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      testComplete();
+    });
+    consumer.unregister();
+    await();
+  }
 }
 

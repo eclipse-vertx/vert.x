@@ -448,7 +448,7 @@ public class AsyncFileImpl implements AsyncFile {
       res.fail(e);
     }
     if (handler != null) {
-      handler.handle(res);
+      vertx.runOnContext(v -> handler.handle(res));
     }
   }
 

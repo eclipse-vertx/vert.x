@@ -22,6 +22,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerRequestStream;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -31,6 +32,7 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -112,6 +114,38 @@ public class HttpRequestStreamTest extends VertxTestBase {
         assertTrue(closed.get());
         testComplete();
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testCloseServerAsynchronously() {
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    AtomicInteger done = new AtomicInteger();
+    HttpServerRequestStream stream = server.requestStream();
+    stream.handler(req -> {});
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      if (done.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      ThreadLocal<Object> stack2 = new ThreadLocal<>();
+      stack2.set(true);
+      server.close(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertNull(stack2.get());
+        if (done.incrementAndGet() == 2) {
+          testComplete();
+        }
+      });
+      stack2.set(null);
     });
     await();
   }

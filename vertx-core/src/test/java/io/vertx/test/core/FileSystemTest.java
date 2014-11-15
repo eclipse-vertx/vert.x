@@ -1483,6 +1483,21 @@ public class FileSystemTest extends VertxTestBase {
     assertEquals(def.isDSync(), json.isDSync());
   }
 
+  @Test
+  public void testAsyncFileCloseHandlerIsAsync() throws Exception {
+    String fileName = "some-file.dat";
+    createFileWithJunk(fileName, 100);
+    AsyncFile file = vertx.fileSystem().openSync(testDir + pathSep + fileName, new OpenOptions());
+    ThreadLocal stack = new ThreadLocal();
+    stack.set(true);
+    file.close(ar -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      testComplete();
+    });
+    await();
+  }
+
   private AsyncResultHandler<Void> createHandler(boolean shouldPass, Handler<Void> afterOK) {
     return ar -> {
       if (ar.failed()) {

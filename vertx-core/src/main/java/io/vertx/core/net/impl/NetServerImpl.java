@@ -247,12 +247,14 @@ public class NetServerImpl implements NetServer, Closeable {
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> done) {
     if (connectStream.endHandler() != null) {
+      Handler<Void> endHandler = connectStream.endHandler;
+      connectStream.endHandler = null;
       Handler<AsyncResult<Void>> next = done;
       done = new AsyncResultHandler<Void>() {
         @Override
         public void handle(AsyncResult<Void> event) {
           if (event.succeeded()) {
-            connectStream.endHandler().handle(event.result());
+            endHandler.handle(event.result());
           }
           if (next != null) {
             next.handle(event);

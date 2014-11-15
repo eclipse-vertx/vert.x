@@ -25,6 +25,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -927,6 +928,63 @@ public class WebsocketTest extends VertxTestBase {
         assertTrue(ar.succeeded());
         assertTrue(closed.get());
         testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testWebsocketStreamCallbackAsynchronously() {
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    AtomicInteger done = new AtomicInteger();
+    ServerWebSocketStream stream = server.websocketStream();
+    stream.handler(req -> { });
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    stream.endHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      if (done.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      ThreadLocal<Object> stack2 = new ThreadLocal<>();
+      stack2.set(true);
+      server.close(v -> {
+        assertTrue(vertx.context().isEventLoopContext());
+        assertNull(stack2.get());
+        if (done.incrementAndGet() == 2) {
+          testComplete();
+        }
+      });
+      stack2.set(null);
+    });
+    await();
+  }
+
+  @Test
+  public void testMultipleServerClose() {
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    AtomicInteger times = new AtomicInteger();
+    // We assume the endHandler and the close completion handler are invoked in the same context task
+    ThreadLocal stack = new ThreadLocal();
+    stack.set(true);
+    server.websocketStream().endHandler(v -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      times.incrementAndGet();
+    });
+    server.close(ar1 -> {
+      assertNull(stack.get());
+      assertTrue(vertx.context().isEventLoopContext());
+      server.close(ar2 -> {
+        server.close(ar3 -> {
+          assertEquals(1, times.get());
+          testComplete();
+        });
       });
     });
     await();

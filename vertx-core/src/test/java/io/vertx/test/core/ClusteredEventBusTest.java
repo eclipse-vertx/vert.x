@@ -302,4 +302,35 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     vertx.setTimer(4000, id -> testComplete());
     await();
   }
+
+  @Test
+  public void testConsumerHandlesCompletionAsynchronously1() {
+    startNodes(2);
+    MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.completionHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      testComplete();
+    });
+    consumer.handler(msg -> {});
+    await();
+  }
+
+  @Test
+  public void testConsumerHandlesCompletionAsynchronously2() {
+    startNodes(2);
+    MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
+    consumer.handler(msg -> {
+    });
+    ThreadLocal<Object> stack = new ThreadLocal<>();
+    stack.set(true);
+    consumer.completionHandler(v -> {
+      assertTrue(vertx.context().isEventLoopContext());
+      assertNull(stack.get());
+      testComplete();
+    });
+    await();
+  }
 }
