@@ -1,4 +1,8 @@
-package io.vertx.test.core.http;
+package io.vertx.test.core;
+
+import io.vertx.core.MultiMap;
+import io.vertx.core.http.CaseInsensitiveHeaders;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,16 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Test;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-
-import io.vertx.core.MultiMap;
-import io.vertx.core.http.CaseInsensitiveHeaders;
+import static org.junit.Assert.*;
 
 public class CaseInsensitiveHeadersTest {
 
