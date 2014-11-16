@@ -1047,6 +1047,17 @@ public class LocalEventBusTest extends EventBusTestBase {
     testUnregistrationOfUnregisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
   }
 
+  @Test
+  public void testUnregisterThenUnsetEndHandler() {
+    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+    consumer.endHandler(v -> {});
+    consumer.unregister(res -> {
+      testComplete();
+    });
+    consumer.endHandler(null);
+    await();
+  }
+
   private void testUnregistrationOfUnregisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     consumer.endHandler(v -> testComplete());
     consumer.unregister();

@@ -1011,12 +1011,10 @@ public class EventBusImpl implements EventBus {
 
     private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
       if (endHandler != null) {
+        Handler<Void> theEndHandler = endHandler;
         Handler<AsyncResult<Void>> handler = completionHandler;
         completionHandler = ar -> {
-          if (ar.failed()) {
-            exceptionHandler.handle(ar.cause());
-          }
-          endHandler.handle(null);
+          theEndHandler.handle(null);
           if (handler != null) {
             handler.handle(ar);
           }
