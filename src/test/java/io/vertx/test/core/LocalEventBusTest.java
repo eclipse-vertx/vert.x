@@ -28,6 +28,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.MessageProducer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.EventBusImpl;
@@ -1173,7 +1174,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testPublisher() {
     String str = TestUtils.randomUnicodeString(100);
-    WriteStream<String> publisher = eb.publisher(ADDRESS1);
+    MessageProducer<String> publisher = eb.publisher(ADDRESS1);
     AtomicInteger count = new AtomicInteger();
     int n = 2;
     for (int i = 0;i < n;i++) {
@@ -1190,7 +1191,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testPublisherWithOptions() {
     String str = TestUtils.randomUnicodeString(100);
-    WriteStream<String> publisher = eb.publisher(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    MessageProducer<String> publisher = eb.publisher(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
     AtomicInteger count = new AtomicInteger();
     int n = 2;
     for (int i = 0;i < n;i++) {
@@ -1213,7 +1214,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     });
-    WriteStream<String> producer = eb.sender(ADDRESS2);
+    MessageProducer<String> producer = eb.sender(ADDRESS2);
     Pump.pump(consumer, producer);
     producer.write(str);
   }
@@ -1292,6 +1293,32 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testUpdateDeliveryOptionsOnProducer() {
+    MessageProducer<String> producer = eb.sender(ADDRESS1);
+    MessageConsumer<String> consumer = eb.<String>consumer(ADDRESS1);
+    consumer.completionHandler(v -> {
+      assertTrue(v.succeeded());
+      producer.write("no-header");
+    });
+    consumer.handler(msg -> {
+      switch (msg.body()) {
+        case "no-header":
+          assertNull(msg.headers().get("header-name"));
+          producer.deliveryOptions(new DeliveryOptions().addHeader("header-name", "header-value"));
+          producer.write("with-header");
+          break;
+        case "with-header":
+          assertEquals("header-value", msg.headers().get("header-name"));
+          testComplete();
+          break;
+        default:
+          fail();
+      }
+    });
     await();
   }
 }

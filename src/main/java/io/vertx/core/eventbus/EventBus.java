@@ -126,7 +126,7 @@ public interface EventBus extends Measured {
    * @param address The address to send it to
    * @return The sender
    */
-  <T> WriteStream<T> sender(String address);
+  <T> MessageProducer<T> sender(String address);
 
   /**
    * Create a message sender against the specified address. The returned sender will invoke the {@link #send(String, Object, DeliveryOptions)}
@@ -136,7 +136,7 @@ public interface EventBus extends Measured {
    * @param address The address to send it to
    * @return The sender
    */
-  <T> WriteStream<T> sender(String address, DeliveryOptions options);
+  <T> MessageProducer<T> sender(String address, DeliveryOptions options);
 
   /**
    * Create a message publisher against the specified address. The returned publisher will invoke the {@link #publish(String, Object)}
@@ -146,7 +146,7 @@ public interface EventBus extends Measured {
    * @param address The address to publish it to
    * @return The publisher
    */
-  <T> WriteStream<T> publisher(String address);
+  <T> MessageProducer<T> publisher(String address);
 
   /**
    * Create a message publisher against the specified address. The returned publisher will invoke the {@link #publish(String, Object, DeliveryOptions)}
@@ -156,7 +156,7 @@ public interface EventBus extends Measured {
    * @param address The address to publish it to
    * @return The publisher
    */
-  <T> WriteStream<T> publisher(String address, DeliveryOptions options);
+  <T> MessageProducer<T> publisher(String address, DeliveryOptions options);
 
   @GenIgnore
   EventBus registerCodec(MessageCodec codec);

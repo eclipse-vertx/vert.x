@@ -14,41 +14,40 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.eventbus.impl;
+package io.vertx.core.eventbus;
 
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.WriteStream;
 
 /**
+ * Represents a stream of message that can be written to<p>
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@FunctionalInterface
-public interface ProducerBase<T> extends WriteStream<T>, Handler<T> {
+@VertxGen
+public interface MessageProducer<T> extends WriteStream<T> {
 
   @Override
-  public default WriteStream<T> exceptionHandler(Handler<Throwable> handler) {
-    return this;
-  }
+  MessageProducer<T> exceptionHandler(Handler<Throwable> handler);
 
   @Override
-  public default WriteStream<T> setWriteQueueMaxSize(int maxSize) {
-    return this;
-  }
+  MessageProducer<T> write(T data);
 
   @Override
-  public default WriteStream<T> write(T data) {
-    handle(data);
-    return this;
-  }
+  MessageProducer<T> setWriteQueueMaxSize(int maxSize);
 
   @Override
-  public default boolean writeQueueFull() {
-    return false;
-  }
+  MessageProducer<T> drainHandler(Handler<Void> handler);
 
-  @Override
-  public default WriteStream<T> drainHandler(Handler<Void> handler) {
-    return this;
-  }
+  /**
+   * Update the delivery options of this producer.
+   *
+   * @param options the new options
+   * @return this producer object
+   */
+  @Fluent
+  MessageProducer<T> deliveryOptions(DeliveryOptions options);
 
 }
