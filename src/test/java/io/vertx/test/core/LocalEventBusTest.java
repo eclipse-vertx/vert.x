@@ -104,7 +104,11 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertNullPointerException(() -> eb.publish(null, "", new DeliveryOptions()));
     assertNullPointerException(() -> eb.publish("", "", null));
     assertNullPointerException(() -> eb.consumer(null));
+    assertNullPointerException(() -> eb.consumer(null, msg -> {}));
+    assertNullPointerException(() -> eb.consumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.localConsumer(null));
+    assertNullPointerException(() -> eb.localConsumer(null, msg -> {}));
+    assertNullPointerException(() -> eb.localConsumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.sender(null));
     assertNullPointerException(() -> eb.sender(null, new DeliveryOptions()));
     assertNullPointerException(() -> eb.publisher("", null));
@@ -137,13 +141,28 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testRegisterLocal() {
+  public void testRegisterLocal1() {
     String str = TestUtils.randomUnicodeString(100);
     eb.<String>localConsumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      eb.send(ADDRESS1, str);
     });
-    eb.send(ADDRESS1, str);
+    await();
+  }
+
+  @Test
+  public void testRegisterLocal2() {
+    String str = TestUtils.randomUnicodeString(100);
+    eb.localConsumer(ADDRESS1, (Message<String> msg) -> {
+      assertEquals(str, msg.body());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      eb.send(ADDRESS1, str);
+    });
     await();
   }
 

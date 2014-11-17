@@ -108,6 +108,15 @@ public interface EventBus extends Measured {
   <T> MessageConsumer<T> consumer(String address);
 
   /**
+   * Register a message consumer against the specified address.
+   *
+   * @param address The address that will register it at
+   * @param handler The handler that will process the received messages
+   * @return the event bus message consumer
+   */
+  <T> MessageConsumer<T> consumer(String address, Handler<Message<T>> handler);
+
+  /**
    * Create a local message consumer against the specified address. The handler info won't
    * be propagated across the cluster. The returned consumer is not yet registered at the
    * address, registration will be effective when {@link MessageConsumer#handler(io.vertx.core.Handler)}
@@ -117,6 +126,16 @@ public interface EventBus extends Measured {
    * @return the event bus message consumer
    */
   <T> MessageConsumer<T> localConsumer(String address);
+
+  /**
+   * Register a local message consumer against the specified address. The handler info won't be propagated
+   * across the cluster.
+   *
+   * @param address The address that will register it at
+   * @param handler The handler that will process the received messages
+   * @return the event bus message consumer
+   */
+  <T> MessageConsumer<T> localConsumer(String address, Handler<Message<T>> handler);
 
   /**
    * Create a message sender against the specified address. The returned sender will invoke the {@link #send(String, Object)}
