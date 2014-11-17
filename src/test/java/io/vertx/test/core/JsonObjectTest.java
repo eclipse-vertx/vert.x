@@ -43,10 +43,10 @@ import static org.junit.Assert.*;
  */
 public class JsonObjectTest {
 
-  private JsonObject jsonObject;
+  protected JsonObject jsonObject;
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
     jsonObject = new JsonObject();
   }
 

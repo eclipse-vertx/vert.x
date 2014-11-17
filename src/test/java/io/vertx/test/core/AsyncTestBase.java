@@ -22,7 +22,9 @@ import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.internal.ArrayComparisonFailure;
+import org.junit.rules.TestName;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,10 +47,13 @@ public class AsyncTestBase {
   private boolean threadChecksEnabled = true;
   private volatile boolean tearingDown;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
+  @Rule
+  public TestName name = new TestName();
 
   protected void setUp() throws Exception {
+    log.info("Starting test: " + this.getClass().getSimpleName() + "#" + name.getMethodName());
     tearingDown = false;
-    latch = new CountDownLatch(1);
+    waitFor(1);
     throwable = null;
     testCompleteCalled = false;
     awaitCalled = false;
@@ -68,6 +73,24 @@ public class AsyncTestBase {
   @After
   public void after() throws Exception {
     tearDown();
+  }
+
+  protected void waitFor(int count) {
+    latch = new CountDownLatch(count);
+  }
+
+  protected synchronized void complete() {
+    if (tearingDown) {
+      throw new IllegalStateException("testComplete called after test has completed");
+    }
+    checkThread();
+    if (testCompleteCalled) {
+      throw new IllegalStateException("already complete");
+    }
+    latch.countDown();
+    if (latch.getCount() == 0) {
+      testCompleteCalled = true;
+    }
   }
 
   protected void testComplete() {
@@ -97,20 +120,24 @@ public class AsyncTestBase {
         // timed out
         throw new IllegalStateException("Timed out in waiting for test complete");
       } else {
-        if (throwable != null) {
-          if (throwable instanceof Error) {
-            throw (Error)throwable;
-          } else if (throwable instanceof RuntimeException) {
-            throw (RuntimeException)throwable;
-          } else {
-            // Unexpected throwable- Should never happen
-            throw new IllegalStateException(throwable);
-          }
-
-        }
+        rethrowError();
       }
     } catch (InterruptedException e) {
       throw new IllegalStateException("Test thread was interrupted!");
+    }
+  }
+
+  private void rethrowError() {
+    if (throwable != null) {
+      if (throwable instanceof Error) {
+        throw (Error)throwable;
+      } else if (throwable instanceof RuntimeException) {
+        throw (RuntimeException)throwable;
+      } else {
+        // Unexpected throwable- Should never happen
+        throw new IllegalStateException(throwable);
+      }
+
     }
   }
 
@@ -123,15 +150,16 @@ public class AsyncTestBase {
       // Throwable caught from non main thread
       throw new IllegalStateException("Assert or failure from non main thread but no await() on main thread");
     }
-    if (threadChecksEnabled) {
-      for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
-        if (!entry.getKey().equals("main") && !entry.getKey().startsWith("vert.x-")) {
+    for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
+      if (!entry.getKey().equals("main")) {
+        if (threadChecksEnabled && !entry.getKey().startsWith("vert.x-")) {
           IllegalStateException is = new IllegalStateException("Non Vert.x thread! :" + entry.getKey());
           is.setStackTrace(entry.getValue().getStackTrace());
           throw is;
         }
       }
     }
+
   }
 
   private void handleThrowable(Throwable t) {
@@ -139,6 +167,7 @@ public class AsyncTestBase {
       throw new IllegalStateException("assert or failure occurred after test has completed");
     }
     throwable = t;
+    t.printStackTrace();
     thrownThread = Thread.currentThread();
     latch.countDown();
     if (t instanceof AssertionError) {

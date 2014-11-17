@@ -67,6 +67,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
+  private Handler<Void> headersEndHandler;
+  private Handler<Void> bodyEndHandler;
   private boolean chunked;
   private boolean closed;
   private ChannelFuture channelFuture;
@@ -287,10 +289,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void end0(ByteBuf data) {
     checkWritten();
-
     if (!headWritten) {
       // if the head was not written yet we can write out everything in on go
-      // which is more cheap.
+      // which is cheaper.
       prepareHeaders();
       FullHttpResponse resp;
       if (trailing != null) {
@@ -323,6 +324,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
     written = true;
     conn.responseComplete();
+    if (bodyEndHandler != null) {
+      bodyEndHandler.handle(null);
+    }
   }
 
   @Override
@@ -356,6 +360,18 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean headWritten() {
     return headWritten;
+  }
+
+  @Override
+  public synchronized HttpServerResponse headersEndHandler(Handler<Void> handler) {
+    this.headersEndHandler = handler;
+    return this;
+  }
+
+  @Override
+  public synchronized HttpServerResponse bodyEndHandler(Handler<Void> handler) {
+    this.bodyEndHandler = handler;
+    return this;
   }
 
   private synchronized void doSendFile(String filename, String notFoundResource, final Handler<AsyncResult<Void>> resultHandler) {
@@ -413,6 +429,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         closeConnAfterWrite();
       }
       conn.responseComplete();
+      if (bodyEndHandler != null) {
+        bodyEndHandler.handle(null);
+      }
     }
   }
 
@@ -484,6 +503,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       response.headers().set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
     } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
       response.headers().set(HttpHeaders.CONTENT_LENGTH, "0");
+    }
+    if (headersEndHandler != null) {
+      headersEndHandler.handle(null);
     }
   }
 

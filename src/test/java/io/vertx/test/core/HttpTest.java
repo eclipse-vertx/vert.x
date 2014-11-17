@@ -1024,15 +1024,86 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
-  private void testGetNow(Runnable runner) {
+  @Test
+  public void testResponseEndHandlers1() {
+    waitFor(2);
+    AtomicInteger cnt = new AtomicInteger();
     server.requestHandler(req -> {
+      req.response().headersEndHandler(v -> {
+        // Insert another header
+        req.response().putHeader("extraheader", "wibble");
+        assertEquals(0, cnt.getAndIncrement());
+      });
+      req.response().bodyEndHandler(v -> {
+        assertEquals(1, cnt.getAndIncrement());
+        complete();
+      });
       req.response().end();
-    });
-
-    server.listen(onSuccess(s -> {
-      runner.run();
+    }).listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        assertEquals(200, res.statusCode());
+        assertEquals("wibble", res.headers().get("extraheader"));
+        complete();
+      }).end();
     }));
+    await();
+  }
 
+  @Test
+  public void testResponseEndHandlers2() {
+    waitFor(2);
+    AtomicInteger cnt = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.response().headersEndHandler(v -> {
+        // Insert another header
+        req.response().putHeader("extraheader", "wibble");
+        assertEquals(0, cnt.getAndIncrement());
+      });
+      req.response().bodyEndHandler(v -> {
+        assertEquals(1, cnt.getAndIncrement());
+        complete();
+      });
+      req.response().end("blah");
+    }).listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        assertEquals(200, res.statusCode());
+        assertEquals("wibble", res.headers().get("extraheader"));
+        res.bodyHandler(buff -> {
+          assertEquals(Buffer.buffer("blah"), buff);
+          complete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testResponseEndHandlersSendFile() throws Exception {
+    waitFor(2);
+    AtomicInteger cnt = new AtomicInteger();
+    String content = "iqdioqwdqwiojqwijdwqd";
+    File toSend = setupFile("somefile.txt", content);
+    server.requestHandler(req -> {
+      req.response().headersEndHandler(v -> {
+        // Insert another header
+        req.response().putHeader("extraheader", "wibble");
+        assertEquals(0, cnt.getAndIncrement());
+      });
+      req.response().bodyEndHandler(v -> {
+        assertEquals(1, cnt.getAndIncrement());
+        complete();
+      });
+      req.response().sendFile(toSend.getAbsolutePath());
+    }).listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        assertEquals(200, res.statusCode());
+        assertEquals("wibble", res.headers().get("extraheader"));
+        res.bodyHandler(buff -> {
+          assertEquals(Buffer.buffer(content), buff);
+          complete();
+        });
+      }).end();
+    }));
     await();
   }
 

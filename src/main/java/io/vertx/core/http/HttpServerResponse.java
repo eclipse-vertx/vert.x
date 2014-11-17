@@ -245,4 +245,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   boolean headWritten();
 
+  @Fluent
+  HttpServerResponse headersEndHandler(Handler<Void> handler);
+
+  @Fluent
+  HttpServerResponse bodyEndHandler(Handler<Void> handler);
+
 }
