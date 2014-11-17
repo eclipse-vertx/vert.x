@@ -28,6 +28,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.MessageProducer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.EventBusImpl;
@@ -103,7 +104,11 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertNullPointerException(() -> eb.publish(null, "", new DeliveryOptions()));
     assertNullPointerException(() -> eb.publish("", "", null));
     assertNullPointerException(() -> eb.consumer(null));
+    assertNullPointerException(() -> eb.consumer(null, msg -> {}));
+    assertNullPointerException(() -> eb.consumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.localConsumer(null));
+    assertNullPointerException(() -> eb.localConsumer(null, msg -> {}));
+    assertNullPointerException(() -> eb.localConsumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.sender(null));
     assertNullPointerException(() -> eb.sender(null, new DeliveryOptions()));
     assertNullPointerException(() -> eb.publisher("", null));
@@ -136,13 +141,28 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testRegisterLocal() {
+  public void testRegisterLocal1() {
     String str = TestUtils.randomUnicodeString(100);
     eb.<String>localConsumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      eb.send(ADDRESS1, str);
     });
-    eb.send(ADDRESS1, str);
+    await();
+  }
+
+  @Test
+  public void testRegisterLocal2() {
+    String str = TestUtils.randomUnicodeString(100);
+    eb.localConsumer(ADDRESS1, (Message<String> msg) -> {
+      assertEquals(str, msg.body());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      eb.send(ADDRESS1, str);
+    });
     await();
   }
 
@@ -1173,7 +1193,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testPublisher() {
     String str = TestUtils.randomUnicodeString(100);
-    WriteStream<String> publisher = eb.publisher(ADDRESS1);
+    MessageProducer<String> publisher = eb.publisher(ADDRESS1);
     AtomicInteger count = new AtomicInteger();
     int n = 2;
     for (int i = 0;i < n;i++) {
@@ -1190,7 +1210,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testPublisherWithOptions() {
     String str = TestUtils.randomUnicodeString(100);
-    WriteStream<String> publisher = eb.publisher(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    MessageProducer<String> publisher = eb.publisher(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
     AtomicInteger count = new AtomicInteger();
     int n = 2;
     for (int i = 0;i < n;i++) {
@@ -1213,7 +1233,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     });
-    WriteStream<String> producer = eb.sender(ADDRESS2);
+    MessageProducer<String> producer = eb.sender(ADDRESS2);
     Pump.pump(consumer, producer);
     producer.write(str);
   }
@@ -1292,6 +1312,32 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testUpdateDeliveryOptionsOnProducer() {
+    MessageProducer<String> producer = eb.sender(ADDRESS1);
+    MessageConsumer<String> consumer = eb.<String>consumer(ADDRESS1);
+    consumer.completionHandler(v -> {
+      assertTrue(v.succeeded());
+      producer.write("no-header");
+    });
+    consumer.handler(msg -> {
+      switch (msg.body()) {
+        case "no-header":
+          assertNull(msg.headers().get("header-name"));
+          producer.deliveryOptions(new DeliveryOptions().addHeader("header-name", "header-value"));
+          producer.write("with-header");
+          break;
+        case "with-header":
+          assertEquals("header-value", msg.headers().get("header-name"));
+          testComplete();
+          break;
+        default:
+          fail();
+      }
+    });
     await();
   }
 }

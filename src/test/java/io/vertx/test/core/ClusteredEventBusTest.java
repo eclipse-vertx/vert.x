@@ -123,6 +123,34 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
 
+  @Test
+  public void testRegisterRemote1() {
+    startNodes(2);
+    String str = TestUtils.randomUnicodeString(100);
+    vertices[0].eventBus().<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
+      assertEquals(str, msg.body());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      vertices[1].eventBus().send(ADDRESS1, str);
+    });
+    await();
+  }
+
+  @Test
+  public void testRegisterRemote2() {
+    startNodes(2);
+    String str = TestUtils.randomUnicodeString(100);
+    vertices[0].eventBus().consumer(ADDRESS1, (Message<String> msg) -> {
+      assertEquals(str, msg.body());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      vertices[1].eventBus().send(ADDRESS1, str);
+    });
+    await();
+  }
+
   @Override
   protected <T> void testPublish(T val, Consumer<T> consumer) {
     int numNodes = 3;

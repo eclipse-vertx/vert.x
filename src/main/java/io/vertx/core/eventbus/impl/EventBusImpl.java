@@ -26,6 +26,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.MessageProducer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.codecs.BooleanMessageCodec;
@@ -63,7 +64,6 @@ import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.WriteStream;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -175,29 +175,29 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public <T> WriteStream<T> sender(String address) {
+  public <T> MessageProducer<T> sender(String address) {
     Objects.requireNonNull(address, "address");
-    return (ProducerBase<T>) data -> send(address, data);
+    return new MessageProducerImpl<>(this, address, true, new DeliveryOptions());
   }
 
   @Override
-  public <T> WriteStream<T> sender(String address, DeliveryOptions options) {
+  public <T> MessageProducer<T> sender(String address, DeliveryOptions options) {
     Objects.requireNonNull(address, "address");
     Objects.requireNonNull(options, "options");
-    return (ProducerBase<T>) data -> send(address, data, options);
+    return new MessageProducerImpl<>(this, address, true, options);
   }
 
   @Override
-  public <T> WriteStream<T> publisher(String address) {
+  public <T> MessageProducer<T> publisher(String address) {
     Objects.requireNonNull(address, "address");
-    return (ProducerBase<T>) data -> publish(address, data);
+    return new MessageProducerImpl<>(this, address, false, new DeliveryOptions());
   }
 
   @Override
-  public <T> WriteStream<T> publisher(String address, DeliveryOptions options) {
+  public <T> MessageProducer<T> publisher(String address, DeliveryOptions options) {
     Objects.requireNonNull(address, "address");
     Objects.requireNonNull(options, "options");
-    return (ProducerBase<T>) data -> publish(address, data, options);
+    return new MessageProducerImpl<>(this, address, false, options);
   }
 
   @Override
@@ -218,9 +218,25 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
+  public <T> MessageConsumer<T> consumer(String address, Handler<Message<T>> handler) {
+    Objects.requireNonNull(handler, "handler");
+    MessageConsumer<T> consumer = consumer(address);
+    consumer.handler(handler);
+    return consumer;
+  }
+
+  @Override
   public <T> MessageConsumer<T> localConsumer(String address) {
     Objects.requireNonNull(address, "address");
     return new HandlerRegistration<>(address, false, true, -1);
+  }
+
+  @Override
+  public <T> MessageConsumer<T> localConsumer(String address, Handler<Message<T>> handler) {
+    Objects.requireNonNull(handler, "handler");
+    MessageConsumer<T> consumer = localConsumer(address);
+    consumer.handler(handler);
+    return consumer;
   }
 
   @Override
