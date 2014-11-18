@@ -43,4 +43,10 @@ public interface Context {
 
   boolean isMultiThreaded();
 
+  <T> T get(String key);
+
+  void put(String key, Object value);
+
+  boolean remove(String key);
+
 }

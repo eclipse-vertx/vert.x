@@ -527,7 +527,7 @@ public class EventBusImpl implements EventBus {
       // Reset the context id - send can cause messages to be delivered in different contexts so the context id
       // of the current thread can change
       if (context != null) {
-        vertx.setContext(context);
+        ContextImpl.setContext(context);
       }
     }
   }

@@ -26,12 +26,12 @@ public class RedeploySourceVerticle extends AbstractVerticle {
 
   @Override
   public void start() throws Exception {
-    vertx.eventBus().publish("vertstarted", vertx.context().deploymentID());
+    vertx.eventBus().publish("vertstarted", context.deploymentID());
   }
 
   @Override
   public void stop() throws Exception {
-    vertx.eventBus().publish("vertstopped", vertx.context().deploymentID());
+    vertx.eventBus().publish("vertstopped", context.deploymentID());
   }
 
   @Test

@@ -21,6 +21,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -58,5 +60,16 @@ public class EventLoopContext extends ContextImpl {
       throw new IllegalStateException("Event delivered on unexpected thread " + current + " expected: " + contextThread);
     }
   }
+
+  private Map<String, Object> contextData;
+
+  @Override
+  public Map<String, Object> contextData() {
+    if (contextData == null) {
+      contextData = new HashMap<>();
+    }
+    return contextData;
+  }
+
 
 }

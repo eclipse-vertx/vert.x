@@ -24,6 +24,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -2908,7 +2909,7 @@ public class HttpTest extends HttpTestBase {
       servers.add(theServer);
       final AtomicReference<Context> context = new AtomicReference<>();
       theServer.requestHandler(req -> {
-        Context ctx = vertx.context();
+        Context ctx = Vertx.currentContext();
         if (context.get() != null) {
           assertSame(ctx, context.get());
         } else {
@@ -3505,7 +3506,7 @@ public class HttpTest extends HttpTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.context();
+        ctx = Vertx.currentContext();
         if (worker) {
           assertTrue(ctx instanceof WorkerContext);
         } else {
@@ -3515,20 +3516,20 @@ public class HttpTest extends HttpTestBase {
         server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
-          assertSame(ctx, vertx.context());
+          assertSame(ctx, Vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.context());
+          assertSame(ctx, Vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           client = vertx.createHttpClient(new HttpClientOptions());
           client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
-            assertSame(ctx, vertx.context());
+            assertSame(ctx, Vertx.currentContext());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
@@ -3651,12 +3652,12 @@ public class HttpTest extends HttpTestBase {
     stack.set(true);
     server.requestStream().endHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       times.incrementAndGet();
     });
     server.close(ar1 -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       server.close(ar2 -> {
         server.close(ar3 -> {
           assertEquals(1, times.get());

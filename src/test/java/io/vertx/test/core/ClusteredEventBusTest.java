@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -338,7 +339,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
     consumer.completionHandler(v -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       testComplete();
     });
@@ -355,7 +356,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
     consumer.completionHandler(v -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       testComplete();
     });

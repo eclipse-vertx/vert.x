@@ -295,10 +295,10 @@ public class HAManager {
             ContextImpl context = vertx.getContext();
             try {
               // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
-              vertx.setContext(null);
+              ContextImpl.setContext(null);
               checkQuorumWhenAdded(nodeID, start);
             } finally {
-              vertx.setContext(context);
+              ContextImpl.setContext(context);
             }
           }
           return null;
@@ -350,15 +350,13 @@ public class HAManager {
   // Add the deployment to an internal list of deployments - these will be executed when a quorum is attained
   private void addToHADeployList(final String verticleName, final DeploymentOptions deploymentOptions,
                                  final Handler<AsyncResult<String>> doneHandler) {
-    toDeployOnQuorum.add(new Runnable() {
-      public void run() {
-        ContextImpl ctx = vertx.getContext();
-        try {
-          vertx.setContext(null);
-          deployVerticle(verticleName, deploymentOptions, doneHandler);
-        } finally {
-          vertx.setContext(ctx);
-        }
+    toDeployOnQuorum.add(() -> {
+      ContextImpl ctx = vertx.getContext();
+      try {
+        ContextImpl.setContext(null);
+        deployVerticle(verticleName, deploymentOptions, doneHandler);
+      } finally {
+        ContextImpl.setContext(ctx);
       }
     });
    }
@@ -383,7 +381,7 @@ public class HAManager {
         if (dep.deploymentOptions().isHa()) {
           ContextImpl ctx = vertx.getContext();
           try {
-            vertx.setContext(null);
+            ContextImpl.setContext(null);
             deploymentManager.undeployVerticle(deploymentID, new AsyncResultHandler<Void>() {
               @Override
               public void handle(AsyncResult<Void> result) {
@@ -405,7 +403,7 @@ public class HAManager {
               }
             });
           } finally {
-            vertx.setContext(ctx);
+            ContextImpl.setContext(ctx);
           }
         }
       }
@@ -478,7 +476,7 @@ public class HAManager {
     final AtomicReference<Throwable> err = new AtomicReference<>();
     // Now deploy this verticle on this node
     ContextImpl ctx = vertx.getContext();
-    vertx.setContext(null);
+    ContextImpl.setContext(null);
     JsonObject options = failedVerticle.getJsonObject("options");
     doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
       if (result.succeeded()) {
@@ -493,7 +491,7 @@ public class HAManager {
         throw new VertxException(t);
       }
     });
-    vertx.setContext(ctx);
+    ContextImpl.setContext(ctx);
     try {
       if (!latch.await(120, TimeUnit.SECONDS)) {
         throw new VertxException("Timed out waiting for redeploy on failover");

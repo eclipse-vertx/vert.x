@@ -16,6 +16,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -46,4 +47,8 @@ public class VertxFactoryImpl implements VertxFactory {
     new VertxImpl(options, resultHandler);
   }
 
+  @Override
+  public Context context() {
+    return VertxImpl.context();
+  }
 }

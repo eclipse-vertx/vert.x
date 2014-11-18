@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class AbstractVerticle implements Verticle, Context {
+public abstract class AbstractVerticle implements Verticle {
 
   protected Vertx vertx;
   protected Context context;
@@ -39,39 +39,16 @@ public abstract class AbstractVerticle implements Verticle, Context {
     this.context = context;
   }
 
-  @Override
-  public void runOnContext(Handler<Void> action) {
-    context.runOnContext(action);
-  }
-
-  @Override
   public String deploymentID() {
     return context.deploymentID();
   }
 
-  @Override
   public JsonObject config() {
     return context.config();
   }
 
-  @Override
   public List<String> processArgs() {
     return context.processArgs();
-  }
-
-  @Override
-  public boolean isEventLoopContext() {
-    return context.isEventLoopContext();
-  }
-
-  @Override
-  public boolean isWorker() {
-    return context.isWorker();
-  }
-
-  @Override
-  public boolean isMultiThreaded() {
-    return context.isMultiThreaded();
   }
 
   @Override

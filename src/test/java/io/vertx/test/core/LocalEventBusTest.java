@@ -631,7 +631,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.context();
+        ctx = context;
         if (worker) {
           if (multiThreaded) {
             assertTrue(ctx instanceof MultiThreadedWorkerContext);
@@ -643,7 +643,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         }
         Thread thr = Thread.currentThread();
         MessageConsumer<?> reg = vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
-          assertSame(ctx, vertx.context());
+          assertSame(ctx, context);
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
@@ -651,12 +651,12 @@ public class LocalEventBusTest extends EventBusTestBase {
         });
         reg.completionHandler(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.context());
+          assertSame(ctx, context);
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           vertx.eventBus().send(ADDRESS1, "foo", onSuccess((Message<Object> reply) -> {
-            assertSame(ctx, vertx.context());
+            assertSame(ctx, context);
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
@@ -1245,7 +1245,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     stack.set(true);
     consumer.completionHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       testComplete();
     });
     consumer.handler(msg -> {
@@ -1262,7 +1262,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     stack.set(true);
     consumer.completionHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       testComplete();
     });
     await();
@@ -1277,7 +1277,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     stack.set(true);
     consumer.endHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       testComplete();
     });
     consumer.unregister();
@@ -1294,7 +1294,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     stack.set(true);
     consumer.endHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       testComplete();
     });
     consumer.unregister();
@@ -1308,7 +1308,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     stack.set(true);
     consumer.endHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       testComplete();
     });
     consumer.unregister();

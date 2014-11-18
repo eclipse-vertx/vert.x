@@ -15,6 +15,7 @@
  */
 package io.vertx.test.core;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -127,19 +128,19 @@ public class HttpRequestStreamTest extends VertxTestBase {
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
     stream.endHandler(v -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       if (done.incrementAndGet() == 2) {
         testComplete();
       }
     });
     server.listen(ar -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       ThreadLocal<Object> stack2 = new ThreadLocal<>();
       stack2.set(true);
       server.close(v -> {
-        assertTrue(vertx.context().isEventLoopContext());
+        assertTrue(Vertx.currentContext().isEventLoopContext());
         assertNull(stack2.get());
         if (done.incrementAndGet() == 2) {
           testComplete();

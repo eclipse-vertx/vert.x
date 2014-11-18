@@ -16,6 +16,7 @@
 package io.vertx.core.spi;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -34,5 +35,7 @@ public interface VertxFactory {
   Vertx vertx(VertxOptions options);
 
   void vertxAsync(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
+
+  Context context();
 
 }

@@ -33,10 +33,10 @@ public class TestVerticle2 extends AbstractVerticle {
   @Override
   public void start() throws Exception {
     synchronized (contexts) {
-      if (contexts.contains(vertx.context())) {
+      if (contexts.contains(context)) {
         throw new IllegalStateException("Same context!");
       } else {
-        contexts.add(vertx.context());
+        contexts.add(context);
         vertx.eventBus().send("tvstarted", "started");
       }
     }

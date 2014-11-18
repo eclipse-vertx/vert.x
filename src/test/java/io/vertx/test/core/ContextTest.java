@@ -17,10 +17,8 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import org.junit.Test;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -31,12 +29,12 @@ public class ContextTest extends VertxTestBase {
   public void testRunOnContext() throws Exception {
     vertx.runOnContext(v -> {
       Thread th = Thread.currentThread();
-      Context ctx = vertx.context();
+      Context ctx = Vertx.currentContext();
       ctx.runOnContext(v2 -> {
         assertEquals(th, Thread.currentThread());
         // Execute it a few times to make sure it returns same context
         for (int i = 0; i < 10; i++) {
-          Context c = vertx.context();
+          Context c = Vertx.currentContext();
           assertEquals(ctx, c);
         }
         // And simulate a third party thread - e.g. a 3rd party async library wishing to return a result on the
@@ -45,7 +43,7 @@ public class ContextTest extends VertxTestBase {
           public void run() {
             ctx.runOnContext(v3 -> {
               assertEquals(th, Thread.currentThread());
-              assertEquals(ctx, vertx.context());
+              assertEquals(ctx, Vertx.currentContext());
               testComplete();
             });
           }
@@ -57,13 +55,27 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testNoContext() throws Exception {
-    Set<Context> ctxts = new HashSet<>();
-    // We are not on a context when we call this so we should be given a new context each time
-    for (int i = 0; i < 10; i++) {
-      Context ctx = vertx.context();
-      assertFalse(ctxts.contains(ctx));
-      ctxts.add(ctx);
-    }
-    testComplete();
+    assertNull(Vertx.currentContext());
+  }
+
+  class SomeObject {
+  }
+
+  @Test
+  public void testPutGetRemoveData() throws Exception {
+    SomeObject obj = new SomeObject();
+    vertx.runOnContext(v -> {
+      Context ctx = Vertx.currentContext();
+      ctx.put("foo", obj);
+      ctx.runOnContext(v2 -> {
+        assertEquals(obj, ctx.get("foo"));
+        assertTrue(ctx.remove("foo"));
+        ctx.runOnContext(v3 -> {
+          assertNull(ctx.get("foo"));
+          testComplete();
+        });
+      });
+    });
+    await();
   }
 }

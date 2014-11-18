@@ -271,10 +271,6 @@ public class VertxImpl implements VertxInternal {
     context.runOnContext(task);
   }
 
-  public Context context() {
-    return getOrCreateContext();
-  }
-
   // The background pool is used for making blocking calls to legacy synchronous APIs
   public ExecutorService getWorkerPool() {
     return workerPool;
@@ -398,24 +394,16 @@ public class VertxImpl implements VertxInternal {
     }
   }
 
-  public void setContext(ContextImpl context) {
-    Thread current = Thread.currentThread();
-    if (current instanceof VertxThread) {
-      ((VertxThread)current).setContext(context);
-    }
-    if (context != null) {
-      context.setTCCL();
-    } else {
-      Thread.currentThread().setContextClassLoader(null);
-    }
-  }
-
-  public ContextImpl getContext() {
+  public static Context context() {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
       return ((VertxThread)current).getContext();
     }
     return null;
+  }
+
+  public ContextImpl getContext() {
+    return (ContextImpl)context();
   }
 
   @Override
@@ -437,21 +425,17 @@ public class VertxImpl implements VertxInternal {
       }
       eventBus.close(ar2 -> {
 
-        if (sharedHttpServers != null) {
-          // Copy set to prevent ConcurrentModificationException
-          for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
-            server.close();
-          }
-          sharedHttpServers.clear();
+        // Copy set to prevent ConcurrentModificationException
+        for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
+          server.close();
         }
+        sharedHttpServers.clear();
 
-        if (sharedNetServers != null) {
-          // Copy set to prevent ConcurrentModificationException
-          for (NetServer server : new HashSet<>(sharedNetServers.values())) {
-            server.close();
-          }
-          sharedNetServers.clear();
+        // Copy set to prevent ConcurrentModificationException
+        for (NetServer server : new HashSet<>(sharedNetServers.values())) {
+          server.close();
         }
+        sharedNetServers.clear();
 
         fileResolver.deleteCacheDir(res -> {
 
@@ -465,7 +449,7 @@ public class VertxImpl implements VertxInternal {
 
           checker.close();
 
-          setContext(null);
+          ContextImpl.setContext(null);
 
           if (completionHandler != null) {
             // Call directly - we have no context

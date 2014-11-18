@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -942,19 +943,19 @@ public class WebsocketTest extends VertxTestBase {
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
     stream.endHandler(v -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       if (done.incrementAndGet() == 2) {
         testComplete();
       }
     });
     server.listen(ar -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       ThreadLocal<Object> stack2 = new ThreadLocal<>();
       stack2.set(true);
       server.close(v -> {
-        assertTrue(vertx.context().isEventLoopContext());
+        assertTrue(Vertx.currentContext().isEventLoopContext());
         assertNull(stack2.get());
         if (done.incrementAndGet() == 2) {
           testComplete();
@@ -974,12 +975,12 @@ public class WebsocketTest extends VertxTestBase {
     stack.set(true);
     server.websocketStream().endHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       times.incrementAndGet();
     });
     server.close(ar1 -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       server.close(ar2 -> {
         server.close(ar3 -> {
           assertEquals(1, times.get());

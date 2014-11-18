@@ -22,6 +22,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
@@ -267,11 +268,11 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertTrue(ar.succeeded());
-      Context ctx = vertx.context();
+      Context ctx = Vertx.currentContext();
       MyVerticle verticle2 = new MyVerticle();
       vertx.deployVerticle(verticle2, ar2 -> {
         assertDeployment(2, verticle2, null, ar2);
-        Context ctx2 = vertx.context();
+        Context ctx2 = Vertx.currentContext();
         assertEquals(ctx, ctx2);
         testComplete();
       });
@@ -356,14 +357,14 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertTrue(ar.succeeded());
-      Context ctx = vertx.context();
+      Context ctx = Vertx.currentContext();
       MyVerticle verticle2 = new MyVerticle(startAction, MyVerticle.NOOP);
       vertx.deployVerticle(verticle2, ar2 -> {
         assertFalse(ar2.succeeded());
         assertEquals(expectedThrowable, ar2.cause().getClass());
         assertEquals("FooBar!", ar2.cause().getMessage());
         assertEquals(1, vertx.deployments().size());
-        Context ctx2 = vertx.context();
+        Context ctx2 = Vertx.currentContext();
         assertEquals(ctx, ctx2);
         testComplete();
       });
@@ -385,7 +386,7 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertTrue(ar.succeeded());
-      Context ctx = vertx.context();
+      Context ctx = Vertx.currentContext();
       MyVerticle verticle2 = new MyVerticle(MyVerticle.NOOP, stopAction);
       vertx.deployVerticle(verticle2, ar2 -> {
         assertTrue(ar2.succeeded());
@@ -394,7 +395,7 @@ public class DeploymentTest extends VertxTestBase {
           assertEquals(expectedThrowable, ar3.cause().getClass());
           assertEquals("BooFar!", ar3.cause().getMessage());
           assertEquals(1, vertx.deployments().size());
-          assertEquals(ctx, vertx.context());
+          assertEquals(ctx, Vertx.currentContext());
           testComplete();
         });
       });
@@ -412,7 +413,7 @@ public class DeploymentTest extends VertxTestBase {
         assertNull(ar2.result());
         assertFalse(vertx.deployments().contains(ar.result()));
         assertEquals(verticle.startContext, verticle.stopContext);
-        Context currentContext = vertx.context();
+        Context currentContext = Vertx.currentContext();
         assertNotSame(currentContext, verticle.startContext);
         testComplete();
       });
@@ -629,9 +630,9 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testSimpleChildDeployment() throws Exception {
     Verticle verticle = new MyAsyncVerticle(f -> {
-      Context parentContext = vertx.context();
+      Context parentContext = Vertx.currentContext();
       Verticle child1 = new MyAsyncVerticle(f2 -> {
-        Context childContext = vertx.context();
+        Context childContext = Vertx.currentContext();
         assertNotSame(parentContext, childContext);
         f2.complete(null);
         testComplete();
@@ -829,7 +830,7 @@ public class DeploymentTest extends VertxTestBase {
       completionHandler.handle(Future.completedFuture());
     };
     MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
-      ContextImpl ctx = (ContextImpl)vertx.context();
+      ContextImpl ctx = (ContextImpl)Vertx.currentContext();
       ctx.addCloseHook(myCloseable1);
       ctx.addCloseHook(myCloseable2);
       f.complete(null);
@@ -1017,7 +1018,7 @@ public class DeploymentTest extends VertxTestBase {
     assertFalse(verticle.stopCalled);
     assertTrue(vertx.deployments().contains(deploymentID));
     assertEquals(instances, vertx.deployments().size());
-    Context currentContext = vertx.context();
+    Context currentContext = Vertx.currentContext();
     assertNotSame(currentContext, verticle.startContext);
   }
 
@@ -1057,10 +1058,10 @@ public class DeploymentTest extends VertxTestBase {
           throw new Error("FooBar!");
         default:
           startCalled = true;
-          startContext = vertx.context();
+          startContext = Vertx.currentContext();
       }
-      deploymentID = vertx.context().deploymentID();
-      config = vertx.context().config();
+      deploymentID = Vertx.currentContext().deploymentID();
+      config = context.config();
     }
 
     @Override
@@ -1072,7 +1073,7 @@ public class DeploymentTest extends VertxTestBase {
           throw new Error("BooFar!");
         default:
           stopCalled = true;
-          stopContext = vertx.context();
+          stopContext = Vertx.currentContext();
       }
     }
   }

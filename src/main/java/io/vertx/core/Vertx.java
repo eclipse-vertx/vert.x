@@ -69,6 +69,20 @@ public interface Vertx extends Measured {
   }
 
   /**
+   * Gets the current context
+   * @return The current context or null if no current context
+   */
+  static Context currentContext() {
+    return factory.context();
+  }
+
+  /**
+   * Gets the current context, or creates one if there isn't one
+   * @return The current context (created if didn't exist)
+   */
+  Context getOrCreateContext();
+
+  /**
    * Create a TCP/SSL server
    */
   NetServer createNetServer(NetServerOptions options);
@@ -149,11 +163,6 @@ public interface Vertx extends Measured {
    * {@code false} if the timer does not exist.
    */
   boolean cancelTimer(long id);
-
-  /**
-   * @return The current context
-   */
-  Context context();
 
   /**
    * Put the handler on the event queue for the current loop (or worker context) so it will be run asynchronously ASAP after this event has

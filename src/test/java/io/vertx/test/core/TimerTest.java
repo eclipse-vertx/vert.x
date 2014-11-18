@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.TimeoutStream;
+import io.vertx.core.Vertx;
 import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
@@ -278,7 +279,7 @@ public class TimerTest extends VertxTestBase {
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
     stream.endHandler(v -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       testComplete();
     });
@@ -292,7 +293,7 @@ public class TimerTest extends VertxTestBase {
     TimeoutStream stream = vertx.periodicStream(10);
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stream.endHandler(v -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       testComplete();
     });

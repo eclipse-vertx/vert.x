@@ -39,11 +39,12 @@ import java.util.concurrent.ExecutorService;
  */
 public interface VertxInternal extends VertxSPI {
 
+  @Override
+  ContextImpl getOrCreateContext();
+
   EventLoopGroup getEventLoopGroup();
 
   ExecutorService getWorkerPool();
-
-  ContextImpl getOrCreateContext();
 
   Map<ServerID, HttpServerImpl> sharedHttpServers();
 
@@ -56,11 +57,6 @@ public interface VertxInternal extends VertxSPI {
 	 * @return the context
 	 */
 	ContextImpl getContext();
-
-	/**
-	 * Set the current context
-	 */
-  void setContext(ContextImpl context);
 
   /**
    * @return event loop context
