@@ -19,6 +19,8 @@ package io.vertx.core.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -53,5 +55,16 @@ public class WorkerContext extends ContextImpl {
   protected void checkCorrectThread() {
     // NOOP
   }
+
+  private Map<String, Object> contextData;
+
+  @Override
+  public Map<String, Object> contextData() {
+    if (contextData == null) {
+      contextData = new ConcurrentHashMap<>();
+    }
+    return contextData;
+  }
+
 
 }

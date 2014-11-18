@@ -34,9 +34,6 @@ public class AbstractVerticleTest extends VertxTestBase {
     vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(config), onSuccess(res -> {
       assertEquals(res, verticle.getDeploymentID());
       assertEquals(config, verticle.getConfig());
-      assertFalse(verticle.isWorker());
-      assertFalse(verticle.isMultiThreaded());
-      assertTrue(verticle.isEventLoopContext());
       testComplete();
     }));
     await();

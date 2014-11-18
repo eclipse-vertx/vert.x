@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -33,9 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -118,7 +117,7 @@ public class DatagramTest extends VertxTestBase {
     peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());
       peer2.endHandler(v -> {
-        assertTrue(vertx.context().isEventLoopContext());
+        assertTrue(Vertx.currentContext().isEventLoopContext());
         assertNull(stack.get());
         testComplete();
       });

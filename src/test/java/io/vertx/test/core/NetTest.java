@@ -22,6 +22,7 @@ import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -1690,7 +1691,7 @@ public class NetTest extends VertxTestBase {
       Context ctx;
       @Override
       public void start() {
-        ctx = vertx.context();
+        ctx = context;
         if (worker) {
           assertTrue(ctx instanceof WorkerContext);
         } else {
@@ -1702,20 +1703,20 @@ public class NetTest extends VertxTestBase {
           sock.handler(buff -> {
             sock.write(buff);
           });
-          assertSame(ctx, vertx.context());
+          assertSame(ctx, context);
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
         });
         server.listen(ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, vertx.context());
+          assertSame(ctx, context);
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
           client = vertx.createNetClient(new NetClientOptions());
           client.connect(1234, "localhost", ar2 -> {
-            assertSame(ctx, vertx.context());
+            assertSame(ctx, context);
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
@@ -1725,7 +1726,7 @@ public class NetTest extends VertxTestBase {
             sock.write(buff);
             Buffer brec = Buffer.buffer();
             sock.handler(rec -> {
-              assertSame(ctx, vertx.context());
+              assertSame(ctx, context);
               if (!worker) {
                 assertSame(thr, Thread.currentThread());
               }
@@ -1868,19 +1869,19 @@ public class NetTest extends VertxTestBase {
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
     stream.endHandler(v -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       if (done.incrementAndGet() == 2) {
         testComplete();
       }
     });
     server.listen(ar -> {
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       ThreadLocal<Object> stack2 = new ThreadLocal<>();
       stack2.set(true);
       server.close(v -> {
-        assertTrue(vertx.context().isEventLoopContext());
+        assertTrue(Vertx.currentContext().isEventLoopContext());
         assertNull(stack2.get());
         if (done.incrementAndGet() == 2) {
           testComplete();
@@ -1900,12 +1901,12 @@ public class NetTest extends VertxTestBase {
     stack.set(true);
     server.connectStream().endHandler(v -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       times.incrementAndGet();
     });
     server.close(ar1 -> {
       assertNull(stack.get());
-      assertTrue(vertx.context().isEventLoopContext());
+      assertTrue(Vertx.currentContext().isEventLoopContext());
       server.close(ar2 -> {
         server.close(ar3 -> {
           assertEquals(1, times.get());

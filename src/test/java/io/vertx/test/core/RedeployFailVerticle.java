@@ -30,7 +30,7 @@ public class RedeployFailVerticle extends AbstractVerticle {
     vertx.eventBus().<Boolean>send("vertstartok", "foo", res -> {
       if (res.result().body()) {
         startFuture.complete();
-        vertx.eventBus().publish("vertstarted", vertx.context().deploymentID());
+        vertx.eventBus().publish("vertstarted", context.deploymentID());
       } else {
         startFuture.fail(new VertxException("foo"));
       }
@@ -39,7 +39,7 @@ public class RedeployFailVerticle extends AbstractVerticle {
 
   @Override
   public void stop() throws Exception {
-    vertx.eventBus().publish("vertstopped", vertx.context().deploymentID());
+    vertx.eventBus().publish("vertstopped", context.deploymentID());
   }
 
 

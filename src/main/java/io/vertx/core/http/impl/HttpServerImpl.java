@@ -412,7 +412,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    vertx.setContext(closeContext);
+    ContextImpl.setContext(closeContext);
 
     metrics.close();
 
@@ -493,7 +493,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
             if (reqHandler != null) {
               // We need to set the context manually as this is executed directly, not via context.execute()
-              vertx.setContext(reqHandler.context);
+              ContextImpl.setContext(reqHandler.context);
               conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, null, metrics);
               conn.requestHandler(reqHandler.handler);
               connectionMap.put(ch, conn);
@@ -584,7 +584,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
           break;
         }
         // Set context manually
-        vertx.setContext(wsHandler.context);
+        ContextImpl.setContext(wsHandler.context);
         if (firstHandler == wsHandler) {
           break;
         }

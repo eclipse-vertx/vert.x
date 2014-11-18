@@ -30,6 +30,7 @@ import io.vertx.core.spi.cluster.Action;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -45,7 +46,6 @@ public abstract class ContextImpl implements Context {
 
   protected final String deploymentID;
   protected final JsonObject config;
-  protected final VertxInternal vertx;
   private Deployment deployment;
   private Set<Closeable> closeHooks;
   private final ClassLoader tccl;
@@ -56,7 +56,6 @@ public abstract class ContextImpl implements Context {
 
   protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
-    this.vertx = vertx;
     this.orderedInternalPoolExec = orderedInternalPoolExec;
     this.deploymentID = deploymentID;
     this.config = config;
@@ -67,6 +66,18 @@ public abstract class ContextImpl implements Context {
       this.eventLoop = null;
     }
     this.tccl = tccl;
+  }
+
+  public static void setContext(ContextImpl context) {
+    Thread current = Thread.currentThread();
+    if (current instanceof VertxThread) {
+      ((VertxThread)current).setContext(context);
+    }
+    if (context != null) {
+      context.setTCCL();
+    } else {
+      Thread.currentThread().setContextClassLoader(null);
+    }
   }
 
   public void setTCCL() {
@@ -128,6 +139,24 @@ public abstract class ContextImpl implements Context {
   public abstract boolean isEventLoopContext();
 
   public abstract boolean isMultiThreaded();
+
+  public abstract Map<String, Object> contextData();
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T get(String key) {
+    return (T)contextData().get(key);
+  }
+
+  @Override
+  public void put(String key, Object value) {
+    contextData().put(key, value);
+  }
+
+  @Override
+  public boolean remove(String key) {
+    return contextData().remove(key) != null;
+  }
 
   public boolean isWorker() {
     return !isEventLoopContext();
@@ -195,7 +224,7 @@ public abstract class ContextImpl implements Context {
   }
 
   private void unsetContext() {
-    vertx.setContext(null);
+    setContext(null);
   }
 
   protected void executeStart() {
@@ -223,7 +252,7 @@ public abstract class ContextImpl implements Context {
         executeStart();
       }
       try {
-        vertx.setContext(ContextImpl.this);
+        setContext(ContextImpl.this);
         if (cTask != null) {
           cTask.run();
         } else {

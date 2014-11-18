@@ -362,7 +362,7 @@ public class NetServerImpl implements NetServer, Closeable {
     // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
     // which can cause context id for the thread to change!
 
-    vertx.setContext(closeContext);
+    ContextImpl.setContext(closeContext);
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cg -> {
