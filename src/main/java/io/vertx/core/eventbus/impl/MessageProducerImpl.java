@@ -75,4 +75,9 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     return this;
   }
 
+  @Override
+  public String address() {
+    return address;
+  }
+
 }

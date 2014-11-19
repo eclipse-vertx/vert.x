@@ -125,6 +125,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = TestUtils.randomUnicodeString(100);
     Handler<Message<String>> handler = msg -> fail("Should not receive message");
     MessageConsumer reg = eb.<String>consumer(ADDRESS1).handler(handler);
+    assertEquals(ADDRESS1, reg.address());
     reg.unregister();
     eb.send(ADDRESS1, str);
     vertx.setTimer(1000, id -> testComplete());
@@ -1194,6 +1195,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testPublisher() {
     String str = TestUtils.randomUnicodeString(100);
     MessageProducer<String> publisher = eb.publisher(ADDRESS1);
+    assertEquals(ADDRESS1, publisher.address());
     AtomicInteger count = new AtomicInteger();
     int n = 2;
     for (int i = 0;i < n;i++) {
@@ -1211,6 +1213,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testPublisherWithOptions() {
     String str = TestUtils.randomUnicodeString(100);
     MessageProducer<String> publisher = eb.publisher(ADDRESS1, new DeliveryOptions().addHeader("foo", "foo_value"));
+    assertEquals(ADDRESS1, publisher.address());
     AtomicInteger count = new AtomicInteger();
     int n = 2;
     for (int i = 0;i < n;i++) {
