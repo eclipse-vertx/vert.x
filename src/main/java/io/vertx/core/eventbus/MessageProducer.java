@@ -50,4 +50,9 @@ public interface MessageProducer<T> extends WriteStream<T> {
   @Fluent
   MessageProducer<T> deliveryOptions(DeliveryOptions options);
 
+  /**
+   * @return The address to which the producer produces messages.
+   */
+  String address();
+
 }
