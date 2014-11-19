@@ -284,8 +284,10 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public void fail(int failureCode, String message) {
-    sendReply(bus.createMessage(true, replyAddress, null,
-              new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message), null), null, null);
+    if (replyAddress != null) {
+      sendReply(bus.createMessage(true, replyAddress, null,
+          new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message), null), null, null);
+    }
   }
 
   @Override
@@ -305,7 +307,9 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
-    sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
+    if (replyAddress != null) {
+      sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
+    }
   }
 
   protected void setReplyAddress(String replyAddress) {

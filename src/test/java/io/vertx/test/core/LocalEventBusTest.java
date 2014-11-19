@@ -503,6 +503,46 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
   }
 
+  @Test
+  public void testReplyToSendWithNoReplyHandler() {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
+      msg.reply("a reply");
+      testComplete();
+    });
+    eb.send(ADDRESS1, "whatever");
+    await();
+  }
+
+  @Test
+  public void testReplyToPublish() {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
+      msg.reply("a reply");
+      testComplete();
+    });
+    eb.publish(ADDRESS1, "whatever");
+    await();
+  }
+
+  @Test
+  public void testFailAfterSend() {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
+      msg.fail(0, "a failure");
+      testComplete();
+    });
+    eb.publish(ADDRESS1, "whatever");
+    await();
+  }
+
+  @Test
+  public void testFailAfterPublish() {
+    eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
+      msg.fail(0, "a failure");
+      testComplete();
+    });
+    eb.publish(ADDRESS1, "whatever");
+    await();
+  }
+
   // Sends with different types
 
   @Test
