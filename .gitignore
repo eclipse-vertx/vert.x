@@ -14,11 +14,9 @@ out
 *.iws
 .vertx
 test-output
-Scratch.java
-ScratchTest.java
+src/test/java/io/vertx/test/scratchpad
 test-results
 test-tmp
 *.class
-ScratchPad.java
 *.swp
 .vertx
