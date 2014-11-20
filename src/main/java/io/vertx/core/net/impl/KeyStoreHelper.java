@@ -54,7 +54,7 @@ public abstract class KeyStoreHelper {
       JKSOptions jks = (JKSOptions) options;
       Callable<Buffer> value;
       if (jks.getPath() != null) {
-        value = () -> vertx.fileSystem().readFileSync(vertx.resolveFile(jks.getPath()).getAbsolutePath());
+        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(jks.getPath()).getAbsolutePath());
       } else if (jks.getValue() != null) {
         value = () -> jks.getValue();
       } else {
@@ -65,7 +65,7 @@ public abstract class KeyStoreHelper {
       PKCS12Options pkcs12 = (PKCS12Options) options;
       Callable<Buffer> value;
       if (pkcs12.getPath() != null) {
-        value = () -> vertx.fileSystem().readFileSync(vertx.resolveFile(pkcs12.getPath()).getAbsolutePath());
+        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(pkcs12.getPath()).getAbsolutePath());
       } else if (pkcs12.getValue() != null) {
         value = () -> pkcs12.getValue();
       } else {
@@ -76,7 +76,7 @@ public abstract class KeyStoreHelper {
       KeyCertOptions keyCert = (KeyCertOptions) options;
       Callable<Buffer> key = () -> {
         if (keyCert.getKeyPath() != null) {
-          return vertx.fileSystem().readFileSync(vertx.resolveFile(keyCert.getKeyPath()).getAbsolutePath());
+          return vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyCert.getKeyPath()).getAbsolutePath());
         } else if (keyCert.getKeyValue() != null) {
           return keyCert.getKeyValue();
         } else {
@@ -85,7 +85,7 @@ public abstract class KeyStoreHelper {
       };
       Callable<Buffer> cert = () -> {
         if (keyCert.getCertPath() != null) {
-          return vertx.fileSystem().readFileSync(vertx.resolveFile(keyCert.getCertPath()).getAbsolutePath());
+          return vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyCert.getCertPath()).getAbsolutePath());
         } else if (keyCert.getCertValue() != null) {
           return keyCert.getCertValue();
         } else {
@@ -107,7 +107,7 @@ public abstract class KeyStoreHelper {
           getCertPaths().
           stream().
           map(path -> vertx.resolveFile(path).getAbsolutePath()).
-          map(vertx.fileSystem()::readFileSync);
+          map(vertx.fileSystem()::readFileBlocking);
       certValues = Stream.concat(certValues, caOptions.getCertValues().stream());
       return new CA(certValues);
     } else {

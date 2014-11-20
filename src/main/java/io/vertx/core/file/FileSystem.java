@@ -26,10 +26,10 @@ import java.util.List;
 
 /**
  * Contains a broad set of operations for manipulating files.<p>
- * An asynchronous and a synchronous version of each operation is provided.<p>
- * The asynchronous versions take a handler which is called when the operation completes or an error occurs.<p>
- * The synchronous versions return the results, or throw exceptions directly.<p>
- * It is highly recommended the asynchronous versions are used unless you are sure the operation
+ * A blocking and non blocking version of each operation is provided.<p>
+ * The non blocking versions take a handler which is called when the operation completes or an error occurs.<p>
+ * The blocking versions return the results, or throw exceptions directly.<p>
+ * It is highly recommended the non blocking versions are used unless you are sure the operation
  * will not block for a significant period of time.<p>
  * Instances of FileSystem are thread-safe.<p>
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -45,10 +45,10 @@ public interface FileSystem {
   FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #copy(String, String, Handler)}
+   * Blocking version of {@link #copy(String, String, Handler)}
    */
   @Fluent
-  FileSystem copySync(String from, String to) ;
+  FileSystem copyBlocking(String from, String to) ;
 
   /**
    * Copy a file from the path {@code from} to path {@code to}, asynchronously.<p>
@@ -60,10 +60,10 @@ public interface FileSystem {
   FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #copyRecursive(String, String, boolean, Handler)}
+   * Blocking version of {@link #copyRecursive(String, String, boolean, Handler)}
    */
   @Fluent
-  FileSystem copyRecursiveSync(String from, String to, boolean recursive) ;
+  FileSystem copyRecursiveBlocking(String from, String to, boolean recursive) ;
 
   /**
    * Move a file from the path {@code from} to path {@code to}, asynchronously.<p>
@@ -73,10 +73,10 @@ public interface FileSystem {
   FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #move(String, String, Handler)}
+   * Blocking version of {@link #move(String, String, Handler)}
    */
   @Fluent
-  FileSystem moveSync(String from, String to) ;
+  FileSystem moveBlocking(String from, String to) ;
 
   /**
    * Truncate the file represented by {@code path} to length {@code len} in bytes, asynchronously.<p>
@@ -86,10 +86,10 @@ public interface FileSystem {
   FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #truncate(String, long, Handler)}
+   * Blocking version of {@link #truncate(String, long, Handler)}
    */
   @Fluent
-  FileSystem truncateSync(String path, long len) ;
+  FileSystem truncateBlocking(String path, long len) ;
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
@@ -100,10 +100,10 @@ public interface FileSystem {
   FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #chmod(String, String, Handler) }
+   * Blocking version of {@link #chmod(String, String, Handler) }
    */
   @Fluent
-  FileSystem chmodSync(String path, String perms) ;
+  FileSystem chmodBlocking(String path, String perms) ;
 
   /**
    * Change the permissions on the file represented by {@code path} to {@code perms}, asynchronously.
@@ -116,10 +116,10 @@ public interface FileSystem {
   FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #chmodRecursive(String, String, String, Handler)}
+   * Blocking version of {@link #chmodRecursive(String, String, String, Handler)}
    */
   @Fluent
-  FileSystem chmodRecursiveSync(String path, String perms, String dirPerms) ;
+  FileSystem chmodRecursiveBlocking(String path, String perms, String dirPerms) ;
 
 
   /**
@@ -130,11 +130,11 @@ public interface FileSystem {
   FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #chown(String, String, String, Handler)}
+   * Blocking version of {@link #chown(String, String, String, Handler)}
    *
    */
   @Fluent
-  FileSystem chownSync(String path, String user, String group) ;
+  FileSystem chownBlocking(String path, String user, String group) ;
 
   /**
    * Obtain properties for the file represented by {@code path}, asynchronously.
@@ -144,9 +144,9 @@ public interface FileSystem {
   FileSystem props(String path, Handler<AsyncResult<FileProps>> handler);
 
   /**
-   * Synchronous version of {@link #props(String, Handler)}
+   * Blocking version of {@link #props(String, Handler)}
    */
-  FileProps propsSync(String path) ;
+  FileProps propsBlocking(String path) ;
 
   /**
    * Obtain properties for the link represented by {@code path}, asynchronously.
@@ -156,9 +156,9 @@ public interface FileSystem {
   FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler);
 
   /**
-   * Synchronous version of {@link #lprops(String, Handler)}
+   * Blocking version of {@link #lprops(String, Handler)}
    */
-  FileProps lpropsSync(String path) ;
+  FileProps lpropsBlocking(String path) ;
 
   /**
    * Create a hard link on the file system from {@code link} to {@code existing}, asynchronously.
@@ -167,10 +167,10 @@ public interface FileSystem {
   FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #link(String, String, Handler)}
+   * Blocking version of {@link #link(String, String, Handler)}
    */
   @Fluent
-  FileSystem linkSync(String link, String existing) ;
+  FileSystem linkBlocking(String link, String existing) ;
 
   /**
    * Create a symbolic link on the file system from {@code link} to {@code existing}, asynchronously.
@@ -179,10 +179,10 @@ public interface FileSystem {
   FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #link(String, String, Handler)}
+   * Blocking version of {@link #link(String, String, Handler)}
    */
   @Fluent
-  FileSystem symlinkSync(String link, String existing) ;
+  FileSystem symlinkBlocking(String link, String existing) ;
 
   /**
    * Unlinks the link on the file system represented by the path {@code link}, asynchronously.
@@ -191,10 +191,10 @@ public interface FileSystem {
   FileSystem unlink(String link, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #unlink(String, Handler)}
+   * Blocking version of {@link #unlink(String, Handler)}
    */
   @Fluent
-  FileSystem unlinkSync(String link) ;
+  FileSystem unlinkBlocking(String link) ;
 
   /**
    * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.
@@ -203,9 +203,9 @@ public interface FileSystem {
   FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler);
 
   /**
-   * Synchronous version of {@link #readSymlink(String, Handler)}
+   * Blocking version of {@link #readSymlink(String, Handler)}
    */
-  String readSymlinkSync(String link) ;
+  String readSymlinkBlocking(String link) ;
 
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.
@@ -214,10 +214,10 @@ public interface FileSystem {
   FileSystem delete(String path, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #delete(String, Handler)}
+   * Blocking version of {@link #delete(String, Handler)}
    */
   @Fluent
-  FileSystem deleteSync(String path) ;
+  FileSystem deleteBlocking(String path) ;
 
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.<p>
@@ -228,10 +228,10 @@ public interface FileSystem {
   FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #deleteRecursive(String, boolean, Handler)}
+   * Blocking version of {@link #deleteRecursive(String, boolean, Handler)}
    */
   @Fluent
-  FileSystem deleteSyncRecursive(String path, boolean recursive) ;
+  FileSystem deleteRecursiveBlocking(String path, boolean recursive) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -241,10 +241,10 @@ public interface FileSystem {
   FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdir(String, Handler)}
+   * Blocking version of {@link #mkdir(String, Handler)}
    */
   @Fluent
-  FileSystem mkdirSync(String path) ;
+  FileSystem mkdirBlocking(String path) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -257,10 +257,10 @@ public interface FileSystem {
   FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdir(String, String, Handler)}
+   * Blocking version of {@link #mkdir(String, String, Handler)}
    */
   @Fluent
-  FileSystem mkdirSync(String path, String perms) ;
+  FileSystem mkdirBlocking(String path, String perms) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -272,10 +272,10 @@ public interface FileSystem {
   FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdirs(String, Handler)}
+   * Blocking version of {@link #mkdirs(String, Handler)}
    */
   @Fluent
-  FileSystem mkdirsSync(String path) ;
+  FileSystem mkdirsBlocking(String path) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.<p>
@@ -290,10 +290,10 @@ public interface FileSystem {
   FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #mkdirs(String, String, Handler)}
+   * Blocking version of {@link #mkdirs(String, String, Handler)}
    */
   @Fluent
-  FileSystem mkdirsSync(String path, String perms) ;
+  FileSystem mkdirsBlocking(String path, String perms) ;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
@@ -303,9 +303,9 @@ public interface FileSystem {
   FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler);
 
   /**
-   * Synchronous version of {@link #readDir(String, Handler)}
+   * Blocking version of {@link #readDir(String, Handler)}
    */
-  List<String> readDirSync(String path) ;
+  List<String> readDirBlocking(String path) ;
 
   /**
    * Read the contents of the directory specified by {@code path}, asynchronously.<p>
@@ -317,9 +317,9 @@ public interface FileSystem {
   FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler);
 
   /**
-   * Synchronous version of {@link #readDir(String, String, Handler)}
+   * Blocking version of {@link #readDir(String, String, Handler)}
    */
-  List<String> readDirSync(String path, String filter) ;
+  List<String> readDirBlocking(String path, String filter) ;
 
   /**
    * Reads the entire file as represented by the path {@code path} as a {@link Buffer}, asynchronously.<p>
@@ -329,9 +329,9 @@ public interface FileSystem {
   FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler);
 
   /**
-   * Synchronous version of {@link #readFile(String, Handler)}
+   * Blocking version of {@link #readFile(String, Handler)}
    */
-  Buffer readFileSync(String path) ;
+  Buffer readFileBlocking(String path) ;
 
   /**
    * Creates the file, and writes the specified {@code Buffer data} to the file represented by the path {@code path},
@@ -341,10 +341,10 @@ public interface FileSystem {
   FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #writeFile(String, Buffer, Handler)}
+   * Blocking version of {@link #writeFile(String, Buffer, Handler)}
    */
   @Fluent
-  FileSystem writeFileSync(String path, Buffer data) ;
+  FileSystem writeFileBlocking(String path, Buffer data) ;
 
   /**
    * Open the file represented by {@code path}, asynchronously.<p>
@@ -355,9 +355,9 @@ public interface FileSystem {
   FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler);
 
   /**
-   * Synchronous version of {@link #open(String, io.vertx.core.file.OpenOptions, Handler)}
+   * Blocking version of {@link #open(String, io.vertx.core.file.OpenOptions, Handler)}
    */
-  AsyncFile openSync(String path, OpenOptions options);
+  AsyncFile openBlocking(String path, OpenOptions options);
 
   /**
    * Creates an empty file with the specified {@code path}, asynchronously.
@@ -366,10 +366,10 @@ public interface FileSystem {
   FileSystem createFile(String path, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #createFile(String, Handler)}
+   * Blocking version of {@link #createFile(String, Handler)}
    */
   @Fluent
-  FileSystem createFileSync(String path) ;
+  FileSystem createFileBlocking(String path) ;
 
   /**
    * Creates an empty file with the specified {@code path} and permissions {@code perms}, asynchronously.
@@ -378,10 +378,10 @@ public interface FileSystem {
   FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Synchronous version of {@link #createFile(String, String, Handler)}
+   * Blocking version of {@link #createFile(String, String, Handler)}
    */
   @Fluent
-  FileSystem createFileSync(String path, String perms) ;
+  FileSystem createFileBlocking(String path, String perms) ;
 
   /**
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.
@@ -390,9 +390,9 @@ public interface FileSystem {
   FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler);
 
   /**
-   * Synchronous version of {@link #exists(String, Handler)}
+   * Blocking version of {@link #exists(String, Handler)}
    */
-  boolean existsSync(String path) ;
+  boolean existsBlocking(String path) ;
 
   /**
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.
@@ -401,8 +401,8 @@ public interface FileSystem {
   FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler);
 
   /**
-   * Synchronous version of {@link #fsProps(String, Handler)}
+   * Blocking version of {@link #fsProps(String, Handler)}
    */
-  FileSystemProps fsPropsSync(String path) ;
+  FileSystemProps fsPropsBlocking(String path) ;
 
 }

@@ -88,7 +88,7 @@ public class RedeploymentTest extends VertxTestBase {
 
   @Override
   public void tearDown() throws Exception {
-    vertx.fileSystem().deleteSyncRecursive(tempDir.getPath(), true);
+    vertx.fileSystem().deleteRecursiveBlocking(tempDir.getPath(), true);
   }
 
   @Test
@@ -355,12 +355,12 @@ public class RedeploymentTest extends VertxTestBase {
 
   protected void createFile(File dir, String fileName)  {
     File f = new File(dir, fileName);
-    vertx.fileSystem().writeFileSync(f.getAbsolutePath(), Buffer.buffer(TestUtils.randomAlphaString(1000)));
+    vertx.fileSystem().writeFileBlocking(f.getAbsolutePath(), Buffer.buffer(TestUtils.randomAlphaString(1000)));
   }
 
   protected void createFile(File dir, String fileName, String content)  {
     File f = new File(dir, fileName);
-    vertx.fileSystem().writeFileSync(f.getAbsolutePath(), Buffer.buffer(content));
+    vertx.fileSystem().writeFileBlocking(f.getAbsolutePath(), Buffer.buffer(content));
   }
 
   protected void modifyFile(File dir, String fileName)  {
@@ -381,11 +381,11 @@ public class RedeploymentTest extends VertxTestBase {
 
   protected void createDirectory(File parent, String dirName)  {
     File f = new File(parent, dirName);
-    vertx.fileSystem().mkdirSync(f.getAbsolutePath());
+    vertx.fileSystem().mkdirBlocking(f.getAbsolutePath());
   }
 
   protected void deleteDirectory(File directory)  {
-    vertx.fileSystem().deleteSyncRecursive(directory.getAbsolutePath(), true);
+    vertx.fileSystem().deleteRecursiveBlocking(directory.getAbsolutePath(), true);
   }
 
   // Make sure resources are found when running in IDE and on command line

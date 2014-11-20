@@ -81,7 +81,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem copySync(String from, String to) {
+  public FileSystem copyBlocking(String from, String to) {
     copyInternal(from, to, null).perform();
     return this;
   }
@@ -91,7 +91,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem copyRecursiveSync(String from, String to, boolean recursive) {
+  public FileSystem copyRecursiveBlocking(String from, String to, boolean recursive) {
     copyInternal(from, to, recursive, null).perform();
     return this;
   }
@@ -101,7 +101,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem moveSync(String from, String to) {
+  public FileSystem moveBlocking(String from, String to) {
     moveInternal(from, to, null).perform();
     return this;
   }
@@ -111,7 +111,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem truncateSync(String path, long len) {
+  public FileSystem truncateBlocking(String path, long len) {
     truncateInternal(path, len, null).perform();
     return this;
   }
@@ -121,7 +121,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem chmodSync(String path, String perms) {
+  public FileSystem chmodBlocking(String path, String perms) {
     chmodInternal(path, perms, null).perform();
     return this;
   }
@@ -131,7 +131,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem chmodRecursiveSync(String path, String perms, String dirPerms) {
+  public FileSystem chmodRecursiveBlocking(String path, String perms, String dirPerms) {
     chmodInternal(path, perms, dirPerms, null).perform();
     return this;
   }
@@ -141,7 +141,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem chownSync(String path, String user, String group) {
+  public FileSystem chownBlocking(String path, String user, String group) {
     chownInternal(path, user, group, null).perform();
     return this;
   }
@@ -151,7 +151,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileProps propsSync(String path) {
+  public FileProps propsBlocking(String path) {
     return propsInternal(path, null).perform();
   }
 
@@ -160,7 +160,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileProps lpropsSync(String path) {
+  public FileProps lpropsBlocking(String path) {
     return lpropsInternal(path, null).perform();
   }
 
@@ -169,7 +169,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem linkSync(String link, String existing) {
+  public FileSystem linkBlocking(String link, String existing) {
     linkInternal(link, existing, null).perform();
     return this;
   }
@@ -179,7 +179,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem symlinkSync(String link, String existing) {
+  public FileSystem symlinkBlocking(String link, String existing) {
     symlinkInternal(link, existing, null).perform();
     return this;
   }
@@ -189,7 +189,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem unlinkSync(String link) {
+  public FileSystem unlinkBlocking(String link) {
     unlinkInternal(link, null).perform();
     return this;
   }
@@ -199,7 +199,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public String readSymlinkSync(String link) {
+  public String readSymlinkBlocking(String link) {
     return readSymlinkInternal(link, null).perform();
   }
 
@@ -208,7 +208,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem deleteSync(String path) {
+  public FileSystem deleteBlocking(String path) {
     deleteInternal(path, null).perform();
     return this;
   }
@@ -218,7 +218,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem deleteSyncRecursive(String path, boolean recursive) {
+  public FileSystem deleteRecursiveBlocking(String path, boolean recursive) {
     deleteInternal(path, recursive, null).perform();
     return this;
   }
@@ -228,7 +228,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdirSync(String path) {
+  public FileSystem mkdirBlocking(String path) {
     mkdirInternal(path, null).perform();
     return this;
   }
@@ -238,7 +238,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdirsSync(String path) {
+  public FileSystem mkdirsBlocking(String path) {
     mkdirInternal(path, true, null).perform();
     return this;
   }
@@ -248,7 +248,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdirSync(String path, String perms) {
+  public FileSystem mkdirBlocking(String path, String perms) {
     mkdirInternal(path, perms, null).perform();
     return this;
   }
@@ -258,7 +258,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdirsSync(String path, String perms) {
+  public FileSystem mkdirsBlocking(String path, String perms) {
     mkdirInternal(path, perms, true, null).perform();
     return this;
   }
@@ -268,7 +268,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public List<String> readDirSync(String path) {
+  public List<String> readDirBlocking(String path) {
     return readDirInternal(path, null).perform();
   }
 
@@ -277,7 +277,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public List<String> readDirSync(String path, String filter) {
+  public List<String> readDirBlocking(String path, String filter) {
     return readDirInternal(path, filter, null).perform();
   }
 
@@ -286,7 +286,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public Buffer readFileSync(String path) {
+  public Buffer readFileBlocking(String path) {
     return readFileInternal(path, null).perform();
   }
 
@@ -295,7 +295,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem writeFileSync(String path, Buffer data) {
+  public FileSystem writeFileBlocking(String path, Buffer data) {
     writeFileInternal(path, data, null).perform();
     return this;
   }
@@ -305,7 +305,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public AsyncFile openSync(String path, OpenOptions options) {
+  public AsyncFile openBlocking(String path, OpenOptions options) {
     return openInternal(path, options, null).perform();
   }
 
@@ -314,7 +314,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem createFileSync(String path) {
+  public FileSystem createFileBlocking(String path) {
     createFileInternal(path, null).perform();
     return this;
   }
@@ -324,7 +324,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem createFileSync(String path, String perms) {
+  public FileSystem createFileBlocking(String path, String perms) {
     createFileInternal(path, perms, null).perform();
     return this;
   }
@@ -334,7 +334,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public boolean existsSync(String path) {
+  public boolean existsBlocking(String path) {
     return existsInternal(path, null).perform();
   }
 
@@ -343,7 +343,7 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystemProps fsPropsSync(String path) {
+  public FileSystemProps fsPropsBlocking(String path) {
     return fsPropsInternal(path, null).perform();
   }
 

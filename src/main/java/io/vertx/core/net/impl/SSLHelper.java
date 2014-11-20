@@ -144,7 +144,7 @@ public class SSLHelper {
         Stream<Buffer> tmp = crlPaths.
             stream().
             map(path -> vertx.resolveFile(path).getAbsolutePath()).
-            map(vertx.fileSystem()::readFileSync);
+            map(vertx.fileSystem()::readFileBlocking);
         tmp = Stream.concat(tmp, crlValues.stream());
         CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
         ArrayList<CRL> crls = new ArrayList<>();

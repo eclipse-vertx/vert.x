@@ -285,7 +285,7 @@ public class KeyStoreTest extends VertxTestBase {
   @Test
   public void testJKSValue() throws Exception {
     JKSOptions options = (JKSOptions) getServerCertOptions(KS.JKS);
-    Buffer store = vertx.fileSystem().readFileSync(options.getPath());
+    Buffer store = vertx.fileSystem().readFileBlocking(options.getPath());
     options.setPath(null).setValue(store);
     testKeyStore(options);
   }
@@ -298,7 +298,7 @@ public class KeyStoreTest extends VertxTestBase {
   @Test
   public void testPKCS12Value() throws Exception {
     PKCS12Options options = (PKCS12Options) getServerCertOptions(KS.PKCS12);
-    Buffer store = vertx.fileSystem().readFileSync(options.getPath());
+    Buffer store = vertx.fileSystem().readFileBlocking(options.getPath());
     options.setPath(null).setValue(store);
     testKeyStore(options);
   }
@@ -311,9 +311,9 @@ public class KeyStoreTest extends VertxTestBase {
   @Test
   public void testKeyCertValue() throws Exception {
     KeyCertOptions options = (KeyCertOptions) getServerCertOptions(KS.PEM);
-    Buffer key = vertx.fileSystem().readFileSync(options.getKeyPath());
+    Buffer key = vertx.fileSystem().readFileBlocking(options.getKeyPath());
     options.setKeyValue(null).setKeyValue(key);
-    Buffer cert = vertx.fileSystem().readFileSync(options.getCertPath());
+    Buffer cert = vertx.fileSystem().readFileBlocking(options.getCertPath());
     options.setCertValue(null).setCertValue(cert);
     testKeyStore(options);
   }
@@ -328,7 +328,7 @@ public class KeyStoreTest extends VertxTestBase {
     CaOptions options = (CaOptions) getServerTrustOptions(TS.PEM);
     options.getCertPaths().
         stream().
-        map(vertx.fileSystem()::readFileSync).
+        map(vertx.fileSystem()::readFileBlocking).
         forEach(options::addCertValue);
     options.getCertPaths().clear();
     testTrustStore(options);

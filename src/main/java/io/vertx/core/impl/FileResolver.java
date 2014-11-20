@@ -108,7 +108,7 @@ public class FileResolver {
       String cacheDirName = ".vertx/file-cache-" + UUID.randomUUID().toString();
       cacheDir = new File(cacheDirName);
       if (cacheDir.exists()) {
-        vertx.fileSystem().deleteSyncRecursive(cacheDir.getAbsolutePath(), true);
+        vertx.fileSystem().deleteRecursiveBlocking(cacheDir.getAbsolutePath(), true);
       } else {
         if (!cacheDir.mkdirs()) {
           throw new IllegalStateException("Failed to create cache dir");

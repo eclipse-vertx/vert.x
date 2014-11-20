@@ -91,7 +91,7 @@ public class FileResolverTest extends VertxTestBase {
 
   @Test
   public void testReadFileFromClasspath() {
-    Buffer buffer = vertx.fileSystem().readFileSync(fileName1);
+    Buffer buffer = vertx.fileSystem().readFileBlocking(fileName1);
     assertNotNull(buffer);
     assertTrue(buffer.toString().startsWith("<html><body>blah</body></html>"));
   }
