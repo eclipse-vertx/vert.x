@@ -652,6 +652,22 @@ public class JsonObjectTest {
     jsonObject.putNull("foo");
     assertNull(jsonObject.getValue("foo"));
     assertNull(jsonObject.getValue("absent"));
+    // JsonObject with inner Map
+    Map<String, Object> map = new HashMap<>();
+    Map<String, Object> innerMap = new HashMap<>();
+    innerMap.put("blah", "wibble");
+    map.put("foo", innerMap);
+    jsonObject = new JsonObject(map);
+    obj = (JsonObject)jsonObject.getValue("foo");
+    assertEquals("wibble", obj.getString("blah"));
+    // JsonObject with inner List
+    map = new HashMap<>();
+    List<Object> innerList = new ArrayList<>();
+    innerList.add("blah");
+    map.put("foo", innerList);
+    jsonObject = new JsonObject(map);
+    arr = (JsonArray)jsonObject.getValue("foo");
+    assertEquals("blah", arr.getString(0));
   }
 
   @Test

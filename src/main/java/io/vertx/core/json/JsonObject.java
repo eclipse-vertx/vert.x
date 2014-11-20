@@ -134,7 +134,13 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   public Object getValue(String key) {
     Objects.requireNonNull(key);
-    return map.get(key);
+    Object val = map.get(key);
+    if (val instanceof Map) {
+      val = new JsonObject((Map)val);
+    } else if (val instanceof List) {
+      val = new JsonArray((List)val);
+    }
+    return val;
   }
 
   public String getString(String key, String def) {

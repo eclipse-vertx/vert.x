@@ -126,7 +126,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   public Object getValue(int pos) {
-    return list.get(pos);
+    Object val = list.get(pos);
+    if (val instanceof Map) {
+      val = new JsonObject((Map)val);
+    } else if (val instanceof List) {
+      val = new JsonArray((List)val);
+    }
+    return val;
   }
 
   public boolean hasNull(int pos) {

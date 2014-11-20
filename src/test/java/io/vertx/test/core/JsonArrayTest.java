@@ -364,6 +364,22 @@ public class JsonArrayTest {
     } catch (IndexOutOfBoundsException e) {
       // OK
     }
+    // JsonObject with inner Map
+    List<Object> list = new ArrayList<>();
+    Map<String, Object> innerMap = new HashMap<>();
+    innerMap.put("blah", "wibble");
+    list.add(innerMap);
+    jsonArray = new JsonArray(list);
+    obj = (JsonObject)jsonArray.getValue(0);
+    assertEquals("wibble", obj.getString("blah"));
+    // JsonObject with inner List
+    list = new ArrayList<>();
+    List<Object> innerList = new ArrayList<>();
+    innerList.add("blah");
+    list.add(innerList);
+    jsonArray = new JsonArray(list);
+    arr = (JsonArray)jsonArray.getValue(0);
+    assertEquals("blah", arr.getString(0));
   }
 
   @Test
