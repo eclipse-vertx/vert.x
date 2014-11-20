@@ -109,7 +109,7 @@ public class VertxTestBase extends AsyncTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      Vertx.vertxAsync(options.setClusterHost("localhost").setClusterPort(0).setClustered(true)
+      Vertx.clusteredVertx(options.setClusterHost("localhost").setClusterPort(0).setClustered(true)
         .setClusterManager(getClusterManager()), ar -> {
         if (ar.failed()) {
           ar.cause().printStackTrace();

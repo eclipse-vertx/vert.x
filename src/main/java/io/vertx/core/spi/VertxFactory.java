@@ -34,7 +34,7 @@ public interface VertxFactory {
 
   Vertx vertx(VertxOptions options);
 
-  void vertxAsync(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
+  void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler);
 
   Context context();
 

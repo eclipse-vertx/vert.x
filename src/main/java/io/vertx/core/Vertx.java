@@ -64,8 +64,8 @@ public interface Vertx extends Measured {
     return factory.vertx(options);
   }
 
-  static void vertxAsync(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    factory.vertxAsync(options, resultHandler);
+  static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    factory.clusteredVertx(options, resultHandler);
   }
 
   /**

@@ -43,7 +43,7 @@ public class VertxFactoryImpl implements VertxFactory {
   }
 
   @Override
-  public void vertxAsync(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
+  public void clusteredVertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
     new VertxImpl(options, resultHandler);
   }
 

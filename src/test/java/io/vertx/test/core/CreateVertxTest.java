@@ -54,7 +54,7 @@ public class CreateVertxTest extends AsyncTestBase {
   public void testCreateClusteredVertxAsync() {
     VertxOptions options = new VertxOptions();
     options.setClustered(true);
-    Vertx.vertxAsync(options, ar -> {
+    Vertx.clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
       testComplete();
@@ -65,7 +65,7 @@ public class CreateVertxTest extends AsyncTestBase {
   @Test
   public void testCreateNonClusteredVertxAsync() {
     VertxOptions options = new VertxOptions();
-    Vertx.vertxAsync(options, ar -> {
+    Vertx.clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
       testComplete();

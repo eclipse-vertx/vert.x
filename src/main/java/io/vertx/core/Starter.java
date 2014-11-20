@@ -141,7 +141,7 @@ public class Starter {
           options.setQuorumSize(quorumSize);
         }
       }
-      Vertx.vertxAsync(options, ar -> {
+      Vertx.clusteredVertx(options, ar -> {
         result.set(ar);
         latch.countDown();
       });
