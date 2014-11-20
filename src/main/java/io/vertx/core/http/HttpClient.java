@@ -44,6 +44,22 @@ public interface HttpClient extends Measured {
    */
   HttpClient exceptionHandler(Handler<Throwable> handler);
 
+  HttpClientRequest request(HttpMethod method, String absoluteURI);
+
+  /**
+   * Create a new http client request.
+   *
+   * The returned request does not have yet a response handler and one should be set before sending
+   * any data to the remote server.
+   *
+   * @param method the http method
+   * @param port the remote server port
+   * @param host the remote server host
+   * @param requestURI the request uri
+   * @return the http client request
+   */
+  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI);
+
   HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);

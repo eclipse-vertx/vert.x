@@ -23,6 +23,7 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -62,19 +63,34 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<Buffer> {
+public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpClientResponse> {
 
   @Override
   HttpClientRequest exceptionHandler(Handler<Throwable> handler);
 
+  /**
+   * @throws java.lang.IllegalStateException when no response handler is set
+   */
   @Override
-  HttpClientRequest write(Buffer data);
+  HttpClientRequest write(Buffer data) throws IllegalStateException;
 
   @Override
   HttpClientRequest setWriteQueueMaxSize(int maxSize);
 
   @Override
   HttpClientRequest drainHandler(Handler<Void> handler);
+
+  @Override
+  HttpClientRequest handler(Handler<HttpClientResponse> handler);
+
+  @Override
+  HttpClientRequest pause();
+
+  @Override
+  HttpClientRequest resume();
+
+  @Override
+  HttpClientRequest endHandler(Handler<Void> endHandler);
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
@@ -136,17 +152,19 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * Write a {@link String} to the request body, encoded in UTF-8.
    *
    * @return A reference to this, so multiple method calls can be chained.
+   * @throws java.lang.IllegalStateException when no response handler is set
    */
   @Fluent
-  HttpClientRequest write(String chunk);
+  HttpClientRequest write(String chunk) throws IllegalStateException;
 
   /**
    * Write a {@link String} to the request body, encoded using the encoding {@code enc}.
    *
    * @return A reference to this, so multiple method calls can be chained.
+   * @throws java.lang.IllegalStateException when no response handler is set
    */
   @Fluent
-  HttpClientRequest write(String chunk, String enc);
+  HttpClientRequest write(String chunk, String enc) throws IllegalStateException;
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
@@ -165,33 +183,42 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * to implement HTTP 100-continue handling, see {@link #continueHandler(io.vertx.core.Handler)} for more information.
    *
    * @return A reference to this, so multiple method calls can be chained.
+   * @throws java.lang.IllegalStateException when no response handler is set
    */
   @Fluent
-  HttpClientRequest sendHead();
+  HttpClientRequest sendHead() throws IllegalStateException;
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the default encoding
+   *
+   * @throws java.lang.IllegalStateException when no response handler is set
    */
-  void end(String chunk);
+  void end(String chunk) throws IllegalStateException;
 
   /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding
+   *
+   * @throws java.lang.IllegalStateException when no response handler is set
    */
-  void end(String chunk, String enc);
+  void end(String chunk, String enc) throws IllegalStateException;
 
   /**
    * Same as {@link #end()} but writes some data to the request body before ending. If the request is not chunked and
    * no other data has been written then the Content-Length header will be automatically set
+   *
+   * @throws java.lang.IllegalStateException when no response handler is set
    */
-  void end(Buffer chunk);
+  void end(Buffer chunk) throws IllegalStateException;
 
   /**
    * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then
    * the actual request won't get written until this method gets called.<p>
    * Once the request has ended, it cannot be used any more, and if keep alive is true the underlying connection will
    * be returned to the {@link HttpClient} pool so it can be assigned to another request.
+   *
+   * @throws java.lang.IllegalStateException when no response handler is set
    */
-  void end();
+  void end() throws IllegalStateException;
 
   /**
     * Set's the amount of time after which if a response is not received TimeoutException()

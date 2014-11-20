@@ -54,7 +54,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.metrics.spi.HttpClientMetrics;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
@@ -63,7 +62,6 @@ import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -153,15 +151,25 @@ public class HttpClientImpl implements HttpClient {
 
   @Override
   public HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler) {
-    checkConnect(method, responseHandler);
-    URL url = parseUrl(absoluteURI);
-    return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null, responseHandler);
+    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
+    return request(method, absoluteURI).handler(responseHandler);
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, int port, String host, String path, Handler<HttpClientResponse> responseHandler) {
-    checkConnect(method, responseHandler);
-    return doRequest(method, host, port, path, null, responseHandler);
+  public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
+    return request(method, port, host, requestURI).handler(responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, String absoluteURI) {
+    URL url = parseUrl(absoluteURI);
+    return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI) {
+    return doRequest(method, host, port, requestURI, null);
   }
 
   @Override
@@ -307,14 +315,12 @@ public class HttpClientImpl implements HttpClient {
     }
   }
 
-  private HttpClientRequest doRequest(HttpMethod method, String host, int port, String relativeURI, MultiMap headers,
-                                      Handler<HttpClientResponse> responseHandler) {
+  private HttpClientRequest doRequest(HttpMethod method, String host, int port, String relativeURI, MultiMap headers) {
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
-    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     checkClosed();
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, relativeURI, responseHandler, vertx);
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, relativeURI, vertx);
     if (headers != null) {
       req.headers().setAll(headers);
     }
@@ -325,14 +331,6 @@ public class HttpClientImpl implements HttpClient {
     if (closed) {
       throw new IllegalStateException("Client is closed");
     }
-  }
-
-  private Handler<HttpClientResponse> checkConnect(HttpMethod method, Handler<HttpClientResponse> handler) {
-    if (method == HttpMethod.CONNECT) {
-      // special handling for CONNECT
-      handler = connectHandler(handler);
-    }
-    return handler;
   }
 
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
@@ -373,97 +371,6 @@ public class HttpClientImpl implements HttpClient {
         log.error(t);
       }
     });
-  }
-
-  private Handler<HttpClientResponse> connectHandler(Handler<HttpClientResponse> responseHandler) {
-    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
-    return resp -> {
-      HttpClientResponse response;
-      if (resp.statusCode() == 200) {
-        // connect successful force the modification of the ChannelPipeline
-        // beside this also pause the socket for now so the user has a chance to register its dataHandler
-        // after received the NetSocket
-        NetSocket socket = resp.netSocket();
-        socket.pause();
-
-        response = new HttpClientResponse() {
-          private boolean resumed;
-
-          @Override
-          public int statusCode() {
-            return resp.statusCode();
-          }
-
-          @Override
-          public String statusMessage() {
-            return resp.statusMessage();
-          }
-
-          @Override
-          public MultiMap headers() {
-            return resp.headers();
-          }
-
-          @Override
-          public MultiMap trailers() {
-            return resp.trailers();
-          }
-
-          @Override
-          public List<String> cookies() {
-            return resp.cookies();
-          }
-
-          @Override
-          public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
-            resp.bodyHandler(bodyHandler);
-            return this;
-          }
-
-          @Override
-          public synchronized NetSocket netSocket() {
-            if (!resumed) {
-              resumed = true;
-              vertx.getContext().runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
-            }
-            return socket;
-          }
-
-          @Override
-          public HttpClientResponse endHandler(Handler<Void> endHandler) {
-            resp.endHandler(endHandler);
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse handler(Handler<Buffer> handler) {
-            resp.handler(handler);
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse pause() {
-            resp.pause();
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse resume() {
-            resp.resume();
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse exceptionHandler(Handler<Throwable> handler) {
-            resp.exceptionHandler(handler);
-            return this;
-          }
-        };
-      } else {
-        response = resp;
-      }
-      responseHandler.handle(response);
-    };
   }
 
   private class ClientHandler extends VertxHttpHandler<ClientConnection> {

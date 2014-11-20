@@ -1349,7 +1349,6 @@ public class HttpTest extends HttpTestBase {
       assertIllegalStateException(() -> req.end("foo"));
       assertIllegalStateException(() -> req.end(buff));
       assertIllegalStateException(() -> req.end("foo", "UTF-8"));
-      assertIllegalStateException(() -> req.exceptionHandler(noOpHandler()));
       assertIllegalStateException(() -> req.sendHead());
       assertIllegalStateException(() -> req.setChunked(false));
       assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
@@ -1551,6 +1550,50 @@ public class HttpTest extends HttpTestBase {
     }));
 
     await();
+  }
+
+  @Test
+  public void testConnectWithoutResponseHandler() throws Exception {
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end();
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end("whatever");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end("whatever", "UTF-8");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end(Buffer.buffer("whatever"));
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).sendHead();
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).write(Buffer.buffer("whatever"));
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).write("whatever");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).write("whatever", "UTF-8");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
   }
 
   @Test
