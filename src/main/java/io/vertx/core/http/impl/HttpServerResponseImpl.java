@@ -38,8 +38,12 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.impl.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  *
@@ -53,8 +57,7 @@ import java.io.File;
  */
 public class HttpServerResponseImpl implements HttpServerResponse {
 
-  private static final Buffer NOT_FOUND = Buffer.buffer("<html><body>Resource not found</body><html>");
-  private static final Buffer FORBIDDEN = Buffer.buffer("<html><body>Forbidden</body><html>");
+  private static final Logger log = LoggerFactory.getLogger(HttpServerResponseImpl.class);
 
   private final VertxInternal vertx;
   private final ServerConnection conn;
@@ -331,24 +334,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponseImpl sendFile(String filename) {
-    return sendFile(filename, (String)null);
-  }
-
-  @Override
-  public HttpServerResponseImpl sendFile(String filename, String notFoundResource) {
-    doSendFile(filename, notFoundResource, null);
-    return this;
-  }
-
-  @Override
-  public HttpServerResponse sendFile(String filename, String notFoundFile, Handler<AsyncResult<Void>> resultHandler) {
-    doSendFile(filename, notFoundFile, resultHandler);
+    doSendFile(filename, null);
     return this;
   }
 
   @Override
   public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
-    doSendFile(filename, null, resultHandler);
+    doSendFile(filename, resultHandler);
     return this;
   }
 
@@ -374,64 +366,66 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return this;
   }
 
-  private synchronized void doSendFile(String filename, String notFoundResource, final Handler<AsyncResult<Void>> resultHandler) {
+  private synchronized void doSendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
     if (headWritten) {
       throw new IllegalStateException("Head already written");
     }
     checkWritten();
     File file = vertx.resolveFile(filename);
-    if (!file.exists()) {
-      if (notFoundResource != null) {
-        setStatusCode(HttpResponseStatus.NOT_FOUND.code());
-        sendFile(notFoundResource, null, resultHandler);
-      } else {
-        sendNotFound();
-      }
-    } else if (file.isDirectory()) {
-      // send over a 403 Forbidden
-      sendForbidden();
-    } else {
-      if (!contentLengthSet()) {
-        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(file.length()));
-      }
-      if (!contentTypeSet()) {
-        int li = filename.lastIndexOf('.');
-        if (li != -1 && li != filename.length() - 1) {
-          String ext = filename.substring(li + 1, filename.length());
-          String contentType = MimeMapping.getMimeTypeForExtension(ext);
-          if (contentType != null) {
-            putHeader(HttpHeaders.CONTENT_TYPE, contentType);
-          }
+    long fileLength = file.length();
+    if (!contentLengthSet()) {
+      putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileLength));
+    }
+    if (!contentTypeSet()) {
+      int li = filename.lastIndexOf('.');
+      if (li != -1 && li != filename.length() - 1) {
+        String ext = filename.substring(li + 1, filename.length());
+        String contentType = MimeMapping.getMimeTypeForExtension(ext);
+        if (contentType != null) {
+          putHeader(HttpHeaders.CONTENT_TYPE, contentType);
         }
       }
-      prepareHeaders();
+    }
+    prepareHeaders();
+
+    RandomAccessFile raf;
+    try {
+      raf = new RandomAccessFile(file, "r");
       conn.queueForWrite(response);
-      conn.sendFile(file);
-
-      // write an empty last content to let the http encoder know the response is complete
-      channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
-      headWritten = written = true;
-
-      ContextImpl ctx = vertx.getOrCreateContext();
+      conn.sendFile(raf, fileLength);
+    } catch (IOException e) {
       if (resultHandler != null) {
-        channelFuture.addListener(future -> {
-          AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.completedFuture();
-          } else {
-            res = Future.completedFuture(future.cause());
-          }
-          ctx.runOnContext((v) -> resultHandler.handle(res));
-        });
+        ContextImpl ctx = vertx.getOrCreateContext();
+        ctx.runOnContext((v) -> resultHandler.handle(Future.completedFuture(e)));
+      } else {
+        log.error("Failed to send file", e);
       }
+      return;
+    }
 
-      if (!keepAlive) {
-        closeConnAfterWrite();
-      }
-      conn.responseComplete();
-      if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
-      }
+    // write an empty last content to let the http encoder know the response is complete
+    channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+    headWritten = written = true;
+
+    if (resultHandler != null) {
+      ContextImpl ctx = vertx.getOrCreateContext();
+      channelFuture.addListener(future -> {
+        AsyncResult<Void> res;
+        if (future.isSuccess()) {
+          res = Future.completedFuture();
+        } else {
+          res = Future.completedFuture(future.cause());
+        }
+        ctx.runOnContext((v) -> resultHandler.handle(res));
+      });
+    }
+
+    if (!keepAlive) {
+      closeConnAfterWrite();
+    }
+    conn.responseComplete();
+    if (bodyEndHandler != null) {
+      bodyEndHandler.handle(null);
     }
   }
 
@@ -457,18 +451,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         }
       });
     }
-  }
-
-  private void sendForbidden() {
-    setStatusCode(HttpResponseStatus.FORBIDDEN.code());
-    putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML);
-    end(FORBIDDEN);
-  }
-
-  private void sendNotFound() {
-    setStatusCode(HttpResponseStatus.NOT_FOUND.code());
-    putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML);
-    end(NOT_FOUND);
   }
 
   synchronized void handleDrained() {
@@ -508,7 +490,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       headersEndHandler.handle(null);
     }
   }
-
 
   private synchronized HttpServerResponseImpl write(ByteBuf chunk, final Handler<AsyncResult<Void>> completionHandler) {
     checkWritten();

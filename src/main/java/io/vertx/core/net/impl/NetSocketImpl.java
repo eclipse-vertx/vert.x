@@ -39,6 +39,8 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -178,17 +180,26 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     if (f.isDirectory()) {
       throw new IllegalArgumentException("filename must point to a file and not to a directory");
     }
-    ChannelFuture future = super.sendFile(f);
-    if (resultHandler != null) {
-      future.addListener(fut -> {
-        final AsyncResult<Void> res;
-        if (future.isSuccess()) {
-          res = Future.completedFuture();
-        } else {
-          res = Future.completedFuture(future.cause());
-        }
-        vertx.runOnContext(v -> resultHandler.handle(res));
-      });
+    try {
+      RandomAccessFile raf = new RandomAccessFile(f, "r");
+      ChannelFuture future = super.sendFile(raf, f.length());
+      if (resultHandler != null) {
+        future.addListener(fut -> {
+          final AsyncResult<Void> res;
+          if (future.isSuccess()) {
+            res = Future.completedFuture();
+          } else {
+            res = Future.completedFuture(future.cause());
+          }
+          vertx.runOnContext(v -> resultHandler.handle(res));
+        });
+      }
+    } catch (IOException e) {
+      if (resultHandler != null) {
+        vertx.runOnContext(v -> resultHandler.handle(Future.completedFuture(e)));
+      } else {
+        log.error("Failed to send file", e);
+      }
     }
     return this;
   }

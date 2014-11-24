@@ -18,7 +18,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.FileRegion;
@@ -36,7 +35,6 @@ import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
@@ -185,40 +183,26 @@ public abstract class ConnectionBase {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
-  protected ChannelFuture sendFile(File file) {
-    final RandomAccessFile raf;
-    try {
-      raf = new RandomAccessFile(file, "r");
-      long fileLength = file.length();
-
-      // Write the content.
-      ChannelFuture writeFuture;
-      if (!supportsFileRegion()) {
-        // Cannot use zero-copy
-        writeFuture = writeToChannel(new ChunkedFile(raf, 0, fileLength, 8192));
-      } else {
-        // No encryption - use zero-copy.
-        final FileRegion region =
-            new DefaultFileRegion(raf.getChannel(), 0, fileLength);
-        writeFuture = writeToChannel(region);
-      }
-      writeFuture.addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) throws Exception {
-          raf.close();
-        }
-      });
-      return writeFuture;
-    } catch (IOException e) {
-      context.runOnContext(v ->  handleException(e));
-      return null;
+  protected ChannelFuture sendFile(RandomAccessFile raf, long fileLength) throws IOException {
+    // Write the content.
+    ChannelFuture writeFuture;
+    if (!supportsFileRegion()) {
+      // Cannot use zero-copy
+      writeFuture = writeToChannel(new ChunkedFile(raf, 0, fileLength, 8192));
+    } else {
+      // No encryption - use zero-copy.
+      FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+      writeFuture = writeToChannel(region);
     }
+    writeFuture.addListener(fut -> raf.close());
+    return writeFuture;
   }
 
   public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
     if (isSSL()) {
-      final ChannelHandlerContext sslHandlerContext = channel.pipeline().context("ssl");
+      ChannelHandlerContext sslHandlerContext = channel.pipeline().context("ssl");
       assert sslHandlerContext != null;
-      final SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
+      SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession().getPeerCertificateChain();
     } else {
       return null;
