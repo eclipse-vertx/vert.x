@@ -64,7 +64,7 @@ public class AsynchronousLock implements Lock {
   }
 
   private void lockAquired(Context context, Handler<AsyncResult<Lock>> resultHandler) {
-    context.runOnContext(v -> resultHandler.handle(Future.completedFuture(this)));
+    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(this)));
   }
 
   private LockWaiter pollWaiters() {
@@ -98,7 +98,7 @@ public class AsynchronousLock implements Lock {
       synchronized (lock) {
         if (!acquired) {
           timedOut = true;
-          context.runOnContext(v -> resultHandler.handle(Future.completedFuture(new VertxException("Timed out waiting to get lock"))));
+          context.runOnContext(v -> resultHandler.handle(Future.failedFuture(new VertxException("Timed out waiting to get lock"))));
         }
       }
     }

@@ -823,11 +823,11 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(Future.completedFuture());
+      completionHandler.handle(Future.succeededFuture());
     };
     Closeable myCloseable2 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(Future.completedFuture());
+      completionHandler.handle(Future.succeededFuture());
     };
     MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
       ContextImpl ctx = (ContextImpl)Vertx.currentContext();

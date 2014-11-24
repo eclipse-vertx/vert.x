@@ -62,9 +62,9 @@ public class SharedDataImpl implements SharedData {
     clusterManager.<K, V>getAsyncMap(name, null, ar -> {
       if (ar.succeeded()) {
         // Wrap it
-        resultHandler.handle(Future.completedFuture(new WrappedAsyncMap<K, V>(ar.result())));
+        resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<K, V>(ar.result())));
       } else {
-        resultHandler.handle(Future.completedFuture(ar.cause()));
+        resultHandler.handle(Future.failedFuture(ar.cause()));
       }
     });
   }
@@ -134,7 +134,7 @@ public class SharedDataImpl implements SharedData {
     }
     Counter theCounter = counter;
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.completedFuture(theCounter)));
+    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(theCounter)));
   }
 
   private static void checkType(Object obj) {

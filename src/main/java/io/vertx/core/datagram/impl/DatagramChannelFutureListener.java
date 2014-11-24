@@ -43,9 +43,9 @@ final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
 
   private void notifyHandler(ChannelFuture future) {
     if (future.isSuccess()) {
-      handler.handle(Future.completedFuture(result));
+      handler.handle(Future.succeededFuture(result));
     } else {
-      handler.handle(Future.completedFuture(future.cause()));
+      handler.handle(Future.failedFuture(future.cause()));
     }
   }
 }

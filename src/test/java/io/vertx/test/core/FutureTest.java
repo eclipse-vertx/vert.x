@@ -29,14 +29,14 @@ public class FutureTest extends VertxTestBase {
   @Test
   public void testStateAfterCompletion() {
     Object foo = new Object();
-    Future<Object> future = Future.completedFuture(foo);
+    Future<Object> future = Future.succeededFuture(foo);
     assertTrue(future.succeeded());
     assertFalse(future.failed());
     assertTrue(future.isComplete());
     assertEquals(foo, future.result());
     assertNull(future.cause());
     Exception cause = new Exception();
-    future = Future.completedFuture(cause);
+    future = Future.failedFuture(cause);
     assertFalse(future.succeeded());
     assertTrue(future.failed());
     assertTrue(future.isComplete());
@@ -47,12 +47,12 @@ public class FutureTest extends VertxTestBase {
   @Test
   public void testSetResultOnCompletedFuture() {
     ArrayList<Future<Object>> futures = new ArrayList<>();
-    futures.add(Future.completedFuture());
-    futures.add(Future.completedFuture());
-    futures.add(Future.completedFuture(new Object()));
-    futures.add(Future.completedFuture(new Object()));
-    futures.add(Future.completedFuture(new Exception()));
-    futures.add(Future.completedFuture(new Exception()));
+    futures.add(Future.succeededFuture());
+    futures.add(Future.succeededFuture());
+    futures.add(Future.succeededFuture(new Object()));
+    futures.add(Future.succeededFuture(new Object()));
+    futures.add(Future.failedFuture(new Exception()));
+    futures.add(Future.failedFuture(new Exception()));
     for (Future<Object> future : futures) {
       try {
         future.complete(new Object());
@@ -117,7 +117,7 @@ public class FutureTest extends VertxTestBase {
   @Test
   public void testCallSetHandlerAfterCompletion() {
     AtomicBoolean called = new AtomicBoolean();
-    Future<Object> future = Future.completedFuture();
+    Future<Object> future = Future.succeededFuture();
     future.setHandler(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
@@ -128,7 +128,7 @@ public class FutureTest extends VertxTestBase {
     assertTrue(called.get());
     called.set(false);
     Object foo = new Object();
-    future = Future.completedFuture(foo);
+    future = Future.succeededFuture(foo);
     future.setHandler(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
@@ -139,7 +139,7 @@ public class FutureTest extends VertxTestBase {
     assertTrue(called.get());
     called.set(false);
     Exception cause = new Exception();
-    future = Future.completedFuture(cause);
+    future = Future.failedFuture(cause);
     future.setHandler(result -> {
       assertFalse(result.succeeded());
       assertTrue(result.failed());

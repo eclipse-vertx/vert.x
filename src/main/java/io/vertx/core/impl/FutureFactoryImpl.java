@@ -43,4 +43,9 @@ public class FutureFactoryImpl implements FutureFactory {
   public <T> Future<T> completedFuture(Throwable t) {
     return new FutureImpl<T>(t);
   }
+
+  @Override
+  public <T> Future<T> completedFuture(String failureMessage, boolean failed) {
+    return new FutureImpl<>(failureMessage, true);
+  }
 }

@@ -97,7 +97,7 @@ public class HttpClientImpl implements HttpClient {
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();
-      completionHandler.handle(Future.completedFuture());
+      completionHandler.handle(Future.succeededFuture());
     };
     if (creatingContext != null) {
       if (creatingContext.isWorker()) {

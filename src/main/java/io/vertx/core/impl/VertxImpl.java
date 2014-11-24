@@ -171,11 +171,11 @@ public class VertxImpl implements VertxInternal {
                     clusterManager, subs, serverID, ebServer);
                 }
                 if (resultHandler != null) {
-                  resultHandler.handle(Future.completedFuture(this));
+                  resultHandler.handle(Future.succeededFuture(this));
                 }
               } else {
                 if (resultHandler != null) {
-                  resultHandler.handle(Future.completedFuture(ar.cause()));
+                  resultHandler.handle(Future.failedFuture(ar.cause()));
                 } else {
                   log.error(ar.cause());
                 }
@@ -183,7 +183,7 @@ public class VertxImpl implements VertxInternal {
             });
           } else {
             if (resultHandler != null) {
-              resultHandler.handle(Future.completedFuture(ar.cause()));
+              resultHandler.handle(Future.failedFuture(ar.cause()));
             } else {
               log.error(ar.cause());
             }
@@ -197,7 +197,7 @@ public class VertxImpl implements VertxInternal {
       this.eventBus = new EventBusImpl(this);
       if (resultHandler != null) {
         // TODO shouldn't this be run async?
-        resultHandler.handle(Future.completedFuture(this));
+        resultHandler.handle(Future.succeededFuture(this));
       }
     }
   }
@@ -416,7 +416,7 @@ public class VertxImpl implements VertxInternal {
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (closed || eventBus == null) {
       runOnContext(v -> {
-        completionHandler.handle(Future.completedFuture());
+        completionHandler.handle(Future.succeededFuture());
       });
     }
     closed = true;
@@ -454,7 +454,7 @@ public class VertxImpl implements VertxInternal {
 
           if (completionHandler != null) {
             // Call directly - we have no context
-            completionHandler.handle(Future.completedFuture());
+            completionHandler.handle(Future.succeededFuture());
           }
         });
 
@@ -549,6 +549,12 @@ public class VertxImpl implements VertxInternal {
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
     context.executeBlocking(action, resultHandler);
+  }
+
+  @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
+    ContextImpl context = getOrCreateContext();
+    context.executeBlocking(blockingCodeHandler, asyncResultHandler);
   }
 
   // For testing
@@ -658,7 +664,7 @@ public class VertxImpl implements VertxInternal {
     public void close(Handler<AsyncResult<Void>> completionHandler) {
       VertxImpl.this.timeouts.remove(timerID);
       cancel();
-      completionHandler.handle(Future.completedFuture());
+      completionHandler.handle(Future.succeededFuture());
     }
 
   }

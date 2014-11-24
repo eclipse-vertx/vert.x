@@ -163,9 +163,9 @@ public abstract class ConnectionBase {
         context.executeSync(() -> {
           if (completionHandler != null) {
             if (channelFuture.isSuccess()) {
-              completionHandler.handle(Future.completedFuture());
+              completionHandler.handle(Future.succeededFuture());
             } else {
-              completionHandler.handle(Future.completedFuture(channelFuture.cause()));
+              completionHandler.handle(Future.failedFuture(channelFuture.cause()));
             }
           } else if (!channelFuture.isSuccess()) {
             handleException(channelFuture.cause());

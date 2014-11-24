@@ -72,7 +72,7 @@ public class NetClientImpl implements NetClient {
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
     this.closeHook = completionHandler -> {
       NetClientImpl.this.close();
-      completionHandler.handle(Future.completedFuture());
+      completionHandler.handle(Future.succeededFuture());
     };
     creatingContext = vertx.getContext();
     if (creatingContext != null) {
@@ -216,7 +216,7 @@ public class NetClientImpl implements NetClient {
   private void doConnected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics);
     socketMap.put(ch, sock);
-    connectHandler.handle(Future.completedFuture(sock));
+    connectHandler.handle(Future.succeededFuture(sock));
   }
 
   private void failed(ContextImpl context, Channel ch, Throwable t, Handler<AsyncResult<NetSocket>> connectHandler) {
@@ -225,7 +225,7 @@ public class NetClientImpl implements NetClient {
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {
-    connectHandler.handle(Future.completedFuture(t));
+    connectHandler.handle(Future.failedFuture(t));
   }
 
   @Override

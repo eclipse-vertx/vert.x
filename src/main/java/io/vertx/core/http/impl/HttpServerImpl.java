@@ -235,7 +235,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(v -> listenHandler.handle(Future.completedFuture(t)));
+            vertx.runOnContext(v -> listenHandler.handle(Future.failedFuture(t)));
           } else {
             // No handler - log so user can see failure
             log.error(t);
@@ -255,9 +255,9 @@ public class HttpServerImpl implements HttpServer, Closeable {
         if (listenHandler != null) {
           final AsyncResult<HttpServer> res;
           if (future.isSuccess()) {
-            res = Future.completedFuture(HttpServerImpl.this);
+            res = Future.succeededFuture(HttpServerImpl.this);
           } else {
-            res = Future.completedFuture(future.cause());
+            res = Future.failedFuture(future.cause());
             listening = false;
           }
           // FIXME - workaround for https://github.com/netty/netty/issues/2586
@@ -422,7 +422,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {
     if (done != null) {
-      closeContext.runOnContext((v) -> done.handle(Future.completedFuture(e)));
+      closeContext.runOnContext((v) -> done.handle(Future.failedFuture(e)));
     }
   }
 

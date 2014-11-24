@@ -56,7 +56,7 @@ public class FileResolver {
     if (cacheDir != null) {
       vertx.fileSystem().deleteRecursive(cacheDir.getAbsolutePath(), true, handler);
     } else {
-      handler.handle(Future.completedFuture());
+      handler.handle(Future.succeededFuture());
     }
   }
 

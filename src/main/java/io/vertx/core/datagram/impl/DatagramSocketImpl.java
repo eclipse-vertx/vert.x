@@ -300,7 +300,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
-    context.executeSync(() -> handler.handle(Future.completedFuture(cause)));
+    context.executeSync(() -> handler.handle(Future.failedFuture(cause)));
   }
 
   @Override

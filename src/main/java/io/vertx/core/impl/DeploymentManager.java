@@ -189,13 +189,13 @@ public class DeploymentManager {
             log.error("Undeploy failed", ar.cause());
           }
           if (count.incrementAndGet() == deploymentIDs.size()) {
-            completionHandler.handle(Future.completedFuture());
+            completionHandler.handle(Future.succeededFuture());
           }
         });
       }
     } else {
       Context context = vertx.getOrCreateContext();
-      context.runOnContext(v -> completionHandler.handle(Future.completedFuture()));
+      context.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
     }
   }
 
@@ -371,7 +371,7 @@ public class DeploymentManager {
 
   private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> completionHandler) {
     if (completionHandler != null) {
-      reportResult(context, completionHandler, Future.completedFuture(t));
+      reportResult(context, completionHandler, Future.failedFuture(t));
     } else {
       log.error(t.getMessage(), t);
     }
@@ -379,7 +379,7 @@ public class DeploymentManager {
 
   private <T> void reportSuccess(T result, Context context, Handler<AsyncResult<T>> completionHandler) {
     if (completionHandler != null) {
-      reportResult(context, completionHandler, Future.completedFuture(result));
+      reportResult(context, completionHandler, Future.succeededFuture(result));
     }
   }
 

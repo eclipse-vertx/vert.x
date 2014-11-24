@@ -214,6 +214,8 @@ public interface Vertx extends Measured {
   @GenIgnore
   void unregisterVerticleFactory(VerticleFactory factory);
 
+  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+
   @GenIgnore
   Set<VerticleFactory> verticleFactories();
 

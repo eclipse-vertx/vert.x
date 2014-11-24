@@ -117,11 +117,11 @@ public abstract class ContextImpl implements Context {
             if (ar.failed()) {
               if (failed.compareAndSet(false, true)) {
                 // Only report one failure
-                completionHandler.handle(Future.completedFuture(ar.cause()));
+                completionHandler.handle(Future.failedFuture(ar.cause()));
               }
             } else {
               if (count.incrementAndGet() == num) {
-                completionHandler.handle(Future.completedFuture());
+                completionHandler.handle(Future.succeededFuture());
               }
             }
           });
@@ -130,7 +130,7 @@ public abstract class ContextImpl implements Context {
         }
       }
     } else {
-      completionHandler.handle(Future.completedFuture());
+      completionHandler.handle(Future.succeededFuture());
     }
   }
 
@@ -200,12 +200,25 @@ public abstract class ContextImpl implements Context {
 
   // Execute an internal task on the internal blocking ordered executor
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(action, null, resultHandler);
+  }
+
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(null, blockingCodeHandler, resultHandler);
+  }
+
+  public <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     try {
       orderedInternalPoolExec.execute(() -> {
         Future<T> res = Future.future();
         try {
-          T result = action.perform();
-          res.complete(result);
+          if (blockingCodeHandler != null) {
+            setContext(this);
+            blockingCodeHandler.handle(res);
+          } else {
+            T result = action.perform();
+            res.complete(result);
+          }
         } catch (Throwable e) {
           res.fail(e);
         }
@@ -215,6 +228,10 @@ public abstract class ContextImpl implements Context {
       });
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
+    } finally {
+      if (blockingCodeHandler != null) {
+        unsetContext();
+      }
     }
   }
 

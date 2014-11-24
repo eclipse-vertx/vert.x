@@ -106,7 +106,7 @@ public class FakeClusterManager implements ClusterManager {
       }
     }
     AsyncMultiMap<K, V> theMap = map;
-    vertx.runOnContext(v -> resultHandler.handle(Future.completedFuture(theMap)));
+    vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(theMap)));
   }
 
   @Override
@@ -120,7 +120,7 @@ public class FakeClusterManager implements ClusterManager {
       }
     }
     AsyncMap<K, V> theMap = map;
-    vertx.runOnContext(v -> resultHandler.handle(Future.completedFuture(theMap)));
+    vertx.runOnContext(v -> resultHandler.handle(Future.succeededFuture(theMap)));
   }
 
   @Override
@@ -155,7 +155,7 @@ public class FakeClusterManager implements ClusterManager {
     }
     Counter theCounter = counter;
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.completedFuture(theCounter)));
+    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(theCounter)));
   }
 
   @Override
@@ -180,7 +180,7 @@ public class FakeClusterManager implements ClusterManager {
     doJoin(nodeID, this);
     Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> {
-      resultHandler.handle(Future.completedFuture());
+      resultHandler.handle(Future.succeededFuture());
     });
   }
 
@@ -195,7 +195,7 @@ public class FakeClusterManager implements ClusterManager {
       this.nodeID = null;
     }
     Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.completedFuture()));
+    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture()));
   }
 
   @Override

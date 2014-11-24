@@ -45,6 +45,10 @@ class FutureImpl<T> implements Future<T> {
     }
   }
 
+  FutureImpl(String failureMessage, boolean failed) {
+    this(new NoStackTraceThrowable(failureMessage));
+  }
+
   /**
    * Create a FutureResult that has already succeeded
    * @param result The result
@@ -123,6 +127,11 @@ class FutureImpl<T> implements Future<T> {
     this.throwable = throwable;
     failed = true;
     checkCallHandler();
+  }
+
+  @Override
+  public void fail(String failureMessage) {
+    fail(new NoStackTraceThrowable(failureMessage));
   }
 
   private void checkCallHandler() {

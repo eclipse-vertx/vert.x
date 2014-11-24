@@ -396,7 +396,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     } catch (IOException e) {
       if (resultHandler != null) {
         ContextImpl ctx = vertx.getOrCreateContext();
-        ctx.runOnContext((v) -> resultHandler.handle(Future.completedFuture(e)));
+        ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
       } else {
         log.error("Failed to send file", e);
       }
@@ -412,9 +412,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       channelFuture.addListener(future -> {
         AsyncResult<Void> res;
         if (future.isSuccess()) {
-          res = Future.completedFuture();
+          res = Future.succeededFuture();
         } else {
-          res = Future.completedFuture(future.cause());
+          res = Future.failedFuture(future.cause());
         }
         ctx.runOnContext((v) -> resultHandler.handle(res));
       });

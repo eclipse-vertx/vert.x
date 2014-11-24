@@ -16,24 +16,32 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.spi.FutureFactory;
 
+@VertxGen
 public interface Future<T> extends AsyncResult<T> {
 
   static <T> Future<T> future() {
     return factory.future();
   }
 
-  static <T> Future<T> completedFuture() {
+  static <T> Future<T> succeededFuture() {
     return factory.completedFuture();
   }
 
-  static <T> Future<T> completedFuture(T result) {
+  static <T> Future<T> succeededFuture(T result) {
     return factory.completedFuture(result);
   }
 
-  static <T> Future<T> completedFuture(Throwable t) {
+  @GenIgnore
+  static <T> Future<T> failedFuture(Throwable t) {
     return factory.completedFuture(t);
+  }
+
+  static <T> Future<T> failedFuture(String failureMessage) {
+    return factory.completedFuture(failureMessage, true);
   }
 
   /**
@@ -58,7 +66,10 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Set the failure. Any handler will be called, if there is one
    */
+  @GenIgnore
   void fail(Throwable throwable);
+
+  void fail(String failureMessage);
 
   static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 

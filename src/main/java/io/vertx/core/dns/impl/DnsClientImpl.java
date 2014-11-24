@@ -148,7 +148,7 @@ public final class DnsClientImpl implements DnsClient {
           for (List<String> txt: records) {
             txts.addAll(txt);
           }
-          handler.handle(Future.completedFuture(txts));
+          handler.handle(Future.succeededFuture(txts));
         }
       }
     }, DnsEntry.TYPE_TXT);
@@ -215,16 +215,16 @@ public final class DnsClientImpl implements DnsClient {
 
       return resolvePTR(reverseName.toString(), ar -> {
           if (ar.failed()) {
-            handler.handle(Future.completedFuture(ar.cause()));
+            handler.handle(Future.failedFuture(ar.cause()));
           } else {
             String result = ar.result();
-            handler.handle(Future.completedFuture(result));
+            handler.handle(Future.succeededFuture(result));
           }
         });
     } catch (UnknownHostException e) {
       // Should never happen as we work with ip addresses as input
       // anyway just in case notify the handler
-      actualCtx.runOnContext((v) -> handler.handle(Future.completedFuture(e)));
+      actualCtx.runOnContext((v) -> handler.handle(Future.failedFuture(e)));
     }
     return this;
   }
@@ -313,9 +313,9 @@ public final class DnsClientImpl implements DnsClient {
       } else {
         List<T> result = event.result();
         if (result.isEmpty()) {
-          handler.handle(Future.completedFuture());
+          handler.handle(Future.succeededFuture());
         } else {
-          handler.handle(Future.completedFuture(result.get(0)));
+          handler.handle(Future.succeededFuture(result.get(0)));
         }
       }
     }
@@ -343,7 +343,7 @@ public final class DnsClientImpl implements DnsClient {
         }
 
         Collections.sort(records, comparator);
-        handler.handle(Future.completedFuture(records));
+        handler.handle(Future.succeededFuture(records));
       }
     }
 

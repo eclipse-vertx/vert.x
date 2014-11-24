@@ -194,7 +194,7 @@ public class NetServerImpl implements NetServer, Closeable {
         } catch (Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
-            vertx.runOnContext(v ->  listenHandler.handle(Future.completedFuture(t)));
+            vertx.runOnContext(v ->  listenHandler.handle(Future.failedFuture(t)));
           } else {
             // No handler - log so user can see failure
             log.error(t);
@@ -221,10 +221,10 @@ public class NetServerImpl implements NetServer, Closeable {
         if (listenHandler != null) {
           AsyncResult<NetServer> res;
           if (actualServer.bindFuture.isSuccess()) {
-            res = Future.completedFuture(NetServerImpl.this);
+            res = Future.succeededFuture(NetServerImpl.this);
           } else {
             listening = false;
-            res = Future.completedFuture(actualServer.bindFuture.cause());
+            res = Future.failedFuture(actualServer.bindFuture.cause());
           }
           // Call with expectRightThread = false as if server is already listening
           // Netty will call future handler immediately with calling thread
@@ -374,7 +374,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   private void executeCloseDone(ContextImpl closeContext, Handler<AsyncResult<Void>> done, Exception e) {
     if (done != null) {
-      closeContext.runOnContext(v -> done.handle(Future.completedFuture(e)));
+      closeContext.runOnContext(v -> done.handle(Future.failedFuture(e)));
     }
   }
 

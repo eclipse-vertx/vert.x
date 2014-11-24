@@ -187,16 +187,16 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
         future.addListener(fut -> {
           final AsyncResult<Void> res;
           if (future.isSuccess()) {
-            res = Future.completedFuture();
+            res = Future.succeededFuture();
           } else {
-            res = Future.completedFuture(future.cause());
+            res = Future.failedFuture(future.cause());
           }
           vertx.runOnContext(v -> resultHandler.handle(res));
         });
       }
     } catch (IOException e) {
       if (resultHandler != null) {
-        vertx.runOnContext(v -> resultHandler.handle(Future.completedFuture(e)));
+        vertx.runOnContext(v -> resultHandler.handle(Future.failedFuture(e)));
       } else {
         log.error("Failed to send file", e);
       }
