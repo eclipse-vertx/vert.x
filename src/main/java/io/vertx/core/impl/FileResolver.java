@@ -78,20 +78,28 @@ public class FileResolver {
       // Look for file on classpath
       ClassLoader cl = getClassLoader();
       InputStream is = cl.getResourceAsStream(fileName);
+
       if (is != null) {
+        // We assume a file is a directory if the name does not contain '.' - this is
+        // not perfect but it's very hard to determine this based on a URL from the classpath
+        boolean isDirectory = new File(fileName).getName().indexOf('.') == -1;
+
         // Copy it to cacheDir
         if (cacheFile == null) {
           setupCacheDir();
           cacheFile = new File(cacheDir, fileName);
-          if (!enableCaching && cacheFile.exists()) {
-            cacheFile.delete();
+          if (isDirectory) {
+            cacheFile.mkdirs();
+          } else {
+            cacheFile.getParentFile().mkdirs();
           }
-          cacheFile.getParentFile().mkdirs();
         }
-        try {
-          Files.copy(is, cacheFile.toPath());
-        } catch (IOException e) {
-          throw new VertxException("Failed to copy file", e);
+        if (!isDirectory) {
+          try {
+            Files.copy(is, cacheFile.toPath());
+          } catch (IOException e) {
+            throw new VertxException("Failed to copy file", e);
+          }
         }
         return cacheFile;
       }
@@ -123,3 +131,4 @@ public class FileResolver {
 
 
 }
+

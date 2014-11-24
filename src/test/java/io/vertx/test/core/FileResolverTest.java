@@ -32,37 +32,87 @@ import java.io.File;
  */
 public class FileResolverTest extends VertxTestBase {
 
-  FileResolver resolver = new FileResolver(vertx);
-  String fileName1 = "webroot/somefile.html";
-  String fileName2 = "webroot/someotherfile.html";
+  protected FileResolver resolver = new FileResolver(vertx);
 
   @Test
-  public void testResolveNotExist() {
+  public void testResolveNotExistFile() {
     File file = resolver.resolveFile("doesnotexist.txt");
     assertFalse(file.exists());
     assertEquals("doesnotexist.txt", file.getPath());
   }
 
   @Test
-  public void testResolveFromClasspath() throws Exception {
-    File file = resolver.resolveFile(fileName1);
-    assertTrue(file.exists());
-    assertTrue(file.getPath().startsWith(".vertx/file-cache-"));
-    // Resolve again
-    File file2 = resolver.resolveFile(fileName1);
-    assertTrue(file2.exists());
-    assertTrue(file2.getPath().startsWith(".vertx/file-cache-"));
-    // Resolve some other file
-    File file3 = resolver.resolveFile(fileName2);
-    assertTrue(file3.exists());
-    assertTrue(file3.getPath().startsWith(".vertx/file-cache-"));
+  public void testResolveNotExistDirectory() {
+    File file = resolver.resolveFile("somedir");
+    assertFalse(file.exists());
+    assertEquals("somedir", file.getPath());
+  }
+
+  @Test
+  public void testResolveNotExistFileInDirectory() {
+    File file = resolver.resolveFile("somedir/doesnotexist.txt");
+    assertFalse(file.exists());
+    assertEquals("somedir/doesnotexist.txt", file.getPath());
+  }
+
+  @Test
+  public void testResolveFileFromClasspath() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      File file = resolver.resolveFile("afile.html");
+      assertTrue(file.exists());
+      assertTrue(file.getPath().startsWith(".vertx/file-cache-"));
+      assertFalse(file.isDirectory());
+      assertEquals("<html><body>afile</body></html>", readFile(file));
+    }
+  }
+
+  @Test
+  public void testResolveDirectoryFromClasspath() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      File file = resolver.resolveFile("webroot");
+      assertTrue(file.exists());
+      assertTrue(file.getPath().startsWith(".vertx/file-cache-"));
+      assertTrue(file.isDirectory());
+    }
+  }
+
+  @Test
+  public void testResolveFileInDirectoryFromClasspath() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      File file = resolver.resolveFile("webroot/somefile.html");
+      assertTrue(file.exists());
+      assertTrue(file.getPath().startsWith(".vertx/file-cache-"));
+      assertFalse(file.isDirectory());
+      assertEquals("<html><body>blah</body></html>", readFile(file));
+    }
+  }
+
+  @Test
+  public void testResolveSubDirectoryFromClasspath() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      File file = resolver.resolveFile("webroot/subdir");
+      assertTrue(file.exists());
+      assertTrue(file.getPath().startsWith(".vertx/file-cache-"));
+      assertTrue(file.isDirectory());
+    }
+  }
+
+  @Test
+  public void testResolveFileInSubDirectoryFromClasspath() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      File file = resolver.resolveFile("webroot/subdir/subfile.html");
+      assertTrue(file.exists());
+      assertTrue(file.getPath().startsWith(".vertx/file-cache-"));
+      assertFalse(file.isDirectory());
+      assertEquals("<html><body>subfile</body></html>", readFile(file));
+    }
   }
 
   @Test
   public void testDeleteCacheDir() throws Exception {
     Vertx vertx2 = Vertx.vertx();
     FileResolver resolver2 = new FileResolver(vertx2);
-    File file = resolver2.resolveFile(fileName1);
+    File file = resolver2.resolveFile("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
@@ -78,7 +128,7 @@ public class FileResolverTest extends VertxTestBase {
   @Test
   public void testCacheDirDeletedOnVertxClose() {
     VertxInternal vertx2 = (VertxInternal)Vertx.vertx();
-    File file = vertx2.resolveFile(fileName1);
+    File file = vertx2.resolveFile("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
@@ -90,16 +140,24 @@ public class FileResolverTest extends VertxTestBase {
   }
 
   @Test
-  public void testReadFileFromClasspath() {
-    Buffer buffer = vertx.fileSystem().readFileBlocking(fileName1);
+  public void testFileSystemReadFile() {
+    assertTrue(vertx.fileSystem().existsBlocking("afile.html"));
+    assertFalse(vertx.fileSystem().propsBlocking("afile.html").isDirectory());
+    Buffer buffer = vertx.fileSystem().readFileBlocking("afile.html");
     assertNotNull(buffer);
-    assertTrue(buffer.toString().startsWith("<html><body>blah</body></html>"));
+    assertTrue(buffer.toString().startsWith("<html><body>afile</body></html>"));
+  }
+
+  @Test
+  public void testFileSystemReadDirectory() {
+    assertTrue(vertx.fileSystem().existsBlocking("webroot"));
+    assertTrue(vertx.fileSystem().propsBlocking("webroot").isDirectory());
   }
 
   @Test
   public void testSendFileFromClasspath() {
     vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
-      res.response().sendFile(fileName1);
+      res.response().sendFile("webroot/somefile.html");
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
         resp.bodyHandler(buff -> {
@@ -110,4 +168,9 @@ public class FileResolverTest extends VertxTestBase {
     }));
     await();
   }
+
+  private String readFile(File file) {
+    return vertx.fileSystem().readFileBlocking(file.getAbsolutePath()).toString();
+  }
+
 }
