@@ -27,8 +27,6 @@ import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.spi.cluster.Action;
 
 import java.io.File;
@@ -66,9 +64,6 @@ import java.util.regex.Pattern;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class FileSystemImpl implements FileSystem {
-
-  @SuppressWarnings("unused")
-  private static final Logger log = LoggerFactory.getLogger(FileSystemImpl.class);
 
   protected final VertxInternal vertx;
 
@@ -351,12 +346,14 @@ public class FileSystemImpl implements FileSystem {
     return copyInternal(from, to, false, handler);
   }
 
-  private BlockingAction<Void> copyInternal(String from, String to, final boolean recursive, Handler<AsyncResult<Void>> handler) {
-    Path source = vertx.resolveFile(from).toPath();
-    Path target = vertx.resolveFile(to).toPath();
+  private BlockingAction<Void> copyInternal(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(from);
+    Objects.requireNonNull(to);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path source = vertx.resolveFile(from).toPath();
+          Path target = vertx.resolveFile(to).toPath();
           if (recursive) {
             Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
                 new SimpleFileVisitor<Path>() {
@@ -392,11 +389,13 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<Void> moveInternal(String from, String to, Handler<AsyncResult<Void>> handler) {
-    Path source = vertx.resolveFile(from).toPath();
-    Path target = vertx.resolveFile(to).toPath();
+    Objects.requireNonNull(from);
+    Objects.requireNonNull(to);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path source = vertx.resolveFile(from).toPath();
+          Path target = vertx.resolveFile(to).toPath();
           Files.move(source, target);
         } catch (IOException e) {
           throw new FileSystemException(e);
@@ -406,18 +405,19 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> truncateInternal(String p, final long len, Handler<AsyncResult<Void>> handler) {
-    String path = vertx.resolveFile(p).getAbsolutePath();
+  private BlockingAction<Void> truncateInternal(String p, long len, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(p);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
-        if (len < 0) {
-          throw new FileSystemException("Cannot truncate file to size < 0");
-        }
-        if (!Files.exists(Paths.get(path))) {
-          throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
-        }
         RandomAccessFile raf = null;
         try {
+          String path = vertx.resolveFile(p).getAbsolutePath();
+          if (len < 0) {
+            throw new FileSystemException("Cannot truncate file to size < 0");
+          }
+          if (!Files.exists(Paths.get(path))) {
+            throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
+          }
           try {
             raf = new RandomAccessFile(path, "rw");
             raf.setLength(len);
@@ -437,12 +437,13 @@ public class FileSystemImpl implements FileSystem {
   }
 
   protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler) {
-    Path target = vertx.resolveFile(path).toPath();
+    Objects.requireNonNull(path);
     Set<PosixFilePermission> permissions = PosixFilePermissions.fromString(perms);
     Set<PosixFilePermission> dirPermissions = dirPerms == null ? null : PosixFilePermissions.fromString(dirPerms);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path target = vertx.resolveFile(path).toPath();
           if (dirPermissions != null) {
             Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
               public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -461,7 +462,7 @@ public class FileSystemImpl implements FileSystem {
             Files.setPosixFilePermissions(target, permissions);
           }
         } catch (SecurityException e) {
-          throw new FileSystemException("Accessed denied for chmod on " + target);
+          throw new FileSystemException("Accessed denied for chmod on " + path);
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
@@ -470,15 +471,15 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  protected BlockingAction<Void> chownInternal(String path, final String user, final String group, Handler<AsyncResult<Void>> handler) {
-    Path target = vertx.resolveFile(path).toPath();
-    UserPrincipalLookupService service = target.getFileSystem().getUserPrincipalLookupService();
+  protected BlockingAction<Void> chownInternal(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(path);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
-
         try {
-          final UserPrincipal userPrincipal = user == null ? null : service.lookupPrincipalByName(user);
-          final GroupPrincipal groupPrincipal = group == null ? null : service.lookupPrincipalByGroupName(group);
+          Path target = vertx.resolveFile(path).toPath();
+          UserPrincipalLookupService service = target.getFileSystem().getUserPrincipalLookupService();
+          UserPrincipal userPrincipal = user == null ? null : service.lookupPrincipalByName(user);
+          GroupPrincipal groupPrincipal = group == null ? null : service.lookupPrincipalByGroupName(group);
           if (groupPrincipal != null) {
             PosixFileAttributeView view = Files.getFileAttributeView(target, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
             if (view == null) {
@@ -491,7 +492,7 @@ public class FileSystemImpl implements FileSystem {
             Files.setOwner(target, userPrincipal);
           }
         } catch (SecurityException e) {
-          throw new FileSystemException("Accessed denied for chown on " + target);
+          throw new FileSystemException("Accessed denied for chown on " + path);
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
@@ -508,11 +509,12 @@ public class FileSystemImpl implements FileSystem {
     return props(path, false, handler);
   }
 
-  private BlockingAction<FileProps> props(String path, final boolean followLinks, Handler<AsyncResult<FileProps>> handler) {
-    Path target = vertx.resolveFile(path).toPath();
+  private BlockingAction<FileProps> props(String path, boolean followLinks, Handler<AsyncResult<FileProps>> handler) {
+    Objects.requireNonNull(path);
     return new BlockingAction<FileProps>(handler) {
       public FileProps perform() {
         try {
+          Path target = vertx.resolveFile(path).toPath();
           BasicFileAttributes attrs;
           if (followLinks) {
             attrs = Files.readAttributes(target, BasicFileAttributes.class);
@@ -535,12 +537,14 @@ public class FileSystemImpl implements FileSystem {
     return link(link, existing, true, handler);
   }
 
-  private BlockingAction<Void> link(String link, String existing, final boolean symbolic, Handler<AsyncResult<Void>> handler) {
-    Path source = vertx.resolveFile(link).toPath();
-    Path target = vertx.resolveFile(existing).toPath();
+  private BlockingAction<Void> link(String link, String existing, boolean symbolic, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(link);
+    Objects.requireNonNull(existing);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path source = vertx.resolveFile(link).toPath();
+          Path target = vertx.resolveFile(existing).toPath();
           if (symbolic) {
             Files.createSymbolicLink(source, target);
           } else {
@@ -559,10 +563,11 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<String> readSymlinkInternal(String link, Handler<AsyncResult<String>> handler) {
-    Path source = vertx.resolveFile(link).toPath();
+    Objects.requireNonNull(link);
     return new BlockingAction<String>(handler) {
       public String perform() {
         try {
+          Path source = vertx.resolveFile(link).toPath();
           return Files.readSymbolicLink(source).toString();
         } catch (IOException e) {
           throw new FileSystemException(e);
@@ -575,11 +580,12 @@ public class FileSystemImpl implements FileSystem {
     return deleteInternal(path, false, handler);
   }
 
-  private BlockingAction<Void> deleteInternal(String path, final boolean recursive, Handler<AsyncResult<Void>> handler) {
-    Path source = vertx.resolveFile(path).toPath();
+  private BlockingAction<Void> deleteInternal(String path, boolean recursive, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(path);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path source = vertx.resolveFile(path).toPath();
           if (recursive) {
             Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
               public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -618,12 +624,13 @@ public class FileSystemImpl implements FileSystem {
     return mkdirInternal(path, perms, false, handler);
   }
 
-  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents, Handler<AsyncResult<Void>> handler) {
-    Path source = vertx.resolveFile(path).toPath();
+  protected BlockingAction<Void> mkdirInternal(String path, String perms, boolean createParents, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(path);
     FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path source = vertx.resolveFile(path).toPath();
           if (createParents) {
             if (attrs != null) {
               Files.createDirectories(source, attrs);
@@ -649,11 +656,12 @@ public class FileSystemImpl implements FileSystem {
     return readDirInternal(path, null, handler);
   }
 
-  private BlockingAction<List<String>> readDirInternal(String p, final String filter, Handler<AsyncResult<List<String>>> handler) {
-    File file = vertx.resolveFile(p);
+  private BlockingAction<List<String>> readDirInternal(String p, String filter, Handler<AsyncResult<List<String>>> handler) {
+    Objects.requireNonNull(p);
     return new BlockingAction<List<String>>(handler) {
       public List<String> perform() {
         try {
+          File file = vertx.resolveFile(p);
           if (!file.exists()) {
             throw new FileSystemException("Cannot read directory " + file + ". Does not exist");
           }
@@ -690,10 +698,11 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<Buffer> readFileInternal(String path, Handler<AsyncResult<Buffer>> handler) {
-    Path target = vertx.resolveFile(path).toPath();
+    Objects.requireNonNull(path);
     return new BlockingAction<Buffer>(handler) {
       public Buffer perform() {
         try {
+          Path target = vertx.resolveFile(path).toPath();
           byte[] bytes = Files.readAllBytes(target);
           Buffer buff = Buffer.buffer(bytes);
           return buff;
@@ -704,12 +713,13 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> writeFileInternal(String path, final Buffer data, Handler<AsyncResult<Void>> handler) {
-    Objects.requireNonNull(data, "no null data accepted");
-    Path target = vertx.resolveFile(path).toPath();
+  private BlockingAction<Void> writeFileInternal(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(path);
+    Objects.requireNonNull(data);
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path target = vertx.resolveFile(path).toPath();
           Files.write(target, data.getBytes());
           return null;
         } catch (IOException e) {
@@ -720,9 +730,10 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<AsyncFile> openInternal(String p, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler) {
-    Objects.requireNonNull(options, "no null options accepted");
-    String path = vertx.resolveFile(p).getAbsolutePath();
+    Objects.requireNonNull(p);
+    Objects.requireNonNull(options);
     return new BlockingAction<AsyncFile>(handler) {
+      String path = vertx.resolveFile(p).getAbsolutePath();
       public AsyncFile perform() {
         return doOpen(path, options, context);
       }
@@ -737,12 +748,13 @@ public class FileSystemImpl implements FileSystem {
     return createFileInternal(path, null, handler);
   }
 
-  protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
-    Path target = vertx.resolveFile(p).toPath();
+  protected BlockingAction<Void> createFileInternal(String p, String perms, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(p);
     FileAttribute<?> attrs = perms == null ? null : PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(perms));
     return new BlockingAction<Void>(handler) {
       public Void perform() {
         try {
+          Path target = vertx.resolveFile(p).toPath();
           if (attrs != null) {
             Files.createFile(target, attrs);
           } else {
@@ -757,8 +769,9 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<Boolean> existsInternal(String path, Handler<AsyncResult<Boolean>> handler) {
-    File file = vertx.resolveFile(path);
+    Objects.requireNonNull(path);
     return new BlockingAction<Boolean>(handler) {
+      File file = vertx.resolveFile(path);
       public Boolean perform() {
         return file.exists();
       }
@@ -766,10 +779,11 @@ public class FileSystemImpl implements FileSystem {
   }
 
   private BlockingAction<FileSystemProps> fsPropsInternal(String path, Handler<AsyncResult<FileSystemProps>> handler) {
-    Path target = vertx.resolveFile(path).toPath();
+    Objects.requireNonNull(path);
     return new BlockingAction<FileSystemProps>(handler) {
       public FileSystemProps perform() {
         try {
+          Path target = vertx.resolveFile(path).toPath();
           FileStore fs = Files.getFileStore(target);
           return new FileSystemPropsImpl(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
         } catch (IOException e) {

@@ -45,6 +45,7 @@ public class FileResolver {
 
   private final Vertx vertx;
   private final boolean enableCaching = System.getProperty("vertx.disableFileCaching") == null;
+  private final boolean enableCPResolving = System.getProperty("vertx.disableFileCPResolving") == null;
   private File cacheDir;
 
   public FileResolver(Vertx vertx) {
@@ -62,6 +63,9 @@ public class FileResolver {
   public File resolveFile(String fileName) {
     // First look for file with that name on disk
     File file = new File(fileName);
+    if (!enableCPResolving) {
+      return file;
+    }
     if (!file.exists()) {
       // Look for it in local file cache
       File cacheFile = null;

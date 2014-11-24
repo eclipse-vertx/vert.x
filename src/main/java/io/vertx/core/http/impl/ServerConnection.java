@@ -50,7 +50,8 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
@@ -311,8 +312,8 @@ class ServerConnection extends ConnectionBase {
     return super.supportsFileRegion() && channel.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
-  protected ChannelFuture sendFile(File file) {
-    return super.sendFile(file);
+  protected ChannelFuture sendFile(RandomAccessFile file, long fileLength) throws IOException {
+    return super.sendFile(file, fileLength);
   }
 
   @Override

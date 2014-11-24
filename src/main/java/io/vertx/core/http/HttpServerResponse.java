@@ -220,21 +220,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Fluent
   HttpServerResponse sendFile(String filename);
 
-  /**
-   * Same as {@link #sendFile(String)} but also takes the path to a resource to serve if the resource is not found
-   */
-  @Fluent
-  HttpServerResponse sendFile(String filename, String notFoundFile);
-
   @Fluent
   HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
-
-  /**
-   * Same as {@link #sendFile(String, String)} but also takes a handler that will be called when the send has completed or
-   * a failure has occurred
-   */
-  @Fluent
-  HttpServerResponse sendFile(String filename, String notFoundFile, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Close the underlying TCP connection

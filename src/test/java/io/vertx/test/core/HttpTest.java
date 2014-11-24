@@ -64,6 +64,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -544,7 +545,8 @@ public class HttpTest extends HttpTestBase {
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
-    int trafficClass = TestUtils.randomByte() + 127;boolean tcpNoDelay = rand.nextBoolean();
+    int trafficClass = TestUtils.randomByte() + 128;
+    boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
@@ -2024,41 +2026,17 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testSendFile() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, null, false);
+    sendFile("test-send-file.html", content, false);
   }
 
   @Test
   public void testSendFileWithHandler() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, null, true);
+    sendFile("test-send-file.html", content, true);
   }
 
-  @Test
-  public void testFileNotFound() throws Exception {
-    sendFile(null, "<html><body>Resource not found</body><html>", null, false);
-  }
-
-  @Test
-  public void testSendFileNotFoundWith404Page() throws Exception {
-    String content = "<html><body>This is my 404 page</body></html>";
-    sendFile(null, content, "my-404-page.html", false);
-  }
-
-  @Test
-  public void testSendFileNotFoundWith404PageAndHandler() throws Exception {
-    String content = "<html><body>This is my 404 page</body></html>";
-    sendFile(null, content, "my-404-page.html", true);
-  }
-
-  private void sendFile(String sendFile, String contentExpected, String notFoundFile, boolean handler) throws Exception {
-    File fileToDelete;
-    if (sendFile != null) {
-      fileToDelete = setupFile(sendFile, contentExpected);
-    } else if (notFoundFile != null) {
-      fileToDelete = setupFile(notFoundFile, contentExpected);
-    } else {
-      fileToDelete = null;
-    }
+  private void sendFile(String fileName, String contentExpected, boolean handler) throws Exception {
+    File fileToSend = setupFile(fileName, contentExpected);
 
     CountDownLatch latch;
     if (handler) {
@@ -2070,38 +2048,20 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       if (handler) {
         Handler<AsyncResult<Void>> completionHandler = onSuccess(v -> latch.countDown());
-        if (sendFile != null) { // Send file with handler
-          req.response().sendFile(fileToDelete.getAbsolutePath(), null, completionHandler);
-        } else if (notFoundFile != null) { // File doesn't exist, send not found resource with handler
-          req.response().sendFile("doesnotexist.html", fileToDelete.getAbsolutePath(), completionHandler);
-        } else { // File doesn't exist, send default not found resource with handler
-          req.response().sendFile("doesnotexist.html", null, completionHandler);
-        }
+        req.response().sendFile(fileToSend.getAbsolutePath(), completionHandler);
       } else {
-        if (sendFile != null) { // Send file
-          req.response().sendFile(fileToDelete.getAbsolutePath());
-        } else if (notFoundFile != null) { // File doesn't exist, send not found resource
-          req.response().sendFile("doesnotexist.html", fileToDelete.getAbsolutePath());
-        } else { // File doesn't exist, send default not found resource
-          req.response().sendFile("doesnotexist.html");
-        }
+        req.response().sendFile(fileToSend.getAbsolutePath());
       }
     });
 
     server.listen(onSuccess(s -> {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        if (sendFile != null) {
-          assertEquals(200, resp.statusCode());
-        } else {
-          assertEquals(404, resp.statusCode());
-        }
+        assertEquals(200, resp.statusCode());
+
         assertEquals("text/html", resp.headers().get("Content-Type"));
         resp.bodyHandler(buff -> {
           assertEquals(contentExpected, buff.toString());
-          if (fileToDelete != null) {
-            assertEquals(fileToDelete.length(), Long.parseLong(resp.headers().get("content-length")));
-            fileToDelete.delete();
-          }
+          assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
           latch.countDown();
         });
       }).end();
@@ -2131,6 +2091,66 @@ public class HttpTest extends HttpTestBase {
           file.delete();
           testComplete();
         });
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileNotFound() throws Exception {
+
+    server.requestHandler(req -> {
+      req.response().putHeader("Content-Type", "wibble");
+      req.response().sendFile("nosuchfile.html");
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        fail("Should not receive response");
+      }).end();
+      vertx.setTimer(100, tid -> testComplete());
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileNotFoundWithHandler() throws Exception {
+
+    server.requestHandler(req -> {
+      req.response().putHeader("Content-Type", "wibble");
+      req.response().sendFile("nosuchfile.html", onFailure(t -> {
+        assertTrue(t instanceof FileNotFoundException);
+        testComplete();
+      }));
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        fail("Should not receive response");
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileDirectoryWithHandler() throws Exception {
+
+    File dir = testFolder.newFolder();
+
+    server.requestHandler(req -> {
+      req.response().putHeader("Content-Type", "wibble");
+      req.response().sendFile(dir.getAbsolutePath(), onFailure(t -> {
+        assertTrue(t instanceof FileNotFoundException);
+        testComplete();
+      }));
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        fail("Should not receive response");
       }).end();
     }));
 
@@ -3399,26 +3419,6 @@ public class HttpTest extends HttpTestBase {
       req.exceptionHandler(t -> fail("Should not throw exception"));
       req.setTimeout(3000);
       req.end();
-    }));
-
-    await();
-  }
-
-  @Test
-  public void testSendFileDirectory() {
-    File file = new File(testDir, "testdirectory");
-    server.requestHandler(req -> {
-      vertx.fileSystem().mkdir(file.getAbsolutePath(), onSuccess(v -> {
-        req.response().sendFile(file.getAbsolutePath());
-        assertTrue(req.response().ended());
-      }));
-    });
-
-    server.listen(onSuccess(s -> {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(403, resp.statusCode());
-        vertx.fileSystem().delete(file.getAbsolutePath(), v -> testComplete());
-      }).end();
     }));
 
     await();

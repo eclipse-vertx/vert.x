@@ -196,6 +196,7 @@ public class VertxImpl implements VertxInternal {
       this.sharedData = new SharedDataImpl(this, null);
       this.eventBus = new EventBusImpl(this);
       if (resultHandler != null) {
+        // TODO shouldn't this be run async?
         resultHandler.handle(Future.completedFuture(this));
       }
     }
