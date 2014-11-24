@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -233,6 +234,39 @@ public class AsyncTestBaseTest extends AsyncTestBase {
         clearThrown();
       }
     }
+  }
+
+  @Test
+  public void waitForMultiple() {
+    int toWaitFor = 10;
+    waitFor(10);
+    AtomicInteger cnt = new AtomicInteger();
+    for (int i = 0; i < toWaitFor; i++) {
+      executor.execute(() -> {
+        cnt.incrementAndGet();
+        complete();
+      });
+    }
+    await();
+    assertEquals(toWaitFor, cnt.get());
+  }
+
+  @Test
+  public void increaseToWait() {
+    int toWaitFor = 10;
+    waitFor(3);
+    complete();
+    complete();
+    waitForMore(9);
+    AtomicInteger cnt = new AtomicInteger();
+    for (int i = 0; i < toWaitFor; i++) {
+      executor.execute(() -> {
+        cnt.incrementAndGet();
+        complete();
+      });
+    }
+    await();
+    assertEquals(toWaitFor, cnt.get());
   }
 
 }

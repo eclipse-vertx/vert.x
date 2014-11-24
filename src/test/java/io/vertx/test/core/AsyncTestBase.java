@@ -38,7 +38,6 @@ public class AsyncTestBase {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncTestBase.class);
 
-
   private CountDownLatch latch;
   private volatile Throwable throwable;
   private volatile Thread thrownThread;
@@ -75,8 +74,12 @@ public class AsyncTestBase {
     tearDown();
   }
 
-  protected void waitFor(int count) {
+  protected synchronized void waitFor(int count) {
     latch = new CountDownLatch(count);
+  }
+
+  protected synchronized void waitForMore(int count) {
+    latch = new CountDownLatch(count + (int)latch.getCount());
   }
 
   protected synchronized void complete() {
