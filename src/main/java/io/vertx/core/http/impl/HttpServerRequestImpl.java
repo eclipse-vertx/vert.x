@@ -90,6 +90,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
+  private HttpServerFileUploadImpl lastUpload;
+
 
   HttpServerRequestImpl(ServerConnection conn,
                         HttpRequest request,
@@ -327,7 +329,18 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         decoder.destroy();
       }
     }
-    if (endHandler != null) {
+    // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
+    if (endHandler != null && lastUpload == null) {
+      endHandler.handle(null);
+    }
+  }
+
+  synchronized void uploadComplete(HttpServerFileUploadImpl upload) {
+    this.lastUpload = upload;
+  }
+
+  synchronized void callEndHandler(HttpServerFileUploadImpl upload) {
+    if (endHandler != null && upload == lastUpload) {
       endHandler.handle(null);
     }
   }

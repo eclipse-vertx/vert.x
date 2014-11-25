@@ -15,15 +15,12 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.streams.Pump;
 
 import java.nio.charset.Charset;
@@ -39,7 +36,7 @@ import java.nio.charset.Charset;
  */
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
-  private final HttpServerRequest req;
+  private final HttpServerRequestImpl req;
   private final Vertx vertx;
   private final String name;
   private final String filename;
@@ -58,7 +55,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private boolean complete;
   private boolean lazyCalculateSize;
 
-  HttpServerFileUploadImpl(Vertx vertx, HttpServerRequest req, String name, String filename, String contentType,
+  HttpServerFileUploadImpl(Vertx vertx, HttpServerRequestImpl req, String name, String filename, String contentType,
                            String contentTransferEncoding,
                            Charset charset, long size) {
     this.vertx = vertx;
@@ -185,6 +182,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void complete() {
+    req.uploadComplete(this);
     lazyCalculateSize = false;
     if (paused) {
       complete = true;
@@ -192,17 +190,13 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       if (file == null) {
         notifyEndHandler();
       } else {
-        file.close(new AsyncResultHandler<Void>() {
-          @Override
-          public void handle(AsyncResult<Void> event) {
-            if (event.failed()) {
-              notifyExceptionHandler(event.cause());
-            }
-            notifyEndHandler();
+        file.close(ar -> {
+          if (ar.failed()) {
+            notifyExceptionHandler(ar.cause());
           }
+          notifyEndHandler();
         });
       }
-
     }
   }
 
@@ -210,6 +204,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     if (endHandler != null) {
       endHandler.handle(null);
     }
+    req.callEndHandler(this);
   }
 
   private void notifyExceptionHandler(Throwable cause) {
