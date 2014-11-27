@@ -22,12 +22,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>7</version>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-parent</artifactId>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>io.vertx</groupId>
   <artifactId>vertx-core</artifactId>
   <version>3.0.0-SNAPSHOT</version>
 
@@ -53,10 +52,6 @@
   </scm>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <java.version>1.8</java.version>
 
     <netty.version>4.0.24.Final</netty.version>
     <jackson.version>2.4.3</jackson.version>
@@ -67,12 +62,6 @@
     <asciidoclet.version>1.5.1</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
 
-    <maven.compiler.plugin.version>3.2</maven.compiler.plugin.version>
-    <maven.jar.plugin.version>2.5</maven.jar.plugin.version>
-    <maven.source.plugin.version>2.4</maven.source.plugin.version>
-    <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
-    <maven.surefire.plugin.version>2.18</maven.surefire.plugin.version>
-    <maven.surefire.report.plugin.version>2.18</maven.surefire.report.plugin.version>
   </properties>
 
   <dependencies>
@@ -125,95 +114,60 @@
   </dependencies>
 
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven.compiler.plugin.version}</version>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-          <optimize>true</optimize>
-        </configuration>
-        <executions>
-          <execution>
-            <id>default-compile</id>
-            <configuration>
-              <annotationProcessors>
-                <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-              </annotationProcessors>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>${maven.source.plugin.version}</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>jar-no-fork</goal>
-              <goal>test-jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven.javadoc.plugin.version}</version>
-        <configuration>
-          <source>${java.version}</source>
-          <doclet>org.asciidoctor.Asciidoclet</doclet>
-          <docletArtifact>
-            <groupId>org.asciidoctor</groupId>
-            <artifactId>asciidoclet</artifactId>
-            <version>${asciidoclet.version}</version>
-          </docletArtifact>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven.surefire.plugin.version}</version>
-        <configuration>
-          <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-          <excludes>
-            <exclude>**/RedeploySourceVerticle.java</exclude>
-          </excludes>
-          <additionalClasspathElements>
-            <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
-          </additionalClasspathElements>
-          <systemPropertyVariables>
-            <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
-            <buildDirectory>${project.build.directory}</buildDirectory>
-          </systemPropertyVariables>
-          <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
-          <argLine>-Xmx1200M</argLine>
-          <forkCount>1</forkCount>
-          <reuseForks>true</reuseForks>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>${maven.surefire.report.plugin.version}</version>
-      </plugin>
-    </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-compile</id>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven.javadoc.plugin.version}</version>
+          <configuration>
+            <source>${java.version}</source>
+            <doclet>org.asciidoctor.Asciidoclet</doclet>
+            <docletArtifact>
+              <groupId>org.asciidoctor</groupId>
+              <artifactId>asciidoclet</artifactId>
+              <version>${asciidoclet.version}</version>
+            </docletArtifact>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven.surefire.plugin.version}</version>
+          <configuration>
+            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+            <excludes>
+              <exclude>**/RedeploySourceVerticle.java</exclude>
+            </excludes>
+            <additionalClasspathElements>
+              <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+            </additionalClasspathElements>
+            <systemPropertyVariables>
+              <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
+              <buildDirectory>${project.build.directory}</buildDirectory>
+            </systemPropertyVariables>
+            <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
+            <argLine>-Xmx1200M</argLine>
+            <forkCount>1</forkCount>
+            <reuseForks>true</reuseForks>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
 
     <resources>
       <resource>
@@ -253,7 +207,6 @@
         </plugins>
       </build>
     </profile>
-
   </profiles>
 
 </project>
