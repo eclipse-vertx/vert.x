@@ -1,0 +1,99 @@
+Most data in Vert.x is shuffled around using instances of link:apidocs/io/vertx/core/buffer/Buffer.html[`Buffer`]
+
+A Buffer represents a sequence of zero or more bytes that can be written to or read from, and which expands
+automatically as necessary to accomodate any bytes written to it.
+
+You can perhaps think of a buffer as
+smart byte array.
+
+=== Creating Buffers
+
+Create a new empty buffer:
+
+[source,java]
+----
+Buffer buff = Buffer.buffer();
+----
+
+Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
+
+[source,java]
+----
+Buffer buff = Buffer.buffer("some-string");
+----
+
+Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
+
+[source,java]
+----
+Buffer buff = Buffer.buffer("some-string", "UTF-16");
+----
+
+Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to
+it you can create the buffer and specify this size. This makes the buffer initially allocate that much memory
+and is more efficient than the buffer automatically resizing multiple times as data is written to it.
+
+Note that buffers created this way are empty. It does not create a buffer filled with zeros up to the specified size.
+
+[source,java]
+----
+Buffer buff = Buffer.buffer(100000);
+----
+
+=== Writing to a Buffer
+
+There are two ways to write to a buffer: appending, and random access. In either case buffers will always expand
+automatically to encompass the bytes. It's not possible to get an `IndexOutOfBoundsException` with a buffer.
+
+==== Appending to a Buffer
+
+To append to a buffer, you use the `appendXXX` methods. Append methods exist for appending other buffers,
+byte arrays, String and all primitive types.
+
+The return value of the `appendXXX methods is the buffer itself, so these can be chained:
+
+[source,java]
+----
+Buffer buff = Buffer.buffer();
+
+buff.appendInt(123).appendString("hello\n");
+
+socket.write(buff);
+----
+
+==== Random access buffer writes
+
+You can also write into the buffer at a specific index, by using the `setXXX` methods. Set methods exist for
+other buffers, byte arrays, String and all primitive types. All the set methods take an index as the first
+argument - this represents the position in the buffer where to start writing the data.
+
+The buffer will always expand as necessary to accomodate the data.
+
+[source,java]
+----
+Buffer buff = Buffer.buffer();
+
+buff.setInt(1000, 123);
+buff.setString(0, "hello");
+----
+
+=== Reading from a Buffer
+
+Data is read from a buffer using the `getXXX` methods. Get methods exist for byte arrays, String and all primitive types.
+The first argument to these methods is an index in the buffer from where to get the data.
+
+[source,java]
+----
+Buffer buff = getSomeBuffer();
+for (int i = 0; i < buff.length(); i += 4) {
+  System.out.println("int value at " + i + " is " + buff.getInt(i));
+}
+----
+
+=== Other buffer methods:
+
+* link:apidocs/io/vertx/core/buffer/Buffer.html#length--[`length`]. To obtain the length of the buffer. The length of a buffer is the
+  index of the byte in the buffer with the largest index + 1.
+* link:apidocs/io/vertx/core/buffer/Buffer.html#copy--[`copy`]. Copy the entire buffer
+
+See the link:apidocs/io/vertx/core/buffer/Buffer.html[`doc`] for more detailed method level documentation.

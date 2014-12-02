@@ -61,6 +61,7 @@
     <junit.version>4.11</junit.version>
     <asciidoclet.version>1.5.1</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
+    <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
 
   </properties>
 
@@ -98,6 +99,12 @@
       <version>1.0-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>docgen</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <optional>true</optional>
+    </dependency>
     <!-- Testing -->
     <dependency>
       <groupId>junit</groupId>
@@ -124,8 +131,12 @@
               <id>default-compile</id>
               <configuration>
                 <annotationProcessors>
+                  <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
                 </annotationProcessors>
+                <compilerArgs>
+                  <arg>-Adocgen.output=${asciidoc.dir}</arg>
+                </compilerArgs>
               </configuration>
             </execution>
           </executions>
@@ -166,9 +177,92 @@
             <reuseForks>true</reuseForks>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.bsc.maven</groupId>
+          <artifactId>maven-processor-plugin</artifactId>
+          <version>2.2.4</version>
+          <configuration>
+            <processors>
+              <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
+            </processors>
+            <optionMap>
+              <docgen.output>${asciidoc.dir}</docgen.output>
+            </optionMap>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.asciidoctor</groupId>
+          <artifactId>asciidoctor-maven-plugin</artifactId>
+          <version>1.5.0</version>
+          <configuration>
+            <sourceDirectory>${asciidoc.dir}</sourceDirectory>
+            <sourceDocumentName>index.ad</sourceDocumentName>
+            <outputDirectory>${project.build.directory}/site</outputDirectory>
+            <backend>html</backend>
+            <doctype>book</doctype>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-clean</id>
+              <configuration>
+                <filesets>
+                  <fileset>
+                    <directory>${asciidoc.dir}</directory>
+                  </fileset>
+                </filesets>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
 
+      <!-- Plugin executions for the site phase -->
+      <plugin>
+        <groupId>org.bsc.maven</groupId>
+        <artifactId>maven-processor-plugin</artifactId>
+        <version>2.2.4</version>
+        <executions>
+          <!-- Run the annotation processor on vertx-core and generate the Asciidoctor files -->
+          <execution>
+            <id>generate-asciidoctor</id>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <phase>site</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Transform the Asciidoctor to html -->
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <version>1.5.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <phase>site</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>site</phase>
+            <goals>
+              <goal>javadoc</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
     <resources>
       <resource>
         <directory>src/main/resources</directory>
@@ -187,26 +281,20 @@
     </resources>
   </build>
 
-  <profiles>
-    <profile>
-      <id>dist</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>site</phase>
-                <goals>
-                  <goal>aggregate</goal>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.7</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
 
 </project>

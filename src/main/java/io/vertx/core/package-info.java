@@ -14,5 +14,19 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
+/**
+ * = Vert.x API manual
+ *
+ * == The Event Bus
+ *
+ * include::{@link io.vertx.core.eventbus}[]
+ *
+ * == Buffers
+ *
+ * include::{@link io.vertx.core.buffer}[]
+ */
+@Document(fileName = "index.ad")
 @io.vertx.codegen.annotations.GenModule(name = "vertx")
 package io.vertx.core;
+
+import io.vertx.docgen.Document;
