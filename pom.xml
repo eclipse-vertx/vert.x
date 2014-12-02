@@ -61,6 +61,7 @@
     <junit.version>4.11</junit.version>
     <asciidoclet.version>1.5.1</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
+    <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
 
   </properties>
 
@@ -134,7 +135,7 @@
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
                 </annotationProcessors>
                 <compilerArgs>
-                  <arg>-Adocgen.output=${project.build.directory}/asciidoc</arg>
+                  <arg>-Adocgen.output=${asciidoc.dir}</arg>
                 </compilerArgs>
               </configuration>
             </execution>
@@ -185,7 +186,7 @@
               <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
             </processors>
             <optionMap>
-              <docgen.output>${project.build.directory}/asciidoc</docgen.output>
+              <docgen.output>${asciidoc.dir}</docgen.output>
             </optionMap>
           </configuration>
         </plugin>
@@ -194,12 +195,27 @@
           <artifactId>asciidoctor-maven-plugin</artifactId>
           <version>1.5.0</version>
           <configuration>
-            <sourceDirectory>${project.build.directory}/asciidoc</sourceDirectory>
+            <sourceDirectory>${asciidoc.dir}</sourceDirectory>
             <sourceDocumentName>index.adoc</sourceDocumentName>
             <outputDirectory>${project.build.directory}/site</outputDirectory>
             <backend>html</backend>
             <doctype>book</doctype>
           </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-clean</id>
+              <configuration>
+                <filesets>
+                  <fileset>
+                    <directory>${asciidoc.dir}</directory>
+                  </fileset>
+                </filesets>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
