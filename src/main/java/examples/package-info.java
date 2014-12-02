@@ -14,29 +14,10 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package examples;
-
-import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.EventBus;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EventBusExamples {
+@Source
+package examples;
 
-  Vertx vertx = Vertx.vertx();
-
-  public void theExample() {
-    EventBus eb = vertx.eventBus();
-    eb.consumer("test.address", message -> {
-      System.out.println("I received a message " + message.body());
-    });
-  }
-
-  public void theExample2() {
-    EventBus eb = vertx.eventBus();
-    eb.<String>consumer("test.address", message -> {
-      System.out.println("I received a message " + message.body());
-    });
-  }
-}
+import io.vertx.docgen.Source;
