@@ -196,7 +196,7 @@
           <version>1.5.0</version>
           <configuration>
             <sourceDirectory>${asciidoc.dir}</sourceDirectory>
-            <sourceDocumentName>index.adoc</sourceDocumentName>
+            <sourceDocumentName>index.ad</sourceDocumentName>
             <outputDirectory>${project.build.directory}/site</outputDirectory>
             <backend>html</backend>
             <doctype>book</doctype>
