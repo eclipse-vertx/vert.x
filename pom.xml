@@ -101,8 +101,8 @@
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>docgen</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <artifactId>vertx-docgen</artifactId>
+      <version>3.0.0-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
     <!-- Testing -->
