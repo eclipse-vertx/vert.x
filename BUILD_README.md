@@ -6,9 +6,7 @@ Maven 3.2.x
 
 ## To build a distro
 
-mvn install -Pdist
-
-The distribution will be under vertx-dist/target/vert.x-<version>
+See the Vert.x stack project: https://github.com/vert-x3/vertx-stack
 
 ## To run tests
 
