@@ -25,7 +25,7 @@
  *
  * include::{@link io.vertx.core.buffer}[]
  */
-@Document(fileName = "index.ad")
+@Document(fileName = "index.adoc")
 @io.vertx.codegen.annotations.GenModule(name = "vertx")
 package io.vertx.core;
 

@@ -1,9 +1,0 @@
-= Vert.x API manual
-
-== The Event Bus
-
-include::io.vertx.core.eventbus.ad[]
-
-== Buffers
-
-include::io.vertx.core.buffer.ad[]
