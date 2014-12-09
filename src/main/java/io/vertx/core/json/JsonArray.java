@@ -141,7 +141,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
 
   public JsonArray add(Enum value) {
     Objects.requireNonNull(value);
-    list.add(value.toString());
+    list.add(value.name());
     return this;
   }
 

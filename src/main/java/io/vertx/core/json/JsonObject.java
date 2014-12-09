@@ -252,7 +252,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   public JsonObject put(String key, Enum value) {
     Objects.requireNonNull(key);
-    map.put(key, value == null ? null : value.toString());
+    map.put(key, value == null ? null : value.name());
     return this;
   }
 
