@@ -16,7 +16,6 @@
 
 package io.vertx.core.streams.impl;
 
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
@@ -40,7 +39,6 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
 public class PumpImpl<T> implements Pump {
 
   private final ReadStream<T> readStream;
