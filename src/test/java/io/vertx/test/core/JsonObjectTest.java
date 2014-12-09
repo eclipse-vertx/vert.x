@@ -751,6 +751,23 @@ public class JsonObjectTest {
     assertEquals(0, jsonObject.size());
   }
 
+  enum SomeEnum {
+    FOO, BAR
+  }
+
+  @Test
+  public void testPutEnum() {
+    assertSame(jsonObject, jsonObject.put("foo", SomeEnum.FOO));
+    assertEquals(SomeEnum.FOO.toString(), jsonObject.getString("foo"));
+    assertTrue(jsonObject.containsKey("foo"));
+    try {
+      jsonObject.put(null, SomeEnum.FOO);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
   @Test
   public void testPutString() {
     assertSame(jsonObject, jsonObject.put("foo", "bar"));

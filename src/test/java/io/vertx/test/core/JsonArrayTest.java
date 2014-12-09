@@ -382,6 +382,22 @@ public class JsonArrayTest {
     assertEquals("blah", arr.getString(0));
   }
 
+  enum SomeEnum {
+    FOO, BAR
+  }
+
+  @Test
+  public void testAddEnum() {
+    assertSame(jsonArray, jsonArray.add(JsonObjectTest.SomeEnum.FOO));
+    assertEquals(JsonObjectTest.SomeEnum.FOO.toString(), jsonArray.getString(0));
+    try {
+      jsonArray.add((JsonObjectTest.SomeEnum)null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
   @Test
   public void testAddString() {
     assertSame(jsonArray, jsonArray.add("foo"));

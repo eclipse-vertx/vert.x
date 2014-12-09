@@ -139,6 +139,12 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     return list.get(pos) == null;
   }
 
+  public JsonArray add(Enum value) {
+    Objects.requireNonNull(value);
+    list.add(value.toString());
+    return this;
+  }
+
   public JsonArray add(CharSequence value) {
     Objects.requireNonNull(value);
     list.add(value.toString());
