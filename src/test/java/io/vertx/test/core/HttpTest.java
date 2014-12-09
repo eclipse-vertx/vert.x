@@ -2371,22 +2371,21 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectionErrorsGetReportedToRequest() throws InterruptedException {
-    AtomicInteger clientExceptions = new AtomicInteger();
+    AtomicInteger req1Exceptions = new AtomicInteger();
     AtomicInteger req2Exceptions = new AtomicInteger();
     AtomicInteger req3Exceptions = new AtomicInteger();
 
     CountDownLatch latch = new CountDownLatch(3);
 
-    client.exceptionHandler(t -> {
-      assertEquals("More than one call to client exception handler was not expected", 1, clientExceptions.incrementAndGet());
-      latch.countDown();
-    });
-
     // This one should cause an error in the Client Exception handler, because it has no exception handler set specifically.
     HttpClientRequest req1 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl1", resp -> {
       fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
     });
-    // No exception handler set on request!
+
+    req1.exceptionHandler(t -> {
+      assertEquals("More than one call to req1 exception handler was not expected", 1, req1Exceptions.incrementAndGet());
+      latch.countDown();
+    });
 
     HttpClientRequest req2 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl2", resp -> {
       fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
@@ -2734,16 +2733,16 @@ public class HttpTest extends HttpTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
 
-      client.exceptionHandler(t -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, 4043, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, response -> {
+        response.bodyHandler(data -> assertEquals("bar", data.toString()));
+        testComplete();
+      });
+      req.exceptionHandler(t -> {
         if (shouldPass) {
           fail("Should not throw exception");
         } else {
           testComplete();
         }
-      });
-      HttpClientRequest req = client.request(HttpMethod.GET, 4043, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, response -> {
-        response.bodyHandler(data -> assertEquals("bar", data.toString()));
-        testComplete();
       });
       req.end("foo");
     });
@@ -2897,18 +2896,18 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectInvalidPort() {
-    client.exceptionHandler(t -> testComplete());
-    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).end();
+    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+        exceptionHandler(t -> testComplete()).
+        end();
 
     await();
   }
 
   @Test
   public void testConnectInvalidHost() {
-    client.exceptionHandler(t -> {
-      testComplete();
-    });
-    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).end();
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+        exceptionHandler(t -> testComplete()).
+        end();
 
     await();
   }

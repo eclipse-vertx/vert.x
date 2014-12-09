@@ -37,13 +37,6 @@ import io.vertx.core.metrics.Measured;
 @VertxGen
 public interface HttpClient extends Measured {
 
-  /**
-   * Set an exception handler
-   *
-   * @return A reference to this, so multiple invocations can be chained together.
-   */
-  HttpClient exceptionHandler(Handler<Throwable> handler);
-
   HttpClientRequest request(HttpMethod method, String absoluteURI);
 
   /**

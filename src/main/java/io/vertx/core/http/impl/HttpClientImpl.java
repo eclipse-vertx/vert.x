@@ -87,7 +87,6 @@ public class HttpClientImpl implements HttpClient {
   private final Closeable closeHook;
   private final SSLHelper sslHelper;
   private final HttpClientMetrics metrics;
-  private Handler<Throwable> exceptionHandler;
   private volatile boolean closed;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
@@ -112,13 +111,6 @@ public class HttpClientImpl implements HttpClient {
       }
     };
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
-  }
-
-  @Override
-  public synchronized HttpClientImpl exceptionHandler(Handler<Throwable> handler) {
-    checkClosed();
-    this.exceptionHandler = handler;
-    return this;
   }
 
   @Override
@@ -202,7 +194,7 @@ public class HttpClientImpl implements HttpClient {
         ContextImpl context = vertx.getOrCreateContext();
         Handler<Throwable> connectionExceptionHandler = exceptionHandler;
         if (connectionExceptionHandler == null) {
-          connectionExceptionHandler = HttpClientImpl.this.exceptionHandler;
+          connectionExceptionHandler = log::error;
         }
         Handler<WebSocket> wsConnect;
         if (endHandler != null) {
@@ -299,14 +291,6 @@ public class HttpClientImpl implements HttpClient {
   void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context) {
     pool.getConnection(port, host, handler, connectionExceptionHandler, context);
-  }
-
-  void handleException(Exception e) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
-    } else {
-      log.error(e);
-    }
   }
 
   /**
@@ -452,7 +436,7 @@ public class HttpClientImpl implements HttpClient {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     // If that doesn't exist just log it
     Handler<Throwable> exHandler =
-      connectionExceptionHandler == null ? (exceptionHandler == null ? log::error : exceptionHandler ): connectionExceptionHandler;
+      connectionExceptionHandler == null ? log::error : connectionExceptionHandler;
 
     context.executeSync(() -> {
       listener.connectionClosed(null);
