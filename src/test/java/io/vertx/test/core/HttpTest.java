@@ -1597,6 +1597,15 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientExceptionHandlerCalledWhenFailingToConnect() throws Exception {
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+        exceptionHandler(error -> testComplete()).
+        endHandler(done -> fail()).
+        end();
+    await();
+  }
+
+  @Test
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
@@ -2896,7 +2905,9 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectInvalidHost() {
-    client.exceptionHandler(t -> testComplete());
+    client.exceptionHandler(t -> {
+      testComplete();
+    });
     client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).end();
 
     await();
