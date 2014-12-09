@@ -27,6 +27,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketStream;
+import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -347,23 +348,23 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-
-      client.exceptionHandler(t -> {
-        if (shouldPass) {
-          t.printStackTrace();
-          fail("Should not throw exception");
-        } else {
-          testComplete();
-        }
-      });
-      client.connectWebsocket(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-        int size = 100;
-        Buffer received = Buffer.buffer();
-        ws.handler(data -> {
-          received.appendBuffer(data);
-          if (received.length() == size) {
-            ws.close();
-            testComplete();
+      client.websocket(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/").
+          exceptionHandler(t -> {
+            if (shouldPass) {
+              t.printStackTrace();
+              fail("Should not throw exception");
+            } else {
+              testComplete();
+            }
+          }).
+          handler(ws -> {
+            int size = 100;
+            Buffer received = Buffer.buffer();
+            ws.handler(data -> {
+              received.appendBuffer(data);
+              if (received.length() == size) {
+                ws.close();
+                testComplete();
           }
         });
         Buffer buff = Buffer.buffer(TestUtils.randomByteArray(size));
@@ -390,13 +391,14 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
-        ws.handler(buff -> {
-          assertEquals(message, buff.toString("UTF-8"));
-          testComplete();
-        });
-      });
-      client.exceptionHandler(t -> fail(t.getMessage()));
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
+          exceptionHandler(t -> fail(t.getMessage())).
+          handler(ws -> {
+            ws.handler(buff -> {
+              assertEquals(message, buff.toString("UTF-8"));
+              testComplete();
+            });
+          });
     });
     await();
   }
@@ -786,12 +788,13 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
     });
     server.listen(onSuccess(ar -> {
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol, ws -> {
-      });
-      client.exceptionHandler(t -> {
-        // Should fail
-        testComplete();
-      });
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol).
+          exceptionHandler(t -> {
+            // Should fail
+            testComplete();
+          }).
+          handler(ws -> {
+          });
     }));
     await();
   }
@@ -807,8 +810,9 @@ public class WebsocketTest extends VertxTestBase {
 
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.exceptionHandler(t -> testComplete());
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> fail("Should not be called"));
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version).
+          exceptionHandler(t -> testComplete()).
+          handler(ws -> fail("Should not be called"));
     });
     await();
   }
@@ -896,21 +900,22 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(listenAR.succeeded());
       stream.pause();
       paused.set(true);
-      client.exceptionHandler(err -> {
-        assertTrue(paused.get());
-        assertTrue(err instanceof WebSocketHandshakeException);
-        paused.set(false);
-        stream.resume();
-        client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
-          ws.handler(buffer -> {
-            assertEquals("whatever", buffer.toString("UTF-8"));
-            ws.closeHandler(v2 -> {
-              testComplete();
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
+          exceptionHandler(err -> {
+            assertTrue(paused.get());
+            assertTrue(err instanceof WebSocketHandshakeException);
+            paused.set(false);
+            stream.resume();
+            client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+              ws.handler(buffer -> {
+                assertEquals("whatever", buffer.toString("UTF-8"));
+                ws.closeHandler(v2 -> {
+                  testComplete();
+                });
+              });
             });
-          });
-        });
-      });
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> fail());
+          }).
+          handler(ws -> fail());
     });
     await();
   }
@@ -987,6 +992,26 @@ public class WebsocketTest extends VertxTestBase {
           testComplete();
         });
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testEndHandlerCalled() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
+    AtomicInteger doneCount = new AtomicInteger();
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
+          endHandler(done -> doneCount.incrementAndGet()).
+          handler(ws -> {
+            assertEquals(0, doneCount.get());
+            ws.closeHandler(v -> {
+              assertEquals(1, doneCount.get());
+              testComplete();
+            });
+          });
     });
     await();
   }

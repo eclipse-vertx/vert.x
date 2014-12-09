@@ -31,6 +31,7 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
@@ -44,6 +45,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketStream;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -121,32 +123,123 @@ public class HttpClientImpl implements HttpClient {
 
   @Override
   public HttpClient connectWebsocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect) {
-    return connectWebsocket(port, host, requestURI, null, null, wsConnect);
+    websocket(port, host, requestURI, null, null).handler(wsConnect);
+    return this;
   }
 
   @Override
   public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect) {
-    return connectWebsocket(port, host, requestURI, headers, null, wsConnect);
+    websocket(port, host, requestURI, headers, null).handler(wsConnect);
+    return this;
   }
 
   @Override
   public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    return connectWebsocket(port, host, requestURI, headers, version, null, wsConnect);
+    websocket(port, host, requestURI, headers, version, null).handler(wsConnect);
+    return this;
   }
 
   @Override
   public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                      String subProtocols, Handler<WebSocket> wsConnect) {
-    checkClosed();
-    ContextImpl context = vertx.getOrCreateContext();
-    getConnection(port, host, conn -> {
-      if (!conn.isClosed()) {
-        conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
-      } else {
-        connectWebsocket(port, host, requestURI, headers, version, subProtocols, wsConnect);
-      }
-    }, exceptionHandler, context);
+    websocket(port, host, requestURI, headers, version, subProtocols).handler(wsConnect);
     return this;
+  }
+
+  @Override
+  public WebSocketStream websocket(int port, String host, String requestURI) {
+    return websocket(port, host, requestURI, null, null);
+  }
+
+  @Override
+  public WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers) {
+    return websocket(port, host, requestURI, headers, null);
+  }
+
+  @Override
+  public WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version) {
+    return websocket(port, host, requestURI, headers, version, null);
+  }
+
+  @Override
+  public WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+                                          String subProtocols) {
+    return new WebSocketStreamImpl(port, host, requestURI, headers, version, subProtocols);
+  }
+
+  private class WebSocketStreamImpl implements WebSocketStream {
+
+    final int port;
+    final String host;
+    final String requestURI;
+    final MultiMap headers;
+    final WebsocketVersion version;
+    final String subProtocols;
+    private Handler<WebSocket> handler;
+    private Handler<Throwable> exceptionHandler;
+    private Handler<Void> endHandler;
+
+    public WebSocketStreamImpl(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols) {
+      this.port = port;
+      this.host = host;
+      this.requestURI = requestURI;
+      this.headers = headers;
+      this.version = version;
+      this.subProtocols = subProtocols;
+    }
+
+    @Override
+    public synchronized WebSocketStream exceptionHandler(Handler<Throwable> handler) {
+      exceptionHandler = handler;
+      return this;
+    }
+
+    @Override
+    public synchronized WebSocketStream handler(Handler<WebSocket> handler) {
+      if (this.handler == null && handler != null) {
+        this.handler = handler;
+        checkClosed();
+        ContextImpl context = vertx.getOrCreateContext();
+        Handler<Throwable> connectionExceptionHandler = exceptionHandler;
+        if (connectionExceptionHandler == null) {
+          connectionExceptionHandler = HttpClientImpl.this.exceptionHandler;
+        }
+        Handler<WebSocket> wsConnect;
+        if (endHandler != null) {
+          Handler<Void> endCallback = endHandler;
+          wsConnect = ws -> {
+            handler.handle(ws);
+            endCallback.handle(null);
+          };
+        } else {
+          wsConnect = handler;
+        }
+        getConnection(port, host, conn -> {
+          if (!conn.isClosed()) {
+            conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
+          } else {
+            connectWebsocket(port, host, requestURI, headers, version, subProtocols, wsConnect);
+          }
+        }, connectionExceptionHandler, context);
+      }
+      return this;
+    }
+
+    @Override
+    public synchronized WebSocketStream endHandler(Handler<Void> endHandler) {
+      this.endHandler = endHandler;
+      return this;
+    }
+
+    @Override
+    public WebSocketStream pause() {
+      return this;
+    }
+
+    @Override
+    public WebSocketStream resume() {
+      return this;
+    }
   }
 
   @Override
@@ -291,14 +384,14 @@ public class HttpClientImpl implements HttpClient {
           io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
           fut.addListener(fut2 -> {
             if (fut2.isSuccess()) {
-              connected(context, port, host, ch, connectHandler, listener);
+              connected(context, port, host, ch, connectHandler, connectErrorHandler, listener);
             } else {
               connectionFailed(context, ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
                                listener);
             }
           });
         } else {
-          connected(context, port, host, ch, connectHandler, listener);
+          connected(context, port, host, ch, connectHandler, connectErrorHandler, listener);
         }
       } else {
         connectionFailed(context, ch, connectErrorHandler, channelFuture.cause(), listener);
@@ -334,13 +427,15 @@ public class HttpClientImpl implements HttpClient {
   }
 
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
+                         Handler<Throwable> exceptionHandler,
                          ConnectionLifeCycleListener listener) {
-    context.executeSync(() -> createConn(context, port, host, ch, connectHandler, listener));
+    context.executeSync(() -> createConn(context, port, host, ch, connectHandler, exceptionHandler, listener));
   }
 
   private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
+                          Handler<Throwable> exceptionHandler,
                           ConnectionLifeCycleListener listener) {
-    ClientConnection conn = new ClientConnection(vertx, HttpClientImpl.this, ch,
+    ClientConnection conn = new ClientConnection(vertx, HttpClientImpl.this, exceptionHandler, ch,
         options.isSsl(), host, port, context, listener, metrics);
     conn.closeHandler(v -> {
       // The connection has been closed - tell the pool about it, this allows the pool to create more

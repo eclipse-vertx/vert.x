@@ -65,6 +65,18 @@ public interface HttpClient extends Measured {
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
 
+  WebSocketStream websocket(int port, String host, String requestURI);
+
+  WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers);
+
+  WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
+
+  /**
+   * @return a {@link io.vertx.core.http.WebSocketStream} configured with the specified arguments
+   */
+  WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+                                   String subProtocols);
+
   HttpClient connectWebsocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect);
 
   HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
@@ -73,7 +85,7 @@ public interface HttpClient extends Measured {
                               Handler<WebSocket> wsConnect);
 
   HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
-                              String subProtocols, Handler<WebSocket> wsConnect);
+                                   String subProtocols, Handler<WebSocket> wsConnect);
 
   /**
    * Close the HTTP client. This will cause any pooled HTTP connections to be closed.
