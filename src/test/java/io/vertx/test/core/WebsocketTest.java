@@ -1015,4 +1015,28 @@ public class WebsocketTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testClearClientHandlersOnEnd() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
+          handler(ws -> {
+            ws.endHandler(v -> {
+              try {
+                ws.endHandler(null);
+                ws.exceptionHandler(null);
+                ws.handler(null);
+              } catch (Exception e) {
+                fail("Was expecting to set to null the handlers when the socket is closed");
+                return;
+              }
+              testComplete();
+            });
+          });
+    });
+    await();
+  }
 }

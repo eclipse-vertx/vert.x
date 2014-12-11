@@ -41,21 +41,27 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
 
   @Override
   public synchronized WebSocket handler(Handler<Buffer> handler) {
-    checkClosed();
+    if (handler != null) {
+      checkClosed();
+    }
     this.dataHandler = handler;
     return this;
   }
 
   @Override
   public synchronized WebSocket endHandler(Handler<Void> handler) {
-    checkClosed();
+    if (handler != null) {
+      checkClosed();
+    }
     this.endHandler = handler;
     return this;
   }
 
   @Override
   public synchronized WebSocket exceptionHandler(Handler<Throwable> handler) {
-    checkClosed();
+    if (handler != null) {
+      checkClosed();
+    }
     this.exceptionHandler = handler;
     return this;
   }
