@@ -3721,6 +3721,85 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testClearHandlersOnEnd() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> req.response().setStatusCode(200).end());
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
+      AtomicInteger count = new AtomicInteger();
+      req.handler(resp -> {
+        resp.endHandler(v -> {
+          try {
+            resp.endHandler(null);
+            resp.exceptionHandler(null);
+            resp.handler(null);
+          } catch (Exception e) {
+            fail("Was expecting to set to null the handlers when the response is completed");
+            return;
+          }
+          if (count.incrementAndGet() == 2) {
+            testComplete();
+          }
+        });
+      });
+      req.endHandler(done -> {
+        try {
+          req.handler(null);
+          req.exceptionHandler(null);
+          req.endHandler(null);
+        } catch (Exception e) {
+          e.printStackTrace();
+          fail("Was expecting to set to null the handlers when the response is completed");
+          return;
+        }
+        if (count.incrementAndGet() == 2) {
+          testComplete();
+        }
+      });
+      req.end();
+
+    });
+    await();
+  }
+
+  @Test
+  public void testSetHandlersOnEnd() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> req.response().setStatusCode(200).end());
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
+      req.handler(resp -> {});
+      req.endHandler(done -> {
+        try {
+          req.handler(arg -> {});
+          fail();
+        } catch (Exception ignore) {
+        }
+        try {
+          req.exceptionHandler(arg -> {
+          });
+          fail();
+        } catch (Exception ignore) {
+        }
+        try {
+          req.endHandler(arg -> {
+          });
+          fail();
+        } catch (Exception ignore) {
+        }
+        testComplete();
+      });
+      req.end();
+
+    });
+    await();
+  }
+
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
       req.response().setChunked(true);

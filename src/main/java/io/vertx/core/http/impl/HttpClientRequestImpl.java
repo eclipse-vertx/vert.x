@@ -93,9 +93,9 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized  HttpClientRequest handler(Handler<HttpClientResponse> handler) {
     if (handler != null) {
+      checkComplete();
       respHandler = checkConnect(method, handler);
     } else {
-      checkComplete();
       respHandler = null;
     }
     return this;
@@ -113,6 +113,9 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public synchronized HttpClientRequest endHandler(Handler<Void> endHandler) {
+    if (endHandler != null) {
+      checkComplete();
+    }
     this.endHandler = endHandler;
     return this;
   }
@@ -222,6 +225,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
+      checkComplete();
       this.exceptionHandler = t -> {
         cancelOutstandingTimeoutTimer();
         handler.handle(t);
