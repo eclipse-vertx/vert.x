@@ -19,7 +19,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -445,11 +444,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void closeConnAfterWrite() {
     if (channelFuture != null) {
-      channelFuture.addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) throws Exception {
-          conn.close();
-        }
-      });
+      channelFuture.addListener(fut -> conn.close());
     }
   }
 
