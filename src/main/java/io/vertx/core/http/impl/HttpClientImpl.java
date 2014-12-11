@@ -31,6 +31,7 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
@@ -44,6 +45,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketStream;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -54,7 +56,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.metrics.spi.HttpClientMetrics;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
@@ -63,7 +64,6 @@ import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,7 +87,6 @@ public class HttpClientImpl implements HttpClient {
   private final Closeable closeHook;
   private final SSLHelper sslHelper;
   private final HttpClientMetrics metrics;
-  private Handler<Throwable> exceptionHandler;
   private volatile boolean closed;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
@@ -115,53 +114,147 @@ public class HttpClientImpl implements HttpClient {
   }
 
   @Override
-  public synchronized HttpClientImpl exceptionHandler(Handler<Throwable> handler) {
-    checkClosed();
-    this.exceptionHandler = handler;
+  public HttpClient connectWebsocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect) {
+    websocket(port, host, requestURI, null, null).handler(wsConnect);
     return this;
   }
 
   @Override
-  public HttpClient connectWebsocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect) {
-    return connectWebsocket(port, host, requestURI, null, null, wsConnect);
-  }
-
-  @Override
   public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect) {
-    return connectWebsocket(port, host, requestURI, headers, null, wsConnect);
+    websocket(port, host, requestURI, headers, null).handler(wsConnect);
+    return this;
   }
 
   @Override
   public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    return connectWebsocket(port, host, requestURI, headers, version, null, wsConnect);
+    websocket(port, host, requestURI, headers, version, null).handler(wsConnect);
+    return this;
   }
 
   @Override
   public HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                      String subProtocols, Handler<WebSocket> wsConnect) {
-    checkClosed();
-    ContextImpl context = vertx.getOrCreateContext();
-    getConnection(port, host, conn -> {
-      if (!conn.isClosed()) {
-        conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
-      } else {
-        connectWebsocket(port, host, requestURI, headers, version, subProtocols, wsConnect);
-      }
-    }, exceptionHandler, context);
+    websocket(port, host, requestURI, headers, version, subProtocols).handler(wsConnect);
     return this;
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler) {
-    checkConnect(method, responseHandler);
-    URL url = parseUrl(absoluteURI);
-    return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null, responseHandler);
+  public WebSocketStream websocket(int port, String host, String requestURI) {
+    return websocket(port, host, requestURI, null, null);
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, int port, String host, String path, Handler<HttpClientResponse> responseHandler) {
-    checkConnect(method, responseHandler);
-    return doRequest(method, host, port, path, null, responseHandler);
+  public WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers) {
+    return websocket(port, host, requestURI, headers, null);
+  }
+
+  @Override
+  public WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version) {
+    return websocket(port, host, requestURI, headers, version, null);
+  }
+
+  @Override
+  public WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+                                          String subProtocols) {
+    return new WebSocketStreamImpl(port, host, requestURI, headers, version, subProtocols);
+  }
+
+  private class WebSocketStreamImpl implements WebSocketStream {
+
+    final int port;
+    final String host;
+    final String requestURI;
+    final MultiMap headers;
+    final WebsocketVersion version;
+    final String subProtocols;
+    private Handler<WebSocket> handler;
+    private Handler<Throwable> exceptionHandler;
+    private Handler<Void> endHandler;
+
+    public WebSocketStreamImpl(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols) {
+      this.port = port;
+      this.host = host;
+      this.requestURI = requestURI;
+      this.headers = headers;
+      this.version = version;
+      this.subProtocols = subProtocols;
+    }
+
+    @Override
+    public synchronized WebSocketStream exceptionHandler(Handler<Throwable> handler) {
+      exceptionHandler = handler;
+      return this;
+    }
+
+    @Override
+    public synchronized WebSocketStream handler(Handler<WebSocket> handler) {
+      if (this.handler == null && handler != null) {
+        this.handler = handler;
+        checkClosed();
+        ContextImpl context = vertx.getOrCreateContext();
+        Handler<Throwable> connectionExceptionHandler = exceptionHandler;
+        if (connectionExceptionHandler == null) {
+          connectionExceptionHandler = log::error;
+        }
+        Handler<WebSocket> wsConnect;
+        if (endHandler != null) {
+          Handler<Void> endCallback = endHandler;
+          wsConnect = ws -> {
+            handler.handle(ws);
+            endCallback.handle(null);
+          };
+        } else {
+          wsConnect = handler;
+        }
+        getConnection(port, host, conn -> {
+          if (!conn.isClosed()) {
+            conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
+          } else {
+            connectWebsocket(port, host, requestURI, headers, version, subProtocols, wsConnect);
+          }
+        }, connectionExceptionHandler, context);
+      }
+      return this;
+    }
+
+    @Override
+    public synchronized WebSocketStream endHandler(Handler<Void> endHandler) {
+      this.endHandler = endHandler;
+      return this;
+    }
+
+    @Override
+    public WebSocketStream pause() {
+      return this;
+    }
+
+    @Override
+    public WebSocketStream resume() {
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler) {
+    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
+    return request(method, absoluteURI).handler(responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler) {
+    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
+    return request(method, port, host, requestURI).handler(responseHandler);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, String absoluteURI) {
+    URL url = parseUrl(absoluteURI);
+    return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null);
+  }
+
+  @Override
+  public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI) {
+    return doRequest(method, host, port, requestURI, null);
   }
 
   @Override
@@ -198,14 +291,6 @@ public class HttpClientImpl implements HttpClient {
   void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context) {
     pool.getConnection(port, host, handler, connectionExceptionHandler, context);
-  }
-
-  void handleException(Exception e) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(e);
-    } else {
-      log.error(e);
-    }
   }
 
   /**
@@ -283,14 +368,14 @@ public class HttpClientImpl implements HttpClient {
           io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
           fut.addListener(fut2 -> {
             if (fut2.isSuccess()) {
-              connected(context, port, host, ch, connectHandler, listener);
+              connected(context, port, host, ch, connectHandler, connectErrorHandler, listener);
             } else {
               connectionFailed(context, ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
                                listener);
             }
           });
         } else {
-          connected(context, port, host, ch, connectHandler, listener);
+          connected(context, port, host, ch, connectHandler, connectErrorHandler, listener);
         }
       } else {
         connectionFailed(context, ch, connectErrorHandler, channelFuture.cause(), listener);
@@ -307,14 +392,12 @@ public class HttpClientImpl implements HttpClient {
     }
   }
 
-  private HttpClientRequest doRequest(HttpMethod method, String host, int port, String relativeURI, MultiMap headers,
-                                      Handler<HttpClientResponse> responseHandler) {
+  private HttpClientRequest doRequest(HttpMethod method, String host, int port, String relativeURI, MultiMap headers) {
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
-    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
     checkClosed();
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, relativeURI, responseHandler, vertx);
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, relativeURI, vertx);
     if (headers != null) {
       req.headers().setAll(headers);
     }
@@ -327,22 +410,16 @@ public class HttpClientImpl implements HttpClient {
     }
   }
 
-  private Handler<HttpClientResponse> checkConnect(HttpMethod method, Handler<HttpClientResponse> handler) {
-    if (method == HttpMethod.CONNECT) {
-      // special handling for CONNECT
-      handler = connectHandler(handler);
-    }
-    return handler;
-  }
-
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
+                         Handler<Throwable> exceptionHandler,
                          ConnectionLifeCycleListener listener) {
-    context.executeSync(() -> createConn(context, port, host, ch, connectHandler, listener));
+    context.executeSync(() -> createConn(context, port, host, ch, connectHandler, exceptionHandler, listener));
   }
 
   private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
+                          Handler<Throwable> exceptionHandler,
                           ConnectionLifeCycleListener listener) {
-    ClientConnection conn = new ClientConnection(vertx, HttpClientImpl.this, ch,
+    ClientConnection conn = new ClientConnection(vertx, HttpClientImpl.this, exceptionHandler, ch,
         options.isSsl(), host, port, context, listener, metrics);
     conn.closeHandler(v -> {
       // The connection has been closed - tell the pool about it, this allows the pool to create more
@@ -359,7 +436,7 @@ public class HttpClientImpl implements HttpClient {
     // If no specific exception handler is provided, fall back to the HttpClient's exception handler.
     // If that doesn't exist just log it
     Handler<Throwable> exHandler =
-      connectionExceptionHandler == null ? (exceptionHandler == null ? log::error : exceptionHandler ): connectionExceptionHandler;
+      connectionExceptionHandler == null ? log::error : connectionExceptionHandler;
 
     context.executeSync(() -> {
       listener.connectionClosed(null);
@@ -373,97 +450,6 @@ public class HttpClientImpl implements HttpClient {
         log.error(t);
       }
     });
-  }
-
-  private Handler<HttpClientResponse> connectHandler(Handler<HttpClientResponse> responseHandler) {
-    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
-    return resp -> {
-      HttpClientResponse response;
-      if (resp.statusCode() == 200) {
-        // connect successful force the modification of the ChannelPipeline
-        // beside this also pause the socket for now so the user has a chance to register its dataHandler
-        // after received the NetSocket
-        NetSocket socket = resp.netSocket();
-        socket.pause();
-
-        response = new HttpClientResponse() {
-          private boolean resumed;
-
-          @Override
-          public int statusCode() {
-            return resp.statusCode();
-          }
-
-          @Override
-          public String statusMessage() {
-            return resp.statusMessage();
-          }
-
-          @Override
-          public MultiMap headers() {
-            return resp.headers();
-          }
-
-          @Override
-          public MultiMap trailers() {
-            return resp.trailers();
-          }
-
-          @Override
-          public List<String> cookies() {
-            return resp.cookies();
-          }
-
-          @Override
-          public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
-            resp.bodyHandler(bodyHandler);
-            return this;
-          }
-
-          @Override
-          public synchronized NetSocket netSocket() {
-            if (!resumed) {
-              resumed = true;
-              vertx.getContext().runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
-            }
-            return socket;
-          }
-
-          @Override
-          public HttpClientResponse endHandler(Handler<Void> endHandler) {
-            resp.endHandler(endHandler);
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse handler(Handler<Buffer> handler) {
-            resp.handler(handler);
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse pause() {
-            resp.pause();
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse resume() {
-            resp.resume();
-            return this;
-          }
-
-          @Override
-          public HttpClientResponse exceptionHandler(Handler<Throwable> handler) {
-            resp.exceptionHandler(handler);
-            return this;
-          }
-        };
-      } else {
-        response = resp;
-      }
-      responseHandler.handle(response);
-    };
   }
 
   private class ClientHandler extends VertxHttpHandler<ClientConnection> {

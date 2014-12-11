@@ -35,7 +35,9 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.net.NetSocket;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
@@ -56,9 +58,10 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private final int port;
   private final HttpClientImpl client;
   private final HttpRequest request;
-  private final Handler<HttpClientResponse> respHandler;
   private final VertxInternal vertx;
   private final io.vertx.core.http.HttpMethod method;
+  private Handler<HttpClientResponse> respHandler;
+  private Handler<Void> endHandler;
   private boolean chunked;
   private Handler<Void> continueHandler;
   private ClientConnection conn;
@@ -77,16 +80,44 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private long lastDataReceived;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
-                        String relativeURI,
-                        Handler<HttpClientResponse> respHandler, VertxInternal vertx) {
+                        String relativeURI, VertxInternal vertx) {
     this.host = host;
     this.port = port;
     this.client = client;
     this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, toNettyHttpMethod(method), relativeURI, false);
     this.chunked = false;
     this.method = method;
-    this.respHandler = respHandler;
     this.vertx = vertx;
+  }
+
+  @Override
+  public synchronized  HttpClientRequest handler(Handler<HttpClientResponse> handler) {
+    if (handler != null) {
+      checkComplete();
+      respHandler = checkConnect(method, handler);
+    } else {
+      respHandler = null;
+    }
+    return this;
+  }
+
+  @Override
+  public HttpClientRequest pause() {
+    return this;
+  }
+
+  @Override
+  public HttpClientRequest resume() {
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest endHandler(Handler<Void> endHandler) {
+    if (endHandler != null) {
+      checkComplete();
+    }
+    this.endHandler = endHandler;
+    return this;
   }
 
   @Override
@@ -139,6 +170,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized HttpClientRequestImpl write(Buffer chunk) {
     checkComplete();
+    checkResponseHandler();
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false);
     return this;
@@ -147,6 +179,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized HttpClientRequestImpl write(String chunk) {
     checkComplete();
+    checkResponseHandler();
     return write(Buffer.buffer(chunk));
   }
 
@@ -154,6 +187,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   public synchronized HttpClientRequestImpl write(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
     checkComplete();
+    checkResponseHandler();
     return write(Buffer.buffer(chunk, enc));
   }
 
@@ -190,11 +224,15 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    checkComplete();
-    this.exceptionHandler = t -> {
-      cancelOutstandingTimeoutTimer();
-      handler.handle(t);
-    };
+    if (handler != null) {
+      checkComplete();
+      this.exceptionHandler = t -> {
+        cancelOutstandingTimeoutTimer();
+        handler.handle(t);
+      };
+    } else {
+      this.exceptionHandler = null;
+    }
     return this;
   }
 
@@ -208,6 +246,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized HttpClientRequestImpl sendHead() {
     checkComplete();
+    checkResponseHandler();
     if (conn != null) {
       if (!headWritten) {
         writeHead();
@@ -233,6 +272,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized void end(Buffer chunk) {
     checkComplete();
+    checkResponseHandler();
     if (!chunked && !contentLengthSet()) {
       headers().set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
@@ -242,6 +282,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized void end() {
     checkComplete();
+    checkResponseHandler();
     write(Unpooled.EMPTY_BUFFER, true);
   }
 
@@ -294,7 +335,12 @@ public class HttpClientRequestImpl implements HttpClientRequest {
             continueHandler.handle(null);
           }
         } else {
-          respHandler.handle(resp);
+          if (respHandler != null) {
+            respHandler.handle(resp);
+          }
+          if (endHandler != null) {
+            endHandler.handle(null);
+          }
         }
       } catch (Throwable t) {
         handleException(t);
@@ -304,6 +350,105 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   synchronized HttpRequest getRequest() {
     return request;
+  }
+
+  private Handler<HttpClientResponse> checkConnect(io.vertx.core.http.HttpMethod method, Handler<HttpClientResponse> handler) {
+    if (method == io.vertx.core.http.HttpMethod.CONNECT) {
+      // special handling for CONNECT
+      handler = connectHandler(handler);
+    }
+    return handler;
+  }
+
+  private Handler<HttpClientResponse> connectHandler(Handler<HttpClientResponse> responseHandler) {
+    Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
+    return resp -> {
+      HttpClientResponse response;
+      if (resp.statusCode() == 200) {
+        // connect successful force the modification of the ChannelPipeline
+        // beside this also pause the socket for now so the user has a chance to register its dataHandler
+        // after received the NetSocket
+        NetSocket socket = resp.netSocket();
+        socket.pause();
+
+        response = new HttpClientResponse() {
+          private boolean resumed;
+
+          @Override
+          public int statusCode() {
+            return resp.statusCode();
+          }
+
+          @Override
+          public String statusMessage() {
+            return resp.statusMessage();
+          }
+
+          @Override
+          public MultiMap headers() {
+            return resp.headers();
+          }
+
+          @Override
+          public MultiMap trailers() {
+            return resp.trailers();
+          }
+
+          @Override
+          public List<String> cookies() {
+            return resp.cookies();
+          }
+
+          @Override
+          public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
+            resp.bodyHandler(bodyHandler);
+            return this;
+          }
+
+          @Override
+          public synchronized NetSocket netSocket() {
+            if (!resumed) {
+              resumed = true;
+              vertx.getContext().runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
+            }
+            return socket;
+          }
+
+          @Override
+          public HttpClientResponse endHandler(Handler<Void> endHandler) {
+            resp.endHandler(endHandler);
+            return this;
+          }
+
+          @Override
+          public HttpClientResponse handler(Handler<Buffer> handler) {
+            resp.handler(handler);
+            return this;
+          }
+
+          @Override
+          public HttpClientResponse pause() {
+            resp.pause();
+            return this;
+          }
+
+          @Override
+          public HttpClientResponse resume() {
+            resp.resume();
+            return this;
+          }
+
+          @Override
+          public HttpClientResponse exceptionHandler(Handler<Throwable> handler) {
+            resp.exceptionHandler(handler);
+            return this;
+          }
+        };
+      } else {
+        response = resp;
+      }
+      responseHandler.handle(response);
+    };
   }
 
   private Handler<Throwable> getExceptionHandler() {
@@ -337,7 +482,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded"));
   }
 
-  private void connect() {
+  private synchronized void connect() {
     if (!connecting) {
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
@@ -384,7 +529,9 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
         if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
 
-        conn.endRequest();
+        if (respHandler != null) {
+          conn.endRequest();
+        }
       } else {
         writeHeadWithContent(pending, false);
       }
@@ -395,7 +542,9 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
         if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
 
-        conn.endRequest();
+        if (respHandler != null) {
+          conn.endRequest();
+        }
       } else {
         if (writeHead) {
           writeHead();
@@ -491,7 +640,9 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       if (end) {
         if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
 
-        conn.endRequest();
+        if (respHandler != null) {
+          conn.endRequest();
+        }
       }
     }
   }
@@ -499,6 +650,12 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private void checkComplete() {
     if (completed) {
       throw new IllegalStateException("Request already complete");
+    }
+  }
+
+  private void checkResponseHandler() {
+    if (respHandler == null) {
+      throw new IllegalStateException("You must set an handler for the HttpClientResponse before connecting");
     }
   }
 

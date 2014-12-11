@@ -1349,7 +1349,6 @@ public class HttpTest extends HttpTestBase {
       assertIllegalStateException(() -> req.end("foo"));
       assertIllegalStateException(() -> req.end(buff));
       assertIllegalStateException(() -> req.end("foo", "UTF-8"));
-      assertIllegalStateException(() -> req.exceptionHandler(noOpHandler()));
       assertIllegalStateException(() -> req.sendHead());
       assertIllegalStateException(() -> req.setChunked(false));
       assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
@@ -1550,6 +1549,59 @@ public class HttpTest extends HttpTestBase {
       req.end();
     }));
 
+    await();
+  }
+
+  @Test
+  public void testConnectWithoutResponseHandler() throws Exception {
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end();
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end("whatever");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end("whatever", "UTF-8");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).end(Buffer.buffer("whatever"));
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).sendHead();
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).write(Buffer.buffer("whatever"));
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).write("whatever");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).write("whatever", "UTF-8");
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+  }
+
+  @Test
+  public void testClientExceptionHandlerCalledWhenFailingToConnect() throws Exception {
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+        exceptionHandler(error -> testComplete()).
+        endHandler(done -> fail()).
+        end();
     await();
   }
 
@@ -2319,22 +2371,21 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectionErrorsGetReportedToRequest() throws InterruptedException {
-    AtomicInteger clientExceptions = new AtomicInteger();
+    AtomicInteger req1Exceptions = new AtomicInteger();
     AtomicInteger req2Exceptions = new AtomicInteger();
     AtomicInteger req3Exceptions = new AtomicInteger();
 
     CountDownLatch latch = new CountDownLatch(3);
 
-    client.exceptionHandler(t -> {
-      assertEquals("More than one call to client exception handler was not expected", 1, clientExceptions.incrementAndGet());
-      latch.countDown();
-    });
-
     // This one should cause an error in the Client Exception handler, because it has no exception handler set specifically.
     HttpClientRequest req1 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl1", resp -> {
       fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
     });
-    // No exception handler set on request!
+
+    req1.exceptionHandler(t -> {
+      assertEquals("More than one call to req1 exception handler was not expected", 1, req1Exceptions.incrementAndGet());
+      latch.countDown();
+    });
 
     HttpClientRequest req2 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl2", resp -> {
       fail("Should never get a response on a bad port, if you see this message than you are running an http server on port 9998");
@@ -2682,16 +2733,16 @@ public class HttpTest extends HttpTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
 
-      client.exceptionHandler(t -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, 4043, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, response -> {
+        response.bodyHandler(data -> assertEquals("bar", data.toString()));
+        testComplete();
+      });
+      req.exceptionHandler(t -> {
         if (shouldPass) {
           fail("Should not throw exception");
         } else {
           testComplete();
         }
-      });
-      HttpClientRequest req = client.request(HttpMethod.GET, 4043, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, response -> {
-        response.bodyHandler(data -> assertEquals("bar", data.toString()));
-        testComplete();
       });
       req.end("foo");
     });
@@ -2845,16 +2896,18 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectInvalidPort() {
-    client.exceptionHandler(t -> testComplete());
-    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).end();
+    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+        exceptionHandler(t -> testComplete()).
+        end();
 
     await();
   }
 
   @Test
   public void testConnectInvalidHost() {
-    client.exceptionHandler(t -> testComplete());
-    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).end();
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+        exceptionHandler(t -> testComplete()).
+        end();
 
     await();
   }
@@ -3664,6 +3717,85 @@ public class HttpTest extends HttpTestBase {
           testComplete();
         });
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testClearHandlersOnEnd() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> req.response().setStatusCode(200).end());
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
+      AtomicInteger count = new AtomicInteger();
+      req.handler(resp -> {
+        resp.endHandler(v -> {
+          try {
+            resp.endHandler(null);
+            resp.exceptionHandler(null);
+            resp.handler(null);
+          } catch (Exception e) {
+            fail("Was expecting to set to null the handlers when the response is completed");
+            return;
+          }
+          if (count.incrementAndGet() == 2) {
+            testComplete();
+          }
+        });
+      });
+      req.endHandler(done -> {
+        try {
+          req.handler(null);
+          req.exceptionHandler(null);
+          req.endHandler(null);
+        } catch (Exception e) {
+          e.printStackTrace();
+          fail("Was expecting to set to null the handlers when the response is completed");
+          return;
+        }
+        if (count.incrementAndGet() == 2) {
+          testComplete();
+        }
+      });
+      req.end();
+
+    });
+    await();
+  }
+
+  @Test
+  public void testSetHandlersOnEnd() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> req.response().setStatusCode(200).end());
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
+      req.handler(resp -> {});
+      req.endHandler(done -> {
+        try {
+          req.handler(arg -> {});
+          fail();
+        } catch (Exception ignore) {
+        }
+        try {
+          req.exceptionHandler(arg -> {
+          });
+          fail();
+        } catch (Exception ignore) {
+        }
+        try {
+          req.endHandler(arg -> {
+          });
+          fail();
+        } catch (Exception ignore) {
+        }
+        testComplete();
+      });
+      req.end();
+
     });
     await();
   }

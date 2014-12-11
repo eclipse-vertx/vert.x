@@ -37,17 +37,38 @@ import io.vertx.core.metrics.Measured;
 @VertxGen
 public interface HttpClient extends Measured {
 
+  HttpClientRequest request(HttpMethod method, String absoluteURI);
+
   /**
-   * Set an exception handler
+   * Create a new http client request.
    *
-   * @return A reference to this, so multiple invocations can be chained together.
+   * The returned request does not have yet a response handler and one should be set before sending
+   * any data to the remote server.
+   *
+   * @param method the http method
+   * @param port the remote server port
+   * @param host the remote server host
+   * @param requestURI the request uri
+   * @return the http client request
    */
-  HttpClient exceptionHandler(Handler<Throwable> handler);
+  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI);
 
   HttpClientRequest request(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
+
+  WebSocketStream websocket(int port, String host, String requestURI);
+
+  WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers);
+
+  WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
+
+  /**
+   * @return a {@link io.vertx.core.http.WebSocketStream} configured with the specified arguments
+   */
+  WebSocketStream websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
+                                   String subProtocols);
 
   HttpClient connectWebsocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect);
 
@@ -57,7 +78,7 @@ public interface HttpClient extends Measured {
                               Handler<WebSocket> wsConnect);
 
   HttpClient connectWebsocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
-                              String subProtocols, Handler<WebSocket> wsConnect);
+                                   String subProtocols, Handler<WebSocket> wsConnect);
 
   /**
    * Close the HTTP client. This will cause any pooled HTTP connections to be closed.

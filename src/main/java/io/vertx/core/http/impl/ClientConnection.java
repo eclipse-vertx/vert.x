@@ -80,6 +80,7 @@ class ClientConnection extends ConnectionBase {
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final HttpClientMetrics metrics;
+  private final Handler<Throwable> exceptionHandler;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -87,7 +88,7 @@ class ClientConnection extends ConnectionBase {
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
-  ClientConnection(VertxInternal vertx, HttpClientImpl client, Channel channel, boolean ssl, String host,
+  ClientConnection(VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
     super(vertx, channel, context, metrics);
     this.client = client;
@@ -101,6 +102,7 @@ class ClientConnection extends ConnectionBase {
     }
     this.listener = listener;
     this.metrics = metrics;
+    this.exceptionHandler = exceptionHandler;
   }
 
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
@@ -132,8 +134,8 @@ class ClientConnection extends ConnectionBase {
       ChannelPipeline p = channel.pipeline();
       p.addBefore("handler", "handshakeCompleter", new HandshakeInboundHandler(wsConnect, version != WebSocketVersion.V00));
       handshaker.handshake(channel).addListener(future -> {
-        if (!future.isSuccess()) {
-          client.handleException((Exception) future.cause());
+        if (!future.isSuccess() && exceptionHandler != null) {
+          exceptionHandler.handle(future.cause());
         }
       });
     } catch (Exception e) {
@@ -215,7 +217,9 @@ class ClientConnection extends ConnectionBase {
     private void handleException(WebSocketHandshakeException e) {
       handshaking = false;
       buffered.clear();
-      client.handleException(e);
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(e);
+      }
     }
 
     private void handshakeComplete(ChannelHandlerContext ctx, FullHttpResponse response) {
