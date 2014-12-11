@@ -221,10 +221,14 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    this.exceptionHandler = t -> {
-      cancelOutstandingTimeoutTimer();
-      handler.handle(t);
-    };
+    if (handler != null) {
+      this.exceptionHandler = t -> {
+        cancelOutstandingTimeoutTimer();
+        handler.handle(t);
+      };
+    } else {
+      this.exceptionHandler = null;
+    }
     return this;
   }
 
