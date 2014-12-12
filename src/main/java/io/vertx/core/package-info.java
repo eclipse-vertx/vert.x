@@ -15,6 +15,9 @@
  */
 
 /**
+ * = Vert.x reference manual
+ * :toc: right
+ *
  * = Vert.x API manual
  *
  * == The Event Bus
