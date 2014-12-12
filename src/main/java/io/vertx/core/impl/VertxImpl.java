@@ -150,7 +150,7 @@ public class VertxImpl implements VertxInternal {
             haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
           }
         }
-        clusterManager.<String, ServerID>getAsyncMultiMap("subs", null, ar2 -> {
+        clusterManager.<String, ServerID>getAsyncMultiMap("subs", ar2 -> {
           if (ar2.succeeded()) {
             AsyncMultiMap<String, ServerID> subs = ar2.result();
             NetServer server = createNetServer(new NetServerOptions().setPort(options.getClusterPort()).setHost(options.getClusterHost()));

@@ -16,7 +16,11 @@
 
 package io.vertx.core.shareddata;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -45,5 +49,11 @@ public interface LocalMap<K, V> {
   V replace(K key, V value);
 
   void close();
+
+  @GenIgnore
+  Set<K> keySet();
+
+  @GenIgnore
+  Collection<V> values();
 
 }
