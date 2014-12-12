@@ -20,14 +20,6 @@
  *
  * = Vert.x API manual
  *
- * == The Event Bus
- *
- * include::{@link io.vertx.core.eventbus}[]
- *
- * == Buffers
- *
- * include::{@link io.vertx.core.buffer}[]
- *
  * == Flow Control - Streams and Pumps
  *
  * include::{@link io.vertx.core.streams}[]
