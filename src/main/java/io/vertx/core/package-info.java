@@ -24,6 +24,11 @@
  * == Buffers
  *
  * include::{@link io.vertx.core.buffer}[]
+ *
+ * == Flow Control - Streams and Pumps
+ *
+ * include::{@link io.vertx.core.streams}[]
+ *
  */
 @Document(fileName = "index.adoc")
 @io.vertx.codegen.annotations.GenModule(name = "vertx")

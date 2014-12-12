@@ -7,3 +7,7 @@ include::io.vertx.core.eventbus.adoc[]
 == Buffers
 
 include::io.vertx.core.buffer.adoc[]
+
+== Flow Control - Streams and Pumps
+
+include::io.vertx.core.streams.adoc[]
