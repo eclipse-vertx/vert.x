@@ -72,6 +72,7 @@
 
   <properties>
 
+    <vertx.version>3.0.0-SNAPSHOT</vertx.version>
     <netty.version>4.0.24.Final</netty.version>
     <jackson.version>2.4.3</jackson.version>
     <metrics.version>3.0.2</metrics.version>
@@ -115,13 +116,13 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>${vertx.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-docgen</artifactId>
-      <version>3.0.0-SNAPSHOT</version>
+      <version>${vertx.version}</version>
       <optional>true</optional>
     </dependency>
     <!-- Testing -->
