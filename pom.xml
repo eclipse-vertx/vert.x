@@ -189,6 +189,7 @@
             <systemPropertyVariables>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
               <buildDirectory>${project.build.directory}</buildDirectory>
+              <vertxVersion>${project.version} </vertxVersion>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <argLine>-Xmx1200M</argLine>
