@@ -17,6 +17,8 @@
 package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
 
 /**
@@ -36,6 +38,8 @@ public class Checker {
         obj instanceof Character ||
         obj instanceof byte[] ||
         obj instanceof Buffer ||
+        obj instanceof JsonObject ||
+        obj instanceof JsonArray ||
         obj instanceof Shareable) {
     } else {
       throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
@@ -43,7 +47,11 @@ public class Checker {
   }
 
   static <T> T copyIfRequired(T obj) {
-    if (obj instanceof byte[]) {
+    if (obj instanceof JsonObject) {
+      return (T)((JsonObject)obj).copy();
+    } else if (obj instanceof JsonArray) {
+      return (T) ((JsonArray) obj).copy();
+    } else if (obj instanceof byte[]) {
       //Copy it
       byte[] bytes = (byte[]) obj;
       byte[] copy = new byte[bytes.length];

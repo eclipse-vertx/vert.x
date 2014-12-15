@@ -24,7 +24,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
-import io.vertx.core.shareddata.MapOptions;
 import io.vertx.core.shareddata.impl.AsynchronousCounter;
 import io.vertx.core.shareddata.impl.AsynchronousLock;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
@@ -96,7 +95,7 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public <K, V> void getAsyncMultiMap(String name, MapOptions options, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler) {
+  public <K, V> void getAsyncMultiMap(String name, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler) {
     AsyncMultiMap<K, V> map = (AsyncMultiMap<K, V>)asyncMultiMaps.get(name);
     if (map == null) {
       map = new FakeAsyncMultiMap<>();
@@ -110,7 +109,7 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public <K, V> void getAsyncMap(String name, MapOptions options, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+  public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
     AsyncMap<K, V> map = (AsyncMap<K, V>)asyncMaps.get(name);
     if (map == null) {
       map = new FakeAsyncMap<>();
@@ -282,6 +281,16 @@ public class FakeClusterManager implements ClusterManager {
     }
 
     @Override
+    public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
+      put(k, v, completionHandler);
+    }
+
+    @Override
+    public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
+      putIfAbsent(k, v, completionHandler);
+    }
+
+    @Override
     public void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
       vertx.executeBlocking(() -> map.remove(k, v), resultHandler);
     }
@@ -302,6 +311,11 @@ public class FakeClusterManager implements ClusterManager {
         map.clear();
         return null;
       }, resultHandler);
+    }
+
+    @Override
+    public void size(Handler<AsyncResult<Integer>> resultHandler) {
+      vertx.executeBlocking(map::size, resultHandler);
     }
 
     @Override

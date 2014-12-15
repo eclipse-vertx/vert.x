@@ -29,6 +29,7 @@ public class FutureFactoryImpl implements FutureFactory {
     return new FutureImpl<T>();
   }
 
+  // TODO - for completed futures with null values we could maybe reuse a static instance to save allocation
   @Override
   public <T> Future<T> completedFuture() {
     return new FutureImpl<T>((T)null);

@@ -46,7 +46,11 @@ public interface AsyncMap<K, V> {
    */
   void put(K k, V v, Handler<AsyncResult<Void>> completionHandler);
 
+  void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler);
+
   void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler);
+
+  void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler);
 
   /**
    * Remove a value from the map, asynchronously.
@@ -62,5 +66,7 @@ public interface AsyncMap<K, V> {
   void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler);
 
   void clear(Handler<AsyncResult<Void>> resultHandler);
+
+  void size(Handler<AsyncResult<Integer>> resultHandler);
 
 }

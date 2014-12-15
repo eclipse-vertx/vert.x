@@ -25,8 +25,7 @@ import org.junit.Test;
 
 import java.io.Serializable;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -507,6 +506,27 @@ public class ClusterWideMapTest extends VertxTestBase {
             map.get("foo", onSuccess(res -> {
               assertNull(res);
               testComplete();
+            }));
+          }));
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testSize() {
+    getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map -> {
+      map.size(onSuccess(size -> {
+        assertEquals(0, size.intValue());
+        map.put("foo", "bar", onSuccess(v -> {
+          map.size(onSuccess(size2 -> {
+            assertEquals(1, size2.intValue());
+            getVertx().sharedData().<String, String>getClusterWideMap("foo", onSuccess(map2 -> {
+              map2.size(onSuccess(size3 -> {
+                assertEquals(1, size3.intValue());
+                testComplete();
+              }));
             }));
           }));
         }));

@@ -59,7 +59,7 @@ public class SharedDataImpl implements SharedData {
     if (clusterManager == null) {
       throw new IllegalStateException("Can't get cluster wide map if not clustered");
     }
-    clusterManager.<K, V>getAsyncMap(name, null, ar -> {
+    clusterManager.<K, V>getAsyncMap(name, ar -> {
       if (ar.succeeded()) {
         // Wrap it
         resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<K, V>(ar.result())));
@@ -184,10 +184,24 @@ public class SharedDataImpl implements SharedData {
     }
 
     @Override
+    public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
+      checkType(k);
+      checkType(v);
+      delegate.put(k, v, timeout, completionHandler);
+    }
+
+    @Override
     public void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler) {
       checkType(k);
       checkType(v);
       delegate.putIfAbsent(k, v, completionHandler);
+    }
+
+    @Override
+    public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
+      checkType(k);
+      checkType(v);
+      delegate.putIfAbsent(k, v, timeout, completionHandler);
     }
 
     @Override
@@ -213,6 +227,11 @@ public class SharedDataImpl implements SharedData {
     @Override
     public void clear(Handler<AsyncResult<Void>> resultHandler) {
       delegate.clear(resultHandler);
+    }
+
+    @Override
+    public void size(Handler<AsyncResult<Integer>> resultHandler) {
+      delegate.size(resultHandler);
     }
   }
 

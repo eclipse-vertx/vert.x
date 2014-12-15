@@ -19,6 +19,7 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.shareddata.LocalMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +32,6 @@ import static io.vertx.core.shareddata.impl.Checker.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class LocalMapImpl<K, V> implements LocalMap<K, V> {
-
 
   private final ConcurrentMap<Object, LocalMap<?, ?>> maps;
   private final String name;
@@ -104,5 +104,23 @@ class LocalMapImpl<K, V> implements LocalMap<K, V> {
   @Override
   public void close() {
     maps.remove(name);
+  }
+
+  @Override
+  public Set<K> keySet() {
+    Set<K> keys = new HashSet<>(map.size());
+    for (K k: map.keySet()) {
+      keys.add(copyIfRequired(k));
+    }
+    return keys;
+  }
+
+  @Override
+  public Collection<V> values() {
+    List<V> values = new ArrayList<>(map.size());
+    for (V v: map.values()) {
+      values.add(copyIfRequired(v));
+    }
+    return values;
   }
 }
