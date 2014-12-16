@@ -283,6 +283,7 @@ public class FakeClusterManager implements ClusterManager {
     @Override
     public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
       put(k, v, completionHandler);
+      vertx.setTimer(timeout, tid -> map.remove(k));
     }
 
     @Override
