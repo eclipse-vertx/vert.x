@@ -24,11 +24,14 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FileRegion;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
@@ -166,6 +169,23 @@ class ServerConnection extends ConnectionBase {
     return lastWriteFuture = super.writeToChannel(obj);
   }
 
+  ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {
+    if (handshaker == null || !(nettyReq instanceof FullHttpRequest)) {
+      throw new IllegalStateException("Can't upgrade this request");
+    }
+    ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
+      request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
+      null, server.options().getMaxWebsocketFrameSize());
+    try {
+      handshaker.handshake(channel, (FullHttpRequest)nettyReq);
+    } catch (WebSocketHandshakeException e) {
+      handleException(e);
+    } catch (Exception e) {
+      log.error("Failed to generate shake response", e);
+    }
+    return ws;
+  }
+
   NetSocket createNetSocket() {
     NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<Channel, NetSocketImpl>(1);
@@ -262,6 +282,17 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
+  @Override
+  public void close() {
+    if (handshaker == null) {
+      super.close();
+    } else {
+      endReadAndFlush();
+      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
+    }
+  }
+
+
   synchronized void handleWebsocketConnect(ServerWebSocketImpl ws) {
     if (wsHandler != null) {
       wsHandler.handle(ws);
@@ -314,16 +345,6 @@ class ServerConnection extends ConnectionBase {
 
   protected ChannelFuture sendFile(RandomAccessFile file, long fileLength) throws IOException {
     return super.sendFile(file, fileLength);
-  }
-
-  @Override
-  public void close() {
-    if (handshaker == null) {
-      super.close();
-    } else {
-      endReadAndFlush();
-      handshaker.close(channel, new CloseWebSocketFrame(1000, null));
-    }
   }
 
   private void processMessage(Object msg) {

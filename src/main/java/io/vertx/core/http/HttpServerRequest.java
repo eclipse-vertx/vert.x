@@ -178,4 +178,6 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @CacheReturn
   MultiMap formAttributes();
 
+  ServerWebSocket upgrade();
+
 }

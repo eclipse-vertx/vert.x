@@ -464,7 +464,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
           ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        if (wsHandlerManager.hasHandlers() && request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
+        if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
           // it doesn't send a normal 'Connection: Upgrade' header. Instead it
           // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
@@ -492,12 +492,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
             if (reqHandler != null) {
-              // We need to set the context manually as this is executed directly, not via context.execute()
-              ContextImpl.setContext(reqHandler.context);
-              conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, null, metrics);
-              conn.requestHandler(reqHandler.handler);
-              connectionMap.put(ch, conn);
-              conn.handleMessage(msg);
+              createConnAndHandle(reqHandler, ch, (HttpRequest)msg, null);
             }
           } else {
             conn.handleMessage(msg);
@@ -564,30 +559,39 @@ public class HttpServerImpl implements HttpServer, Closeable {
       return loc;
     }
 
-    private void handshake(final FullHttpRequest request, final Channel ch, ChannelHandlerContext ctx) throws Exception {
-      final WebSocketServerHandshaker shake;
+    private void createConnAndHandle(HandlerHolder<HttpServerRequest> reqHandler, Channel ch, HttpRequest request,
+                                     WebSocketServerHandshaker shake) {
+      // We need to set the context manually as this is executed directly, not via context.execute()
+      ContextImpl.setContext(reqHandler.context);
+      ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
+      conn.requestHandler(reqHandler.handler);
+      connectionMap.put(ch, conn);
+      conn.handleMessage(request);
+    }
+
+    private void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
+
       WebSocketServerHandshakerFactory factory =
           new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
                                                options.getMaxWebsocketFrameSize());
-      shake = factory.newHandshaker(request);
+      WebSocketServerHandshaker shake = factory.newHandshaker(request);
 
       if (shake == null) {
         log.error("Unrecognised websockets handshake");
         WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
         return;
       }
-      HandlerHolder<ServerWebSocket> firstHandler = null;
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
 
-      while (true) {
-        if (wsHandler == null) {
-          break;
+      if (wsHandler == null) {
+        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+        if (reqHandler != null) {
+          createConnAndHandle(reqHandler, ch, request, shake);
         }
+      } else {
+
         // Set context manually
         ContextImpl.setContext(wsHandler.context);
-        if (firstHandler == wsHandler) {
-          break;
-        }
         URI theURI;
         try {
           theURI = new URI(request.getUri());
@@ -595,8 +599,8 @@ public class HttpServerImpl implements HttpServer, Closeable {
           throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
         }
 
-        final ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-                                                             serverOrigin, shake, metrics);
+        ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
+          serverOrigin, shake, metrics);
         wsConn.wsHandler(wsHandler.handler);
 
         Runnable connectRunnable = () -> {
@@ -610,25 +614,21 @@ public class HttpServerImpl implements HttpServer, Closeable {
           }
         };
 
-        final ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-            theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
-            connectRunnable, options.getMaxWebsocketFrameSize());
+        ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
+          theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
+          connectRunnable, options.getMaxWebsocketFrameSize());
         wsConn.handleWebsocketConnect(ws);
-        if (ws.isRejected()) {
-          if (firstHandler == null) {
-            firstHandler = wsHandler;
-          }
-        } else {
+        if (!ws.isRejected()) {
           ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
           if (handler != null) {
             // remove compressor as its not needed anymore once connection was upgraded to websockets
             ctx.pipeline().remove(handler);
           }
           ws.connectNow();
-          return;
+        } else {
+          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
         }
       }
-      ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
     }
   }
 
@@ -639,6 +639,14 @@ public class HttpServerImpl implements HttpServer, Closeable {
     // which could make the JVM run out of file handles.
     close();
     super.finalize();
+  }
+
+  HttpServerOptions options() {
+    return options;
+  }
+
+  Map<Channel, ServerConnection> connectionMap() {
+    return connectionMap;
   }
 
   /*
