@@ -22,6 +22,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -1036,6 +1037,54 @@ public class WebsocketTest extends VertxTestBase {
               testComplete();
             });
           });
+    });
+    await();
+  }
+
+  @Test
+  public void testUpgrade() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(request -> {
+      ServerWebSocket ws = request.upgrade();
+      ws.write(Buffer.buffer("helloworld"));
+      ws.close();
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
+        handler(ws -> {
+          System.out.println("Connected");
+          Buffer buff = Buffer.buffer();
+          ws.handler(b -> {
+            System.out.println("Got data");
+            buff.appendBuffer(b);
+          });
+          ws.endHandler(v -> {
+            assertEquals("helloworld", buff.toString());
+            testComplete();
+          });
+        });
+    });
+    await();
+  }
+
+  @Test
+  public void testUpgradeInvalidRequest() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(request -> {
+      try {
+        request.upgrade();
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+      testComplete();
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
+      }).end();
     });
     await();
   }
