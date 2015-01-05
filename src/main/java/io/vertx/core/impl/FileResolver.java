@@ -88,7 +88,7 @@ public class FileResolver {
           case "file":
             return unpackFromFileURL(url, fileName, cl);
           case "jar":
-            return unpackFromJarURL(url, fileName, cl);
+            return unpackFromJarURL(url, fileName);
           default:
             throw new IllegalStateException("Invalid url protocol: " + prot);
         }
@@ -122,7 +122,7 @@ public class FileResolver {
     return cacheFile;
   }
 
-  private synchronized  File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+  private synchronized  File unpackFromJarURL(URL url, String fileName) {
 
     String path = url.getPath();
     String jarFile = path.substring(5, path.lastIndexOf(".jar!") + 4);
@@ -140,11 +140,8 @@ public class FileResolver {
             file.mkdirs();
           } else {
             file.getParentFile().mkdirs();
-            InputStream is = zip.getInputStream(entry);
-            try {
+            try (InputStream is = zip.getInputStream(entry)) {
               Files.copy(is, file.toPath());
-            } finally {
-              is.close();
             }
           }
         }
