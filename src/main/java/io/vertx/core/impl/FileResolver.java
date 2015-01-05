@@ -22,11 +22,16 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.util.Enumeration;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -67,45 +72,90 @@ public class FileResolver {
       return file;
     }
     if (!file.exists()) {
+      setupCacheDir();
       // Look for it in local file cache
-      File cacheFile = null;
-      if (enableCaching && cacheDir != null) {
-        cacheFile = new File(cacheDir, fileName);
-        if (cacheFile.exists()) {
-          return cacheFile;
-        }
+      File cacheFile = new File(cacheDir, fileName);
+      if (enableCaching && cacheFile.exists()) {
+        return cacheFile;
       }
       // Look for file on classpath
       ClassLoader cl = getClassLoader();
-      InputStream is = cl.getResourceAsStream(fileName);
+      URL url = cl.getResource(fileName);
 
-      if (is != null) {
-        // We assume a file is a directory if the name does not contain '.' - this is
-        // not perfect but it's very hard to determine this based on a URL from the classpath
-        boolean isDirectory = new File(fileName).getName().indexOf('.') == -1;
-
-        // Copy it to cacheDir
-        if (cacheFile == null) {
-          setupCacheDir();
-          cacheFile = new File(cacheDir, fileName);
-          if (isDirectory) {
-            cacheFile.mkdirs();
-          } else {
-            cacheFile.getParentFile().mkdirs();
-          }
+      if (url != null) {
+        String prot = url.getProtocol();
+        switch (prot) {
+          case "file":
+            return unpackFromFileURL(url, fileName, cl);
+          case "jar":
+            return unpackFromJarURL(url, fileName, cl);
+          default:
+            throw new IllegalStateException("Invalid url protocol: " + prot);
         }
-        if (!isDirectory) {
-          try {
-            Files.copy(is, cacheFile.toPath());
-          } catch (IOException e) {
-            throw new VertxException("Failed to copy file", e);
-          }
-        }
-        return cacheFile;
       }
     }
     return file;
   }
+
+  private synchronized File unpackFromFileURL(URL url, String fileName, ClassLoader cl) {
+    File resource = new File(url.getPath());
+    boolean isDirectory = resource.isDirectory();
+    File cacheFile = new File(cacheDir, fileName);
+    if (!isDirectory) {
+      cacheFile.getParentFile().mkdirs();
+      try {
+        Files.copy(resource.toPath(), cacheFile.toPath());
+      } catch (FileAlreadyExistsException e) {
+        // Ignore
+      } catch (IOException e) {
+        throw new VertxException(e);
+      }
+    } else {
+      cacheFile.mkdirs();
+      String[] listing = resource.list();
+      for (String file: listing) {
+        String subResource = fileName + "/" + file;
+        URL url2 = cl.getResource(subResource);
+        unpackFromFileURL(url2, subResource, cl);
+      }
+    }
+    return cacheFile;
+  }
+
+  private synchronized  File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+
+    String path = url.getPath();
+    String jarFile = path.substring(5, path.lastIndexOf(".jar!") + 4);
+
+    try {
+      ZipFile zip = new ZipFile(jarFile);
+      Enumeration<? extends ZipEntry> entries = zip.entries();
+      while (entries.hasMoreElements()) {
+        ZipEntry entry = entries.nextElement();
+        String name = entry.getName();
+        if (name.startsWith(fileName)) {
+          File file = new File(cacheDir, name);
+          if (name.endsWith("/")) {
+            // Directory
+            file.mkdirs();
+          } else {
+            file.getParentFile().mkdirs();
+            InputStream is = zip.getInputStream(entry);
+            try {
+              Files.copy(is, file.toPath());
+            } finally {
+              is.close();
+            }
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new VertxException(e);
+    }
+
+    return new File(cacheDir, fileName);
+  }
+
 
   private ClassLoader getClassLoader() {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();

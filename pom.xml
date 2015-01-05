@@ -186,6 +186,7 @@
             </excludes>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+              <additionalClasspathElement>src/test/resources/webroot2.jar</additionalClasspathElement>
             </additionalClasspathElements>
             <systemPropertyVariables>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
