@@ -21,29 +21,10 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <repositories>
-    <repository>
-      <id>sonatype-nexus-releases</id>
-      <url>https://oss.sonatype.org/content/repositories/releases</url>
-      <layout>default</layout>
-    </repository>
-    <repository>
-      <id>sonatype-nexus-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <layout>default</layout>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
-  </repositories>
-    
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>1</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
