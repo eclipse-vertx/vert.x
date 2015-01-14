@@ -62,6 +62,7 @@
     <asciidoclet.version>1.5.1</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
+    <stack.version>3.0.0-SNAPSHOT</stack.version>
 
   </properties>
 
@@ -70,7 +71,7 @@
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-dependencies</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>${stack.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
