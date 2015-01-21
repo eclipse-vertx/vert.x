@@ -48,6 +48,9 @@ import java.util.zip.ZipInputStream;
  */
 public class FileResolver {
 
+  private static final String FILE_SEP = System.getProperty("file.separator");
+  private static boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
+
   private final Vertx vertx;
   private final boolean enableCaching = System.getProperty("vertx.disableFileCaching") == null;
   private final boolean enableCPResolving = System.getProperty("vertx.disableFileCPResolving") == null;
@@ -80,8 +83,10 @@ public class FileResolver {
       }
       // Look for file on classpath
       ClassLoader cl = getClassLoader();
+      if (NON_UNIX_FILE_SEP) {
+        fileName = fileName.replace(FILE_SEP, "/");
+      }
       URL url = cl.getResource(fileName);
-
       if (url != null) {
         String prot = url.getProtocol();
         switch (prot) {
