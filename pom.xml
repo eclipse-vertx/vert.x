@@ -21,29 +21,10 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <repositories>
-    <repository>
-      <id>sonatype-nexus-releases</id>
-      <url>https://oss.sonatype.org/content/repositories/releases</url>
-      <layout>default</layout>
-    </repository>
-    <repository>
-      <id>sonatype-nexus-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <layout>default</layout>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
-  </repositories>
-    
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>2</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
@@ -72,7 +53,6 @@
 
   <properties>
 
-    <vertx.version>3.0.0-SNAPSHOT</vertx.version>
     <netty.version>4.0.24.Final</netty.version>
     <jackson.version>2.4.3</jackson.version>
     <metrics.version>3.0.2</metrics.version>
@@ -82,8 +62,21 @@
     <asciidoclet.version>1.5.1</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
+    <stack.version>3.0.0-SNAPSHOT</stack.version>
 
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-dependencies</artifactId>
+        <version>${stack.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -116,13 +109,11 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
-      <version>${vertx.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-docgen</artifactId>
-      <version>${vertx.version}</version>
       <optional>true</optional>
     </dependency>
     <!-- Testing -->

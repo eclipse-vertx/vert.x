@@ -104,7 +104,11 @@ public class CompilingClassLoader extends ClassLoader {
       boolean valid = task.call();
       if (valid) {
         for (Diagnostic<?> d : diagnostics.getDiagnostics()) {
-          log.info(d);
+          String code = d.getCode();
+          if (code == null || (!code.startsWith("compiler.warn.annotation.method.not.found") &&
+              !"compiler.warn.proc.processor.incompatible.source.version".equals(code))) {
+            log.info(d);
+          }
         }
       } else {
         for (Diagnostic<?> d : diagnostics.getDiagnostics()) {
