@@ -15,14 +15,14 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 
 /**
  * An interface for trust store configuration options.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@Options
+@DataObject
 public interface TrustStoreOptions {
 
   /**

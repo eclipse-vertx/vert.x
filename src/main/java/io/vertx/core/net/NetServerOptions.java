@@ -16,17 +16,17 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class NetServerOptions extends TCPSSLOptions {
 
   // Server specific HTTP stuff
-
   public static final int DEFAULT_PORT = 0;
   public static final String DEFAULT_HOST = "0.0.0.0";
   public static final int DEFAULT_ACCEPT_BACKLOG = 1024;

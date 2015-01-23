@@ -16,7 +16,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetServerOptions;
@@ -25,7 +25,7 @@ import io.vertx.core.net.TrustStoreOptions;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class HttpServerOptions extends NetServerOptions {
 
   public static final int DEFAULT_PORT = 80;  // Default port is 80 for HTTP not 0 from HttpServerOptions

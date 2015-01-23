@@ -16,7 +16,7 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
@@ -59,7 +59,7 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class CaOptions implements TrustStoreOptions, Cloneable {
 
   private ArrayList<String> certPaths;

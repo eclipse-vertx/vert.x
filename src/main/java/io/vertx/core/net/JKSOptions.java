@@ -16,7 +16,7 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JKSOptions;
@@ -43,7 +43,7 @@ import io.vertx.core.net.JKSOptions;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable {
 
   private String password;

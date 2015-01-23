@@ -16,14 +16,14 @@
 
 package io.vertx.core;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class VertxOptions {
 
   public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 2 * Runtime.getRuntime().availableProcessors();

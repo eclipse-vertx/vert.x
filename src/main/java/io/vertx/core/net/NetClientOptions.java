@@ -16,13 +16,13 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class NetClientOptions extends ClientOptionsBase {
 
   public static final int DEFAULT_RECONNECT_ATTEMPTS = 0;

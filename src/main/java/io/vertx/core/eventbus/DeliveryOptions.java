@@ -16,7 +16,7 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.Arguments;
@@ -28,7 +28,7 @@ import java.util.Objects;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class DeliveryOptions {
 
   private static final long DEFAULT_TIMEOUT = 30 * 1000;

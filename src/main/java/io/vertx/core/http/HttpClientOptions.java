@@ -16,7 +16,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.KeyStoreOptions;
@@ -25,7 +25,7 @@ import io.vertx.core.net.TrustStoreOptions;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class HttpClientOptions extends ClientOptionsBase {
 
   public static final int DEFAULT_MAX_POOL_SIZE = 5;

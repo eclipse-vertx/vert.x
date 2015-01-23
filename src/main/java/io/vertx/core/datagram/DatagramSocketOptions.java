@@ -16,7 +16,7 @@
 
 package io.vertx.core.datagram;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
@@ -24,7 +24,7 @@ import io.vertx.core.net.NetworkOptions;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class DatagramSocketOptions extends NetworkOptions {
   
   public static final boolean DEFAULT_BROADCAST = false;

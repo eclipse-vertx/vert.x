@@ -16,7 +16,7 @@
 
 package io.vertx.core;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class DeploymentOptions {
 
   public static final boolean DEFAULT_WORKER = false;

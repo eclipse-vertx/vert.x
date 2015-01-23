@@ -16,13 +16,13 @@
 
 package io.vertx.core.file;
 
-import io.vertx.codegen.annotations.Options;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@Options
+@DataObject
 public class OpenOptions {
 
   private static final String DEFAULT_PERMS = null;
