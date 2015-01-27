@@ -45,12 +45,15 @@ public class AsyncTestBase {
   private volatile boolean awaitCalled;
   private boolean threadChecksEnabled = true;
   private volatile boolean tearingDown;
+  private volatile String mainThreadName;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
   @Rule
   public TestName name = new TestName();
 
+
   protected void setUp() throws Exception {
     log.info("Starting test: " + this.getClass().getSimpleName() + "#" + name.getMethodName());
+    mainThreadName = Thread.currentThread().getName();
     tearingDown = false;
     waitFor(1);
     throwable = null;
@@ -154,7 +157,7 @@ public class AsyncTestBase {
       throw new IllegalStateException("Assert or failure from non main thread but no await() on main thread");
     }
     for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
-      if (!entry.getKey().equals("main")) {
+      if (!entry.getKey().equals(mainThreadName)) {
         if (threadChecksEnabled && !entry.getKey().startsWith("vert.x-")) {
           IllegalStateException is = new IllegalStateException("Non Vert.x thread! :" + entry.getKey());
           is.setStackTrace(entry.getValue().getStackTrace());
