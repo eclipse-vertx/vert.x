@@ -221,7 +221,7 @@ public class RedeploymentTest extends VertxTestBase {
       // Now wait a bit and touch again
       vertx.setTimer(2000, id -> touchJar());
     }, 1, 0, 1);
-    vertx.undeployVerticle(depID, onSuccess(v -> {
+    vertx.undeploy(depID, onSuccess(v -> {
       testComplete();
     }));
     await();
@@ -230,7 +230,7 @@ public class RedeploymentTest extends VertxTestBase {
   @Test
   public void testManualUndeployAfterRedeply() throws Exception {
     String depID = testRedeploy(() -> touchJar());
-    vertx.undeployVerticle(depID, onSuccess(v -> {
+    vertx.undeploy(depID, onSuccess(v -> {
       testComplete();
     }));
     await();

@@ -30,8 +30,8 @@ import java.util.Objects;
 /**
  * Certificate Authority trust store options configuring certificates based on
  * <i>Privacy-enhanced Electronic Email</i> (PEM) files. The store is configured with a list of
- * validating certificates.<p>
- *
+ * validating certificates.
+ * <p>
  * Validating certificates must contain X.509 certificates wrapped in a PEM block:<p>
  *
  * <pre>
@@ -42,13 +42,15 @@ import java.util.Objects;
  * -----END CERTIFICATE-----
  * </pre>
  *
- * The certificates can either be loaded by Vert.x from the filesystem:<p>
+ * The certificates can either be loaded by Vert.x from the filesystem:
+ * <p>
  * <pre>
  * HttpServerOptions options = new HttpServerOptions();
  * options.setTrustStore(new CaOptions().addCertPath("/cert.pem"));
  * </pre>
  *
- * Or directly provided as a buffer:<p>
+ * Or directly provided as a buffer:
+ * <p>
  *
  * <pre>
  * Buffer cert = vertx.fileSystem().readFileSync("/cert.pem");
@@ -65,18 +67,31 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
   private ArrayList<String> certPaths;
   private ArrayList<Buffer> certValues;
 
+  /**
+   * Default constructor
+   */
   public CaOptions() {
     super();
     this.certPaths = new ArrayList<>();
     this.certValues = new ArrayList<>();
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public CaOptions(CaOptions other) {
     super();
     this.certPaths = new ArrayList<>(other.getCertPaths());
     this.certValues = new ArrayList<>(other.getCertValues());
   }
 
+  /**
+   * Create options from JSON
+   *
+   * @param json  the JSON
+   */
   public CaOptions(JsonObject json) {
     super();
     this.certPaths = new ArrayList<>();
@@ -89,10 +104,20 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
     }
   }
 
+  /**
+   * @return  the certificate paths used to locate certificates
+   */
   public List<String> getCertPaths() {
     return certPaths;
   }
 
+  /**
+   * Add a certificate path
+   *
+   * @param certPath  the path to add
+   * @return a reference to this, so the API can be used fluently
+   * @throws NullPointerException
+   */
   public CaOptions addCertPath(String certPath) throws NullPointerException {
     Objects.requireNonNull(certPath, "No null certificate accepted");
     Arguments.require(!certPath.isEmpty(), "No empty certificate path accepted");
@@ -100,10 +125,21 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
     return this;
   }
 
+  /**
+   *
+   * @return the certificate values
+   */
   public List<Buffer> getCertValues() {
     return certValues;
   }
 
+  /**
+   * Add a certificate value
+   *
+   * @param certValue  the value to add
+   * @return a reference to this, so the API can be used fluently
+   * @throws NullPointerException
+   */
   public CaOptions addCertValue(Buffer certValue) throws NullPointerException {
     Objects.requireNonNull(certValue, "No null certificate accepted");
     certValues.add(certValue);

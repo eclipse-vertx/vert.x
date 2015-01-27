@@ -31,15 +31,15 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 
 /**
- * Represents a server-side HTTP request.<p>
- * Instances are created for each request that is handled by the server
- * and is passed to the user via the {@link io.vertx.core.Handler} instance
- * registered with the {@link HttpServer} using the request stream {@link io.vertx.core.http.HttpServer#requestStream()}.<p>
+ * Represents a server-side HTTP request.
+ * <p>
+ * Instances are created for each request and passed to the user via a handler.
+ * <p>
  * Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via
- * the {@code response} field.<p>
+ * {@link #response}.<p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.<p>
- * Instances of this class are not thread-safe<p>
+ * {@link io.vertx.core.streams.Pump} to pump data with flow control.
+ * <p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -62,67 +62,63 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpServerRequest endHandler(Handler<Void> endHandler);
 
   /**
-   * The HTTP version of the request
+   * @return the HTTP version of the request
    */
   HttpVersion version();
 
   /**
-   * The HTTP method for the request. One of GET, PUT, POST, DELETE, TRACE, CONNECT, OPTIONS or HEAD
+   * @return the HTTP method for the request.
    */
   HttpMethod method();
 
   /**
-   * The uri of the request. For example
-   * http://www.somedomain.com/somepath/somemorepath/someresource.foo?someparam=32&amp;someotherparam=x
+   * @return the URI of the request. This is usually a relative URI
    */
   String uri();
 
   /**
-   * The path part of the uri. For example /somepath/somemorepath/someresource.foo
+   * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
    */
   String path();
 
   /**
-   * The query part of the uri. For example someparam=32&amp;someotherparam=x
+   * @return the query part of the uri. For example someparam=32&amp;someotherparam=x
    */
   String query();
 
   /**
-   * The response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used
+   * @return the response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used
    * to send the response back to the client.
    */
   @CacheReturn
   HttpServerResponse response();
 
   /**
-   * A map of all headers in the request, If the request contains multiple headers with the same key, the values
-   * will be concatenated together into a single header with the same key value, with each value separated by a comma,
-   * as specified <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">here</a>.
-   * The headers will be automatically lower-cased when they reach the server
+   * @return the headers in the request.
    */
   @CacheReturn
   MultiMap headers();
 
   /**
-   * Returns a map of all the parameters in the request
+   * @return the query parameters in the request
    */
   @CacheReturn
   MultiMap params();
 
   /**
-   * Return the remote (client side) address of the request
+   * @return the remote (client side) address of the request
    */
   @CacheReturn
   SocketAddress remoteAddress();
 
   /**
-   * Return the local (server side) address of the server that handles the request
+   * @return the local (server side) address of the server that handles the request
    */
   @CacheReturn
   SocketAddress localAddress();
 
   /**
-   * @return an array of the peer certificates.  Returns null if connection is
+   * @return an array of the peer certificates. Returns null if connection is
    *         not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
   */
@@ -130,15 +126,15 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**
-   * Get the absolute URI corresponding to the the HTTP request
-   * @return the URI
+   * @return the absolute URI corresponding to the the HTTP request
    */
   String absoluteURI();
 
   /**
-   * Convenience method for receiving the entire request body in one piece. This saves the user having to manually
-   * set a data and end handler and append the chunks of the body until the whole body received.
-   * Don't use this if your request body is large - you could potentially run out of RAM.
+   * Convenience method for receiving the entire request body in one piece.
+   * <p>
+   * This saves the user having to manually setting a data and end handler and append the chunks of the body until
+   * the whole body received. Don't use this if your request body is large - you could potentially run out of RAM.
    *
    * @param bodyHandler This handler will be called after all the body has been received
    */
@@ -146,38 +142,62 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpServerRequest bodyHandler(Handler<Buffer> bodyHandler);
 
   /**
-   * Get a net socket for the underlying connection of this request. USE THIS WITH CAUTION!
+   * Get a net socket for the underlying connection of this request.
+   * <p>
+   * USE THIS WITH CAUTION!
+   * <p>
    * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
+   *
    * @return the net socket
    */
   @CacheReturn
   NetSocket netSocket();
 
   /**
-   * Call this with true if you are expecting a multi-part form to be submitted in the request
+   * Call this with true if you are expecting a multi-part body to be submitted in the request.
    * This must be called before the body of the request has been received
-   * @param expect
+   *
+   * @param expect  true - if you are expecting a multi-part body
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   HttpServerRequest setExpectMultipart(boolean expect);
 
+  /**
+   * @return  true if we are expecting a multi-part body for this request. See {@link #setExpectMultipart}.
+   */
   boolean isExpectMultipart();
 
   /**
-   * Set the upload handler. The handler will get notified once a new file upload was received and so allow to
-   * get notified by the upload in progress.
+   * Set an upload handler. The handler will get notified once a new file upload was received to allow you to deal
+   * with the file upload.
+   *
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> uploadHandler);
 
   /**
-   * Returns a map of all form attributes which was found in the request. Be aware that this message should only get
-   * called after the endHandler was notified as the map will be filled on-the-fly.
-   * {@link #setExpectMultipart(boolean)} must be called first before trying to get the formAttributes
+   * Returns a map of all form attributes in the request.
+   * <p>
+   * Be aware that the attributes will only be available after the whole body has been received, i.e. after
+   * the request end handler has been called.
+   * <p>
+   * {@link #setExpectMultipart(boolean)} must be called first before trying to get the form attributes.
+   *
+   * @return the form attributes
    */
   @CacheReturn
   MultiMap formAttributes();
 
+  /**
+   * Upgrade the connection to a WebSocket connection.
+   * <p>
+   * This is an alternative way of handling WebSockets and can only be used if no websocket handlers are set on the
+   * Http server, and can only be used during the upgrade request during the WebSocket handshake.
+   *
+   * @return  the WebSocket
+   */
   ServerWebSocket upgrade();
 
 }

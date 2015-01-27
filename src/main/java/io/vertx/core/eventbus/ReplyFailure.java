@@ -16,8 +16,27 @@
 
 package io.vertx.core.eventbus;
 
+/**
+ * Represents the type of reply failure
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 public enum ReplyFailure {
-  TIMEOUT, NO_HANDLERS, RECIPIENT_FAILURE;
+
+  /**
+   * The message send failed because no reply was received before the timeout time.
+   */
+  TIMEOUT,
+
+  /**
+   * The message send failed because no handlers were available to handle the message.
+   */
+  NO_HANDLERS,
+
+  /**
+   * The message send failed because the recipient actively sent back a failure (rejected the message)
+   */
+  RECIPIENT_FAILURE;
 
   public static ReplyFailure fromInt(int i) {
     switch (i) {

@@ -21,39 +21,52 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 
 /**
- * Represents a stream of data that can be read from.<p>
+ * Represents a stream of items that can be read from.
+ * <p>
  * Any class that implements this interface can be used by a {@link Pump} to pump data from it
- * to a {@link WriteStream}.<p>
- * This interface exposes a fluent api and the type T represents the type of the object that implements
- * the interface to allow method chaining
+ * to a {@link WriteStream}.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
 public interface ReadStream<T> extends StreamBase {
 
+  /**
+   * Set an exception handler on the read stream.
+   *
+   * @param handler  the exception handler
+   * @return a reference to this, so the API can be used fluently
+   */
   ReadStream<T> exceptionHandler(Handler<Throwable> handler);
 
   /**
    * Set a data handler. As data is read, the handler will be called with the data.
+   *
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   ReadStream<T> handler(Handler<T> handler);
 
   /**
    * Pause the {@code ReadSupport}. While it's paused, no data will be sent to the {@code dataHandler}
+   *
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   ReadStream<T> pause();
 
   /**
    * Resume reading. If the {@code ReadSupport} has been paused, reading will recommence on it.
+   *
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   ReadStream<T> resume();
 
   /**
    * Set an end handler. Once the stream has ended, and there is no more data to be read, this handler will be called.
+   *
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   ReadStream<T> endHandler(Handler<Void> endHandler);

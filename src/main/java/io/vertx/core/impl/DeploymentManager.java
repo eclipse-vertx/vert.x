@@ -290,7 +290,7 @@ public class DeploymentManager {
     if (shouldEnableRedployment(options, parentContext)) {
       // For redeploy we need to use a unique value of isolationGroup as we need a new classloader each time
       // to ensure classes get reloaded, so we overwrite any value of isolation group
-      // Also we only do redeploy on top most deployments
+      // Also we only do redeploy on top most deploymentIDs
       setRedeployIsolationGroup(options);
     }
     String isolationGroup = options.getIsolationGroup();
@@ -341,7 +341,7 @@ public class DeploymentManager {
 
   private Redeployer getRedeployer(DeploymentOptions options, ClassLoader cl, ContextImpl parentContext) {
     if (shouldEnableRedployment(options, parentContext)) {
-      // We only do redeploy on top most deployments
+      // We only do redeploy on top most deploymentIDs
       setRedeployIsolationGroup(options);
 
       URLClassLoader urlc = (URLClassLoader)cl;

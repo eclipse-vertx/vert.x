@@ -109,15 +109,15 @@ public class ComplexHATest extends VertxTestBase {
     AtomicInteger undeployCount = new AtomicInteger();
     for (int pos: aliveNodes) {
       Vertx v = vertices[pos];
-      int deployedNum = v.deployments().size();
+      int deployedNum = v.deploymentIDs().size();
       int numToUnDeploy = random.nextInt(deployedNum + 1);
-      List<String> deployed = new ArrayList<>(v.deployments());
+      List<String> deployed = new ArrayList<>(v.deploymentIDs());
       int ii = pos;
       for (int j = 0; j < numToUnDeploy; j++) {
         int depPos = random.nextInt(deployed.size());
         String depID = deployed.remove(depPos);
         toUndeploy++;
-        v.undeployVerticle(depID, onSuccess(d -> {
+        v.undeploy(depID, onSuccess(d -> {
           undeployCount.incrementAndGet();
         }));
       }
@@ -160,14 +160,14 @@ public class ComplexHATest extends VertxTestBase {
   protected Set<Deployment> takeDeploymentSnapshot(int pos) {
     Set<Deployment> snapshot = new ConcurrentHashSet<>();
     VertxInternal v = (VertxInternal)vertices[pos];
-    for (String depID: v.deployments()) {
+    for (String depID: v.deploymentIDs()) {
       snapshot.add(v.getDeployment(depID));
     }
     return snapshot;
   }
 
   protected void kill(int pos) {
-    // Save the deployments first
+    // Save the deploymentIDs first
     takeDeploymentSnapshots();
     VertxInternal v = (VertxInternal)vertices[pos];
     killedNode = pos;

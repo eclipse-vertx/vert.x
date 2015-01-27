@@ -28,14 +28,13 @@ import io.vertx.core.streams.ReadStream;
 import java.util.List;
 
 /**
- * Represents a client-side HTTP response.<p>
- * An instance is provided to the user via a {@link io.vertx.core.Handler}
- * instance that was specified when one of the HTTP method operations, or the
- * generic {@link HttpClient#request(String, String, io.vertx.core.Handler)}
- * method was called on an instance of {@link HttpClient}.<p>
+ * Represents a client-side HTTP response.
+ * <p>
+ * Vert.x provides you with one of these via the handler that was provided when creating the {@link io.vertx.core.http.HttpClientRequest}
+ * or that was set on the {@link io.vertx.core.http.HttpClientRequest} instance.
+ * <p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.<p>
- * Instances of this class are not thread-safe.<p>
+ * {@link io.vertx.core.streams.Pump} to pump data with flow control.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -58,37 +57,38 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   HttpClientResponse endHandler(Handler<Void> endHandler);
 
   /**
-   * The HTTP status code of the response
+   * @return the status code of the response
    */
   int statusCode();
 
   /**
-   * The HTTP status message of the response
+   * @return the status message of the response
    */
   String statusMessage();
 
   /**
-   * @return The HTTP headers
+   * @return the headers
    */
   @CacheReturn
   MultiMap headers();
 
   /**
-   * @return The HTTP trailers
+   * @return the trailers
    */
   @CacheReturn
   MultiMap trailers();
 
   /**
-   * @return The Set-Cookie headers (including trailers)
+   * @return the Set-Cookie headers (including trailers)
    */
   @CacheReturn
   List<String> cookies();
 
   /**
-   * Convenience method for receiving the entire request body in one piece. This saves the user having to manually
-   * set a data and end handler and append the chunks of the body until the whole body received.
-   * Don't use this if your request body is large - you could potentially run out of RAM.
+   * Convenience method for receiving the entire request body in one piece.
+   * <p>
+   * This saves you having to manually set a dataHandler and an endHandler and append the chunks of the body until
+   * the whole body received. Don't use this if your request body is large - you could potentially run out of RAM.
    *
    * @param bodyHandler This handler will be called after all the body has been received
    */
@@ -96,9 +96,10 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler);
 
   /**
-   * Get a net socket for the underlying connection of this request. USE THIS WITH CAUTION!
-   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
-   *
+   * Get a net socket for the underlying connection of this request.
+   * <p>
+   * USE THIS WITH CAUTION! Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
+   * <p>
    * One valid use-case for calling this is to receive the {@link io.vertx.core.net.NetSocket} after a HTTP CONNECT was issued to the
    * remote peer and it responded with a status code of 200.
    *

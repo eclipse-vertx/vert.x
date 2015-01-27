@@ -1378,14 +1378,14 @@ public class NetTest extends VertxTestBase {
   public void testRemoteAddress() throws Exception {
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
-      assertEquals("127.0.0.1", addr.hostAddress());
+      assertEquals("127.0.0.1", addr.host());
     }).listen(ar -> {
       assertTrue(ar.succeeded());
       vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", result -> {
         NetSocket socket = result.result();
         SocketAddress addr = socket.remoteAddress();
-        assertEquals("127.0.0.1", addr.hostAddress());
-        assertEquals(addr.hostPort(), 1234);
+        assertEquals("127.0.0.1", addr.host());
+        assertEquals(addr.port(), 1234);
         testComplete();
       });
     });
@@ -1482,7 +1482,7 @@ public class NetTest extends VertxTestBase {
     File fDir = testFolder.newFolder();
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
-      assertEquals("127.0.0.1", addr.hostAddress());
+      assertEquals("127.0.0.1", addr.host());
     }).listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", result -> {

@@ -23,7 +23,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.spi.WebSocketFrameFactory;
 
 /**
- * A Web Socket frame that represents either text or binary data.
+ * A WebSocket frame that represents either text or binary data.
+ * <p>
+ * A WebSocket message is composed of one or more WebSocket frames.
+ * <p>
+ * If there is a just a single frame in the message then a single text or binary frame should be created with final = true.
+ * <p>
+ * If there are more than one frames in the message, then the first frame should be a text or binary frame with
+ * final = false, followed by one or more continuation frames. The last continuation frame should have final = true.
  *
  * @author <a href="http://www.jboss.org/netty/">The Netty Project</a>
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
@@ -33,45 +40,69 @@ import io.vertx.core.spi.WebSocketFrameFactory;
 @VertxGen
 public interface WebSocketFrame {
 
+  /**
+   * Create a binary WebSocket frame.
+   *
+   * @param data  the data for the frame
+   * @param isFinal  true if it's the final frame in the WebSocket message
+   * @return the frame
+   */
   static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
     return factory.binaryFrame(data, isFinal);
   }
 
+  /**
+   * Create a text WebSocket frame.
+   *
+   * @param str  the string for the frame
+   * @param isFinal  true if it's the final frame in the WebSocket message
+   * @return the frame
+   */
   static WebSocketFrame textFrame(String str, boolean isFinal) {
     return factory.textFrame(str, isFinal);
   }
 
+  /**
+   * Create a continuation frame
+   *
+   * @param data  the data for the frame
+   * @param isFinal true if it's the final frame in the WebSocket message
+   * @return the frame
+   */
   static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
     return factory.continuationFrame(data, isFinal);
   }
 
   /**
-   * Returns {@code true} if and only if the content of this frame is a string
-   * encoded in UTF-8.
+   * @return true if it's a text frame
    */
   boolean isText();
 
   /**
-   * Returns {@code true} if and only if the content of this frame is an
-   * arbitrary binary data.
+   * @eturn true if it's a binary frame
    */
   boolean isBinary();
 
+  /**
+   * @return true if it's a continuation frame
+   */
   boolean isContinuation();
 
   /**
-   * Converts the content of this frame into a UTF-8 string and returns the
-   * converted string.
+   * @return the content of this frame as a UTF-8 string and returns the
+   * converted string. Only use this for text frames.
    */
   @CacheReturn
   String textData();
 
+  /**
+   * @return the data of the frame
+   */
   @CacheReturn
   Buffer binaryData();
 
   /**
-   * Returns {@code true} if this is the final frame.  This should be {@code true} unless a number of 
-   * coninuation frames are expected to follow this frame.
+   * @return true if this is the final frame.
    */
   boolean isFinal();
 

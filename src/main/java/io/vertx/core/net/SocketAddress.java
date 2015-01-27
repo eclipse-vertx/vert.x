@@ -19,12 +19,14 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
+ * The address of a socket
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
 public interface SocketAddress {
 
-  String hostAddress();
+  String host();
 
-  int hostPort();
+  int port();
 }

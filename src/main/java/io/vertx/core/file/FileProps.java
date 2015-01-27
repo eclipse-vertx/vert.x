@@ -19,8 +19,8 @@ package io.vertx.core.file;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
- * Represents properties of a file on the file system<p>
- * Instances of FileProps are thread-safe<p>
+ * Represents properties of a file on the file system.
+ * <p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

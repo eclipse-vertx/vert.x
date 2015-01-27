@@ -24,6 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Options for configuring a verticle deployment.
+ * <p>
+ *
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
@@ -49,6 +53,9 @@ public class DeploymentOptions {
   private long redeployScanPeriod;
   private long redeployGracePeriod;
 
+  /**
+   * Default constructor
+   */
   public DeploymentOptions() {
     this.worker = DEFAULT_WORKER;
     this.config = null;
@@ -61,6 +68,11 @@ public class DeploymentOptions {
     this.redeployGracePeriod = DEFAULT_REDEPLOY_GRACE_PERIOD;
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other the instance to copy
+   */
   public DeploymentOptions(DeploymentOptions other) {
     this.config = other.getConfig() == null ? null : other.getConfig().copy();
     this.worker = other.isWorker();
@@ -74,10 +86,20 @@ public class DeploymentOptions {
     this.redeployGracePeriod = other.redeployGracePeriod;
   }
 
+  /**
+   * Constructor for creating a instance from JSON
+   *
+   * @param json  the JSON
+   */
   public DeploymentOptions(JsonObject json) {
     fromJson(json);
   }
 
+  /**
+   * Initialise the fields of this instance from the specified JSON
+   *
+   * @param json  the JSON
+   */
   public void fromJson(JsonObject json) {
     this.config = json.getJsonObject("config");
     this.worker = json.getBoolean("worker", DEFAULT_WORKER);
@@ -94,42 +116,93 @@ public class DeploymentOptions {
     this.redeployGracePeriod = json.getLong("redeployGracePeriod", DEFAULT_REDEPLOY_GRACE_PERIOD);
   }
 
+  /**
+   * Get the JSON configuration that will be passed to the verticle(s) when deployed.
+   *
+   * @return  the JSON config
+   */
   public JsonObject getConfig() {
     return config;
   }
 
+  /**
+   * Set the JSON configuration that will be passed to the verticle(s) when it's deployed
+   *
+   * @param config  the JSON config
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setConfig(JsonObject config) {
     this.config = config;
     return this;
   }
 
+  /**
+   * Should the verticle(s) be deployed as a worker verticle?
+   *
+   * @return true if will be deployed as worker, false otherwise
+   */
   public boolean isWorker() {
     return worker;
   }
 
+  /**
+   * Set whether the verticle(s) should be deployed as a worker verticle
+   *
+   * @param worker true for worker, false otherwise
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setWorker(boolean worker) {
     this.worker = worker;
     return this;
   }
 
+  /**
+   * Should the verticle(s) be deployed as a multi-threaded worker verticle?
+   * <p>
+   * Ignored if {@link #isWorker} is not true.
+   *
+   * @return true if will be deployed as multi-threaded worker, false otherwise
+   */
   public boolean isMultiThreaded() {
     return multiThreaded;
   }
 
+  /**
+   * Set whether the verticle(s) should be deployed as a multi-threaded worker verticle
+   *
+   * @param multiThreaded true for multi-threaded worker, false otherwise
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setMultiThreaded(boolean multiThreaded) {
     this.multiThreaded = multiThreaded;
     return this;
   }
 
+  /**
+   * Get the isolation group that will be used when deploying the verticle(s)
+   *
+   * @return the isolation group
+   */
   public String getIsolationGroup() {
     return isolationGroup;
   }
 
+  /**
+   * Set the isolation group that will be used when deploying the verticle(s)
+   *
+   * @param isolationGroup - the isolation group
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setIsolationGroup(String isolationGroup) {
     this.isolationGroup = isolationGroup;
     return this;
   }
 
+  /**
+   * Convert this to JSON
+   *
+   * @return  the JSON
+   */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     if (worker) json.put("worker", true);
@@ -153,28 +226,64 @@ public class DeploymentOptions {
     return json;
   }
 
+  /**
+   * Will the verticle(s) be deployed as HA (highly available) ?
+   *
+   * @return true if HA, false otherwise
+   */
   public boolean isHa() {
     return ha;
   }
 
+  /**
+   * Set whether the verticle(s) will be deployed as HA.
+   *
+   * @param ha  true if to be deployed as HA, false otherwise
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setHa(boolean ha) {
     this.ha = ha;
     return this;
   }
 
+  /**
+   * Get any extra classpath to be used when deploying the verticle.
+   * <p>
+   * Ignored if no isolation group is set.
+   *
+   * @return  any extra classpath
+   */
   public List<String> getExtraClasspath() {
     return extraClasspath;
   }
 
+  /**
+   * Set any extra classpath to be used when deploying the verticle.
+   * <p>
+   * Ignored if no isolation group is set.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setExtraClasspath(List<String> extraClasspath) {
     this.extraClasspath = extraClasspath;
     return this;
   }
 
+  /**
+   * Get the number of instances that should be deployed.
+   *
+   * @return  the number of instances
+   */
   public int getInstances() {
     return instances;
   }
 
+  /**
+   * Set the number of instances that should be deployed.
+   *
+   * @param instances  the number of instances
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setInstances(int instances) {
     this.instances = instances;
     return this;

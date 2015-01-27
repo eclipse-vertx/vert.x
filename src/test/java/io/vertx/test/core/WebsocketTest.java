@@ -349,7 +349,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.websocket(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/").
+      client.websocketStream(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/").
           exceptionHandler(t -> {
             if (shouldPass) {
               t.printStackTrace();
@@ -392,7 +392,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
           exceptionHandler(t -> fail(t.getMessage())).
           handler(ws -> {
             ws.handler(buff -> {
@@ -439,7 +439,7 @@ public class WebsocketTest extends VertxTestBase {
     // Create a bunch of connections
     CountDownLatch latchClient = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", ws -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", ws -> {
         ws.closeHandler(v -> latchClient.countDown());
         ws.close();
       });
@@ -566,7 +566,7 @@ public class WebsocketTest extends VertxTestBase {
       int bsize = 100;
       int sends = 10;
 
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path + "?" + query, null, version, ws -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path + "?" + query, null, version, ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -634,58 +634,58 @@ public class WebsocketTest extends VertxTestBase {
 
       int msgs = 10;
 
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path + "?" + query, null,
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path + "?" + query, null,
         version, ws -> {
-        final List<Buffer> sent = new ArrayList<>();
-        final List<Buffer> received = new ArrayList<>();
+          final List<Buffer> sent = new ArrayList<>();
+          final List<Buffer> received = new ArrayList<>();
 
-        AtomicReference<Buffer> currentReceived = new AtomicReference<>(Buffer.buffer());
-        ws.frameHandler(frame -> {
-          //received.appendBuffer(frame.binaryData());
-          currentReceived.get().appendBuffer(frame.binaryData());
-          if (frame.isFinal()) {
-            received.add(currentReceived.get());
-            currentReceived.set(Buffer.buffer());
-          }
-          if (received.size() == msgs) {
-            int pos = 0;
-            for (Buffer rec: received) {
-              assertEquals(rec, sent.get(pos++));
+          AtomicReference<Buffer> currentReceived = new AtomicReference<>(Buffer.buffer());
+          ws.frameHandler(frame -> {
+            //received.appendBuffer(frame.binaryData());
+            currentReceived.get().appendBuffer(frame.binaryData());
+            if (frame.isFinal()) {
+              received.add(currentReceived.get());
+              currentReceived.set(Buffer.buffer());
             }
-            testComplete();
+            if (received.size() == msgs) {
+              int pos = 0;
+              for (Buffer rec : received) {
+                assertEquals(rec, sent.get(pos++));
+              }
+              testComplete();
+            }
+          });
+
+          AtomicReference<Buffer> currentSent = new AtomicReference<>(Buffer.buffer());
+          for (int i = 0; i < msgs; i++) {
+            for (int j = 0; j < frames; j++) {
+              Buffer buff;
+              WebSocketFrame frame;
+              if (binary) {
+                buff = Buffer.buffer(TestUtils.randomByteArray(bsize));
+                if (j == 0) {
+                  frame = WebSocketFrame.binaryFrame(buff, false);
+                } else {
+                  frame = WebSocketFrame.continuationFrame(buff, j == frames - 1);
+                }
+              } else {
+                String str = TestUtils.randomAlphaString(bsize);
+                buff = Buffer.buffer(str);
+                if (j == 0) {
+                  frame = WebSocketFrame.textFrame(str, false);
+                } else {
+                  frame = WebSocketFrame.continuationFrame(buff, j == frames - 1);
+                }
+              }
+              currentSent.get().appendBuffer(buff);
+              ws.writeFrame(frame);
+              if (j == frames - 1) {
+                sent.add(currentSent.get());
+                currentSent.set(Buffer.buffer());
+              }
+            }
           }
         });
-
-        AtomicReference<Buffer> currentSent = new AtomicReference<>(Buffer.buffer());
-        for (int i = 0; i < msgs; i++) {
-          for (int j = 0; j < frames; j++) {
-            Buffer buff;
-            WebSocketFrame frame;
-            if (binary) {
-              buff = Buffer.buffer(TestUtils.randomByteArray(bsize));
-              if (j == 0) {
-                frame = WebSocketFrame.binaryFrame(buff, false);
-              } else {
-                frame = WebSocketFrame.continuationFrame(buff, j == frames - 1);
-              }
-            } else {
-              String str = TestUtils.randomAlphaString(bsize);
-              buff = Buffer.buffer(str);
-              if (j == 0) {
-                frame = WebSocketFrame.textFrame(str, false);
-              } else {
-                frame = WebSocketFrame.continuationFrame(buff, j == frames - 1);
-              }
-            }
-            currentSent.get().appendBuffer(buff);
-            ws.writeFrame(frame);
-            if (j == frames - 1) {
-              sent.add(currentSent.get());
-              currentSent.set(Buffer.buffer());
-            }
-          }
-        }
-      });
     });
     await();
   }
@@ -714,7 +714,7 @@ public class WebsocketTest extends VertxTestBase {
 
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
         AtomicBoolean receivedFirstFrame = new AtomicBoolean();
         ws.frameHandler(received -> {
           Buffer receivedBuffer = Buffer.buffer(received.textData());
@@ -743,7 +743,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
         Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -768,7 +768,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol, ws -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol, ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -789,7 +789,7 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
     });
     server.listen(onSuccess(ar -> {
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol).
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol).
           exceptionHandler(t -> {
             // Should fail
             testComplete();
@@ -811,7 +811,7 @@ public class WebsocketTest extends VertxTestBase {
 
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version).
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version).
           exceptionHandler(t -> testComplete()).
           handler(ws -> fail("Should not be called"));
     });
@@ -872,7 +872,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
         Buffer actual = Buffer.buffer();
         ws.handler(actual::appendBuffer);
         ws.closeHandler(v -> {
@@ -901,13 +901,13 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(listenAR.succeeded());
       stream.pause();
       paused.set(true);
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).
           exceptionHandler(err -> {
             assertTrue(paused.get());
             assertTrue(err instanceof WebSocketHandshakeException);
             paused.set(false);
             stream.resume();
-            client.connectWebsocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+            client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
               ws.handler(buffer -> {
                 assertEquals("whatever", buffer.toString("UTF-8"));
                 ws.closeHandler(v2 -> {
@@ -1004,7 +1004,7 @@ public class WebsocketTest extends VertxTestBase {
     AtomicInteger doneCount = new AtomicInteger();
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
           endHandler(done -> doneCount.incrementAndGet()).
           handler(ws -> {
             assertEquals(0, doneCount.get());
@@ -1023,7 +1023,7 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
           handler(ws -> {
             ws.endHandler(v -> {
               try {
@@ -1052,7 +1052,7 @@ public class WebsocketTest extends VertxTestBase {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
+      client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
         handler(ws -> {
           System.out.println("Connected");
           Buffer buff = Buffer.buffer();

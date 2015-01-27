@@ -20,6 +20,11 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 
+/**
+ * Represents a client-side WebSocket.
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 @VertxGen
 public interface WebSocket extends WebSocketBase {
 

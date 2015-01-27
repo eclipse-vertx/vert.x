@@ -19,8 +19,8 @@ package io.vertx.core.file;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
- * Represents properties of the file system.<p>
- * Instances of FileSystemProps are thread-safe.<p>
+ * Represents properties of the file system.
+ *
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -28,17 +28,17 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface FileSystemProps {
 
   /**
-   * The total space on the file system, in bytes
+   * @return The total space on the file system, in bytes
    */
   long totalSpace();
 
   /**
-   * The total un-allocated space on the file system, in bytes
+   * @return The total un-allocated space on the file system, in bytes
    */
   long unallocatedSpace();
 
   /**
-   * The total usable space on the file system, in bytes
+   * @return The total usable space on the file system, in bytes
    */
   long usableSpace();
 }

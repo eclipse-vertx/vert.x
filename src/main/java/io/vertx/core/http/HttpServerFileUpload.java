@@ -22,7 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 
 /**
- * Represents an upload from an HTML form.<p>
+ * Represents an file upload from an HTML FORM.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -45,43 +45,48 @@ public interface HttpServerFileUpload extends ReadStream<Buffer> {
   HttpServerFileUpload resume();
 
   /**
-   * Stream the content of this upload to the given filename.
+   * Stream the content of this upload to the given file on storage.
+   *
+   * @param filename  the name of the file
    */
   @Fluent
   HttpServerFileUpload streamToFileSystem(String filename);
 
   /**
-   * Returns the filename which was used when upload the file.
+   * @return the filename which was used when upload the file.
    */
   String filename();
 
   /**
-   * Returns the name of the attribute
+   * @return the name of the attribute
    */
   String name();
 
   /**
-   * Returns the contentType for the upload
+   * @return  the content type for the upload
    */
   String contentType();
 
   /**
-   * Returns the contentTransferEncoding for the upload
+   * @return the contentTransferEncoding for the upload
    */
   String contentTransferEncoding();
 
   /**
-   * Returns the charset for the upload
+   * @return the charset for the upload
    */
   String charset();
 
   /**
-   * Returns the size of the upload (in bytes)
+   * The size of the upload may not be available until it is all read.
+   * Check {@link #isSizeAvailable} to determine this
+   *
+   * @return the size of the upload (in bytes)
    */
   long size();
 
   /**
-   * Returns {@code true} if the size of the upload can be retrieved via {@link #size()}.
+   * @return true if the size of the upload can be retrieved via {@link #size()}.
    */
   boolean isSizeAvailable();
 }

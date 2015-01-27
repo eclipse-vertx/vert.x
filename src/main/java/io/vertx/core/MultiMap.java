@@ -25,6 +25,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * This class represents a MultiMap of String keys to a List of String values.
+ * <p>
+ * It's useful in Vert.x to represent things in Vert.x like HTTP headers and HTTP parameters which allow
+ * multiple values for keys.
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -52,12 +57,14 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    */
   List<String> getAll(String name);
 
+  /**
+   * Like {@link #getAll(String)} but accepting a {@code CharSequence} as a parameter
+   */
   @GenIgnore
   List<String> getAll(CharSequence name);
 
-
   /**
-   * Returns all entries it contains.
+   * Returns all entries in the multi-map.
    *
    * @return A immutable {@link java.util.List} of the name-value entries, which will be
    *         empty if no pairs are found
@@ -69,10 +76,13 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * Checks to see if there is a value with the specified name
    *
    * @param name The name to search for
-   * @return True if at least one entry is found
+   * @return true if at least one entry is found
    */
   boolean contains(String name);
 
+  /**
+   * Like {@link #contains(String)} but accepting a {@code CharSequence} as a parameter
+   */
   @GenIgnore
   boolean contains(CharSequence name);
 
@@ -91,36 +101,39 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Adds a new value with the specified name and value.
    *
-   *
    * @param name The name
    * @param value The value being added
-   *
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   MultiMap add(String name, String value);
 
+  /**
+   * Like {@link #add(String, String)} but accepting {@code CharSequence} as parameters
+   */
   @GenIgnore
   MultiMap add(CharSequence name, CharSequence value);
 
   /**
    * Adds a new values under the specified name
    *
-   *
    * @param name The name being set
    * @param values The values
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
   MultiMap add(String name, Iterable<String> values);
 
+  /**
+   * Like {@link #add(String, Iterable)} but accepting {@code CharSequence} as parameters
+   */
   @GenIgnore
   MultiMap add(CharSequence name, Iterable<CharSequence> values);
 
   /**
    * Adds all the entries from another MultiMap to this one
    *
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   MultiMap addAll(MultiMap map);
@@ -128,23 +141,26 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Adds all the entries from a Map to this
    *
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
   MultiMap addAll(Map<String, String> headers);
 
   /**
    * Sets a value under the specified name.
-   *
+   * <p>
    * If there is an existing header with the same name, it is removed.
    *
    * @param name The name
    * @param value The value
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   MultiMap set(String name, String value);
 
+  /**
+   * Like {@link #set(String, String)} but accepting {@code CharSequence} as parameters
+   */
   @GenIgnore
   MultiMap set(CharSequence name, CharSequence value);
 
@@ -153,19 +169,21 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    *
    * @param name The name of the headers being set
    * @param values The values of the headers being set
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
   MultiMap set(String name, Iterable<String> values);
 
+  /**
+   * Like {@link #set(String, Iterable)} but accepting {@code CharSequence} as parameters
+   */
   @GenIgnore
   MultiMap set(CharSequence name, Iterable<CharSequence> values);
-
 
   /**
    * Cleans this instance.
    *
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   MultiMap setAll(MultiMap map);
@@ -173,7 +191,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   /**
    * Cleans and set all values of the given instance
    *
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
   MultiMap setAll(Map<String, String> headers);
@@ -182,25 +200,27 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   * Removes the value with the given name
   *
   * @param name The name  of the value to remove
-  * @return {@code this}
+  * @return a reference to this, so the API can be used fluently
   */
   @Fluent
   MultiMap remove(String name);
 
+  /**
+   * Like {@link #remove(String)} but accepting {@code CharSequence} as parameters
+   */
   @GenIgnore
   MultiMap remove(CharSequence name);
-
 
   /**
    * Removes all
    *
-   * @return {@code this}
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   MultiMap clear();
 
   /**
-   * Return the number of names.
+   * Return the number of keys.
    */
   int size();
 

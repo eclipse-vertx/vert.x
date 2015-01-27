@@ -225,16 +225,16 @@ public class DatagramTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       Buffer buffer = TestUtils.randomBuffer(128);
       peer2.handler(packet -> {
-        assertEquals("127.0.0.1", packet.sender().hostAddress());
-        assertEquals(1235, packet.sender().hostPort());
+        assertEquals("127.0.0.1", packet.sender().host());
+        assertEquals(1235, packet.sender().port());
         assertEquals(buffer, packet.data());
         peer2.send(packet.data(), 1235, "127.0.0.1", ar2 -> assertTrue(ar2.succeeded()));
       });
       peer1.listen(1235, "127.0.0.1", ar2 -> {
         peer1.handler(packet -> {
           assertEquals(buffer, packet.data());
-          assertEquals("127.0.0.1", packet.sender().hostAddress());
-          assertEquals(1234, packet.sender().hostPort());
+          assertEquals("127.0.0.1", packet.sender().host());
+          assertEquals(1234, packet.sender().port());
           testComplete();
         });
         peer1.send(buffer, 1234, "127.0.0.1", ar3 -> assertTrue(ar3.succeeded()));

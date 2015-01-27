@@ -22,7 +22,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.streams.WriteStream;
 
 /**
- * Represents a stream of message that can be written to<p>
+ * Represents a stream of message that can be written to.
+ * <p>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

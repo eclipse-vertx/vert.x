@@ -21,7 +21,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 
 /**
- * Represents a stream of data.<p>
+ * Base interface for a stream.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -30,6 +30,9 @@ public interface StreamBase {
 
   /**
    * Set an exception handler.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   StreamBase exceptionHandler(Handler<Throwable> handler);

@@ -99,8 +99,7 @@ public class Json {
   public static String encode(Object obj) throws EncodeException {
     try {
       return mapper.writeValueAsString(obj);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
   }

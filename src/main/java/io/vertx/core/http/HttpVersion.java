@@ -17,6 +17,8 @@
 package io.vertx.core.http;
 
 /**
+ * Represents the version of the HTTP protocol.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public enum HttpVersion {

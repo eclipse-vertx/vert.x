@@ -26,13 +26,10 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
- * Represents an HTML 5 Websocket<p>
- * Instances of this class are created and provided to the handler of an
- * {@link HttpClient} when a successful websocket connect attempt occurs.<p>
- * On the server side, the subclass {@link ServerWebSocket} is used instead.<p>
+ * Base WebSocket implementation.
+ * <p>
  * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.<p>
- * Instances of this class are not thread-safe<p>
+ * {@link io.vertx.core.streams.Pump} to pump data with flow control.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -64,68 +61,77 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase drainHandler(Handler<Void> handler);
 
   /**
-   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
-   * handler is given by {@code binaryHandlerID}.<p>
+   * When a {@code Websocket} is created it automatically registers an event handler with the event bus - the ID of that
+   * handler is given by this method.
+   * <p>
    * Given this ID, a different event loop can send a binary frame to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
-   * allows you to write data to other websockets which are owned by different event loops.
+   * allows you to write data to other WebSockets which are owned by different event loops.
+   *
+   * @return the binary handler id
    */
   String binaryHandlerID();
 
   /**
    * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
-   * handler is given by {@code textHandlerID}.<p>
+   * handler is given by {@code textHandlerID}.
+   * <p>
    * Given this ID, a different event loop can send a text frame to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
-   * allows you to write data to other websockets which are owned by different event loops.
+   * allows you to write data to other WebSockets which are owned by different event loops.
    */
   String textHandlerID();
 
+  /**
+   * Write a WebSocket frame to the connection
+   *
+   * @param frame  the frame to write
+   * @return a reference to this, so the API can be used fluently
+   */
   @Fluent
   WebSocketBase writeFrame(WebSocketFrame frame);
 
-
-  /*
-  OK - get rid of above writeBinaryFrame/writeTextFrame and replace with writeFrame which takes a websocket frame
-  allow websocket frame to be instantiated
-
-  Also provide a method to write a single complete websocket message
-
-  For reading provide a method to read a single websocket message, like a body handler
-   */
-
   /**
-   * Writes a (potentially large) piece of data as a websocket message - this may be split into multiple frames
-   * if it is large.
+   * Writes a (potentially large) piece of data to the connection. This data might be written as multiple frames
+   * if it exceeds the maximum WebSocket frame size.
+   *
+   * @param data  the data to write
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   WebSocketBase writeMessage(Buffer data);
 
   /**
-   * Set a closed handler on the connection
+   * Set a close handler. This will be called when the WebSocket is closed.
+   *
+   * @param handler  the handler
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   WebSocketBase closeHandler(Handler<Void> handler);
 
   /**
-   * Set a frame handler on the connection
+   * Set a frame handler on the connection. This handler will be called when frames are read on the connection.
+   *
+   * @param handler  the handler
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   WebSocketBase frameHandler(Handler<WebSocketFrame> handler);
 
   /**
-   * Close the websocket
+   * Close the WebSocket.
    */
   void close();
 
   /**
-   * Return the remote address for this socket
+   * @return the remote address for this socket
    */
   @CacheReturn
   SocketAddress remoteAddress();
 
   /**
-   * Return the local address for this socket
+   * @return the local address for this socket
    */
   @CacheReturn
   SocketAddress localAddress();

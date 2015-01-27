@@ -37,11 +37,11 @@ public class SocketAddressImpl implements SocketAddress{
     this.hostAddress = host;
   }
 
-  public String hostAddress() {
+  public String host() {
     return hostAddress;
   }
 
-  public int hostPort() {
+  public int port() {
     return port;
   }
 

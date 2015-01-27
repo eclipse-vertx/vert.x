@@ -112,7 +112,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
   private final ServerWebSocketStreamImpl wsStream = new ServerWebSocketStreamImpl();
   private final HttpServerRequestStreamImpl requestStream = new HttpServerRequestStreamImpl();
   private final String subProtocols;
-  private final String serverOrigin;
+  private String serverOrigin;
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
@@ -134,7 +134,6 @@ public class HttpServerImpl implements HttpServer, Closeable {
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
     this.subProtocols = options.getWebsocketSubProtocols();
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
-    this.serverOrigin = (options.isSsl() ? "https" : "http") + "://" + options.getHost() + ":" + options.getPort();
   }
 
   @Override
@@ -169,11 +168,33 @@ public class HttpServerImpl implements HttpServer, Closeable {
     return wsStream;
   }
 
+  @Override
   public HttpServer listen() {
-    return listen(null);
+    return listen(options.getPort(), options.getHost(), null);
   }
 
-  public synchronized HttpServer listen(final Handler<AsyncResult<HttpServer>> listenHandler) {
+  @Override
+  public HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler) {
+    return listen(options.getPort(), options.getHost(), listenHandler);
+  }
+
+  @Override
+  public HttpServer listen(int port, String host) {
+    return listen(port, host, null);
+  }
+
+  @Override
+  public HttpServer listen(int port) {
+    return listen(port, "0.0.0.0", null);
+  }
+
+  @Override
+  public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
+    return listen(port, "0.0.0.0", listenHandler);
+  }
+
+
+  public synchronized HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -182,8 +203,9 @@ public class HttpServerImpl implements HttpServer, Closeable {
     }
     listenContext = vertx.getOrCreateContext();
     listening = true;
+    serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
     synchronized (vertx.sharedHttpServers()) {
-      id = new ServerID(options.getPort(), options.getHost());
+      id = new ServerID(port, host);
       HttpServerImpl shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
@@ -222,14 +244,14 @@ public class HttpServerImpl implements HttpServer, Closeable {
 
         addHandlers(this, listenContext);
         try {
-          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(options.getHost()), options.getPort()));
+          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
           bindFuture.addListener(channelFuture -> {
               if (!channelFuture.isSuccess()) {
                 vertx.sharedHttpServers().remove(id);
               } else {
-                metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
+                metrics.listening(new SocketAddressImpl(port, host));
               }
             });
         } catch (final Throwable t) {
@@ -249,7 +271,7 @@ public class HttpServerImpl implements HttpServer, Closeable {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         addHandlers(actualServer, listenContext);
-        metrics.listening(new SocketAddressImpl(options.getPort(), options.getHost()));
+        metrics.listening(new SocketAddressImpl(port, host));
       }
       actualServer.bindFuture.addListener(future -> {
         if (listenHandler != null) {

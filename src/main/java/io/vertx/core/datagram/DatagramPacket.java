@@ -20,7 +20,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
 /**
- * A received Datagram packet (UDP) which contains the data and information about the sender of the data itself.
+ * A received datagram packet (UDP) which contains the data and information about the sender of the data itself.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -28,12 +28,17 @@ import io.vertx.core.net.SocketAddress;
 public interface DatagramPacket {
 
   /**
-   * Returns the {@link io.vertx.core.net.SocketAddress} of the sender that send this {@link io.vertx.core.datagram.DatagramPacket}.
+   * Returns the {@link io.vertx.core.net.SocketAddress} of the sender that sent
+   * this {@link io.vertx.core.datagram.DatagramPacket}.
+   *
+   * @return the address of the sender
    */
   SocketAddress sender();
 
   /**
    * Returns the data of the {@link io.vertx.core.datagram.DatagramPacket}
+   *
+   * @return the data
    */
   Buffer data();
 }

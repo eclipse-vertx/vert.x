@@ -28,16 +28,41 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
+ * Base class. TCP and SSL related options
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class TCPSSLOptions extends NetworkOptions {
 
+  /**
+   * The default value of TCP-no-delay = true (Nagle disabled)
+   */
   public static final boolean DEFAULT_TCP_NO_DELAY = true;
+
+  /**
+   * The default value of TCP keep alive
+   */
   public static final boolean DEFAULT_TCP_KEEP_ALIVE = SocketDefaults.instance.isTcpKeepAlive();
+
+  /**
+   * The default value of SO_linger
+   */
   public static final int DEFAULT_SO_LINGER = SocketDefaults.instance.getSoLinger();
+
+  /**
+   * The default value of Netty use pooled buffers = false
+   */
   public static final boolean DEFAULT_USE_POOLED_BUFFERS = false;
+
+  /**
+   * SSL enable by default = false
+   */
   public static final boolean DEFAULT_SSL = false;
-  public static final int DEFAULT_IDLE_TIMEOUT = 0;  // TODO - shouldn't this be -1 ??
+
+  /**
+   * Default idle timeout = 0
+   */
+  public static final int DEFAULT_IDLE_TIMEOUT = 0;
 
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
@@ -51,6 +76,26 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
 
+  /**
+   * Default constructor
+   */
+  public TCPSSLOptions() {
+    super();
+    tcpNoDelay = DEFAULT_TCP_NO_DELAY;
+    tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
+    soLinger = DEFAULT_SO_LINGER;
+    usePooledBuffers = DEFAULT_USE_POOLED_BUFFERS;
+    idleTimeout = DEFAULT_IDLE_TIMEOUT;
+    ssl = DEFAULT_SSL;
+    crlPaths = new ArrayList<>();
+    crlValues = new ArrayList<>();
+  }
+
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public TCPSSLOptions(TCPSSLOptions other) {
     super(other);
     this.tcpNoDelay = other.isTcpNoDelay();
@@ -66,6 +111,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.crlValues = new ArrayList<>(other.getCrlValues());
   }
 
+  /**
+   * Create options from JSON
+   *
+   * @param json the JSON
+   */
   public TCPSSLOptions(JsonObject json) {
     super(json);
     this.tcpNoDelay = json.getBoolean("tcpNoDelay", DEFAULT_TCP_NO_DELAY);
@@ -119,40 +169,56 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     }
   }
 
-  public TCPSSLOptions() {
-    super();
-    tcpNoDelay = DEFAULT_TCP_NO_DELAY;
-    tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
-    soLinger = DEFAULT_SO_LINGER;
-    usePooledBuffers = DEFAULT_USE_POOLED_BUFFERS;
-    idleTimeout = DEFAULT_IDLE_TIMEOUT;
-    ssl = DEFAULT_SSL;
-    crlPaths = new ArrayList<>();
-    crlValues = new ArrayList<>();
-  }
-
+  /**
+   * @return TCP no delay enabled ?
+   */
   public boolean isTcpNoDelay() {
     return tcpNoDelay;
   }
 
+  /**
+   * Set whether TCP no delay is enabled
+   *
+   * @param tcpNoDelay true if TCP no delay is enabled (Nagle disabled)
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setTcpNoDelay(boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
     return this;
   }
 
+  /**
+   * @return is TCP keep alive enabled?
+   */
   public boolean isTcpKeepAlive() {
     return tcpKeepAlive;
   }
 
+  /**
+   * Set whether TCP keep alive is enabled
+   *
+   * @param tcpKeepAlive true if TCP keep alive is enabled
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     this.tcpKeepAlive = tcpKeepAlive;
     return this;
   }
 
+  /**
+   *
+   * @return is SO_linger enabled
+   */
   public int getSoLinger() {
     return soLinger;
   }
 
+  /**
+   * Set whether SO_linger keep alive is enabled
+   *
+   * @param soLinger true if SO_linger is enabled
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setSoLinger(int soLinger) {
     if (soLinger < 0) {
       throw new IllegalArgumentException("soLinger must be >= 0");
@@ -161,10 +227,20 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  /**
+   * @return are Netty pooled buffers enabled?
+   *
+   */
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
 
+  /**
+   * Set whether Netty pooled buffers are enabled
+   *
+   * @param usePooledBuffers true if pooled buffers enabled
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
@@ -178,60 +254,122 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  /**
+   * @return  the idle timeout
+   */
   public int getIdleTimeout() {
     return idleTimeout;
   }
 
+  /**
+   *
+   * @return is SSL/TLS enabled?
+   */
   public boolean isSsl() {
     return ssl;
   }
 
+  /**
+   * Set whether SSL/TLS is enabled
+   *
+   * @param ssl  true if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }
 
+  /**
+   * @return the key store options
+   */
   public KeyStoreOptions getKeyStoreOptions() {
     return keyStore;
   }
 
+  /**
+   * Set the key store options
+   * @param keyStore the options
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
     this.keyStore = keyStore;
     return this;
   }
 
+  /**
+   *
+   * @return the trust store options
+   */
   public TrustStoreOptions getTrustStoreOptions() {
     return trustStore;
   }
 
+  /**
+   * Set the trust store options
+   * @param trustStore the options
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
     this.trustStore = trustStore;
     return this;
   }
 
+  /**
+   * Add an enabled cipher suite
+   *
+   * @param suite  the suite
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
   }
 
+  /**
+   *
+   * @return the enabled cipher suites
+   */
   public Set<String> getEnabledCipherSuites() {
     return enabledCipherSuites;
   }
 
+  /**
+   *
+   * @return the CRL (Certificate revocation list) paths
+   */
   public List<String> getCrlPaths() {
     return crlPaths;
   }
 
+  /**
+   * Add a CRL path
+   * @param crlPath  the path
+   * @return a reference to this, so the API can be used fluently
+   * @throws NullPointerException
+   */
   public TCPSSLOptions addCrlPath(String crlPath) throws NullPointerException {
     Objects.requireNonNull(crlPath, "No null crl accepted");
     crlPaths.add(crlPath);
     return this;
   }
 
+  /**
+   * Get the CRL values
+   *
+   * @return the list of values
+   */
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
 
+  /**
+   * Add a CRL value
+   *
+   * @param crlValue  the value
+   * @return a reference to this, so the API can be used fluently
+   * @throws NullPointerException
+   */
   public TCPSSLOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     Objects.requireNonNull(crlValue, "No null crl accepted");
     crlValues.add(crlValue);

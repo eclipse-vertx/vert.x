@@ -76,7 +76,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
   }
 
   @Override
-  public synchronized ServerWebSocket reject() {
+  public synchronized void reject() {
     checkClosed();
     if (connectRunnable == null) {
       throw new IllegalStateException("Cannot reject websocket on the client side");
@@ -85,7 +85,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
       throw new IllegalStateException("Cannot reject websocket, it has already been written to");
     }
     rejected = true;
-    return this;
   }
 
   @Override

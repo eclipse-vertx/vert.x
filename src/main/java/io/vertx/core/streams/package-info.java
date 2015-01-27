@@ -15,9 +15,13 @@
  */
 
 /**
- * There are several objects in Vert.x that allow items to be read from and written. In previous versions the
- * {@link io.vertx.core.streams} package was manipulating {@link io.vertx.core.buffer.Buffer} objects exclusively.
- * From now, streams are not anymore coupled to buffers and work with any kind of objects.
+ *
+ * == Streams
+ *
+ * There are several objects in Vert.x that allow items to be read from and written.
+ *
+ * In previous versions the {@link io.vertx.core.streams} package was manipulating {@link io.vertx.core.buffer.Buffer}
+ * objects exclusively. From now, streams are not anymore coupled to buffers and work with any kind of objects.
  *
  * In Vert.x, calls to write item return immediately and writes are internally queued.
  *
@@ -154,7 +158,7 @@
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@Document
+@Document(fileName = "streams.adoc")
 package io.vertx.core.streams;
 
 import io.vertx.docgen.Document;

@@ -21,11 +21,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.<p>
+ * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
+ * <p>
  * When used as a key store, it should point to a store containing a private key and its certificate.
- * When used as a trust store, it should point to a store containing a list of accepted certificates.<p>
+ * When used as a trust store, it should point to a store containing a list of accepted certificates.
+ * <p>
  *
- * The store can either be loaded by Vert.x from the filesystem:<p>
+ * The store can either be loaded by Vert.x from the filesystem:
+ * <p>
  * <pre>
  * HttpServerOptions options = new HttpServerOptions();
  * options.setKeyStore(new PKCS12Options().setPath("/mykeystore.p12").setPassword("foo"));
@@ -48,10 +51,18 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
   private String path;
   private Buffer value;
 
+  /**
+   * Default constructor
+   */
   public PKCS12Options() {
     super();
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public PKCS12Options(PKCS12Options other) {
     super();
     this.password = other.getPassword();
@@ -59,6 +70,11 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
     this.value = other.getValue();
   }
 
+  /**
+   * Create options from JSON
+   *
+   * @param json  the JSON
+   */
   public PKCS12Options(JsonObject json) {
     super();
     this.password = json.getString("password");
@@ -67,28 +83,61 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
     this.value = value != null ? Buffer.buffer(value) : null;
   }
 
+  /**
+   * Get the password
+   *
+   * @return  the password
+   */
   public String getPassword() {
     return password;
   }
 
+  /**
+   * Set the password
+   *
+   * @param password  the password
+   * @return a reference to this, so the API can be used fluently
+   */
   public PKCS12Options setPassword(String password) {
     this.password = password;
     return this;
   }
 
+  /**
+   * Get the path
+   *
+   * @return the path
+   */
   public String getPath() {
     return path;
   }
 
+  /**
+   * Set the path
+   *
+   * @param path  the path
+   * @return a reference to this, so the API can be used fluently
+   */
   public PKCS12Options setPath(String path) {
     this.path = path;
     return this;
   }
 
+  /**
+   * Get the store as a buffer
+   *
+   * @return store as buffer
+   */
   public Buffer getValue() {
     return value;
   }
 
+  /**
+   * Set the store as a buffer
+   *
+   * @param value  the store as a buffer
+   * @return a reference to this, so the API can be used fluently
+   */
   public PKCS12Options setValue(Buffer value) {
     this.value = value;
     return this;

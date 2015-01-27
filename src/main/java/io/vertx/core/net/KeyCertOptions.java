@@ -21,12 +21,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
- * /**
  * Key store options configuring a private key and its certificate based on
- * <i>Privacy-enhanced Electronic Email</i> (PEM) files.<p>
+ * <i>Privacy-enhanced Electronic Email</i> (PEM) files.
+ * <p>
  *
  * The key file must contain a <b>non encrypted</b> private key in <b>PKCS8</b> format wrapped in a PEM
- * block, for example:<p>
+ * block, for example:
+ * <p>
  *
  * <pre>
  * -----BEGIN PRIVATE KEY-----
@@ -36,7 +37,8 @@ import io.vertx.core.json.JsonObject;
  * -----END PRIVATE KEY-----
  * </pre><p>
  *
- * The certificate file must contain an X.509 certificate wrapped in a PEM block, for example:<p>
+ * The certificate file must contain an X.509 certificate wrapped in a PEM block, for example:
+ * <p>
  *
  * <pre>
  * -----BEGIN CERTIFICATE-----
@@ -46,7 +48,8 @@ import io.vertx.core.json.JsonObject;
  * -----END CERTIFICATE-----
  * </pre>
  *
- * The key and certificate can either be loaded by Vert.x from the filesystem:<p>
+ * The key and certificate can either be loaded by Vert.x from the filesystem:
+ * <p>
  * <pre>
  * HttpServerOptions options = new HttpServerOptions();
  * options.setKeyStore(new KeyCertOptions().setKeyPath("/mykey.pem").setCertPath("/mycert.pem"));
@@ -71,10 +74,18 @@ public class KeyCertOptions implements KeyStoreOptions, Cloneable {
   private String certPath;
   private Buffer certValue;
 
+  /**
+   * Default constructor
+   */
   public KeyCertOptions() {
     super();
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public KeyCertOptions(KeyCertOptions other) {
     super();
     this.keyPath = other.getKeyPath();
@@ -83,6 +94,11 @@ public class KeyCertOptions implements KeyStoreOptions, Cloneable {
     this.certValue = other.getCertValue();
   }
 
+  /**
+   * Create options from JSON
+   *
+   * @param json  the JSON
+   */
   public KeyCertOptions(JsonObject json) {
     super();
     keyPath = json.getString("keyPath");
@@ -93,37 +109,81 @@ public class KeyCertOptions implements KeyStoreOptions, Cloneable {
     this.certValue = certValue != null ? Buffer.buffer(certValue) : null;
   }
 
+  /**
+   * Get the path to the key file
+   *
+   * @return the path to the key file
+   */
   public String getKeyPath() {
     return keyPath;
   }
 
+  /**
+   * Set the path to the key file
+   *
+   * @param keyPath  the path to the key file
+   * @return a reference to this, so the API can be used fluently
+   */
   public KeyCertOptions setKeyPath(String keyPath) {
     this.keyPath = keyPath;
     return this;
   }
 
+  /**
+   * Get the path to the certificate file
+   *
+   * @return  the path to the certificate file
+   */
   public String getCertPath() {
     return certPath;
   }
 
+  /**
+   * Get the key as a buffer
+   *
+   * @return  key as a buffer
+   */
   public Buffer getKeyValue() {
     return keyValue;
   }
 
+  /**
+   * Set the key a a buffer
+   *
+   * @param keyValue  key as a buffer
+   * @return a reference to this, so the API can be used fluently
+   */
   public KeyCertOptions setKeyValue(Buffer keyValue) {
     this.keyValue = keyValue;
     return this;
   }
 
+  /**
+   * Set the path to the certificate
+   *
+   * @param certPath  the path to the certificate
+   * @return a reference to this, so the API can be used fluently
+   */
   public KeyCertOptions setCertPath(String certPath) {
     this.certPath = certPath;
     return this;
   }
 
+  /**
+   * Get the certificate as a buffer
+   *
+   * @return  the certificate as a buffer
+   */
   public Buffer getCertValue() {
     return certValue;
   }
 
+  /**
+   * Set the certificate as a buffer
+   *
+   * @param certValue  the certificate as a buffer
+   * @return a reference to this, so the API can be used fluently
+   */
   public KeyCertOptions setCertValue(Buffer certValue) {
     this.certValue = certValue;
     return this;

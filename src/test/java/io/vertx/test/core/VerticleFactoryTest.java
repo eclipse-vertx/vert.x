@@ -231,7 +231,7 @@ public class VerticleFactoryTest extends VertxTestBase {
       assertEquals("actual:myverticle", fact.identifier);
       assertTrue(verticle.startCalled);
       assertTrue(verticle.startCalled);
-      assertEquals(1, vertx.deployments().size());
+      assertEquals(1, vertx.deploymentIDs().size());
       Deployment dep = ((VertxInternal)vertx).getDeployment(res.result());
       assertNotNull(dep);
       assertFalse(original.equals(dep.deploymentOptions()));

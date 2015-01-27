@@ -19,6 +19,8 @@ package io.vertx.core;
 import java.util.ServiceLoader;
 
 /**
+ * A helper class for loading factories from the classpath.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ServiceHelper {

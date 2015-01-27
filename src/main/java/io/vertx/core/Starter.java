@@ -45,6 +45,17 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 /**
+ * A {@code main()} class that can be used to deploy verticles.
+ * <p>
+ * This class is used by the {@code vertx} command line utility to deploy verticles from the command line.
+ * <p>
+ * E.g.
+ * <p>
+ * {@code vertx run myverticle.js}
+ * <p>
+ * It can also be used as the main class of an executable jar so you can run verticles directly with:
+ * <p>
+ * {@code java -jar myapp.jar}
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -421,7 +432,7 @@ public class Starter {
         "                               in the cluster started with the same HA group   \n" +
         "        -quorum                used in conjunction with -ha this specifies the \n" +
         "                               minimum number of nodes in the cluster for any  \n" +
-        "                               HA deployments to be active. Defaults to 0      \n" +
+        "                               HA deploymentIDs to be active. Defaults to 0      \n" +
         "        -hagroup               used in conjunction with -ha this specifies the \n" +
         "                               HA group this node will join. There can be      \n" +
         "                               multiple HA groups in a cluster. Nodes will only\n" +

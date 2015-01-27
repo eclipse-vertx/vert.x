@@ -20,33 +20,55 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
+ * Options for configuring a {@link io.vertx.core.net.NetClient}.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
 public class NetClientOptions extends ClientOptionsBase {
 
+  /**
+   * The default value for reconnect attempts = 0
+   */
   public static final int DEFAULT_RECONNECT_ATTEMPTS = 0;
+
+  /**
+   * The default value for reconnect interval = 1000 ms
+   */
   public static final long DEFAULT_RECONNECT_INTERVAL = 1000;
 
   private int reconnectAttempts;
   private long reconnectInterval;
 
+  /**
+   * The default constructor
+   */
+  public NetClientOptions() {
+    super();
+    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
+    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
+  }
+
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public NetClientOptions(NetClientOptions other) {
     super(other);
     this.reconnectAttempts = other.getReconnectAttempts();
     this.reconnectInterval = other.getReconnectInterval();
   }
 
+  /**
+   * Create options from JSON
+   *
+   * @param json  the JSON
+   */
   public NetClientOptions(JsonObject json) {
     super(json);
     this.reconnectAttempts = json.getInteger("reconnectAttempts", DEFAULT_RECONNECT_ATTEMPTS);
     this.reconnectInterval = json.getLong("reconnectInterval", DEFAULT_RECONNECT_INTERVAL);
-  }
-
-  public NetClientOptions() {
-    super();
-    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
-    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
   }
 
   @Override
@@ -139,6 +161,12 @@ public class NetClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * Set the value of reconnect attempts
+   *
+   * @param attempts  the maximum number of reconnect attempts
+   * @return a reference to this, so the API can be used fluently
+   */
   public NetClientOptions setReconnectAttempts(int attempts) {
     if (attempts < -1) {
       throw new IllegalArgumentException("reconnect attempts must be >= -1");
@@ -147,10 +175,19 @@ public class NetClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return  the value of reconnect attempts
+   */
   public int getReconnectAttempts() {
     return reconnectAttempts;
   }
 
+  /**
+   * Set the reconnect interval
+   *
+   * @param interval  the reconnect interval in ms
+   * @return a reference to this, so the API can be used fluently
+   */
   public NetClientOptions setReconnectInterval(long interval) {
     if (interval < 1) {
       throw new IllegalArgumentException("reconnect interval nust be >= 1");
@@ -159,6 +196,9 @@ public class NetClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return  the value of reconnect interval
+   */
   public long getReconnectInterval() {
     return reconnectInterval;
   }

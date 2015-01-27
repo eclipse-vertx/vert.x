@@ -21,25 +21,89 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 /**
+ * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
+ * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
 public class VertxOptions {
 
+  /**
+   * The default number of event loop threads to be used  = 2 * number of cores on the machine
+   */
   public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 2 * Runtime.getRuntime().availableProcessors();
+
+  /**
+   * The default number of threads in the worker pool = 20
+   */
   public static final int DEFAULT_WORKER_POOL_SIZE = 20;
+
+  /**
+   * The default number of threads in the internal blocking  pool (used by some internal operations) = 20
+   */
   public static final int DEFAULT_INTERNAL_BLOCKING_POOL_SIZE = 20;
+
+  /**
+   * The default value of whether Vert.x is clustered = false.
+   */
   public static final boolean DEFAULT_CLUSTERED = false;
+
+  /**
+   * The default hostname to use when clustering = "localhost"
+   */
   public static final String DEFAULT_CLUSTER_HOST = "localhost";
+
+  /**
+   * The default port to use when clustering = 0 (meaning assign a random port)
+   */
   public static final int DEFAULT_CLUSTER_PORT = 0;
+
+  /**
+   * The default value of cluster ping interval = 20000 ms.
+   */
   public static final long DEFAULT_CLUSTER_PING_INTERVAL = 20000;
+
+  /**
+   * The default value of cluster ping reply interval = 20000 ms.
+   */
   public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = 20000;
+
+  /**
+   * The default value of blocked thread check period = 1000 ms.
+   */
   public static final long DEFAULT_BLOCKED_THREAD_CHECK_PERIOD = 1000;
+
+  /**
+   * The default value of max event loop execute time = 2000000000 ns (2 seconds)
+   */
   public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2000l * 1000000;
-  public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = 1l * 60 * 1000 * 1000000;
+
+  /**
+   * The default value of max worker execute time = 60000000000 ns (60 seconds)
+   */
+  public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = 60l * 1000 * 1000000;
+
+  /**
+   * The default value of quorum size = 1
+   */
   public static final int DEFAULT_QUORUM_SIZE = 1;
+
+  /**
+   * The default value of HA enabled = false
+   */
+  public static final boolean DEFAULT_HA_ENABLED = false;
+
+  /**
+   * The default value of metrics enabled false
+   */
   public static final boolean DEFAULT_METRICS_ENABLED = false;
+
+  /**
+   * The default value of JMX enabled = false
+   */
   public static final boolean DEFAULT_JMX_ENABLED = false;
+
+
 
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
@@ -53,16 +117,24 @@ public class VertxOptions {
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
   private long maxWorkerExecuteTime = DEFAULT_MAX_WORKER_EXECUTE_TIME;
   private ClusterManager clusterManager;
-  private boolean haEnabled;
+  private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup;
   private boolean metricsEnabled = DEFAULT_METRICS_ENABLED;
   private boolean jmxEnabled = DEFAULT_JMX_ENABLED;
   private String jmxDomain;
 
+  /**
+   * Default constructor
+   */
   public VertxOptions() {
   }
 
+  /**
+   * Copy constructor
+   * 
+   * @param other The other {@code VertxOptions} to copy when creating this
+   */
   public VertxOptions(VertxOptions other) {
     this.eventLoopPoolSize = other.getEventLoopPoolSize();
     this.workerPoolSize = other.getWorkerPoolSize();
@@ -84,6 +156,11 @@ public class VertxOptions {
     this.jmxDomain = other.getJmxDomain();
   }
 
+  /**
+   * Create an instance from a {@link io.vertx.core.json.JsonObject}
+   * 
+   * @param json the JsonObject to create it from
+   */
   public VertxOptions(JsonObject json) {
     this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENT_LOOP_POOL_SIZE);
     this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKER_POOL_SIZE);
@@ -104,10 +181,21 @@ public class VertxOptions {
     this.jmxDomain = json.getString("jmxDomain");
   }
 
+  /**
+   * Get the number of event loop threads to be used by the Vert.x instance.
+   * 
+   * @return the number of threads
+   */
   public int getEventLoopPoolSize() {
     return eventLoopPoolSize;
   }
 
+  /**
+   * Set the number of event loop threads to be used by the Vert.x instance.
+   * 
+   * @param eventLoopPoolSize  the number of threads
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setEventLoopPoolSize(int eventLoopPoolSize) {
     if (eventLoopPoolSize < 1) {
       throw new IllegalArgumentException("eventLoopPoolSize must be > 0");
@@ -116,10 +204,23 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the maximum number of worker threads to be used by the Vert.x instance.
+   * <p>
+   * Worker threads are used for running blocking code and worker verticles.
+   *
+   * @return the maximum number of worker threads
+   */
   public int getWorkerPoolSize() {
     return workerPoolSize;
   }
 
+  /**
+   * Set the maximum number of worker threads to be used by the Vert.x instance.
+   *
+   * @param workerPoolSize  the number of threads
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setWorkerPoolSize(int workerPoolSize) {
     if (workerPoolSize < 1) {
       throw new IllegalArgumentException("workerPoolSize must be > 0");
@@ -128,28 +229,59 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Is the Vert.x instance clustered?
+   * @return true if clustered, false if not
+   */
   public boolean isClustered() {
     return clustered;
   }
 
+  /**
+   * Set whether or not the Vert.x instance will be clustered.
+   * @param clustered  if true, the Vert.x instance will be clustered, otherwise not
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setClustered(boolean clustered) {
     this.clustered = clustered;
     return this;
   }
 
+  /**
+   * Get the host name to be used for clustering.
+   *
+   * @return The host name
+   */
   public String getClusterHost() {
     return clusterHost;
   }
 
+  /**
+   * Set the hostname to be used for clustering.
+   *
+   * @param clusterHost  the host name to use
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setClusterHost(String clusterHost) {
     this.clusterHost = clusterHost;
     return this;
   }
 
+  /**
+   * Get the port to be used for clustering
+   *
+   * @return the port
+   */
   public int getClusterPort() {
     return clusterPort;
   }
 
+  /**
+   * Set the port to be used for clustering.
+   *
+   * @param clusterPort  the port
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setClusterPort(int clusterPort) {
     if (clusterPort < 0 || clusterPort > 65535) {
       throw new IllegalArgumentException("clusterPort p must be in range 0 <= p <= 65535");
@@ -158,10 +290,23 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the value of cluster ping interval, in ms.
+   * <p>
+   * Nodes in the cluster ping each other at this interval to determine whether they are still running.
+   *
+   * @return The value of cluster ping interval
+   */
   public long getClusterPingInterval() {
     return clusterPingInterval;
   }
 
+  /**
+   * Set the value of cluster ping interval, in ms.
+   *
+   * @param clusterPingInterval The value of cluster ping interval, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setClusterPingInterval(long clusterPingInterval) {
     if (clusterPingInterval < 1) {
       throw new IllegalArgumentException("clusterPingInterval must be greater than 0");
@@ -170,10 +315,23 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the value of cluster ping reply interval, in ms.
+   * <p>
+   * After sending a ping, if a pong is not received in this time, the node will be considered dead.
+   *
+   * @return the value of cluster ping reply interval
+   */
   public long getClusterPingReplyInterval() {
     return clusterPingReplyInterval;
   }
 
+  /**
+   * Set the value of cluster ping reply interval, in ms.
+   *
+   * @param clusterPingReplyInterval The value of cluster ping reply interval, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setClusterPingReplyInterval(long clusterPingReplyInterval) {
     if (clusterPingReplyInterval < 1) {
       throw new IllegalArgumentException("clusterPingReplyInterval must be greater than 0");
@@ -182,10 +340,23 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the value of blocked thread check period, in ms.
+   * <p>
+   * This setting determines how often Vert.x will check whether event loop threads are executing for too long.
+   *
+   * @return the value of blocked thread check period, in ms.
+   */
   public long getBlockedThreadCheckPeriod() {
     return blockedThreadCheckPeriod;
   }
 
+  /**
+   * Sets the value of blocked thread check period, in ms.
+   *
+   * @param blockedThreadCheckPeriod  the value of blocked thread check period, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setBlockedThreadCheckPeriod(long blockedThreadCheckPeriod) {
     if (blockedThreadCheckPeriod < 1) {
       throw new IllegalArgumentException("blockedThreadCheckPeriod must be > 0");
@@ -194,10 +365,26 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the value of max event loop execute time, in ns.
+   * <p>
+   * Vert.x will automatically log a warning if it detects that event loop threads haven't returned within this time.
+   * <p>
+   * This can be used to detect where the user is blocking an event loop thread, contrary to the Golden Rule of the
+   * holy Event Loop.
+   *
+   * @return the value of max event loop execute time, in ms.
+   */
   public long getMaxEventLoopExecuteTime() {
     return maxEventLoopExecuteTime;
   }
 
+  /**
+   * Sets the value of max event loop execute time, in ns.
+   *
+   * @param maxEventLoopExecuteTime  the value of max event loop execute time, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setMaxEventLoopExecuteTime(long maxEventLoopExecuteTime) {
     if (maxEventLoopExecuteTime < 1) {
       throw new IllegalArgumentException("maxEventLoopExecuteTime must be > 0");
@@ -206,10 +393,26 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the value of max worker execute time, in ns.
+   * <p>
+   * Vert.x will automatically log a warning if it detects that worker threads haven't returned within this time.
+   * <p>
+   * This can be used to detect where the user is blocking a worker thread for too long. Although worker threads
+   * can be blocked longer than event loop threads, they shouldn't be blocked for long periods of time.
+   *
+   * @return The value of max worker execute time, in ms.
+   */
   public long getMaxWorkerExecuteTime() {
     return maxWorkerExecuteTime;
   }
 
+  /**
+   * Sets the value of max worker execute time, in ns.
+   *
+   * @param maxWorkerExecuteTime  the value of max worker execute time, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
     if (maxWorkerExecuteTime < 1) {
       throw new IllegalArgumentException("maxWorkerpExecuteTime must be > 0");
@@ -218,19 +421,52 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the cluster manager to be used when clustering.
+   * <p>
+   * If the cluster manager has been programmatically set here, then that will be used when clustering.
+   * <p>
+   * Otherwise Vert.x attempts to locate a cluster manager on the classpath.
+   *
+   * @return  the cluster manager.
+   */
   public ClusterManager getClusterManager() {
     return clusterManager;
   }
 
+  /**
+   * Programmatically set the cluster manager to be used when clustering.
+   * <p>
+   * Only valid if clustered = true.
+   * <p>
+   * Normally Vert.x will look on the classpath for a cluster manager, but if you want to set one
+   * programmatically you can use this method.
+   *
+   * @param clusterManager  the cluster manager
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setClusterManager(ClusterManager clusterManager) {
     this.clusterManager = clusterManager;
     return this;
   }
 
+  /**
+   * Get the value of internal blocking pool size.
+   * <p>
+   * Vert.x maintains a pool for internal blocking operations
+   *
+   * @return the value of internal blocking pool size
+   */
   public int getInternalBlockingPoolSize() {
     return internalBlockingPoolSize;
   }
 
+  /**
+   * Set the value of internal blocking pool size
+   *
+   * @param internalBlockingPoolSize the maximumn number of threads in the internal blocking pool
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setInternalBlockingPoolSize(int internalBlockingPoolSize) {
     if (internalBlockingPoolSize < 1) {
       throw new IllegalArgumentException("internalBlockingPoolSize must be > 0");
@@ -239,19 +475,41 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Will HA be enabled on the Vert.x instance?
+   *
+   * @return true if HA enabled, false otherwise
+   */
   public boolean isHAEnabled() {
     return haEnabled;
   }
 
+  /**
+   * Set whether HA will be enabled on the Vert.x instance.
+   *
+   * @param haEnabled  true if enabled, false if not.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setHAEnabled(boolean haEnabled) {
     this.haEnabled = haEnabled;
     return this;
   }
 
+  /**
+   * Get the quorum size to be used when HA is enabled.
+   *
+   * @return  the quorum size
+   */
   public int getQuorumSize() {
     return quorumSize;
   }
 
+  /**
+   * Set the quorum size to be used when HA is enabled.
+   *
+   * @param quorumSize  the quorum size
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setQuorumSize(int quorumSize) {
     if (quorumSize < 1) {
       throw new IllegalArgumentException("quorumSize should be >= 1");
@@ -260,38 +518,82 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the HA group to be used when HA is enabled.
+   *
+   * @return the HA group
+   */
   public String getHAGroup() {
     return haGroup;
   }
 
+  /**
+   * Set the HA group to be used when HA is enabled.
+   *
+   * @param haGroup the HA group to use
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setHAGroup(String haGroup) {
     this.haGroup = haGroup;
     return this;
   }
 
+  /**
+   * Will metrics be enabled on the Vert.x instance?
+   *
+   * @return true if enabled, false if not.
+   */
+  public boolean isMetricsEnabled() {
+    return metricsEnabled;
+  }
+
+  /**
+   * Set whether metrics will be enabled on the Vert.x instance.
+   *
+   * @param enable true if metrics enabled, or false if not.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setMetricsEnabled(boolean enable) {
     this.metricsEnabled = enable;
     return this;
   }
 
-  public boolean isMetricsEnabled() {
-    return metricsEnabled;
-  }
-
+  /**
+   * Will JMX be enabled on the Vert.x instance?
+   *
+   * @return true if enabled, false if not.
+   */
   public boolean isJmxEnabled() {
     return jmxEnabled;
   }
 
+  /**
+   * Set whether JMX will be enabled on the Vert.x instance.
+   *
+   * @param jmxEnabled true if JMX enabled, or false if not.
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setJmxEnabled(boolean jmxEnabled) {
     this.jmxEnabled = jmxEnabled;
     if (jmxEnabled) metricsEnabled = true;
     return this;
   }
 
+  /**
+   * Get the JMX domain to use when JMX metrics are enabled.
+   *
+   * @return the JMX domain
+   */
   public String getJmxDomain() {
     return jmxDomain;
   }
 
+  /**
+   * Set the JMX domain to use when JMX metrics are enabled.
+   *
+   * @param jmxDomain  the JMX domain
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setJmxDomain(String jmxDomain) {
     this.jmxDomain = jmxDomain;
     return this;

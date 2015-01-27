@@ -18,6 +18,8 @@ package io.vertx.core;
 
 /**
  * Handler for {@link AsyncResult}
+ * <p>
+ * Convenience class.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

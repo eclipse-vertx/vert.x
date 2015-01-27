@@ -52,10 +52,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * As HA modules are deployed, if a quorum has been attained they are deployed immediately, otherwise the deployment
  * information is added to a list.
  *
- * Periodically we check the value of attainedQuorum and if true we deploy any HA deployments waiting for a quorum.
+ * Periodically we check the value of attainedQuorum and if true we deploy any HA deploymentIDs waiting for a quorum.
  *
- * If false, we check if there are any HA deployments current deployed, and if so undeploy them, and add them to the list
- * of deployments waiting for a quorum.
+ * If false, we check if there are any HA deploymentIDs current deployed, and if so undeploy them, and add them to the list
+ * of deploymentIDs waiting for a quorum.
  *
  * By doing this check periodically we can avoid race conditions resulting in modules being deployed after a quorum has
  * been lost, and without having to resort to exclusive locking which is actually quite tricky here, and prone to
@@ -323,12 +323,12 @@ public class HAManager {
     }
     boolean attained = count >= quorumSize;
     if (!attainedQuorum && attained) {
-      // A quorum has been attained so we can deploy any currently undeployed HA deployments
-      log.info("A quorum has been obtained. Any deployments waiting on a quorum will now be deployed");
+      // A quorum has been attained so we can deploy any currently undeployed HA deploymentIDs
+      log.info("A quorum has been obtained. Any deploymentIDs waiting on a quorum will now be deployed");
       this.attainedQuorum = true;
     } else if (attainedQuorum && !attained) {
-      // We had a quorum but we lost it - we must undeploy any HA deployments
-      log.info("There is no longer a quorum. Any HA deployments will be undeployed until a quorum is re-attained");
+      // We had a quorum but we lost it - we must undeploy any HA deploymentIDs
+      log.info("There is no longer a quorum. Any HA deploymentIDs will be undeployed until a quorum is re-attained");
       this.attainedQuorum = false;
     }
   }
@@ -347,7 +347,7 @@ public class HAManager {
     }
   }
 
-  // Add the deployment to an internal list of deployments - these will be executed when a quorum is attained
+  // Add the deployment to an internal list of deploymentIDs - these will be executed when a quorum is attained
   private void addToHADeployList(final String verticleName, final DeploymentOptions deploymentOptions,
                                  final Handler<AsyncResult<String>> doneHandler) {
     toDeployOnQuorum.add(() -> {
@@ -369,11 +369,11 @@ public class HAManager {
         undeployHADeployments();
       }
     } catch (Throwable t) {
-      log.error("Failed when checking HA deployments", t);
+      log.error("Failed when checking HA deploymentIDs", t);
     }
   }
 
-  // Undeploy any HA deployments now there is no quorum
+  // Undeploy any HA deploymentIDs now there is no quorum
   private void undeployHADeployments() {
     for (String deploymentID: deploymentManager.deployments()) {
       Deployment dep = deploymentManager.getDeployment(deploymentID);
@@ -410,11 +410,11 @@ public class HAManager {
     }
   }
 
-  // Deploy any deployments that are waiting for a quorum
+  // Deploy any deploymentIDs that are waiting for a quorum
   private void deployHADeployments() {
     int size = toDeployOnQuorum.size();
     if (size != 0) {
-      log.info("There are " + size + " HA deployments waiting on a quorum. These will now be deployed");
+      log.info("There are " + size + " HA deploymentIDs waiting on a quorum. These will now be deployed");
       Runnable task;
       while ((task = toDeployOnQuorum.poll()) != null) {
         try {
@@ -434,7 +434,7 @@ public class HAManager {
       String chosen = chooseHashedNode(group, failedNodeID.hashCode());
       if (chosen != null && chosen.equals(this.nodeID)) {
         if (deployments != null) {
-          log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deployments from that node.");
+          log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
           for (Object obj: deployments) {
             JsonObject app = (JsonObject)obj;
             processFailover(app);

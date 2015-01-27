@@ -17,7 +17,15 @@
 package io.vertx.core;
 
 /**
- * Represents a result that may not have occurred yet.
+ * Encapsulates the result of an asynchronous operation.
+ * <p>
+ * Many operations in Vert.x APIs provide results back by passing an instance of this in a {@link io.vertx.core.Handler}.
+ * <p>
+ * The result can either have failed or succeeded.
+ * <p>
+ * If it failed then the cause of the failure is available with {@link #cause}.
+ * <p>
+ * If it succeeded then the actual result is available with {@link #result}
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -25,21 +33,29 @@ public interface AsyncResult<T> {
 
   /**
    * The result of the operation. This will be null if the operation failed.
+   *
+   * @return the result or null if the operation failed.
    */
   T result();
 
   /**
-   * An exception describing failure. This will be null if the operation succeeded.
+   * A Throwable describing failure. This will be null if the operation succeeded.
+   *
+   * @return the cause or null if the operation succeeded.
    */
   Throwable cause();
 
   /**
    * Did it succeed?
+   *
+   * @return true if it succeded or false otherwise
    */
   boolean succeeded();
 
   /**
    * Did it fail?
+   *
+   * @return true if it failed or false otherwise
    */
   boolean failed();
 

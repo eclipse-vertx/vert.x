@@ -20,14 +20,30 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SocketDefaults;
 
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public abstract class NetworkOptions {
 
+  /**
+   * The default value of TCP send buffer size
+   */
   public static final int DEFAULT_SEND_BUFFER_SIZE = SocketDefaults.instance.getTcpSendBufferSize();
+
+  /**
+   * The default value of TCP receive buffer size
+   */
   public static final int DEFAULT_RECEIVE_BUFFER_SIZE = SocketDefaults.instance.getTcpReceiveBufferSize();
+
+  /**
+   * The default value of traffic class
+   */
   public static final int DEFAULT_TRAFFIC_CLASS = SocketDefaults.instance.getTrafficClass();
+
+  /**
+   * The default value of reuse address
+   */
   public static final boolean DEFAULT_REUSE_ADDRESS = true;
 
   private int sendBufferSize;
@@ -35,20 +51,9 @@ public abstract class NetworkOptions {
   private int trafficClass;
   private boolean reuseAddress;
 
-  public NetworkOptions(NetworkOptions other) {
-    this.sendBufferSize = other.getSendBufferSize();
-    this.receiveBufferSize = other.getReceiveBufferSize();
-    this.reuseAddress = other.isReuseAddress();
-    this.trafficClass = other.getTrafficClass();
-  }
-
-  public NetworkOptions(JsonObject json) {
-    this.sendBufferSize = json.getInteger("sendBufferSize", DEFAULT_SEND_BUFFER_SIZE);
-    this.receiveBufferSize = json.getInteger("receiveBufferSize", DEFAULT_RECEIVE_BUFFER_SIZE);
-    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSE_ADDRESS);
-    this.trafficClass = json.getInteger("trafficClass", DEFAULT_TRAFFIC_CLASS);
-  }
-
+  /**
+   * Default constructor
+   */
   public NetworkOptions() {
     sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
     receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
@@ -56,39 +61,102 @@ public abstract class NetworkOptions {
     trafficClass = DEFAULT_TRAFFIC_CLASS;
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
+  public NetworkOptions(NetworkOptions other) {
+    this.sendBufferSize = other.getSendBufferSize();
+    this.receiveBufferSize = other.getReceiveBufferSize();
+    this.reuseAddress = other.isReuseAddress();
+    this.trafficClass = other.getTrafficClass();
+  }
+
+  /**
+   * Constructor from JSON
+   *
+   * @param json  the JSON
+   */
+  public NetworkOptions(JsonObject json) {
+    this.sendBufferSize = json.getInteger("sendBufferSize", DEFAULT_SEND_BUFFER_SIZE);
+    this.receiveBufferSize = json.getInteger("receiveBufferSize", DEFAULT_RECEIVE_BUFFER_SIZE);
+    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSE_ADDRESS);
+    this.trafficClass = json.getInteger("trafficClass", DEFAULT_TRAFFIC_CLASS);
+  }
+
+  /**
+   * Return the TCP send buffer size, in bytes.
+   *
+   * @return the send buffer size
+   */
   public int getSendBufferSize() {
     return sendBufferSize;
   }
 
+  /**
+   * Set the TCP send buffer size
+   *
+   * @param sendBufferSize  the buffers size, in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
   public NetworkOptions setSendBufferSize(int sendBufferSize) {
     Arguments.require(sendBufferSize > 0, "sendBufferSize must be > 0");
     this.sendBufferSize = sendBufferSize;
     return this;
   }
 
+  /**
+   * Return the TCP receive buffer size, in bytes
+   *
+   * @return the receive buffer size
+   */
   public int getReceiveBufferSize() {
     return receiveBufferSize;
   }
 
+  /**
+   * Set the TCP receive buffer size
+   *
+   * @param receiveBufferSize  the buffers size, in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
   public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
     Arguments.require(receiveBufferSize > 0, "receiveBufferSize must be > 0");
     this.receiveBufferSize = receiveBufferSize;
     return this;
   }
 
+  /**
+   * @return  the value of reuse address
+   */
   public boolean isReuseAddress() {
     return reuseAddress;
   }
 
+  /**
+   * Set the value of reuse address
+   * @param reuseAddress  the value of reuse address
+   * @return a reference to this, so the API can be used fluently
+   */
   public NetworkOptions setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
     return this;
   }
 
+  /**
+   * @return  the value of traffic class
+   */
   public int getTrafficClass() {
     return trafficClass;
   }
 
+  /**
+   * Set the value of traffic class
+   *
+   * @param trafficClass  the value of traffic class
+   * @return a reference to this, so the API can be used fluently
+   */
   public NetworkOptions setTrafficClass(int trafficClass) {
     Arguments.requireInRange(trafficClass, 0, 255, "trafficClass tc must be 0 <= tc <= 255");
     this.trafficClass = trafficClass;

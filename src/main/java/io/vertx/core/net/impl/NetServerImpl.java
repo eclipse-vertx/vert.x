@@ -117,6 +117,21 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
+  public NetServer listen(int port, String host) {
+    return listen(port, host, null);
+  }
+
+  @Override
+  public NetServer listen(int port) {
+    return listen(port, "0.0.0.0", null);
+  }
+
+  @Override
+  public NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
+    return listen(port, "0.0.0.0", listenHandler);
+  }
+
+  @Override
   public NetServer listen() {
     listen(null);
     return this;
@@ -124,6 +139,11 @@ public class NetServerImpl implements NetServer, Closeable {
 
   @Override
   public synchronized NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
+    return listen(options.getPort(), options.getHost(), listenHandler);
+  }
+
+  @Override
+  public synchronized NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
     if (connectStream.handler() == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -135,10 +155,10 @@ public class NetServerImpl implements NetServer, Closeable {
     listenContext = vertx.getOrCreateContext();
 
     synchronized (vertx.sharedNetServers()) {
-      this.actualPort = options.getPort(); // Will be updated on bind for a wildcard port
-      id = new ServerID(options.getPort(), options.getHost());
+      this.actualPort = port; // Will be updated on bind for a wildcard port
+      id = new ServerID(port, host);
       NetServerImpl shared = vertx.sharedNetServers().get(id);
-      if (shared == null || options.getPort() == 0) { // Wildcard port will imply a new actual server each time
+      if (shared == null || port == 0) { // Wildcard port will imply a new actual server each time
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
         ServerBootstrap bootstrap = new ServerBootstrap();
@@ -176,11 +196,11 @@ public class NetServerImpl implements NetServer, Closeable {
         }
 
         try {
-          InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(options.getHost()), options.getPort());
+          InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host), port);
           bindFuture = bootstrap.bind(addr).addListener(future -> runListeners());
           this.addListener(() -> {
             if (bindFuture.isSuccess()) {
-              log.trace("Net server listening on " + options.getHost() + ":" + bindFuture.channel().localAddress());
+              log.trace("Net server listening on " + host + ":" + bindFuture.channel().localAddress());
               // Update port to actual port - wildcard port 0 might have been used
               NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
@@ -202,7 +222,7 @@ public class NetServerImpl implements NetServer, Closeable {
           listening = false;
           return this;
         }
-        if (options.getPort() != 0) {
+        if (port != 0) {
           vertx.sharedNetServers().put(id, this);
         }
         actualServer = this;

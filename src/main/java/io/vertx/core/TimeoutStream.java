@@ -20,10 +20,10 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
 
 /**
- * A timeout stream triggered by a timer, the {@link io.vertx.core.Handler} will be call when the timer is fired,
+ * A timeout stream is triggered by a timer, the {@link io.vertx.core.Handler} will be call when the timer is fired,
  * it can be once or several times depending on the nature of the timer related to this stream. The
- * {@link ReadStream#endHandler(Handler)} will be called after the timer handler has been called.<p>
- *
+ * {@link ReadStream#endHandler(Handler)} will be called after the timer handler has been called.
+ * <p>
  * Pausing the timer inhibits the timer shots until the stream is resumed. Setting a null handler callback cancels
  * the timer.
  *

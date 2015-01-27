@@ -1,8 +1,9 @@
+== Streams
+
 There are several objects in Vert.x that allow items to be read from and written.
 
-In previous versions the
-io.vertx.core.streams.adoc package was manipulating link:apidocs/io/vertx/core/buffer/Buffer.html[`Buffer`] objects exclusively.
-From now, streams are not anymore coupled to buffers and work with any kind of objects.
+In previous versions the streams.adoc package was manipulating link:apidocs/io/vertx/core/buffer/Buffer.html[`Buffer`]
+objects exclusively. From now, streams are not anymore coupled to buffers and work with any kind of objects.
 
 In Vert.x, calls to write item return immediately and writes are internally queued.
 

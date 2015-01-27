@@ -16,8 +16,9 @@
 package io.vertx.core.http;
 
 /**
- * Contains often used Header names. Beside this contains a utility method to create optimized
- * {@link CharSequence} which can be used as header name and value.
+ * Contains often used Header names.
+ * <p>
+ * It also contains a utility method to create optimized {@link CharSequence} which can be used as header name and value.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */

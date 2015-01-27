@@ -17,6 +17,8 @@
 package io.vertx.core.http;
 
 /**
+ * Represents an HTTP method
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public enum HttpMethod {

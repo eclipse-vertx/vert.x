@@ -171,7 +171,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
     Objects.requireNonNull(handler, "no null handler accepted");
-    InetSocketAddress is = new InetSocketAddress(local.hostAddress(), local.hostPort());
+    InetSocketAddress is = new InetSocketAddress(local.host(), local.port());
     ChannelFuture future = channel().bind(is);
     addListener(future, ar -> {
       if (ar.succeeded()) {
