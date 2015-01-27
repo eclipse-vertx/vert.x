@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Random;
+import java.util.List;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -193,20 +194,40 @@ class BaseTransport {
   // We remove cookie headers for security reasons. See https://github.com/sockjs/sockjs-node section on
   // Authorisation
   static MultiMap removeCookieHeaders(MultiMap headers) {
-    // We don't want to remove the JSESSION cookie.
-    String jsessionid = null;
-    for (String cookie : headers.getAll("cookie")) {
-      if (cookie.startsWith("JSESSIONID=")) {
-        jsessionid = cookie;
-      }
-    }
-    headers.remove("cookie");
 
-    // Add back jsessionid cookie header
-    if (jsessionid != null) {
-      headers.add("cookie", jsessionid);
-    }
+	  
+	    // We don't want to remove the JSESSION cookie.
+	      String jsessionid = null;
+	      String cookie = headers.get("cookie");
+	      //List cookies
+	      if(cookie.indexOf(";")!= -1){
+	    	  // Example os list Cookie	UII_LOCALE=en; SSO_IM_IDCTXID=5604122b-6da5-4b7e-a85a-4cfebb32112a; CRED=DEFAULT/Admin; JSESSIONID=34asd-28aa-48b1-ad1d-de21d07bfbd1
+	          String[] cookies = cookie.toString().split("\\;");
+	          for (String c : cookies) {
+	              if (c.trim().startsWith("JSESSIONID=")) {
+	                  jsessionid = c.trim();
+	                  break;
+	              }
+	          }    
+	      
+	      }else{
+	          List<String> lstCookie=headers.getAll("cookie");
+	    	  for (String c : lstCookie) {
+	              if (c.startsWith("JSESSIONID=")) {
+	                  jsessionid = cookie;
+	                  break;
+	              }
+	            }
+	      }
+	      
+	    headers.remove("cookie");
 
-    return headers;
+	    // Add back jsessionid cookie header
+	    if (jsessionid != null) {
+	      headers.add("cookie", jsessionid);
+	    }
+
+	    return headers;
+	  
   }
 }
