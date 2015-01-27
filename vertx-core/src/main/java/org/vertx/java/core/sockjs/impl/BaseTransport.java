@@ -194,8 +194,6 @@ class BaseTransport {
   // We remove cookie headers for security reasons. See https://github.com/sockjs/sockjs-node section on
   // Authorisation
   static MultiMap removeCookieHeaders(MultiMap headers) {
-
-	  
 	    // We don't want to remove the JSESSION cookie.
 	      String jsessionid = null;
 	      String cookie = headers.get("cookie");
