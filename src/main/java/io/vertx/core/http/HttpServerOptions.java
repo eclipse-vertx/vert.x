@@ -23,7 +23,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.TrustStoreOptions;
 
 /**
- * Represents options used by an {@link com.sun.net.httpserver.HttpServer} instance
+ * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

@@ -49,7 +49,7 @@ public interface AsyncMap<K, V> {
   void put(K k, V v, Handler<AsyncResult<Void>> completionHandler);
 
   /**
-   * Like {@link #put(K, V, Handler)} but specifying a timeout. If the value cannot be put within the timeout a
+   * Like {@link #put} but specifying a timeout. If the value cannot be put within the timeout a
    * failure will be passed to the handler
    *
    * @param k  the key
@@ -70,7 +70,7 @@ public interface AsyncMap<K, V> {
   void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler);
 
   /**
-   * Link {@link #putIfAbsent(K, V, Handler)} but specifying a timeout. If the value cannot be put within the timeout a
+   * Link {@link #putIfAbsent} but specifying a timeout. If the value cannot be put within the timeout a
    * failure will be passed to the handler
    *
    * @param k  the key
@@ -92,7 +92,7 @@ public interface AsyncMap<K, V> {
    * Remove a value from the map, only if entry already exists with same value.
    *
    * @param k  the key
-   * @paran v  the value
+   * @param v  the value
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
   void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler);

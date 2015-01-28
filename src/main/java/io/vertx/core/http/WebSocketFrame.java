@@ -79,7 +79,7 @@ public interface WebSocketFrame {
   boolean isText();
 
   /**
-   * @eturn true if it's a binary frame
+   * @return true if it's a binary frame
    */
   boolean isBinary();
 

@@ -16,6 +16,7 @@
 
 package io.vertx.core.json;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.Json;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
@@ -693,8 +694,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Remove all the entries in this JSON object
-   * @return
    */
+  @Fluent
   public JsonObject clear() {
     map.clear();
     return this;
