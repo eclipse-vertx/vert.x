@@ -8,7 +8,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>target/site</directory>
+            <directory>target/docs</directory>
             <outputDirectory>/</outputDirectory>
         </fileSet>
     </fileSets>
