@@ -17,6 +17,7 @@ package io.vertx.core.datagram.impl;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
@@ -279,6 +280,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     }
     if (options.getReceiveBufferSize() != -1) {
       channel.config().setReceiveBufferSize(options.getReceiveBufferSize());
+      channel.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
     }
     channel.config().setReuseAddress(options.isReuseAddress());
     if (options.getTrafficClass() != -1) {

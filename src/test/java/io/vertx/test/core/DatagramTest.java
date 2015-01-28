@@ -110,6 +110,24 @@ public class DatagramTest extends VertxTestBase {
   }
 
   @Test
+  public void testSendReceiveLargePacket() {
+    int packetSize = 10000;
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions().setReceiveBufferSize(packetSize));
+    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions().setReceiveBufferSize(packetSize));
+    peer2.exceptionHandler(t -> fail(t.getMessage()));
+    peer2.listen(1234, "127.0.0.1", ar -> {
+      assertTrue(ar.succeeded());
+      Buffer buffer = TestUtils.randomBuffer(packetSize);
+      peer2.handler(packet -> {
+        assertEquals(buffer, packet.data());
+        testComplete();
+      });
+      peer1.send(buffer, 1234, "127.0.0.1", ar2 -> assertTrue(ar2.succeeded()));
+    });
+    await();
+  }
+
+  @Test
   public void testEndHandler() {
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
