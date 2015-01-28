@@ -25,6 +25,7 @@ import io.vertx.core.VertxException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.Enumeration;
@@ -103,7 +104,12 @@ public class FileResolver {
   }
 
   private synchronized File unpackFromFileURL(URL url, String fileName, ClassLoader cl) {
-    File resource = new File(url.getPath());
+    File resource;
+    try {
+      resource = new File(URLDecoder.decode(url.getPath(), "UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      throw new VertxException(e);
+    }
     boolean isDirectory = resource.isDirectory();
     File cacheFile = new File(cacheDir, fileName);
     if (!isDirectory) {

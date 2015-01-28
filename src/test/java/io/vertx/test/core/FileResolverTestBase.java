@@ -87,6 +87,17 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   }
 
   @Test
+  public void testResolveFileWithSpacesFromClasspath() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      File file = resolver.resolveFile("afile with spaces.html");
+      assertTrue(file.exists());
+      assertTrue(file.getPath().startsWith(".vertx/file-cache-"));
+      assertFalse(file.isDirectory());
+      assertEquals("<html><body>afile with spaces</body></html>", readFile(file));
+    }
+  }
+
+  @Test
   public void testResolveDirectoryFromClasspath() throws Exception {
     for (int i = 0; i < 2; i++) {
       File file = resolver.resolveFile(webRoot);
