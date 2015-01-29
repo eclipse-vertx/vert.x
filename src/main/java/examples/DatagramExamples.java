@@ -78,10 +78,8 @@ public class DatagramExamples {
         });
 
         // join the multicast group
-        socket.listenMulticastGroup("230.0.0.1", new AsyncResultHandler<DatagramSocket>() {
-          public void handle(AsyncResult<DatagramSocket> asyncResult) {
-            System.out.println("Listen succeeded? " + asyncResult.succeeded());
-          }
+        socket.listenMulticastGroup("230.0.0.1", asyncResult2 -> {
+            System.out.println("Listen succeeded? " + asyncResult2.succeeded());
         });
       } else {
         System.out.println("Listen failed" + asyncResult.cause());
