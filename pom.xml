@@ -214,7 +214,6 @@
             <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
           </configuration>
         </plugin>
-
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <executions>
@@ -226,6 +225,20 @@
                     <directory>${asciidoc.dir}</directory>
                   </fileset>
                 </filesets>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <configuration>
+                <excludes>
+                  <exclude>docoverride/**</exclude>
+                </excludes>
               </configuration>
             </execution>
           </executions>
