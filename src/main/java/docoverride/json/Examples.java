@@ -24,7 +24,7 @@ import io.vertx.docgen.Source;
  * Created by tim on 09/01/15.
  */
 @Source
-public class JsonExamples {
+public class Examples {
 
   public void example0_1() {
     String jsonString = "{\"foo\":\"bar\"}";
