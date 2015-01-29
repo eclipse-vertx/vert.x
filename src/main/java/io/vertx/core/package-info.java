@@ -302,7 +302,7 @@
  * An application would typically be composed of many verticle instances running in the same Vert.x instance at the same
  * time. The different verticle instances communicate with each other by sending messages on the <<event_bus, event bus>>.
  *
- * include::verticles.adoc[]
+ * include::override/verticles.adoc[]
  *
  * === Verticle Types
  *
@@ -604,7 +604,7 @@
  * [[event_bus]]
  * include::eventbus.adoc[]
  *
- * include::json.adoc[]
+ * include::override/json.adoc[]
  *
  * include::buffers.adoc[]
  *
