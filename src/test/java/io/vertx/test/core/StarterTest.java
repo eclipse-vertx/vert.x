@@ -191,7 +191,7 @@ public class StarterTest extends VertxTestBase {
     // One for each type that we support
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "eventLoopPoolSize", "123");
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "maxEventLoopExecuteTime", "123767667");
-    System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "metricsEnabled", "true");
+    System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "haGroup", "somegroup");
 
     System.setProperty(Starter.DEPLOYMENT_OPTIONS_PROP_PREFIX + "redeployScanPeriod", "612536253");
@@ -213,7 +213,7 @@ public class StarterTest extends VertxTestBase {
 
     assertEquals(123, opts.getEventLoopPoolSize(), 0);
     assertEquals(123767667l, opts.getMaxEventLoopExecuteTime());
-    assertEquals(true, opts.isMetricsEnabled());
+    assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
 
     DeploymentOptions depOptions = starter.getDeploymentOptions();

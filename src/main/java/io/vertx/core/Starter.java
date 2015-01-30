@@ -21,6 +21,7 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.metrics.MetricsOptions;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -63,6 +64,7 @@ public class Starter {
 
   public static final String VERTX_OPTIONS_PROP_PREFIX = "vertx.options.";
   public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options.";
+  public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
 
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
   public static List<String> PROCESS_ARGS;
@@ -121,7 +123,9 @@ public class Starter {
   }
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
-    options = new VertxOptions();
+    MetricsOptions metricsOptions = new MetricsOptions();
+    configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);
+    options = new VertxOptions().setMetricsOptions(metricsOptions);
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     if (clustered) {
       log.info("Starting clustering...");

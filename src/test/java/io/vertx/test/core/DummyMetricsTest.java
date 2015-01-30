@@ -23,6 +23,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -36,7 +37,7 @@ public class DummyMetricsTest extends VertxTestBase {
 
   @Override
   protected VertxOptions getOptions() {
-    return new VertxOptions().setMetricsEnabled(false); // Just to be explicit
+    return new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(false)); // Just to be explicit
   }
 
   @Test

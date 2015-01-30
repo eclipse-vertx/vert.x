@@ -18,6 +18,7 @@ package io.vertx.core;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 /**
@@ -98,13 +99,6 @@ public class VertxOptions {
    */
   public static final boolean DEFAULT_METRICS_ENABLED = false;
 
-  /**
-   * The default value of JMX enabled = false
-   */
-  public static final boolean DEFAULT_JMX_ENABLED = false;
-
-
-
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -120,9 +114,7 @@ public class VertxOptions {
   private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup;
-  private boolean metricsEnabled = DEFAULT_METRICS_ENABLED;
-  private boolean jmxEnabled = DEFAULT_JMX_ENABLED;
-  private String jmxDomain;
+  private MetricsOptions metrics;
 
   /**
    * Default constructor
@@ -151,9 +143,7 @@ public class VertxOptions {
     this.haEnabled = other.isHAEnabled();
     this.quorumSize = other.getQuorumSize();
     this.haGroup = other.getHAGroup();
-    this.metricsEnabled = other.isMetricsEnabled();
-    this.jmxEnabled = other.isJmxEnabled();
-    this.jmxDomain = other.getJmxDomain();
+    this.metrics = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
   }
 
   /**
@@ -176,9 +166,8 @@ public class VertxOptions {
     this.haEnabled = json.getBoolean("haEnabled", false);
     this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUM_SIZE);
     this.haGroup = json.getString("haGroup", null);
-    this.metricsEnabled = json.getBoolean("metricsEnabled", DEFAULT_METRICS_ENABLED);
-    this.jmxEnabled = json.getBoolean("jmxEnabled", DEFAULT_JMX_ENABLED);
-    this.jmxDomain = json.getString("jmxDomain");
+    JsonObject metricsJson = json.getJsonObject("metricsOptions");
+    this.metrics = metricsJson != null ? new MetricsOptions(metricsJson) : null;
   }
 
   /**
@@ -539,63 +528,20 @@ public class VertxOptions {
   }
 
   /**
-   * Will metrics be enabled on the Vert.x instance?
-   *
-   * @return true if enabled, false if not.
+   * @return the metrics options
    */
-  public boolean isMetricsEnabled() {
-    return metricsEnabled;
+  public MetricsOptions getMetricsOptions() {
+    return metrics;
   }
 
   /**
-   * Set whether metrics will be enabled on the Vert.x instance.
+   * Set the metrics options
    *
-   * @param enable true if metrics enabled, or false if not.
+   * @param metrics the options
    * @return a reference to this, so the API can be used fluently
    */
-  public VertxOptions setMetricsEnabled(boolean enable) {
-    this.metricsEnabled = enable;
-    return this;
-  }
-
-  /**
-   * Will JMX be enabled on the Vert.x instance?
-   *
-   * @return true if enabled, false if not.
-   */
-  public boolean isJmxEnabled() {
-    return jmxEnabled;
-  }
-
-  /**
-   * Set whether JMX will be enabled on the Vert.x instance.
-   *
-   * @param jmxEnabled true if JMX enabled, or false if not.
-   * @return a reference to this, so the API can be used fluently
-   */
-  public VertxOptions setJmxEnabled(boolean jmxEnabled) {
-    this.jmxEnabled = jmxEnabled;
-    if (jmxEnabled) metricsEnabled = true;
-    return this;
-  }
-
-  /**
-   * Get the JMX domain to use when JMX metrics are enabled.
-   *
-   * @return the JMX domain
-   */
-  public String getJmxDomain() {
-    return jmxDomain;
-  }
-
-  /**
-   * Set the JMX domain to use when JMX metrics are enabled.
-   *
-   * @param jmxDomain  the JMX domain
-   * @return a reference to this, so the API can be used fluently
-   */
-  public VertxOptions setJmxDomain(String jmxDomain) {
-    this.jmxDomain = jmxDomain;
+  public VertxOptions setMetricsOptions(MetricsOptions metrics) {
+    this.metrics = metrics;
     return this;
   }
 

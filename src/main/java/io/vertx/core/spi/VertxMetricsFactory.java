@@ -18,11 +18,22 @@ package io.vertx.core.spi;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.spi.VertxMetrics;
 
 /**
+ * A factory for the plugable metrics SPI.
+ *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface VertxMetricsFactory {
+
+  /**
+   * Create a new {@link io.vertx.core.metrics.spi.VertxMetrics} object.
+   *
+   * @param vertx the vertx instance
+   * @param options the metrics configuration option
+   * @return the metrics implementation
+   */
   VertxMetrics metrics(Vertx vertx, VertxOptions options);
 }

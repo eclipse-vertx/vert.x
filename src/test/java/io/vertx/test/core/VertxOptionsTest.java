@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -162,19 +163,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(options, options.setHAGroup(randString));
     assertEquals(randString, options.getHAGroup());
 
-    assertFalse(options.isMetricsEnabled());
-    assertEquals(options, options.setMetricsEnabled(true));
-    assertTrue(options.isMetricsEnabled());
-
-    // Test metrics get enabled if jmx is set to true
-    options.setMetricsEnabled(false);
-    assertFalse(options.isJmxEnabled());
-    assertEquals(options, options.setJmxEnabled(true));
-    assertTrue(options.isJmxEnabled());
-    assertTrue(options.isMetricsEnabled());
-
-    assertNull(options.getJmxDomain());
-    assertEquals("foo", options.setJmxDomain("foo").getJmxDomain());
+    assertNull(options.getMetricsOptions());
   }
 
   @Test
@@ -212,9 +201,11 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setHAEnabled(haEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
-    options.setMetricsEnabled(metricsEnabled);
-    options.setJmxEnabled(jmxEnabled);
-    options.setJmxDomain(jmxDomain);
+    options.setMetricsOptions(
+        new MetricsOptions().
+            setEnabled(metricsEnabled).
+            setJmxEnabled(jmxEnabled).
+            setJmxDomain(jmxDomain));
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(clusterPingInterval, options.getClusterPingInterval());
@@ -229,9 +220,11 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
-    assertEquals(metricsEnabled || jmxEnabled, options.isMetricsEnabled());
-    assertEquals(jmxEnabled, options.isJmxEnabled());
-    assertEquals(jmxDomain, options.getJmxDomain());
+    MetricsOptions metricsOptions = options.getMetricsOptions();
+    assertNotNull(metricsOptions);
+    assertEquals(metricsEnabled || jmxEnabled, metricsOptions.isEnabled());
+    assertEquals(jmxEnabled, metricsOptions.isJmxEnabled());
+    assertEquals(jmxDomain, metricsOptions.getJmxDomain());
   }
 
   @Test
@@ -271,10 +264,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
     assertNull(options.getHAGroup());
-    assertFalse(options.isMetricsEnabled());
-    assertFalse(options.isJmxEnabled());
-    assertNull(options.getJmxDomain());
-
+    assertNull(options.getMetricsOptions());
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
     int internalBlockingPoolSize = TestUtils.randomPositiveInt();
@@ -308,9 +298,10 @@ public class VertxOptionsTest extends VertxTestBase {
         put("haEnabled", haEnabled).
         put("quorumSize", quorumSize).
         put("haGroup", haGroup).
-        put("metricsEnabled", metricsEnabled).
-        put("jmxEnabled", jmxEnabled).
-        put("jmxDomain", jmxDomain)
+        put("metricsOptions", new JsonObject().
+            put("enabled", metricsEnabled).
+            put("jmxEnabled", jmxEnabled).
+            put("jmxDomain", jmxDomain))
     );
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(clusterPingInterval, options.getClusterPingInterval());
@@ -326,8 +317,9 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
-    assertEquals(metricsEnabled, options.isMetricsEnabled());
-    assertEquals(jmxEnabled, options.isJmxEnabled());
-    assertEquals(jmxDomain, options.getJmxDomain());
+    MetricsOptions metricsOptions = options.getMetricsOptions();
+    assertEquals(metricsEnabled, metricsOptions.isEnabled());
+    assertEquals(jmxEnabled, metricsOptions.isJmxEnabled());
+    assertEquals(jmxDomain, metricsOptions.getJmxDomain());
   }
 }
