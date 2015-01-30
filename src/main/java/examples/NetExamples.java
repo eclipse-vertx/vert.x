@@ -19,7 +19,6 @@ package examples;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.net.*;
 
 /**
@@ -187,23 +186,22 @@ public class NetExamples {
   }
 
   public void example17(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions();
-    options.setSsl(true);
-    JKSOptions jksOptions = new JKSOptions();
-    jksOptions.setPath("/path/to/your/keystore.jks");
-    jksOptions.setPassword("password-of-your-keystore");
-    options.setKeyStoreOptions(jksOptions);
+    NetServerOptions options = new NetServerOptions().setSsl(true).setKeyStoreOptions(
+        new JKSOptions().
+            setPath("/path/to/your/keystore.jks").
+            setPassword("password-of-your-keystore")
+    );
     NetServer server = vertx.createNetServer(options);
   }
 
   public void example18(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions();
-    options.setSsl(true);
-    JKSOptions jksOptions = new JKSOptions();
     Buffer myKeyStoreAsABuffer = readKeyStore();
-    jksOptions.setValue(myKeyStoreAsABuffer);
-    jksOptions.setPassword("password-of-your-keystore");
-    options.setKeyStoreOptions(jksOptions);
+    JKSOptions jksOptions = new JKSOptions().
+        setValue(myKeyStoreAsABuffer).
+        setPassword("password-of-your-keystore");
+    NetServerOptions options = new NetServerOptions().
+        setSsl(true).
+        setKeyStoreOptions(jksOptions);
     NetServer server = vertx.createNetServer(options);
   }
 

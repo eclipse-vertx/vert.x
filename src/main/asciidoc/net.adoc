@@ -364,12 +364,11 @@ The password for the keystore should also be provided:
 
 [source,java]
 ----
-NetServerOptions options = new NetServerOptions();
-options.setSsl(true);
-JKSOptions jksOptions = new JKSOptions();
-jksOptions.setPath("/path/to/your/keystore.jks");
-jksOptions.setPassword("password-of-your-keystore");
-options.setKeyStoreOptions(jksOptions);
+NetServerOptions options = new NetServerOptions().setSsl(true).setKeyStoreOptions(
+    new JKSOptions().
+        setPath("/path/to/your/keystore.jks").
+        setPassword("password-of-your-keystore")
+);
 NetServer server = vertx.createNetServer(options);
 ----
 
@@ -377,13 +376,13 @@ Alternatively you can read the key store yourself as a buffer and provide that d
 
 [source,java]
 ----
-NetServerOptions options = new NetServerOptions();
-options.setSsl(true);
-JKSOptions jksOptions = new JKSOptions();
 Buffer myKeyStoreAsABuffer = readKeyStore();
-jksOptions.setValue(myKeyStoreAsABuffer);
-jksOptions.setPassword("password-of-your-keystore");
-options.setKeyStoreOptions(jksOptions);
+JKSOptions jksOptions = new JKSOptions().
+    setValue(myKeyStoreAsABuffer).
+    setPassword("password-of-your-keystore");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setKeyStoreOptions(jksOptions);
 NetServer server = vertx.createNetServer(options);
 ----
 
