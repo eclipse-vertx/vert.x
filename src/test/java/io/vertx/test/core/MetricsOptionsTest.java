@@ -34,6 +34,7 @@ public class MetricsOptionsTest extends VertxTestBase {
     assertFalse(options.isEnabled());
     assertEquals(options, options.setEnabled(true));
     assertTrue(options.isEnabled());
+    assertNull(options.getName());
 
     // Test metrics get enabled if jmx is set to true
     options.setEnabled(false);
@@ -44,6 +45,9 @@ public class MetricsOptionsTest extends VertxTestBase {
 
     assertNull(options.getJmxDomain());
     assertEquals("foo", options.setJmxDomain("foo").getJmxDomain());
+
+    assertNull(options.getName());
+    assertEquals("bar", options.setName("bar").getName());
   }
 
   @Test
@@ -54,13 +58,16 @@ public class MetricsOptionsTest extends VertxTestBase {
     boolean metricsEnabled = rand.nextBoolean();
     boolean jmxEnabled = rand.nextBoolean();
     String jmxDomain = TestUtils.randomAlphaString(100);
+    String name = TestUtils.randomAlphaString(100);
     options.setEnabled(metricsEnabled);
     options.setJmxEnabled(jmxEnabled);
     options.setJmxDomain(jmxDomain);
+    options.setName(name);
     options = new MetricsOptions(options);
     assertEquals(metricsEnabled || jmxEnabled, options.isEnabled());
     assertEquals(jmxEnabled, options.isJmxEnabled());
     assertEquals(jmxDomain, options.getJmxDomain());
+    assertEquals(name, options.getName());
   }
 
   @Test
@@ -69,16 +76,20 @@ public class MetricsOptionsTest extends VertxTestBase {
     assertFalse(options.isEnabled());
     assertFalse(options.isJmxEnabled());
     assertNull(options.getJmxDomain());
+    assertNull(options.getName());
     Random rand = new Random();
     boolean metricsEnabled = rand.nextBoolean();
     boolean jmxEnabled = rand.nextBoolean();
     String jmxDomain = TestUtils.randomAlphaString(100);
+    String metricsName = TestUtils.randomAlphaString(100);
     options = new MetricsOptions(new JsonObject().
         put("enabled", metricsEnabled).
+        put("name", metricsName).
         put("jmxEnabled", jmxEnabled).
         put("jmxDomain", jmxDomain)
     );
     assertEquals(metricsEnabled, options.isEnabled());
+    assertEquals(metricsName, options.getName());
     assertEquals(jmxEnabled, options.isJmxEnabled());
     assertEquals(jmxDomain, options.getJmxDomain());
   }

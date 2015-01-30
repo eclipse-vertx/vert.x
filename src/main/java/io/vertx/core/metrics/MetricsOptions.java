@@ -38,6 +38,7 @@ public class MetricsOptions {
   public static final boolean DEFAULT_JMX_ENABLED = false;
 
   private boolean enabled;
+  private String name;
   private boolean jmxEnabled;
   private String jmxDomain;
 
@@ -56,6 +57,7 @@ public class MetricsOptions {
    */
   public MetricsOptions(MetricsOptions other) {
     this.enabled = other.isEnabled();
+    this.name = other.getName();
     this.jmxEnabled = other.isJmxEnabled();
     this.jmxDomain = other.getJmxDomain();
   }
@@ -67,6 +69,7 @@ public class MetricsOptions {
    */
   public MetricsOptions(JsonObject json) {
     this.enabled = json.getBoolean("enabled", DEFAULT_METRICS_ENABLED);
+    this.name = json.getString("name");
     this.jmxEnabled = json.getBoolean("jmxEnabled", DEFAULT_JMX_ENABLED);
     this.jmxDomain = json.getString("jmxDomain");
   }
@@ -88,6 +91,26 @@ public class MetricsOptions {
    */
   public MetricsOptions setEnabled(boolean enable) {
     this.enabled = enable;
+    return this;
+  }
+
+  /**
+   * An optional name used by the metrics implementation for namespacing or registering the metrics.
+   *
+   * @return the metrics name
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Set the name used by the metrics implementation for namespacing or registering the metrics.
+   *
+   * @param name the name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public MetricsOptions setName(String name) {
+    this.name = name;
     return this;
   }
 
@@ -131,5 +154,4 @@ public class MetricsOptions {
     this.jmxDomain = jmxDomain;
     return this;
   }
-
 }
