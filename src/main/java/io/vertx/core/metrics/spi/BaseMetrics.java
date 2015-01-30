@@ -21,9 +21,22 @@ package io.vertx.core.metrics.spi;
  */
 public interface BaseMetrics {
 
+  /**
+   * The name used as the base for metrics provided by an SPI.
+   *
+   * @return the base name
+   */
   String baseName();
 
+  /**
+   * Whether the metrics are enabled.
+   *
+   * @return true if the metrics are enabled.
+   */
   boolean isEnabled();
 
+  /**
+   * Used to close out the metrics, for example when an http server/client has been closed.
+   */
   void close();
 }

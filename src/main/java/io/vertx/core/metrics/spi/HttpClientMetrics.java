@@ -20,11 +20,24 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 
 /**
+ * The http client metrics SPI that Vert.x will use to call when http client events occur.
+ *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface HttpClientMetrics extends NetMetrics {
 
+  /**
+   * Called when an http client request begins
+   * 
+   * @param request the {@link io.vertx.core.http.HttpClientRequest}
+   */
   void requestBegin(HttpClientRequest request);
 
+  /**
+   * Called when an http client response has ended
+   *
+   * @param request the {@link io.vertx.core.http.HttpClientRequest}
+   * @param response the {@link io.vertx.core.http.HttpClientResponse}
+   */
   void responseEnd(HttpClientRequest request, HttpClientResponse response);
 }
