@@ -69,7 +69,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.HttpServerMetrics;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
 import io.vertx.core.net.impl.KeyStoreHelper;

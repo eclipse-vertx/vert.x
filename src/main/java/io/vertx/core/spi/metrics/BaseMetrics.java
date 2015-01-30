@@ -14,24 +14,16 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.spi;
-
-import io.vertx.core.net.SocketAddress;
+package io.vertx.core.spi.metrics;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface NetMetrics extends BaseMetrics {
+public interface BaseMetrics {
 
-  void listening(SocketAddress localAddress);
+  String baseName();
 
-  void connected(SocketAddress remoteAddress);
+  boolean isEnabled();
 
-  void disconnected(SocketAddress remoteAddress);
-
-  void bytesRead(SocketAddress remoteAddress, long numberOfBytes);
-
-  void bytesWritten(SocketAddress remoteAddress, long numberOfBytes);
-
-  void exceptionOccurred(SocketAddress remoteAddress, Throwable t);
+  void close();
 }

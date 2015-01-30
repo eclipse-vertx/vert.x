@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.spi;
+package io.vertx.core.spi.metrics;
 
 import io.vertx.core.Verticle;
 import io.vertx.core.datagram.DatagramSocket;

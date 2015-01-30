@@ -14,22 +14,28 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.spi;
+package io.vertx.core.spi.metrics;
 
-import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface EventBusMetrics extends BaseMetrics {
+public interface DatagramSocketMetrics extends NetMetrics {
 
-  void handlerRegistered(String address);
+  // There should probably be a TcpMetrics that has the connected/disconnected characteristics, but since datagram
+  // uses a tcp like connection class, it's easier to do it this way
 
-  void handlerUnregistered(String address);
+  @Override
+  default void connected(SocketAddress remoteAddress) {
+    newSocket();
+  }
 
-  void messageSent(String address, boolean publish);
+  @Override
+  default void disconnected(SocketAddress remoteAddress) {
+    close();
+  }
 
-  void messageReceived(String address);
-
-  void replyFailure(String address, ReplyFailure failure);
+  // What does this represent?
+  void newSocket();
 }

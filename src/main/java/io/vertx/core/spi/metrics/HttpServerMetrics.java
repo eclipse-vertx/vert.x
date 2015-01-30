@@ -14,17 +14,17 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.spi;
+package io.vertx.core.spi.metrics;
 
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpClientMetrics extends NetMetrics {
+public interface HttpServerMetrics extends NetMetrics {
 
-  void requestBegin(HttpClientRequest request);
+  void requestBegin(HttpServerRequest request, HttpServerResponse response);
 
-  void responseEnd(HttpClientRequest request, HttpClientResponse response);
+  void responseEnd(HttpServerResponse response);
 }
