@@ -159,9 +159,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
       }
     }
     JsonArray arr = json.getJsonArray("enabledCipherSuites");
-    this.enabledCipherSuites = arr == null ? null : new HashSet<String>(arr.getList());
+    this.enabledCipherSuites = arr == null ? null : new HashSet<>(arr.getList());
     arr = json.getJsonArray("crlPaths");
-    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.getList());
+    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<>(arr.getList());
     this.crlValues = new ArrayList<>();
     arr = json.getJsonArray("crlValues");
     if (arr != null) {
