@@ -33,9 +33,9 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.JKSOptions;
-import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -43,7 +43,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.NetSocketStream;
 import io.vertx.core.net.NetworkOptions;
-import io.vertx.core.net.PKCS12Options;
+import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
@@ -163,15 +163,15 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getKeyCertOptions());
+    JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getCaOptions());
+    JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(trustStoreOptions, options.getCaOptions());
 
     assertFalse(options.isTrustAll());
     assertEquals(options, options.setTrustAll(true));
@@ -258,15 +258,15 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getKeyCertOptions());
+    JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getCaOptions());
+    JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(trustStoreOptions, options.getCaOptions());
 
     assertEquals(1024, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
@@ -308,10 +308,10 @@ public class NetTest extends VertxTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -351,10 +351,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
     assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, copy.getConnectTimeout());
@@ -397,12 +397,12 @@ public class NetTest extends VertxTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -445,12 +445,12 @@ public class NetTest extends VertxTestBase {
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
-    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
-    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
-    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertNotSame(keyStoreOptions, options.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
+    assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, options.getConnectTimeout());
@@ -461,24 +461,21 @@ public class NetTest extends VertxTestBase {
     assertEquals(reconnectInterval, options.getReconnectInterval());
 
     // Test other keystore/truststore types
-    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
-      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
+    json.remove("keyStoreOptions");
+    json.remove("trustStoreOptions");
+    json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
+      .put("pfxCaOptions", new JsonObject().put("password", tsPassword));
     options = new NetClientOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
-    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
-    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
-      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
+    json.remove("pfxKeyCertOptions");
+    json.remove("pfxCaOptions");
+    json.put("pemKeyCertOptions", new JsonObject())
+      .put("pemCaOptions", new JsonObject());
     options = new NetClientOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
-    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
-
-    // Invalid types
-    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new NetClientOptions(json));
-
-    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new NetClientOptions(json));
+    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
   @Test
@@ -495,10 +492,10 @@ public class NetTest extends VertxTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -536,10 +533,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
     assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -587,12 +584,12 @@ public class NetTest extends VertxTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -616,8 +613,8 @@ public class NetTest extends VertxTestBase {
       .put("ssl", ssl)
       .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
       .put("crlPaths", new JsonArray().add(crlPath))
-      .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
-      .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+      .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
+      .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
       .put("port", port)
       .put("host", host)
       .put("acceptBacklog", acceptBacklog);
@@ -633,12 +630,12 @@ public class NetTest extends VertxTestBase {
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
-    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
-    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
-    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertNotSame(keyStoreOptions, options.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
+    assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, options.getCrlPaths().size());
@@ -648,25 +645,21 @@ public class NetTest extends VertxTestBase {
     assertEquals(acceptBacklog, options.getAcceptBacklog());
 
     // Test other keystore/truststore types
-    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
-      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
+    json.remove("keyStoreOptions");
+    json.remove("trustStoreOptions");
+    json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
+      .put("pfxCaOptions", new JsonObject().put("password", tsPassword));
     options = new NetServerOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
-    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
-    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
-      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
+    json.remove("pfxKeyCertOptions");
+    json.remove("pfxCaOptions");
+    json.put("pemKeyCertOptions", new JsonObject())
+      .put("pemCaOptions", new JsonObject());
     options = new NetServerOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
-    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
-
-
-    // Invalid types
-    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new NetServerOptions(json));
-
-    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new NetServerOptions(json));
+    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
   @Test
@@ -1105,10 +1098,10 @@ public class NetTest extends VertxTestBase {
       options.setSsl(true);
     }
     if (serverTrust) {
-      options.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
+      options.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
     }
     if (serverCert) {
-      options.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
+      options.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
     }
     if (requireClientAuth) {
       options.setClientAuthRequired(true);
@@ -1141,10 +1134,10 @@ public class NetTest extends VertxTestBase {
           clientOptions.setTrustAll(true);
         }
         if (clientTrust) {
-          clientOptions.setTrustStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
+          clientOptions.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
         }
         if (clientCert) {
-          clientOptions.setKeyStoreOptions(new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
+          clientOptions.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
         }
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);

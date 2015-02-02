@@ -17,12 +17,12 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.JKSOptions;
+import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.PKCS12Options;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.CaOptions;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -49,9 +49,9 @@ public abstract class KeyStoreHelper {
   // Dummy password for encrypting pem based stores in memory
   private static final String DUMMY_PASSWORD = "dummy";
 
-  public static KeyStoreHelper create(VertxInternal vertx, KeyStoreOptions options) {
-    if (options instanceof JKSOptions) {
-      JKSOptions jks = (JKSOptions) options;
+  public static KeyStoreHelper create(VertxInternal vertx, KeyCertOptions options) {
+    if (options instanceof JksOptions) {
+      JksOptions jks = (JksOptions) options;
       Supplier<Buffer> value;
       if (jks.getPath() != null) {
         value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(jks.getPath()).getAbsolutePath());
@@ -61,8 +61,8 @@ public abstract class KeyStoreHelper {
         return null;
       }
       return new JKSOrPKCS12("JKS", jks.getPassword(), value);
-    } else if (options instanceof PKCS12Options) {
-      PKCS12Options pkcs12 = (PKCS12Options) options;
+    } else if (options instanceof PfxOptions) {
+      PfxOptions pkcs12 = (PfxOptions) options;
       Supplier<Buffer> value;
       if (pkcs12.getPath() != null) {
         value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(pkcs12.getPath()).getAbsolutePath());
@@ -72,8 +72,8 @@ public abstract class KeyStoreHelper {
         return null;
       }
       return new JKSOrPKCS12("PKCS12", pkcs12.getPassword(), value);
-    } else if (options instanceof KeyCertOptions) {
-      KeyCertOptions keyCert = (KeyCertOptions) options;
+    } else if (options instanceof PemKeyCertOptions) {
+      PemKeyCertOptions keyCert = (PemKeyCertOptions) options;
       Supplier<Buffer> key = () -> {
         if (keyCert.getKeyPath() != null) {
           return vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyCert.getKeyPath()).getAbsolutePath());
@@ -98,11 +98,11 @@ public abstract class KeyStoreHelper {
     }
   }
 
-  public static KeyStoreHelper create(VertxInternal vertx, TrustStoreOptions options) {
-    if (options instanceof KeyStoreOptions) {
-      return create(vertx, (KeyStoreOptions) options);
-    } else if (options instanceof CaOptions) {
-      CaOptions caOptions = (CaOptions) options;
+  public static KeyStoreHelper create(VertxInternal vertx, CaOptions options) {
+    if (options instanceof KeyCertOptions) {
+      return create(vertx, (KeyCertOptions) options);
+    } else if (options instanceof PemCaOptions) {
+      PemCaOptions caOptions = (PemCaOptions) options;
       Stream<Buffer> certValues = caOptions.
           getCertPaths().
           stream().

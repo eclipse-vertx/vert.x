@@ -17,7 +17,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -153,15 +152,35 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public NetServerOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public NetServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public NetServerOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (NetServerOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public NetServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (NetServerOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public NetServerOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public NetServerOptions setPfxCaOptions(PfxOptions options) {
+    return (NetServerOptions) super.setPfxCaOptions(options);
+  }
+
+  @Override
+  public NetServerOptions setPemCaOptions(PemCaOptions options) {
+    return (NetServerOptions) super.setPemCaOptions(options);
   }
 
   @Override

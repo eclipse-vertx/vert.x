@@ -23,12 +23,13 @@ import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.JKSOptions;
+import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.PKCS12Options;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.CaOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
@@ -183,61 +184,81 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected TrustStoreOptions getClientTrustOptions(TS trust) {
+  protected void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
+    if (options instanceof JksOptions) {
+      sslOptions.setKeyStoreOptions((JksOptions) options);
+    } else if (options instanceof PfxOptions) {
+      sslOptions.setPfxKeyCertOptions((PfxOptions) options);
+    } else {
+      sslOptions.setPemKeyCertOptions((PemKeyCertOptions) options);
+    }
+  }
+
+  protected void setOptions(TCPSSLOptions sslOptions, CaOptions options) {
+    if (options instanceof JksOptions) {
+      sslOptions.setTrustStoreOptions((JksOptions) options);
+    } else if (options instanceof PfxOptions) {
+      sslOptions.setPfxCaOptions((PfxOptions) options);
+    } else {
+      sslOptions.setPemCaOptions((PemCaOptions) options);
+    }
+  }
+
+  protected CaOptions getClientTrustOptions(TS trust) {
     switch (trust) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble");
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/client-truststore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/client-truststore.p12")).setPassword("wibble");
       case PEM:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/server-cert.pem"));
+        return new PemCaOptions().addCertPath(findFileOnClasspath("tls/server-cert.pem"));
       case PEM_CA:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
+        return new PemCaOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
       default:
         return null;
     }
   }
 
-  protected KeyStoreOptions getClientCertOptions(KS cert) {
+  protected KeyCertOptions getClientCertOptions(KS cert) {
     switch (cert) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble");
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/client-keystore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/client-keystore.p12")).setPassword("wibble");
       case PEM:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert.pem"));
       case PEM_CA:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert-ca.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert-ca.pem"));
       default:
         return null;
     }
   }
 
-  protected TrustStoreOptions getServerTrustOptions(TS trust) {
+  protected CaOptions getServerTrustOptions(TS trust) {
     switch (trust) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble");
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/server-truststore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/server-truststore.p12")).setPassword("wibble");
       case PEM:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/client-cert.pem"));
+        return new PemCaOptions().addCertPath(findFileOnClasspath("tls/client-cert.pem"));
       case PEM_CA:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
+        return new PemCaOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
       default:
         return null;
     }
   }
 
-  protected KeyStoreOptions getServerCertOptions(KS cert) {
+  protected KeyCertOptions getServerCertOptions(KS cert) {
     switch (cert) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/server-keystore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/server-keystore.p12")).setPassword("wibble");
       case PEM:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert.pem"));
       case PEM_CA:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert-ca.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert-ca.pem"));
       default:
         return null;
     }

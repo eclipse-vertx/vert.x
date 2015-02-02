@@ -19,7 +19,6 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JKSOptions;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on Java Keystore files.
@@ -46,7 +45,7 @@ import io.vertx.core.net.JKSOptions;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable {
+public class JksOptions implements KeyCertOptions, CaOptions, Cloneable {
 
   private String password;
   private String path;
@@ -55,7 +54,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
   /**
    * Default constructor
    */
-  public JKSOptions() {
+  public JksOptions() {
     super();
   }
 
@@ -64,7 +63,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
    *
    * @param other  the options to copy
    */
-  public JKSOptions(JKSOptions other) {
+  public JksOptions(JksOptions other) {
     super();
     this.password = other.getPassword();
     this.path = other.getPath();
@@ -76,7 +75,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
    *
    * @param json  the JSON
    */
-  public JKSOptions(JsonObject json) {
+  public JksOptions(JsonObject json) {
     super();
     this.password = json.getString("password");
     this.path = json.getString("path");
@@ -97,7 +96,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
    * @param password  the password
    * @return a reference to this, so the API can be used fluently
    */
-  public JKSOptions setPassword(String password) {
+  public JksOptions setPassword(String password) {
     this.password = password;
     return this;
   }
@@ -117,7 +116,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
    * @param path  the path
    * @return a reference to this, so the API can be used fluently
    */
-  public JKSOptions setPath(String path) {
+  public JksOptions setPath(String path) {
     this.path = path;
     return this;
   }
@@ -137,13 +136,13 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
    * @param value  the key store as a buffer
    * @return a reference to this, so the API can be used fluently
    */
-  public JKSOptions setValue(Buffer value) {
+  public JksOptions setValue(Buffer value) {
     this.value = value;
     return this;
   }
 
   @Override
-  public JKSOptions clone() {
-    return new JKSOptions(this);
+  public JksOptions clone() {
+    return new JksOptions(this);
   }
 }

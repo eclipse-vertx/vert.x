@@ -46,16 +46,16 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.JKSOptions;
+import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.NetworkOptions;
-import io.vertx.core.net.PKCS12Options;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.CaOptions;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
 import org.junit.Rule;
@@ -168,15 +168,15 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getKeyCertOptions());
+    JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getCaOptions());
+    JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(trustStoreOptions, options.getCaOptions());
 
     assertFalse(options.isTrustAll());
     assertEquals(options, options.setTrustAll(true));
@@ -280,15 +280,15 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getKeyCertOptions());
+    JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getCaOptions());
+    JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(trustStoreOptions, options.getCaOptions());
 
     assertEquals(1024, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
@@ -343,10 +343,10 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -394,10 +394,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
     assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, copy.getConnectTimeout());
@@ -446,12 +446,12 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -500,12 +500,12 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
-    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
-    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
-    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertNotSame(keyStoreOptions, options.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
+    assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, options.getConnectTimeout());
@@ -522,14 +522,14 @@ public class HttpTest extends HttpTestBase {
     json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
       .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
     options = new HttpClientOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
-    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
     json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
       .put("trustStoreOptions", new JsonObject().put("type", "ca"));
     options = new HttpClientOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
-    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
+    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
 
     // Invalid types
     json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
@@ -552,10 +552,10 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -599,10 +599,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
     assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -650,12 +650,12 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -702,12 +702,12 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
-    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
-    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
-    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertNotSame(keyStoreOptions, options.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
+    assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getCaOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, options.getCrlPaths().size());
@@ -723,14 +723,14 @@ public class HttpTest extends HttpTestBase {
     json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
       .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
     options = new HttpServerOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
-    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
     json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
       .put("trustStoreOptions", new JsonObject().put("type", "ca"));
     options = new HttpServerOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
-    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
+    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
 
     // Invalid types
     json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
@@ -2705,16 +2705,16 @@ public class HttpTest extends HttpTestBase {
     if (clientUsesCrl) {
       options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
     }
-    options.setTrustStoreOptions(getClientTrustOptions(clientTrust));
-    options.setKeyStoreOptions(getClientCertOptions(clientCert));
+    setOptions(options, getClientTrustOptions(clientTrust));
+    setOptions(options, getClientCertOptions(clientCert));
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
-    serverOptions.setTrustStoreOptions(getServerTrustOptions(serverTrust));
-    serverOptions.setKeyStoreOptions(getServerCertOptions(serverCert));
+    setOptions(serverOptions, getServerTrustOptions(serverTrust));
+    setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
       serverOptions.setClientAuthRequired(true);
     }
@@ -2752,52 +2752,52 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testJKSInvalidPath() {
-    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: /invalid.jks");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KS.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: /invalid.jks");
   }
 
   @Test
   public void testJKSMissingPassword() {
-    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPassword(null), "Password must not be null");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KS.JKS)).setPassword(null), "Password must not be null");
   }
 
   @Test
   public void testJKSInvalidPassword() {
-    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KS.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect");
   }
 
   @Test
   public void testPKCS12InvalidPath() {
-    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: /invalid.p12");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KS.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: /invalid.p12");
   }
 
   @Test
   public void testPKCS12MissingPassword() {
-    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPassword(null), "Get Key failed: null");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KS.PKCS12)).setPassword(null), "Get Key failed: null");
   }
 
   @Test
   public void testPKCS12InvalidPassword() {
-    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KS.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded");
   }
 
   @Test
   public void testKeyCertMissingKeyPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(null), "Missing private key");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(null), "Missing private key");
   }
 
   @Test
   public void testKeyCertInvalidKeyPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
   public void testKeyCertMissingCertPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath(null), "Missing X.509 certificate");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath(null), "Missing X.509 certificate");
   }
 
   @Test
   public void testKeyCertInvalidCertPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
@@ -2818,13 +2818,13 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(file.toString()), expectedMessage);
+      testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(file.toString()), expectedMessage);
     }
   }
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(new CaOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidTrustStore(new PemCaOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
@@ -2845,21 +2845,21 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidTrustStore(new CaOptions().addCertPath(file.toString()), expectedMessage);
+      testInvalidTrustStore(new PemCaOptions().addCertPath(file.toString()), expectedMessage);
     }
   }
 
-  private void testInvalidKeyStore(KeyStoreOptions ksOptions, String expectedMessage) {
+  private void testInvalidKeyStore(KeyCertOptions options, String expectedMessage) {
     HttpServerOptions serverOptions = new HttpServerOptions();
-    serverOptions.setKeyStoreOptions(ksOptions);
+    setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
     testStore(serverOptions, expectedMessage);
   }
 
-  private void testInvalidTrustStore(TrustStoreOptions tsOptions, String expectedMessage) {
+  private void testInvalidTrustStore(CaOptions options, String expectedMessage) {
     HttpServerOptions serverOptions = new HttpServerOptions();
-    serverOptions.setTrustStoreOptions(tsOptions);
+    setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
     testStore(serverOptions, expectedMessage);
@@ -2881,7 +2881,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testCrlInvalidPath() throws Exception {
     HttpClientOptions clientOptions = new HttpClientOptions();
-    clientOptions.setTrustStoreOptions(getClientTrustOptions(TS.PEM_CA));
+    setOptions(clientOptions, getClientTrustOptions(TS.PEM_CA));
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);

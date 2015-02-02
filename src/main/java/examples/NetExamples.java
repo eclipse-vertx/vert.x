@@ -187,7 +187,7 @@ public class NetExamples {
 
   public void example17(Vertx vertx) {
     NetServerOptions options = new NetServerOptions().setSsl(true).setKeyStoreOptions(
-        new JKSOptions().
+        new JksOptions().
             setPath("/path/to/your/keystore.jks").
             setPassword("password-of-your-keystore")
     );
@@ -196,7 +196,7 @@ public class NetExamples {
 
   public void example18(Vertx vertx) {
     Buffer myKeyStoreAsABuffer = readKeyStore();
-    JKSOptions jksOptions = new JKSOptions().
+    JksOptions jksOptions = new JksOptions().
         setValue(myKeyStoreAsABuffer).
         setPassword("password-of-your-keystore");
     NetServerOptions options = new NetServerOptions().

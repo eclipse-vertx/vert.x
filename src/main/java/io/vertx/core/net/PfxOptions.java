@@ -31,21 +31,21 @@ import io.vertx.core.json.JsonObject;
  * <p>
  * <pre>
  * HttpServerOptions options = new HttpServerOptions();
- * options.setKeyStore(new PKCS12Options().setPath("/mykeystore.p12").setPassword("foo"));
+ * options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
  * </pre>
  *
  * Or directly provided as a buffer:<p>
  *
  * <pre>
  * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
- * options.setKeyStore(new PKCS12Options().setValue(store).setPassword("foo"));
+ * options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Cloneable {
+public class PfxOptions implements KeyCertOptions, CaOptions, Cloneable {
 
   private String password;
   private String path;
@@ -54,7 +54,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
   /**
    * Default constructor
    */
-  public PKCS12Options() {
+  public PfxOptions() {
     super();
   }
 
@@ -63,7 +63,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
    *
    * @param other  the options to copy
    */
-  public PKCS12Options(PKCS12Options other) {
+  public PfxOptions(PfxOptions other) {
     super();
     this.password = other.getPassword();
     this.path = other.getPath();
@@ -75,7 +75,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
    *
    * @param json  the JSON
    */
-  public PKCS12Options(JsonObject json) {
+  public PfxOptions(JsonObject json) {
     super();
     this.password = json.getString("password");
     this.path = json.getString("path");
@@ -98,7 +98,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
    * @param password  the password
    * @return a reference to this, so the API can be used fluently
    */
-  public PKCS12Options setPassword(String password) {
+  public PfxOptions setPassword(String password) {
     this.password = password;
     return this;
   }
@@ -118,7 +118,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
    * @param path  the path
    * @return a reference to this, so the API can be used fluently
    */
-  public PKCS12Options setPath(String path) {
+  public PfxOptions setPath(String path) {
     this.path = path;
     return this;
   }
@@ -138,13 +138,13 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
    * @param value  the store as a buffer
    * @return a reference to this, so the API can be used fluently
    */
-  public PKCS12Options setValue(Buffer value) {
+  public PfxOptions setValue(Buffer value) {
     this.value = value;
     return this;
   }
 
   @Override
-  public PKCS12Options clone() {
-    return new PKCS12Options(this);
+  public PfxOptions clone() {
+    return new PfxOptions(this);
   }
 }

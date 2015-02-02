@@ -19,8 +19,12 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.CaOptions;
+import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -189,15 +193,35 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public HttpClientOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public HttpClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public HttpClientOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (HttpClientOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (HttpClientOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpClientOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public HttpClientOptions setPfxCaOptions(PfxOptions options) {
+    return (HttpClientOptions) super.setPfxCaOptions(options);
+  }
+
+  @Override
+  public HttpClientOptions setPemCaOptions(PemCaOptions options) {
+    return (HttpClientOptions) super.setPemCaOptions(options);
   }
 
   @Override

@@ -132,15 +132,35 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public NetClientOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public NetClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public NetClientOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (NetClientOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (NetClientOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public NetClientOptions setPemCaOptions(PemCaOptions options) {
+    return (NetClientOptions) super.setPemCaOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setPfxCaOptions(PfxOptions options) {
+    return (NetClientOptions) super.setPfxCaOptions(options);
   }
 
   @Override

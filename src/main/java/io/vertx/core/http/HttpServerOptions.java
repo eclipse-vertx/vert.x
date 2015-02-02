@@ -18,9 +18,12 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.CaOptions;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -145,15 +148,35 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public HttpServerOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public HttpServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public HttpServerOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (HttpServerOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (HttpServerOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpServerOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public HttpServerOptions setPemCaOptions(PemCaOptions options) {
+    return (HttpServerOptions) super.setPemCaOptions(options);
+  }
+
+  @Override
+  public HttpServerOptions setPfxCaOptions(PfxOptions options) {
+    return (HttpServerOptions) super.setPfxCaOptions(options);
   }
 
   @Override

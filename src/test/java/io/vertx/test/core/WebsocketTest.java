@@ -324,16 +324,16 @@ public class WebsocketTest extends VertxTestBase {
     if (clientUsesCrl) {
       options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
     }
-    options.setTrustStoreOptions(getClientTrustOptions(clientTrust));
-    options.setKeyStoreOptions(getClientCertOptions(clientCert));
+    setOptions(options, getClientTrustOptions(clientTrust));
+    setOptions(options, getClientCertOptions(clientCert));
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
-    serverOptions.setTrustStoreOptions(getServerTrustOptions(serverTrust));
-    serverOptions.setKeyStoreOptions(getServerCertOptions(serverCert));
+    setOptions(serverOptions, getServerTrustOptions(serverTrust));
+    setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
       serverOptions.setClientAuthRequired(true);
     }
