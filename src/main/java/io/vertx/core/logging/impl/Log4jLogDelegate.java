@@ -19,6 +19,8 @@ package io.vertx.core.logging.impl;
 import io.vertx.core.logging.Logger;
 import org.apache.log4j.Level;
 
+import static org.slf4j.spi.LocationAwareLogger.DEBUG_INT;
+
 /**
  * A {@link LogDelegate} which delegates to Apache Log4j
  *
@@ -57,47 +59,101 @@ public class Log4jLogDelegate implements LogDelegate {
     log(Level.ERROR, message);
   }
 
-  public void error(final Object message, final Throwable t) {
+    @Override
+    public void error(Object message, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void error(final Object message, final Throwable t) {
     log(Level.ERROR, message, t);
   }
 
-  public void warn(final Object message) {
+    @Override
+    public void error(Object message, Throwable t, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void warn(final Object message) {
     log(Level.WARN, message);
   }
 
-  public void warn(final Object message, final Throwable t) {
+    @Override
+    public void warn(Object message, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void warn(final Object message, final Throwable t) {
     log(Level.WARN, message, t);
   }
 
-  public void info(final Object message) {
+    @Override
+    public void warn(Object message, Throwable t, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void info(final Object message) {
     log(Level.INFO, message);
   }
 
-  public void info(final Object message, final Throwable t) {
+    @Override
+    public void info(Object message, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void info(final Object message, final Throwable t) {
     log(Level.INFO, message, t);
   }
 
-  public void debug(final Object message) {
+    @Override
+    public void info(Object message, Throwable t, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void debug(final Object message) {
     log(Level.DEBUG, message);
   }
 
-  public void debug(final Object message, final Throwable t) {
+    @Override
+    public void debug(Object message, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void debug(final Object message, final Throwable t) {
     log(Level.DEBUG, message, t);
   }
 
-  public void trace(final Object message) {
+    @Override
+    public void debug(Object message, Throwable t, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void trace(final Object message) {
     log(Level.TRACE, message);
   }
 
-  public void trace(final Object message, final Throwable t) {
+    @Override
+    public void trace(Object message, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    public void trace(final Object message, final Throwable t) {
     log(Level.TRACE, message, t);
   }
 
-  private void log(Level level, Object message) {
+    @Override
+    public void trace(Object message, Throwable t, Object... params) {
+        throwUnsupportedOperationException();
+    }
+
+    private void log(Level level, Object message) {
     log(level, message, null);
   }
 
   private void log(Level level, Object message, Throwable t) {
     logger.log(FQCN, level, message, t);
   }
+
+    private void throwUnsupportedOperationException() {
+        throw new UnsupportedOperationException("Log4j version used in Vertx doesn't support parameterized logging.");
+    }
 }
