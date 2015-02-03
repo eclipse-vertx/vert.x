@@ -81,10 +81,17 @@ public class ComplexHATest extends VertxTestBase {
   protected void deployRandomVerticles(Runnable runner) {
     int toDeploy = 0;
     AtomicInteger deployCount = new AtomicInteger();
-    for (int pos: aliveNodes) {
+    List<Integer> numbersToDeploy = new ArrayList<>();
+    for (int i = 0; i < aliveNodes.size(); i++) {
       int numToDeploy = random.nextInt(maxVerticlesPerNode + 1);
+      numbersToDeploy.add(numToDeploy);
+      toDeploy += numToDeploy;
+    }
+    int index = 0;
+    for (int pos: aliveNodes) {
       Vertx v = vertices[pos];
-      int ii = pos;
+      int numToDeploy = numbersToDeploy.get(index);
+      index++;
       for (int j = 0; j < numToDeploy; j++) {
         JsonObject config = new JsonObject();
         config.put("foo", TestUtils.randomAlphaString(100));
