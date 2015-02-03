@@ -359,7 +359,7 @@
  *
  * Keep in mind that pem configuration, the private key is not crypted.
  *
- * ==== Specifying certificate authority for the server
+ * ==== Specifying trust for the server
  *
  * SSL/TLS servers can use a certificate authority in order to verify the identity of the clients.
  *
