@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -187,6 +188,16 @@ public class NetServerOptions extends TCPSSLOptions {
   public NetServerOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (NetServerOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public NetServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (NetServerOptions) super.addCrlValue(crlValue);
   }
 
   /**

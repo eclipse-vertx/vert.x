@@ -17,12 +17,14 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -182,6 +184,16 @@ public class HttpServerOptions extends NetServerOptions {
   public HttpServerOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (HttpServerOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public HttpServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (HttpServerOptions) super.addCrlValue(crlValue);
   }
 
   @Override

@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -167,6 +168,16 @@ public class NetClientOptions extends ClientOptionsBase {
   public NetClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (NetClientOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (NetClientOptions) super.addCrlValue(crlValue);
   }
 
   @Override

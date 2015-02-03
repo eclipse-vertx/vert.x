@@ -299,7 +299,7 @@
  *
  * ==== Enabling SSL/TLS on the server
  *
- * SSL/TLS is enabled with  {@link io.vertx.core.net.NetServerOptions#setSsl(boolean)}.
+ * SSL/TLS is enabled with  {@link io.vertx.core.net.NetServerOptions#setSsl(boolean) ssl}.
  *
  * By default it is disabled.
  *
@@ -410,6 +410,148 @@
  * ----
  * {@link examples.NetExamples#example28}
  * ----
+ *
+ * ==== Enabling SSL/TLS on the client
+ *
+ * Net Clients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
+ *
+ * To enable SSL on a NetClient the function setSSL(true) is called.
+ *
+ * ==== Client trust configuration
+ *
+ * If the {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustALl} is set to true on the client, then the client will
+ * trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't
+ * be sure who you are connecting to. Use this with caution. Default value is false.
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example29}
+ * ----
+ *
+ * If {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is not set then a client trust store must be
+ * configured and should contain the certificates of the servers that the client trusts.
+ *
+ * Likewise server configuration, the client trust can be configured in several ways:
+ *
+ * The first method is by specifying the location of a Java trust-store which contains the certificate authority.
+ *
+ * It is just a standard Java key store, the same as the key stores on the server side. The client
+ * trust store location is set by using the function {@link io.vertx.core.net.JksOptions#setPath path} on the
+ * {@link io.vertx.core.net.JksOptions jks options}. If a server presents a certificate during connection which is not
+ * in the client trust store, the connection attempt will not succeed.
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example30}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example31}
+ * ----
+ *
+ * Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+ * extension can also be loaded in a similar fashion than JKS trust stores:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example32}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example33}
+ * ----
+ *
+ * Another way of providing server certificate authority using a list `.pem` files.
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example34}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example35}
+ * ----
+ *
+ * ==== Specifying key/certificate for the client
+ *
+ * If the server requires client authentication then the client must present its own certificate to the server when
+ * connecting. The client can be configured in several ways:
+ *
+ * The first method is by specifying the location of a Java key-store which contains the key and certificate.
+ * Again it's just a regular Java key store. The client keystore location is set by using the function
+ * {@link io.vertx.core.net.JksOptions#setPath(java.lang.String) path} on the
+ * {@link io.vertx.core.net.JksOptions jks options}.
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example36}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example37}
+ * ----
+ *
+ * Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+ * extension can also be loaded in a similar fashion than JKS key stores:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example38}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example39}
+ * ----
+ *
+ * Another way of providing server private key and certificate separately using `.pem` files.
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example40}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example41}
+ * ----
+ *
+ * Keep in mind that pem configuration, the private key is not crypted.
+ *
+ * ==== Revoking certificate authorities
+ *
+ * Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
+ * longer be trusted. The {@link io.vertx.core.net.TCPSSLOptions#addCrlPath(java.lang.String) crlPath} configures
+ * the crl list to use:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example42}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,java]
+ * ----
+ * {@link examples.NetExamples#example43}
+ * ----
+ *
  */
 @Document(fileName = "net.adoc")
 package io.vertx.core.net;

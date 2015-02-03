@@ -17,12 +17,14 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -226,6 +228,16 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (HttpClientOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public HttpClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (HttpClientOptions) super.addCrlValue(crlValue);
   }
 
   @Override
