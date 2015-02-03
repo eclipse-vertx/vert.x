@@ -279,7 +279,7 @@ public class NetExamples {
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
         setClientAuthRequired(true).
-        setPfxCaOptions(
+        setPfxTrustOptions(
             new PfxOptions().
                 setPath("/path/to/your/truststore.pfx").
                 setPassword("password-of-your-truststore")
@@ -292,7 +292,7 @@ public class NetExamples {
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
         setClientAuthRequired(true).
-        setPfxCaOptions(
+        setPfxTrustOptions(
             new PfxOptions().
                 setValue(myTrustStoreAsABuffer).
                 setPassword("password-of-your-truststore")
@@ -304,8 +304,8 @@ public class NetExamples {
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
         setClientAuthRequired(true).
-        setPemCaOptions(
-            new PemCaOptions().
+        setPemTrustOptions(
+            new PemTrustOptions().
                 addCertPath("/path/to/your/server-ca.pem")
         );
     NetServer server = vertx.createNetServer(options);
@@ -316,8 +316,8 @@ public class NetExamples {
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
         setClientAuthRequired(true).
-        setPemCaOptions(
-            new PemCaOptions().
+        setPemTrustOptions(
+            new PemTrustOptions().
                 addCertValue(myCaAsABuffer)
         );
     NetServer server = vertx.createNetServer(options);

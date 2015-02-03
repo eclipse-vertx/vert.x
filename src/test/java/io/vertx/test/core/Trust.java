@@ -18,7 +18,7 @@ package io.vertx.test.core;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-enum TS {
+enum Trust {
   NONE,
   JKS,
   PKCS12,

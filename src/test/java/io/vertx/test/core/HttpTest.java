@@ -46,7 +46,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -55,7 +55,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.CaOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
 import org.junit.Rule;
@@ -173,10 +173,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getCaOptions());
+    assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getCaOptions());
+    assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertFalse(options.isTrustAll());
     assertEquals(options, options.setTrustAll(true));
@@ -285,10 +285,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getCaOptions());
+    assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getCaOptions());
+    assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertEquals(1024, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
@@ -396,8 +396,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, copy.getConnectTimeout());
@@ -503,9 +503,9 @@ public class HttpTest extends HttpTestBase {
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
     assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
-    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getTrustOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getTrustOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, options.getConnectTimeout());
@@ -519,23 +519,17 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tryUseCompression, options.isTryUseCompression());
 
     // Test other keystore/truststore types
-    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
-      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
+    json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
+      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpClientOptions(json);
-    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
-    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
-      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
+    json.put("pemKeyCertOptions", new JsonObject())
+      .put("pemTrustOptions", new JsonObject());
     options = new HttpClientOptions(json);
-    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
-
-    // Invalid types
-    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new HttpClientOptions(json));
-    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new HttpClientOptions(json));
   }
 
   @Test
@@ -601,8 +595,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -705,9 +699,9 @@ public class HttpTest extends HttpTestBase {
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
     assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
-    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getTrustOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getTrustOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, options.getCrlPaths().size());
@@ -720,23 +714,17 @@ public class HttpTest extends HttpTestBase {
     assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
 
     // Test other keystore/truststore types
-    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
-      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
+    json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
+      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpServerOptions(json);
-    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
-    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
-      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
+    json.put("pemKeyCertOptions", new JsonObject())
+      .put("pemTrustOptions", new JsonObject());
     options = new HttpServerOptions(json);
-    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
-
-    // Invalid types
-    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new HttpServerOptions(json));
-    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new HttpServerOptions(json));
   }
 
   @Test
@@ -2561,137 +2549,137 @@ public class HttpTest extends HttpTestBase {
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, true, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPKCS12() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.PKCS12, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.PKCS12, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPEM() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.PEM, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.PEM, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts via a CA (not trust all)
   public void testTLSClientTrustServerCertPEM_CA() throws Exception {
-    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPKCS12ServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PKCS12, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PKCS12, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPEMServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PEM, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PEM, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, false, false, false);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServerPEM() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.PEM, TS.NONE, false, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.PEM, Trust.NONE, false, false, false, false, false);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, false, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.JKS, false, false, false, false, true);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequiredPEM() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.PEM, TS.JKS, false, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.PEM, Trust.JKS, false, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequiredPKCS12() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PKCS12, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.PKCS12, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequiredPEM() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PEM, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.PEM, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertPKCS12Required() throws Exception {
-    testTLS(KS.PKCS12, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.PKCS12, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertPEMRequired() throws Exception {
-    testTLS(KS.PEM, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.PEM, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert by CA and it is required
   public void testTLSClientCertPEM_CARequired() throws Exception {
-    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, false, false, false, true);
+    testTLS(KeyCert.PEM_CA, Trust.JKS, KeyCert.JKS, Trust.PEM_CA, true, false, false, false, true);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, false);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.NONE, true, false, false, false, false);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.NONE, true, false, false, false, false);
   }
 
   @Test
   // Server specifies cert that the client does not trust via a revoked certificate of the CA
   public void testTLSClientRevokedServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, true, false);
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, true, false);
   }
 
   @Test
   //Client specifies cert that the server does not trust via a revoked certificate of the CA
   public void testTLSRevokedClientCertServer() throws Exception {
-    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, true, false, false, false);
+    testTLS(KeyCert.PEM_CA, Trust.JKS, KeyCert.JKS, Trust.PEM_CA, true, true, false, false, false);
   }
 
   @Test
   // Specify some cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true, ENABLED_CIPHER_SUITES);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, true, false, true, ENABLED_CIPHER_SUITES);
   }
 
-  private void testTLS(KS clientCert, TS clientTrust,
-                       KS serverCert, TS serverTrust,
+  private void testTLS(KeyCert clientCert, Trust clientTrust,
+                       KeyCert serverCert, Trust serverTrust,
                        boolean requireClientAuth, boolean serverUsesCrl, boolean clientTrustAll,
                        boolean clientUsesCrl, boolean shouldPass,
                        String... enabledCipherSuites) throws Exception {
@@ -2752,52 +2740,52 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testJKSInvalidPath() {
-    testInvalidKeyStore(((JksOptions) getServerCertOptions(KS.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: /invalid.jks");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: /invalid.jks");
   }
 
   @Test
   public void testJKSMissingPassword() {
-    testInvalidKeyStore(((JksOptions) getServerCertOptions(KS.JKS)).setPassword(null), "Password must not be null");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword(null), "Password must not be null");
   }
 
   @Test
   public void testJKSInvalidPassword() {
-    testInvalidKeyStore(((JksOptions) getServerCertOptions(KS.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect");
   }
 
   @Test
   public void testPKCS12InvalidPath() {
-    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KS.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: /invalid.p12");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: /invalid.p12");
   }
 
   @Test
   public void testPKCS12MissingPassword() {
-    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KS.PKCS12)).setPassword(null), "Get Key failed: null");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword(null), "Get Key failed: null");
   }
 
   @Test
   public void testPKCS12InvalidPassword() {
-    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KS.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded");
   }
 
   @Test
   public void testKeyCertMissingKeyPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(null), "Missing private key");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(null), "Missing private key");
   }
 
   @Test
   public void testKeyCertInvalidKeyPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
   public void testKeyCertMissingCertPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath(null), "Missing X.509 certificate");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath(null), "Missing X.509 certificate");
   }
 
   @Test
   public void testKeyCertInvalidCertPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
@@ -2818,13 +2806,13 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(file.toString()), expectedMessage);
+      testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(file.toString()), expectedMessage);
     }
   }
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(new PemCaOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidTrustStore(new PemTrustOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
   }
 
   @Test
@@ -2845,7 +2833,7 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidTrustStore(new PemCaOptions().addCertPath(file.toString()), expectedMessage);
+      testInvalidTrustStore(new PemTrustOptions().addCertPath(file.toString()), expectedMessage);
     }
   }
 
@@ -2857,7 +2845,7 @@ public class HttpTest extends HttpTestBase {
     testStore(serverOptions, expectedMessage);
   }
 
-  private void testInvalidTrustStore(CaOptions options, String expectedMessage) {
+  private void testInvalidTrustStore(TrustOptions options, String expectedMessage) {
     HttpServerOptions serverOptions = new HttpServerOptions();
     setOptions(serverOptions, options);
     serverOptions.setSsl(true);
@@ -2881,7 +2869,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testCrlInvalidPath() throws Exception {
     HttpClientOptions clientOptions = new HttpClientOptions();
-    setOptions(clientOptions, getClientTrustOptions(TS.PEM_CA));
+    setOptions(clientOptions, getClientTrustOptions(Trust.PEM_CA));
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);

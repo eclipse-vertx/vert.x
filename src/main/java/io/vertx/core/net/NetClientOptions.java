@@ -154,13 +154,13 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setPemCaOptions(PemCaOptions options) {
-    return (NetClientOptions) super.setPemCaOptions(options);
+  public NetClientOptions setPemTrustOptions(PemTrustOptions options) {
+    return (NetClientOptions) super.setPemTrustOptions(options);
   }
 
   @Override
-  public NetClientOptions setPfxCaOptions(PfxOptions options) {
-    return (NetClientOptions) super.setPfxCaOptions(options);
+  public NetClientOptions setPfxTrustOptions(PfxOptions options) {
+    return (NetClientOptions) super.setPfxTrustOptions(options);
   }
 
   @Override

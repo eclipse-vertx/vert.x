@@ -20,11 +20,9 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -215,13 +213,13 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setPfxCaOptions(PfxOptions options) {
-    return (HttpClientOptions) super.setPfxCaOptions(options);
+  public HttpClientOptions setPfxTrustOptions(PfxOptions options) {
+    return (HttpClientOptions) super.setPfxTrustOptions(options);
   }
 
   @Override
-  public HttpClientOptions setPemCaOptions(PemCaOptions options) {
-    return (HttpClientOptions) super.setPemCaOptions(options);
+  public HttpClientOptions setPemTrustOptions(PemTrustOptions options) {
+    return (HttpClientOptions) super.setPemTrustOptions(options);
   }
 
   @Override

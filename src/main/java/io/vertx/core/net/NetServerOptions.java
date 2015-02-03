@@ -174,13 +174,13 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setPfxCaOptions(PfxOptions options) {
-    return (NetServerOptions) super.setPfxCaOptions(options);
+  public NetServerOptions setPfxTrustOptions(PfxOptions options) {
+    return (NetServerOptions) super.setPfxTrustOptions(options);
   }
 
   @Override
-  public NetServerOptions setPemCaOptions(PemCaOptions options) {
-    return (NetServerOptions) super.setPemCaOptions(options);
+  public NetServerOptions setPemTrustOptions(PemTrustOptions options) {
+    return (NetServerOptions) super.setPemTrustOptions(options);
   }
 
   @Override

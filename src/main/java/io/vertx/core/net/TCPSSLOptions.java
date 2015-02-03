@@ -71,7 +71,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private int idleTimeout;
   private boolean ssl;
   private KeyCertOptions keyCertOptions;
-  private CaOptions caOptions;
+  private TrustOptions trustOptions;
   private Set<String> enabledCipherSuites = new HashSet<>();
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
@@ -105,7 +105,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.idleTimeout = other.getIdleTimeout();
     this.ssl = other.isSsl();
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
-    this.caOptions = other.getCaOptions() != null ? other.getCaOptions().clone() : null;
+    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? null : new HashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
@@ -136,17 +136,17 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (keyCertJson != null) {
       keyCertOptions = new PemKeyCertOptions(keyCertJson);
     }
-    JsonObject caOptions = json.getJsonObject("trustStoreOptions");
-    if (caOptions != null) {
-      this.caOptions = new JksOptions(caOptions);
+    JsonObject trustOptions = json.getJsonObject("trustStoreOptions");
+    if (trustOptions != null) {
+      this.trustOptions = new JksOptions(trustOptions);
     }
-    caOptions = json.getJsonObject("pfxCaOptions");
-    if (caOptions != null) {
-      this.caOptions = new PfxOptions(caOptions);
+    trustOptions = json.getJsonObject("pfxTrustOptions");
+    if (trustOptions != null) {
+      this.trustOptions = new PfxOptions(trustOptions);
     }
-    caOptions = json.getJsonObject("pemCaOptions");
-    if (caOptions != null) {
-      this.caOptions = new PemCaOptions(caOptions);
+    trustOptions = json.getJsonObject("pemTrustOptions");
+    if (trustOptions != null) {
+      this.trustOptions = new PemTrustOptions(trustOptions);
     }
     JsonArray arr = json.getJsonArray("enabledCipherSuites");
     this.enabledCipherSuites = arr == null ? null : new HashSet<>(arr.getList());
@@ -308,39 +308,39 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return the certificate authority options
+   * @return the trust options
    */
-  public CaOptions getCaOptions() {
-    return caOptions;
+  public TrustOptions getTrustOptions() {
+    return trustOptions;
   }
 
   /**
-   * Set the certificate authority options in jks format, aka Java trustore
+   * Set the trust options in jks format, aka Java trustore
    * @param options the options in jks format
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
-    this.caOptions = options;
+    this.trustOptions = options;
     return this;
   }
 
   /**
-   * Set the certificate authority options in pfx format
+   * Set the trust options in pfx format
    * @param options the options in pfx format
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setPfxCaOptions(PfxOptions options) {
-    this.caOptions = options;
+  public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
+    this.trustOptions = options;
     return this;
   }
 
   /**
-   * Set the certificate authority options in pfx format
+   * Set the trust options in pem format
    * @param options the options in pem format
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setPemCaOptions(PemCaOptions options) {
-    this.caOptions = options;
+  public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
+    this.trustOptions = options;
     return this;
   }
 
@@ -424,7 +424,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (enabledCipherSuites != null ? !enabledCipherSuites.equals(that.enabledCipherSuites) : that.enabledCipherSuites != null)
       return false;
     if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null) return false;
-    if (caOptions != null ? !caOptions.equals(that.caOptions) : that.caOptions != null) return false;
+    if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
 
     return true;
   }
@@ -439,7 +439,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + idleTimeout;
     result = 31 * result + (ssl ? 1 : 0);
     result = 31 * result + (keyCertOptions != null ? keyCertOptions.hashCode() : 0);
-    result = 31 * result + (caOptions != null ? caOptions.hashCode() : 0);
+    result = 31 * result + (trustOptions != null ? trustOptions.hashCode() : 0);
     result = 31 * result + (enabledCipherSuites != null ? enabledCipherSuites.hashCode() : 0);
     result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
     result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);

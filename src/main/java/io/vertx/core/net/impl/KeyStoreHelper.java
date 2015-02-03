@@ -17,12 +17,12 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.CaOptions;
+import io.vertx.core.net.TrustOptions;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -98,17 +98,17 @@ public abstract class KeyStoreHelper {
     }
   }
 
-  public static KeyStoreHelper create(VertxInternal vertx, CaOptions options) {
+  public static KeyStoreHelper create(VertxInternal vertx, TrustOptions options) {
     if (options instanceof KeyCertOptions) {
       return create(vertx, (KeyCertOptions) options);
-    } else if (options instanceof PemCaOptions) {
-      PemCaOptions caOptions = (PemCaOptions) options;
-      Stream<Buffer> certValues = caOptions.
+    } else if (options instanceof PemTrustOptions) {
+      PemTrustOptions trustOptions = (PemTrustOptions) options;
+      Stream<Buffer> certValues = trustOptions.
           getCertPaths().
           stream().
           map(path -> vertx.resolveFile(path).getAbsolutePath()).
           map(vertx.fileSystem()::readFileBlocking);
-      certValues = Stream.concat(certValues, caOptions.getCertValues().stream());
+      certValues = Stream.concat(certValues, trustOptions.getCertValues().stream());
       return new CA(certValues);
     } else {
       return null;

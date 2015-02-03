@@ -19,11 +19,10 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.CaOptions;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -170,13 +169,13 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setPemCaOptions(PemCaOptions options) {
-    return (HttpServerOptions) super.setPemCaOptions(options);
+  public HttpServerOptions setPemTrustOptions(PemTrustOptions options) {
+    return (HttpServerOptions) super.setPemTrustOptions(options);
   }
 
   @Override
-  public HttpServerOptions setPfxCaOptions(PfxOptions options) {
-    return (HttpServerOptions) super.setPfxCaOptions(options);
+  public HttpServerOptions setPfxTrustOptions(PfxOptions options) {
+    return (HttpServerOptions) super.setPfxTrustOptions(options);
   }
 
   @Override

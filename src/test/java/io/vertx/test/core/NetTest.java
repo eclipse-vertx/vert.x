@@ -33,7 +33,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.PemCaOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.NetClient;
@@ -168,10 +168,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getCaOptions());
+    assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getCaOptions());
+    assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertFalse(options.isTrustAll());
     assertEquals(options, options.setTrustAll(true));
@@ -263,10 +263,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getCaOptions());
+    assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getCaOptions());
+    assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertEquals(1024, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
@@ -353,8 +353,8 @@ public class NetTest extends VertxTestBase {
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, copy.getConnectTimeout());
@@ -448,9 +448,9 @@ public class NetTest extends VertxTestBase {
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
     assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
-    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getTrustOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getTrustOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, options.getConnectTimeout());
@@ -464,17 +464,17 @@ public class NetTest extends VertxTestBase {
     json.remove("keyStoreOptions");
     json.remove("trustStoreOptions");
     json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
-      .put("pfxCaOptions", new JsonObject().put("password", tsPassword));
+      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new NetClientOptions(json);
-    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
     json.remove("pfxKeyCertOptions");
-    json.remove("pfxCaOptions");
+    json.remove("pfxTrustOptions");
     json.put("pemKeyCertOptions", new JsonObject())
-      .put("pemCaOptions", new JsonObject());
+      .put("pemTrustOptions", new JsonObject());
     options = new NetClientOptions(json);
-    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
@@ -535,8 +535,8 @@ public class NetTest extends VertxTestBase {
     assertEquals(ssl, copy.isSsl());
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getCaOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -633,9 +633,9 @@ public class NetTest extends VertxTestBase {
     assertNotSame(keyStoreOptions, options.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
     assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getCaOptions());
-    assertEquals(tsPassword, ((JksOptions) options.getCaOptions()).getPassword());
-    assertEquals(tsPath, ((JksOptions) options.getCaOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getTrustOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getTrustOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, options.getCrlPaths().size());
@@ -648,17 +648,17 @@ public class NetTest extends VertxTestBase {
     json.remove("keyStoreOptions");
     json.remove("trustStoreOptions");
     json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
-      .put("pfxCaOptions", new JsonObject().put("password", tsPassword));
+      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new NetServerOptions(json);
-    assertTrue(options.getCaOptions() instanceof PfxOptions);
+    assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
     json.remove("pfxKeyCertOptions");
-    json.remove("pfxCaOptions");
+    json.remove("pfxTrustOptions");
     json.put("pemKeyCertOptions", new JsonObject())
-      .put("pemCaOptions", new JsonObject());
+      .put("pemTrustOptions", new JsonObject());
     options = new NetServerOptions(json);
-    assertTrue(options.getCaOptions() instanceof PemCaOptions);
+    assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 

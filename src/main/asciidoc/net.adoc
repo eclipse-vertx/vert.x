@@ -490,7 +490,7 @@ extension can also be loaded in a similar fashion than JKS trust stores:
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
     setClientAuthRequired(true).
-    setPfxCaOptions(
+    setPfxTrustOptions(
         new PfxOptions().
             setPath("/path/to/your/truststore.pfx").
             setPassword("password-of-your-truststore")
@@ -506,7 +506,7 @@ Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/you
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
     setClientAuthRequired(true).
-    setPfxCaOptions(
+    setPfxTrustOptions(
         new PfxOptions().
             setValue(myTrustStoreAsABuffer).
             setPassword("password-of-your-truststore")
@@ -521,8 +521,8 @@ Another way of providing server certificate authority using a list `.pem` files.
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
     setClientAuthRequired(true).
-    setPemCaOptions(
-        new PemCaOptions().
+    setPemTrustOptions(
+        new PemTrustOptions().
             addCertPath("/path/to/your/server-ca.pem")
     );
 NetServer server = vertx.createNetServer(options);
@@ -536,8 +536,8 @@ Buffer myCaAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
     setClientAuthRequired(true).
-    setPemCaOptions(
-        new PemCaOptions().
+    setPemTrustOptions(
+        new PemTrustOptions().
             addCertValue(myCaAsABuffer)
     );
 NetServer server = vertx.createNetServer(options);

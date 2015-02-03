@@ -45,7 +45,7 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-public class JksOptions implements KeyCertOptions, CaOptions, Cloneable {
+public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
 
   private String password;
   private String path;
