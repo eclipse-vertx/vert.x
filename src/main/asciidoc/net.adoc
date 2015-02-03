@@ -349,7 +349,7 @@ SSL/TLS is enabled with  link:apidocs/io/vertx/core/net/NetServerOptions.html#se
 
 By default it is disabled.
 
-=== Specifying key/certificate for the server
+==== Specifying key/certificate for the server
 
 SSL/TLS servers usually provide certificates to clients in order verify their identity to clients.
 
@@ -360,13 +360,13 @@ The first method is by specifying the location of a Java key-store which contain
 Java key stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
 utility which ships with the JDK.
 
-The password for the keystore should also be provided:
+The password for the key store should also be provided:
 
 [source,java]
 ----
 NetServerOptions options = new NetServerOptions().setSsl(true).setKeyStoreOptions(
     new JksOptions().
-        setPath("/path/to/your/keystore.jks").
+        setPath("/path/to/your/server-keystore.jks").
         setPassword("password-of-your-keystore")
 );
 NetServer server = vertx.createNetServer(options);
@@ -376,7 +376,7 @@ Alternatively you can read the key store yourself as a buffer and provide that d
 
 [source,java]
 ----
-Buffer myKeyStoreAsABuffer = readKeyStore();
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.jks");
 JksOptions jksOptions = new JksOptions().
     setValue(myKeyStoreAsABuffer).
     setPassword("password-of-your-keystore");
@@ -386,6 +386,159 @@ NetServerOptions options = new NetServerOptions().
 NetServer server = vertx.createNetServer(options);
 ----
 
-Another way of providing server private key and certificate is using `.PEM` files
+Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS key stores:
 
-TODO all the other ways of configuring SSL/TLS
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setPfxKeyCertOptions(
+    new PfxOptions().
+        setPath("/path/to/your/server-keystore.pfx").
+        setPassword("password-of-your-keystore")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.pfx");
+PfxOptions pfxOptions = new PfxOptions().
+    setValue(myKeyStoreAsABuffer).
+    setPassword("password-of-your-keystore");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setPfxKeyCertOptions(pfxOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+Another way of providing server private key and certificate separately using `.pem` files.
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setPemKeyCertOptions(
+    new PemKeyCertOptions().
+        setKeyPath("/path/to/your/server-key.pem").
+        setCertPath("/path/to/your/server-cert.pem")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myKeyAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-key.pem");
+Buffer myCertAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-cert.pem");
+PemKeyCertOptions pemOptions = new PemKeyCertOptions().
+    setKeyValue(myKeyAsABuffer).
+    setCertValue(myCertAsABuffer);
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setPemKeyCertOptions(pemOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+Keep in mind that pem configuration, the private key is not crypted.
+
+==== Specifying certificate authority for the server
+
+SSL/TLS servers can use a certificate authority in order to verify the identity of the clients.
+
+Certificate authorities can be configured for servers in several ways:
+
+Java trust stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+utility which ships with the JDK.
+
+The password for the trust store should also be provided:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setTrustStoreOptions(
+        new JksOptions().
+            setPath("/path/to/your/truststore.jks").
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Alternatively you can read the trust store yourself as a buffer and provide that directly:
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setTrustStoreOptions(
+        new JksOptions().
+            setValue(myTrustStoreAsABuffer).
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS trust stores:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPfxCaOptions(
+        new PfxOptions().
+            setPath("/path/to/your/truststore.pfx").
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPfxCaOptions(
+        new PfxOptions().
+            setValue(myTrustStoreAsABuffer).
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Another way of providing server certificate authority using a list `.pem` files.
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPemCaOptions(
+        new PemCaOptions().
+            addCertPath("/path/to/your/server-ca.pem")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myCaAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-ca.pfx");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPemCaOptions(
+        new PemCaOptions().
+            addCertValue(myCaAsABuffer)
+    );
+NetServer server = vertx.createNetServer(options);
+----
