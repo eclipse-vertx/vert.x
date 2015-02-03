@@ -208,8 +208,12 @@ public class VertxTestBase extends AsyncTestBase {
     switch (trust) {
       case JKS:
         return new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble");
+      case JKS_CA:
+        return new JksOptions().setPath(findFileOnClasspath("tls/client-truststore-ca.jks")).setPassword("wibble");
       case PKCS12:
         return new PfxOptions().setPath(findFileOnClasspath("tls/client-truststore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        return new PfxOptions().setPath(findFileOnClasspath("tls/client-truststore-ca.p12")).setPassword("wibble");
       case PEM:
         return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/server-cert.pem"));
       case PEM_CA:
@@ -223,8 +227,12 @@ public class VertxTestBase extends AsyncTestBase {
     switch (cert) {
       case JKS:
         return new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble");
+      case JKS_CA:
+        throw new UnsupportedOperationException();
       case PKCS12:
         return new PfxOptions().setPath(findFileOnClasspath("tls/client-keystore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        throw new UnsupportedOperationException();
       case PEM:
         return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert.pem"));
       case PEM_CA:
@@ -238,8 +246,12 @@ public class VertxTestBase extends AsyncTestBase {
     switch (trust) {
       case JKS:
         return new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble");
+      case JKS_CA:
+        throw new UnsupportedOperationException();
       case PKCS12:
         return new PfxOptions().setPath(findFileOnClasspath("tls/server-truststore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        throw new UnsupportedOperationException();
       case PEM:
         return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/client-cert.pem"));
       case PEM_CA:
@@ -253,8 +265,12 @@ public class VertxTestBase extends AsyncTestBase {
     switch (cert) {
       case JKS:
         return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
+      case JKS_CA:
+        return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore-ca.jks")).setPassword("wibble");
       case PKCS12:
         return new PfxOptions().setPath(findFileOnClasspath("tls/server-keystore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        return new PfxOptions().setPath(findFileOnClasspath("tls/server-keystore-ca.p12")).setPassword("wibble");
       case PEM:
         return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert.pem"));
       case PEM_CA:

@@ -20,9 +20,11 @@ package io.vertx.test.core;
  */
 enum Trust {
   NONE,
-  JKS,
-  PKCS12,
-  PEM,   // Self signed
-  PEM_CA // Signed by CA
+  JKS,       // Self signed CA
+  PKCS12,    // Self signed CA
+  PEM,       // Self signed CA
+  JKS_CA,    // Signed by CA
+  PKCS12_CA, // Self by CA
+  PEM_CA     // Signed by CA
 }
 

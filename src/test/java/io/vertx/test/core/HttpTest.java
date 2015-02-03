@@ -2572,7 +2572,55 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPEM_CA() throws Exception {
+  public void testTLSClientTrustServerCertJKS_CAWithJKS_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.JKS_CA, KeyCert.JKS_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertJKS_CAWithPKCS12_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PKCS12_CA, KeyCert.JKS_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertJKS_CAWithPEM_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.JKS_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12_CAWithJKS_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.JKS_CA, KeyCert.PKCS12_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12_CAWithPKCS12_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PKCS12_CA, KeyCert.PKCS12_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12_CAWithPEM_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PKCS12_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEM_CAWithJKS_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.JKS_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEM_CAWithPKCS12_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PKCS12_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEM_CAWithPEM_CA() throws Exception {
     testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
   }
 
