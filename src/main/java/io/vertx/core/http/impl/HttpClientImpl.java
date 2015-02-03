@@ -54,7 +54,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.HttpClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;

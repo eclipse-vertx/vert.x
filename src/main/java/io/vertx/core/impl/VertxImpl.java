@@ -49,7 +49,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
-import io.vertx.core.metrics.spi.VertxMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -356,18 +356,16 @@ public class VertxImpl implements VertxInternal {
   }
 
   private VertxMetrics initialiseMetrics(VertxOptions options) {
-    if (options.isMetricsEnabled()) {
+    if (options.getMetricsOptions() != null && options.getMetricsOptions().isEnabled()) {
       ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
       if (factories.iterator().hasNext()) {
         VertxMetricsFactory factory = factories.iterator().next();
         return factory.metrics(this, options);
       } else {
         log.warn("Metrics has been set to enabled but no VertxMetricsFactory found on classpath");
-        return new DummyVertxMetrics();
       }
-    } else {
-      return new DummyVertxMetrics();
     }
+    return new DummyVertxMetrics();
   }
 
   private ClusterManager getClusterManager(VertxOptions options) {

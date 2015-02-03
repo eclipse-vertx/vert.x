@@ -34,7 +34,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.NetMetrics;
+import io.vertx.core.spi.metrics.NetMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 

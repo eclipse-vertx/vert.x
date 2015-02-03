@@ -14,16 +14,22 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.spi;
+package io.vertx.core.spi.metrics;
+
+import io.vertx.core.eventbus.ReplyFailure;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface BaseMetrics {
+public interface EventBusMetrics extends BaseMetrics {
 
-  String baseName();
+  void handlerRegistered(String address);
 
-  boolean isEnabled();
+  void handlerUnregistered(String address);
 
-  void close();
+  void messageSent(String address, boolean publish);
+
+  void messageReceived(String address);
+
+  void replyFailure(String address, ReplyFailure failure);
 }

@@ -14,17 +14,24 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.spi;
+package io.vertx.core.spi.metrics;
 
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpServerMetrics extends NetMetrics {
+public interface NetMetrics extends BaseMetrics {
 
-  void requestBegin(HttpServerRequest request, HttpServerResponse response);
+  void listening(SocketAddress localAddress);
 
-  void responseEnd(HttpServerResponse response);
+  void connected(SocketAddress remoteAddress);
+
+  void disconnected(SocketAddress remoteAddress);
+
+  void bytesRead(SocketAddress remoteAddress, long numberOfBytes);
+
+  void bytesWritten(SocketAddress remoteAddress, long numberOfBytes);
+
+  void exceptionOccurred(SocketAddress remoteAddress, Throwable t);
 }

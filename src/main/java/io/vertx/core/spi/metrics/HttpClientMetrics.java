@@ -14,28 +14,17 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.metrics.spi;
+package io.vertx.core.spi.metrics;
 
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface DatagramSocketMetrics extends NetMetrics {
+public interface HttpClientMetrics extends NetMetrics {
 
-  // There should probably be a TcpMetrics that has the connected/disconnected characteristics, but since datagram
-  // uses a tcp like connection class, it's easier to do it this way
+  void requestBegin(HttpClientRequest request);
 
-  @Override
-  default void connected(SocketAddress remoteAddress) {
-    newSocket();
-  }
-
-  @Override
-  default void disconnected(SocketAddress remoteAddress) {
-    close();
-  }
-
-  // What does this represent?
-  void newSocket();
+  void responseEnd(HttpClientRequest request, HttpClientResponse response);
 }
