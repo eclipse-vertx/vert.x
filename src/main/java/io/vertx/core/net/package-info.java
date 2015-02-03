@@ -537,7 +537,7 @@
  * ==== Revoking certificate authorities
  *
  * Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
- * longer be trusted. The {@link io.vertx.core.net.TCPSSLOptions#addCrlPath(java.lang.String) crlPath} configures
+ * longer be trusted. The {@link io.vertx.core.net.NetClientOptions#addCrlPath(java.lang.String) crlPath} configures
  * the crl list to use:
  *
  * [source,java]

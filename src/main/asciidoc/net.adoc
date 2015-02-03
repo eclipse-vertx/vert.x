@@ -752,7 +752,7 @@ Keep in mind that pem configuration, the private key is not crypted.
 ==== Revoking certificate authorities
 
 Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
-longer be trusted. The link:apidocs/io/vertx/core/net/TCPSSLOptions.html#addCrlPath-java.lang.String-[`crlPath`] configures
+longer be trusted. The link:apidocs/io/vertx/core/net/NetClientOptions.html#addCrlPath-java.lang.String-[`crlPath`] configures
 the crl list to use:
 
 [source,java]
