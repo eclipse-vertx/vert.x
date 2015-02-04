@@ -546,7 +546,7 @@
  * HEAD requests.
  *
  * The simplest way to do this with the Vert.x http client is using the methods prefixed with `Now`. For example
- * {@link io.vertx.core.http.HttpClient#getNow)}.
+ * {@link io.vertx.core.http.HttpClient#getNow}.
  *
  * These methods create the http request and send it in a single method call and allow you to provide a handler that will be
  * called with the http response when it comes back.

@@ -13,21 +13,17 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.core.net;
-
-import io.vertx.codegen.annotations.DataObject;
+package io.vertx.test.core;
 
 /**
- * An interface for key store configuration options.
- *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject
-public interface KeyStoreOptions {
-
-  /**
-   * @return a copy of these options
-   */
-  KeyStoreOptions clone();
-
+enum KeyCert {
+  NONE,
+  JKS,       // Self signed
+  PKCS12,    // Self signed
+  PEM,       // Self signed
+  JKS_CA,    // Signed by CA
+  PKCS12_CA, // Signed by CA
+  PEM_CA     // Signed by CA
 }

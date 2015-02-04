@@ -38,7 +38,7 @@
  *
  * [source,java]
  * ----
- * {@link examples.JsonExamples#example0_1}
+ * {@link docoverride.json.Examples#example0_1}
  * ----
  *
  * ==== Putting entries into a JSON object
@@ -49,7 +49,7 @@
  *
  * [source,java]
  * ----
- * {@link examples.JsonExamples#example1}
+ * {@link docoverride.json.Examples#example1}
  * ----
  *
  * ==== Getting values from a JSON object
@@ -58,7 +58,7 @@
  *
  * [source,java]
  * ----
- * {@link examples.JsonExamples#example2}
+ * {@link docoverride.json.Examples#example2}
  * ----
  *
  * ==== Encoding the JSON object to a String
@@ -81,7 +81,7 @@
  *
  * [source,java]
  * ----
- * {@link examples.JsonExamples#example0_2}
+ * {@link docoverride.json.Examples#example0_2}
  * ----
  *
  * ==== Adding entries into a JSON array
@@ -90,7 +90,7 @@
  *
  * [source,java]
  * ----
- * {@link examples.JsonExamples#example3}
+ * {@link docoverride.json.Examples#example3}
  * ----
  *
  * ==== Getting values from a JSON array
@@ -99,7 +99,7 @@
  *
  * [source,java]
  * ----
- * {@link examples.JsonExamples#example4}
+ * {@link docoverride.json.Examples#example4}
  * ----
  *
  * ==== Encoding the JSON array to a String
@@ -108,8 +108,8 @@
  *
  *
  */
-@Document(fileName = "json.adoc")
-package io.vertx.core.json;
+@Document(fileName = "override/json.adoc")
+package docoverride.json;
 
 import io.vertx.docgen.Document;
 

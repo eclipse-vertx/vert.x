@@ -41,11 +41,6 @@ public class BufferExamples {
     Buffer buff = Buffer.buffer("some string", "UTF-16");
   }
 
-  public void example4() {
-    byte[] bytes = new byte[] {1, 3, 5};
-    Buffer buff = Buffer.buffer(bytes);
-  }
-
   public void example5() {
     Buffer buff = Buffer.buffer(10000);
   }

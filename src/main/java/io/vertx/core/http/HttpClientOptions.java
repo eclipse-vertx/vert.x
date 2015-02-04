@@ -17,10 +17,14 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -189,21 +193,51 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public HttpClientOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public HttpClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public HttpClientOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (HttpClientOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (HttpClientOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpClientOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public HttpClientOptions setPfxTrustOptions(PfxOptions options) {
+    return (HttpClientOptions) super.setPfxTrustOptions(options);
+  }
+
+  @Override
+  public HttpClientOptions setPemTrustOptions(PemTrustOptions options) {
+    return (HttpClientOptions) super.setPemTrustOptions(options);
   }
 
   @Override
   public HttpClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (HttpClientOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public HttpClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (HttpClientOptions) super.addCrlValue(crlValue);
   }
 
   @Override

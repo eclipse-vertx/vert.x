@@ -70,8 +70,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean usePooledBuffers;
   private int idleTimeout;
   private boolean ssl;
-  private KeyStoreOptions keyStore;
-  private TrustStoreOptions trustStore;
+  private KeyCertOptions keyCertOptions;
+  private TrustOptions trustOptions;
   private Set<String> enabledCipherSuites = new HashSet<>();
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
@@ -104,8 +104,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.usePooledBuffers = other.isUsePooledBuffers();
     this.idleTimeout = other.getIdleTimeout();
     this.ssl = other.isSsl();
-    this.keyStore = other.getKeyStoreOptions() != null ? other.getKeyStoreOptions().clone() : null;
-    this.trustStore = other.getTrustStoreOptions() != null ? other.getTrustStoreOptions().clone() : null;
+    this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
+    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? null : new HashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
@@ -124,44 +124,34 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
     this.idleTimeout = json.getInteger("idleTimeout", 0);
     this.ssl = json.getBoolean("ssl", false);
-    JsonObject keyStoreJson = json.getJsonObject("keyStoreOptions");
-    if (keyStoreJson != null) {
-      String type = keyStoreJson.getString("type", null);
-      switch (type != null ? type.toLowerCase() : "jks") {
-        case "jks":
-          keyStore = new JKSOptions(keyStoreJson);
-          break;
-        case "pkcs12":
-          keyStore = new PKCS12Options(keyStoreJson);
-          break;
-        case "keycert":
-          keyStore = new KeyCertOptions(keyStoreJson);
-          break;
-        default:
-          throw new IllegalArgumentException("Invalid key store type: " + type);
-      }
+    JsonObject keyCertJson = json.getJsonObject("keyStoreOptions");
+    if (keyCertJson != null) {
+      keyCertOptions = new JksOptions(keyCertJson);
     }
-    JsonObject trustStoreJson = json.getJsonObject("trustStoreOptions");
-    if (trustStoreJson != null) {
-      String type = trustStoreJson.getString("type", null);
-      switch (type != null ? type.toLowerCase() : "jks") {
-        case "jks":
-          trustStore = new JKSOptions(trustStoreJson);
-          break;
-        case "pkcs12":
-          trustStore = new PKCS12Options(trustStoreJson);
-          break;
-        case "ca":
-          trustStore = new CaOptions(trustStoreJson);
-          break;
-        default:
-          throw new IllegalArgumentException("Invalid trust store type: " + type);
-      }
+    keyCertJson = json.getJsonObject("pfxKeyCertOptions");
+    if (keyCertJson != null) {
+      keyCertOptions = new PfxOptions(keyCertJson);
+    }
+    keyCertJson = json.getJsonObject("pemKeyCertOptions");
+    if (keyCertJson != null) {
+      keyCertOptions = new PemKeyCertOptions(keyCertJson);
+    }
+    JsonObject trustOptions = json.getJsonObject("trustStoreOptions");
+    if (trustOptions != null) {
+      this.trustOptions = new JksOptions(trustOptions);
+    }
+    trustOptions = json.getJsonObject("pfxTrustOptions");
+    if (trustOptions != null) {
+      this.trustOptions = new PfxOptions(trustOptions);
+    }
+    trustOptions = json.getJsonObject("pemTrustOptions");
+    if (trustOptions != null) {
+      this.trustOptions = new PemTrustOptions(trustOptions);
     }
     JsonArray arr = json.getJsonArray("enabledCipherSuites");
-    this.enabledCipherSuites = arr == null ? null : new HashSet<String>(arr.getList());
+    this.enabledCipherSuites = arr == null ? null : new HashSet<>(arr.getList());
     arr = json.getJsonArray("crlPaths");
-    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<String>(arr.getList());
+    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<>(arr.getList());
     this.crlValues = new ArrayList<>();
     arr = json.getJsonArray("crlValues");
     if (arr != null) {
@@ -281,37 +271,76 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return the key store options
+   * @return the key cert options
    */
-  public KeyStoreOptions getKeyStoreOptions() {
-    return keyStore;
+  public KeyCertOptions getKeyCertOptions() {
+    return keyCertOptions;
   }
 
   /**
-   * Set the key store options
-   * @param keyStore the options
+   * Set the key/cert options in jks format, aka Java keystore.
+   * @param options the key store in jks format
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    this.keyStore = keyStore;
+  public TCPSSLOptions setKeyStoreOptions(JksOptions options) {
+    this.keyCertOptions = options;
     return this;
   }
 
   /**
-   *
-   * @return the trust store options
+   * Set the key/cert options in pfx format.
+   * @param options the key cert options in pfx format
+   * @return a reference to this, so the API can be used fluently
    */
-  public TrustStoreOptions getTrustStoreOptions() {
-    return trustStore;
+  public TCPSSLOptions setPfxKeyCertOptions(PfxOptions options) {
+    this.keyCertOptions = options;
+    return this;
   }
 
   /**
-   * Set the trust store options
-   * @param trustStore the options
+   * Set the key/cert store options in pem format.
+   * @param options the options in pem format
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    this.trustStore = trustStore;
+  public TCPSSLOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    this.keyCertOptions = options;
+    return this;
+  }
+
+  /**
+   * @return the trust options
+   */
+  public TrustOptions getTrustOptions() {
+    return trustOptions;
+  }
+
+  /**
+   * Set the trust options in jks format, aka Java trustore
+   * @param options the options in jks format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
+   * Set the trust options in pfx format
+   * @param options the options in pfx format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
+   * Set the trust options in pem format
+   * @param options the options in pem format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
+    this.trustOptions = options;
     return this;
   }
 
@@ -394,8 +423,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (crlValues != null ? !crlValues.equals(that.crlValues) : that.crlValues != null) return false;
     if (enabledCipherSuites != null ? !enabledCipherSuites.equals(that.enabledCipherSuites) : that.enabledCipherSuites != null)
       return false;
-    if (keyStore != null ? !keyStore.equals(that.keyStore) : that.keyStore != null) return false;
-    if (trustStore != null ? !trustStore.equals(that.trustStore) : that.trustStore != null) return false;
+    if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null) return false;
+    if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
 
     return true;
   }
@@ -409,8 +438,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (usePooledBuffers ? 1 : 0);
     result = 31 * result + idleTimeout;
     result = 31 * result + (ssl ? 1 : 0);
-    result = 31 * result + (keyStore != null ? keyStore.hashCode() : 0);
-    result = 31 * result + (trustStore != null ? trustStore.hashCode() : 0);
+    result = 31 * result + (keyCertOptions != null ? keyCertOptions.hashCode() : 0);
+    result = 31 * result + (trustOptions != null ? trustOptions.hashCode() : 0);
     result = 31 * result + (enabledCipherSuites != null ? enabledCipherSuites.hashCode() : 0);
     result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
     result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);

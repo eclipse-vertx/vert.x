@@ -14,17 +14,17 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package examples;
+package docoverride.json;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetSocket;
+import io.vertx.docgen.Source;
 
 /**
  * Created by tim on 09/01/15.
  */
-public class JsonExamples {
+@Source
+public class Examples {
 
   public void example0_1() {
     String jsonString = "{\"foo\":\"bar\"}";

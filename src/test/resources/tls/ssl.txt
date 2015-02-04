@@ -30,7 +30,8 @@ openssl pkcs12 -in server-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM
 
 openssl pkcs12 -in server-keystore.p12 -nokeys -out server-cert.pem
 
-# PEM signed by CA with Certificate Revocation List
+
+# PEM signed by CA
 
 1) Generate a Certificate Signing Request for the server cert
 
@@ -48,10 +49,41 @@ echo 1000 > ca/crlnumber
 
 openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -in server-csr.pem | openssl x509 -out server-cert-ca.pem -outform PEM
 
-4) Revoke the cert
+
+# PKCS#12 key store signed by CA
+
+1) Import the signed certificate and the private key into a new PKCS#12 key-store for the server
+
+openssl pkcs12 -export -name test-store -in server-cert-ca.pem -inkey server-key.pem -out server-keystore-ca.p12
+
+
+# JKS key store signed by CA
+
+1) Convert the PKCS#12 key-store to the JKS format
+
+keytool -importkeystore -destkeystore server-keystore-ca.jks -srckeystore server-keystore-ca.p12 -srcstoretype pkcs12 -alias test-store
+
+
+# JKS trust store signed by CA
+
+1) Create a JKS trust-store containing the CA
+
+keytool -import -trustcacerts -alias test-store -file ca/ca-cert.pem -keystore client-truststore-ca.jks
+
+
+# PKCS#12 trust store signed by CA
+
+1) Convert the JKS trust-store ca signed to the PKCS#12 format
+
+keytool -importkeystore -srckeystore client-truststore-ca.jks -destkeystore client-truststore-ca.p12 -deststoretype PKCS12
+
+
+# Certificate Revocation List
+
+1) Revoke the cert
 
 openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -revoke ca/01.pem
 
-5) Generate the Certificate Revocation List
+2) Generate the Certificate Revocation List
 
 openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -gencrl -out ca/crl.pem

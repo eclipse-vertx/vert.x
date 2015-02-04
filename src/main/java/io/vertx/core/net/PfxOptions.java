@@ -19,34 +19,33 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JKSOptions;
 
 /**
- * Key or trust store options configuring private key and/or certificates based on Java Keystore files.
+ * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
  * <p>
  * When used as a key store, it should point to a store containing a private key and its certificate.
- * When used as a trust store, it should point to a store containing a list of trusted certificates.
+ * When used as a trust store, it should point to a store containing a list of accepted certificates.
  * <p>
+ *
  * The store can either be loaded by Vert.x from the filesystem:
  * <p>
  * <pre>
- * HttpServerOptions options = HttpServerOptions.httpServerOptions();
- * options.setKeyStore(JKSOptions.options().setPath("/mykeystore.jks").setPassword("foo"));
+ * HttpServerOptions options = new HttpServerOptions();
+ * options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
  * </pre>
  *
- * Or directly provided as a buffer:
- * <p>
+ * Or directly provided as a buffer:<p>
  *
  * <pre>
- * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.jks");
- * options.setKeyStore(JKSOptions.options().setValue(store).setPassword("foo"));
+ * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
+ * options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable {
+public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
 
   private String password;
   private String path;
@@ -55,7 +54,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
   /**
    * Default constructor
    */
-  public JKSOptions() {
+  public PfxOptions() {
     super();
   }
 
@@ -64,7 +63,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
    *
    * @param other  the options to copy
    */
-  public JKSOptions(JKSOptions other) {
+  public PfxOptions(PfxOptions other) {
     super();
     this.password = other.getPassword();
     this.path = other.getPath();
@@ -76,7 +75,7 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
    *
    * @param json  the JSON
    */
-  public JKSOptions(JsonObject json) {
+  public PfxOptions(JsonObject json) {
     super();
     this.password = json.getString("password");
     this.path = json.getString("path");
@@ -85,25 +84,27 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
   }
 
   /**
-   * @return the password for the key store
+   * Get the password
+   *
+   * @return  the password
    */
   public String getPassword() {
     return password;
   }
 
   /**
-   * Set the password for the key store
+   * Set the password
    *
    * @param password  the password
    * @return a reference to this, so the API can be used fluently
    */
-  public JKSOptions setPassword(String password) {
+  public PfxOptions setPassword(String password) {
     this.password = password;
     return this;
   }
 
   /**
-   * Get the path to the ksy store
+   * Get the path
    *
    * @return the path
    */
@@ -112,38 +113,38 @@ public class JKSOptions implements KeyStoreOptions, TrustStoreOptions, Cloneable
   }
 
   /**
-   * Set the path to the key store
+   * Set the path
    *
    * @param path  the path
    * @return a reference to this, so the API can be used fluently
    */
-  public JKSOptions setPath(String path) {
+  public PfxOptions setPath(String path) {
     this.path = path;
     return this;
   }
 
   /**
-   * Get the key store as a buffer
+   * Get the store as a buffer
    *
-   * @return  the key store as a buffer
+   * @return store as buffer
    */
   public Buffer getValue() {
     return value;
   }
 
   /**
-   * Set the key store as a buffer
+   * Set the store as a buffer
    *
-   * @param value  the key store as a buffer
+   * @param value  the store as a buffer
    * @return a reference to this, so the API can be used fluently
    */
-  public JKSOptions setValue(Buffer value) {
+  public PfxOptions setValue(Buffer value) {
     this.value = value;
     return this;
   }
 
   @Override
-  public JKSOptions clone() {
-    return new JKSOptions(this);
+  public PfxOptions clone() {
+    return new PfxOptions(this);
   }
 }

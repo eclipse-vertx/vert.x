@@ -17,13 +17,17 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
 
 /**
- * Represents options used by an {@link com.sun.net.httpserver.HttpServer} instance
+ * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -145,21 +149,51 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public HttpServerOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public HttpServerOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public HttpServerOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (HttpServerOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (HttpServerOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public HttpServerOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public HttpServerOptions setPemTrustOptions(PemTrustOptions options) {
+    return (HttpServerOptions) super.setPemTrustOptions(options);
+  }
+
+  @Override
+  public HttpServerOptions setPfxTrustOptions(PfxOptions options) {
+    return (HttpServerOptions) super.setPfxTrustOptions(options);
   }
 
   @Override
   public HttpServerOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (HttpServerOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public HttpServerOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (HttpServerOptions) super.addCrlValue(crlValue);
   }
 
   @Override

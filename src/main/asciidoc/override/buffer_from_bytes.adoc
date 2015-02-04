@@ -1,0 +1,7 @@
+Create a buffer from a byte[]
+
+[source,java]
+----
+byte[] bytes = new byte[] {1, 3, 5};
+Buffer buff = Buffer.buffer(bytes);
+----

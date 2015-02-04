@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -132,21 +133,51 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public NetClientOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public NetClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public NetClientOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (NetClientOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (NetClientOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public NetClientOptions setPemTrustOptions(PemTrustOptions options) {
+    return (NetClientOptions) super.setPemTrustOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setPfxTrustOptions(PfxOptions options) {
+    return (NetClientOptions) super.setPfxTrustOptions(options);
   }
 
   @Override
   public NetClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (NetClientOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (NetClientOptions) super.addCrlValue(crlValue);
   }
 
   @Override

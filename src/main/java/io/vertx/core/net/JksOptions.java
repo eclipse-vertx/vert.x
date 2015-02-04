@@ -21,31 +21,31 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
+ * Key or trust store options configuring private key and/or certificates based on Java Keystore files.
  * <p>
  * When used as a key store, it should point to a store containing a private key and its certificate.
- * When used as a trust store, it should point to a store containing a list of accepted certificates.
+ * When used as a trust store, it should point to a store containing a list of trusted certificates.
  * <p>
- *
  * The store can either be loaded by Vert.x from the filesystem:
  * <p>
  * <pre>
- * HttpServerOptions options = new HttpServerOptions();
- * options.setKeyStore(new PKCS12Options().setPath("/mykeystore.p12").setPassword("foo"));
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setKeyStore(JKSOptions.options().setPath("/mykeystore.jks").setPassword("foo"));
  * </pre>
  *
- * Or directly provided as a buffer:<p>
+ * Or directly provided as a buffer:
+ * <p>
  *
  * <pre>
- * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
- * options.setKeyStore(new PKCS12Options().setValue(store).setPassword("foo"));
+ * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.jks");
+ * options.setKeyStore(JKSOptions.options().setValue(store).setPassword("foo"));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Cloneable {
+public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
 
   private String password;
   private String path;
@@ -54,7 +54,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
   /**
    * Default constructor
    */
-  public PKCS12Options() {
+  public JksOptions() {
     super();
   }
 
@@ -63,7 +63,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
    *
    * @param other  the options to copy
    */
-  public PKCS12Options(PKCS12Options other) {
+  public JksOptions(JksOptions other) {
     super();
     this.password = other.getPassword();
     this.path = other.getPath();
@@ -75,7 +75,7 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
    *
    * @param json  the JSON
    */
-  public PKCS12Options(JsonObject json) {
+  public JksOptions(JsonObject json) {
     super();
     this.password = json.getString("password");
     this.path = json.getString("path");
@@ -84,27 +84,25 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
   }
 
   /**
-   * Get the password
-   *
-   * @return  the password
+   * @return the password for the key store
    */
   public String getPassword() {
     return password;
   }
 
   /**
-   * Set the password
+   * Set the password for the key store
    *
    * @param password  the password
    * @return a reference to this, so the API can be used fluently
    */
-  public PKCS12Options setPassword(String password) {
+  public JksOptions setPassword(String password) {
     this.password = password;
     return this;
   }
 
   /**
-   * Get the path
+   * Get the path to the ksy store
    *
    * @return the path
    */
@@ -113,38 +111,38 @@ public class PKCS12Options implements KeyStoreOptions, TrustStoreOptions, Clonea
   }
 
   /**
-   * Set the path
+   * Set the path to the key store
    *
    * @param path  the path
    * @return a reference to this, so the API can be used fluently
    */
-  public PKCS12Options setPath(String path) {
+  public JksOptions setPath(String path) {
     this.path = path;
     return this;
   }
 
   /**
-   * Get the store as a buffer
+   * Get the key store as a buffer
    *
-   * @return store as buffer
+   * @return  the key store as a buffer
    */
   public Buffer getValue() {
     return value;
   }
 
   /**
-   * Set the store as a buffer
+   * Set the key store as a buffer
    *
-   * @param value  the store as a buffer
+   * @param value  the key store as a buffer
    * @return a reference to this, so the API can be used fluently
    */
-  public PKCS12Options setValue(Buffer value) {
+  public JksOptions setValue(Buffer value) {
     this.value = value;
     return this;
   }
 
   @Override
-  public PKCS12Options clone() {
-    return new PKCS12Options(this);
+  public JksOptions clone() {
+    return new JksOptions(this);
   }
 }

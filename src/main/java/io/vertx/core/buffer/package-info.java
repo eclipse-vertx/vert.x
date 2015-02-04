@@ -52,12 +52,7 @@
  * {@link examples.BufferExamples#example3}
  * ----
  *
- * Create a buffer from a byte[]
- *
- * [source,java]
- * ----
- * {@link examples.BufferExamples#example4}
- * ----
+ * include::override/buffer_from_bytes.adoc[]
  *
  * Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it
  * you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is

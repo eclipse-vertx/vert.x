@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Certificate Authority trust store options configuring certificates based on
- * <i>Privacy-enhanced Electronic Email</i> (PEM) files. The store is configured with a list of
+ * Certificate Authority options configuring certificates based on
+ * <i>Privacy-enhanced Electronic Email</i> (PEM) files. The options is configured with a list of
  * validating certificates.
  * <p>
  * Validating certificates must contain X.509 certificates wrapped in a PEM block:<p>
@@ -46,7 +46,7 @@ import java.util.Objects;
  * <p>
  * <pre>
  * HttpServerOptions options = new HttpServerOptions();
- * options.setTrustStore(new CaOptions().addCertPath("/cert.pem"));
+ * options.setPemTrustOptions(new PemTrustOptions().addCertPath("/cert.pem"));
  * </pre>
  *
  * Or directly provided as a buffer:
@@ -55,14 +55,14 @@ import java.util.Objects;
  * <pre>
  * Buffer cert = vertx.fileSystem().readFileSync("/cert.pem");
  * HttpServerOptions options = new HttpServerOptions();
- * options.setTrustStore(new CaOptions().addCertValue(cert));
+ * options.setPemTrustOptions(new PemTrustOptions().addCertValue(cert));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-public class CaOptions implements TrustStoreOptions, Cloneable {
+public class PemTrustOptions implements TrustOptions, Cloneable {
 
   private ArrayList<String> certPaths;
   private ArrayList<Buffer> certValues;
@@ -70,7 +70,7 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
   /**
    * Default constructor
    */
-  public CaOptions() {
+  public PemTrustOptions() {
     super();
     this.certPaths = new ArrayList<>();
     this.certValues = new ArrayList<>();
@@ -81,7 +81,7 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
    *
    * @param other  the options to copy
    */
-  public CaOptions(CaOptions other) {
+  public PemTrustOptions(PemTrustOptions other) {
     super();
     this.certPaths = new ArrayList<>(other.getCertPaths());
     this.certValues = new ArrayList<>(other.getCertValues());
@@ -92,7 +92,7 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
    *
    * @param json  the JSON
    */
-  public CaOptions(JsonObject json) {
+  public PemTrustOptions(JsonObject json) {
     super();
     this.certPaths = new ArrayList<>();
     this.certValues = new ArrayList<>();
@@ -118,7 +118,7 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
-  public CaOptions addCertPath(String certPath) throws NullPointerException {
+  public PemTrustOptions addCertPath(String certPath) throws NullPointerException {
     Objects.requireNonNull(certPath, "No null certificate accepted");
     Arguments.require(!certPath.isEmpty(), "No empty certificate path accepted");
     certPaths.add(certPath);
@@ -140,15 +140,15 @@ public class CaOptions implements TrustStoreOptions, Cloneable {
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
-  public CaOptions addCertValue(Buffer certValue) throws NullPointerException {
+  public PemTrustOptions addCertValue(Buffer certValue) throws NullPointerException {
     Objects.requireNonNull(certValue, "No null certificate accepted");
     certValues.add(certValue);
     return this;
   }
 
   @Override
-  public CaOptions clone() {
-    return new CaOptions(this);
+  public PemTrustOptions clone() {
+    return new PemTrustOptions(this);
   }
 
 }

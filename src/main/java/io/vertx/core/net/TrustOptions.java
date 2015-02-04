@@ -13,16 +13,21 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.test.core;
+package io.vertx.core.net;
+
+import io.vertx.codegen.annotations.DataObject;
 
 /**
+ * Certification authority configuration options.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-enum TS {
-  NONE,
-  JKS,
-  PKCS12,
-  PEM,   // Self signed
-  PEM_CA // Signed by CA
-}
+@DataObject
+public interface TrustOptions {
 
+  /**
+   * @return a copy of these options
+   */
+  TrustOptions clone();
+
+}
