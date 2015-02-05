@@ -73,6 +73,22 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   MultiMap headers();
 
   /**
+   * Return the first header value with the specified name
+   *
+   * @param headerName  the header name
+   * @return the header value
+   */
+  String getHeader(String headerName);
+
+  /**
+   * Return the first trailer value with the specified name
+   *
+   * @param trailerName  the trailer name
+   * @return the trailer value
+   */
+  String getTrailer(String trailerName);
+
+  /**
    * @return the trailers
    */
   @CacheReturn

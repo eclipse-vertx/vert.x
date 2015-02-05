@@ -8,7 +8,10 @@ By default Vert.x does not record any metrics. Instead it provides an SPI for ot
 which can be added to the classpath. Once added, you can enable metrics by doing the following:
 [source,java]
 ----
-Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+Vertx vertx = Vertx.vertx(
+    new VertxOptions().setMetricsOptions(
+        new MetricsOptions().setEnabled(true))
+);
 ----
 
 Once enabled, you can retrieve metrics from any link:apidocs/io/vertx/core/metrics/Measured.html[`Measured`] object which provides

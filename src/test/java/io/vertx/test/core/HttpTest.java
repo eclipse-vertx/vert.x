@@ -846,6 +846,7 @@ public class HttpTest extends HttpTestBase {
   public void testPutHeadersOnRequest() {
     server.requestHandler(req -> {
       assertEquals("bar", req.headers().get("foo"));
+      assertEquals("bar", req.getHeader("foo"));
       req.response().end();
     });
     server.listen(onSuccess(server -> {
@@ -1215,6 +1216,7 @@ public class HttpTest extends HttpTestBase {
       assertEquals(headers.size() + 1, req.headers().size());
       for (Map.Entry<String, String> entry : headers) {
         assertEquals(entry.getValue(), req.headers().get(entry.getKey()));
+        assertEquals(entry.getValue(), req.getHeader(entry.getKey()));
       }
       req.response().end();
     });
@@ -1263,6 +1265,7 @@ public class HttpTest extends HttpTestBase {
         assertEquals(headers.size() + 1, resp.headers().size());
         for (Map.Entry<String, String> entry : headers) {
           assertEquals(entry.getValue(), resp.headers().get(entry.getKey()));
+          assertEquals(entry.getValue(), resp.getHeader(entry.getKey()));
         }
         testComplete();
       }).end();
@@ -1679,6 +1682,7 @@ public class HttpTest extends HttpTestBase {
           assertEquals(trailers.size(), resp.trailers().size());
           for (Map.Entry<String, String> entry : trailers) {
             assertEquals(entry.getValue(), resp.trailers().get(entry.getKey()));
+            assertEquals(entry.getValue(), resp.getTrailer(entry.getKey()));
           }
           testComplete();
         });
@@ -3238,6 +3242,7 @@ public class HttpTest extends HttpTestBase {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
+        assertTrue(req.isExpectMultipart());
         req.uploadHandler(upload -> {
           upload.handler(buffer -> {
             assertEquals(content, buffer.toString("UTF-8"));
@@ -3303,7 +3308,9 @@ public class HttpTest extends HttpTestBase {
           MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("vert x", attrs.get("framework"));
+          assertEquals("vert x", req.getFormAttribute("framework"));
           assertEquals("jvm", attrs.get("runson"));
+          assertEquals("jvm", req.getFormAttribute("runson"));
           req.response().end();
         });
       }

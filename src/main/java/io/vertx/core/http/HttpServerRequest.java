@@ -100,10 +100,27 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   MultiMap headers();
 
   /**
+   * Return the first header value with the specified name
+   *
+   * @param headerName  the header name
+   * @return the header value
+   */
+  String getHeader(String headerName);
+
+  /**
    * @return the query parameters in the request
    */
   @CacheReturn
   MultiMap params();
+
+  /**
+   * Return the first param value with the specified name
+   *
+   * @param paramName  the param name
+   * @return the param value
+   */
+  String getParam(String paramName);
+
 
   /**
    * @return the remote (client side) address of the request
@@ -189,6 +206,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @CacheReturn
   MultiMap formAttributes();
+
+  /**
+   * Return the first form attribute value with the specified name
+   *
+   * @param attributeName  the attribute name
+   * @return the attribute value
+   */
+  String getFormAttribute(String attributeName);
 
   /**
    * Upgrade the connection to a WebSocket connection.

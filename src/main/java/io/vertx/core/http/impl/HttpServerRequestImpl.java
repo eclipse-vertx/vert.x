@@ -163,6 +163,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
+  public String getHeader(String headerName) {
+    return headers().get(headerName);
+  }
+
+  @Override
   public synchronized MultiMap params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
@@ -175,6 +180,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       }
     }
     return params;
+  }
+
+  @Override
+  public String getParam(String paramName) {
+    return params().get(paramName);
   }
 
   @Override
@@ -263,6 +273,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
     }
     return attributes();
+  }
+
+  @Override
+  public String getFormAttribute(String attributeName) {
+    return formAttributes().get(attributeName);
   }
 
   @Override

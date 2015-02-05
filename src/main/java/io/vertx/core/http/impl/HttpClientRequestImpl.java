@@ -390,6 +390,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           }
 
           @Override
+          public String getHeader(String headerName) {
+            return resp.getHeader(headerName);
+          }
+
+          @Override
+          public String getTrailer(String trailerName) {
+            return resp.getTrailer(trailerName);
+          }
+
+          @Override
           public MultiMap trailers() {
             return resp.trailers();
           }
