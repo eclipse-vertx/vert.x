@@ -270,6 +270,15 @@
             <goals>
               <goal>javadoc</goal>
             </goals>
+            <configuration>
+              <sourceFileExcludes>
+                <sourceFileExclude>**/package-info.java</sourceFileExclude>
+                <sourceFileExclude>**/impl/**</sourceFileExclude>
+              </sourceFileExcludes>
+              <sourceFileIncludes>
+                <sourceFileInclude>io/vertx/**/*.java</sourceFileInclude>
+              </sourceFileIncludes>
+            </configuration>
           </execution>
         </executions>
       </plugin>
