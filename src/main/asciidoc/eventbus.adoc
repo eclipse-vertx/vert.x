@@ -1,9 +1,9 @@
 == The Event Bus
 :toc: left
 
-The link:apidocs/io/vertx/core/eventbus/EventBus.html[`event bus`] is the *nervous system* of Vert.x.
+The `link:apidocs/io/vertx/core/eventbus/EventBus.html[event bus]` is the *nervous system* of Vert.x.
 
-There is a single event bus instance for every Vert.x instance and it is obtained using the method link:apidocs/io/vertx/core/Vertx.html#eventBus--[`eventBus`].
+There is a single event bus instance for every Vert.x instance and it is obtained using the method `link:apidocs/io/vertx/core/Vertx.html#eventBus--[eventBus]`.
 
 The event bus allows different parts of your application to communicate with each other irrespective of what language they are written in,
 and whether they're in the same Vert.x instance, or in a different Vert.x instance.
@@ -77,7 +77,7 @@ to retry after recovery.
 
 ==== Types of messages
 
-Out of the box Vert.x allows any primitive/simple type, String, or link:apidocs/io/vertx/core/buffer/Buffer.html[`buffers`] to
+Out of the box Vert.x allows any primitive/simple type, String, or `link:apidocs/io/vertx/core/buffer/Buffer.html[buffers]` to
 be sent as messages.
 
 However it's a convention and common practice in Vert.x to send messages as http://json.org/[JSON]
@@ -88,7 +88,7 @@ _lingua franca_ for Vert.x.
 However you are not forced to use JSON if you don't want to.
 
 The event bus is very flexible and also supports supports sending arbitrary objects over the event bus.
-You do this by defining a link:apidocs/io/vertx/core/eventbus/MessageCodec.html[`codec`] for the objects you want to send.
+You do this by defining a `link:apidocs/io/vertx/core/eventbus/MessageCodec.html[codec]` for the objects you want to send.
 
 === The Event Bus API
 
@@ -107,7 +107,7 @@ There is a single instance of the event bus per Vert.x instance.
 
 ==== Registering Handlers
 
-This simplest way to register a handler is using link:apidocs/io/vertx/core/eventbus/EventBus.html#consumer-java.lang.String-io.vertx.core.Handler-[`consumer`].
+This simplest way to register a handler is using `link:apidocs/io/vertx/core/eventbus/EventBus.html#consumer-java.lang.String-io.vertx.core.Handler-[consumer]`.
 Here's an example:
 
 [source,java]
@@ -119,13 +119,13 @@ eb.consumer("news.uk.sport", message -> {
 });
 ----
 
-When a message arrives for your handler, your handler will be called, passing in the link:apidocs/io/vertx/core/eventbus/Message.html[`message`].
+When a message arrives for your handler, your handler will be called, passing in the `link:apidocs/io/vertx/core/eventbus/Message.html[message]`.
 
-The object returned from call to +consumer()+ is an instance of link:apidocs/io/vertx/core/eventbus/MessageConsumer.html[`MessageConsumer`]
+The object returned from call to +consumer()+ is an instance of `link:apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]`
 
 This object can subsequently be used to unregister the handler, or use the handler as a stream.
 
-Alternatively you can use link:apidocs/io/vertx/core/eventbus/EventBus.html#consumer-java.lang.String-io.vertx.core.Handler-[`consumer`] to
+Alternatively you can use `link:apidocs/io/vertx/core/eventbus/EventBus.html#consumer-java.lang.String-io.vertx.core.Handler-[consumer]` to
 to return a +MessageConsumer+ with no handler set, and then set the handler on that. For example:
 
 [source,java]
@@ -141,7 +141,7 @@ consumer.handler(message -> {
 When registering a handler on a clustered event bus, it can take some time for the registration to reach all
 nodes of the cluster.
 
-If you want to be notified when this has completed, you can register a link:apidocs/io/vertx/core/eventbus/MessageConsumer.html#completionHandler-io.vertx.core.Handler-[`completion handler`]
+If you want to be notified when this has completed, you can register a `link:apidocs/io/vertx/core/eventbus/MessageConsumer.html#completionHandler-io.vertx.core.Handler-[completion handler]`
 on the +MessageConsumer+ object.
 
 [source,java]
@@ -157,10 +157,10 @@ consumer.completionHandler(res -> {
 
 ==== Un-registering Handlers
 
-To unregister a handler, call link:apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister--[`unregister`].
+To unregister a handler, call `link:apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister--[unregister]`.
 
 If you are on a clustered event bus, un-registering can take some time to propagate across the nodes, if you want to
-be notified when this is complete use link:apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister-io.vertx.core.Handler-[`unregister`].
+be notified when this is complete use `link:apidocs/io/vertx/core/eventbus/MessageConsumer.html#unregister-io.vertx.core.Handler-[unregister]`.
 
 [source,java]
 ----
@@ -175,7 +175,7 @@ consumer.unregister(res -> {
 
 ==== Publishing messages
 
-Publishing a message is simple. Just use link:apidocs/io/vertx/core/eventbus/EventBus.html#publish-java.lang.String-java.lang.Object-[`publish`] specifying the
+Publishing a message is simple. Just use `link:apidocs/io/vertx/core/eventbus/EventBus.html#publish-java.lang.String-java.lang.Object-[publish]` specifying the
 address to publish it to.
 
 [source,java]
@@ -190,7 +190,7 @@ That message will then be delivered to all handlers registered against the addre
 Sending a message will result in only one handler registered at the address receiving the message.
 This is the point to point messaging pattern. The handler is chosen in a non-strict round-robin fashion.
 
-You can send a message with link:apidocs/io/vertx/core/eventbus/EventBus.html#send-java.lang.String-java.lang.Object-[`send`]
+You can send a message with `link:apidocs/io/vertx/core/eventbus/EventBus.html#send-java.lang.String-java.lang.Object-[send]`
 
 [source,java]
 ----
@@ -200,7 +200,7 @@ eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
 ==== Setting headers on messages
 
 Messages sent over the event bus can also contain headers. This can be specified by providing a
-link:apidocs/io/vertx/core/eventbus/DeliveryOptions.html[`DeliveryOptions`] when sending or publishing:
+`link:apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` when sending or publishing:
 
 [source,java]
 ----
@@ -211,11 +211,11 @@ eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
 
 ==== The Message object
 
-The object you receive in a message handler is a link:apidocs/io/vertx/core/eventbus/Message.html[`Message`].
+The object you receive in a message handler is a `link:apidocs/io/vertx/core/eventbus/Message.html[Message]`.
 
-The link:apidocs/io/vertx/core/eventbus/Message.html#body--[`body`] of the message corresponds to the object that was sent or published.
+The `link:apidocs/io/vertx/core/eventbus/Message.html#body--[body]` of the message corresponds to the object that was sent or published.
 
-The headers of the message are available with link:apidocs/io/vertx/core/eventbus/Message.html#headers--[`headers`].
+The headers of the message are available with `link:apidocs/io/vertx/core/eventbus/Message.html#headers--[headers]`.
 
 ==== Replying to messages
 
@@ -224,7 +224,7 @@ This is known as the *request-response pattern*.
 
 To do this you can specify a reply handler when sending the message.
 
-When the receiver receives the message they can reply to it by calling link:apidocs/io/vertx/core/eventbus/Message.html#reply-java.lang.Object-[`reply`].
+When the receiver receives the message they can reply to it by calling `link:apidocs/io/vertx/core/eventbus/Message.html#reply-java.lang.Object-[reply]`.
 
 When this happens it causes a reply to be sent back to the sender and the reply handler is invoked with the reply.
 
@@ -257,7 +257,7 @@ consisting of multiple rounds.
 
 ==== Sending with timeouts
 
-When sending a message with a reply handler you can specify a timeout in the link:apidocs/io/vertx/core/eventbus/DeliveryOptions.html[`DeliveryOptions`].
+When sending a message with a reply handler you can specify a timeout in the `link:apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]`.
 
 If a reply is not received within that time, the reply handler will be called with a failure.
 
@@ -268,7 +268,7 @@ The default timeout is 30 seconds.
 Message sends can fail for other reasons, including:
 
 * There are no handlers available to send the message to
-* The recipient has explicitly failed the message using link:apidocs/io/vertx/core/eventbus/Message.html#fail-int-java.lang.String-[`fail`]
+* The recipient has explicitly failed the message using `link:apidocs/io/vertx/core/eventbus/Message.html#fail-int-java.lang.String-[fail]`
 
 In all cases the reply handler will be called with the specific failure.
 
@@ -298,7 +298,7 @@ Vertx.clusteredVertx(options, res -> {
 });
 ----
 
-You should also make sure you have a link:apidocs/io/vertx/core/spi/cluster/ClusterManager.html[`ClusterManager`] implementation on your classpath,
+You should also make sure you have a `link:apidocs/io/vertx/core/spi/cluster/ClusterManager.html[ClusterManager]` implementation on your classpath,
 for example the default .
 
 ==== Clustering on the command line

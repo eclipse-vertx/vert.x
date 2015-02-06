@@ -1,8 +1,8 @@
 == Metrics
 
-Vert.x provides a fairly simple API to retrieve metrics via the link:apidocs/io/vertx/core/metrics/Measured.html[`Measured`] interface
-which is implemented by various Vert.x components like link:apidocs/io/vertx/core/http/HttpServer.html[`HttpServer`], link:apidocs/io/vertx/core/net/NetServer.html[`NetServer`],
-and even link:apidocs/io/vertx/core/Vertx.html[`Vertx`] itself.
+Vert.x provides a fairly simple API to retrieve metrics via the `link:apidocs/io/vertx/core/metrics/Measured.html[Measured]` interface
+which is implemented by various Vert.x components like `link:apidocs/io/vertx/core/http/HttpServer.html[HttpServer]`, `link:apidocs/io/vertx/core/net/NetServer.html[NetServer]`,
+and even `link:apidocs/io/vertx/core/Vertx.html[Vertx]` itself.
 
 By default Vert.x does not record any metrics. Instead it provides an SPI for others to implement like https://github.com/vert-x3/vertx-metrics[vertx-metrics]
 which can be added to the classpath. Once added, you can enable metrics by doing the following:
@@ -14,8 +14,8 @@ Vertx vertx = Vertx.vertx(
 );
 ----
 
-Once enabled, you can retrieve metrics from any link:apidocs/io/vertx/core/metrics/Measured.html[`Measured`] object which provides
-a map of the metric name to the data, represented by a link:apidocs/io/vertx/core/json/JsonObject.html[`JsonObject`]. So for example if we were to print
+Once enabled, you can retrieve metrics from any `link:apidocs/io/vertx/core/metrics/Measured.html[Measured]` object which provides
+a map of the metric name to the data, represented by a `link:apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`. So for example if we were to print
 out all metrics for a particular Vert.x instance:
 [source,java]
 ----
@@ -25,13 +25,13 @@ metrics.forEach((name, metric) -> {
 });
 ----
 
-NOTE: For details on the actual contents of the data (the actual metric) represented by the link:apidocs/io/vertx/core/json/JsonObject.html[`JsonObject`]
+NOTE: For details on the actual contents of the data (the actual metric) represented by the `link:apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`
 consult the implementation documentation like https://github.com/vert-x3/vertx-metrics[vertx-metrics]
 
 Often it is desired that you only want to capture specific metrics for a particular component, like an http server
 without having to know the details of the naming scheme of every metric (something which is left to the implementers of the SPI).
 
-Since link:apidocs/io/vertx/core/http/HttpServer.html[`HttpServer`] implements link:apidocs/io/vertx/core/metrics/Measured.html[`Measured`], you can easily grab all metrics
+Since `link:apidocs/io/vertx/core/http/HttpServer.html[HttpServer]` implements `link:apidocs/io/vertx/core/metrics/Measured.html[Measured]`, you can easily grab all metrics
 that are specific for that particular http server.
 [source,java]
 ----
@@ -43,4 +43,4 @@ Map<String, JsonObject> metrics = server.metrics();
 === Metrics SPI
 
 The metrics SPI is an advanced feature which allows implementers to capture events from Vert.x in order to gather metrics. For
-more information on this, please consult the link:apidocs/io/vertx/core/spi/metrics/VertxMetrics.html[`API Documentation`].
+more information on this, please consult the `link:apidocs/io/vertx/core/spi/metrics/VertxMetrics.html[API Documentation]`.
