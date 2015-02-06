@@ -6,7 +6,7 @@ two classes to make handling JSON in your Vert.x applications a bit easier.
 
 === JSON objects
 
-The link:apidocs/io/vertx/core/json/JsonObject.html[`JsonObject`] class represents JSON objects.
+The `link:apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` class represents JSON objects.
 
 A JSON object is basically just a map which has string keys and values can be of one of the JSON supported types
 (string, number, boolean).
@@ -27,7 +27,7 @@ JsonObject object = new JsonObject(jsonString);
 
 ==== Putting entries into a JSON object
 
-Use the link:apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Enum-[`put`] methods to put values into the JSON object.
+Use the `link:apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Enum-[put]` methods to put values into the JSON object.
 
 The method invocations can be chained because of the fluent API:
 
@@ -49,11 +49,11 @@ int intVal = jsonObject.getInteger("some-other-key");
 
 ==== Encoding the JSON object to a String
 
-You use link:apidocs/io/vertx/core/json/JsonObject.html#encode--[`encode`] to encode the object to a String form.
+You use `link:apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` to encode the object to a String form.
 
 === JSON arrays
 
-The link:apidocs/io/vertx/core/json/JsonArray.html[`JsonArray`] class represents JSON arrays.
+The `link:apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` class represents JSON arrays.
 
 A JSON array is a sequence of values (string, number, boolean).
 
@@ -73,7 +73,7 @@ JsonArray array = new JsonArray(jsonString);
 
 ==== Adding entries into a JSON array
 
-You add entries to a JSON array using the link:apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Enum-[`add`] methods.
+You add entries to a JSON array using the `link:apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Enum-[add]` methods.
 
 [source,java]
 ----
@@ -94,4 +94,4 @@ Boolean boolVal = array.getBoolean(2);
 
 ==== Encoding the JSON array to a String
 
-You use link:apidocs/io/vertx/core/json/JsonArray.html#encode--[`encode`] to encode the array to a String form.
+You use `link:apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` to encode the array to a String form.
