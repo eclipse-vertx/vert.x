@@ -24,7 +24,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>2</version>
+    <version>3</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
@@ -192,7 +192,7 @@
         <plugin>
           <groupId>org.asciidoctor</groupId>
           <artifactId>asciidoctor-maven-plugin</artifactId>
-          <version>1.5.0</version>
+          <version>1.5.2</version>
           <configuration>
             <sourceDirectory>${asciidoc.dir}</sourceDirectory>
             <outputDirectory>${project.build.directory}/docs</outputDirectory>
@@ -270,15 +270,6 @@
             <goals>
               <goal>javadoc</goal>
             </goals>
-            <configuration>
-              <sourceFileExcludes>
-                <sourceFileExclude>**/package-info.java</sourceFileExclude>
-                <sourceFileExclude>**/impl/**</sourceFileExclude>
-              </sourceFileExcludes>
-              <sourceFileIncludes>
-                <sourceFileInclude>io/vertx/**/*.java</sourceFileInclude>
-              </sourceFileIncludes>
-            </configuration>
           </execution>
         </executions>
       </plugin>
