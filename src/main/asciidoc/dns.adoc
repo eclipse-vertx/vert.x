@@ -56,7 +56,7 @@ client.lookup4("vertx.io", ar -> {
 
 === lookup6
 
-Try to lookup the AAAA (ipv5) record for a given name. The first which is returned will be used, so it behaves the
+Try to lookup the AAAA (ipv6) record for a given name. The first which is returned will be used, so it behaves the
 same way as you may be used from when using "nslookup" on your operation system.
 
 To lookup the A record for "vertx.io" you would typically use it like:
