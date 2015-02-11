@@ -23,7 +23,7 @@
  *
  * The simplest way to create an HTTP server, using all default options is as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example1}
  * ----
@@ -33,7 +33,7 @@
  * If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.http.HttpServerOptions}
  * instance when creating it:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example2}
  * ----
@@ -45,14 +45,14 @@
  *
  * To tell the server to listen at the host and port as specified in the options:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example3}
  * ----
  *
  * Or to specify the host and port in the call to listen, ignoring what is configured in the options:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example4}
  * ----
@@ -65,7 +65,7 @@
  * If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
  * For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example5}
  * ----
@@ -74,7 +74,7 @@
  *
  * To be notified when a request arrives you need to set a {@link io.vertx.core.http.HttpServer#requestHandler}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example6}
  * ----
@@ -98,7 +98,7 @@
  *
  * Here's a simple example of a server handling a request and replying with "hello world" to it.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example7_1}
  * ----
@@ -153,7 +153,7 @@
  *
  * It also has case-insensitive keys, that means you can do the following:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example8}
  * ----
@@ -205,7 +205,7 @@
  * To receive the body, you can use the {@link io.vertx.core.http.HttpServerRequest#handler}  on the request,
  * this will get called every time a chunk of the request body arrives. Here's an example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example9}
  * ----
@@ -216,7 +216,7 @@
  * In some cases (e.g. if the body is small) you will want to aggregate the entire body in memory, so you could do
  * the aggregation yourself as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example10}
  * ----
@@ -224,7 +224,7 @@
  * This is such a common case, that Vert.x provides a {@link io.vertx.core.http.HttpServerRequest#bodyHandler} to do this
  * for you. The body handler is called once when all the body has been received:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example11}
  * ----
@@ -252,7 +252,7 @@
  * with true, and then you should retrieve the actual attributes using {@link io.vertx.core.http.HttpServerRequest#formAttributes}
  * once the entire body has been read:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example12}
  * ----
@@ -269,7 +269,7 @@
  *
  * The object passed into the handler is a {@link io.vertx.core.http.HttpServerFileUpload} instance.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example13}
  * ----
@@ -277,7 +277,7 @@
  * File uploads can be large we don't provide the entire upload in a single buffer as that might result in memory
  * exhaustion, instead, the upload data is received in chunks:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example14}
  * ----
@@ -288,7 +288,7 @@
  *
  * If you just want to upload the file to disk somewhere you can use {@link io.vertx.core.http.HttpServerFileUpload#streamToFileSystem}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example15}
  * ----
@@ -321,14 +321,14 @@
  *
  * With a single buffer:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example16}
  * ----
  *
  * With a string. In this case the string will encoded using UTF-8 and the result written to the wire.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example17}
  * ----
@@ -336,7 +336,7 @@
  * With a string and an encoding. In this case the string will encoded using the specified encoding and the
  * result written to the wire.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example18}
  * ----
@@ -358,7 +358,7 @@
  *
  * With no arguments, the response is simply ended.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example19}
  * ----
@@ -366,7 +366,7 @@
  * It can also be called with a string or buffer in the same way `write` is called. In this case it's just the same as
  * calling write with a string or buffer followed by calling end with no arguments. For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example20}
  * ----
@@ -385,14 +385,14 @@
  * HTTP response headers can be added to the response by adding them directly to the
  * {@link io.vertx.core.http.HttpServerResponse#headers}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example21}
  * ----
  *
  * Or you can use {@link io.vertx.core.http.HttpServerResponse#putHeader}
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example22}
  * ----
@@ -408,7 +408,7 @@
  *
  * You put the HTTP response into chunked mode as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example23}
  * ----
@@ -421,14 +421,14 @@
  *
  * To add trailers to the response, add them directly to the {@link io.vertx.core.http.HttpServerResponse#trailers}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example24}
  * ----
  *
  * Or use {@link io.vertx.core.http.HttpServerResponse#putTrailer}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example25}
  * ----
@@ -449,7 +449,7 @@
  *
  * Here's a very simple web server that serves files from the file system using sendFile:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example26}
  * ----
@@ -474,7 +474,7 @@
  * It uses a pump for the body, so it will work even if the HTTP request body is much larger than can fit in memory
  * at any one time:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example27}
  * ----
@@ -505,14 +505,14 @@
  *
  * You create an {@link io.vertx.core.http.HttpClient} instance with default options as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example28}
  * ----
  *
  * If you want to configure options for the client, you create it as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example29}
  * ----
@@ -525,7 +525,7 @@
  * Often you want to make many requests to the same host/port with an http client. To avoid you repeating the host/port
  * every time you make a request you can configure the client with a default host/port:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example30}
  * ----
@@ -533,7 +533,7 @@
  * Alternatively if you find yourself making lots of requests to different host/ports with the same client you can
  * simply specify the host/port when doing the request.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example31}
  * ----
@@ -551,7 +551,7 @@
  * These methods create the http request and send it in a single method call and allow you to provide a handler that will be
  * called with the http response when it comes back.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example32}
  * ----
@@ -562,7 +562,7 @@
  * general purpose request methods such as {@link io.vertx.core.http.HttpClient#request} which allow you to specify
  * the HTTP method at run-time:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example33}
  * ----
@@ -580,14 +580,14 @@
  *
  * Here are some examples of writing a POST request with a body:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example34}
  * ----
  *
  * Methods exist to write strings in UTF-8 encoding and in any specific encoding and to write buffers:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example35}
  * ----
@@ -595,7 +595,7 @@
  * If you are just writing a single string or buffer to the HTTP request you can write it and end the request in a
  * single call to the `end` function.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example36}
  * ----
@@ -620,7 +620,7 @@
  *
  * You can write headers to a request using the {@link io.vertx.core.http.HttpClientRequest#headers()} multi-map as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example37}
  * ----
@@ -630,7 +630,7 @@
  *
  * You can also write headers using {@link io.vertx.core.http.HttpClientRequest#putHeader}
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example38}
  * ----
@@ -647,7 +647,7 @@
  *
  * Requests can be ended in several ways. With no arguments the request is simply ended:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example39}
  * ----
@@ -655,7 +655,7 @@
  * Or a string or buffer can be provided in the call to `end`. This is like calling `write` with the string or buffer
  * before calling `end` with no arguments
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example40}
  * ----
@@ -672,7 +672,7 @@
  * In chunked mode each call to write will cause a new chunk to be written to the wire. In chunked mode there is
  * no need to set the `Content-Length` of the request up-front.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example41}
  * ----
@@ -689,7 +689,7 @@
  * You can handle exceptions corresponding to a request by setting an exception handler on the {@link io.vertx.core.http.HttpClientRequest}
  * instance:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example42}
  * ----
@@ -704,7 +704,7 @@
  * not provide a handler when the request is created and set it later on the request object itself, using
  * {@link io.vertx.core.http.HttpClientRequest#handler(io.vertx.core.Handler)}, for example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example43}
  * ----
@@ -716,7 +716,7 @@
  *
  * For, example, you could pump a file on disk to a http request body as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example44}
  * ----
@@ -729,7 +729,7 @@
  * You can query the status code and the status message of the response with {@link io.vertx.core.http.HttpClientResponse#statusCode}
  * and {@link io.vertx.core.http.HttpClientResponse#statusMessage}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example45}
  * ----
@@ -745,7 +745,7 @@
  *
  * The object returned is a {@link io.vertx.core.MultiMap} as HTTP headers can contain multiple values for single keys.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example46}
  * ----
@@ -765,7 +765,7 @@
  * As parts of the response body arrive, the {@link io.vertx.core.http.HttpClientResponse#handler} is called with
  * a {@link io.vertx.core.buffer.Buffer} representing the piece of the body:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example47}
  * ----
@@ -773,7 +773,7 @@
  * If you know the response body is not very large and want to aggregate it all in memory before handling it, you can
  * either aggregate it yourself:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example48}
  * ----
@@ -781,7 +781,7 @@
  * Or you can use the convenience {@link io.vertx.core.http.HttpClientResponse#bodyHandler(io.vertx.core.Handler)} which
  * is called with the entire body when the response has been fully read:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example49}
  * ----
@@ -820,7 +820,7 @@
  *
  * Here's an example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example50}
  * ----
@@ -921,14 +921,14 @@
  * When a WebSocket connection is made to the server, the handler will be called, passing in an instance of
  * {@link io.vertx.core.http.ServerWebSocket}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example51}
  * ----
  *
  * You can choose to reject the WebSocket by calling {@link io.vertx.core.http.ServerWebSocket#reject()}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example52}
  * ----
@@ -938,7 +938,7 @@
  * The second way of handling WebSockets is to handle the HTTP Upgrade request that was sent from the client, and
  * call {@link io.vertx.core.http.HttpServerRequest#upgrade()} on the server request.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example53}
  * ----
@@ -958,7 +958,7 @@
  *
  * The handler will be called with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example54}
  * ----
@@ -968,7 +968,7 @@
  * If you wish to write a single binary WebSocket message containing a single WebSocket frame to the WebSocket (a
  * common case) the simplest way to do this is to use {@link io.vertx.core.http.WebSocket#writeMessage(io.vertx.core.buffer.Buffer)}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example55}
  * ----
@@ -992,7 +992,7 @@
  *
  * Here's an example for binary frames:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example56}
  * ----
@@ -1004,7 +1004,7 @@
  * The frame handler will be called with instances of {@link io.vertx.core.http.WebSocketFrame} when a frame arrives,
  * for example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example57}
  * ----

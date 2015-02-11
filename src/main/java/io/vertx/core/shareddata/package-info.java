@@ -37,7 +37,7 @@
  *
  * Here's an example of using a shared local map:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.SharedDataExamples#example1}
  * ----
@@ -55,7 +55,7 @@
  *
  * Getting the map is asynchronous and the result is returned to you in the handler that you specify. Here's an example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.SharedDataExamples#example2}
  * ----
@@ -66,7 +66,7 @@
  *
  * The actual put is asynchronous and the handler is notified once it is complete:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.SharedDataExamples#example3}
  * ----
@@ -77,7 +77,7 @@
  *
  * The actual get is asynchronous and the handler is notified with the result some time later
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.SharedDataExamples#example4}
  * ----
@@ -106,7 +106,7 @@
  * When you've finished with the lock, you call {@link io.vertx.core.shareddata.Lock#release()} to release it, so
  * another caller can obtain it.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.SharedDataExamples#example5}
  * ----
@@ -114,7 +114,7 @@
  * You can also get a lock with a timeout. If it fails to obtain the lock within the timeout the handler will be called
  * with a failure:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.SharedDataExamples#example6}
  * ----
@@ -127,7 +127,7 @@
  *
  * You obtain an instance with {@link io.vertx.core.shareddata.SharedData#getCounter(java.lang.String, io.vertx.core.Handler)}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.SharedDataExamples#example7}
  * ----

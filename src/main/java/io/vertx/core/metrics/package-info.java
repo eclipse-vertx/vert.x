@@ -23,7 +23,7 @@
  *
  * By default Vert.x does not record any metrics. Instead it provides an SPI for others to implement like https://github.com/vert-x3/vertx-metrics[vertx-metrics]
  * which can be added to the classpath. Once added, you can enable metrics by doing the following:
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.MetricsExamples#example2}
  * ----
@@ -31,7 +31,7 @@
  * Once enabled, you can retrieve metrics from any {@link io.vertx.core.metrics.Measured Measured} object which provides
  * a map of the metric name to the data, represented by a {@link io.vertx.core.json.JsonObject}. So for example if we were to print
  * out all metrics for a particular Vert.x instance:
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.MetricsExamples#example1}
  * ----
@@ -44,7 +44,7 @@
  *
  * Since {@link io.vertx.core.http.HttpServer HttpServer} implements {@link io.vertx.core.metrics.Measured}, you can easily grab all metrics
  * that are specific for that particular http server.
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.MetricsExamples#example3}
  * ----

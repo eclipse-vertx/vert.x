@@ -50,7 +50,7 @@ public class CoreExamples {
   }
 
   public void example5(Vertx vertx) {
-    vertx.setTimer(1000, id -> {
+    vertx.setPeriodic(1000, id -> {
       // This handler will get called every second
       System.out.println("timer fired!");
     });
