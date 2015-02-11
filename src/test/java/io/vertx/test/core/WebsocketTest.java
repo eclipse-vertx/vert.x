@@ -1047,23 +1047,24 @@ public class WebsocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     server.requestHandler(request -> {
       ServerWebSocket ws = request.upgrade();
-      ws.write(Buffer.buffer("helloworld"));
-      ws.close();
+      ws.handler(buff -> {
+        ws.write(Buffer.buffer("helloworld"));
+        ws.close();
+      });
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
         handler(ws -> {
-          System.out.println("Connected");
           Buffer buff = Buffer.buffer();
           ws.handler(b -> {
-            System.out.println("Got data");
             buff.appendBuffer(b);
           });
           ws.endHandler(v -> {
             assertEquals("helloworld", buff.toString());
             testComplete();
           });
+          ws.write(Buffer.buffer("foo"));
         });
     });
     await();

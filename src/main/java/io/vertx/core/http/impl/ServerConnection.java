@@ -170,10 +170,13 @@ class ServerConnection extends ConnectionBase {
   }
 
   ServerWebSocket upgrade(HttpServerRequest request, HttpRequest nettyReq) {
+    if (ws != null) {
+      return ws;
+    }
     if (handshaker == null || !(nettyReq instanceof FullHttpRequest)) {
       throw new IllegalStateException("Can't upgrade this request");
     }
-    ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
+    ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize());
     try {
@@ -183,6 +186,12 @@ class ServerConnection extends ConnectionBase {
     } catch (Exception e) {
       log.error("Failed to generate shake response", e);
     }
+    ChannelHandler handler = channel.pipeline().get(HttpChunkContentCompressor.class);
+    if (handler != null) {
+      // remove compressor as its not needed anymore once connection was upgraded to websockets
+      channel.pipeline().remove(handler);
+    }
+    server.connectionMap().put(channel, this);
     return ws;
   }
 
