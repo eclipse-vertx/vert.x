@@ -46,7 +46,7 @@
  * To use UDP you first need t create a {@link io.vertx.core.datagram.DatagramSocket}. It does not matter here if you only want to send data or send
  * and receive.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DatagramExamples#example1}
  * ----
@@ -63,7 +63,7 @@
  *
  * Sending packets is as easy as shown here:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DatagramExamples#example2}
  * ----
@@ -85,7 +85,7 @@
  *
  * So to listen on a specific address and port you would do something like shown here:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DatagramExamples#example3}
  * ----
@@ -110,7 +110,7 @@
  *
  * This is show here:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DatagramExamples#example4}
  * ----
@@ -135,7 +135,7 @@
  * So to listen on a specific address and port and also receive packets for the Multicast group 230.0.0.1 you
  * would do something like shown here:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DatagramExamples#example5}
  * ----
@@ -148,7 +148,7 @@
  *
  * This is shown here:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DatagramExamples#example6}
  * ----
@@ -165,7 +165,7 @@
  * To block multicast from a specific address you can call `blockMulticastGroup(...)` on the DatagramSocket
  * like shown here:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DatagramExamples#example7}
  * ----

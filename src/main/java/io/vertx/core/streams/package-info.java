@@ -44,7 +44,7 @@
  * A naive way to do this would be to directly take the data that's been read and immediately write it
  * to the `NetSocket`, for example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.StreamsExamples#pump1(io.vertx.core.Vertx)}
  * ----
@@ -57,7 +57,7 @@
  * Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before
  * writing to it:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.StreamsExamples#pump2(io.vertx.core.Vertx)}
  * ----
@@ -65,7 +65,7 @@
  * This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we
  * really want to do is pause the `NetSocket` when the write queue is full. Let's do that:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.StreamsExamples#pump3(io.vertx.core.Vertx)}
  * ----
@@ -73,7 +73,7 @@
  * We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to unpause
  * it when the write queue has processed its backlog:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.StreamsExamples#pump4(io.vertx.core.Vertx)}
  * ----
@@ -86,7 +86,7 @@
  * called {@link io.vertx.core.streams.Pump} which does all this hard work for you. You just feed it the `ReadStream` and
  * the `WriteStream` and it tell it to start:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.StreamsExamples#pump5(io.vertx.core.Vertx)}
  * ----

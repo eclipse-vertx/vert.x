@@ -27,7 +27,7 @@
  *
  * Here's an example of asynchronously copying a file:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.FileSystemExamples#example1}
  * ----
@@ -41,7 +41,7 @@
  *
  * Here's the copy using the blocking API:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.FileSystemExamples#example2}
  * ----
@@ -56,7 +56,7 @@
  *
  * You open an {@link io.vertx.core.file.AsyncFile} as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.FileSystemExamples#example3}
  * ----

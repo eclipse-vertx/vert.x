@@ -23,7 +23,7 @@
  *
  * To obtain a DnsClient instance you will create a new via the Vertx instance.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example1}
  * ----
@@ -39,7 +39,7 @@
  *
  * To lookup the A / AAAA record for "vertx.io" you would typically use it like:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example2}
  * ----
@@ -51,7 +51,7 @@
  *
  * To lookup the A record for "vertx.io" you would typically use it like:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example3}
  * ----
@@ -63,7 +63,7 @@
  *
  * To lookup the A record for "vertx.io" you would typically use it like:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example4}
  * ----
@@ -75,7 +75,7 @@
  *
  * To lookup all the A records for "vertx.io" you would typically do:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example5}
  * ----
@@ -87,7 +87,7 @@
  *
  * To lookup all the AAAAA records for "vertx.io" you would typically do:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example6}
  * ----
@@ -99,7 +99,7 @@
  *
  * To lookup all the CNAME records for "vertx.io" you would typically do:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example7}
  * ----
@@ -111,7 +111,7 @@
  *
  * To lookup all the MX records for "vertx.io" you would typically do:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example8}
  * ----
@@ -121,7 +121,7 @@
  *
  * The {@link io.vertx.core.dns.MxRecord} allows you to access the priority and the name of the MX record by offer methods for it like:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example9}
  * ----
@@ -132,7 +132,7 @@
  *
  * To resolve all the TXT records for "vertx.io" you could use something along these lines:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example10}
  * ----
@@ -144,7 +144,7 @@
  *
  * To resolve all the NS records for "vertx.io" you could use something along these lines:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example11}
  * ----
@@ -156,7 +156,7 @@
  *
  * To lookup all the SRV records for "vertx.io" you would typically do:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example12}
  * ----
@@ -166,7 +166,7 @@
  *
  * The SrvRecord allows you to access all informations contained in the SRV record itself:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example13}
  * ----
@@ -179,7 +179,7 @@
  *
  * To resolve the PTR record for the ipaddress 10.0.0.1 you would use the PTR notion of "1.0.0.10.in-addr.arpa"
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example14}
  * ----
@@ -191,7 +191,7 @@
  *
  * To do a reverse lookup for the ipaddress 10.0.0.1 do something similar like this:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.DNSExamples#example15}
  * ----

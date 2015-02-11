@@ -33,21 +33,21 @@
  *
  * Create a new empty buffer:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example1}
  * ----
  *
  * Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example2}
  * ----
  *
  * Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example3}
  * ----
@@ -60,7 +60,7 @@
  *
  * Note that buffers created this way *are empty*. It does not create a buffer filled with zeros up to the specified size.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example5}
  * ----
@@ -78,7 +78,7 @@
  *
  * The return value of the {@code appendXXX} methods is the buffer itself, so these can be chained:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example6}
  * ----
@@ -91,7 +91,7 @@
  *
  * The buffer will always expand as necessary to accommodate the data.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example7}
  * ----
@@ -101,7 +101,7 @@
  * Data is read from a buffer using the {@code getXXX} methods. Get methods exist for various datatypes.
  * The first argument to these methods is an index in the buffer from where to get the data.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example8}
  * ----

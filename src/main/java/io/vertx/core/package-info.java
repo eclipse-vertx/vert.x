@@ -65,7 +65,7 @@
  *
  * If you're embedding Vert.x then you simply create an instance as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example1}
  * ----
@@ -79,7 +79,7 @@
  *
  * When creating a Vertx object you can also specify options if the defaults aren't right for you:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example2}
  * ----
@@ -101,7 +101,7 @@
  *
  * A fluent API is where multiple methods calls can be chained together. For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example3}
  * ----
@@ -112,7 +112,7 @@
  * like the fluent approach *we don't force you* to do it that way, you can happily ignore it if you prefer and write
  * your code like this:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example4}
  * ----
@@ -133,14 +133,14 @@
  * You handle events by providing _handlers_ to the Vert.x APIs. For example to receive a timer event every second you
  * would do:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example5}
  * ----
  *
  * Or to receive an HTTP request:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example6}
  * ----
@@ -273,7 +273,7 @@
  * It's done by calling {@link io.vertx.core.Vertx#executeBlocking} specifying both the blocking code to execute and a
  * result handler to be called back asynchronous when the blocking code has been executed.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example7}
  * ----
@@ -341,7 +341,7 @@
  *
  * If you want to deploy a verticle as a worker verticle you do that with {@link io.vertx.core.DeploymentOptions#setWorker}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example7_1}
  * ----
@@ -382,7 +382,7 @@
  *
  * Here's an example of deploying some different types of verticles:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example9}
  * ----
@@ -419,7 +419,7 @@
  *
  * If you want to be notified when deployment is complete you can deploy specifying a completion handler:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example10}
  * ----
@@ -434,7 +434,7 @@
  *
  * Un-deployment is itself asynchronous so if you want to be notified when un-deployment is complete you can deploy specifying a completion handler:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example11}
  * ----
@@ -444,7 +444,7 @@
  * When deploying a verticle using a verticle name, you can specify the number of verticle instances that you
  * want to deploy:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example12}
  * ----
@@ -456,7 +456,7 @@
  *
  * Configuration in the form of JSON can be passed to a verticle at deployment time:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example13}
  * ----
@@ -486,7 +486,7 @@
  *
  * Here's an example of using an isolation group to isolate a verticle deployment.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example14}
  * ----
@@ -565,7 +565,7 @@
  *
  * To set a timer to fire once you use {@link io.vertx.core.Vertx#setTimer} method passing in the delay and a handler
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example15}
  * ----
@@ -582,7 +582,7 @@
  *
  * The argument passed into the timer event handler is also the unique timer id:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example16}
  * ----
@@ -591,7 +591,7 @@
  *
  * To cancel a periodic timer, call {@link io.vertx.core.Vertx#cancelTimer} specifying the timer id. For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example17}
  * ----
