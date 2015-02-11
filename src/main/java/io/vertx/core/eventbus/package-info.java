@@ -88,7 +88,7 @@
  *
  * However you are not forced to use JSON if you don't want to.
  *
- * The event bus is very flexible and also supports supports sending arbitrary objects over the event bus.
+ * The event bus is very flexible and also supports sending arbitrary objects over the event bus.
  * You do this by defining a {@link io.vertx.core.eventbus.MessageCodec codec} for the objects you want to send.
  *
  * === The Event Bus API

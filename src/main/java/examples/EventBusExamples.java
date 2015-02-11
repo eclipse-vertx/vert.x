@@ -79,7 +79,7 @@ public class EventBusExamples {
   public void example7(EventBus eventBus) {
     DeliveryOptions options = new DeliveryOptions();
     options.addHeader("some-header", "some-value");
-    eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
+    eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
   }
 
   public void example8(EventBus eventBus) {

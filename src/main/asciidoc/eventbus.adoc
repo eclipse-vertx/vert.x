@@ -87,7 +87,7 @@ _lingua franca_ for Vert.x.
 
 However you are not forced to use JSON if you don't want to.
 
-The event bus is very flexible and also supports supports sending arbitrary objects over the event bus.
+The event bus is very flexible and also supports sending arbitrary objects over the event bus.
 You do this by defining a `link:apidocs/io/vertx/core/eventbus/MessageCodec.html[codec]` for the objects you want to send.
 
 === The Event Bus API
@@ -206,7 +206,7 @@ Messages sent over the event bus can also contain headers. This can be specified
 ----
 DeliveryOptions options = new DeliveryOptions();
 options.addHeader("some-header", "some-value");
-eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
+eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
 ----
 
 ==== The Message object
