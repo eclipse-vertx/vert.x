@@ -274,6 +274,22 @@ public class StarterTest extends VertxTestBase {
     assertEquals(new VertxOptions(), opts);
   }
 
+  @Test
+  public void testRunWithCommandLine() throws Exception {
+    Starter starter = new Starter();
+    int instances = 10;
+    String cl = "run java:" + TestVerticle.class.getCanonicalName() + " -instances " + instances;
+    Thread t = new Thread(() -> {
+      starter.run(cl);
+    });
+    t.start();
+    waitUntil(() -> TestVerticle.instanceCount.get() == instances);
+    assertTrue(t.isAlive()); // It's blocked
+    // Now unblock it
+    starter.unblock();
+    waitUntil(() -> !t.isAlive());
+  }
+
   class MyStarter extends Starter {
     public Vertx getVert() {
       return vertx;

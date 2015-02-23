@@ -3233,9 +3233,30 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testFormUploadFile() throws Exception {
+  public void testFormUploadSmallFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(100), false);
+  }
+
+  @Test
+  public void testFormUploadLargerFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(20000), false);
+  }
+
+  @Test
+  public void testFormUploadSmallFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(100), true);
+  }
+
+  @Test
+  public void testFormUploadLargerFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(20000), true);
+  }
+
+  private void testFormUploadFile(String contentStr, boolean streamToDisk) throws Exception {
+
+    Buffer content = Buffer.buffer(contentStr);
+
     AtomicInteger attributeCount = new AtomicInteger();
-    String content = "Vert.x rocks!";
 
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
@@ -3244,13 +3265,25 @@ public class HttpTest extends HttpTestBase {
         req.setExpectMultipart(true);
         assertTrue(req.isExpectMultipart());
         req.uploadHandler(upload -> {
-          upload.handler(buffer -> {
-            assertEquals(content, buffer.toString("UTF-8"));
-          });
+          Buffer tot = Buffer.buffer();
           assertEquals("file", upload.name());
           assertEquals("tmp-0.txt", upload.filename());
           assertEquals("image/gif", upload.contentType());
+          String uploadedFileName;
+          if (!streamToDisk) {
+            upload.handler(buffer -> tot.appendBuffer(buffer));
+            uploadedFileName = null;
+          } else {
+            uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
+            upload.streamToFileSystem(uploadedFileName);
+          }
           upload.endHandler(v -> {
+            if (streamToDisk) {
+              Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
+              assertEquals(content, uploaded);
+            } else {
+              assertEquals(content, tot);
+            }
             assertTrue(upload.isSizeAvailable());
             assertEquals(content.length(), upload.size());
           });
@@ -3281,7 +3314,7 @@ public class HttpTest extends HttpTestBase {
           "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
           "Content-Type: image/gif\r\n" +
           "\r\n" +
-          content + "\r\n" +
+          contentStr + "\r\n" +
           "--" + boundary + "--\r\n";
 
       buffer.appendString(body);
