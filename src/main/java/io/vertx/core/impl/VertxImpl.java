@@ -680,7 +680,9 @@ public class VertxImpl implements VertxInternal {
       VertxImpl.this.timeouts.remove(timerID);
       metrics.timerEnded(timerID, false);
       ContextImpl context = getContext();
-      context.removeCloseHook(this);
+      if (context != null) {
+        context.removeCloseHook(this);
+      }
     }
 
     // Called via Context close hook when Verticle is undeployed
