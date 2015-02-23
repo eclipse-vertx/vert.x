@@ -78,6 +78,14 @@ public class Starter {
   protected VertxOptions options;
   protected DeploymentOptions deploymentOptions;
 
+  public void run(String commandLine) {
+    String[] sargs = commandLine.split(" ");
+    run(sargs);
+  }
+
+  public static void runCommandLine(String commandLine) {
+    new Starter().run(commandLine);
+  }
 
   public void run(String[] sargs) {
 
