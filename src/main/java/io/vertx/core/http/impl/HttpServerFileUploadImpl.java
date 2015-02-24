@@ -164,10 +164,13 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void receiveData(Buffer data) {
-    if (lazyCalculateSize) {
-      size += data.length();
+    if (data.length() != 0) {
+      // Can sometimes receive zero length packets from Netty!
+      if (lazyCalculateSize) {
+        size += data.length();
+      }
+      doReceiveData(data);
     }
-    doReceiveData(data);
   }
 
   synchronized void doReceiveData(Buffer data) {
