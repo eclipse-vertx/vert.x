@@ -16,14 +16,12 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 
-import java.io.*;
-import java.net.MalformedURLException;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
@@ -32,7 +30,6 @@ import java.util.Enumeration;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -55,10 +52,17 @@ public class FileResolver {
   private final Vertx vertx;
   private final boolean enableCaching = System.getProperty("vertx.disableFileCaching") == null;
   private final boolean enableCPResolving = System.getProperty("vertx.disableFileCPResolving") == null;
+  private final File cwd;
   private File cacheDir;
 
   public FileResolver(Vertx vertx) {
     this.vertx = vertx;
+    String cwdOverride = System.getProperty("vertx.cwd");
+    if (cwdOverride != null) {
+      cwd = new File(cwdOverride).getAbsoluteFile();
+    } else {
+      cwd = null;
+    }
   }
 
   public void deleteCacheDir(Handler<AsyncResult<Void>> handler) {
@@ -72,6 +76,9 @@ public class FileResolver {
   public File resolveFile(String fileName) {
     // First look for file with that name on disk
     File file = new File(fileName);
+    if (cwd != null && !file.isAbsolute()) {
+      file = new File(cwd, fileName);
+    }
     if (!enableCPResolving) {
       return file;
     }
