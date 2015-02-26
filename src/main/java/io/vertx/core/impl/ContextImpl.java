@@ -228,10 +228,6 @@ public abstract class ContextImpl implements Context {
       });
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
-    } finally {
-      if (blockingCodeHandler != null) {
-        unsetContext();
-      }
     }
   }
 

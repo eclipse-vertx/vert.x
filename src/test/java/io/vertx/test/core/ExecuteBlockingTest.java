@@ -19,6 +19,9 @@ package io.vertx.test.core;
 import io.vertx.core.Context;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -94,5 +97,24 @@ public class ExecuteBlockingTest extends VertxTestBase {
     });
 
     await();
+  }
+
+  @Test
+  public void testExecuteBlockingTTCL() throws Exception {
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    assertNotNull(cl);
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<ClassLoader> blockingTCCL = new AtomicReference<>();
+    vertx.<String>executeBlocking(future -> {
+      future.complete("whatever");
+      blockingTCCL.set(Thread.currentThread().getContextClassLoader());
+    }, ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals("whatever", ar.result());
+      latch.countDown();
+    });
+    assertSame(cl, Thread.currentThread().getContextClassLoader());
+    awaitLatch(latch);
+    assertSame(cl, blockingTCCL.get());
   }
 }
