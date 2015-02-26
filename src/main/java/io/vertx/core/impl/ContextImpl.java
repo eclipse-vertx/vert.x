@@ -221,10 +221,6 @@ public abstract class ContextImpl implements Context {
           }
         } catch (Throwable e) {
           res.fail(e);
-        } finally {
-          if (blockingCodeHandler != null) {
-            unsetContext();
-          }
         }
         if (resultHandler != null) {
           runOnContext(v -> res.setHandler(resultHandler));

@@ -104,11 +104,9 @@ public class ExecuteBlockingTest extends VertxTestBase {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     assertNotNull(cl);
     CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<Thread> blockingThread = new AtomicReference<>();
     AtomicReference<ClassLoader> blockingTCCL = new AtomicReference<>();
     vertx.<String>executeBlocking(future -> {
       future.complete("whatever");
-      blockingThread.set(Thread.currentThread());
       blockingTCCL.set(Thread.currentThread().getContextClassLoader());
     }, ar -> {
       assertTrue(ar.succeeded());
@@ -118,6 +116,5 @@ public class ExecuteBlockingTest extends VertxTestBase {
     assertSame(cl, Thread.currentThread().getContextClassLoader());
     awaitLatch(latch);
     assertSame(cl, blockingTCCL.get());
-    assertNull(blockingThread.get().getContextClassLoader());
   }
 }
