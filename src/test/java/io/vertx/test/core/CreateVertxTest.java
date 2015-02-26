@@ -62,14 +62,19 @@ public class CreateVertxTest extends AsyncTestBase {
     await();
   }
 
+  /*
+  If the user doesn't explicitly set clustered to true, it should still create a clustered Vert.x
+   */
   @Test
-  public void testCreateNonClusteredVertxAsync() {
+  public void testCreateClusteredVertxAsyncDontSetClustered() {
     VertxOptions options = new VertxOptions();
     Vertx.clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
+      assertTrue(options.isClustered());
       testComplete();
     });
     await();
   }
+
 }
