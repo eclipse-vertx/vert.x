@@ -478,56 +478,47 @@ public class EventBusImpl implements EventBus {
                              Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
     metrics.messageSent(message.address(), !message.send());
-    ContextImpl context = vertx.getOrCreateContext();
     Handler<Message<T>> simpleReplyHandler = null;
-    try {
-      long timeoutID = -1;
-      if (replyHandler != null) {
-        message.setReplyAddress(generateReplyAddress());
-        AtomicReference<MessageConsumer> refReg = new AtomicReference<>();
-        // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
-        timeoutID = vertx.setTimer(options.getSendTimeout(), timerID -> {
-          log.warn("Message reply handler timed out as no reply was received - it will be removed");
-          refReg.get().unregister();
-          metrics.replyFailure(message.address(), ReplyFailure.TIMEOUT);
-          replyHandler.handle(Future.failedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
-        });
-        simpleReplyHandler = convertHandler(replyHandler);
-        MessageConsumer registration = registerHandler(message.replyAddress(), simpleReplyHandler, true, true, timeoutID);
-        refReg.set(registration);
-      }
-      if (replyDest != null) {
-        if (!replyDest.equals(this.serverID)) {
-          sendRemote(replyDest, message);
-        } else {
-          receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
-        }
+    long timeoutID = -1;
+    if (replyHandler != null) {
+      message.setReplyAddress(generateReplyAddress());
+      AtomicReference<MessageConsumer> refReg = new AtomicReference<>();
+      // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
+      timeoutID = vertx.setTimer(options.getSendTimeout(), timerID -> {
+        log.warn("Message reply handler timed out as no reply was received - it will be removed");
+        refReg.get().unregister();
+        metrics.replyFailure(message.address(), ReplyFailure.TIMEOUT);
+        replyHandler.handle(Future.failedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
+      });
+      simpleReplyHandler = convertHandler(replyHandler);
+      MessageConsumer registration = registerHandler(message.replyAddress(), simpleReplyHandler, true, true, timeoutID);
+      refReg.set(registration);
+    }
+    if (replyDest != null) {
+      if (!replyDest.equals(this.serverID)) {
+        sendRemote(replyDest, message);
       } else {
-        if (subs != null) {
-          long fTimeoutID = timeoutID;
-          Handler<Message<T>> fSimpleReplyHandler = simpleReplyHandler;
-          subs.get(message.address(), asyncResult -> {
-            if (asyncResult.succeeded()) {
-              ChoosableIterable<ServerID> serverIDs = asyncResult.result();
-              if (serverIDs != null && !serverIDs.isEmpty()) {
-                sendToSubs(serverIDs, message, fTimeoutID, replyHandler, fSimpleReplyHandler);
-              } else {
-                receiveMessage(message, fTimeoutID, replyHandler, fSimpleReplyHandler);
-              }
-            } else {
-              log.error("Failed to send message", asyncResult.cause());
-            }
-          });
-        } else {
-          // Not clustered
-          receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
-        }
+        receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
       }
-    } finally {
-      // Reset the context id - send can cause messages to be delivered in different contexts so the context id
-      // of the current thread can change
-      if (context != null) {
-        ContextImpl.setContext(context);
+    } else {
+      if (subs != null) {
+        long fTimeoutID = timeoutID;
+        Handler<Message<T>> fSimpleReplyHandler = simpleReplyHandler;
+        subs.get(message.address(), asyncResult -> {
+          if (asyncResult.succeeded()) {
+            ChoosableIterable<ServerID> serverIDs = asyncResult.result();
+            if (serverIDs != null && !serverIDs.isEmpty()) {
+              sendToSubs(serverIDs, message, fTimeoutID, replyHandler, fSimpleReplyHandler);
+            } else {
+              receiveMessage(message, fTimeoutID, replyHandler, fSimpleReplyHandler);
+            }
+          } else {
+            log.error("Failed to send message", asyncResult.cause());
+          }
+        });
+      } else {
+        // Not clustered
+        receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
       }
     }
   }

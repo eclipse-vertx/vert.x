@@ -75,6 +75,8 @@ public class ComplexHATest extends VertxTestBase {
     } catch (Throwable t) {
       // Need to explicitly catch throwables in repeats or they will be swallowed
       t.printStackTrace();
+      // Don't forget to fail!
+      fail(t.getMessage());
     }
   }
 
@@ -97,7 +99,6 @@ public class ComplexHATest extends VertxTestBase {
         config.put("foo", TestUtils.randomAlphaString(100));
         DeploymentOptions options = new DeploymentOptions().setHa(true).setConfig(config);
         String verticleName = "java:io.vertx.test.core.HAVerticle" + (random.nextInt(3) + 1);
-        toDeploy++;
         v.deployVerticle(verticleName, options, ar -> {
           assertTrue(ar.succeeded());
           deployCount.incrementAndGet();

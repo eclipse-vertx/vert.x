@@ -49,7 +49,6 @@ public abstract class ContextImpl implements Context {
   private Deployment deployment;
   private Set<Closeable> closeHooks;
   private final ClassLoader tccl;
-  private boolean closed;
   private final EventLoop eventLoop;
   protected final Executor orderedInternalPoolExec;
   protected VertxThread contextThread;
@@ -72,16 +71,14 @@ public abstract class ContextImpl implements Context {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
       ((VertxThread)current).setContext(context);
-    }
-    if (context != null) {
-      context.setTCCL();
+      if (context != null) {
+        context.setTCCL();
+      } else {
+        Thread.currentThread().setContextClassLoader(null);
+      }
     } else {
-      Thread.currentThread().setContextClassLoader(null);
+      log.warn("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
     }
-  }
-
-  public void setTCCL() {
-    Thread.currentThread().setContextClassLoader(tccl);
   }
 
   public void setDeployment(Deployment deployment) {
@@ -231,15 +228,6 @@ public abstract class ContextImpl implements Context {
     }
   }
 
-  public void close() {
-    unsetContext();
-    closed = true;
-  }
-
-  private void unsetContext() {
-    setContext(null);
-  }
-
   protected void executeStart() {
     Thread thread = Thread.currentThread();
     // Sanity check - make sure Netty is really delivering events on the correct thread
@@ -279,12 +267,12 @@ public abstract class ContextImpl implements Context {
           executeEnd();
         }
       }
-      if (closed) {
-        // We allow tasks to be run after the context is closed but we make sure we unset the context afterwards
-        // to avoid any leaks
-        unsetContext();
-      }
     };
   }
+
+  private void setTCCL() {
+    Thread.currentThread().setContextClassLoader(tccl);
+  }
+
 
 }
