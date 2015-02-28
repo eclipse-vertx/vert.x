@@ -310,6 +310,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return decoder != null;
   }
 
+  @Override
+  public SocketAddress localAddress() {
+    return conn.localAddress();
+  }
+
   synchronized void handleData(Buffer data) {
     if (decoder != null) {
       try {
@@ -577,10 +582,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  @Override
-  public SocketAddress localAddress() {
-    return conn.localAddress();
-  }
 
   private static String urlDecode(String str) {
     return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);
