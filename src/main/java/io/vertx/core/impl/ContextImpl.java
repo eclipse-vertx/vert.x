@@ -77,7 +77,7 @@ public abstract class ContextImpl implements Context {
         Thread.currentThread().setContextClassLoader(null);
       }
     } else {
-      log.warn("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
+      throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
     }
   }
 

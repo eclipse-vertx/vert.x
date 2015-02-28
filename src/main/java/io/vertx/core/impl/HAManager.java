@@ -147,12 +147,7 @@ public class HAManager {
       }
     });
     clusterMap.put(nodeID, haInfo.encode());
-    quorumTimerID = vertx.setPeriodic(QUORUM_CHECK_PERIOD, new Handler<Long>() {
-      @Override
-      public void handle(Long timerID) {
-        checkHADeployments();
-      }
-    });
+    quorumTimerID = vertx.setPeriodic(QUORUM_CHECK_PERIOD, tid -> checkHADeployments());
     // Call check quorum to compute whether we have an initial quorum
     synchronized (this) {
       checkQuorum();
@@ -476,22 +471,30 @@ public class HAManager {
     final AtomicReference<Throwable> err = new AtomicReference<>();
     // Now deploy this verticle on this node
     ContextImpl ctx = vertx.getContext();
-    ContextImpl.setContext(null);
+    if (ctx != null) {
+      // We could be on main thread in which case we don't want to overwrite tccl
+      ContextImpl.setContext(null);
+    }
     JsonObject options = failedVerticle.getJsonObject("options");
-    doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
-      if (result.succeeded()) {
-        log.info("Successfully redeployed verticle " + verticleName + " after failover");
-      } else {
-        log.error("Failed to redeploy verticle after failover", result.cause());
-        err.set(result.cause());
+    try {
+      doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
+        if (result.succeeded()) {
+          log.info("Successfully redeployed verticle " + verticleName + " after failover");
+        } else {
+          log.error("Failed to redeploy verticle after failover", result.cause());
+          err.set(result.cause());
+        }
+        latch.countDown();
+        Throwable t = err.get();
+        if (t != null) {
+          throw new VertxException(t);
+        }
+      });
+    } finally {
+      if (ctx != null) {
+        ContextImpl.setContext(ctx);
       }
-      latch.countDown();
-      Throwable t = err.get();
-      if (t != null) {
-        throw new VertxException(t);
-      }
-    });
-    ContextImpl.setContext(ctx);
+    }
     try {
       if (!latch.await(120, TimeUnit.SECONDS)) {
         throw new VertxException("Timed out waiting for redeploy on failover");
