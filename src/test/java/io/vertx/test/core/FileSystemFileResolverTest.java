@@ -16,18 +16,6 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.FileResolver;
-import io.vertx.core.impl.VertxInternal;
-import org.junit.Test;
-
-import java.io.File;
-import java.util.concurrent.CountDownLatch;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

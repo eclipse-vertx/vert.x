@@ -815,8 +815,8 @@ public class JsonArrayTest {
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", null, {\n" +
-      "  \"foo\" : \"bar\"\n" +
+    String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", null, {" + System.getProperty("line.separator") +
+      "  \"foo\" : \"bar\"" + System.getProperty("line.separator") +
       "}, [ \"foo\", 123 ] ]";
     String json = jsonArray.encodePrettily();
     assertEquals(expected, json);

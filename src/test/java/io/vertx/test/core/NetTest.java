@@ -47,6 +47,7 @@ import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -784,6 +785,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenInvalidPort() {
+    /* Port 80 is free to use by any application on Windows, so this test fails. */
+    Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setPort(80));
     server.connectHandler((netSocket) -> {

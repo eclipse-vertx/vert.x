@@ -1120,18 +1120,18 @@ public class JsonObjectTest {
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "{\n" +
-      "  \"mystr\" : \"foo\",\n" +
-      "  \"myint\" : 123,\n" +
-      "  \"mylong\" : 1234,\n" +
-      "  \"myfloat\" : 1.23,\n" +
-      "  \"mydouble\" : 2.34,\n" +
-      "  \"myboolean\" : true,\n" +
-      "  \"mybinary\" : \"" + strBytes + "\",\n" +
-      "  \"myobj\" : {\n" +
-      "    \"foo\" : \"bar\"\n" +
-      "  },\n" +
-      "  \"myarr\" : [ \"foo\", 123 ]\n" +
+    String expected = "{" + System.getProperty("line.separator") +
+      "  \"mystr\" : \"foo\"," + System.getProperty("line.separator") +
+      "  \"myint\" : 123," + System.getProperty("line.separator") +
+      "  \"mylong\" : 1234," + System.getProperty("line.separator") +
+      "  \"myfloat\" : 1.23," + System.getProperty("line.separator") +
+      "  \"mydouble\" : 2.34," + System.getProperty("line.separator") +
+      "  \"myboolean\" : true," + System.getProperty("line.separator") +
+      "  \"mybinary\" : \"" + strBytes + "\"," + System.getProperty("line.separator") +
+      "  \"myobj\" : {" + System.getProperty("line.separator") +
+      "    \"foo\" : \"bar\"" + System.getProperty("line.separator") +
+      "  }," + System.getProperty("line.separator") +
+      "  \"myarr\" : [ \"foo\", 123 ]" + System.getProperty("line.separator") +
       "}";
     String json = jsonObject.encodePrettily();
     assertEquals(expected, json);
