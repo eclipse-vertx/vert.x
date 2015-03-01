@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -1120,18 +1121,18 @@ public class JsonObjectTest {
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "{" + System.getProperty("line.separator") +
-      "  \"mystr\" : \"foo\"," + System.getProperty("line.separator") +
-      "  \"myint\" : 123," + System.getProperty("line.separator") +
-      "  \"mylong\" : 1234," + System.getProperty("line.separator") +
-      "  \"myfloat\" : 1.23," + System.getProperty("line.separator") +
-      "  \"mydouble\" : 2.34," + System.getProperty("line.separator") +
-      "  \"myboolean\" : true," + System.getProperty("line.separator") +
-      "  \"mybinary\" : \"" + strBytes + "\"," + System.getProperty("line.separator") +
-      "  \"myobj\" : {" + System.getProperty("line.separator") +
-      "    \"foo\" : \"bar\"" + System.getProperty("line.separator") +
-      "  }," + System.getProperty("line.separator") +
-      "  \"myarr\" : [ \"foo\", 123 ]" + System.getProperty("line.separator") +
+    String expected = "{" + Utils.LINE_SEPARATOR +
+      "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
+      "  \"myint\" : 123," + Utils.LINE_SEPARATOR +
+      "  \"mylong\" : 1234," + Utils.LINE_SEPARATOR +
+      "  \"myfloat\" : 1.23," + Utils.LINE_SEPARATOR +
+      "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
+      "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
+      "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
+      "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
+      "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
+      "  }," + Utils.LINE_SEPARATOR +
+      "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
       "}";
     String json = jsonObject.encodePrettily();
     assertEquals(expected, json);

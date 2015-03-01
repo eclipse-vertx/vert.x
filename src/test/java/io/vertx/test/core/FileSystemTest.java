@@ -28,7 +28,7 @@ import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.file.impl.AsyncFileImpl;
-import io.vertx.core.impl.Windows;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
@@ -443,7 +443,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void azzertPerms(String perms, String file1) {
-    if (!Windows.isWindows()) {
+    if (!Utils.isWindows()) {
       assertEquals(perms, getPerms(file1));
     }
   }
@@ -540,7 +540,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testChownToOwnGroup() throws Exception {
     // Not supported in WindowsFileSystemProvider
-    Assume.assumeFalse(System.getProperty("os.name").startsWith( "Windows" ));
+    Assume.assumeFalse(Utils.isWindows());
     String file1 = "some-file.dat";
     createFileWithJunk(file1, 100);
     String fullPath = testDir + pathSep + file1;
@@ -600,7 +600,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testPropsFollowLink() throws Exception {
     // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
-    Assume.assumeFalse(System.getProperty("os.name").startsWith( "Windows" ));
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
 
@@ -632,7 +632,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testPropsDontFollowLink() throws Exception {
     // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
-    Assume.assumeFalse(System.getProperty("os.name").startsWith( "Windows" ));
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
@@ -692,7 +692,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testSymLink() throws Exception {
     // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
-    Assume.assumeFalse(System.getProperty("os.name").startsWith( "Windows" ));
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
@@ -732,7 +732,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testReadSymLink() throws Exception {
     // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
-    Assume.assumeFalse(System.getProperty("os.name").startsWith( "Windows" ));
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
@@ -1583,7 +1583,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void setPerms(Path path, String perms) {
-    if (Windows.isWindows() == false) {
+    if (Utils.isWindows() == false) {
       try {
         Files.setPosixFilePermissions( path, PosixFilePermissions.fromString(perms) );
       }

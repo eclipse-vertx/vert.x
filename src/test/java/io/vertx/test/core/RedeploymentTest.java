@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -93,7 +94,7 @@ public class RedeploymentTest extends VertxTestBase {
      * removed and garbage collected.  The following clean up statement fails because either there is
      * still some floating reference to the class loader or the JVM hasn't yet garbage collected it.
      */
-    if(!System.getProperty("os.name").startsWith( "Windows" ))
+    if(!Utils.isWindows())
       vertx.fileSystem().deleteRecursiveBlocking(tempDir.getPath(), true);
   }
 

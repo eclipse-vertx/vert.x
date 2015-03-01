@@ -206,7 +206,7 @@ public class VertxImpl implements VertxInternal {
    * @return The FileSystem implementation for the OS
    */
   protected FileSystem getFileSystem() {
-  	return Windows.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
+  	return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
   }
 
   @Override
