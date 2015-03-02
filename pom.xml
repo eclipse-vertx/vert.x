@@ -146,7 +146,8 @@
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
                 </annotationProcessors>
                 <compilerArgs>
-                  <arg>-Adocgen.output=${asciidoc.dir}</arg>
+                  <arg>-Adocgen.output=${asciidoc.dir}/java</arg>
+                  <arg>-AoutputDirectory=${project.basedir}/src/main</arg>
                 </compilerArgs>
               </configuration>
             </execution>
@@ -177,25 +178,14 @@
           </configuration>
         </plugin>
         <plugin>
-          <groupId>org.bsc.maven</groupId>
-          <artifactId>maven-processor-plugin</artifactId>
-          <version>2.2.4</version>
-          <configuration>
-            <processors>
-              <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
-            </processors>
-            <optionMap>
-              <docgen.output>${asciidoc.dir}</docgen.output>
-            </optionMap>
-          </configuration>
-        </plugin>
-        <plugin>
           <groupId>org.asciidoctor</groupId>
           <artifactId>asciidoctor-maven-plugin</artifactId>
           <version>1.5.2</version>
           <configuration>
             <sourceDirectory>${asciidoc.dir}</sourceDirectory>
             <outputDirectory>${project.build.directory}/docs</outputDirectory>
+            <preserveDirectories>true</preserveDirectories>
+            <relativeBaseDir>true</relativeBaseDir>
             <backend>html</backend>
             <doctype>book</doctype>
           </configuration>
@@ -211,7 +201,7 @@
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
           <configuration>
-            <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
+            <reportOutputDirectory>${project.build.directory}/docs/java</reportOutputDirectory>
           </configuration>
         </plugin>
         <plugin>
@@ -252,7 +242,6 @@
       <plugin>
         <groupId>org.asciidoctor</groupId>
         <artifactId>asciidoctor-maven-plugin</artifactId>
-        <version>1.5.0</version>
         <executions>
           <execution>
             <goals>

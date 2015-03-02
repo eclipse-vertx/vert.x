@@ -9,11 +9,11 @@
     <fileSets>
         <fileSet>
             <directory>${asciidoc.dir}</directory>
-            <outputDirectory>/asciidoc</outputDirectory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/docs/apidocs</directory>
-            <outputDirectory>/apidocs</outputDirectory>
+            <directory>${project.build.directory}/docs/java/apidocs</directory>
+            <outputDirectory>/java/apidocs</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

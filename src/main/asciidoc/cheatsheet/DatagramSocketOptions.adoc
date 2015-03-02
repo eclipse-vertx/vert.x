@@ -1,0 +1,39 @@
+== DatagramSocketOptions
+
+++++
+ Options used to configure a datagram socket.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|`sendBufferSize`
+|`Number`
+|_Set the TCP send buffer size_
+|`receiveBufferSize`
+|`Number`
+|_Set the TCP receive buffer size_
+|`reuseAddress`
+|`Boolean`
+|_Set the value of reuse address_
+|`trafficClass`
+|`Number`
+|_Set the value of traffic class_
+|`broadcast`
+|`Boolean`
+|_Set if the socket can receive broadcast packets_
+|`loopbackModeDisabled`
+|`Boolean`
+|_Set if loopback mode is disabled_
+|`multicastTimeToLive`
+|`Number`
+|_Set the multicast ttl value_
+|`multicastNetworkInterface`
+|`String`
+|_Set the multicast network interface address_
+|`ipV6`
+|`Boolean`
+|_Set if IP v6 should be used_|===

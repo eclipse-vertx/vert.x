@@ -1,0 +1,21 @@
+== DeliveryOptions
+
+++++
+ Delivery options are used to configure message delivery.
+ <p>
+ Delivery options allow to configure delivery timeout and message codec name, and to provide any headers
+ that you wish to send with the message.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|`sendTimeout`
+|`Number`
+|_Set the send timeout._
+|`codecName`
+|`String`
+|_Set the codec name._|===

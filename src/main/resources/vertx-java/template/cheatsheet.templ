@@ -1,0 +1,81 @@
+@comment{'A template @DataObject that creates cheatsheets doc'}
+
+@code{
+
+  def renderDocToHtml(margin, doc) {
+    var need = true;
+    var html = new StringBuilder();
+    for (token : doc.tokens) {
+      if (need) {
+        html.append(margin);
+        need = false;
+      }
+      if (token.lineBreak) {
+        html.append("\n");
+        need = true;
+      } else {
+        if (token.text) {
+          html.append(token.value);
+        } else {
+          var tag = token.tag;
+          if (tag instanceof io.vertx.codegen.doc.Tag$Link) {
+            html.append(tag.name);
+          } else if (tag.name == "code") {
+            html.append("<code>").append(tag.value.trim()).append("</code>");
+          }
+        }
+      }
+    }
+    if (!need) {
+      html.append("\n");
+    }
+    return html.toString();
+  }
+
+  def getDataType(type) {
+    var kind = type.kind;
+    if (kind.basic) {
+      if (kind == CLASS_STRING) {
+        return 'String';
+      }
+      var typeName = type.name;
+      if (typeName == 'java.lang.Boolean' || typeName == 'boolean') {
+        return "Boolean";
+      }
+      if (typeName == 'java.lang.Integer' || typeName == 'int' ||
+          typeName == 'java.lang.Long' || typeName == 'long') {
+        return "Number";
+      }
+    } else if (kind == CLASS_DATA_OBJECT) {
+      return 'link:' + type.raw.simpleName + '.html[' + type.raw.simpleName + ']';
+    }
+    System.out.println("unhandled type " + type);
+    return null;
+  }
+}
+
+
+== @{type.simpleName}\n
+\n
+@if{doc != null}
+++++\n
+@{renderDocToHtml('', doc)}
+++++\n
+'''\n
+@end{}
+\n
+[cols=">25%,^25%,50%"]\n
+[frame="topbot"]\n
+|===\n
+^|Name | Type ^| Description\n
+@foreach{property:properties}
+	@code{propertyType=getDataType(property.type)}
+	@code{arrayPrefix = property.array ? 'Array of ' : ''}
+	@if{propertyType != null}
+		\n
+		|`@{property.name}`\n
+		|`@{arrayPrefix}@{getDataType(property.type)}`\n
+		|@if{property.doc != null}_@{renderDocToHtml('', property.doc).trim()}_@else{}-@end{}
+	@end{}
+@end{}
+|===\n

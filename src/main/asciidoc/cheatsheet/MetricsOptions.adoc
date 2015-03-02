@@ -1,0 +1,24 @@
+== MetricsOptions
+
+++++
+ Vert.x metrics configuration.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|`enabled`
+|`Boolean`
+|_Set whether metrics will be enabled on the Vert.x instance._
+|`name`
+|`String`
+|_Set the name used by the metrics implementation for namespacing or registering the metrics._
+|`jmxEnabled`
+|`Boolean`
+|_Set whether JMX will be enabled on the Vert.x instance._
+|`jmxDomain`
+|`String`
+|_Set the JMX domain to use when JMX metrics are enabled._|===

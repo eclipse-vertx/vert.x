@@ -1,0 +1,96 @@
+== HttpClientOptions
+
+++++
+ Options describing how an link will make connections.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|`sendBufferSize`
+|`Number`
+|_Set the TCP send buffer size_
+|`receiveBufferSize`
+|`Number`
+|_Set the TCP receive buffer size_
+|`reuseAddress`
+|`Boolean`
+|_Set the value of reuse address_
+|`trafficClass`
+|`Number`
+|_Set the value of traffic class_
+|`tcpNoDelay`
+|`Boolean`
+|_Set whether TCP no delay is enabled_
+|`tcpKeepAlive`
+|`Boolean`
+|_Set whether TCP keep alive is enabled_
+|`soLinger`
+|`Number`
+|_Set whether SO_linger keep alive is enabled_
+|`usePooledBuffers`
+|`Boolean`
+|_Set whether Netty pooled buffers are enabled_
+|`idleTimeout`
+|`Number`
+|-
+|`ssl`
+|`Boolean`
+|_Set whether SSL/TLS is enabled_
+|`keyStoreOptions`
+|`link:JksOptions.html[JksOptions]`
+|_Set the key/cert options in jks format, aka Java keystore._
+|`pfxKeyCertOptions`
+|`link:PfxOptions.html[PfxOptions]`
+|_Set the key/cert options in pfx format._
+|`pemKeyCertOptions`
+|`link:PemKeyCertOptions.html[PemKeyCertOptions]`
+|_Set the key/cert store options in pem format._
+|`trustStoreOptions`
+|`link:JksOptions.html[JksOptions]`
+|_Set the trust options in jks format, aka Java trustore_
+|`pfxTrustOptions`
+|`link:PfxOptions.html[PfxOptions]`
+|_Set the trust options in pfx format_
+|`pemTrustOptions`
+|`link:PemTrustOptions.html[PemTrustOptions]`
+|_Set the trust options in pem format_
+|`enabledCipherSuites`
+|`Array of String`
+|_Add an enabled cipher suite_
+|`crlPaths`
+|`Array of String`
+|_Add a CRL path_
+|`connectTimeout`
+|`Number`
+|_Set the connect timeout_
+|`trustAll`
+|`Boolean`
+|_Set whether all server certificates should be trusted_
+|`maxPoolSize`
+|`Number`
+|_Set the maximum pool size for connections_
+|`keepAlive`
+|`Boolean`
+|_Set whether keep alive is enabled on the client_
+|`pipelining`
+|`Boolean`
+|_Set whether pipe-lining is enabled on the client_
+|`verifyHost`
+|`Boolean`
+|_Set whether hostname verification is enabled_
+|`tryUseCompression`
+|`Boolean`
+|_Set whether compression is enabled_
+|`maxWebsocketFrameSize`
+|`Number`
+|_Set the max websocket frame size_
+|`defaultHost`
+|`String`
+|_Set the default host name to be used by this client in requests if none is provided when making the request._
+|`defaultPort`
+|`Number`
+|_Set the default port to be used by this client in requests if none is provided when making the request._|===
