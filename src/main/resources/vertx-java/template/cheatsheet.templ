@@ -1,37 +1,20 @@
 @comment{'A template @DataObject that creates cheatsheets doc'}
 
+@includeNamed{'common-lib.templ'}
+
 @code{
 
-  def renderDocToHtml(margin, doc) {
-    var need = true;
-    var html = new StringBuilder();
-    for (token : doc.tokens) {
-      if (need) {
-        html.append(margin);
-        need = false;
-      }
-      if (token.lineBreak) {
-        html.append("\n");
-        need = true;
-      } else {
-        if (token.text) {
-          html.append(token.value);
-        } else {
-          var tag = token.tag;
-          if (tag instanceof io.vertx.codegen.doc.Tag$Link) {
-            html.append(tag.name);
-          } else if (tag.name == "code") {
-            html.append("<code>").append(tag.value.trim()).append("</code>");
-          }
-        }
-      }
-    }
-    if (!need) {
-      html.append("\n");
-    }
-    return html.toString();
+  /**
+   * Render a tag link to an its plain value, this function is used as parameter of the
+   * renderDocToHtml function when it needs to render tag links.
+   */
+  def renderTagLinkToHtml(tag) {
+    return tag.name;
   }
 
+  /**
+   * Return the formatted property data type.
+   */
   def getDataType(type) {
     var kind = type.kind;
     if (kind.basic) {
@@ -54,12 +37,11 @@
   }
 }
 
-
 == @{type.simpleName}\n
 \n
 @if{doc != null}
 ++++\n
-@{renderDocToHtml('', doc)}
+@{renderDocToHtml('', doc, renderTagLinkToHtml)}
 ++++\n
 '''\n
 @end{}
@@ -77,7 +59,7 @@
 		|`@{arrayPrefix}@{getDataType(property.type)}`\n
 		|@if{property.doc != null}
 		+++\n
-		@{renderDocToHtml('', property.doc).trim()}
+		@{renderDocToHtml('', property.doc, renderTagLinkToHtml).trim()}
 		+++\n
 		@else{}-@end{}
 	@end{}

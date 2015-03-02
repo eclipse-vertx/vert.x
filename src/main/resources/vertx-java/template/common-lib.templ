@@ -1,0 +1,46 @@
+@comment{'A library of reusable functions'}
+
+@code{
+
+  /**
+   * Render a doc comment to html markup.
+   *
+   * params:
+   * margin : left margin
+   * doc : io.vertx.codegen.doc.Doc object
+   * renderTagLinkToHtml : a function that takes as input io.vertx.codegen.doc.Tag$Link and returns an html string
+   *
+   * return: the renderer HTML
+   */
+  def renderDocToHtml(margin, doc, renderTagLinkToHtml) {
+    var need = true;
+    var html = new StringBuilder();
+    for (token : doc.tokens) {
+      if (need) {
+        html.append(margin);
+        need = false;
+      }
+      if (token.lineBreak) {
+        html.append("\n");
+        need = true;
+      } else {
+        if (token.text) {
+          html.append(token.value);
+        } else {
+          var tag = token.tag;
+
+          if (tag instanceof io.vertx.codegen.doc.Tag$Link) {
+            var htmlLink = renderTagLinkToHtml(tag);
+            html.append(htmlLink);
+          } else if (tag.name == "code") {
+            html.append("<code>").append(tag.value.trim()).append("</code>");
+          }
+        }
+      }
+    }
+    if (!need) {
+      html.append("\n");
+    }
+    return html.toString();
+  }
+}
