@@ -163,7 +163,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * <p>
    * USE THIS WITH CAUTION!
    * <p>
-   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
+   * Once you have called this method, you must handle writing to the connection yourself using the net socket,
+   * the server request instance will no longer be usable as normal.
+   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol.
    *
    * @return the net socket
    */
