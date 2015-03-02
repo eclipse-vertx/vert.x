@@ -12,13 +12,21 @@
 
 |`enabled`
 |`Boolean`
-|_Set whether metrics will be enabled on the Vert.x instance._
+|+++
+Set whether metrics will be enabled on the Vert.x instance.+++
+
 |`name`
 |`String`
-|_Set the name used by the metrics implementation for namespacing or registering the metrics._
+|+++
+Set the name used by the metrics implementation for namespacing or registering the metrics.+++
+
 |`jmxEnabled`
 |`Boolean`
-|_Set whether JMX will be enabled on the Vert.x instance._
+|+++
+Set whether JMX will be enabled on the Vert.x instance.+++
+
 |`jmxDomain`
 |`String`
-|_Set the JMX domain to use when JMX metrics are enabled._|===
+|+++
+Set the JMX domain to use when JMX metrics are enabled.+++
+|===

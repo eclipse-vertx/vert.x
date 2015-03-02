@@ -30,7 +30,11 @@
 
 |`password`
 |`String`
-|_Set the password for the key store_
+|+++
+Set the password for the key store+++
+
 |`path`
 |`String`
-|_Set the path to the key store_|===
+|+++
+Set the path to the key store+++
+|===

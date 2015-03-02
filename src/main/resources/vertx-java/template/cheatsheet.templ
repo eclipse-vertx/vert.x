@@ -75,7 +75,11 @@
 		\n
 		|`@{property.name}`\n
 		|`@{arrayPrefix}@{getDataType(property.type)}`\n
-		|@if{property.doc != null}_@{renderDocToHtml('', property.doc).trim()}_@else{}-@end{}
+		|@if{property.doc != null}
+		+++\n
+		@{renderDocToHtml('', property.doc).trim()}
+		+++\n
+		@else{}-@end{}
 	@end{}
 @end{}
 |===\n

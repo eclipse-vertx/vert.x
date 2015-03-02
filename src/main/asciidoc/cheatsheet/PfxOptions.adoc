@@ -30,7 +30,11 @@
 
 |`password`
 |`String`
-|_Set the password_
+|+++
+Set the password+++
+
 |`path`
 |`String`
-|_Set the path_|===
+|+++
+Set the path+++
+|===

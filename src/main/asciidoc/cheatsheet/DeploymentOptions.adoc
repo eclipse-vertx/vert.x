@@ -13,24 +13,36 @@
 
 |`worker`
 |`Boolean`
-|_Set whether the verticle(s) should be deployed as a worker verticle_
+|+++
+Set whether the verticle(s) should be deployed as a worker verticle+++
+
 |`multiThreaded`
 |`Boolean`
-|_Set whether the verticle(s) should be deployed as a multi-threaded worker verticle_
+|+++
+Set whether the verticle(s) should be deployed as a multi-threaded worker verticle+++
+
 |`isolationGroup`
 |`String`
-|_Set the isolation group that will be used when deploying the verticle(s)_
+|+++
+Set the isolation group that will be used when deploying the verticle(s)+++
+
 |`ha`
 |`Boolean`
-|_Set whether the verticle(s) will be deployed as HA._
+|+++
+Set whether the verticle(s) will be deployed as HA.+++
+
 |`extraClasspath`
 |`Array of String`
-|_Set any extra classpath to be used when deploying the verticle.
+|+++
+Set any extra classpath to be used when deploying the verticle.
  <p>
- Ignored if no isolation group is set._
+ Ignored if no isolation group is set.+++
+
 |`instances`
 |`Number`
-|_Set the number of instances that should be deployed._
+|+++
+Set the number of instances that should be deployed.+++
+
 |`redeploy`
 |`Boolean`
 |-

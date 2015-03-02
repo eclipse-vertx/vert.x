@@ -52,7 +52,11 @@
 
 |`keyPath`
 |`String`
-|_Set the path to the key file_
+|+++
+Set the path to the key file+++
+
 |`certPath`
 |`String`
-|_Set the path to the certificate_|===
+|+++
+Set the path to the certificate+++
+|===

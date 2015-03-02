@@ -40,4 +40,6 @@
 
 |`certPaths`
 |`Array of String`
-|_Add a certificate path_|===
+|+++
+Add a certificate path+++
+|===

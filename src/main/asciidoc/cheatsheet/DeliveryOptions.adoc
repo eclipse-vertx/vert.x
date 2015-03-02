@@ -15,7 +15,11 @@
 
 |`sendTimeout`
 |`Number`
-|_Set the send timeout._
+|+++
+Set the send timeout.+++
+
 |`codecName`
 |`String`
-|_Set the codec name._|===
+|+++
+Set the codec name.+++
+|===

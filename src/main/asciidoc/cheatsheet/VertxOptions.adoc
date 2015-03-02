@@ -12,46 +12,76 @@
 
 |`eventLoopPoolSize`
 |`Number`
-|_Set the number of event loop threads to be used by the Vert.x instance._
+|+++
+Set the number of event loop threads to be used by the Vert.x instance.+++
+
 |`workerPoolSize`
 |`Number`
-|_Set the maximum number of worker threads to be used by the Vert.x instance._
+|+++
+Set the maximum number of worker threads to be used by the Vert.x instance.+++
+
 |`clustered`
 |`Boolean`
-|_Set whether or not the Vert.x instance will be clustered._
+|+++
+Set whether or not the Vert.x instance will be clustered.+++
+
 |`clusterHost`
 |`String`
-|_Set the hostname to be used for clustering._
+|+++
+Set the hostname to be used for clustering.+++
+
 |`clusterPort`
 |`Number`
-|_Set the port to be used for clustering._
+|+++
+Set the port to be used for clustering.+++
+
 |`clusterPingInterval`
 |`Number`
-|_Set the value of cluster ping interval, in ms._
+|+++
+Set the value of cluster ping interval, in ms.+++
+
 |`clusterPingReplyInterval`
 |`Number`
-|_Set the value of cluster ping reply interval, in ms._
+|+++
+Set the value of cluster ping reply interval, in ms.+++
+
 |`blockedThreadCheckPeriod`
 |`Number`
-|_Sets the value of blocked thread check period, in ms._
+|+++
+Sets the value of blocked thread check period, in ms.+++
+
 |`maxEventLoopExecuteTime`
 |`Number`
-|_Sets the value of max event loop execute time, in ns._
+|+++
+Sets the value of max event loop execute time, in ns.+++
+
 |`maxWorkerExecuteTime`
 |`Number`
-|_Sets the value of max worker execute time, in ns._
+|+++
+Sets the value of max worker execute time, in ns.+++
+
 |`internalBlockingPoolSize`
 |`Number`
-|_Set the value of internal blocking pool size_
+|+++
+Set the value of internal blocking pool size+++
+
 |`haEnabled`
 |`Boolean`
-|_Set whether HA will be enabled on the Vert.x instance._
+|+++
+Set whether HA will be enabled on the Vert.x instance.+++
+
 |`quorumSize`
 |`Number`
-|_Set the quorum size to be used when HA is enabled._
+|+++
+Set the quorum size to be used when HA is enabled.+++
+
 |`haGroup`
 |`String`
-|_Set the HA group to be used when HA is enabled._
+|+++
+Set the HA group to be used when HA is enabled.+++
+
 |`metricsOptions`
 |`link:MetricsOptions.html[MetricsOptions]`
-|_Set the metrics options_|===
+|+++
+Set the metrics options+++
+|===

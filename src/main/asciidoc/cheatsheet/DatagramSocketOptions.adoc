@@ -12,28 +12,46 @@
 
 |`sendBufferSize`
 |`Number`
-|_Set the TCP send buffer size_
+|+++
+Set the TCP send buffer size+++
+
 |`receiveBufferSize`
 |`Number`
-|_Set the TCP receive buffer size_
+|+++
+Set the TCP receive buffer size+++
+
 |`reuseAddress`
 |`Boolean`
-|_Set the value of reuse address_
+|+++
+Set the value of reuse address+++
+
 |`trafficClass`
 |`Number`
-|_Set the value of traffic class_
+|+++
+Set the value of traffic class+++
+
 |`broadcast`
 |`Boolean`
-|_Set if the socket can receive broadcast packets_
+|+++
+Set if the socket can receive broadcast packets+++
+
 |`loopbackModeDisabled`
 |`Boolean`
-|_Set if loopback mode is disabled_
+|+++
+Set if loopback mode is disabled+++
+
 |`multicastTimeToLive`
 |`Number`
-|_Set the multicast ttl value_
+|+++
+Set the multicast ttl value+++
+
 |`multicastNetworkInterface`
 |`String`
-|_Set the multicast network interface address_
+|+++
+Set the multicast network interface address+++
+
 |`ipV6`
 |`Boolean`
-|_Set if IP v6 should be used_|===
+|+++
+Set if IP v6 should be used+++
+|===

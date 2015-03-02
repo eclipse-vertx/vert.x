@@ -12,67 +12,109 @@
 
 |`sendBufferSize`
 |`Number`
-|_Set the TCP send buffer size_
+|+++
+Set the TCP send buffer size+++
+
 |`receiveBufferSize`
 |`Number`
-|_Set the TCP receive buffer size_
+|+++
+Set the TCP receive buffer size+++
+
 |`reuseAddress`
 |`Boolean`
-|_Set the value of reuse address_
+|+++
+Set the value of reuse address+++
+
 |`trafficClass`
 |`Number`
-|_Set the value of traffic class_
+|+++
+Set the value of traffic class+++
+
 |`tcpNoDelay`
 |`Boolean`
-|_Set whether TCP no delay is enabled_
+|+++
+Set whether TCP no delay is enabled+++
+
 |`tcpKeepAlive`
 |`Boolean`
-|_Set whether TCP keep alive is enabled_
+|+++
+Set whether TCP keep alive is enabled+++
+
 |`soLinger`
 |`Number`
-|_Set whether SO_linger keep alive is enabled_
+|+++
+Set whether SO_linger keep alive is enabled+++
+
 |`usePooledBuffers`
 |`Boolean`
-|_Set whether Netty pooled buffers are enabled_
+|+++
+Set whether Netty pooled buffers are enabled+++
+
 |`idleTimeout`
 |`Number`
 |-
 |`ssl`
 |`Boolean`
-|_Set whether SSL/TLS is enabled_
+|+++
+Set whether SSL/TLS is enabled+++
+
 |`keyStoreOptions`
 |`link:JksOptions.html[JksOptions]`
-|_Set the key/cert options in jks format, aka Java keystore._
+|+++
+Set the key/cert options in jks format, aka Java keystore.+++
+
 |`pfxKeyCertOptions`
 |`link:PfxOptions.html[PfxOptions]`
-|_Set the key/cert options in pfx format._
+|+++
+Set the key/cert options in pfx format.+++
+
 |`pemKeyCertOptions`
 |`link:PemKeyCertOptions.html[PemKeyCertOptions]`
-|_Set the key/cert store options in pem format._
+|+++
+Set the key/cert store options in pem format.+++
+
 |`trustStoreOptions`
 |`link:JksOptions.html[JksOptions]`
-|_Set the trust options in jks format, aka Java trustore_
+|+++
+Set the trust options in jks format, aka Java trustore+++
+
 |`pfxTrustOptions`
 |`link:PfxOptions.html[PfxOptions]`
-|_Set the trust options in pfx format_
+|+++
+Set the trust options in pfx format+++
+
 |`pemTrustOptions`
 |`link:PemTrustOptions.html[PemTrustOptions]`
-|_Set the trust options in pem format_
+|+++
+Set the trust options in pem format+++
+
 |`enabledCipherSuites`
 |`Array of String`
-|_Add an enabled cipher suite_
+|+++
+Add an enabled cipher suite+++
+
 |`crlPaths`
 |`Array of String`
-|_Add a CRL path_
+|+++
+Add a CRL path+++
+
 |`acceptBacklog`
 |`Number`
-|_Set the accept back log_
+|+++
+Set the accept back log+++
+
 |`port`
 |`Number`
-|_Set the port_
+|+++
+Set the port+++
+
 |`host`
 |`String`
-|_Set the host_
+|+++
+Set the host+++
+
 |`clientAuthRequired`
 |`Boolean`
-|_Set whether client auth is required_|===
+|+++
+Set whether client auth is required+++
+|===
