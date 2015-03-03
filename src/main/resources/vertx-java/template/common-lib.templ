@@ -28,10 +28,13 @@
           html.append(token.value);
         } else {
           var tag = token.tag;
-
           if (tag instanceof io.vertx.codegen.doc.Tag$Link) {
             var htmlLink = renderTagLinkToHtml(tag);
-            html.append(htmlLink);
+            if (htmlLink != null) {
+              html.append(htmlLink);
+            } else {
+              html.append("<!-- tag link rendered to null using label/type instead -->");
+            }
           } else if (tag.name == "code") {
             html.append("<code>").append(tag.value.trim()).append("</code>");
           }
