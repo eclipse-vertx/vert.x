@@ -66,9 +66,9 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
@@ -78,6 +78,7 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
+import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.InetAddress;
@@ -86,7 +87,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.*;
@@ -96,7 +96,7 @@ import static io.netty.handler.codec.http.HttpVersion.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerImpl implements HttpServer, Closeable {
+public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
 
@@ -371,16 +371,13 @@ public class HttpServerImpl implements HttpServer, Closeable {
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics.baseName();
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public String metricBaseName() {
+    return metrics.baseName();
   }
 
   SSLHelper getSslHelper() {

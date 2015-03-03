@@ -24,7 +24,7 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface NetMetrics extends BaseMetrics {
+public interface NetMetrics extends Metrics {
 
   /**
    * Called when a socket is listening. For example, this is called when an http or net server

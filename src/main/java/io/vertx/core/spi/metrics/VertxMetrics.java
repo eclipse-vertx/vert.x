@@ -38,7 +38,7 @@ import io.vertx.core.net.NetServerOptions;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface VertxMetrics extends BaseMetrics, Measured {
+public interface VertxMetrics extends Metrics, Measured {
 
   /**
    * Called when a verticle is deployed in Vert.x

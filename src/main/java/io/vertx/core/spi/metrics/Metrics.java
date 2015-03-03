@@ -17,9 +17,12 @@
 package io.vertx.core.spi.metrics;
 
 /**
+ * The metrics interface is implemented by metrics providers that wants to provide monitoring of
+ * Vert.x core.
+ *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface BaseMetrics {
+public interface Metrics {
 
   /**
    * The name used as the base for metrics provided by an SPI.

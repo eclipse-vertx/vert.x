@@ -23,7 +23,7 @@ import io.vertx.core.eventbus.ReplyFailure;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface EventBusMetrics extends BaseMetrics {
+public interface EventBusMetrics extends Metrics {
 
   /**
    * Called when a handler is registered on the event bus.

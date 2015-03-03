@@ -30,10 +30,12 @@ import java.util.Map;
 public class MetricsExamples {
 
   public void example1(Vertx vertx) {
-    Map<String, JsonObject> metrics = vertx.metrics();
+//    Map<String, JsonObject> metrics = vertx.metrics();
+/*
     metrics.forEach((name, metric) -> {
       System.out.println(name + " : " + metric.encodePrettily());
     });
+*/
   }
 
   public void example2() {
@@ -44,8 +46,10 @@ public class MetricsExamples {
   }
 
   public void example3(Vertx vertx) {
+/*
     HttpServer server = vertx.createHttpServer();
     // set up server
     Map<String, JsonObject> metrics = server.metrics();
+*/
   }
 }

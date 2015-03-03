@@ -19,10 +19,7 @@ a map of the metric name to the data, represented by a `link:apidocs/io/vertx/co
 out all metrics for a particular Vert.x instance:
 [source,java]
 ----
-Map<String, JsonObject> metrics = vertx.metrics();
-metrics.forEach((name, metric) -> {
-  System.out.println(name + " : " + metric.encodePrettily());
-});
+
 ----
 
 NOTE: For details on the actual contents of the data (the actual metric) represented by the `link:apidocs/io/vertx/core/json/JsonObject.html[JsonObject]`
@@ -35,9 +32,7 @@ Since `link:apidocs/io/vertx/core/http/HttpServer.html[HttpServer]` implements `
 that are specific for that particular http server.
 [source,java]
 ----
-HttpServer server = vertx.createHttpServer();
-// set up server
-Map<String, JsonObject> metrics = server.metrics();
+
 ----
 
 === Metrics SPI
