@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -815,8 +816,8 @@ public class JsonArrayTest {
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", null, {\n" +
-      "  \"foo\" : \"bar\"\n" +
+    String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", null, {" + Utils.LINE_SEPARATOR +
+      "  \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
       "}, [ \"foo\", 123 ] ]";
     String json = jsonArray.encodePrettily();
     assertEquals(expected, json);

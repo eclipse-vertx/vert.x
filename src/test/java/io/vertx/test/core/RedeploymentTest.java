@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -88,7 +89,13 @@ public class RedeploymentTest extends VertxTestBase {
 
   @Override
   public void tearDown() throws Exception {
-    vertx.fileSystem().deleteRecursiveBlocking(tempDir.getPath(), true);
+    /* One of the temp files is a jar which is added to the classpath to test verticle redeploy on jar
+     * changes.  This jar remains locked by the JVM until all references to this class loader have been
+     * removed and garbage collected.  The following clean up statement fails because either there is
+     * still some floating reference to the class loader or the JVM hasn't yet garbage collected it.
+     */
+    if(!Utils.isWindows())
+      vertx.fileSystem().deleteRecursiveBlocking(tempDir.getPath(), true);
   }
 
   @Test

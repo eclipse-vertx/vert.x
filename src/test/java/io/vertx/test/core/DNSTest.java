@@ -55,6 +55,8 @@ public class DNSTest extends VertxTestBase {
     assertNullPointerException(() -> dns.resolvePTR(null, ar -> {}));
     assertNullPointerException(() -> dns.resolveNS(null, ar -> {}));
     assertNullPointerException(() -> dns.resolveSRV(null, ar -> {}));
+
+    dnsServer.stop();
   }
 
   @Test
@@ -71,6 +73,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -86,6 +89,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -105,6 +109,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -121,6 +126,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -137,6 +143,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -155,6 +162,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -169,6 +177,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -196,6 +205,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -210,6 +220,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -223,6 +234,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -237,6 +249,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -248,6 +261,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -263,6 +277,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test
@@ -278,6 +293,7 @@ public class DNSTest extends VertxTestBase {
       testComplete();
     });
     await();
+    dnsServer.stop();
   }
 
   @Test

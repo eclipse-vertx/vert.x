@@ -16,6 +16,8 @@
 
 package io.vertx.core.logging.impl;
 
+import io.vertx.core.impl.Utils;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Instant;
@@ -28,7 +30,6 @@ import java.util.logging.LogRecord;
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  */
 public class VertxLoggerFormatter extends java.util.logging.Formatter {
-  private static String LINE_SEPARATOR = System.getProperty("line.separator");
 
   @Override
   public String format(final LogRecord record) {
@@ -41,7 +42,7 @@ public class VertxLoggerFormatter extends java.util.logging.Formatter {
     sb.append(record.getLoggerName()).append("]").append("  ");
     sb.append(record.getMessage());
 
-    sb.append(VertxLoggerFormatter.LINE_SEPARATOR);
+    sb.append(Utils.LINE_SEPARATOR);
     if (record.getThrown() != null) {
       try {
         StringWriter sw = new StringWriter();

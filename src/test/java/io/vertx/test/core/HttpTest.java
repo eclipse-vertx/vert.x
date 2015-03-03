@@ -58,6 +58,7 @@ import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -71,6 +72,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -2792,52 +2794,52 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testJKSInvalidPath() {
-    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: /invalid.jks");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: ", "invalid.jks");
   }
 
   @Test
   public void testJKSMissingPassword() {
-    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword(null), "Password must not be null");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword(null), "Password must not be null", null);
   }
 
   @Test
   public void testJKSInvalidPassword() {
-    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect", null);
   }
 
   @Test
   public void testPKCS12InvalidPath() {
-    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: /invalid.p12");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: ", "invalid.p12");
   }
 
   @Test
   public void testPKCS12MissingPassword() {
-    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword(null), "Get Key failed: null");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword(null), "Get Key failed: null", null);
   }
 
   @Test
   public void testPKCS12InvalidPassword() {
-    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded", null);
   }
 
   @Test
   public void testKeyCertMissingKeyPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(null), "Missing private key");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(null), "Missing private key", null);
   }
 
   @Test
   public void testKeyCertInvalidKeyPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
   public void testKeyCertMissingCertPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath(null), "Missing X.509 certificate");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath(null), "Missing X.509 certificate", null);
   }
 
   @Test
   public void testKeyCertInvalidCertPath() {
-    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
@@ -2858,13 +2860,13 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(file.toString()), expectedMessage);
+      testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(file.toString()), expectedMessage, null);
     }
   }
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(new PemTrustOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidTrustStore(new PemTrustOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
@@ -2885,27 +2887,27 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidTrustStore(new PemTrustOptions().addCertPath(file.toString()), expectedMessage);
+      testInvalidTrustStore(new PemTrustOptions().addCertPath(file.toString()), expectedMessage, null);
     }
   }
 
-  private void testInvalidKeyStore(KeyCertOptions options, String expectedMessage) {
+  private void testInvalidKeyStore(KeyCertOptions options, String expectedPrefix, String expectedSuffix) {
     HttpServerOptions serverOptions = new HttpServerOptions();
     setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
-    testStore(serverOptions, expectedMessage);
+    testStore(serverOptions, expectedPrefix, expectedSuffix);
   }
 
-  private void testInvalidTrustStore(TrustOptions options, String expectedMessage) {
+  private void testInvalidTrustStore(TrustOptions options, String expectedPrefix, String expectedSuffix) {
     HttpServerOptions serverOptions = new HttpServerOptions();
     setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
-    testStore(serverOptions, expectedMessage);
+    testStore(serverOptions, expectedPrefix, expectedSuffix);
   }
 
-  private void testStore(HttpServerOptions serverOptions, String expectedMessage) {
+  private void testStore(HttpServerOptions serverOptions, String expectedPrefix, String expectedSuffix) {
     HttpServer server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
     });
@@ -2914,7 +2916,12 @@ public class HttpTest extends HttpTestBase {
       fail("Was expecting a failure");
     } catch (VertxException e) {
       assertNotNull(e.getCause());
-      assertEquals(expectedMessage, e.getCause().getMessage());
+      if(expectedSuffix == null)
+        assertEquals(expectedPrefix, e.getCause().getMessage());
+      else {
+        assertTrue(e.getCause().getMessage().startsWith(expectedPrefix));
+        assertTrue(e.getCause().getMessage().endsWith(expectedSuffix));
+      }
     }
   }
 
@@ -2931,7 +2938,7 @@ public class HttpTest extends HttpTestBase {
       fail("Was expecting a failure");
     } catch (VertxException e) {
       assertNotNull(e.getCause());
-      assertEquals("java.nio.file.NoSuchFileException: /invalid.pem", e.getCause().getMessage());
+      assertEquals(NoSuchFileException.class, e.getCause().getCause().getClass());
     }
   }
 
@@ -3158,6 +3165,8 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testListenInvalidPort() {
+    /* Port 7 is free for use by any application in Windows, so this test fails. */
+    Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(7));
     server.requestHandler(noOpHandler()).listen(onFailure(server -> {

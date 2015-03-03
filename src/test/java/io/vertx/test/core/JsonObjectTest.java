@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -1120,18 +1121,18 @@ public class JsonObjectTest {
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "{\n" +
-      "  \"mystr\" : \"foo\",\n" +
-      "  \"myint\" : 123,\n" +
-      "  \"mylong\" : 1234,\n" +
-      "  \"myfloat\" : 1.23,\n" +
-      "  \"mydouble\" : 2.34,\n" +
-      "  \"myboolean\" : true,\n" +
-      "  \"mybinary\" : \"" + strBytes + "\",\n" +
-      "  \"myobj\" : {\n" +
-      "    \"foo\" : \"bar\"\n" +
-      "  },\n" +
-      "  \"myarr\" : [ \"foo\", 123 ]\n" +
+    String expected = "{" + Utils.LINE_SEPARATOR +
+      "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
+      "  \"myint\" : 123," + Utils.LINE_SEPARATOR +
+      "  \"mylong\" : 1234," + Utils.LINE_SEPARATOR +
+      "  \"myfloat\" : 1.23," + Utils.LINE_SEPARATOR +
+      "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
+      "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
+      "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
+      "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
+      "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
+      "  }," + Utils.LINE_SEPARATOR +
+      "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
       "}";
     String json = jsonObject.encodePrettily();
     assertEquals(expected, json);
