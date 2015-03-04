@@ -34,10 +34,6 @@ public class MetricsOptionsTest extends VertxTestBase {
     assertFalse(options.isEnabled());
     assertEquals(options, options.setEnabled(true));
     assertTrue(options.isEnabled());
-
-    // Test metrics get enabled if jmx is set to true
-    options.setEnabled(false);
-    assertTrue(options.isEnabled());
   }
 
   @Test
