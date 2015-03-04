@@ -42,10 +42,9 @@ public class MetricsOptionsTest extends VertxTestBase {
 
     Random rand = new Random();
     boolean metricsEnabled = rand.nextBoolean();
-    boolean jmxEnabled = rand.nextBoolean();
     options.setEnabled(metricsEnabled);
     options = new MetricsOptions(options);
-    assertEquals(metricsEnabled || jmxEnabled, options.isEnabled());
+    assertEquals(metricsEnabled, options.isEnabled());
   }
 
   @Test
@@ -54,14 +53,8 @@ public class MetricsOptionsTest extends VertxTestBase {
     assertFalse(options.isEnabled());
     Random rand = new Random();
     boolean metricsEnabled = rand.nextBoolean();
-    boolean jmxEnabled = rand.nextBoolean();
-    String jmxDomain = TestUtils.randomAlphaString(100);
-    String metricsName = TestUtils.randomAlphaString(100);
     options = new MetricsOptions(new JsonObject().
-        put("enabled", metricsEnabled).
-        put("name", metricsName).
-        put("jmxEnabled", jmxEnabled).
-        put("jmxDomain", jmxDomain)
+        put("enabled", metricsEnabled)
     );
     assertEquals(metricsEnabled, options.isEnabled());
   }
