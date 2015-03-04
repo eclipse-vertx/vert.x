@@ -17,9 +17,6 @@
 package io.vertx.core.metrics;
 
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.json.JsonObject;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
@@ -33,11 +30,4 @@ public interface Measured {
    */
   String metricBaseName();
 
-  /**
-   * Will return the metrics that correspond with this measured object.
-   *
-   * @return the map of metrics where the key is the name of the metric (excluding the base name) and the value is
-   * the json data representing that metric
-   */
-  Map<String, JsonObject> metrics();
 }

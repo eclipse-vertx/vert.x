@@ -53,6 +53,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -63,11 +64,11 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
@@ -77,14 +78,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * This class is thread-safe
  *
  * @author <a href="http://tfox.org">Tim Fox</a>                                                                                        T
  */
-public class EventBusImpl implements EventBus {
+public class EventBusImpl implements EventBus, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
@@ -305,11 +305,8 @@ public class EventBusImpl implements EventBus {
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   <T> void sendReply(ServerID dest, MessageImpl message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {

@@ -33,9 +33,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.NetMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -45,7 +46,6 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetClientImpl implements NetClient {
+public class NetClientImpl implements NetClient, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
 
@@ -110,11 +110,8 @@ public class NetClientImpl implements NetClient {
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   private void checkClosed() {

@@ -42,9 +42,6 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 
-import java.util.Collections;
-import java.util.Map;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -113,11 +110,6 @@ public class DummyVertxMetrics implements VertxMetrics {
   @Override
   public String metricBaseName() {
     return null;
-  }
-
-  @Override
-  public Map<String, JsonObject> metrics() {
-    return Collections.EMPTY_MAP;
   }
 
   class DummyEventBusMetrics implements EventBusMetrics {

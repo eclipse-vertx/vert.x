@@ -32,24 +32,23 @@ import io.vertx.core.datagram.PacketWritestream;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket {
+public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket, MetricsProvider {
 
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
 
@@ -247,11 +246,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   protected DatagramChannel channel() {

@@ -49,6 +49,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -77,12 +79,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VertxImpl implements VertxInternal {
+public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 
@@ -329,11 +330,8 @@ public class VertxImpl implements VertxInternal {
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return metrics.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   public boolean cancelTimer(long id) {
