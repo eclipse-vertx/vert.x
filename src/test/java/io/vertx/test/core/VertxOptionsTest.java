@@ -203,9 +203,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setHAGroup(haGroup);
     options.setMetricsOptions(
         new MetricsOptions().
-            setEnabled(metricsEnabled).
-            setJmxEnabled(jmxEnabled).
-            setJmxDomain(jmxDomain));
+            setEnabled(metricsEnabled));
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(clusterPingInterval, options.getClusterPingInterval());
@@ -223,8 +221,6 @@ public class VertxOptionsTest extends VertxTestBase {
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertNotNull(metricsOptions);
     assertEquals(metricsEnabled || jmxEnabled, metricsOptions.isEnabled());
-    assertEquals(jmxEnabled, metricsOptions.isJmxEnabled());
-    assertEquals(jmxDomain, metricsOptions.getJmxDomain());
   }
 
   @Test
@@ -319,7 +315,5 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haGroup, options.getHAGroup());
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
-    assertEquals(jmxEnabled, metricsOptions.isJmxEnabled());
-    assertEquals(jmxDomain, metricsOptions.getJmxDomain());
   }
 }

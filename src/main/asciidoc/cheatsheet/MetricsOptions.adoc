@@ -1,7 +1,8 @@
 == MetricsOptions
 
 ++++
- Vert.x metrics configuration.
+ Vert.x metrics base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
 ++++
 '''
 
@@ -14,19 +15,4 @@
 |`Boolean`
 |+++
 Set whether metrics will be enabled on the Vert.x instance.+++
-
-|`name`
-|`String`
-|+++
-Set the name used by the metrics implementation for namespacing or registering the metrics.+++
-
-|`jmxEnabled`
-|`Boolean`
-|+++
-Set whether JMX will be enabled on the Vert.x instance.+++
-
-|`jmxDomain`
-|`String`
-|+++
-Set the JMX domain to use when JMX metrics are enabled.+++
 |===
