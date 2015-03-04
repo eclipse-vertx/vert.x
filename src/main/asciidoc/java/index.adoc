@@ -651,8 +651,6 @@ include::datagrams.adoc[]
 
 include::dns.adoc[]
 
-include::metrics.adoc[]
-
 [[streams]]
 include::streams.adoc[]
 

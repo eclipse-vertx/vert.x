@@ -620,8 +620,6 @@
  *
  * include::dns.adoc[]
  *
- * include::metrics.adoc[]
- *
  * [[streams]]
  * include::streams.adoc[]
  *
@@ -630,6 +628,11 @@
  * == Thread safety
  *
  * Notes on thread safety of Vert.x objects
+ *
+ * == Metrics SPI
+ *
+ * The metrics SPI is an advanced feature which allows implementers to capture events from Vert.x in order to gather metrics. For
+ * more information on this, please consult the {@link io.vertx.core.spi.metrics.VertxMetrics API Documentation}.
  *
  * == Clustering
  *
