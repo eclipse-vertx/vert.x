@@ -631,8 +631,10 @@
  *
  * == Metrics SPI
  *
- * The metrics SPI is an advanced feature which allows implementers to capture events from Vert.x in order to gather metrics. For
- * more information on this, please consult the {@link io.vertx.core.spi.metrics.VertxMetrics API Documentation}.
+ * By default Vert.x does not record any metrics. Instead it provides an SPI for others to implement which can be added
+ * to the classpath. The metrics SPI is an advanced feature which allows implementers to capture events from Vert.x in
+ * order to gather metrics. For more information on this, please consult the
+ * {@link io.vertx.core.spi.metrics.VertxMetrics API Documentation}.
  *
  * == Clustering
  *
