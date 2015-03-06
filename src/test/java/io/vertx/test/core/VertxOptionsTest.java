@@ -184,10 +184,8 @@ public class VertxOptionsTest extends VertxTestBase {
     Random rand = new Random();
     boolean haEnabled = rand.nextBoolean();
     boolean metricsEnabled = rand.nextBoolean();
-    boolean jmxEnabled = rand.nextBoolean();
     int quorumSize = 51214;
     String haGroup = TestUtils.randomAlphaString(100);
-    String jmxDomain = TestUtils.randomAlphaString(100);
     options.setClusterPort(clusterPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
     options.setInternalBlockingPoolSize(internalBlockingPoolSize);
@@ -220,7 +218,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haGroup, options.getHAGroup());
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertNotNull(metricsOptions);
-    assertEquals(metricsEnabled || jmxEnabled, metricsOptions.isEnabled());
+    assertEquals(metricsEnabled, metricsOptions.isEnabled());
   }
 
   @Test
