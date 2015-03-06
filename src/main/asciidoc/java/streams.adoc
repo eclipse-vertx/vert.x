@@ -2,7 +2,7 @@
 
 There are several objects in Vert.x that allow items to be read from and written.
 
-In previous versions the streams.adoc package was manipulating `link:apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`
+In previous versions the streams.adoc package was manipulating `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`
 objects exclusively. From now, streams are not anymore coupled to buffers and work with any kind of objects.
 
 In Vert.x, calls to write item return immediately and writes are internally queued.
@@ -13,12 +13,12 @@ exhausting available memory.
 
 To solve this problem a simple flow control capability is provided by some objects in the Vert.x API.
 
-Any flow control aware object that can be written-to implements `link:apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]`,
-and any flow control object that can be read-from is said to implement `link:apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]`.
+Any flow control aware object that can be written-to implements `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]`,
+and any flow control object that can be read-from is said to implement `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]`.
 
 Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
 
-A very simple example would be reading from a `link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` on a server and writing back to the
+A very simple example would be reading from a `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` on a server and writing back to the
 same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can
 do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response,
 async files, WebSockets, etc.
@@ -101,12 +101,12 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-And there we have it. The `link:apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]` event handler will
+And there we have it. The `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]` event handler will
 get called when the write queue is ready to accept more data, this resumes the `NetSocket` which
 allows it to read more data.
 
 It's very common to want to do this when writing Vert.x applications, so we provide a helper class
-called `link:apidocs/io/vertx/core/streams/Pump.html[Pump]` which does all this hard work for you. You just feed it the `ReadStream` and
+called `link:../../apidocs/io/vertx/core/streams/Pump.html[Pump]` which does all this hard work for you. You just feed it the `ReadStream` and
 the `WriteStream` and it tell it to start:
 
 [source,java]
@@ -125,60 +125,60 @@ Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 === ReadStream
 
-`ReadStream` is implemented by `link:apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`, `link:apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`,
-`link:apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:apidocs/io/vertx/core/http/HttpServerFileUpload.html[HttpServerFileUpload]`,
-`link:apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`, `link:apidocs/io/vertx/core/http/HttpServerRequestStream.html[HttpServerRequestStream]`,
-`link:apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]`, `link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:apidocs/io/vertx/core/net/NetSocketStream.html[NetSocketStream]`,
-`link:apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:apidocs/io/vertx/core/http/WebSocketStream.html[WebSocketStream]`, `link:apidocs/io/vertx/core/TimeoutStream.html[TimeoutStream]`,
-`link:apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`.
+`ReadStream` is implemented by `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]`, `link:../../apidocs/io/vertx/core/datagram/DatagramSocket.html[DatagramSocket]`,
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerFileUpload.html[HttpServerFileUpload]`,
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html[HttpServerRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerRequestStream.html[HttpServerRequestStream]`,
+`link:../../apidocs/io/vertx/core/eventbus/MessageConsumer.html[MessageConsumer]`, `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:../../apidocs/io/vertx/core/net/NetSocketStream.html[NetSocketStream]`,
+`link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:../../apidocs/io/vertx/core/http/WebSocketStream.html[WebSocketStream]`, `link:../../apidocs/io/vertx/core/TimeoutStream.html[TimeoutStream]`,
+`link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`.
 
 Functions:
 
-- `link:apidocs/io/vertx/core/streams/ReadStream.html#handler-io.vertx.core.Handler-[handler]`:
+- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#handler-io.vertx.core.Handler-[handler]`:
 set a handler which will receive items from the ReadStream.
-- `link:apidocs/io/vertx/core/streams/ReadStream.html#pause--[pause]`:
+- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#pause--[pause]`:
 pause the handler. When paused no items will be received in the handler.
-- `link:apidocs/io/vertx/core/streams/ReadStream.html#resume--[resume]`:
+- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#resume--[resume]`:
 resume the handler. The handler will be called if any item arrives.
-- `link:apidocs/io/vertx/core/streams/ReadStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`:
+- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`:
 Will be called if an exception occurs on the ReadStream.
-- `link:apidocs/io/vertx/core/streams/ReadStream.html#endHandler-io.vertx.core.Handler-[endHandler]`:
+- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#endHandler-io.vertx.core.Handler-[endHandler]`:
 Will be called when end of stream is reached. This might be when EOF is reached if the ReadStream represents a file,
 or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
 
 === WriteStream
 
-`WriteStream` is implemented by `link:apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`
-`link:apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`,
-`link:apidocs/io/vertx/core/datagram/PacketWritestream.html[PacketWritestream]` and `link:apidocs/io/vertx/core/eventbus/MessageProducer.html[MessageProducer]`
+`WriteStream` is implemented by `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`, `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]`
+`link:../../apidocs/io/vertx/core/http/WebSocket.html[WebSocket]`, `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`, `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]`,
+`link:../../apidocs/io/vertx/core/datagram/PacketWritestream.html[PacketWritestream]` and `link:../../apidocs/io/vertx/core/eventbus/MessageProducer.html[MessageProducer]`
 
 Functions:
 
-- `link:apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]`:
+- `link:../../apidocs/io/vertx/core/streams/WriteStream.html#write-java.lang.Object-[write]`:
 write an object to the WriteStream. This method will never block. Writes are queued internally and asynchronously
 written to the underlying resource.
-- `link:apidocs/io/vertx/core/streams/WriteStream.html#setWriteQueueMaxSize-int-[setWriteQueueMaxSize]`:
-set the number of object at which the write queue is considered _full_, and the method `link:apidocs/io/vertx/core/streams/WriteStream.html#writeQueueFull--[writeQueueFull]`
+- `link:../../apidocs/io/vertx/core/streams/WriteStream.html#setWriteQueueMaxSize-int-[setWriteQueueMaxSize]`:
+set the number of object at which the write queue is considered _full_, and the method `link:../../apidocs/io/vertx/core/streams/WriteStream.html#writeQueueFull--[writeQueueFull]`
 returns `true`. Note that, when the write queue is considered full, if write is called the data will still be accepted
-and queued. The actual number depends on the stream implementation, for `link:apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` the size
+and queued. The actual number depends on the stream implementation, for `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` the size
 represents the actual number of bytes written and not the number of buffers.
-- `link:apidocs/io/vertx/core/streams/WriteStream.html#writeQueueFull--[writeQueueFull]`:
+- `link:../../apidocs/io/vertx/core/streams/WriteStream.html#writeQueueFull--[writeQueueFull]`:
 returns `true` if the write queue is considered full.
-- `link:apidocs/io/vertx/core/streams/WriteStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`:
+- `link:../../apidocs/io/vertx/core/streams/WriteStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`:
 Will be called if an exception occurs on the `WriteStream`.
-- `link:apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]`:
+- `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]`:
 The handler will be called if the `WriteStream` is considered no longer full.
 
 === Pump
 
 Instances of Pump have the following methods:
 
-- `link:apidocs/io/vertx/core/streams/Pump.html#start--[start]`:
+- `link:../../apidocs/io/vertx/core/streams/Pump.html#start--[start]`:
 Start the pump.
-- `link:apidocs/io/vertx/core/streams/Pump.html#stop--[stop]`:
+- `link:../../apidocs/io/vertx/core/streams/Pump.html#stop--[stop]`:
 Stops the pump. When the pump starts it is in stopped mode.
-- `link:apidocs/io/vertx/core/streams/Pump.html#setWriteQueueMaxSize-int-[setWriteQueueMaxSize]`:
-This has the same meaning as `link:apidocs/io/vertx/core/streams/WriteStream.html#setWriteQueueMaxSize-int-[setWriteQueueMaxSize]` on the `WriteStream`.
+- `link:../../apidocs/io/vertx/core/streams/Pump.html#setWriteQueueMaxSize-int-[setWriteQueueMaxSize]`:
+This has the same meaning as `link:../../apidocs/io/vertx/core/streams/WriteStream.html#setWriteQueueMaxSize-int-[setWriteQueueMaxSize]` on the `WriteStream`.
 
 A pump can be started and stopped multiple times.
 

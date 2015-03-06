@@ -161,10 +161,10 @@ client.resolveMX("vertx.io", ar -> {
 });
 ----
 
-Be aware that the List will contain the `link:apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` sorted by the priority of them, which
+Be aware that the List will contain the `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` sorted by the priority of them, which
 means MX records with smaller priority coming first in the List.
 
-The `link:apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` allows you to access the priority and the name of the MX record by offer methods for it like:
+The `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` allows you to access the priority and the name of the MX record by offer methods for it like:
 
 [source,java]
 ----

@@ -1,9 +1,9 @@
 === Writing Verticles
 
-Verticle classes must implement the `link:apidocs/io/vertx/core/Verticle.html[Verticle]` interface.
+Verticle classes must implement the `link:../../apidocs/io/vertx/core/Verticle.html[Verticle]` interface.
 
 They can implement it directly if you like but usually it's simpler to extend
-the abstract class `link:apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`.
+the abstract class `link:../../apidocs/io/vertx/core/AbstractVerticle.html[AbstractVerticle]`.
 
 Here's an example verticle:
 

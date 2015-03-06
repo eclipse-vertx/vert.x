@@ -1,8 +1,8 @@
 == Using the file system with Vert.x
 
-The Vert.x `link:apidocs/io/vertx/core/file/FileSystem.html[FileSystem]` object provides many operations for manipulating the file system.
+The Vert.x `link:../../apidocs/io/vertx/core/file/FileSystem.html[FileSystem]` object provides many operations for manipulating the file system.
 
-There is one file system object per Vert.x instance, and you obtain it with `link:apidocs/io/vertx/core/Vertx.html#fileSystem--[fileSystem]`.
+There is one file system object per Vert.x instance, and you obtain it with `link:../../apidocs/io/vertx/core/Vertx.html#fileSystem--[fileSystem]`.
 
 A blocking and a non blocking version of each operation is provided.
 
@@ -43,13 +43,13 @@ fs.copyBlocking("foo.txt", "bar.txt");
 
 Many operations exist to copy, move, truncate, chmod and many other file operations.
 
-We won't list them all here, please consult the `link:apidocs/io/vertx/core/file/FileSystem.html[API docs]` for the full list.
+We won't list them all here, please consult the `link:../../apidocs/io/vertx/core/file/FileSystem.html[API docs]` for the full list.
 
 === Asynchronous files
 
 Vert.x provides an asynchronous file abstraction that allows you to manipulate a file on the file system
 
-You open an `link:apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]` as follows:
+You open an `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]` as follows:
 
 [source,java]
 ----

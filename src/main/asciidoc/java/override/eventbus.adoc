@@ -1,8 +1,8 @@
 ==== Message Codecs
 
-You can send any object you like across the event bus if you define and register a `link:apidocs/io/vertx/core/eventbus/MessageCodec.html[message codec]` for it.
+You can send any object you like across the event bus if you define and register a `link:../../apidocs/io/vertx/core/eventbus/MessageCodec.html[message codec]` for it.
 
-Message codecs have a name and you specify that name in the `link:apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]`
+Message codecs have a name and you specify that name in the `link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]`
 when sending or publishing the message:
 
 [source,java]
@@ -24,7 +24,7 @@ eventBus.registerDefaultCodec(MyPOJO.class, myCodec);
 eventBus.send("orders", new MyPOJO());
 ----
 
-You unregister a message codec with `link:apidocs/io/vertx/core/eventbus/EventBus.html#unregisterCodec-java.lang.String-[unregisterCodec]`.
+You unregister a message codec with `link:../../apidocs/io/vertx/core/eventbus/EventBus.html#unregisterCodec-java.lang.String-[unregisterCodec]`.
 
 Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
 allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.

@@ -8,7 +8,7 @@ necessary to accommodate any bytes written to it. You can perhaps think of a buf
 
 === Creating buffers
 
-Buffers can create by using one of the static `link:apidocs/io/vertx/core/buffer/Buffer.html#buffer--[Buffer.buffer]` methods.
+Buffers can create by using one of the static `link:../../apidocs/io/vertx/core/buffer/Buffer.html#buffer--[Buffer.buffer]` methods.
 
 Buffers can be initialised from strings or byte arrays, or empty buffers can be created.
 
@@ -101,17 +101,17 @@ for (int i = 0; i < buff.length(); i += 4) {
 
 === Buffer length
 
-Use `link:apidocs/io/vertx/core/buffer/Buffer.html#length--[length]` to obtain the length of the buffer.
+Use `link:../../apidocs/io/vertx/core/buffer/Buffer.html#length--[length]` to obtain the length of the buffer.
 The length of a buffer is the index of the byte in the buffer with the largest index + 1.
 
 === Copying buffers
 
-Use `link:apidocs/io/vertx/core/buffer/Buffer.html#copy--[copy]` to make a copy of the buffer
+Use `link:../../apidocs/io/vertx/core/buffer/Buffer.html#copy--[copy]` to make a copy of the buffer
 
 === Slicing buffers
 
 A sliced buffer is a new buffer which backs onto the original buffer, i.e. it does not copy the underlying data.
-Use `link:apidocs/io/vertx/core/buffer/Buffer.html#slice--[slice]` to create a sliced buffers
+Use `link:../../apidocs/io/vertx/core/buffer/Buffer.html#slice--[slice]` to create a sliced buffers
 
 === Buffer re-use
 

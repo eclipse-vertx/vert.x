@@ -13,7 +13,7 @@ NetServer server = vertx.createNetServer();
 
 === Configuring a TCP server
 
-If you don't want the default, a server can be configured by passing in a `link:apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`
+If you don't want the default, a server can be configured by passing in a `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`
 instance when creating it:
 
 [source,java]
@@ -24,7 +24,7 @@ NetServer server = vertx.createNetServer(options);
 
 === Start the Server Listening
 
-To tell the server to listen for incoming requests you use one of the `link:apidocs/io/vertx/core/net/NetServer.html#listen--[listen]`
+To tell the server to listen for incoming requests you use one of the `link:../../apidocs/io/vertx/core/net/NetServer.html#listen--[listen]`
 alternatives.
 
 To tell the server to listen at the host and port as specified in the options:
@@ -68,7 +68,7 @@ server.listen(1234, "localhost", res -> {
 
 If `0` is used as the listening port, the server will find an unused random port to listen on.
 
-To find out the real port the server is listening on you can call `link:apidocs/io/vertx/core/net/NetServer.html#actualPort--[actualPort]`.
+To find out the real port the server is listening on you can call `link:../../apidocs/io/vertx/core/net/NetServer.html#actualPort--[actualPort]`.
 
 [source,java]
 ----
@@ -84,7 +84,7 @@ server.listen(0, "localhost", res -> {
 
 === Getting notified of incoming connections
 
-To be notified when a connection is made you need to set a `link:apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]`:
+To be notified when a connection is made you need to set a `link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]`:
 
 [source,java]
 ----
@@ -94,17 +94,17 @@ server.connectHandler(socket -> {
 });
 ----
 
-When a connection is made the handler will be called with an instance of `link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`.
+When a connection is made the handler will be called with an instance of `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`.
 
 This is a socket-like interface to the actual connection, and allows you to read and write data as well as do various
 other things like close the socket.
 
 === Reading data from the socket
 
-To read data from the socket you set the `link:apidocs/io/vertx/core/net/NetSocket.html#handler-io.vertx.core.Handler-[handler]` on the
+To read data from the socket you set the `link:../../apidocs/io/vertx/core/net/NetSocket.html#handler-io.vertx.core.Handler-[handler]` on the
 socket.
 
-This handler will be called with an instance of `link:apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` every time data is received on
+This handler will be called with an instance of `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` every time data is received on
 the socket.
 
 [source,java]
@@ -119,7 +119,7 @@ server.connectHandler(socket -> {
 
 === Writing data to a socket
 
-You write to a socket using one of `link:apidocs/io/vertx/core/net/NetSocket.html#write-io.vertx.core.buffer.Buffer-[write]`.
+You write to a socket using one of `link:../../apidocs/io/vertx/core/net/NetSocket.html#write-io.vertx.core.buffer.Buffer-[write]`.
 
 [source,java]
 ----
@@ -137,7 +137,7 @@ Write operations are asynchronous and may not occur until some time after the ca
 
 === Closed handler
 
-If you want to be notified when a socket is closed, you can set a `link:apidocs/io/vertx/core/net/NetSocket.html#closeHandler-io.vertx.core.Handler-[closeHandler]`
+If you want to be notified when a socket is closed, you can set a `link:../../apidocs/io/vertx/core/net/NetSocket.html#closeHandler-io.vertx.core.Handler-[closeHandler]`
 on it:
 
 [source,java]
@@ -149,7 +149,7 @@ socket.closeHandler(v -> {
 
 === Handling exceptions
 
-You can set an `link:apidocs/io/vertx/core/net/NetSocket.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]` to receive any
+You can set an `link:../../apidocs/io/vertx/core/net/NetSocket.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]` to receive any
 exceptions that happen on the socket.
 
 === Event bus write handler
@@ -160,18 +160,18 @@ it writes them to itself.
 This enables you to write data to a socket which is potentially in a completely different verticle or even in a
 different Vert.x instance by sending the buffer to the address of that handler.
 
-The address of the handler is given by `link:apidocs/io/vertx/core/net/NetSocket.html#writeHandlerID--[writeHandlerID]`
+The address of the handler is given by `link:../../apidocs/io/vertx/core/net/NetSocket.html#writeHandlerID--[writeHandlerID]`
 
 === Local and remote addresses
 
-The local address of a `link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` can be retrieved using `link:apidocs/io/vertx/core/net/NetSocket.html#localAddress--[localAddress]`.
+The local address of a `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` can be retrieved using `link:../../apidocs/io/vertx/core/net/NetSocket.html#localAddress--[localAddress]`.
 
-The remote address, (i.e. the address of the other end of the connection) of a `link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`
-can be retrieved using `link:apidocs/io/vertx/core/net/NetSocket.html#remoteAddress--[remoteAddress]`.
+The remote address, (i.e. the address of the other end of the connection) of a `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`
+can be retrieved using `link:../../apidocs/io/vertx/core/net/NetSocket.html#remoteAddress--[remoteAddress]`.
 
 === Sending files
 
-Files can be written to the socket directly using `link:apidocs/io/vertx/core/net/NetSocket.html#sendFile-java.lang.String-[sendFile]`. This can be a very
+Files can be written to the socket directly using `link:../../apidocs/io/vertx/core/net/NetSocket.html#sendFile-java.lang.String-[sendFile]`. This can be a very
 efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
 
 [source,java]
@@ -181,22 +181,22 @@ socket.sendFile("myfile.dat");
 
 === Streaming sockets
 
-Instances of `link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` are also `link:apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` and
-`link:apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instances so they can be used to pump data to or from other
+Instances of `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` are also `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` and
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instances so they can be used to pump data to or from other
 read and write streams.
 
 See the chapter on <<streams, streams and pumps>> for more information.
 
 === Upgrading connections to SSL/TLS
 
-A non SSL/TLS connection can be upgraded to SSL/TLS using `link:apidocs/io/vertx/core/net/NetSocket.html#upgradeToSsl-io.vertx.core.Handler-[upgradeToSsl]`.
+A non SSL/TLS connection can be upgraded to SSL/TLS using `link:../../apidocs/io/vertx/core/net/NetSocket.html#upgradeToSsl-io.vertx.core.Handler-[upgradeToSsl]`.
 
 The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
 for more information.
 
 === Closing a TCP Server
 
-Call `link:apidocs/io/vertx/core/net/NetServer.html#close--[close]` to close the server. Closing the server closes any open connections
+Call `link:../../apidocs/io/vertx/core/net/NetServer.html#close--[close]` to close the server. Closing the server closes any open connections
 and releases all server resources.
 
 The close is actually asynchronous and might not complete until some time after the call has returned.
@@ -285,7 +285,7 @@ NetClient client = vertx.createNetClient();
 
 === Configuring a TCP client
 
-If you don't want the default, a client can be configured by passing in a `link:apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]`
+If you don't want the default, a client can be configured by passing in a `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]`
 instance when creating it:
 
 [source,java]
@@ -296,9 +296,9 @@ NetClient client = vertx.createNetClient(options);
 
 === Making connections
 
-To make a connection to a server you use `link:apidocs/io/vertx/core/net/NetClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]`,
+To make a connection to a server you use `link:../../apidocs/io/vertx/core/net/NetClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]`,
 specifying the port and host of the server and a handler that will be called with a result containing the
-`link:apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` when connection is successful or with a failure if connection failed.
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` when connection is successful or with a failure if connection failed.
 
 [source,java]
 ----
@@ -317,8 +317,8 @@ client.connect(4321, "localhost", res -> {
 === Configuring connection attempts
 
 A client can be configured to automatically retry connecting to the server in the event that it cannot connect.
-This is configured with `link:apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectInterval-long-[setReconnectInterval]` and
-`link:apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectAttempts-int-[setReconnectAttempts]`.
+This is configured with `link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectInterval-long-[setReconnectInterval]` and
+`link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectAttempts-int-[setReconnectAttempts]`.
 
 NOTE: Currently Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
 only apply to creating initial connections.
@@ -340,12 +340,12 @@ TCP clients and servers can be configured to use http://en.wikipedia.org/wiki/Tr
 - earlier versions of TLS were known as SSL.
 
 The APIs of the servers and clients are identical whether or not SSL/TLS is used, and it's enabled by configuring
-the `link:apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` or `link:apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` instances used
+the `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` or `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` instances used
 to create the servers or clients.
 
 ==== Enabling SSL/TLS on the server
 
-SSL/TLS is enabled with  `link:apidocs/io/vertx/core/net/NetServerOptions.html#setSsl-boolean-[ssl]`.
+SSL/TLS is enabled with  `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSsl-boolean-[ssl]`.
 
 By default it is disabled.
 
@@ -551,7 +551,7 @@ To enable SSL on a NetClient the function setSSL(true) is called.
 
 ==== Client trust configuration
 
-If the `link:apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustALl]` is set to true on the client, then the client will
+If the `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustALl]` is set to true on the client, then the client will
 trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't
 be sure who you are connecting to. Use this with caution. Default value is false.
 
@@ -563,7 +563,7 @@ NetClientOptions options = new NetClientOptions().
 NetClient client = vertx.createNetClient(options);
 ----
 
-If `link:apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustAll]` is not set then a client trust store must be
+If `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustAll]` is not set then a client trust store must be
 configured and should contain the certificates of the servers that the client trusts.
 
 Likewise server configuration, the client trust can be configured in several ways:
@@ -571,8 +571,8 @@ Likewise server configuration, the client trust can be configured in several way
 The first method is by specifying the location of a Java trust-store which contains the certificate authority.
 
 It is just a standard Java key store, the same as the key stores on the server side. The client
-trust store location is set by using the function `link:apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]` on the
-`link:apidocs/io/vertx/core/net/JksOptions.html[jks options]`. If a server presents a certificate during connection which is not
+trust store location is set by using the function `link:../../apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]` on the
+`link:../../apidocs/io/vertx/core/net/JksOptions.html[jks options]`. If a server presents a certificate during connection which is not
 in the client trust store, the connection attempt will not succeed.
 
 [source,java]
@@ -666,8 +666,8 @@ connecting. The client can be configured in several ways:
 
 The first method is by specifying the location of a Java key-store which contains the key and certificate.
 Again it's just a regular Java key store. The client keystore location is set by using the function
-`link:apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]` on the
-`link:apidocs/io/vertx/core/net/JksOptions.html[jks options]`.
+`link:../../apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]` on the
+`link:../../apidocs/io/vertx/core/net/JksOptions.html[jks options]`.
 
 [source,java]
 ----
@@ -752,7 +752,7 @@ Keep in mind that pem configuration, the private key is not crypted.
 ==== Revoking certificate authorities
 
 Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
-longer be trusted. The `link:apidocs/io/vertx/core/net/NetClientOptions.html#addCrlPath-java.lang.String-[crlPath]` configures
+longer be trusted. The `link:../../apidocs/io/vertx/core/net/NetClientOptions.html#addCrlPath-java.lang.String-[crlPath]` configures
 the crl list to use:
 
 [source,java]

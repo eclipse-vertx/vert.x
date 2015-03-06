@@ -24,7 +24,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>3</version>
+    <version>5</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
@@ -183,7 +183,7 @@
           <version>1.5.2</version>
           <configuration>
             <sourceDirectory>${asciidoc.dir}</sourceDirectory>
-            <outputDirectory>${project.build.directory}/docs</outputDirectory>
+            <outputDirectory>${project.build.directory}/docs/vertx-core</outputDirectory>
             <preserveDirectories>true</preserveDirectories>
             <relativeBaseDir>true</relativeBaseDir>
             <backend>html</backend>
@@ -201,7 +201,7 @@
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
           <configuration>
-            <reportOutputDirectory>${project.build.directory}/docs/java</reportOutputDirectory>
+            <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
           </configuration>
         </plugin>
         <plugin>
