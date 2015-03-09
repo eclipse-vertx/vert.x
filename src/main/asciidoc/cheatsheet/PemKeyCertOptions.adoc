@@ -50,12 +50,12 @@
 |===
 ^|Name | Type ^| Description
 
-|`keyPath`
+|[[keyPath]]`keyPath`
 |`String`
 |+++
 Set the path to the key file+++
 
-|`certPath`
+|[[certPath]]`certPath`
 |`String`
 |+++
 Set the path to the certificate+++

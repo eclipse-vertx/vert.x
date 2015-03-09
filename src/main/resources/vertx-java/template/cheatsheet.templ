@@ -55,7 +55,7 @@
 	@code{arrayPrefix = property.array ? 'Array of ' : ''}
 	@if{propertyType != null}
 		\n
-		|`@{property.name}`\n
+		|[[@{property.name}]]`@{property.name}`\n
 		|`@{arrayPrefix}@{getDataType(property.type)}`\n
 		|@if{property.doc != null}
 		+++\n

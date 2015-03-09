@@ -13,12 +13,12 @@
 |===
 ^|Name | Type ^| Description
 
-|`sendTimeout`
+|[[sendTimeout]]`sendTimeout`
 |`Number`
 |+++
 Set the send timeout.+++
 
-|`codecName`
+|[[codecName]]`codecName`
 |`String`
 |+++
 Set the codec name.+++

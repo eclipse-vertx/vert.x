@@ -38,7 +38,7 @@
 |===
 ^|Name | Type ^| Description
 
-|`certPaths`
+|[[certPaths]]`certPaths`
 |`Array of String`
 |+++
 Add a certificate path+++

@@ -10,125 +10,125 @@
 |===
 ^|Name | Type ^| Description
 
-|`sendBufferSize`
+|[[sendBufferSize]]`sendBufferSize`
 |`Number`
 |+++
 Set the TCP send buffer size+++
 
-|`receiveBufferSize`
+|[[receiveBufferSize]]`receiveBufferSize`
 |`Number`
 |+++
 Set the TCP receive buffer size+++
 
-|`reuseAddress`
+|[[reuseAddress]]`reuseAddress`
 |`Boolean`
 |+++
 Set the value of reuse address+++
 
-|`trafficClass`
+|[[trafficClass]]`trafficClass`
 |`Number`
 |+++
 Set the value of traffic class+++
 
-|`tcpNoDelay`
+|[[tcpNoDelay]]`tcpNoDelay`
 |`Boolean`
 |+++
 Set whether TCP no delay is enabled+++
 
-|`tcpKeepAlive`
+|[[tcpKeepAlive]]`tcpKeepAlive`
 |`Boolean`
 |+++
 Set whether TCP keep alive is enabled+++
 
-|`soLinger`
+|[[soLinger]]`soLinger`
 |`Number`
 |+++
 Set whether SO_linger keep alive is enabled+++
 
-|`usePooledBuffers`
+|[[usePooledBuffers]]`usePooledBuffers`
 |`Boolean`
 |+++
 Set whether Netty pooled buffers are enabled+++
 
-|`idleTimeout`
+|[[idleTimeout]]`idleTimeout`
 |`Number`
 |-
-|`ssl`
+|[[ssl]]`ssl`
 |`Boolean`
 |+++
 Set whether SSL/TLS is enabled+++
 
-|`keyStoreOptions`
+|[[keyStoreOptions]]`keyStoreOptions`
 |`link:JksOptions.html[JksOptions]`
 |+++
 Set the key/cert options in jks format, aka Java keystore.+++
 
-|`pfxKeyCertOptions`
+|[[pfxKeyCertOptions]]`pfxKeyCertOptions`
 |`link:PfxOptions.html[PfxOptions]`
 |+++
 Set the key/cert options in pfx format.+++
 
-|`pemKeyCertOptions`
+|[[pemKeyCertOptions]]`pemKeyCertOptions`
 |`link:PemKeyCertOptions.html[PemKeyCertOptions]`
 |+++
 Set the key/cert store options in pem format.+++
 
-|`trustStoreOptions`
+|[[trustStoreOptions]]`trustStoreOptions`
 |`link:JksOptions.html[JksOptions]`
 |+++
 Set the trust options in jks format, aka Java trustore+++
 
-|`pemTrustOptions`
+|[[pemTrustOptions]]`pemTrustOptions`
 |`link:PemTrustOptions.html[PemTrustOptions]`
 |+++
 Set the trust options in pem format+++
 
-|`pfxTrustOptions`
+|[[pfxTrustOptions]]`pfxTrustOptions`
 |`link:PfxOptions.html[PfxOptions]`
 |+++
 Set the trust options in pfx format+++
 
-|`enabledCipherSuites`
+|[[enabledCipherSuites]]`enabledCipherSuites`
 |`Array of String`
 |+++
 Add an enabled cipher suite+++
 
-|`crlPaths`
+|[[crlPaths]]`crlPaths`
 |`Array of String`
 |+++
 Add a CRL path+++
 
-|`acceptBacklog`
+|[[acceptBacklog]]`acceptBacklog`
 |`Number`
 |+++
 Set the accept back log+++
 
-|`port`
+|[[port]]`port`
 |`Number`
 |+++
 Set the port+++
 
-|`host`
+|[[host]]`host`
 |`String`
 |+++
 Set the host+++
 
-|`compressionSupported`
+|[[compressionSupported]]`compressionSupported`
 |`Boolean`
 |+++
 Set whether the server supports compression+++
 
-|`maxWebsocketFrameSize`
+|[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`
 |`Number`
 |+++
 Set the maximum websocket frames size+++
 
-|`websocketSubProtocol`
+|[[websocketSubProtocol]]`websocketSubProtocol`
 |`String`
 |+++
 Set the websocket subprotocols supported by the server.+++
 
-|`clientAuthRequired`
+|[[clientAuthRequired]]`clientAuthRequired`
 |`Boolean`
 |+++
 Set whether client auth is required+++

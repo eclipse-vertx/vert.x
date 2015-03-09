@@ -10,77 +10,77 @@
 |===
 ^|Name | Type ^| Description
 
-|`eventLoopPoolSize`
+|[[eventLoopPoolSize]]`eventLoopPoolSize`
 |`Number`
 |+++
 Set the number of event loop threads to be used by the Vert.x instance.+++
 
-|`workerPoolSize`
+|[[workerPoolSize]]`workerPoolSize`
 |`Number`
 |+++
 Set the maximum number of worker threads to be used by the Vert.x instance.+++
 
-|`clustered`
+|[[clustered]]`clustered`
 |`Boolean`
 |+++
 Set whether or not the Vert.x instance will be clustered.+++
 
-|`clusterHost`
+|[[clusterHost]]`clusterHost`
 |`String`
 |+++
 Set the hostname to be used for clustering.+++
 
-|`clusterPort`
+|[[clusterPort]]`clusterPort`
 |`Number`
 |+++
 Set the port to be used for clustering.+++
 
-|`clusterPingInterval`
+|[[clusterPingInterval]]`clusterPingInterval`
 |`Number`
 |+++
 Set the value of cluster ping interval, in ms.+++
 
-|`clusterPingReplyInterval`
+|[[clusterPingReplyInterval]]`clusterPingReplyInterval`
 |`Number`
 |+++
 Set the value of cluster ping reply interval, in ms.+++
 
-|`blockedThreadCheckPeriod`
+|[[blockedThreadCheckPeriod]]`blockedThreadCheckPeriod`
 |`Number`
 |+++
 Sets the value of blocked thread check period, in ms.+++
 
-|`maxEventLoopExecuteTime`
+|[[maxEventLoopExecuteTime]]`maxEventLoopExecuteTime`
 |`Number`
 |+++
 Sets the value of max event loop execute time, in ns.+++
 
-|`maxWorkerExecuteTime`
+|[[maxWorkerExecuteTime]]`maxWorkerExecuteTime`
 |`Number`
 |+++
 Sets the value of max worker execute time, in ns.+++
 
-|`internalBlockingPoolSize`
+|[[internalBlockingPoolSize]]`internalBlockingPoolSize`
 |`Number`
 |+++
 Set the value of internal blocking pool size+++
 
-|`haEnabled`
+|[[haEnabled]]`haEnabled`
 |`Boolean`
 |+++
 Set whether HA will be enabled on the Vert.x instance.+++
 
-|`quorumSize`
+|[[quorumSize]]`quorumSize`
 |`Number`
 |+++
 Set the quorum size to be used when HA is enabled.+++
 
-|`haGroup`
+|[[haGroup]]`haGroup`
 |`String`
 |+++
 Set the HA group to be used when HA is enabled.+++
 
-|`metricsOptions`
+|[[metricsOptions]]`metricsOptions`
 |`link:MetricsOptions.html[MetricsOptions]`
 |+++
 Set the metrics options+++

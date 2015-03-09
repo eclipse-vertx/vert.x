@@ -28,12 +28,12 @@
 |===
 ^|Name | Type ^| Description
 
-|`password`
+|[[password]]`password`
 |`String`
 |+++
 Set the password for the key store+++
 
-|`path`
+|[[path]]`path`
 |`String`
 |+++
 Set the path to the key store+++

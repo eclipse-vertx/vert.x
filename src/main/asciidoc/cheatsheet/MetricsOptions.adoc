@@ -11,7 +11,7 @@
 |===
 ^|Name | Type ^| Description
 
-|`enabled`
+|[[enabled]]`enabled`
 |`Boolean`
 |+++
 Set whether metrics will be enabled on the Vert.x instance.+++
