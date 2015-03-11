@@ -8,11 +8,11 @@
    * params:
    * margin : left margin
    * doc : io.vertx.codegen.doc.Doc object
-   * renderTagLinkToHtml : a function that takes as input io.vertx.codegen.doc.Tag$Link and returns an html string
+   * linkToHtml : a function that takes as input io.vertx.codegen.doc.Tag$Link and returns an html string
    *
    * return: the renderer HTML
    */
-  def renderDocToHtml(margin, doc, renderTagLinkToHtml) {
+  def renderDocToHtml(margin, doc, linkToHtml) {
     var need = true;
     var html = new StringBuilder();
     for (token : doc.tokens) {
@@ -29,7 +29,7 @@
         } else {
           var tag = token.tag;
           if (tag instanceof io.vertx.codegen.doc.Tag$Link) {
-            var htmlLink = renderTagLinkToHtml(tag);
+            var htmlLink = linkToHtml(tag);
             if (htmlLink != null) {
               html.append(htmlLink);
             } else {
