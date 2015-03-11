@@ -30,11 +30,13 @@
           var tag = token.tag;
           if (tag instanceof io.vertx.codegen.doc.Tag$Link) {
             var htmlLink = linkToHtml(tag);
-            if (htmlLink != null) {
-              html.append(htmlLink);
-            } else {
-              html.append("<!-- tag link rendered to null using label/type instead -->");
+            if (htmlLink == null || htmlLink.trim().empty) {
+              htmlLink = tag.label;
             }
+            if (htmlLink == null || htmlLink.trim().empty) {
+              htmlLink = tag.targetElement.simpleName;
+            }
+            html.append(htmlLink);
           } else if (tag.name == "code") {
             html.append("<code>").append(tag.value.trim()).append("</code>");
           }
