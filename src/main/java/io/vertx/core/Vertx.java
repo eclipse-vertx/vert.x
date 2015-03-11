@@ -383,7 +383,6 @@ public interface Vertx extends Measured {
    * @param options  the deployment options.
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
-  @GenIgnore
   void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
