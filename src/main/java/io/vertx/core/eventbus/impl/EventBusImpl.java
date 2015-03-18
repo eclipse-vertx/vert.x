@@ -635,25 +635,28 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
 
   private void sendRemote(ServerID theServerID, MessageImpl message) {
-    // We need to deal with the fact that connecting can take some time and is async, and we cannot
-    // block to wait for it. So we add any sends to a pending list if not connected yet.
-    // Once we connect we send them.
-    // This can also be invoked concurrently from different threads, so it gets a little
-    // tricky
-    ConnectionHolder holder = connections.get(theServerID);
-    if (holder == null) {
-      // When process is creating a lot of connections this can take some time
-      // so increase the timeout
-      holder = new ConnectionHolder(theServerID);
-      ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
-      if (prevHolder != null) {
-        // Another one sneaked in
-        holder = prevHolder;
-      } else {
-        holder.connect();
+    // Execute with event loop group as we could send a remote message from a worker
+    vertx.getEventLoopGroup().execute(() -> {
+      // We need to deal with the fact that connecting can take some time and is async, and we cannot
+      // block to wait for it. So we add any sends to a pending list if not connected yet.
+      // Once we connect we send them.
+      // This can also be invoked concurrently from different threads, so it gets a little
+      // tricky
+      ConnectionHolder holder = connections.get(theServerID);
+      if (holder == null) {
+        // When process is creating a lot of connections this can take some time
+        // so increase the timeout
+        holder = new ConnectionHolder(theServerID);
+        ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
+        if (prevHolder != null) {
+          // Another one sneaked in
+          holder = prevHolder;
+        } else {
+          holder.connect();
+        }
       }
-    }
-    holder.writeMessage(message);
+      holder.writeMessage(message);
+    });
   }
 
   private void removeSub(String subName, ServerID theServerID, Handler<AsyncResult<Void>> completionHandler) {
@@ -661,7 +664,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (!ar.succeeded()) {
         log.error("Couldn't find sub to remove");
       } else {
-        completionHandler.handle(Future.succeededFuture());
+        if (completionHandler != null) {
+          completionHandler.handle(Future.succeededFuture());
+        }
       }
     });
   }

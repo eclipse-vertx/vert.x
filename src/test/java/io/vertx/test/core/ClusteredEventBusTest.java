@@ -16,7 +16,9 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -30,6 +32,7 @@ import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -358,6 +361,50 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     consumer.completionHandler(v -> {
       assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testSendFromWorker() throws Exception {
+    String expectedBody = TestUtils.randomAlphaString(20);
+    startNodes(2);
+    vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
+      assertEquals(expectedBody, msg.body());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      vertices[0].deployVerticle(new AbstractVerticle() {
+        @Override
+        public void start() throws Exception {
+          vertices[0].eventBus().send(ADDRESS1, expectedBody);
+        }
+      }, new DeploymentOptions().setWorker(true));
+    });
+    await();
+  }
+
+  @Test
+  public void testReplyFromWorker() throws Exception {
+    String expectedBody = TestUtils.randomAlphaString(20);
+    startNodes(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[0].deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
+          msg.reply(expectedBody);
+        }).completionHandler(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+      }
+    }, new DeploymentOptions().setWorker(true));
+    awaitLatch(latch);
+    vertices[0].eventBus().send(ADDRESS1, "whatever", reply -> {
+      assertTrue(reply.succeeded());
+      assertEquals(expectedBody, reply.result().body());
       testComplete();
     });
     await();
