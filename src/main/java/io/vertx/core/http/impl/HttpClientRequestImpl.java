@@ -36,6 +36,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.List;
 import java.util.Objects;
@@ -78,6 +79,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private MultiMap headers;
   private boolean exceptionOccurred;
   private long lastDataReceived;
+  private Object metric;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         String relativeURI, VertxInternal vertx) {
@@ -521,6 +523,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private void connected(ClientConnection conn) {
     conn.setCurrentRequest(this);
     this.conn = conn;
+    this.metric = client.httpClientMetrics().requestBegin(this);
 
     // If anything was written or the request ended before we got the connection, then
     // we need to write it now
@@ -537,7 +540,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(pending, true);
 
-        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
+        conn.reportBytesWritten(written);
 
         if (respHandler != null) {
           conn.endRequest();
@@ -550,7 +553,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
 
-        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
+        conn.reportBytesWritten(written);
 
         if (respHandler != null) {
           conn.endRequest();
@@ -562,6 +565,14 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       }
     }
   }
+
+  void reportResponseEnd(HttpClientResponseImpl resp) {
+    HttpClientMetrics metrics = client.httpClientMetrics();
+    if (metrics.isEnabled()) {
+      metrics.responseEnd(metric, this, resp);
+    }
+  }
+
 
   private boolean contentLengthSet() {
     if (headers != null) {
@@ -648,7 +659,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         }
       }
       if (end) {
-        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
+        conn.reportBytesWritten(written);
 
         if (respHandler != null) {
           conn.endRequest();

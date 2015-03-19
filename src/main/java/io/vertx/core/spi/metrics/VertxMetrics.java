@@ -83,7 +83,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link io.vertx.core.http.HttpServer}
    * @return the http server metrics SPI
    */
-  HttpServerMetrics createMetrics(HttpServer server, HttpServerOptions options);
+  HttpServerMetrics<?, ?> createMetrics(HttpServer server, HttpServerOptions options);
 
   /**
    * Provides the http client metrics SPI when an http client has been created
@@ -92,7 +92,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link io.vertx.core.http.HttpClient}
    * @return the http client metrics SPI
    */
-  HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options);
+  HttpClientMetrics<?, ?> createMetrics(HttpClient client, HttpClientOptions options);
 
   /**
    * Provides the net server metrics SPI when a net server is created
@@ -101,7 +101,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link io.vertx.core.net.NetServer}
    * @return the net server metrics SPI
    */
-  NetMetrics createMetrics(NetServer server, NetServerOptions options);
+  TCPMetrics<?> createMetrics(NetServer server, NetServerOptions options);
 
   /**
    * Provides the net client metrics SPI when a net client is created
@@ -110,7 +110,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link io.vertx.core.net.NetClient}
    * @return the net client metrics SPI
    */
-  NetMetrics createMetrics(NetClient client, NetClientOptions options);
+  TCPMetrics<?> createMetrics(NetClient client, NetClientOptions options);
 
   /**
    * Provides the datagram/udp metrics SPI when a datagram socket is created

@@ -44,7 +44,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.NetMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
@@ -71,7 +71,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private final NetServerOptions options;
   private final ContextImpl creatingContext;
   private final SSLHelper sslHelper;
-  private final NetMetrics metrics;
+  private final TCPMetrics metrics;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);

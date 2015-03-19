@@ -198,9 +198,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   synchronized void handleChunk(Buffer data) {
-    if (conn.metrics().isEnabled()) {
-      this.bytesRead += data.length();
-    }
+    bytesRead += data.length();
     if (paused) {
       if (pausedChunks == null) {
         pausedChunks = new ArrayDeque<>();
@@ -215,9 +213,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   synchronized void handleEnd(LastHttpContent trailer) {
-    if (conn.metrics().isEnabled()) conn.metrics().bytesRead(conn.remoteAddress(), bytesRead);
+    conn.reportBytesRead(bytesRead);
     bytesRead = 0;
-    conn.metrics().responseEnd(request, this);
+    request.reportResponseEnd(this);
     if (paused) {
       hasPausedEnd = true;
       pausedTrailer = trailer;

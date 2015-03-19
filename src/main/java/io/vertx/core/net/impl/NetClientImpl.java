@@ -37,7 +37,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.NetMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -63,7 +63,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final Closeable closeHook;
   private final ContextImpl creatingContext;
-  private final NetMetrics metrics;
+  private final TCPMetrics metrics;
   private boolean closed;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {

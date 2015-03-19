@@ -34,7 +34,7 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.metrics.NetMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -64,6 +64,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final MessageConsumer registration;
   private final SSLHelper helper;
   private final boolean client;
+  private final Object metric;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -71,13 +72,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private boolean paused = false;
   private ChannelFuture writeFuture;
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, NetMetrics metrics) {
+  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, TCPMetrics metrics) {
     super(vertx, channel, context, metrics);
     this.helper = helper;
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
+    this.metric = metrics.connected(remoteAddress());
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
+  }
+
+  @Override
+  protected Object metric() {
+    return metric;
   }
 
   @Override
@@ -287,18 +294,14 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       pendingData.add(data);
       return;
     }
-    if (metrics.isEnabled()) {
-      metrics.bytesRead(remoteAddress(), data.length());
-    }
+    reportBytesRead(data.length());
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
   }
 
   private void write(ByteBuf buff) {
-    if (metrics.isEnabled()) {
-      metrics.bytesWritten(remoteAddress(), buff.readableBytes());
-    }
+    reportBytesWritten(buff.readableBytes());
     writeFuture = super.writeToChannel(buff);
   }
 

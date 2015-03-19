@@ -66,6 +66,11 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
+  protected Object metric() {
+    return null;
+  }
+
+  @Override
   public DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler) {
     try {
       addListener(channel().joinGroup(InetAddress.getByName(multicastAddress)), handler);
@@ -207,7 +212,9 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     Objects.requireNonNull(host, "no null host accepted");
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
-    if (metrics.isEnabled()) metrics.bytesWritten(new SocketAddressImpl(port, host), packet.length());
+    if (metrics.isEnabled()) {
+      metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
+    }
 
     return this;
   }
@@ -316,7 +323,9 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   synchronized void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
-    metrics.bytesRead(packet.sender(), packet.data().length());
+    if (metrics.isEnabled()) {
+      metrics.bytesRead(null, packet.sender(), packet.data().length());
+    }
     if (packetHandler != null) {
       packetHandler.handle(packet);
     }

@@ -30,7 +30,8 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.metrics.NetMetrics;
+import io.vertx.core.spi.metrics.NetworkMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -56,18 +57,17 @@ public abstract class ConnectionBase {
   protected final VertxInternal vertx;
   protected final Channel channel;
   protected final ContextImpl context;
-  protected final NetMetrics metrics;
+  protected final NetworkMetrics metrics;
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   private boolean read;
   private boolean needsFlush;
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetMetrics metrics) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
     this.metrics = metrics;
-    metrics.connected(remoteAddress());
   }
 
   protected synchronized final void startRead() {
@@ -139,8 +139,10 @@ public abstract class ConnectionBase {
     return context;
   }
 
+  protected abstract Object metric();
+
   protected synchronized void handleException(Throwable t) {
-    metrics.exceptionOccurred(remoteAddress(), t);
+    metrics.exceptionOccurred(metric(), remoteAddress(), t);
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
@@ -149,7 +151,9 @@ public abstract class ConnectionBase {
   }
 
   protected synchronized void handleClosed() {
-    metrics.disconnected(remoteAddress());
+    if (metrics instanceof TCPMetrics) {
+      ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+    }
     if (closeHandler != null) {
       closeHandler.handle(null);
     }
@@ -177,6 +181,18 @@ public abstract class ConnectionBase {
 
   protected boolean supportsFileRegion() {
     return !isSSL();
+  }
+
+  public void reportBytesRead(long numberOfBytes) {
+    if (metrics.isEnabled()) {
+      metrics.bytesRead(metric(), remoteAddress(), numberOfBytes);
+    }
+  }
+
+  public void reportBytesWritten(long numberOfBytes) {
+    if (metrics.isEnabled()) {
+      metrics.bytesWritten(metric(), remoteAddress(), numberOfBytes);
+    }
   }
 
   private boolean isSSL() {
@@ -220,9 +236,4 @@ public abstract class ConnectionBase {
     if (addr == null) return null;
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
-
-  public NetMetrics netMetrics() {
-    return metrics;
-  }
-
 }

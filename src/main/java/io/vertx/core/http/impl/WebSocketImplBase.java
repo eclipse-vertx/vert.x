@@ -144,9 +144,7 @@ public abstract class WebSocketImplBase implements WebSocketBase {
 
   protected synchronized void writeFrameInternal(WebSocketFrame frame) {
     checkClosed();
-    if (conn.netMetrics().isEnabled()) {
-      conn.netMetrics().bytesWritten(remoteAddress(), frame.binaryData().length());
-    }
+    conn.reportBytesWritten(frame.binaryData().length());
     conn.writeToChannel(frame);
   }
 
@@ -157,9 +155,7 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   }
 
   synchronized void handleFrame(WebSocketFrameInternal frame) {
-    if (conn.netMetrics().isEnabled()) {
-      conn.netMetrics().bytesRead(remoteAddress(), frame.binaryData().length());
-    }
+    conn.reportBytesRead(frame.binaryData().length());
     if (dataHandler != null) {
       Buffer buff = Buffer.buffer(frame.getBinaryData());
       dataHandler.handle(buff);

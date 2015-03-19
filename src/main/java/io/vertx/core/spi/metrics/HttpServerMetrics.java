@@ -24,20 +24,22 @@ import io.vertx.core.http.HttpServerResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpServerMetrics extends NetMetrics {
+public interface HttpServerMetrics<R, S> extends TCPMetrics<S> {
 
   /**
    * Called when an http server request begins
    *
    * @param request the {@link io.vertx.core.http.HttpServerRequest}
    * @param response the {@link io.vertx.core.http.HttpServerResponse}
+   * @return the request metric
    */
-  void requestBegin(HttpServerRequest request, HttpServerResponse response);
+  R requestBegin(HttpServerRequest request, HttpServerResponse response);
 
   /**
    * Called when an http server response has ended.
    *
+   * @param requestMetric the request metric
    * @param response the {@link io.vertx.core.http.HttpServerResponse}
    */
-  void responseEnd(HttpServerResponse response);
+  void responseEnd(R requestMetric, HttpServerResponse response);
 }

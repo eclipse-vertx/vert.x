@@ -29,12 +29,11 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.NetMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -79,13 +78,13 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public NetMetrics createMetrics(NetServer server, NetServerOptions options) {
-    return new DummyNetMetrics();
+  public TCPMetrics createMetrics(NetServer server, NetServerOptions options) {
+    return new DummyTCPMetrics();
   }
 
   @Override
-  public NetMetrics createMetrics(NetClient client, NetClientOptions options) {
-    return new DummyNetMetrics();
+  public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
+    return new DummyTCPMetrics();
   }
 
   @Override
@@ -149,14 +148,15 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  class DummyHttpServerMetrics implements HttpServerMetrics {
+  class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void> {
 
     @Override
-    public void requestBegin(HttpServerRequest request, HttpServerResponse response) {
+    public Void requestBegin(HttpServerRequest request, HttpServerResponse response) {
+      return null;
     }
 
     @Override
-    public void responseEnd(HttpServerResponse response) {
+    public void responseEnd(Void requestMetric, HttpServerResponse response) {
     }
 
     @Override
@@ -164,23 +164,24 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void connected(SocketAddress remoteAddress) {
+    public Void connected(SocketAddress remoteAddress) {
+      return null;
     }
 
     @Override
-    public void disconnected(SocketAddress remoteAddress) {
+    public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
     }
 
     @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
     }
 
     @Override
@@ -198,14 +199,15 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  class DummyHttpClientMetrics implements HttpClientMetrics {
+  class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void> {
 
     @Override
-    public void requestBegin(HttpClientRequest request) {
+    public Void requestBegin(HttpClientRequest request) {
+      return null;
     }
 
     @Override
-    public void responseEnd(HttpClientRequest request, HttpClientResponse response) {
+    public void responseEnd(Void requestMetric, HttpClientRequest request, HttpClientResponse response) {
     }
 
     @Override
@@ -213,23 +215,24 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void connected(SocketAddress remoteAddress) {
+    public Void connected(SocketAddress remoteAddress) {
+      return null;
     }
 
     @Override
-    public void disconnected(SocketAddress remoteAddress) {
+    public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
     }
 
     @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
     }
 
     @Override
@@ -247,30 +250,31 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  class DummyNetMetrics implements NetMetrics {
+  class DummyTCPMetrics implements TCPMetrics<Void> {
 
     @Override
     public void listening(SocketAddress localAddress) {
     }
 
     @Override
-    public void connected(SocketAddress remoteAddress) {
+    public Void connected(SocketAddress remoteAddress) {
+      return null;
     }
 
     @Override
-    public void disconnected(SocketAddress remoteAddress) {
+    public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
     }
 
     @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
     }
 
     @Override
@@ -291,23 +295,19 @@ public class DummyVertxMetrics implements VertxMetrics {
   class DummyDatagramMetrics implements DatagramSocketMetrics {
 
     @Override
-    public void newSocket() {
-    }
-
-    @Override
     public void listening(SocketAddress localAddress) {
     }
 
     @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
     }
 
     @Override

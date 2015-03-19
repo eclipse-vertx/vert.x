@@ -16,30 +16,10 @@
 
 package io.vertx.core.spi.metrics;
 
-import io.vertx.core.net.SocketAddress;
-
 /**
  * The datagram/udp metrics SPI which Vert.x will use to call when each event occurs pertaining to datagram sockets.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface DatagramSocketMetrics extends NetMetrics {
-
-  // There should probably be a TcpMetrics that has the connected/disconnected characteristics, but since datagram
-  // uses a tcp like connection class internally, it's easier to do it this way
-
-  @Override
-  default void connected(SocketAddress remoteAddress) {
-    newSocket();
-  }
-
-  @Override
-  default void disconnected(SocketAddress remoteAddress) {
-    close();
-  }
-
-  /**
-   * Called when a new datagram socket is created.
-   */
-  void newSocket();
+public interface DatagramSocketMetrics extends NetworkMetrics<Void> {
 }

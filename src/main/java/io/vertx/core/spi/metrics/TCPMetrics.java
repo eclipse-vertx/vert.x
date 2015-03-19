@@ -24,51 +24,22 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface NetMetrics extends Metrics {
-
-  /**
-   * Called when a socket is listening. For example, this is called when an http or net server
-   * has been created and is listening on a specific host/port.
-   *
-   * @param localAddress the local address the net socket is listening on.
-   */
-  void listening(SocketAddress localAddress);
+public interface TCPMetrics<S> extends NetworkMetrics<S> {
 
   /**
    * Called when a client has connected, which is applicable for TCP connections.
    *
    * @param remoteAddress the remote address of the client
+   * @return the socket metric
    */
-  void connected(SocketAddress remoteAddress);
+  S connected(SocketAddress remoteAddress);
 
   /**
    * Called when a client has disconnected, which is applicable for TCP connections.
    *
+   * @param socketMetric the socket metric
    * @param remoteAddress the remote address of the client
    */
-  void disconnected(SocketAddress remoteAddress);
+  void disconnected(S socketMetric, SocketAddress remoteAddress);
 
-  /**
-   * Called when bytes have been read
-   *
-   * @param remoteAddress the remote address which this socket received bytes from
-   * @param numberOfBytes the number of bytes read
-   */
-  void bytesRead(SocketAddress remoteAddress, long numberOfBytes);
-
-  /**
-   * Called when bytes have been written
-   *
-   * @param remoteAddress the remote address which bytes are being written to
-   * @param numberOfBytes the number of bytes written
-   */
-  void bytesWritten(SocketAddress remoteAddress, long numberOfBytes);
-
-  /**
-   * Called when exceptions occur for a specific connection.
-   *
-   * @param remoteAddress the remote address of the connection or null if it's datagram/udp
-   * @param t the exception that occurred
-   */
-  void exceptionOccurred(SocketAddress remoteAddress, Throwable t);
 }

@@ -24,20 +24,22 @@ import io.vertx.core.http.HttpClientResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpClientMetrics extends NetMetrics {
+public interface HttpClientMetrics<R, S> extends TCPMetrics<S> {
 
   /**
    * Called when an http client request begins
    * 
    * @param request the {@link io.vertx.core.http.HttpClientRequest}
+   * @return the request metric
    */
-  void requestBegin(HttpClientRequest request);
+  R requestBegin(HttpClientRequest request);
 
   /**
    * Called when an http client response has ended
    *
+   * @param requestMetric the request metric
    * @param request the {@link io.vertx.core.http.HttpClientRequest}
    * @param response the {@link io.vertx.core.http.HttpClientResponse}
    */
-  void responseEnd(HttpClientRequest request, HttpClientResponse response);
+  void responseEnd(R requestMetric, HttpClientRequest request, HttpClientResponse response);
 }

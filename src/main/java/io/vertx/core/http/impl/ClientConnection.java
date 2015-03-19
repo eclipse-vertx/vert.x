@@ -79,8 +79,9 @@ class ClientConnection extends ConnectionBase {
   private final ConnectionLifeCycleListener listener;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private final HttpClientMetrics metrics;
   private final Handler<Throwable> exceptionHandler;
+  private final HttpClientMetrics metrics;
+  private final Object metric;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -101,8 +102,14 @@ class ClientConnection extends ConnectionBase {
       this.hostHeader = host + ':' + port;
     }
     this.listener = listener;
-    this.metrics = metrics;
     this.exceptionHandler = exceptionHandler;
+    this.metrics = metrics;
+    this.metric = metrics.connected(remoteAddress());
+  }
+
+  @Override
+  protected Object metric() {
+    return metric;
   }
 
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
@@ -321,7 +328,6 @@ class ClientConnection extends ConnectionBase {
     }
     this.currentRequest = req;
     this.requests.add(req);
-    client.httpClientMetrics().requestBegin(req);
   }
 
   synchronized void endRequest() {
@@ -330,10 +336,6 @@ class ClientConnection extends ConnectionBase {
     }
     currentRequest = null;
     listener.requestEnded(this);
-  }
-
-  public HttpClientMetrics metrics() {
-    return metrics;
   }
 
   public String hostHeader() {

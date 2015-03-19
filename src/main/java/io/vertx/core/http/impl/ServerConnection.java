@@ -80,7 +80,9 @@ class ServerConnection extends ConnectionBase {
   private final HttpServerImpl server;
   private final WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
+  private final Object metric;
 
+  private Object requestMetric;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private HttpServerRequestImpl currentRequest;
@@ -100,6 +102,12 @@ class ServerConnection extends ConnectionBase {
     this.server = server;
     this.handshaker = handshaker;
     this.metrics = metrics;
+    this.metric = metrics.connected(remoteAddress());
+  }
+
+  @Override
+  protected Object metric() {
+    return metric;
   }
 
   public synchronized void pause() {
@@ -132,9 +140,9 @@ class ServerConnection extends ConnectionBase {
 
   synchronized void responseComplete() {
     if (metrics.isEnabled()) {
-      metrics.bytesWritten(remoteAddress(), bytesWritten);
+      reportBytesWritten(bytesWritten);
       bytesWritten = 0;
-      metrics.responseEnd(pendingResponse);
+      metrics.responseEnd(requestMetric, pendingResponse);
     }
     pendingResponse = null;
     checkNextTick();
@@ -257,7 +265,7 @@ class ServerConnection extends ConnectionBase {
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     this.currentRequest = req;
     pendingResponse = resp;
-    metrics.requestBegin(req, resp);
+    requestMetric = metrics.requestBegin(req, resp);
     if (requestHandler != null) {
       requestHandler.handle(req);
     }
@@ -272,10 +280,7 @@ class ServerConnection extends ConnectionBase {
 
   private void handleEnd() {
     currentRequest.handleEnd();
-    if (metrics.isEnabled()) {
-      metrics.bytesRead(remoteAddress(), bytesRead);
-    }
-
+    reportBytesRead(bytesRead);
     currentRequest = null;
     bytesRead = 0;
   }
