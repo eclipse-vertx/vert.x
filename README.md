@@ -2,7 +2,7 @@
 
 **Please note that the master branch is currently the development branch for Vert.x 3.0. For Vert.x 2, please see the 2.x branch**
 
-**Explore the (experimental, work in progress) [Vert.x 3.0 web-site](http://vert-x3.github.io/web-site/)**
+**Explore the (experimental, work in progress) [Vert.x 3.0 web-site](http://vert-x3.github.io/)**
 
 Vert.x is a polyglot, non-blocking, event-driven application platform that runs on the JVM.
 
