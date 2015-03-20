@@ -133,7 +133,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
         if (buf == null) {
           break;
         }
-        vertx.runOnContext(new VoidHandler() {
+        context.runOnContext(new VoidHandler() {
           @Override
           protected void handle() {
             handleDataReceived(buf);

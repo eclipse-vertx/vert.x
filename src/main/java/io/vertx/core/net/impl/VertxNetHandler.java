@@ -39,7 +39,6 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
   protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
       ByteBuf buf = (ByteBuf) msg;
-      // We need to do this since it's possible the server is being used from a worker context
       context.executeSync(() -> sock.handleDataReceived(Buffer.buffer(buf)));
     } else {
       // just discard
