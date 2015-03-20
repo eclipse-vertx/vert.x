@@ -16,10 +16,7 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
@@ -53,6 +50,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.net.NetClient;
@@ -789,7 +787,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     private ConnectionHolder(ServerID serverID) {
       this.theServerID = serverID;
-      client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(60 * 1000));
+      client = new NetClientImpl(vertx, new NetClientOptions().setConnectTimeout(60 * 1000), false);
     }
 
     void close(boolean failed) {

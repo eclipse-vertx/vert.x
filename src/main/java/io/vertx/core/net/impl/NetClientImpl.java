@@ -67,6 +67,10 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   private boolean closed;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
+    this(vertx, options, true);
+  }
+
+  public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
     this.vertx = vertx;
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
@@ -74,12 +78,16 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       NetClientImpl.this.close();
       completionHandler.handle(Future.succeededFuture());
     };
-    creatingContext = vertx.getContext();
-    if (creatingContext != null) {
-      if (creatingContext.isWorker()) {
-        throw new IllegalStateException("Cannot use NetClient in a worker verticle");
+    if (useCreatingContext) {
+      creatingContext = vertx.getContext();
+      if (creatingContext != null) {
+        if (creatingContext.isWorker()) {
+          throw new IllegalStateException("Cannot use NetClient in a worker verticle");
+        }
+        creatingContext.addCloseHook(closeHook);
       }
-      creatingContext.addCloseHook(closeHook);
+    } else {
+      creatingContext = null;
     }
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
