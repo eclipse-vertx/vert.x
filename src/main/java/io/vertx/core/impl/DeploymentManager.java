@@ -82,6 +82,15 @@ public class DeploymentManager {
 
   public void deployVerticle(Verticle verticle, DeploymentOptions options,
                              Handler<AsyncResult<String>> completionHandler) {
+    if (options.getInstances() != 1) {
+      throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
+    }
+    if (options.getExtraClasspath() != null) {
+      throw new IllegalArgumentException("Can't specify extraClasspath instances for already created verticle");
+    }
+    if (options.getIsolationGroup() != null) {
+      throw new IllegalArgumentException("Can't specify isolationGroup instances for already created verticle");
+    }
     ContextImpl currentContext = vertx.getOrCreateContext();
     doDeploy("java:" + verticle.getClass().getName(), generateDeploymentID(), options, currentContext, currentContext, completionHandler,
              getCurrentClassLoader(), null, verticle);

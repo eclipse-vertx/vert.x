@@ -531,6 +531,21 @@ public class DeploymentTest extends VertxTestBase {
     assertTrue(vertx.deploymentIDs().isEmpty());
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeployInstanceSetInstances() throws Exception {
+    vertx.deployVerticle(new MyVerticle(), new DeploymentOptions().setInstances(2));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeployInstanceSetExtraClasspath() throws Exception {
+    vertx.deployVerticle(new MyVerticle(), new DeploymentOptions().setExtraClasspath(Arrays.asList("foo")));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDeployInstanceSetIsolationGroup() throws Exception {
+    vertx.deployVerticle(new MyVerticle(), new DeploymentOptions().setIsolationGroup("foo"));
+  }
+
   @Test
   public void testDeployUsingClassName() throws Exception {
     vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), ar -> {
