@@ -268,7 +268,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest requestAbs(HttpMethod method, String absoluteURI) {
     URL url = parseUrl(absoluteURI);
-    return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null);
+    return doRequest(method, url.getHost(), url.getPort(), url.getFile(), null);
   }
 
   @Override
