@@ -578,6 +578,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     context.executeBlocking(blockingCodeHandler, asyncResultHandler);
   }
 
+  @Override
+  public boolean isClustered() {
+    return clusterManager != null;
+  }
+
   // For testing
   public void simulateKill() {
     if (haManager() != null) {

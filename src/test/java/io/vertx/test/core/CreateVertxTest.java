@@ -36,6 +36,7 @@ public class CreateVertxTest extends AsyncTestBase {
     VertxOptions options = new VertxOptions();
     Vertx vertx = Vertx.vertx(options);
     assertNotNull(vertx);
+    assertFalse(vertx.isClustered());
   }
 
   @Test
@@ -57,6 +58,7 @@ public class CreateVertxTest extends AsyncTestBase {
     Vertx.clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
+      assertTrue(ar.result().isClustered());
       testComplete();
     });
     await();
@@ -72,6 +74,7 @@ public class CreateVertxTest extends AsyncTestBase {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
       assertTrue(options.isClustered());
+      assertTrue(ar.result().isClustered());
       testComplete();
     });
     await();

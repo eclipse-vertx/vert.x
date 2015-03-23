@@ -434,6 +434,13 @@ public interface Vertx extends Measured {
   Set<VerticleFactory> verticleFactories();
 
   /**
+   * Is this Vert.x instance clustered?
+   *
+   * @return true if clustered
+   */
+  boolean isClustered();
+
+  /**
    * Safely execute some blocking code.
    * <p>
    * Executes the blocking code in the handler {@code blockingCodeHandler} using a thread from the worker pool.
