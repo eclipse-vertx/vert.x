@@ -102,7 +102,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void startNodes(int numNodes) {
-    startNodes(numNodes, new VertxOptions());
+    startNodes(numNodes, getOptions());
   }
 
   protected void startNodes(int numNodes, VertxOptions options) {

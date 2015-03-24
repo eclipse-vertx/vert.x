@@ -410,7 +410,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                 socket.write(PONG);
               }
             } else {
-              receiveMessage(received, -1, null, null);
+              receiveMessage(received, -1, null, null, false);
             }
           }
         }
@@ -429,18 +429,27 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // Choose one
       ServerID sid = subs.choose();
       if (!sid.equals(serverID)) {  //We don't send to this node
+        metrics.messageSent(message.address(), false, false, true);
         sendRemote(sid, message);
       } else {
-        receiveMessage(message, timeoutID, asyncResultHandler, replyHandler);
+        metrics.messageSent(message.address(), false, true, false);
+        receiveMessage(message, timeoutID, asyncResultHandler, replyHandler, true);
       }
     } else {
       // Publish
+      boolean local = false;
+      boolean remote = false;
       for (ServerID sid : subs) {
         if (!sid.equals(serverID)) {  //We don't send to this node
+          remote = true;
           sendRemote(sid, message);
         } else {
-          receiveMessage(message, timeoutID, null, replyHandler);
+          local = true;
         }
+      }
+      metrics.messageSent(message.address(), true, local, remote);
+      if (local) {
+        receiveMessage(message, timeoutID, null, replyHandler, true);
       }
     }
   }
@@ -472,7 +481,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private <T> void sendOrPub(ServerID replyDest, MessageImpl message, DeliveryOptions options,
                              Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
-    metrics.messageSent(message.address(), !message.send());
     Handler<Message<T>> simpleReplyHandler = null;
     long timeoutID = -1;
     if (replyHandler != null) {
@@ -491,9 +499,11 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
     if (replyDest != null) {
       if (!replyDest.equals(this.serverID)) {
+        metrics.messageSent(message.address(), !message.send(), false, true);
         sendRemote(replyDest, message);
       } else {
-        receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
+        metrics.messageSent(message.address(), !message.send(), true, false);
+        receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler, true);
       }
     } else {
       if (subs != null) {
@@ -505,7 +515,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
             if (serverIDs != null && !serverIDs.isEmpty()) {
               sendToSubs(serverIDs, message, fTimeoutID, replyHandler, fSimpleReplyHandler);
             } else {
-              receiveMessage(message, fTimeoutID, replyHandler, fSimpleReplyHandler);
+              metrics.messageSent(message.address(), !message.send(), true, false);
+              receiveMessage(message, fTimeoutID, replyHandler, fSimpleReplyHandler, true);
             }
           } else {
             log.error("Failed to send message", asyncResult.cause());
@@ -513,7 +524,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         });
       } else {
         // Not clustered
-        receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler);
+        metrics.messageSent(message.address(), !message.send(), true, false);
+        receiveMessage(message, timeoutID, replyHandler, simpleReplyHandler, true);
       }
     }
   }
@@ -668,7 +680,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   // Called when a message is incoming
   private <T> void receiveMessage(MessageImpl msg, long timeoutID, Handler<AsyncResult<Message<T>>> replyHandler,
-                                  Handler<Message<T>> simpleReplyHandler) {
+                                  Handler<Message<T>> simpleReplyHandler, boolean local) {
     msg.setBus(this);
     Handlers handlers = handlerMap.get(msg.address());
     if (handlers != null) {
@@ -676,15 +688,18 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         //Choose one
         HandlerHolder holder = handlers.choose();
         if (holder != null) {
-          doReceive(msg, holder);
+          metrics.messageReceived(msg.address(), !msg.send(), local, 1);
+          doReceive(msg, holder, local);
         }
       } else {
         // Publish
+        metrics.messageReceived(msg.address(), !msg.send(), local, handlers.list.size());
         for (HandlerHolder holder: handlers.list) {
-          doReceive(msg, holder);
+          doReceive(msg, holder, local);
         }
       }
     } else {
+      metrics.messageReceived(msg.address(), !msg.send(), local, 0);
       // no handlers
       if (replyHandler != null) {
         sendNoHandlersFailure(msg.address(), replyHandler);
@@ -709,7 +724,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
 
-  private <T> void doReceive(MessageImpl msg, HandlerHolder<T> holder) {
+  private <T> void doReceive(MessageImpl msg, HandlerHolder<T> holder, boolean local) {
     // Each handler gets a fresh copy
     @SuppressWarnings("unchecked")
     Message<T> copied = msg.copyBeforeReceive();
@@ -719,7 +734,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // before it was received
       try {
         if (!holder.isRemoved()) {
-          metrics.messageReceived(msg.address());
           holder.handler.handle(copied);
         }
       } finally {
@@ -963,6 +977,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     private int maxBufferedMessages;
     private final Queue<Message<T>> pending = new ArrayDeque<>(8);
     private boolean paused;
+    private Object metric;
 
     public HandlerRegistration(String address, boolean replyHandler, boolean localOnly, long timeoutID) {
       this.address = address;
@@ -1027,7 +1042,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (registered) {
         registered = false;
         unregisterHandler(address, this, completionHandler);
-        metrics.handlerUnregistered(address);
+        metrics.handlerUnregistered(metric);
       } else {
         callCompletionHandlerAsync(completionHandler);
       }
@@ -1038,14 +1053,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       this.result = result;
       if (completionHandler != null) {
         if (result.succeeded()) {
-          metrics.handlerRegistered(address);
+          metric = metrics.handlerRegistered(address);
         }
         Handler<AsyncResult<Void>> callback = completionHandler;
         vertx.runOnContext(v -> callback.handle(result));
       } else if (result.failed()) {
         log.error("Failed to propagate registration for handler " + handler + " and address " + address);
       } else {
-        metrics.handlerRegistered(address);
+        metric = metrics.handlerRegistered(address);
       }
     }
 

@@ -111,22 +111,23 @@ public class DummyVertxMetrics implements VertxMetrics {
     return null;
   }
 
-  class DummyEventBusMetrics implements EventBusMetrics {
+  class DummyEventBusMetrics implements EventBusMetrics<Void> {
 
     @Override
-    public void handlerRegistered(String address) {
+    public Void handlerRegistered(String address) {
+      return null;
     }
 
     @Override
-    public void handlerUnregistered(String address) {
+    public void handlerUnregistered(Void handler) {
     }
 
     @Override
-    public void messageSent(String address, boolean publish) {
+    public void messageSent(String address, boolean publish, boolean local, boolean remote) {
     }
 
     @Override
-    public void messageReceived(String address) {
+    public void messageReceived(String address, boolean publish, boolean local, int handlers) {
     }
 
     @Override

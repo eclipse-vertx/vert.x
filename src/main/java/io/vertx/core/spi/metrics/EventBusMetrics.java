@@ -23,36 +23,41 @@ import io.vertx.core.eventbus.ReplyFailure;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface EventBusMetrics extends Metrics {
+public interface EventBusMetrics<H> extends Metrics {
 
   /**
    * Called when a handler is registered on the event bus.
    *
    * @param address the address used to register the handler
    */
-  void handlerRegistered(String address);
+  H handlerRegistered(String address);
 
   /**
    * Called when a handler has been unregistered from the event bus.
    *
-   * @param address the address that was used to register the handler
+   * @param handler the unregistered handler
    */
-  void handlerUnregistered(String address);
+  void handlerUnregistered(H handler);
 
   /**
    * Called when a message has been sent or published.
    *
    * @param address the address
-   * @param publish true if it was a publish
+   * @param publish true when the message is published
+   * @param local the message is processed locally
+   * @param remote the message is sent on the cluster
    */
-  void messageSent(String address, boolean publish);
+  void messageSent(String address, boolean publish, boolean local, boolean remote);
 
   /**
-   * Called when a message is received
+   * Called when a message is received.
    *
    * @param address the address
+   * @param publish true when the message is published
+   * @param local true when the message is received locally
+   * @param handlers the number of handlers that process the message
    */
-  void messageReceived(String address);
+  void messageReceived(String address, boolean publish, boolean local, int handlers);
 
   /**
    * Called whenever there is a reply failure on the event bus

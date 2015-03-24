@@ -1,0 +1,181 @@
+/*
+ * Copyright (c) 2011-2013 The original author or authors
+ *  ------------------------------------------------------
+ *  All rights reserved. This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License v1.0
+ *  and Apache License v2.0 which accompanies this distribution.
+ *
+ *      The Eclipse Public License is available at
+ *      http://www.eclipse.org/legal/epl-v10.html
+ *
+ *      The Apache License v2.0 is available at
+ *      http://www.opensource.org/licenses/apache2.0.php
+ *
+ *  You may elect to redistribute this code under either of these licenses.
+ */
+
+package io.vertx.test.fakemetrics;
+
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
+import io.vertx.core.datagram.DatagramSocket;
+import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
+import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
+
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
+public class FakeVertxMetrics implements VertxMetrics {
+
+  private static final ConcurrentHashMap<Vertx, FakeVertxMetrics> metricsMap = new ConcurrentHashMap<>();
+
+  public static FakeVertxMetrics getMetrics(Vertx vertx) {
+    return metricsMap.get(vertx);
+  }
+
+  private final Vertx vertx;
+  private final FakeEventBusMetrics eventBusMetrics;
+
+  public FakeVertxMetrics(Vertx vertx) {
+    metricsMap.put(vertx, this);
+    this.vertx = vertx;
+    this.eventBusMetrics = new FakeEventBusMetrics();
+  }
+
+  public FakeEventBusMetrics getEventBusMetrics() {
+    return eventBusMetrics;
+  }
+
+  public void verticleDeployed(Verticle verticle) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void verticleUndeployed(Verticle verticle) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void timerCreated(long id) {
+  }
+
+  public void timerEnded(long id, boolean cancelled) {
+  }
+
+  public EventBusMetrics createMetrics(EventBus eventBus) {
+    return eventBusMetrics;
+  }
+
+  public HttpServerMetrics<?, ?> createMetrics(HttpServer server, HttpServerOptions options) {
+    throw new UnsupportedOperationException();
+  }
+
+  public HttpClientMetrics<?, ?> createMetrics(HttpClient client, HttpClientOptions options) {
+    throw new UnsupportedOperationException();
+  }
+
+  public TCPMetrics<?> createMetrics(NetServer server, NetServerOptions options) {
+    return new TCPMetrics<Object>() {
+
+      public Object connected(SocketAddress remoteAddress) {
+        return null;
+      }
+
+      public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
+      }
+
+      public void listening(SocketAddress localAddress) {
+      }
+
+      public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+      }
+
+      public void bytesWritten(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+      }
+
+      public void exceptionOccurred(Object socketMetric, SocketAddress remoteAddress, Throwable t) {
+      }
+
+      public String baseName() {
+        return null;
+      }
+
+      public boolean isEnabled() {
+        return false;
+      }
+
+      public void close() {
+      }
+    };
+  }
+
+  public TCPMetrics<?> createMetrics(NetClient client, NetClientOptions options) {
+    return new TCPMetrics<Object>() {
+
+      public Object connected(SocketAddress remoteAddress) {
+        return null;
+      }
+
+      public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
+      }
+
+      public void listening(SocketAddress localAddress) {
+      }
+
+      public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+      }
+
+      public void bytesWritten(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+      }
+
+      public void exceptionOccurred(Object socketMetric, SocketAddress remoteAddress, Throwable t) {
+      }
+
+      public String baseName() {
+        return null;
+      }
+
+      public boolean isEnabled() {
+        return false;
+      }
+
+      public void close() {
+      }
+    };
+  }
+
+  public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
+    throw new UnsupportedOperationException();
+  }
+
+  public String metricBaseName() {
+    throw new UnsupportedOperationException();
+  }
+
+  public String baseName() {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isEnabled() {
+    throw new UnsupportedOperationException();
+  }
+
+  public void close() {
+    metricsMap.remove(vertx);
+  }
+}
