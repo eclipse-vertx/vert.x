@@ -661,9 +661,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @return the underlying Map.
    */
-  @SuppressWarnings("unchecked")
-  public <T> Map<String, T> getMap() {
-    return (Map<String, T>)map;
+  public Map<String, Object> getMap() {
+    return map;
   }
 
   /**
