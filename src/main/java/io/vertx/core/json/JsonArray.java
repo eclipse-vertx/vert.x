@@ -454,8 +454,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    *
    * @return  the underlying List
    */
-  public List getList() {
-    return list;
+  @SuppressWarnings("unchecked")
+  public <T> List<T> getList() {
+    return (List<T>)list;
   }
 
   /**

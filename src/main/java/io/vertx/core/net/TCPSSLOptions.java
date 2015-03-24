@@ -155,7 +155,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.crlValues = new ArrayList<>();
     arr = json.getJsonArray("crlValues");
     if (arr != null) {
-      ((List<byte[]>) arr.getList()).stream().map(Buffer::buffer).forEach(crlValues::add);
+      (arr.<byte[]>getList()).stream().map(Buffer::buffer).forEach(crlValues::add);
     }
   }
 
