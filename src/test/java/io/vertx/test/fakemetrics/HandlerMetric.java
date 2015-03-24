@@ -21,16 +21,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HandlerRegistration {
+public class HandlerMetric {
 
   public final String address;
   public final boolean replyHandler;
   public final AtomicInteger beginCount = new AtomicInteger();
   public final AtomicInteger endCount = new AtomicInteger();
   public final AtomicInteger failureCount = new AtomicInteger();
+  public final AtomicInteger localCount = new AtomicInteger();
 
-  public HandlerRegistration(String address, boolean replyHandler) {
+  public HandlerMetric(String address, boolean replyHandler) {
     this.address = address;
     this.replyHandler = replyHandler;
+  }
+
+  @Override
+  public String toString() {
+    return "HandlerRegistration[address=" + address + ",replyHandler=" + replyHandler + ",beginCount=" + beginCount.get() +
+        ",endCount=" + endCount.get() + ",failureCount=" + failureCount + ",localCount=" + localCount.get() + "]";
   }
 }

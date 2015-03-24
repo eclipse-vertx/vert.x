@@ -123,7 +123,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void beginHandleMessage(Void handler) {
+    public void beginHandleMessage(Void handler, boolean local) {
     }
 
     @Override

@@ -1084,7 +1084,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
       } else {
         checkNextTick();
-        metrics.beginHandleMessage(metric);
+        MessageImpl abc = (MessageImpl) event;
+        metrics.beginHandleMessage(metric, abc.getSocket() == null);
         try {
           handler.handle(event);
           metrics.endHandleMessage(metric, null);

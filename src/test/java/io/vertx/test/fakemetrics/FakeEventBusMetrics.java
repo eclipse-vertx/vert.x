@@ -26,11 +26,11 @@ import java.util.List;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeEventBusMetrics implements EventBusMetrics<HandlerRegistration> {
+public class FakeEventBusMetrics implements EventBusMetrics<HandlerMetric> {
 
   private final List<SentMessage> sentMessages = Collections.synchronizedList(new ArrayList<>());
   private final List<ReceivedMessage> receivedMessages = Collections.synchronizedList(new ArrayList<>());
-  private final List<HandlerRegistration> registrations = new ArrayList<>();
+  private final List<HandlerMetric> registrations = new ArrayList<>();
 
   public List<SentMessage> getSentMessages() {
     return sentMessages;
@@ -40,26 +40,30 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerRegistration>
     return receivedMessages;
   }
 
-  public List<HandlerRegistration> getRegistrations() {
+  public List<HandlerMetric> getRegistrations() {
     return registrations;
   }
 
   @Override
-  public HandlerRegistration handlerRegistered(String address, boolean replyHandler) {
-    HandlerRegistration registration = new HandlerRegistration(address, replyHandler);
+  public HandlerMetric handlerRegistered(String address, boolean replyHandler) {
+    HandlerMetric registration = new HandlerMetric(address, replyHandler);
     registrations.add(registration);
     return registration;
   }
 
-  public void handlerUnregistered(HandlerRegistration handler) {
+  public void handlerUnregistered(HandlerMetric handler) {
     registrations.remove(handler);
   }
 
-  public void beginHandleMessage(HandlerRegistration handler) {
+  @Override
+  public void beginHandleMessage(HandlerMetric handler, boolean local) {
     handler.beginCount.incrementAndGet();
+    if (local) {
+      handler.localCount.incrementAndGet();
+    }
   }
 
-  public void endHandleMessage(HandlerRegistration handler, Throwable failure) {
+  public void endHandleMessage(HandlerMetric handler, Throwable failure) {
     handler.endCount.incrementAndGet();
     if (failure != null) {
       handler.failureCount.incrementAndGet();

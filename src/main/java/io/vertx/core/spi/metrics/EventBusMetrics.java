@@ -44,8 +44,9 @@ public interface EventBusMetrics<H> extends Metrics {
    * Called when an handler begin to process a message.
    *
    * @param handler the handler processing the message
+   * @param local when the received message is local
    */
-  void beginHandleMessage(H handler);
+  void beginHandleMessage(H handler, boolean local);
 
   /**
    * Called when an handler finish to process a message.
