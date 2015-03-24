@@ -217,18 +217,34 @@ public class MetricsTest extends VertxTestBase {
   public void testHandlerProcessMessage() {
     FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
     vertx.eventBus().consumer(ADDRESS1, msg -> {
-      HandlerRegistration registration = metrics.getRegistrations().get(0);
-      assertEquals(1, registration.beginCount.get());
-      assertEquals(0, registration.endCount.get());
-      assertEquals(0, registration.failureCount.get());
+      assertEquals(2, metrics.getRegistrations().size());
+      HandlerRegistration registration1 = metrics.getRegistrations().get(0);
+      assertEquals(1, registration1.beginCount.get());
+      assertEquals(0, registration1.endCount.get());
+      assertEquals(0, registration1.failureCount.get());
+      HandlerRegistration registration2 = metrics.getRegistrations().get(1);
+      assertEquals(0, registration2.beginCount.get());
+      assertEquals(0, registration2.endCount.get());
+      assertEquals(0, registration2.failureCount.get());
       msg.reply("pong");
     });
     vertx.eventBus().send(ADDRESS1, "ping", reply -> {
-      HandlerRegistration registration = metrics.getRegistrations().get(0);
-      assertEquals(1, registration.beginCount.get());
-      assertEquals(1, registration.endCount.get());
-      assertEquals(0, registration.failureCount.get());
-      testComplete();
+      assertEquals(2, metrics.getRegistrations().size());
+      HandlerRegistration registration1 = metrics.getRegistrations().get(0);
+      assertEquals(1, registration1.beginCount.get());
+      assertEquals(1, registration1.endCount.get());
+      assertEquals(0, registration1.failureCount.get());
+      HandlerRegistration registration2 = metrics.getRegistrations().get(1);
+      assertEquals(1, registration2.beginCount.get());
+      assertEquals(0, registration2.endCount.get());
+      assertEquals(0, registration2.failureCount.get());
+      vertx.runOnContext(done -> {
+        assertEquals(1, metrics.getRegistrations().size());
+        assertEquals(1, registration2.beginCount.get());
+        assertEquals(1, registration2.endCount.get());
+        assertEquals(0, registration2.failureCount.get());
+        testComplete();
+      });
     });
     await();
   }
@@ -237,6 +253,7 @@ public class MetricsTest extends VertxTestBase {
   public void testHandlerProcessMessageFailure() throws Exception {
     FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
     vertx.eventBus().consumer(ADDRESS1, msg -> {
+      assertEquals(1, metrics.getReceivedMessages().size());
       HandlerRegistration registration = metrics.getRegistrations().get(0);
       assertEquals(1, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
@@ -244,6 +261,7 @@ public class MetricsTest extends VertxTestBase {
       throw new RuntimeException();
     });
     vertx.eventBus().send(ADDRESS1, "ping");
+    assertEquals(1, metrics.getReceivedMessages().size());
     HandlerRegistration registration = metrics.getRegistrations().get(0);
     long now = System.currentTimeMillis();
     while (registration.failureCount.get() < 1 && (System.currentTimeMillis() - now ) < 10 * 1000) {

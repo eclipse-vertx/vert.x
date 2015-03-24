@@ -750,17 +750,26 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
   }
 
-  private static class HandlerHolder<T> {
+  private class HandlerHolder<T> {
     final ContextImpl context;
-    final Handler<Message<T>> handler;
+    final HandlerRegistration<T> handler;
     final boolean replyHandler;
     final boolean localOnly;
     final long timeoutID;
     boolean removed;
 
     // We use a synchronized block to protect removed as it can be unregistered from a different thread
-    synchronized void setRemoved() {
-      removed = true;
+    void setRemoved() {
+      boolean unregisterMetric = false;
+      synchronized (this) {
+        if (!removed) {
+          removed = true;
+          unregisterMetric = true;
+        }
+      }
+      if (unregisterMetric) {
+        metrics.handlerUnregistered(handler.metric);
+      }
     }
 
     // Because of biased locks the overhead of the synchronized lock should be very low as it's almost always
@@ -769,7 +778,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       return removed;
     }
 
-    HandlerHolder(Handler<Message<T>> handler, boolean replyHandler, boolean localOnly, ContextImpl context, long timeoutID) {
+    HandlerHolder(HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly, ContextImpl context, long timeoutID) {
       this.context = context;
       this.handler = handler;
       this.replyHandler = replyHandler;
@@ -1042,7 +1051,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (registered) {
         registered = false;
         unregisterHandler(address, this, completionHandler);
-        metrics.handlerUnregistered(metric);
       } else {
         callCompletionHandlerAsync(completionHandler);
       }
