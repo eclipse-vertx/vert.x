@@ -659,7 +659,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (!ar.succeeded()) {
         log.error("Couldn't find sub to remove");
       } else {
-        completionHandler.handle(Future.succeededFuture());
+        if (completionHandler != null) {
+          completionHandler.handle(Future.succeededFuture());
+        }
       }
     });
   }
