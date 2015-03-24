@@ -44,8 +44,9 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerRegistration>
     return registrations;
   }
 
-  public HandlerRegistration handlerRegistered(String address) {
-    HandlerRegistration registration = new HandlerRegistration(address);
+  @Override
+  public HandlerRegistration handlerRegistered(String address, boolean replyHandler) {
+    HandlerRegistration registration = new HandlerRegistration(address, replyHandler);
     registrations.add(registration);
     return registration;
   }

@@ -1061,14 +1061,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       this.result = result;
       if (completionHandler != null) {
         if (result.succeeded()) {
-          metric = metrics.handlerRegistered(address);
+          metric = metrics.handlerRegistered(address, replyHandler);
         }
         Handler<AsyncResult<Void>> callback = completionHandler;
         vertx.runOnContext(v -> callback.handle(result));
       } else if (result.failed()) {
         log.error("Failed to propagate registration for handler " + handler + " and address " + address);
       } else {
-        metric = metrics.handlerRegistered(address);
+        metric = metrics.handlerRegistered(address, replyHandler);
       }
     }
 

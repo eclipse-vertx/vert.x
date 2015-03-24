@@ -208,7 +208,9 @@ public class MetricsTest extends VertxTestBase {
     FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
     MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {});
     assertEquals(1, metrics.getRegistrations().size());
-    assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
+    HandlerRegistration registration = metrics.getRegistrations().get(0);
+    assertEquals(ADDRESS1, registration.address);
+    assertEquals(false, registration.replyHandler);
     consumer.unregister();
     assertEquals(0, metrics.getRegistrations().size());
   }
@@ -219,10 +221,13 @@ public class MetricsTest extends VertxTestBase {
     vertx.eventBus().consumer(ADDRESS1, msg -> {
       assertEquals(2, metrics.getRegistrations().size());
       HandlerRegistration registration1 = metrics.getRegistrations().get(0);
+      assertEquals(ADDRESS1, registration1.address);
+      assertEquals(false, registration1.replyHandler);
       assertEquals(1, registration1.beginCount.get());
       assertEquals(0, registration1.endCount.get());
       assertEquals(0, registration1.failureCount.get());
       HandlerRegistration registration2 = metrics.getRegistrations().get(1);
+      assertEquals(true, registration2.replyHandler);
       assertEquals(0, registration2.beginCount.get());
       assertEquals(0, registration2.endCount.get());
       assertEquals(0, registration2.failureCount.get());
@@ -231,14 +236,19 @@ public class MetricsTest extends VertxTestBase {
     vertx.eventBus().send(ADDRESS1, "ping", reply -> {
       assertEquals(2, metrics.getRegistrations().size());
       HandlerRegistration registration1 = metrics.getRegistrations().get(0);
+      assertEquals(ADDRESS1, registration1.address);
+      assertEquals(false, registration1.replyHandler);
       assertEquals(1, registration1.beginCount.get());
       assertEquals(1, registration1.endCount.get());
       assertEquals(0, registration1.failureCount.get());
       HandlerRegistration registration2 = metrics.getRegistrations().get(1);
+      assertEquals(true, registration2.replyHandler);
       assertEquals(1, registration2.beginCount.get());
       assertEquals(0, registration2.endCount.get());
       assertEquals(0, registration2.failureCount.get());
       vertx.runOnContext(done -> {
+        assertEquals(ADDRESS1, registration1.address);
+        assertEquals(false, registration1.replyHandler);
         assertEquals(1, metrics.getRegistrations().size());
         assertEquals(1, registration2.beginCount.get());
         assertEquals(1, registration2.endCount.get());

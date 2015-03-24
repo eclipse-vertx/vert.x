@@ -24,11 +24,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HandlerRegistration {
 
   public final String address;
+  public final boolean replyHandler;
   public final AtomicInteger beginCount = new AtomicInteger();
   public final AtomicInteger endCount = new AtomicInteger();
   public final AtomicInteger failureCount = new AtomicInteger();
 
-  public HandlerRegistration(String address) {
+  public HandlerRegistration(String address, boolean replyHandler) {
     this.address = address;
+    this.replyHandler = replyHandler;
   }
 }

@@ -114,7 +114,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   class DummyEventBusMetrics implements EventBusMetrics<Void> {
 
     @Override
-    public Void handlerRegistered(String address) {
+    public Void handlerRegistered(String address, boolean replyHandler) {
       return null;
     }
 
