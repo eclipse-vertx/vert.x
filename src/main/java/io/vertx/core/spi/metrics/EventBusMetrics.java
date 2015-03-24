@@ -40,6 +40,21 @@ public interface EventBusMetrics<H> extends Metrics {
   void handlerUnregistered(H handler);
 
   /**
+   * Called when an handler begin to process a message.
+   *
+   * @param handler the handler processing the message
+   */
+  void beginHandleMessage(H handler);
+
+  /**
+   * Called when an handler finish to process a message.
+   *
+   * @param handler the handler processing the message
+   * @param failure an optional failure thrown by handler
+   */
+  void endHandleMessage(H handler, Throwable failure);
+
+  /**
    * Called when a message has been sent or published.
    *
    * @param address the address

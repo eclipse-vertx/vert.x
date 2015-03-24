@@ -16,12 +16,17 @@
 
 package io.vertx.test.fakemetrics;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class HandlerRegistration {
 
   public final String address;
+  public final AtomicInteger beginCount = new AtomicInteger();
+  public final AtomicInteger endCount = new AtomicInteger();
+  public final AtomicInteger failureCount = new AtomicInteger();
 
   public HandlerRegistration(String address) {
     this.address = address;

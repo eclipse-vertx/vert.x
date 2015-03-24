@@ -21,9 +21,7 @@ import io.vertx.core.spi.metrics.EventBusMetrics;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -54,6 +52,17 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerRegistration>
 
   public void handlerUnregistered(HandlerRegistration handler) {
     registrations.remove(handler);
+  }
+
+  public void beginHandleMessage(HandlerRegistration handler) {
+    handler.beginCount.incrementAndGet();
+  }
+
+  public void endHandleMessage(HandlerRegistration handler, Throwable failure) {
+    handler.endCount.incrementAndGet();
+    if (failure != null) {
+      handler.failureCount.incrementAndGet();
+    }
   }
 
   @Override

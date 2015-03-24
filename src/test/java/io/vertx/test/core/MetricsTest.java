@@ -22,6 +22,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.test.fakemetrics.FakeEventBusMetrics;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;
+import io.vertx.test.fakemetrics.HandlerRegistration;
 import io.vertx.test.fakemetrics.ReceivedMessage;
 import io.vertx.test.fakemetrics.SentMessage;
 import org.junit.Test;
@@ -210,5 +211,46 @@ public class MetricsTest extends VertxTestBase {
     assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
     consumer.unregister();
     assertEquals(0, metrics.getRegistrations().size());
+  }
+
+  @Test
+  public void testHandlerProcessMessage() {
+    FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
+    vertx.eventBus().consumer(ADDRESS1, msg -> {
+      HandlerRegistration registration = metrics.getRegistrations().get(0);
+      assertEquals(1, registration.beginCount.get());
+      assertEquals(0, registration.endCount.get());
+      assertEquals(0, registration.failureCount.get());
+      msg.reply("pong");
+    });
+    vertx.eventBus().send(ADDRESS1, "ping", reply -> {
+      HandlerRegistration registration = metrics.getRegistrations().get(0);
+      assertEquals(1, registration.beginCount.get());
+      assertEquals(1, registration.endCount.get());
+      assertEquals(0, registration.failureCount.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testHandlerProcessMessageFailure() throws Exception {
+    FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
+    vertx.eventBus().consumer(ADDRESS1, msg -> {
+      HandlerRegistration registration = metrics.getRegistrations().get(0);
+      assertEquals(1, registration.beginCount.get());
+      assertEquals(0, registration.endCount.get());
+      assertEquals(0, registration.failureCount.get());
+      throw new RuntimeException();
+    });
+    vertx.eventBus().send(ADDRESS1, "ping");
+    HandlerRegistration registration = metrics.getRegistrations().get(0);
+    long now = System.currentTimeMillis();
+    while (registration.failureCount.get() < 1 && (System.currentTimeMillis() - now ) < 10 * 1000) {
+      Thread.sleep(10);
+    }
+    assertEquals(1, registration.beginCount.get());
+    assertEquals(1, registration.endCount.get());
+    assertEquals(1, registration.failureCount.get());
   }
 }

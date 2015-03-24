@@ -123,6 +123,14 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
+    public void beginHandleMessage(Void handler) {
+    }
+
+    @Override
+    public void endHandleMessage(Void handler, Throwable failure) {
+    }
+
+    @Override
     public void messageSent(String address, boolean publish, boolean local, boolean remote) {
     }
 

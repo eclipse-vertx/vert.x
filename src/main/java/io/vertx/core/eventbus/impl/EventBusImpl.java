@@ -1076,7 +1076,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
       } else {
         checkNextTick();
-        handler.handle(event);
+        metrics.beginHandleMessage(metric);
+        try {
+          handler.handle(event);
+          metrics.endHandleMessage(metric, null);
+        } catch (Exception e) {
+          metrics.endHandleMessage(metric, e);
+          throw e;
+        }
       }
     }
 
