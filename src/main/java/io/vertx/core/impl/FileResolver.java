@@ -24,8 +24,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
@@ -46,12 +46,15 @@ import java.util.zip.ZipFile;
  */
 public class FileResolver {
 
+  public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
+  public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
+
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
 
   private final Vertx vertx;
-  private final boolean enableCaching = System.getProperty("vertx.disableFileCaching") == null;
-  private final boolean enableCPResolving = System.getProperty("vertx.disableFileCPResolving") == null;
+  private final boolean enableCaching = System.getProperty(DISABLE_FILE_CACHING_PROP_NAME) == null;
+  private final boolean enableCPResolving = System.getProperty(DISABLE_CP_RESOLVING_PROP_NAME) == null;
   private final File cwd;
   private File cacheDir;
 
@@ -122,9 +125,7 @@ public class FileResolver {
     if (!isDirectory) {
       cacheFile.getParentFile().mkdirs();
       try {
-        Files.copy(resource.toPath(), cacheFile.toPath());
-      } catch (FileAlreadyExistsException e) {
-        // Ignore
+        Files.copy(resource.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
         throw new VertxException(e);
       }
@@ -159,7 +160,7 @@ public class FileResolver {
           } else {
             file.getParentFile().mkdirs();
             try (InputStream is = zip.getInputStream(entry)) {
-              Files.copy(is, file.toPath());
+              Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
           }
         }

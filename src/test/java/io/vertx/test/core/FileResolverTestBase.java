@@ -41,7 +41,6 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     resolver = new FileResolver(vertx);
-
   }
 
   @Override
@@ -77,6 +76,19 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveFileFromClasspath() throws Exception {
+    for (int i = 0; i < 2; i++) {
+      File file = resolver.resolveFile("afile.html");
+      assertTrue(file.exists());
+      assertTrue(file.getPath().startsWith(".vertx" + File.separator + "file-cache-"));
+      assertFalse(file.isDirectory());
+      assertEquals("<html><body>afile</body></html>", readFile(file));
+    }
+  }
+
+  @Test
+  public void testResolveFileFromClasspathDisableCaching() throws Exception {
+    System.setProperty(FileResolver.DISABLE_FILE_CACHING_PROP_NAME, "true");
+    resolver = new FileResolver(vertx);
     for (int i = 0; i < 2; i++) {
       File file = resolver.resolveFile("afile.html");
       assertTrue(file.exists());
