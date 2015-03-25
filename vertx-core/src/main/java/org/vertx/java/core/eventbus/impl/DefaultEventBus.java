@@ -852,6 +852,7 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void sendRemote(final ServerID theServerID, final BaseMessage message) {
+
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.

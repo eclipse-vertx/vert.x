@@ -61,7 +61,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private final long replyTimeout;
   private final Vertx vertx;
   private final EventBus eb;
-  private final Set<String> acceptedReplyAddresses = new HashSet<>();
+  private final Map<String, Message> messagesAwaitingReply = new HashMap<>();
   private final Map<String, Pattern> compiledREs = new HashMap<>();
   private EventBusBridgeHook hook;
 
@@ -215,7 +215,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
                   log.debug("Outbound message for address " + address + " rejected because auth is required and socket is not authed");
                 }
               } else {
-                checkAddAccceptedReplyAddress(msg.replyAddress());
+                checkAddAccceptedReplyAddress(msg);
                 deliverMessage(sock, address, msg);
               }
             } else {
@@ -293,17 +293,21 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
   }
 
-  private void checkAddAccceptedReplyAddress(final String replyAddress) {
+  private void checkAddAccceptedReplyAddress(final Message message) {
+    final String replyAddress = message.replyAddress();
     if (replyAddress != null) {
       // This message has a reply address
       // When the reply comes through we want to accept it irrespective of its address
       // Since all replies are implicitly accepted if the original message was accepted
       // So we cache the reply address, so we can check against it
-      acceptedReplyAddresses.add(replyAddress);
+      // We also need to cache the message so we can actually call reply() on it - we need the actual message
+      // as the original sender could be on a different node so we need the replyDest (serverID) too otherwise
+      // the message won't be routed to the node.
+      messagesAwaitingReply.put(replyAddress, message);
       // And we remove after timeout in case the reply never comes
       vertx.setTimer(replyTimeout, new Handler<Long>() {
         public void handle(Long id) {
-          acceptedReplyAddresses.remove(replyAddress);
+          messagesAwaitingReply.remove(replyAddress);
         }
       });
     }
@@ -361,7 +365,13 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     if (debug) {
       log.debug("Received msg from client in bridge. address:"  + address + " message:" + body);
     }
-    Match curMatch = checkMatches(true, address, body);
+    final Message awaitingReply = messagesAwaitingReply.remove(address);
+    Match curMatch;
+    if (awaitingReply != null) {
+      curMatch = new Match(true, false);
+    } else {
+      curMatch = checkMatches(true, address, body);
+    }
     if (curMatch.doesMatch) {
       if (curMatch.requiresAuth) {
         final String sessionID = message.getString("sessionID");
@@ -371,7 +381,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
               if (res.succeeded()) {
                 if (res.result()) {
                   cacheAuthorisation(sessionID, sock);
-                  checkAndSend(send, address, body, sock, replyAddress);
+                  checkAndSend(send, address, body, sock, replyAddress, null);
                 } else {
                   // invalid session id
                   replyStatus(sock, replyAddress, "access_denied");
@@ -393,7 +403,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           }
         }
       } else {
-        checkAndSend(send, address, body, sock, replyAddress);
+        checkAndSend(send, address, body, sock, replyAddress, awaitingReply);
       }
     } else {
       // inbound match failed
@@ -406,7 +416,8 @@ public class EventBusBridge implements Handler<SockJSSocket> {
 
   private void checkAndSend(boolean send, final String address, Object body,
                             final SockJSSocket sock,
-                            final String replyAddress) {
+                            final String replyAddress,
+                            final Message awaitingReply) {
     final SockInfo info = sockInfos.get(sock);
     if (replyAddress != null && !checkMaxHandlers(info)) {
       return;
@@ -420,7 +431,11 @@ public class EventBusBridge implements Handler<SockJSSocket> {
             // Note we don't check outbound matches for replies
             // Replies are always let through if the original message
             // was approved
-            checkAddAccceptedReplyAddress(message.replyAddress());
+
+
+            // Now - the reply message might itself be waiting for a reply - which would be inbound -so we need
+            // to add the message to the messages awaiting reply so it can be let through
+            checkAddAccceptedReplyAddress(message);
             deliverMessage(sock, replyAddress, message);
           } else {
             ReplyException cause = (ReplyException) result.cause();
@@ -441,10 +456,20 @@ public class EventBusBridge implements Handler<SockJSSocket> {
     }
     if (send) {
       if (replyAddress != null) {
-        eb.sendWithTimeout(address, body, replyTimeout, replyHandler);
+        if (awaitingReply != null) {
+          // This is a reply
+          awaitingReply.reply(body, replyHandler);
+        } else {
+          eb.sendWithTimeout(address, body, replyTimeout, replyHandler);
+        }
         info.handlerCount++;
       } else {
-        eb.send(address, body);
+        if (awaitingReply != null) {
+          // This is a reply
+          awaitingReply.reply(body);
+        } else {
+          eb.send(address, body);
+        }
       }
     } else {
       eb.publish(address, body);
@@ -475,11 +500,6 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   this means that specifying one match with a JSON empty object means everything is accepted
    */
   private Match checkMatches(boolean inbound, String address, Object body) {
-
-    if (inbound && acceptedReplyAddresses.remove(address)) {
-      // This is an inbound reply, so we accept it
-      return new Match(true, false);
-    }
 
     List<JsonObject> matches = inbound ? inboundPermitted : outboundPermitted;
 
