@@ -352,7 +352,7 @@ public class AsyncFileImpl implements AsyncFile {
       } catch (IOException e) {
         throw new FileSystemException(e);
       }
-    }, handler);
+    }, true, handler);
   }
 
   private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {

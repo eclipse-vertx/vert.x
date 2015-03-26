@@ -51,11 +51,13 @@ public abstract class ContextImpl implements Context {
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
   protected final Executor orderedInternalPoolExec;
+  protected final Executor workerExec;
   protected VertxThread contextThread;
 
-  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, String deploymentID, JsonObject config,
+  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
     this.orderedInternalPoolExec = orderedInternalPoolExec;
+    this.workerExec = workerExec;
     this.deploymentID = deploymentID;
     this.config = config;
     EventLoopGroup group = vertx.getEventLoopGroup();
@@ -196,17 +198,19 @@ public abstract class ContextImpl implements Context {
   }
 
   // Execute an internal task on the internal blocking ordered executor
-  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, null, resultHandler);
+  public <T> void executeBlocking(Action<T> action, boolean internal, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(action, null, internal, resultHandler);
   }
 
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, resultHandler);
+    executeBlocking(null, blockingCodeHandler, false, resultHandler);
   }
 
-  public <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+  private <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler, boolean internal,
+                                  Handler<AsyncResult<T>> resultHandler) {
     try {
-      orderedInternalPoolExec.execute(() -> {
+      Executor exec = internal ? orderedInternalPoolExec : workerExec;
+      exec.execute(() -> {
         Future<T> res = Future.future();
         try {
           if (blockingCodeHandler != null) {

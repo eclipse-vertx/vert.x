@@ -345,7 +345,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl) {
-    return new EventLoopContext(this, workerOrderedFact.getExecutor(), deploymentID, config, tccl);
+    return new EventLoopContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID, config, tccl);
   }
 
   @Override
@@ -567,9 +567,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
+    ContextImpl context = getOrCreateContext();
+    context.executeBlocking(action, true, resultHandler);
+  }
+
+  @Override
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
-    context.executeBlocking(action, resultHandler);
+    context.executeBlocking(action, false, resultHandler);
   }
 
   @Override
