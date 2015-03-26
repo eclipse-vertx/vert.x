@@ -26,7 +26,6 @@ import io.vertx.core.Starter;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.cluster.Action;
 
 import java.util.HashSet;
 import java.util.List;

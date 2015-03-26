@@ -63,7 +63,6 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 
@@ -570,12 +569,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
     context.executeBlocking(action, true, resultHandler);
-  }
-
-  @Override
-  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    ContextImpl context = getOrCreateContext();
-    context.executeBlocking(action, false, resultHandler);
   }
 
   @Override
