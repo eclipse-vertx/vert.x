@@ -32,9 +32,9 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  public EventLoopContext(VertxInternal vertx, Executor bgExec, String deploymentID, JsonObject config,
+  public EventLoopContext(VertxInternal vertx, Executor internalBlockingExec, Executor workerExec, String deploymentID, JsonObject config,
                           ClassLoader tccl) {
-    super(vertx, bgExec, deploymentID, config, tccl);
+    super(vertx, internalBlockingExec, workerExec, deploymentID, config, tccl);
   }
 
   public void executeAsync(Handler<Void> task) {

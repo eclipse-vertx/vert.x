@@ -592,7 +592,7 @@ public class DeploymentManager {
 
     private void doStartRedeployTimer() {
       redeployTimerID = vertx.setTimer(options.getRedeployScanPeriod(), tid -> {
-        vertx.executeBlocking(redeployer, res -> {
+        vertx.executeBlockingInternal(redeployer, res -> {
           if (res.succeeded()) {
             if (res.result()) {
               doRedeploy();
