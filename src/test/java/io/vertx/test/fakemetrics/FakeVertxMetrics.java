@@ -64,11 +64,9 @@ public class FakeVertxMetrics implements VertxMetrics {
   }
 
   public void verticleDeployed(Verticle verticle) {
-    throw new UnsupportedOperationException();
   }
 
   public void verticleUndeployed(Verticle verticle) {
-    throw new UnsupportedOperationException();
   }
 
   public void timerCreated(long id) {
