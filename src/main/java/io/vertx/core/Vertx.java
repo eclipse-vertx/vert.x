@@ -16,6 +16,7 @@
 
 package io.vertx.core;
 
+import io.netty.channel.EventLoopGroup;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
@@ -457,6 +458,14 @@ public interface Vertx extends Measured {
    * @param <T> the type of the result
    */
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+
+  /**
+   * Return the Netty EventLoopGroup used by Vert.x
+   *
+   * @return the EventLoopGroup
+   */
+  @GenIgnore
+  EventLoopGroup nettyEventLoopGroup();
 
   static final VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
 }

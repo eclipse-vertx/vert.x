@@ -582,6 +582,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return clusterManager != null;
   }
 
+  @Override
+  public EventLoopGroup nettyEventLoopGroup() {
+    return eventLoopGroup;
+  }
+
   // For testing
   public void simulateKill() {
     if (haManager() != null) {

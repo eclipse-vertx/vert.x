@@ -73,8 +73,7 @@ public class HATest extends VertxTestBase {
       testComplete();
     });
     // Shouldn't deploy until a quorum is obtained
-    Thread.sleep(500);
-    assertTrue(vertx1.deploymentIDs().isEmpty());
+    waitUntil(() -> vertx1.deploymentIDs().isEmpty());
     Vertx vertx2 = startVertx(2);
     // Now should be deployed
     await();
