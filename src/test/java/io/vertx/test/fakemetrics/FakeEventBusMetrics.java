@@ -22,6 +22,9 @@ import io.vertx.core.spi.metrics.EventBusMetrics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -31,6 +34,16 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerMetric> {
   private final List<SentMessage> sentMessages = Collections.synchronizedList(new ArrayList<>());
   private final List<ReceivedMessage> receivedMessages = Collections.synchronizedList(new ArrayList<>());
   private final List<HandlerMetric> registrations = new ArrayList<>();
+  private final Map<String, AtomicInteger> encoded = new ConcurrentHashMap<>();
+  private final Map<String, AtomicInteger> decoded = new ConcurrentHashMap<>();
+
+  public Map<String, AtomicInteger> getEncoded() {
+    return encoded;
+  }
+
+  public Map<String, AtomicInteger> getDecoded() {
+    return decoded;
+  }
 
   public List<SentMessage> getSentMessages() {
     return sentMessages;
@@ -42,6 +55,16 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerMetric> {
 
   public List<HandlerMetric> getRegistrations() {
     return registrations;
+  }
+
+  public int getEncodedBytes(String address) {
+    AtomicInteger value = encoded.get(address);
+    return value != null ? value.get() : 0;
+  }
+
+  public int getDecodedBytes(String address) {
+    AtomicInteger value = decoded.get(address);
+    return value != null ? value.get() : 0;
   }
 
   @Override
@@ -78,6 +101,26 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerMetric> {
   @Override
   public void messageReceived(String address, boolean publish, boolean local, int handlers) {
     receivedMessages.add(new ReceivedMessage(address, publish, local, handlers));
+  }
+
+  @Override
+  public void messageWritten(String address, int size) {
+    AtomicInteger value = new AtomicInteger();
+    AtomicInteger existing = encoded.putIfAbsent(address, value);
+    if (existing != null) {
+      value = existing;
+    }
+    value.addAndGet(size);
+  }
+
+  @Override
+  public void messageRead(String address, int size) {
+    AtomicInteger value = new AtomicInteger();
+    AtomicInteger existing = decoded.putIfAbsent(address, value);
+    if (existing != null) {
+      value = existing;
+    }
+    value.addAndGet(size);
   }
 
   public void replyFailure(String address, ReplyFailure failure) {

@@ -114,6 +114,14 @@ public class DummyVertxMetrics implements VertxMetrics {
   class DummyEventBusMetrics implements EventBusMetrics<Void> {
 
     @Override
+    public void messageWritten(String address, int size) {
+    }
+
+    @Override
+    public void messageRead(String address, int size) {
+    }
+
+    @Override
     public Void handlerRegistered(String address, boolean replyHandler) {
       return null;
     }

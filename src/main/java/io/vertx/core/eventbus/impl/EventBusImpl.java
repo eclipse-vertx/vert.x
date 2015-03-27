@@ -51,7 +51,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.net.impl.NetClientImpl;
-import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -303,7 +302,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   @Override
-  public Metrics getMetrics() {
+  public EventBusMetrics<?> getMetrics() {
     return metrics;
   }
 
@@ -402,6 +401,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
           } else {
             MessageImpl received = new MessageImpl();
             received.readFromWire(socket, buff, userCodecMap, systemCodecs);
+            metrics.messageRead(received.address(), buff.length());
             parser.fixedSizeMode(4);
             size = -1;
             if (received.codec() == PING_MESSAGE_CODEC) {
@@ -847,17 +847,22 @@ public class EventBusImpl implements EventBus, MetricsProvider {
           close(true);
         });
         MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true);
-        socket.write(pingMessage.encodeToWire());
+        Buffer data = pingMessage.encodeToWire();
+        socket.write(data);
       });
     }
 
     void writeMessage(MessageImpl message) {
       if (connected) {
-        socket.write(message.encodeToWire());
+        Buffer data = message.encodeToWire();
+        metrics.messageWritten(message.address(), data.length());
+        socket.write(data);
       } else {
         synchronized (this) {
           if (connected) {
-            socket.write(message.encodeToWire());
+            Buffer data = message.encodeToWire();
+            metrics.messageWritten(message.address(), data.length());
+            socket.write(data);
           } else {
             pending.add(message);
           }
@@ -878,7 +883,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // Start a pinger
       schedulePing();
       for (MessageImpl message : pending) {
-        socket.write(message.encodeToWire());
+        Buffer data = message.encodeToWire();
+        metrics.messageWritten(message.address(), data.length());
+        socket.write(data);
       }
       pending.clear();
     }

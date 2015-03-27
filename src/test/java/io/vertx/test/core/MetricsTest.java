@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.test.fakemetrics.FakeEventBusMetrics;
@@ -311,6 +312,26 @@ public class MetricsTest extends VertxTestBase {
         assertEquals(1, registration.localCount.get());
       });
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testBytesCodec() throws Exception {
+    startNodes(2);
+    FakeEventBusMetrics fromMetrics = FakeVertxMetrics.getMetrics(vertices[0]).getEventBusMetrics();
+    FakeEventBusMetrics toMetrics = FakeVertxMetrics.getMetrics(vertices[1]).getEventBusMetrics();
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+      int encoded = fromMetrics.getEncodedBytes(ADDRESS1);
+      int decoded = toMetrics.getDecodedBytes(ADDRESS1);
+      assertTrue("Expected to have more " + encoded + " > 1000 encoded bytes", encoded > 1000);
+      assertTrue("Expected to have more " + decoded + " > 1000 decoded bytes", decoded > 1000);
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(0, fromMetrics.getEncodedBytes(ADDRESS1));
+      assertEquals(0, toMetrics.getDecodedBytes(ADDRESS1));
+      vertices[0].eventBus().send(ADDRESS1, Buffer.buffer(new byte[1000]));
     });
     await();
   }

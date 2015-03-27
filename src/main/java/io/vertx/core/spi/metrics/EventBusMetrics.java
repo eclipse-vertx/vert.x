@@ -77,6 +77,22 @@ public interface EventBusMetrics<H> extends Metrics {
   void messageReceived(String address, boolean publish, boolean local, int handlers);
 
   /**
+   * A message has been sent over the network.
+   *
+   * @param address the message address
+   * @param size the message encoded size in bytes
+   */
+  void messageWritten(String address, int size);
+
+  /**
+   * A message has been received from the network.
+   *
+   * @param address the message address
+   * @param size the message encoded size in bytes
+   */
+  void messageRead(String address, int size);
+
+  /**
    * Called whenever there is a reply failure on the event bus
    *
    * @param address the address
