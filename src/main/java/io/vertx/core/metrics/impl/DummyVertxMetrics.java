@@ -109,11 +109,11 @@ public class DummyVertxMetrics implements VertxMetrics {
   class DummyEventBusMetrics implements EventBusMetrics<Void> {
 
     @Override
-    public void messageWritten(String address, int size) {
+    public void messageWritten(String address, int numberOfBytes) {
     }
 
     @Override
-    public void messageRead(String address, int size) {
+    public void messageRead(String address, int numberOfBytes) {
     }
 
     @Override
@@ -163,7 +163,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void responseEnd(Void requestMetric, HttpServerRequest request, HttpServerResponse response) {
+    public void responseEnd(Void requestMetric, HttpServerResponse response) {
     }
 
     @Override
@@ -205,7 +205,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void responseEnd(Void requestMetric, HttpClientRequest request, HttpClientResponse response) {
+    public void responseEnd(Void requestMetric, HttpClientResponse response) {
     }
 
     @Override

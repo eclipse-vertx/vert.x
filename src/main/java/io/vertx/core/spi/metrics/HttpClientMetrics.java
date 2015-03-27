@@ -38,8 +38,7 @@ public interface HttpClientMetrics<R, S> extends TCPMetrics<S> {
    * Called when an http client response has ended
    *
    * @param requestMetric the request metric
-   * @param request the {@link io.vertx.core.http.HttpClientRequest}
    * @param response the {@link io.vertx.core.http.HttpClientResponse}
    */
-  void responseEnd(R requestMetric, HttpClientRequest request, HttpClientResponse response);
+  void responseEnd(R requestMetric, HttpClientResponse response);
 }

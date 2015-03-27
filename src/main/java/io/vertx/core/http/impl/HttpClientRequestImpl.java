@@ -569,7 +569,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   void reportResponseEnd(HttpClientResponseImpl resp) {
     HttpClientMetrics metrics = client.httpClientMetrics();
     if (metrics.isEnabled()) {
-      metrics.responseEnd(metric, this, resp);
+      metrics.responseEnd(metric, resp);
     }
   }
 

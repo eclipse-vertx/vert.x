@@ -104,23 +104,23 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerMetric> {
   }
 
   @Override
-  public void messageWritten(String address, int size) {
+  public void messageWritten(String address, int numberOfBytes) {
     AtomicInteger value = new AtomicInteger();
     AtomicInteger existing = encoded.putIfAbsent(address, value);
     if (existing != null) {
       value = existing;
     }
-    value.addAndGet(size);
+    value.addAndGet(numberOfBytes);
   }
 
   @Override
-  public void messageRead(String address, int size) {
+  public void messageRead(String address, int numberOfBytes) {
     AtomicInteger value = new AtomicInteger();
     AtomicInteger existing = decoded.putIfAbsent(address, value);
     if (existing != null) {
       value = existing;
     }
-    value.addAndGet(size);
+    value.addAndGet(numberOfBytes);
   }
 
   public void replyFailure(String address, ReplyFailure failure) {

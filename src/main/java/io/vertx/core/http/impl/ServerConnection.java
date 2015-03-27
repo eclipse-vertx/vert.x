@@ -142,7 +142,7 @@ class ServerConnection extends ConnectionBase {
     if (metrics.isEnabled()) {
       reportBytesWritten(bytesWritten);
       bytesWritten = 0;
-      metrics.responseEnd(requestMetric, currentRequest, pendingResponse);
+      metrics.responseEnd(requestMetric, pendingResponse);
     }
     pendingResponse = null;
     checkNextTick();
