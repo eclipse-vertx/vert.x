@@ -376,7 +376,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public String metricBaseName() {
-    return metrics.baseName();
+    return metrics != null ? metrics.baseName() : null;
   }
 
   SSLHelper getSslHelper() {

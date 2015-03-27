@@ -320,7 +320,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
   @Override
   public String metricBaseName() {
-    return metrics.baseName();
+    return metrics != null ? metrics.baseName() : null;
   }
 
   @Override
