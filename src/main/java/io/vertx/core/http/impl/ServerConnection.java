@@ -142,7 +142,7 @@ class ServerConnection extends ConnectionBase {
     if (metrics.isEnabled()) {
       reportBytesWritten(bytesWritten);
       bytesWritten = 0;
-      metrics.responseEnd(requestMetric, pendingResponse);
+      metrics.responseEnd(requestMetric, currentRequest, pendingResponse);
     }
     pendingResponse = null;
     checkNextTick();
@@ -265,7 +265,7 @@ class ServerConnection extends ConnectionBase {
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     this.currentRequest = req;
     pendingResponse = resp;
-    requestMetric = metrics.requestBegin(req, resp);
+    requestMetric = metrics.requestBegin(req);
     if (requestHandler != null) {
       requestHandler.handle(req);
     }

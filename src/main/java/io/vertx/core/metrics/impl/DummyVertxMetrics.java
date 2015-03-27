@@ -158,12 +158,12 @@ public class DummyVertxMetrics implements VertxMetrics {
   class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void> {
 
     @Override
-    public Void requestBegin(HttpServerRequest request, HttpServerResponse response) {
+    public Void requestBegin(HttpServerRequest request) {
       return null;
     }
 
     @Override
-    public void responseEnd(Void requestMetric, HttpServerResponse response) {
+    public void responseEnd(Void requestMetric, HttpServerRequest request, HttpServerResponse response) {
     }
 
     @Override

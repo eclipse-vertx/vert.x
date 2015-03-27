@@ -30,16 +30,16 @@ public interface HttpServerMetrics<R, S> extends TCPMetrics<S> {
    * Called when an http server request begins
    *
    * @param request the {@link io.vertx.core.http.HttpServerRequest}
-   * @param response the {@link io.vertx.core.http.HttpServerResponse}
    * @return the request metric
    */
-  R requestBegin(HttpServerRequest request, HttpServerResponse response);
+  R requestBegin(HttpServerRequest request);
 
   /**
    * Called when an http server response has ended.
    *
    * @param requestMetric the request metric
+   * @param request the {@link io.vertx.core.http.HttpServerRequest}
    * @param response the {@link io.vertx.core.http.HttpServerResponse}
    */
-  void responseEnd(R requestMetric, HttpServerResponse response);
+  void responseEnd(R requestMetric, HttpServerRequest request, HttpServerResponse response);
 }
