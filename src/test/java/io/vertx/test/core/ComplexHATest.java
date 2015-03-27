@@ -179,9 +179,9 @@ public class ComplexHATest extends VertxTestBase {
     takeDeploymentSnapshots();
     VertxInternal v = (VertxInternal)vertices[pos];
     killedNode = pos;
-    v.executeBlocking(() -> {
+    v.executeBlocking(fut -> {
       v.simulateKill();
-      return null;
+      fut.complete();
     }, ar -> {
       assertTrue(ar.succeeded());
     });

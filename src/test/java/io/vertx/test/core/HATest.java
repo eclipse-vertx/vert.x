@@ -73,8 +73,7 @@ public class HATest extends VertxTestBase {
       testComplete();
     });
     // Shouldn't deploy until a quorum is obtained
-    Thread.sleep(500);
-    assertTrue(vertx1.deploymentIDs().isEmpty());
+    waitUntil(() -> vertx1.deploymentIDs().isEmpty());
     Vertx vertx2 = startVertx(2);
     // Now should be deployed
     await();
@@ -383,9 +382,9 @@ public class HATest extends VertxTestBase {
 
   protected void kill(int pos) {
     VertxInternal v = (VertxInternal)vertices[pos];
-    v.executeBlocking(() -> {
+    v.executeBlocking(fut -> {
       v.simulateKill();
-      return null;
+      fut.complete();
     }, ar -> {
       assertTrue(ar.succeeded());
     });

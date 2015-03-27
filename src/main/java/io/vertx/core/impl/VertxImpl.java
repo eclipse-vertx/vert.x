@@ -63,7 +63,6 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.cluster.Action;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 
@@ -573,12 +572,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    ContextImpl context = getOrCreateContext();
-    context.executeBlocking(action, false, resultHandler);
-  }
-
-  @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
     ContextImpl context = getOrCreateContext();
     context.executeBlocking(blockingCodeHandler, asyncResultHandler);
@@ -587,6 +580,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public boolean isClustered() {
     return clusterManager != null;
+  }
+
+  @Override
+  public EventLoopGroup nettyEventLoopGroup() {
+    return eventLoopGroup;
   }
 
   // For testing
