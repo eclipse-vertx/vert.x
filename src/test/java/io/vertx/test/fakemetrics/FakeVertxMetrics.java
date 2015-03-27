@@ -79,7 +79,7 @@ public class FakeVertxMetrics implements VertxMetrics {
     return eventBusMetrics;
   }
 
-  public HttpServerMetrics<?, ?> createMetrics(HttpServer server, HttpServerOptions options) {
+  public HttpServerMetrics<?, ?> createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
     throw new UnsupportedOperationException();
   }
 
@@ -87,7 +87,7 @@ public class FakeVertxMetrics implements VertxMetrics {
     throw new UnsupportedOperationException();
   }
 
-  public TCPMetrics<?> createMetrics(NetServer server, NetServerOptions options) {
+  public TCPMetrics<?> createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
     return new TCPMetrics<Object>() {
 
       public Object connected(SocketAddress remoteAddress) {

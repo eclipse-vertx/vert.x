@@ -29,6 +29,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * The main Vert.x metrics SPI which Vert.x will use internally. This interface serves two purposes, one
@@ -80,10 +81,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the http server metrics SPI when an http server is created
    *
    * @param server the Vert.x http server
+   * @param localAddress localAddress the local address the net socket is listening on
    * @param options the options used to create the {@link io.vertx.core.http.HttpServer}
    * @return the http server metrics SPI
    */
-  HttpServerMetrics<?, ?> createMetrics(HttpServer server, HttpServerOptions options);
+  HttpServerMetrics<?, ?> createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options);
 
   /**
    * Provides the http client metrics SPI when an http client has been created
@@ -98,10 +100,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the net server metrics SPI when a net server is created
    *
    * @param server the Vert.x net server
+   * @param localAddress localAddress the local address the net socket is listening on
    * @param options the options used to create the {@link io.vertx.core.net.NetServer}
    * @return the net server metrics SPI
    */
-  TCPMetrics<?> createMetrics(NetServer server, NetServerOptions options);
+  TCPMetrics<?> createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options);
 
   /**
    * Provides the net client metrics SPI when a net client is created

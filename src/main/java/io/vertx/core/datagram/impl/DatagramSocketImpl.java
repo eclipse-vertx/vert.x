@@ -35,6 +35,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
@@ -180,7 +181,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     ChannelFuture future = channel().bind(is);
     addListener(future, ar -> {
       if (ar.succeeded()) {
-        metrics.listening(localAddress());
+        ((DatagramSocketMetrics) metrics).listening(localAddress());
       }
       handler.handle(ar);
     });

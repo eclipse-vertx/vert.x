@@ -27,14 +27,6 @@ import io.vertx.core.net.SocketAddress;
 public interface NetworkMetrics<S> extends Metrics {
 
   /**
-   * Called when a socket is listening. For example, this is called when an http or net server
-   * has been created and is listening on a specific host/port.
-   *
-   * @param localAddress the local address the net socket is listening on.
-   */
-  void listening(SocketAddress localAddress);
-
-  /**
    * Called when bytes have been read
    *
    * @param socketMetric the socket metric, null for UDP

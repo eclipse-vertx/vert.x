@@ -103,7 +103,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final HttpServerOptions options;
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
-  private final HttpServerMetrics metrics;
   private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
@@ -120,6 +119,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private ServerID id;
   private HttpServerImpl actualServer;
   private ContextImpl listenContext;
+  private HttpServerMetrics metrics;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -133,7 +133,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.subProtocols = options.getWebsocketSubProtocols();
-    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -251,7 +250,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               if (!channelFuture.isSuccess()) {
                 vertx.sharedHttpServers().remove(id);
               } else {
-                metrics.listening(new SocketAddressImpl(port, host));
+                metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
               }
             });
         } catch (final Throwable t) {
@@ -271,7 +270,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         addHandlers(actualServer, listenContext);
-        metrics.listening(new SocketAddressImpl(port, host));
+        metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
       }
       actualServer.bindFuture.addListener(future -> {
         if (listenHandler != null) {

@@ -71,7 +71,6 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private final NetServerOptions options;
   private final ContextImpl creatingContext;
   private final SSLHelper sslHelper;
-  private final TCPMetrics metrics;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
@@ -85,6 +84,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private volatile int actualPort;
   private boolean listenersRun;
   private ContextImpl listenContext;
+  private TCPMetrics metrics;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
@@ -97,7 +97,6 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       }
       creatingContext.addCloseHook(this);
     }
-    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -205,7 +204,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
               NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
-              metrics.listening(new SocketAddressImpl(id.port, id.host));
+              metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -230,7 +229,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
-        metrics.listening(new SocketAddressImpl(id.port, id.host));
+        metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
         if (connectStream.handler() != null) {
           actualServer.handlerManager.addHandler(connectStream.handler(), listenContext);
         }

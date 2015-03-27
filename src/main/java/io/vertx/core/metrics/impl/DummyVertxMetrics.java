@@ -68,7 +68,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public HttpServerMetrics createMetrics(HttpServer server, HttpServerOptions options) {
+  public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
     return new DummyHttpServerMetrics();
   }
 
@@ -78,7 +78,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public TCPMetrics createMetrics(NetServer server, NetServerOptions options) {
+  public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
     return new DummyTCPMetrics();
   }
 
@@ -177,10 +177,6 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void listening(SocketAddress localAddress) {
-    }
-
-    @Override
     public Void connected(SocketAddress remoteAddress) {
       return null;
     }
@@ -228,10 +224,6 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void listening(SocketAddress localAddress) {
-    }
-
-    @Override
     public Void connected(SocketAddress remoteAddress) {
       return null;
     }
@@ -268,10 +260,6 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   class DummyTCPMetrics implements TCPMetrics<Void> {
-
-    @Override
-    public void listening(SocketAddress localAddress) {
-    }
 
     @Override
     public Void connected(SocketAddress remoteAddress) {
