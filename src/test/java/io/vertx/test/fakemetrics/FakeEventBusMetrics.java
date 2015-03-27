@@ -127,10 +127,6 @@ public class FakeEventBusMetrics implements EventBusMetrics<HandlerMetric> {
     throw new UnsupportedOperationException();
   }
 
-  public String baseName() {
-    throw new UnsupportedOperationException();
-  }
-
   public boolean isEnabled() {
     throw new UnsupportedOperationException();
   }

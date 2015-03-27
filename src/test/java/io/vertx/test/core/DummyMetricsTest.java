@@ -42,41 +42,41 @@ public class DummyMetricsTest extends VertxTestBase {
 
   @Test
   public void testDummyVertxMetrics() {
-    assertNull(vertx.metricBaseName());
+    assertFalse(vertx.isMetricsEnabled());
   }
 
   @Test
   public void testDummyNetServerMetrics() {
     NetServer server = vertx.createNetServer(new NetServerOptions());
-    assertNull(server.metricBaseName());
+    assertFalse(server.isMetricsEnabled());
   }
 
   @Test
   public void testDummyNetClientMetrics() {
     NetClient client = vertx.createNetClient(new NetClientOptions());
-    assertNull(client.metricBaseName());
+    assertFalse(client.isMetricsEnabled());
   }
 
   @Test
   public void testDummyHttpServerMetrics() {
     HttpServer server = vertx.createHttpServer(new HttpServerOptions());
-    assertNull(server.metricBaseName());
+    assertFalse(server.isMetricsEnabled());
   }
 
   @Test
   public void testDummyHttpClientMetrics() {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions());
-    assertNull(client.metricBaseName());
+    assertFalse(client.isMetricsEnabled());
   }
 
   @Test
   public void testDummyEventBusMetrics() {
-    assertNull(vertx.eventBus().metricBaseName());
+    assertFalse(vertx.eventBus().isMetricsEnabled());
   }
 
   @Test
   public void testDummyDatagramSocketMetrics() {
     DatagramSocket sock = vertx.createDatagramSocket(new DatagramSocketOptions());
-    assertNull(sock.metricBaseName());
+    assertFalse(sock.isMetricsEnabled());
   }
 }

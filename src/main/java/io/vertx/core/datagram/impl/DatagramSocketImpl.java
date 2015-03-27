@@ -249,8 +249,8 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics.baseName();
+  public boolean isMetricsEnabled() {
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override

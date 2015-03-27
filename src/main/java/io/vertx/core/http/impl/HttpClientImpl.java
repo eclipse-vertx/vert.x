@@ -587,8 +587,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics.baseName();
+  public boolean isMetricsEnabled() {
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override

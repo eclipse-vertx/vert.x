@@ -23,11 +23,12 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen(concrete = false)
 public interface Measured {
+
   /**
-   * The metric base name
+   * Whether the metrics are enabled for this measured object
    *
-   * @return the metric base name
+   * @return true if the metrics are enabled
    */
-  String metricBaseName();
+  boolean isMetricsEnabled();
 
 }

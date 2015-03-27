@@ -63,6 +63,11 @@ public class FakeVertxMetrics implements VertxMetrics {
     return eventBusMetrics;
   }
 
+  @Override
+  public boolean isMetricsEnabled() {
+    return true;
+  }
+
   public void verticleDeployed(Verticle verticle) {
   }
 
@@ -109,10 +114,6 @@ public class FakeVertxMetrics implements VertxMetrics {
       public void exceptionOccurred(Object socketMetric, SocketAddress remoteAddress, Throwable t) {
       }
 
-      public String baseName() {
-        return null;
-      }
-
       public boolean isEnabled() {
         return false;
       }
@@ -144,10 +145,6 @@ public class FakeVertxMetrics implements VertxMetrics {
       public void exceptionOccurred(Object socketMetric, SocketAddress remoteAddress, Throwable t) {
       }
 
-      public String baseName() {
-        return null;
-      }
-
       public boolean isEnabled() {
         return false;
       }
@@ -162,10 +159,6 @@ public class FakeVertxMetrics implements VertxMetrics {
   }
 
   public String metricBaseName() {
-    throw new UnsupportedOperationException();
-  }
-
-  public String baseName() {
     throw new UnsupportedOperationException();
   }
 

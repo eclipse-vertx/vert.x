@@ -25,13 +25,6 @@ package io.vertx.core.spi.metrics;
 public interface Metrics {
 
   /**
-   * The name used as the base for metrics provided by an SPI.
-   *
-   * @return the base name
-   */
-  String baseName();
-
-  /**
    * Whether the metrics are enabled.
    *
    * @return true if the metrics are enabled.

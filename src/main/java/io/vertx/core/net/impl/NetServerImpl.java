@@ -319,8 +319,8 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics != null ? metrics.baseName() : null;
+  public boolean isMetricsEnabled() {
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override

@@ -97,18 +97,13 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public String baseName() {
-    return null;
-  }
-
-  @Override
   public boolean isEnabled() {
     return false;
   }
 
   @Override
-  public String metricBaseName() {
-    return null;
+  public boolean isMetricsEnabled() {
+    return false;
   }
 
   class DummyEventBusMetrics implements EventBusMetrics<Void> {
@@ -148,11 +143,6 @@ public class DummyVertxMetrics implements VertxMetrics {
 
     @Override
     public void replyFailure(String address, ReplyFailure failure) {
-    }
-
-    @Override
-    public String baseName() {
-      return null;
     }
 
     @Override
@@ -202,11 +192,6 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public String baseName() {
-      return null;
-    }
-
-    @Override
     public boolean isEnabled() {
       return false;
     }
@@ -249,11 +234,6 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public String baseName() {
-      return null;
-    }
-
-    @Override
     public boolean isEnabled() {
       return false;
     }
@@ -287,11 +267,6 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public String baseName() {
-      return null;
-    }
-
-    @Override
     public boolean isEnabled() {
       return false;
     }
@@ -317,11 +292,6 @@ public class DummyVertxMetrics implements VertxMetrics {
 
     @Override
     public void close() {
-    }
-
-    @Override
-    public String baseName() {
-      return null;
     }
 
     @Override
