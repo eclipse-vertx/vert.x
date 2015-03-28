@@ -523,7 +523,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private void connected(ClientConnection conn) {
     conn.setCurrentRequest(this);
     this.conn = conn;
-    this.metric = client.httpClientMetrics().requestBegin(conn.localAddress(), conn.remoteAddress(), this);
+    this.metric = client.httpClientMetrics().requestBegin(conn.metric(), conn.localAddress(), conn.remoteAddress(), this);
 
     // If anything was written or the request ended before we got the connection, then
     // we need to write it now

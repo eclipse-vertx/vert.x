@@ -158,7 +158,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void> {
 
     @Override
-    public Void requestBegin(HttpServerRequest request) {
+    public Void requestBegin(Void socketMetric, HttpServerRequest request) {
       return null;
     }
 
@@ -200,7 +200,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void> {
 
     @Override
-    public Void requestBegin(SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
+    public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
       return null;
     }
 

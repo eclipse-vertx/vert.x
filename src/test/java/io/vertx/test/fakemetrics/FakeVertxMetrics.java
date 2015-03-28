@@ -102,9 +102,6 @@ public class FakeVertxMetrics implements VertxMetrics {
       public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
       }
 
-      public void listening(SocketAddress localAddress) {
-      }
-
       public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
       }
 
@@ -133,9 +130,6 @@ public class FakeVertxMetrics implements VertxMetrics {
       public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
       }
 
-      public void listening(SocketAddress localAddress) {
-      }
-
       public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
       }
 
@@ -155,10 +149,6 @@ public class FakeVertxMetrics implements VertxMetrics {
   }
 
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    throw new UnsupportedOperationException();
-  }
-
-  public String metricBaseName() {
     throw new UnsupportedOperationException();
   }
 

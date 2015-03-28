@@ -265,7 +265,7 @@ class ServerConnection extends ConnectionBase {
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     this.currentRequest = req;
     pendingResponse = resp;
-    requestMetric = metrics.requestBegin(req);
+    requestMetric = metrics.requestBegin(metric, req);
     if (requestHandler != null) {
       requestHandler.handle(req);
     }

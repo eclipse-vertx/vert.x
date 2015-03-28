@@ -30,12 +30,13 @@ public interface HttpClientMetrics<R, S> extends TCPMetrics<S> {
   /**
    * Called when an http client request begins
    *
+   * @param socketMetric the socket metric
    * @param localAddress the local address
    * @param remoteAddress the remote address
    * @param request the {@link io.vertx.core.http.HttpClientRequest}
    * @return the request metric
    */
-  R requestBegin(SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request);
+  R requestBegin(S socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request);
 
   /**
    * Called when an http client response has ended

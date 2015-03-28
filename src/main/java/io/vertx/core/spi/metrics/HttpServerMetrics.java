@@ -29,10 +29,11 @@ public interface HttpServerMetrics<R, S> extends TCPMetrics<S> {
   /**
    * Called when an http server request begins
    *
+   * @param socketMetric the socket metric
    * @param request the {@link io.vertx.core.http.HttpServerRequest}
    * @return the request metric
    */
-  R requestBegin(HttpServerRequest request);
+  R requestBegin(S socketMetric, HttpServerRequest request);
 
   /**
    * Called when an http server response has ended.
