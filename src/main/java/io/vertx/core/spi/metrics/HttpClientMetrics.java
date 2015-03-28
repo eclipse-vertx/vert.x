@@ -18,6 +18,7 @@ package io.vertx.core.spi.metrics;
 
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * The http client metrics SPI that Vert.x will use to call when http client events occur.
@@ -28,11 +29,13 @@ public interface HttpClientMetrics<R, S> extends TCPMetrics<S> {
 
   /**
    * Called when an http client request begins
-   * 
+   *
+   * @param localAddress the local address
+   * @param remoteAddress the remote address
    * @param request the {@link io.vertx.core.http.HttpClientRequest}
    * @return the request metric
    */
-  R requestBegin(HttpClientRequest request);
+  R requestBegin(SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request);
 
   /**
    * Called when an http client response has ended
