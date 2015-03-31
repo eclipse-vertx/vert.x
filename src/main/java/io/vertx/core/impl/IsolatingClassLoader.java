@@ -16,8 +16,12 @@
 
 package io.vertx.core.impl;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * Before delegating to the parent, this classloader attempts to load the class first
@@ -61,6 +65,43 @@ public class IsolatingClassLoader extends URLClassLoader {
       }
       return c;
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public URL getResource(String name) {
+
+    // First check this classloader
+    URL url = findResource(name);
+
+    // Then try the parent if not found
+    if (url == null) {
+      url = super.getResource(name);
+    }
+
+    return url;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Enumeration<URL> getResources(String name) throws IOException {
+
+    // First get resources from this classloader
+    List<URL> resources = Collections.list(findResources(name));
+
+    // Then add resources from the parent
+    if (getParent() != null) {
+      Enumeration<URL> parentResources = getParent().getResources(name);
+      if (parentResources.hasMoreElements()) {
+        resources.addAll(Collections.list(parentResources));
+      }
+    }
+
+    return Collections.enumeration(resources);
   }
 
   private boolean isVertxOrSystemClass(String name) {
