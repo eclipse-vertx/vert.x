@@ -29,6 +29,8 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -155,7 +157,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void> {
+  class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void, Void> {
 
     @Override
     public Void requestBegin(Void socketMetric, HttpServerRequest request) {
@@ -195,9 +197,18 @@ public class DummyVertxMetrics implements VertxMetrics {
     public boolean isEnabled() {
       return false;
     }
+
+    @Override
+    public Void connected(Void socketMetric, ServerWebSocket serverWebSocket) {
+      return null;
+    }
+
+    @Override
+    public void disconnected(Void serverWebSocketMetric) {
+    }
   }
 
-  class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void> {
+  class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void> {
 
     @Override
     public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
@@ -236,6 +247,15 @@ public class DummyVertxMetrics implements VertxMetrics {
     @Override
     public boolean isEnabled() {
       return false;
+    }
+
+    @Override
+    public Void connected(Void socketMetric, WebSocket webSocket) {
+      return null;
+    }
+
+    @Override
+    public void disconnected(Void webSocketMetric) {
     }
   }
 

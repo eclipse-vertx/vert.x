@@ -40,6 +40,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
   private final String query;
   private final Runnable connectRunnable;
   private final MultiMap headers;
+  Object metric;
 
   private boolean connected;
   private boolean rejected;

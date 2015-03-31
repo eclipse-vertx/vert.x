@@ -21,7 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -34,9 +34,13 @@ import io.vertx.core.net.impl.ConnectionBase;
  */
 public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
 
-  public WebSocketImpl(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
+  final Object metric;
+
+  public WebSocketImpl(VertxInternal vertx,
+                       ClientConnection conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
+    metric = conn.metrics.connected(conn.metric(), this);
   }
 
   @Override
@@ -124,5 +128,11 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
     checkClosed();
     this.drainHandler = handler;
     return this;
+  }
+
+  @Override
+  synchronized void handleClosed() {
+    ((ClientConnection) conn).metrics.disconnected(metric);
+    super.handleClosed();
   }
 }

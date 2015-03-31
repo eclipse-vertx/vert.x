@@ -16,7 +16,9 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.metrics.Measured;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
 import java.util.ArrayList;
@@ -29,13 +31,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeEventBusMetrics implements EventBusMetrics<HandlerMetric> {
+public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetrics<HandlerMetric> {
 
   private final List<SentMessage> sentMessages = Collections.synchronizedList(new ArrayList<>());
   private final List<ReceivedMessage> receivedMessages = Collections.synchronizedList(new ArrayList<>());
   private final List<HandlerMetric> registrations = new ArrayList<>();
   private final Map<String, AtomicInteger> encoded = new ConcurrentHashMap<>();
   private final Map<String, AtomicInteger> decoded = new ConcurrentHashMap<>();
+
+  public FakeEventBusMetrics(EventBus eventBus) {
+    super(eventBus);
+  }
 
   public Map<String, AtomicInteger> getEncoded() {
     return encoded;
