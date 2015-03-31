@@ -37,30 +37,13 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeVertxMetrics implements VertxMetrics {
-
-  private static final ConcurrentHashMap<Vertx, FakeVertxMetrics> metricsMap = new ConcurrentHashMap<>();
-
-  public static FakeVertxMetrics getMetrics(Vertx vertx) {
-    return metricsMap.get(vertx);
-  }
-
-  private final Vertx vertx;
-  private final FakeEventBusMetrics eventBusMetrics;
+public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   public FakeVertxMetrics(Vertx vertx) {
-    metricsMap.put(vertx, this);
-    this.vertx = vertx;
-    this.eventBusMetrics = new FakeEventBusMetrics();
-  }
-
-  public FakeEventBusMetrics getEventBusMetrics() {
-    return eventBusMetrics;
+    super(vertx);
   }
 
   @Override
@@ -81,15 +64,15 @@ public class FakeVertxMetrics implements VertxMetrics {
   }
 
   public EventBusMetrics createMetrics(EventBus eventBus) {
-    return eventBusMetrics;
+    return new FakeEventBusMetrics(eventBus);
   }
 
-  public HttpServerMetrics<?, ?> createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
-    throw new UnsupportedOperationException();
+  public HttpServerMetrics<?, ?, ?> createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
+    return new FakeHttpServerMetrics(server);
   }
 
-  public HttpClientMetrics<?, ?> createMetrics(HttpClient client, HttpClientOptions options) {
-    throw new UnsupportedOperationException();
+  public HttpClientMetrics<?, ?, ?> createMetrics(HttpClient client, HttpClientOptions options) {
+    return new FakeHttpClientMetrics(client);
   }
 
   public TCPMetrics<?> createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
@@ -156,7 +139,4 @@ public class FakeVertxMetrics implements VertxMetrics {
     throw new UnsupportedOperationException();
   }
 
-  public void close() {
-    metricsMap.remove(vertx);
-  }
 }

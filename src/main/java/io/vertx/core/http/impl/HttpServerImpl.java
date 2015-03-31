@@ -637,6 +637,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
           theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
           connectRunnable, options.getMaxWebsocketFrameSize());
+        ws.metric = metrics.connected(wsConn.metric(), ws);
         wsConn.handleWebsocketConnect(ws);
         if (!ws.isRejected()) {
           ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);

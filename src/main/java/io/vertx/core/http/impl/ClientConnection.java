@@ -80,8 +80,8 @@ class ClientConnection extends ConnectionBase {
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
-  private final HttpClientMetrics metrics;
   private final Object metric;
+  final HttpClientMetrics metrics;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;

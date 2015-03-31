@@ -18,6 +18,7 @@ package io.vertx.core.spi.metrics;
 
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -25,7 +26,7 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpClientMetrics<R, S> extends TCPMetrics<S> {
+public interface HttpClientMetrics<R, W, S> extends TCPMetrics<S> {
 
   /**
    * Called when an http client request begins
@@ -45,4 +46,20 @@ public interface HttpClientMetrics<R, S> extends TCPMetrics<S> {
    * @param response the {@link io.vertx.core.http.HttpClientResponse}
    */
   void responseEnd(R requestMetric, HttpClientResponse response);
+
+  /**
+   * Called when a web socket connects.
+   *
+   * @param socketMetric the socket metric
+   * @param webSocket the server web socket
+   * @return the web socket metric
+   */
+  W connected(S socketMetric, WebSocket webSocket);
+
+  /**
+   * Called when the web socket has disconnected.
+   *
+   * @param webSocketMetric the web socket metric
+   */
+  void disconnected(W webSocketMetric);
 }
