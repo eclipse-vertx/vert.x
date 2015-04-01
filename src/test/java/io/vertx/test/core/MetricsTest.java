@@ -20,12 +20,18 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.test.fakemetrics.FakeEventBusMetrics;
+import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
+import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
+import io.vertx.test.fakemetrics.FakeMetricsBase;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import io.vertx.test.fakemetrics.HandlerMetric;
 import io.vertx.test.fakemetrics.ReceivedMessage;
 import io.vertx.test.fakemetrics.SentMessage;
+import io.vertx.test.fakemetrics.WebSocketMetric;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -75,8 +81,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testBroadcastMessage(Vertx from, Vertx[] to, boolean publish, boolean expectedLocal, boolean expectedRemote) {
-    FakeVertxMetrics metrics = FakeVertxMetrics.getMetrics(from);
-    FakeEventBusMetrics eventBusMetrics = metrics.getEventBusMetrics();
+    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(from.eventBus());
     AtomicInteger broadcastCount = new AtomicInteger();
     AtomicInteger receiveCount = new AtomicInteger();
     for (Vertx vertx : to) {
@@ -114,8 +119,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testReceiveMessageSent(Vertx from, Vertx to, boolean expectedLocal, int expectedHandlers) {
-    FakeVertxMetrics metrics = FakeVertxMetrics.getMetrics(to);
-    FakeEventBusMetrics eventBusMetrics = metrics.getEventBusMetrics();
+    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     consumer.completionHandler(done -> {
       assertTrue(done.succeeded());
@@ -141,8 +145,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testReceiveMessagePublished(Vertx from, Vertx to, boolean expectedLocal, int expectedHandlers) {
-    FakeVertxMetrics metrics = FakeVertxMetrics.getMetrics(to);
-    FakeEventBusMetrics eventBusMetrics = metrics.getEventBusMetrics();
+    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     AtomicInteger count = new AtomicInteger();
     for (int i = 0;i < expectedHandlers;i++) {
       MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
@@ -176,8 +179,8 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testReply(Vertx from, Vertx to, boolean expectedLocal, boolean expectedRemote) {
-    FakeEventBusMetrics fromMetrics = FakeVertxMetrics.getMetrics(from).getEventBusMetrics();
-    FakeEventBusMetrics toMetrics = FakeVertxMetrics.getMetrics(to).getEventBusMetrics();
+    FakeEventBusMetrics fromMetrics = FakeMetricsBase.getMetrics(from.eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     consumer.completionHandler(done -> {
       assertTrue(done.succeeded());
@@ -207,8 +210,9 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHandlerRegistration() {
-    FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
-    MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {});
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
+    MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {
+    });
     assertEquals(1, metrics.getRegistrations().size());
     HandlerMetric registration = metrics.getRegistrations().get(0);
     assertEquals(ADDRESS1, registration.address);
@@ -235,7 +239,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testHandlerProcessMessage(Vertx from, Vertx to, int expectedLocalCoult) {
-    FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(to).getEventBusMetrics();
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(to.eventBus());
     to.eventBus().consumer(ADDRESS1, msg -> {
       HandlerMetric registration = assertRegistration(metrics);
       assertEquals(ADDRESS1, registration.address);
@@ -261,7 +265,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHandlerProcessMessageFailure() throws Exception {
-    FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
     vertx.eventBus().consumer(ADDRESS1, msg -> {
       assertEquals(1, metrics.getReceivedMessages().size());
       HandlerMetric registration = metrics.getRegistrations().get(0);
@@ -284,7 +288,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHandlerMetricReply() throws Exception {
-    FakeEventBusMetrics metrics = FakeVertxMetrics.getMetrics(vertx).getEventBusMetrics();
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
     vertx.eventBus().consumer(ADDRESS1, msg -> {
       assertEquals(2, metrics.getRegistrations().size());
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
@@ -319,8 +323,8 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testBytesCodec() throws Exception {
     startNodes(2);
-    FakeEventBusMetrics fromMetrics = FakeVertxMetrics.getMetrics(vertices[0]).getEventBusMetrics();
-    FakeEventBusMetrics toMetrics = FakeVertxMetrics.getMetrics(vertices[1]).getEventBusMetrics();
+    FakeEventBusMetrics fromMetrics = FakeMetricsBase.getMetrics(vertices[0].eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(vertices[1].eventBus());
     vertices[1].eventBus().consumer(ADDRESS1, msg -> {
       int encoded = fromMetrics.getEncodedBytes(ADDRESS1);
       int decoded = toMetrics.getDecodedBytes(ADDRESS1);
@@ -332,6 +336,58 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(0, fromMetrics.getEncodedBytes(ADDRESS1));
       assertEquals(0, toMetrics.getDecodedBytes(ADDRESS1));
       vertices[0].eventBus().send(ADDRESS1, Buffer.buffer(new byte[1000]));
+    });
+    await();
+  }
+
+  @Test
+  public void testServerWebSocket() throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    server.websocketHandler(ws -> {
+      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      WebSocketMetric metric = metrics.getMetric(ws);
+      assertNotNull(metric);
+      assertNotNull(metric.soMetric);
+      ws.handler(buffer -> {
+        ws.close();
+      });
+      ws.closeHandler(closed -> {
+        assertNull(metrics.getMetric(ws));
+        testComplete();
+      });
+    });
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
+      assertTrue(ar.succeeded());
+      HttpClient client = vertx.createHttpClient();
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        ws.write(Buffer.buffer("wibble"));
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testWebSocket() throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    server.websocketHandler(ws -> {
+      ws.write(Buffer.buffer("wibble"));
+    });
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
+      assertTrue(ar.succeeded());
+      HttpClient client = vertx.createHttpClient();
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+        WebSocketMetric metric = metrics.getMetric(ws);
+        assertNotNull(metric);
+        assertNotNull(metric.soMetric);
+        ws.closeHandler(closed -> {
+          assertNull(metrics.getMetric(ws));
+          testComplete();
+        });
+        ws.handler(buffer -> {
+          ws.close();
+        });
+      });
     });
     await();
   }

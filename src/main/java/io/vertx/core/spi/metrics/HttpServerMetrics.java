@@ -18,13 +18,14 @@ package io.vertx.core.spi.metrics;
 
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.ServerWebSocket;
 
 /**
  * The http server metrics SPI that Vert.x will use to call when each http server event occurs.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpServerMetrics<R, S> extends TCPMetrics<S> {
+public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
 
   /**
    * Called when an http server request begins
@@ -42,4 +43,20 @@ public interface HttpServerMetrics<R, S> extends TCPMetrics<S> {
    * @param response the {@link io.vertx.core.http.HttpServerResponse}
    */
   void responseEnd(R requestMetric, HttpServerResponse response);
+
+  /**
+   * Called when a server web socket connects.
+   *
+   * @param socketMetric the socket metric
+   * @param serverWebSocket the server web socket
+   * @return the server web socket metric
+   */
+  W connected(S socketMetric, ServerWebSocket serverWebSocket);
+
+  /**
+   * Called when the server web socket has disconnected.
+   *
+   * @param serverWebSocketMetric the server web socket metric
+   */
+  void disconnected(W serverWebSocketMetric);
 }
