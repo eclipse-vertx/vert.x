@@ -40,7 +40,7 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
                        ClientConnection conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
-    metric = conn.metrics.connected(conn.metric(), this);
+    metric = conn.metrics().connected(conn.metric(), this);
   }
 
   @Override
@@ -132,7 +132,7 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
 
   @Override
   synchronized void handleClosed() {
-    ((ClientConnection) conn).metrics.disconnected(metric);
+    ((ClientConnection) conn).metrics().disconnected(metric);
     super.handleClosed();
   }
 }

@@ -81,7 +81,7 @@ class ClientConnection extends ConnectionBase {
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
-  final HttpClientMetrics metrics;
+  private final HttpClientMetrics metrics;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -110,6 +110,10 @@ class ClientConnection extends ConnectionBase {
   @Override
   protected Object metric() {
     return metric;
+  }
+
+  protected HttpClientMetrics metrics() {
+    return metrics;
   }
 
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
