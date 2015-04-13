@@ -81,7 +81,4 @@ public class ReplyException extends VertxException {
     return failureCode;
   }
 
-  private static String failure(ReplyFailure failureType, int failureCode, String message) {
-    return "(" + failureType + "," + failureCode + ") " + (message != null ? message : ""); 
-  }
 }
