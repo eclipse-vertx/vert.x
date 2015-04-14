@@ -424,7 +424,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextImpl getContext() {
-    return (ContextImpl)context();
+    ContextImpl context = (ContextImpl) context();
+    if (context != null && context.owner == this) {
+      return context;
+    }
+    return null;
   }
 
   @Override

@@ -43,6 +43,7 @@ public abstract class ContextImpl implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
+  protected final VertxInternal owner;
   protected final String deploymentID;
   protected final JsonObject config;
   private Deployment deployment;
@@ -66,6 +67,7 @@ public abstract class ContextImpl implements Context {
       this.eventLoop = null;
     }
     this.tccl = tccl;
+    this.owner = vertx;
   }
 
   public static void setContext(ContextImpl context) {
