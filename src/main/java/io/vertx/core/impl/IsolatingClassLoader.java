@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class IsolatingClassLoader extends URLClassLoader {
 
-  IsolatingClassLoader(URL[] urls, ClassLoader parent) {
+  public IsolatingClassLoader(URL[] urls, ClassLoader parent) {
     super(urls, parent);
   }
 
