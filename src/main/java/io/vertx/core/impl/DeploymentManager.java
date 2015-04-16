@@ -527,6 +527,7 @@ public class DeploymentManager {
               deployments.remove(deploymentID);
               vertx.metricsSPI().verticleUndeployed(verticleHolder.verticle);
               context.runCloseHooks(ar2 -> {
+
                 if (ar2.failed()) {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
@@ -585,9 +586,10 @@ public class DeploymentManager {
 
     // This is run on the context of the actual verticle, not the context that did the deploy
     private void startRedeployTimer() {
-      if (redeployer != null) {
-        doStartRedeployTimer();
-      }
+      // Redeployment is disabled.
+//      if (redeployer != null) {
+//        doStartRedeployTimer();
+//      }
     }
 
     private void doStartRedeployTimer() {

@@ -77,6 +77,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -438,6 +439,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
+
     if (closed || eventBus == null) {
       runOnContext(v -> {
         completionHandler.handle(Future.succeededFuture());
@@ -448,40 +450,37 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       if (haManager() != null) {
         haManager().stop();
       }
+
       eventBus.close(ar2 -> {
 
         // Copy set to prevent ConcurrentModificationException
-        for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {
-          server.close();
-        }
+        Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
+        Set<NetServer> netServers = new HashSet<>(sharedNetServers.values());
         sharedHttpServers.clear();
-
-        // Copy set to prevent ConcurrentModificationException
-        for (NetServer server : new HashSet<>(sharedNetServers.values())) {
-          server.close();
-        }
         sharedNetServers.clear();
 
-        fileResolver.deleteCacheDir(res -> {
+        int serverCount = httpServers.size() + netServers.size();
 
-          workerPool.shutdownNow();
-          internalBlockingPool.shutdownNow();
-          eventLoopGroup.shutdownNow();
+        AtomicInteger serverCloseCount = new AtomicInteger();
 
-          if (metrics != null) {
-            metrics.close();
+        Handler<AsyncResult<Void>> serverCloseHandler = res -> {
+          if (res.failed()) {
+            log.error("Failure in shutting down server", res.cause());
           }
-
-          checker.close();
-
-          ContextImpl.setContext(null);
-
-          if (completionHandler != null) {
-            // Call directly - we have no context
-            completionHandler.handle(Future.succeededFuture());
+          if (serverCloseCount.incrementAndGet() == serverCount) {
+            deleteCacheDirAndShutdown(completionHandler);
           }
-        });
+        };
 
+        for (HttpServer server : httpServers) {
+          server.close(serverCloseHandler);
+        }
+        for (NetServer server : netServers) {
+          server.close(serverCloseHandler);
+        }
+        if (serverCount == 0) {
+          deleteCacheDirAndShutdown(completionHandler);
+        }
       });
     });
   }
@@ -635,6 +634,28 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public File resolveFile(String fileName) {
     return fileResolver.resolveFile(fileName);
+  }
+
+  private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
+    fileResolver.deleteCacheDir(res -> {
+
+      workerPool.shutdownNow();
+      internalBlockingPool.shutdownNow();
+      eventLoopGroup.shutdownNow();
+
+      if (metrics != null) {
+        metrics.close();
+      }
+
+      checker.close();
+
+      ContextImpl.setContext(null);
+
+      if (completionHandler != null) {
+        // Call directly - we have no context
+        completionHandler.handle(Future.succeededFuture());
+      }
+    });
   }
 
   private HAManager haManager() {

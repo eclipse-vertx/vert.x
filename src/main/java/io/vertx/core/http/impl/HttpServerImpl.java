@@ -17,30 +17,14 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
@@ -54,12 +38,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerRequestStream;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.ServerWebSocketStream;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -68,16 +47,9 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.net.impl.HandlerHolder;
-import io.vertx.core.net.impl.HandlerManager;
-import io.vertx.core.net.impl.KeyStoreHelper;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
-import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.net.impl.VertxEventLoopGroup;
+import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.streams.ReadStream;
 
@@ -89,7 +61,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * This class is thread-safe
@@ -434,7 +406,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       throw new IllegalStateException("Context was changed");
     }
 
-    metrics.close();
+    if (metrics != null) {
+      metrics.close();
+    }
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cgf -> executeCloseDone(closeContext, done, fut.cause()));

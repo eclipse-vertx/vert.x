@@ -24,7 +24,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -32,8 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- *
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HATest extends VertxTestBase {
@@ -80,10 +77,6 @@ public class HATest extends VertxTestBase {
     closeVertices(vertx1, vertx2);
   }
 
-  @Rule
-  public RepeatRule repeatRule = new RepeatRule();
-
-
   @Test
   public void testQuorumLost() throws Exception {
     Vertx vertx1 = startVertx(3);
@@ -119,15 +112,18 @@ public class HATest extends VertxTestBase {
 
   @Test
   public void testCleanCloseNoFailover() throws Exception {
+
     Vertx vertx1 = startVertx();
     Vertx vertx2 = startVertx();
     DeploymentOptions options = new DeploymentOptions().setHa(true);
     JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
+    CountDownLatch deployLatch = new CountDownLatch(1);
     vertx2.deployVerticle("java:" + HAVerticle1.class.getName(), options, ar -> {
       assertTrue(ar.succeeded());
+      deployLatch.countDown();
     });
-    waitUntil(() -> vertx2.deploymentIDs().size() == 1);
+    awaitLatch(deployLatch);
     ((VertxInternal)vertx1).failoverCompleteHandler(succeeded -> {
       fail("Should not be called");
     });

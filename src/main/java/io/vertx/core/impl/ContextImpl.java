@@ -53,6 +53,7 @@ public abstract class ContextImpl implements Context {
   protected final Executor orderedInternalPoolExec;
   protected final Executor workerExec;
   protected VertxThread contextThread;
+  private volatile boolean closeHooksRun;
 
   protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
@@ -94,7 +95,8 @@ public abstract class ContextImpl implements Context {
 
   public void addCloseHook(Closeable hook) {
     if (closeHooks == null) {
-      closeHooks = new HashSet<>();
+      // Has to be concurrent as can be removed from non context thread
+      closeHooks = new ConcurrentHashSet<>();
     }
     closeHooks.add(hook);
   }
@@ -105,29 +107,41 @@ public abstract class ContextImpl implements Context {
     }
   }
 
+
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
+    if (closeHooksRun) {
+      // Sanity check
+      throw new IllegalStateException("Close hooks already run");
+    }
+    closeHooksRun = true;
     if (closeHooks != null && !closeHooks.isEmpty()) {
-      final int num = closeHooks.size();
-      AtomicInteger count = new AtomicInteger();
-      AtomicBoolean failed = new AtomicBoolean();
-      // Copy to avoid ConcurrentModificationException
-      for (Closeable hook: new HashSet<>(closeHooks)) {
-        try {
-          hook.close(ar -> {
-            if (ar.failed()) {
-              if (failed.compareAndSet(false, true)) {
-                // Only report one failure
-                completionHandler.handle(Future.failedFuture(ar.cause()));
+      // Must copy before looping as can be removed during loop otherwise
+      Set<Closeable> copy = new HashSet<>(closeHooks);
+      int num = copy.size();
+      if (num != 0) {
+        AtomicInteger count = new AtomicInteger();
+        AtomicBoolean failed = new AtomicBoolean();
+        for (Closeable hook: copy) {
+          try {
+            hook.close(ar -> {
+              if (ar.failed()) {
+                if (failed.compareAndSet(false, true)) {
+                  // Only report one failure
+                  completionHandler.handle(Future.failedFuture(ar.cause()));
+                }
+              } else {
+                if (count.incrementAndGet() == num) {
+                  // closeHooksRun = true;
+                  completionHandler.handle(Future.succeededFuture());
+                }
               }
-            } else {
-              if (count.incrementAndGet() == num) {
-                completionHandler.handle(Future.succeededFuture());
-              }
-            }
-          });
-        } catch (Throwable t) {
-          log.warn("Failed to run close hooks", t);
+            });
+          } catch (Throwable t) {
+            log.warn("Failed to run close hooks", t);
+          }
         }
+      } else {
+        completionHandler.handle(Future.succeededFuture());
       }
     } else {
       completionHandler.handle(Future.succeededFuture());
