@@ -3885,12 +3885,13 @@ public class HttpTest extends HttpTestBase {
           // OK
         }
         try  {
-          req.handler(v2 -> {});
+          req.handler(v2 -> {
+          });
           fail("Shouldn't be able to set handler");
         } catch (IllegalStateException e) {
           // OK
         }
-        
+
         req.response().setStatusCode(200).end();
       });
     });
@@ -3899,6 +3900,53 @@ public class HttpTest extends HttpTestBase {
       client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testRequestEndedNoEndHandler() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      assertFalse(req.isEnded());
+      req.response().setStatusCode(200).end();
+      vertx.setTimer(500, v -> {
+        assertTrue(req.isEnded());
+        try {
+          req.endHandler(v2 -> {
+          });
+          fail("Shouldn't be able to set end handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          req.setExpectMultipart(true);
+          fail("Shouldn't be able to set expect multipart");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          req.bodyHandler(v2 -> {
+          });
+          fail("Shouldn't be able to set body handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          req.handler(v2 -> {
+          });
+          fail("Shouldn't be able to set handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      });
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        assertEquals(200, resp.statusCode());
       });
     });
     await();

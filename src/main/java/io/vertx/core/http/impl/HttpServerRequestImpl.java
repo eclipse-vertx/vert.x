@@ -339,6 +339,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   synchronized void handleEnd() {
+    ended = true;
     if (decoder != null) {
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -368,7 +369,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (endHandler != null && lastUpload == null) {
-      ended = true;
       endHandler.handle(null);
     }
   }
@@ -378,8 +378,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   synchronized void callEndHandler(HttpServerFileUploadImpl upload) {
+    ended = true;
     if (endHandler != null && upload == lastUpload) {
-      ended = true;
       endHandler.handle(null);
     }
   }
