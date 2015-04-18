@@ -280,9 +280,10 @@ public abstract class ContextImpl implements Context {
   }
 
   public int getInstanceCount(){
-      if(deployment == null || deployment.deploymentOptions() == null) {
-          return 0;
-      }
-      return deployment.deploymentOptions().getInstances();
+    if(deployment == null || deployment.deploymentOptions() == null) {
+      // implicitly there is the current instance of the verticle running always
+      return 1;
+    }
+    return deployment.deploymentOptions().getInstances();
   }
 }
