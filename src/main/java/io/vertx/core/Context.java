@@ -127,4 +127,9 @@ public interface Context {
    */
   boolean remove(String key);
 
+  /**
+   * Get the number of instances of the verticle that were started
+   */
+  int getInstanceCount();
+
 }

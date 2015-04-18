@@ -279,5 +279,10 @@ public abstract class ContextImpl implements Context {
     Thread.currentThread().setContextClassLoader(tccl);
   }
 
-
+  public int getInstanceCount(){
+      if(deployment == null || deployment.deploymentOptions() == null) {
+          return 0;
+      }
+      return deployment.deploymentOptions().getInstances();
+  }
 }
