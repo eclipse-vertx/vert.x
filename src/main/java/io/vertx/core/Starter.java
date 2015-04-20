@@ -277,7 +277,11 @@ public class Starter {
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     deploymentOptions = new DeploymentOptions();
     configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
-    vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances), createLoggingHandler(message, res -> {
+
+    boolean redeploy = args.map.get("-redeploy") != null;
+
+    vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances)
+                                 .setRedeploy(redeploy), createLoggingHandler(message, res -> {
       if (res.failed()) {
         // Failed to deploy
         unblock();
@@ -449,10 +453,8 @@ public class Starter {
     String usage =
 
         "    vertx run <main> [-options]                                                \n" +
-        "        runs a verticle called <main> in its own instance of vert.x.           \n" +
-        "        <main> can be a JavaScript script, a Ruby script, A Groovy script,     \n" +
-        "        a Java class, a Java source file, or a Python Script.\n\n" +
-        "    valid options are:\n" +
+        "        runs a verticle called <main> in its own instance of vert.x.         \n\n" +
+        "    valid options are:                                                         \n" +
         "        -conf <config>         Specifies configuration that should be provided \n" +
         "                               to the verticle. <config> should reference      \n" +
         "                               either a text file containing a valid JSON      \n" +
@@ -468,23 +470,24 @@ public class Starter {
         "                               a cluster with any other vert.x instances on    \n" +
         "                               the network.                                    \n" +
         "        -cluster-port          port to use for cluster communication.          \n" +
-        "                               Default is 0 which means choose a spare          \n" +
+        "                               Default is 0 which means choose a spare         \n" +
         "                               random port.                                    \n" +
         "        -cluster-host          host to bind to for cluster communication.      \n" +
         "                               If this is not specified vert.x will attempt    \n" +
-        "                               to choose one from the available interfaces.  \n\n" +
+        "                               to choose one from the available interfaces.    \n" +
         "        -ha                    if specified the verticle will be deployed as a \n" +
         "                               high availability (HA) deployment.              \n" +
-        "                               This means it can fail over to any other nodes \n" +
+        "                               This means it can fail over to any other nodes  \n" +
         "                               in the cluster started with the same HA group   \n" +
         "        -quorum                used in conjunction with -ha this specifies the \n" +
         "                               minimum number of nodes in the cluster for any  \n" +
-        "                               HA deploymentIDs to be active. Defaults to 0      \n" +
+        "                               HA deploymentIDs to be active. Defaults to 0    \n" +
         "        -hagroup               used in conjunction with -ha this specifies the \n" +
         "                               HA group this node will join. There can be      \n" +
         "                               multiple HA groups in a cluster. Nodes will only\n" +
         "                               failover to other nodes in the same group.      \n" +
-        "                               Defaults to __DEFAULT__                       \n\n" +
+        "                               Defaults to __DEFAULT__                         \n" +
+        "        -redeploy              Enable automatic redeployment                 \n\n" +
 
         "    vertx -version                                                             \n" +
         "        displays the version";
