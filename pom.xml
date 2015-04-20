@@ -161,6 +161,7 @@
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <excludes>
               <exclude>**/RedeploySourceVerticle.java</exclude>
+              <exclude>**/RedeploymentTest.java</exclude>
             </excludes>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>

@@ -714,12 +714,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   private <T> void sendNoHandlersFailure(String address, Handler<AsyncResult<Message<T>>> handler) {
-    vertx.runOnContext(new Handler<Void>() {
-      @Override
-      public void handle(Void v) {
-        metrics.replyFailure(address, ReplyFailure.NO_HANDLERS);
-        handler.handle(Future.failedFuture(new ReplyException(ReplyFailure.NO_HANDLERS)));
-      }
+    vertx.runOnContext(v -> {
+      metrics.replyFailure(address, ReplyFailure.NO_HANDLERS);
+      handler.handle(Future.failedFuture(new ReplyException(ReplyFailure.NO_HANDLERS)));
     });
   }
 

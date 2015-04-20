@@ -913,4 +913,5 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     close();
     super.finalize();
   }
+
 }

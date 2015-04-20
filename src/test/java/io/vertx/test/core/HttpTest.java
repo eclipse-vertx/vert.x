@@ -18,44 +18,16 @@ package io.vertx.test.core;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HeadersAdaptor;
-import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.NetworkOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
 import org.junit.Assume;
@@ -63,25 +35,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -105,6 +64,7 @@ public class HttpTest extends HttpTestBase {
 
   private File testDir;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     testDir = testFolder.newFolder();
@@ -2027,7 +1987,11 @@ public class HttpTest extends HttpTestBase {
 
   private void testKeepAlive(boolean keepAlive, int poolSize, int numServers, int expectedConnectedServers) throws Exception {
     client.close();
-    server.close();
+    CountDownLatch firstCloseLatch = new CountDownLatch(1);
+    server.close(onSuccess(v -> firstCloseLatch.countDown()));
+    // Make sure server is closed before continuing
+    awaitLatch(firstCloseLatch);
+
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(false).setMaxPoolSize(poolSize));
     int requests = 100;
 
@@ -2051,15 +2015,22 @@ public class HttpTest extends HttpTestBase {
     awaitLatch(startServerLatch);
 
     CountDownLatch reqLatch = new CountDownLatch(requests);
-    for (int count = 0; count < requests; count++) {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(200, resp.statusCode());
-        reqLatch.countDown();
-      }).end();
-    }
+
+    // We make sure we execute all the requests on the same context otherwise some responses can come beack when there
+    // are no waiters resulting in it being closed so a a new connection is made for the next request resulting in the
+    // number of total connections being > pool size (which is correct)
+    vertx.runOnContext(v -> {
+      for (int count = 0; count < requests; count++) {
+        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+          assertEquals(200, resp.statusCode());
+          reqLatch.countDown();
+        }).end();
+      }
+    });
 
     awaitLatch(reqLatch);
 
+    //client.dispConnCount();
     assertEquals(expectedConnectedServers, connectedServers.size());
 
     CountDownLatch serverCloseLatch = new CountDownLatch(numServers);
@@ -3167,14 +3138,12 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testListenInvalidPort() {
+  public void testListenInvalidPort() throws Exception {
     /* Port 7 is free for use by any application in Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(7));
-    server.requestHandler(noOpHandler()).listen(onFailure(server -> {
-      testComplete();
-    }));
+    server.requestHandler(noOpHandler()).listen(onFailure(server -> testComplete()));
     await();
   }
 

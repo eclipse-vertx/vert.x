@@ -23,15 +23,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.test.fakemetrics.FakeEventBusMetrics;
-import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
-import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
-import io.vertx.test.fakemetrics.FakeMetricsBase;
-import io.vertx.test.fakemetrics.FakeVertxMetrics;
-import io.vertx.test.fakemetrics.HandlerMetric;
-import io.vertx.test.fakemetrics.ReceivedMessage;
-import io.vertx.test.fakemetrics.SentMessage;
-import io.vertx.test.fakemetrics.WebSocketMetric;
+import io.vertx.test.fakemetrics.*;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -249,17 +241,18 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(0, registration.failureCount.get());
       assertEquals(expectedLocalCoult, registration.localCount.get());
       msg.reply("pong");
-    });
-    from.eventBus().send(ADDRESS1, "ping", reply -> {
-      HandlerMetric registration = assertRegistration(metrics);
-      assertEquals(ADDRESS1, registration.address);
-      assertEquals(false, registration.replyHandler);
-      assertEquals(1, registration.beginCount.get());
-      assertEquals(1, registration.endCount.get());
-      assertEquals(0, registration.failureCount.get());
-      assertEquals(expectedLocalCoult, registration.localCount.get());
-      testComplete();
-    });
+    }).completionHandler(onSuccess(v -> {
+      from.eventBus().send(ADDRESS1, "ping", reply -> {
+        HandlerMetric registration = assertRegistration(metrics);
+        assertEquals(ADDRESS1, registration.address);
+        assertEquals(false, registration.replyHandler);
+        assertEquals(1, registration.beginCount.get());
+        assertEquals(1, registration.endCount.get());
+        assertEquals(0, registration.failureCount.get());
+        assertEquals(expectedLocalCoult, registration.localCount.get());
+        testComplete();
+      });
+    }));
     await();
   }
 
