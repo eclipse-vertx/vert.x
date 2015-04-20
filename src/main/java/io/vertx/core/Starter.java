@@ -122,7 +122,8 @@ public class Starter {
     run(new Args(sargs), sargs);
   }
 
-  protected void run(Args args, String[] sargs) {
+  // Note! Must be public so can be called by reflection
+  public void run(Args args, String[] sargs) {
 
     PROCESS_ARGS = Collections.unmodifiableList(Arrays.asList(sargs));
 
