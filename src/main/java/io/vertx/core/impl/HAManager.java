@@ -224,18 +224,15 @@ public class HAManager {
 
   private void doDeployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                                 final Handler<AsyncResult<String>> doneHandler) {
-    final Handler<AsyncResult<String>> wrappedHandler = new Handler<AsyncResult<String>>() {
-      @Override
-      public void handle(AsyncResult<String> asyncResult) {
-        if (asyncResult.succeeded()) {
-          // Tell the other nodes of the cluster about the verticle for HA purposes
-          addToHA(asyncResult.result(), verticleName, deploymentOptions);
-        }
-        if (doneHandler != null) {
-          doneHandler.handle(asyncResult);
-        } else if (asyncResult.failed()) {
-          log.error("Failed to deploy verticle", asyncResult.cause());
-        }
+    final Handler<AsyncResult<String>> wrappedHandler = asyncResult -> {
+      if (asyncResult.succeeded()) {
+        // Tell the other nodes of the cluster about the verticle for HA purposes
+        addToHA(asyncResult.result(), verticleName, deploymentOptions);
+      }
+      if (doneHandler != null) {
+        doneHandler.handle(asyncResult);
+      } else if (asyncResult.failed()) {
+        log.error("Failed to deploy verticle", asyncResult.cause());
       }
     };
     deploymentManager.deployVerticle(verticleName, deploymentOptions, wrappedHandler);
@@ -257,8 +254,8 @@ public class HAManager {
     if (attainedQuorum) {
 
       // Check for failover
-
       String sclusterInfo = clusterMap.get(leftNodeID);
+
       if (sclusterInfo == null) {
         // Clean close - do nothing
       } else {
@@ -429,7 +426,7 @@ public class HAManager {
       String chosen = chooseHashedNode(group, failedNodeID.hashCode());
       if (chosen != null && chosen.equals(this.nodeID)) {
         if (deployments != null) {
-          log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
+          log.info("node" + nodeID + " says: Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
           for (Object obj: deployments) {
             JsonObject app = (JsonObject)obj;
             processFailover(app);
@@ -454,7 +451,7 @@ public class HAManager {
         latch.countDown();
       });
       try {
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(30, TimeUnit.SECONDS);
       } catch (InterruptedException ignore) {
       }
     }

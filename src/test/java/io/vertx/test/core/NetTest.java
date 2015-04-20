@@ -1592,14 +1592,18 @@ public class NetTest extends VertxTestBase {
   public void testListenTwice() {
     server.connectHandler(sock -> {
     });
-    server.listen();
-    try {
-      server.listen(sock -> {
-      });
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      // OK
-    }
+    server.listen(onSuccess(s -> {
+      try {
+        server.listen(res -> {});
+        fail("Should throw exception");
+      } catch (IllegalStateException e) {
+        // OK
+        testComplete();
+      } catch (Exception e) {
+        fail(e.getMessage());
+      }
+    }));
+    await();
   }
 
   @Test

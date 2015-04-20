@@ -243,6 +243,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
             res = Future.succeededFuture(NetServerImpl.this);
           } else {
             listening = false;
+
             res = Future.failedFuture(actualServer.bindFuture.cause());
           }
           // Call with expectRightThread = false as if server is already listening
@@ -251,7 +252,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
           listenContext.runOnContext(v -> listenHandler.handle(res));
         } else if (!actualServer.bindFuture.isSuccess()) {
           // No handler - log so user can see failure
-          log.error(actualServer.bindFuture.cause());
+          log.error("Failed to listen", actualServer.bindFuture.cause());
           listening = false;
         }
       });
@@ -384,7 +385,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cg -> {
-      metrics.close();
+      if (metrics != null) {
+        metrics.close();
+      }
       executeCloseDone(closeContext, done, fut.cause());
     });
 
