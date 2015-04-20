@@ -587,9 +587,9 @@ public class DeploymentManager {
     // This is run on the context of the actual verticle, not the context that did the deploy
     private void startRedeployTimer() {
       // Redeployment is disabled.
-//      if (redeployer != null) {
-//        doStartRedeployTimer();
-//      }
+      if (redeployer != null) {
+        doStartRedeployTimer();
+      }
     }
 
     private void doStartRedeployTimer() {
