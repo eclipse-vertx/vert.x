@@ -55,7 +55,7 @@ public class StarterTest extends VertxTestBase {
   @Test
   public void testVersion() throws Exception {
     String[] args = new String[] {"-version"};
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     starter.run(args);
     // TODO some way of getting this from the version in pom.xml
     assertEquals(System.getProperty("vertxVersion"), starter.getVersion());
@@ -72,7 +72,7 @@ public class StarterTest extends VertxTestBase {
   }
 
   public void testRunVerticleMultiple(int instances) throws Exception {
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-instances", String.valueOf(instances)};
     Thread t = new Thread(() -> {
       starter.run(args);
@@ -89,7 +89,7 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testRunVerticleClustered() throws Exception {
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     Thread t = new Thread(() -> {
       starter.run(args);
@@ -105,7 +105,7 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testRunVerticleWithMainVerticleInManifestNoArgs() throws Exception {
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     String[] args = new String[0];
     Thread t = new Thread(() -> {
       starter.run(args);
@@ -121,7 +121,7 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testRunVerticleWithMainVerticleInManifestWithArgs() throws Exception {
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     String[] args = new String[] {"-cluster", "-worker"};
     Thread t = new Thread(() -> {
       starter.run(args);
@@ -137,7 +137,7 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testRunVerticleWithConfString() throws Exception {
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
     String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", conf.encode()};
     Thread t = new Thread(() -> {
@@ -160,7 +160,7 @@ public class StarterTest extends VertxTestBase {
   public void testRunVerticleWithConfFile() throws Exception {
     Path tempDir = testFolder.newFolder().toPath();
     Path tempFile = Files.createTempFile(tempDir, "conf", "json");
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
     Files.write(tempFile, conf.encode().getBytes());
     String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
@@ -276,7 +276,7 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testRunWithCommandLine() throws Exception {
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     int instances = 10;
     String cl = "run java:" + TestVerticle.class.getCanonicalName() + " -instances " + instances;
     Thread t = new Thread(() -> {
@@ -299,6 +299,16 @@ public class StarterTest extends VertxTestBase {
     }
     public DeploymentOptions getDeploymentOptions() {
       return deploymentOptions;
+    }
+
+    @Override
+    public void run(String[] sargs) {
+      super.run(sargs);
+    }
+
+    @Override
+    public void run(String commandLine) {
+      super.run(commandLine);
     }
   }
 }

@@ -17,6 +17,7 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.Args;
+import io.vertx.core.impl.IsolatingClassLoader;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -28,11 +29,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.URL;
+import java.net.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -66,11 +63,48 @@ public class Starter {
   public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options.";
   public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
 
+  private static final String PATH_SEP = System.getProperty("path.separator");
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
   public static List<String> PROCESS_ARGS;
 
-  public static void main(String[] args) {
-    new Starter().run(args);
+  public static void main(String[] sargs) {
+    Args args = new Args(sargs);
+
+    String extraCP = args.map.get("-cp");
+    if (extraCP != null) {
+      String[] parts = extraCP.split(PATH_SEP);
+      URL[] urls = new URL[parts.length];
+      for (int p = 0; p < parts.length; p++) {
+        String part = parts[p];
+        File file = new File(part);
+        try {
+          URL url = file.toURI().toURL();
+          urls[p] = url;
+        } catch (MalformedURLException e) {
+          throw new IllegalStateException(e);
+        }
+      }
+      IsolatingClassLoader icl = new IsolatingClassLoader(urls, Starter.class.getClassLoader());
+      ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
+      Thread.currentThread().setContextClassLoader(icl);
+      try {
+        Class<?> clazz = icl.loadClass(Starter.class.getName());
+        Object instance = clazz.newInstance();
+        Method run = clazz.getMethod("run", Args.class, String[].class);
+        run.invoke(instance, args, sargs);
+      } catch (Exception e) {
+        throw new IllegalStateException(e);
+      } finally {
+        Thread.currentThread().setContextClassLoader(oldTCCL);
+      }
+    } else {
+      // No extra CP, just invoke directly
+      new Starter().run(args, sargs);
+    }
+  }
+
+  public static void runCommandLine(String commandLine) {
+    new Starter().run(commandLine);
   }
 
   private final CountDownLatch stopLatch = new CountDownLatch(1);
@@ -78,20 +112,20 @@ public class Starter {
   protected VertxOptions options;
   protected DeploymentOptions deploymentOptions;
 
-  public void run(String commandLine) {
+  protected void run(String commandLine) {
     String[] sargs = commandLine.split(" ");
-    run(sargs);
+    Args args = new Args(sargs);
+    run(args, sargs);
   }
 
-  public static void runCommandLine(String commandLine) {
-    new Starter().run(commandLine);
+  protected void run(String[] sargs) {
+    run(new Args(sargs), sargs);
   }
 
-  public void run(String[] sargs) {
+  // Note! Must be public so can be called by reflection
+  public void run(Args args, String[] sargs) {
 
     PROCESS_ARGS = Collections.unmodifiableList(Arrays.asList(sargs));
-
-    Args args = new Args(sargs);
 
     if (sargs.length > 0) {
       String first = sargs[0];
@@ -111,6 +145,7 @@ public class Starter {
     }
 
     String main = readMainVerticleFromManifest();
+
     if (main != null) {
       runVerticle(main, args);
     } else {
@@ -395,7 +430,8 @@ public class Starter {
       while (resources.hasMoreElements()) {
         Manifest manifest = new Manifest(resources.nextElement().openStream());
         Attributes attributes = manifest.getMainAttributes();
-        if (Starter.class.getName().equals(attributes.getValue("Main-Class"))) {
+        String mainClass = attributes.getValue("Main-Class");
+        if (Starter.class.getName().equals(mainClass)) {
           String theMainVerticle = attributes.getValue("Main-Verticle");
           if (theMainVerticle != null) {
             return theMainVerticle;
@@ -410,9 +446,6 @@ public class Starter {
 
   private void displaySyntax() {
 
-    // TODO
-    // Update usage string for ha
-    // Also for vertx version
     String usage =
 
         "    vertx run <main> [-options]                                                \n" +
@@ -429,6 +462,8 @@ public class Starter {
         "                               will be deployed. Defaults to 1                 \n" +
         "        -worker                if specified then the verticle is a worker      \n" +
         "                               verticle.                                       \n" +
+        "        -cp <classpath>        provide an extra classpath to be used for the   \n" +
+        "                               verticle deployment.                            \n" +
         "        -cluster               if specified then the vert.x instance will form \n" +
         "                               a cluster with any other vert.x instances on    \n" +
         "                               the network.                                    \n" +
