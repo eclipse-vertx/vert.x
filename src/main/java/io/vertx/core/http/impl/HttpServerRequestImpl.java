@@ -92,6 +92,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private HttpPostRequestDecoder decoder;
   private boolean isURLEncoded;
   private HttpServerFileUploadImpl lastUpload;
+  private boolean ended;
 
 
   HttpServerRequestImpl(ServerConnection conn,
@@ -189,6 +190,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public synchronized HttpServerRequest handler(Handler<Buffer> dataHandler) {
+    checkEnded();
     this.dataHandler = dataHandler;
     return this;
   }
@@ -213,6 +215,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public synchronized HttpServerRequest endHandler(Handler<Void> handler) {
+    checkEnded();
     this.endHandler = handler;
     return this;
   }
@@ -263,6 +266,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public synchronized HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
+    checkEnded();
     this.uploadHandler = handler;
     return this;
   }
@@ -287,6 +291,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public synchronized HttpServerRequest setExpectMultipart(boolean expect) {
+    checkEnded();
     if (expect && decoder == null) {
       String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
       if (contentType != null) {
@@ -315,6 +320,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return conn.localAddress();
   }
 
+  @Override
+  public synchronized boolean isEnded() {
+    return ended;
+  }
+
   synchronized void handleData(Buffer data) {
     if (decoder != null) {
       try {
@@ -329,6 +339,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   synchronized void handleEnd() {
+    ended = true;
     if (decoder != null) {
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -367,6 +378,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   synchronized void callEndHandler(HttpServerFileUploadImpl upload) {
+    ended = true;
     if (endHandler != null && upload == lastUpload) {
       endHandler.handle(null);
     }
@@ -377,6 +389,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       exceptionHandler.handle(t);
     }
   }
+
+  private void checkEnded() {
+    if (ended) {
+      throw new IllegalStateException("Request has already been read");
+    }
+  }
+
 
   private MultiMap attributes() {
     // Create it lazily

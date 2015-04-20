@@ -227,4 +227,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   ServerWebSocket upgrade();
 
+  /**
+   * Has the request ended? I.e. has the entire request, including the body been read?
+   *
+   * @return true if ended
+   */
+  boolean isEnded();
+
 }
