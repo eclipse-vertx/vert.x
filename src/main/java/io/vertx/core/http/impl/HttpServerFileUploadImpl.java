@@ -187,7 +187,6 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void complete() {
-    req.uploadComplete(this);
     if (paused) {
       complete = true;
     } else {
@@ -213,7 +212,6 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     if (endHandler != null) {
       endHandler.handle(null);
     }
-    req.callEndHandler(this);
   }
 
   private void notifyExceptionHandler(Throwable cause) {
