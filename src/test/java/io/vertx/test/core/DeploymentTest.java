@@ -592,8 +592,8 @@ public class DeploymentTest extends VertxTestBase {
     });
     CountDownLatch deployLatch = new CountDownLatch(1);
     vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options, onSuccess(depID -> {
-      assertEquals(1, deployHandlerCount.incrementAndGet());
-      deployLatch.countDown();
+        assertEquals(1, deployHandlerCount.incrementAndGet());
+        deployLatch.countDown();
     }));
     awaitLatch(deployLatch);
     waitUntil(() -> deployCount.get() == numInstances);
@@ -985,6 +985,46 @@ public class DeploymentTest extends VertxTestBase {
     });
     await();
     vertx = null;
+  }
+
+  @Test
+  public void testGetInstanceCount() throws Exception {
+    class MultiInstanceVerticle extends AbstractVerticle {
+      @Override
+      public void start() {
+        assertEquals(vertx.getOrCreateContext().getInstanceCount(), 1);
+      }
+    }
+
+    vertx.deployVerticle(new MultiInstanceVerticle(), ar -> {
+      assertTrue(ar.succeeded());
+      testComplete();
+    });
+    await();
+    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
+    vertx.undeploy(deployment.deploymentID());
+  }
+
+  @Test
+  public void testGetInstanceCountMultipleVerticles() throws Exception {
+    AtomicInteger messageCount = new AtomicInteger(0);
+    AtomicInteger totalReportedInstances = new AtomicInteger(0);
+
+    vertx.eventBus().consumer("instanceCount", event -> {
+      messageCount.incrementAndGet();
+      totalReportedInstances.addAndGet((int)event.body());
+      if(messageCount.intValue() == 3) {
+        assertEquals(9, totalReportedInstances.get());
+      }
+    });
+
+    vertx.deployVerticle(TestVerticle3.class.getCanonicalName(), new DeploymentOptions().setInstances(3), ar -> {
+      assertTrue(ar.succeeded());
+      testComplete();
+    });
+    await();
+    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
+    vertx.undeploy(deployment.deploymentID());
   }
 
   // TODO
