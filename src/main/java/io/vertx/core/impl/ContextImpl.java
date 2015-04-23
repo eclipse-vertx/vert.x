@@ -279,5 +279,11 @@ public abstract class ContextImpl implements Context {
     Thread.currentThread().setContextClassLoader(tccl);
   }
 
-
+  public int getInstanceCount(){
+    if(deployment == null || deployment.deploymentOptions() == null) {
+      // implicitly there is the current instance of the verticle running always
+      return 1;
+    }
+    return deployment.deploymentOptions().getInstances();
+  }
 }
