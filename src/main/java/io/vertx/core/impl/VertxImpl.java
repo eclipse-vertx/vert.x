@@ -773,7 +773,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     @Override
     public void cancel() {
-      handler(null);
+      if (id != null) {
+        VertxImpl.this.cancelTimer(id);
+      }
     }
 
     @Override
@@ -785,12 +787,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         this.handler = handler;
         id = scheduleTimeout(getOrCreateContext(), this, delay, periodic);
       } else {
-        if (id != null) {
-          VertxImpl.this.cancelTimer(id);
-          if (endHandler != null) {
-            runOnContext(endHandler);
-          }
-        }
+        cancel();
       }
       return this;
     }
