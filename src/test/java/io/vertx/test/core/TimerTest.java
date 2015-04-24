@@ -91,6 +91,7 @@ public class TimerTest extends VertxTestBase {
     final AtomicLong id = new AtomicLong(-1);
     id.set(vertx.setPeriodic(delay, new Handler<Long>() {
       int count;
+
       public void handle(Long timerID) {
         assertEquals(id.get(), timerID.longValue());
         count++;
@@ -163,26 +164,33 @@ public class TimerTest extends VertxTestBase {
   @Test
   public void testTimerStreamCallingWithNullHandlerCancelsTheTimer() throws Exception {
     ReadStream<Long> timer = vertx.timerStream(10);
+    AtomicInteger count = new AtomicInteger();
     timer.handler(l -> {
-      fail();
+      if (count.incrementAndGet() == 1) {
+        timer.handler(null);
+        vertx.setTimer(200, id -> {
+          assertEquals(1, count.get());
+          testComplete();
+        });
+      } else {
+        fail();
+      }
     });
-    timer.endHandler(v -> {
-      testComplete();
-    });
-    timer.handler(null);
     await();
   }
 
   @Test
   public void testTimerStreamCancellation() throws Exception {
     TimeoutStream timer = vertx.timerStream(10);
+    AtomicBoolean called = new AtomicBoolean();
     timer.handler(l -> {
-      fail();
-    });
-    timer.endHandler(v -> {
-      testComplete();
+      called.set(true);
     });
     timer.cancel();
+    vertx.setTimer(500, id -> {
+      assertFalse(called.get());
+      testComplete();
+    });
     await();
   }
 
@@ -220,7 +228,7 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testPeriodicStreamHandler() throws Exception {
-    ReadStream<Long> timer = vertx.periodicStream(10);
+    TimeoutStream timer = vertx.periodicStream(10);
     AtomicInteger count = new AtomicInteger();
     timer.handler(l -> {
       int value = count.incrementAndGet();
@@ -230,14 +238,15 @@ public class TimerTest extends VertxTestBase {
         case 1:
           throw new RuntimeException();
         case 2:
-          timer.handler(null);
+          timer.cancel();
+          testComplete();
           break;
         default:
           fail();
       }
     });
     timer.endHandler(v -> {
-      testComplete();
+      fail();
     });
     await();
   }
@@ -274,7 +283,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimeoutStreamEndCallbackAsynchronously1() {
+  public void testTimeoutStreamEndCallbackAsynchronously() {
     TimeoutStream stream = vertx.timerStream(10);
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
@@ -283,24 +292,7 @@ public class TimerTest extends VertxTestBase {
       assertNull(stack.get());
       testComplete();
     });
-    stream.handler(id -> {});
-    await();
-  }
-
-  // This test does not pass 
-  @Test
-  public void testTimeoutStreamEndCallbackAsynchronously2() {
-    TimeoutStream stream = vertx.periodicStream(10);
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stream.endHandler(v -> {
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      assertNull(stack.get());
-      testComplete();
-    });
     stream.handler(id -> {
-      stack.set(true);
-      stream.cancel();
-      stack.set(null);
     });
     await();
   }
