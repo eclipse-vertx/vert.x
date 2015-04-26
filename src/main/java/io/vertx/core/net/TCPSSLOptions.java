@@ -106,7 +106,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.ssl = other.isSsl();
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
     this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
-    this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? null : new HashSet<>(other.getEnabledCipherSuites());
+    this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new HashSet<>() : new HashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
   }
@@ -149,7 +149,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
       this.trustOptions = new PemTrustOptions(trustOptions);
     }
     JsonArray arr = json.getJsonArray("enabledCipherSuites");
-    this.enabledCipherSuites = arr == null ? null : new HashSet<>(arr.getList());
+    this.enabledCipherSuites = arr == null ? new HashSet<>() : new HashSet<>(arr.getList());
     arr = json.getJsonArray("crlPaths");
     this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<>(arr.getList());
     this.crlValues = new ArrayList<>();
