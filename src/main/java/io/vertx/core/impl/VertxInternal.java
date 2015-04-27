@@ -25,6 +25,7 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
@@ -86,4 +87,6 @@ public interface VertxInternal extends Vertx {
   File resolveFile(String fileName);
 
   <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
+
+  ClusterManager getClusterManager();
 }

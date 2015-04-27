@@ -64,7 +64,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   private final Closeable closeHook;
   private final ContextImpl creatingContext;
   private final TCPMetrics metrics;
-  private boolean closed;
+  private volatile boolean closed;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
     this(vertx, options, true);
@@ -99,7 +99,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   }
 
   @Override
-  public synchronized void close() {
+  public void close() {
     if (!closed) {
       for (NetSocket sock : socketMap.values()) {
         sock.close();

@@ -432,6 +432,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return null;
   }
 
+  public ClusterManager getClusterManager() {
+    return clusterManager;
+  }
+
   @Override
   public void close() {
     close(null);
