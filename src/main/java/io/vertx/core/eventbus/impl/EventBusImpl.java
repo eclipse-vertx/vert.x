@@ -16,32 +16,13 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.MessageProducer;
-import io.vertx.core.eventbus.ReplyException;
-import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.eventbus.impl.codecs.BooleanMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.BufferMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.ByteArrayMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.ByteMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.CharMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.DoubleMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.FloatMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.IntMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.JsonArrayMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.JsonObjectMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.LongMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.NullMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.ShortMessageCodec;
-import io.vertx.core.eventbus.impl.codecs.StringMessageCodec;
+import io.vertx.core.eventbus.*;
+import io.vertx.core.eventbus.impl.codecs.*;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
@@ -50,25 +31,21 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.net.impl.NetClientImpl;
-import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -288,6 +265,16 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       server.close(ar -> {
         if (ar.failed()) {
           log.error("Failed to close server", ar.cause());
+        }
+        // Close all outbound connections explicitly - don't rely on context hooks
+        for (ConnectionHolder holder: connections.values()) {
+          holder.close(false);
+        }
+        // Unregister all handlers explicitly - don't rely on context hooks
+        for (Handlers handlers: handlerMap.values()) {
+          for (HandlerHolder holder: handlers.list) {
+            holder.handler.unregister();
+          }
         }
         closeClusterManager(completionHandler);
       });
@@ -669,11 +656,18 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private void removeSub(String subName, ServerID theServerID, Handler<AsyncResult<Void>> completionHandler) {
     subs.remove(subName, theServerID, ar -> {
       if (!ar.succeeded()) {
-        log.error("Couldn't find sub to remove");
+        log.error("Failed to remove sub", ar.cause());
       } else {
-        if (completionHandler != null) {
-          completionHandler.handle(Future.succeededFuture());
+        if (ar.result()) {
+          if (completionHandler != null) {
+            completionHandler.handle(Future.succeededFuture());
+          }
+        } else {
+          if (completionHandler != null) {
+            completionHandler.handle(Future.failedFuture("sub not found"));
+          }
         }
+
       }
     });
   }
@@ -819,6 +813,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (pingTimeoutID != -1) {
         vertx.cancelTimer(pingTimeoutID);
       }
+
       try {
         client.close();
       } catch (Exception ignore) {
@@ -830,6 +825,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (connections.remove(theServerID, this)) {
         log.debug("Cluster connection closed: " + theServerID + " holder " + this);
         if (failed) {
+          // Remove entries for that server in all subscriptions, so we don't try and send messages to that server
+          // again
           cleanSubsForServerID(theServerID);
         }
       }

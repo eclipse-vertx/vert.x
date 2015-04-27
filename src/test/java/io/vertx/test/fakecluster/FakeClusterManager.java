@@ -338,20 +338,30 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void get(final K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
-      vertx.executeBlocking(fut -> fut.complete(map.get(k)), asyncResultHandler);
+      vertx.executeBlocking(fut -> {
+        ChoosableIterable<V> it = map.get(k);
+        if (it == null) {
+          it = new ChoosableSet<V>(0);
+        }
+        fut.complete(it);
+      }, asyncResultHandler);
     }
 
     @Override
     public void remove(final K k, final V v, Handler<AsyncResult<Boolean>> completionHandler) {
       vertx.executeBlocking(fut -> {
           ChoosableSet<V> vals = map.get(k);
+          boolean found = false;
           if (vals != null) {
-            vals.remove(v);
-            if (vals.isEmpty()) {
-              map.remove(k);
+            boolean removed = vals.remove(v);
+            if (removed) {
+              if (vals.isEmpty()) {
+                map.remove(k);
+              }
+              found = true;
             }
           }
-          fut.complete();
+          fut.complete(found);
         }, completionHandler);
     }
 
