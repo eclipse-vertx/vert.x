@@ -261,7 +261,7 @@
  * *But.. the real world is not like that. (Have you watched the news lately?)*
  *
  * Fact is, many, if not most libraries, especially in the JVM ecosystem have synchronous APIs and many of the methods are
- * likely to block. A good example is the JDBC API - it's inherently asynchronous, and no matter how hard it tries, Vert.x
+ * likely to block. A good example is the JDBC API - it's inherently synchronous, and no matter how hard it tries, Vert.x
  * cannot sprinkle magic pixie dust on it to make it asynchronous.
  *
  * We're not going to rewrite everything to be asynchronous overnight so we need to provide you a way to use "traditional"
