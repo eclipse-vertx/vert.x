@@ -1034,7 +1034,10 @@ public class DefaultEventBus implements EventBus {
       });
       socket.closeHandler(new VoidHandler() {
         public void handle() {
-          cleanupConnection(theServerID, ConnectionHolder.this, false);
+          // Note! We call cleanupConnection with failed=true even for close handler being called
+          // This is because sometimes Netty only calls the close handler even if the connection abruptly
+          // terminates
+          cleanupConnection(theServerID, ConnectionHolder.this, true);
         }
       });
       socket.dataHandler(new Handler<Buffer>() {
