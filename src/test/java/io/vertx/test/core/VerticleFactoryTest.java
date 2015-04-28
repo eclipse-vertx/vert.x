@@ -17,7 +17,10 @@
 package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.Deployment;
@@ -468,17 +471,18 @@ public class VerticleFactoryTest extends VertxTestBase {
     }
 
     @Override
-    public String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader cl) throws Exception {
+    public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
       if (failInResolve) {
-        throw new IOException("whatever");
+        resolution.fail(new IOException("whatever"));
+      } else {
+        identifierToResolve = identifier;
+        deploymentOptionsToResolve = deploymentOptions;
+        // Now we change the deployment options
+        deploymentOptions.setConfig(new JsonObject().put("wibble", "quux"));
+        deploymentOptions.setWorker(true);
+        deploymentOptions.setIsolationGroup("othergroup");
+        resolution.complete(resolvedIdentifier);
       }
-      identifierToResolve = identifier;
-      deploymentOptionsToResolve = deploymentOptions;
-      // Now we change the deployment options
-      deploymentOptions.setConfig(new JsonObject().put("wibble", "quux"));
-      deploymentOptions.setWorker(true);
-      deploymentOptions.setIsolationGroup("othergroup");
-      return resolvedIdentifier;
     }
 
     @Override

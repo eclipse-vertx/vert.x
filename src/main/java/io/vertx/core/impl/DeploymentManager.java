@@ -93,7 +93,7 @@ public class DeploymentManager {
     }
     ContextImpl currentContext = vertx.getOrCreateContext();
     doDeploy("java:" + verticle.getClass().getName(), generateDeploymentID(), options, currentContext, currentContext, completionHandler,
-             getCurrentClassLoader(), null, verticle);
+        getCurrentClassLoader(), null, verticle);
   }
 
   public void deployVerticle(String identifier,
@@ -126,30 +126,68 @@ public class DeploymentManager {
                                 Handler<AsyncResult<String>> completionHandler) {
     List<VerticleFactory> verticleFactories = resolveFactories(identifier);
     Iterator<VerticleFactory> iter = verticleFactories.iterator();
-    while (iter.hasNext()) {
-      try {
-        VerticleFactory verticleFactory = iter.next();
-        if (verticleFactory.requiresResolve()) {
-          String resolvedName = verticleFactory.resolve(identifier, options, cl);
+    doDeployVerticle(iter, null, identifier, deploymentID, options, parentContext, callingContext, cl, redeployer, completionHandler);
+  }
+
+  private void doDeployVerticle(Iterator<VerticleFactory> iter,
+                                Throwable prevErr,
+                                String identifier,
+                                String deploymentID,
+                                DeploymentOptions options,
+                                ContextImpl parentContext,
+                                ContextImpl callingContext,
+                                ClassLoader cl,
+                                Redeployer redeployer,
+                                Handler<AsyncResult<String>> completionHandler) {
+    if (iter.hasNext()) {
+      VerticleFactory verticleFactory = iter.next();
+      Future<String> fut = Future.future();
+      if (verticleFactory.requiresResolve()) {
+        try {
+          verticleFactory.resolve(identifier, options, cl, fut);
+        } catch (Exception e) {
+          try {
+            fut.fail(e);
+          } catch (Exception ignore) {
+            // Too late
+          }
+        }
+      } else {
+        fut.complete(identifier);
+      }
+      fut.setHandler(ar -> {
+        Throwable err;
+        if (ar.succeeded()) {
+          String resolvedName = ar.result();
           if (!resolvedName.equals(identifier)) {
             deployVerticle(resolvedName, options, completionHandler);
             return;
+          } else {
+            Verticle[] verticles = new Verticle[options.getInstances()];
+            try {
+              for (int i = 0; i < options.getInstances(); i++) {
+                verticles[i] = verticleFactory.createVerticle(identifier, cl);
+                if (verticles[i] == null) {
+                  throw new NullPointerException("VerticleFactory::createVerticle returned null");
+                }
+              }
+              doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, redeployer, verticles);
+              return;
+            } catch (Exception e) {
+              err = e;
+            }
           }
+        } else {
+          err = ar.cause();
         }
-        Verticle[] verticles = new Verticle[options.getInstances()];
-        for (int i = 0; i < options.getInstances(); i++) {
-          verticles[i] = verticleFactory.createVerticle(identifier, cl);
-          if (verticles[i] == null) {
-            throw new NullPointerException("VerticleFactory::createVerticle returned null");
-          }
-        }
-        doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, redeployer, verticles);
-        return;
-      } catch (Exception e) {
-        if (!iter.hasNext()) {
-          // Report failure if there are no more factories to try otherwise try the next one
-          reportFailure(e, callingContext, completionHandler);
-        }
+        doDeployVerticle(iter, err, identifier, deploymentID, options, parentContext, callingContext, cl, redeployer, completionHandler);
+      });
+    } else {
+      if (prevErr != null) {
+        // Report failure if there are no more factories to try otherwise try the next one
+        reportFailure(prevErr, callingContext, completionHandler);
+      } else {
+        // not handled or impossible ?
       }
     }
   }
