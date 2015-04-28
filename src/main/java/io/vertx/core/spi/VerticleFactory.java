@@ -16,7 +16,10 @@
 
 package io.vertx.core.spi;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 
@@ -45,8 +48,8 @@ public interface VerticleFactory {
     return false;
   }
 
-  default String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader) throws Exception {
-    return identifier;
+  default void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
+    resolution.complete(identifier);
   }
 
   default void init(Vertx vertx) {
