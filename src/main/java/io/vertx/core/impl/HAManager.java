@@ -426,7 +426,7 @@ public class HAManager {
       String group = theHAInfo.getString("group");
       String chosen = chooseHashedNode(group, failedNodeID.hashCode());
       if (chosen != null && chosen.equals(this.nodeID)) {
-        if (deployments != null) {
+        if (deployments != null && deployments.size() != 0) {
           log.info("node" + nodeID + " says: Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
           for (Object obj: deployments) {
             JsonObject app = (JsonObject)obj;
