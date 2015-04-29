@@ -32,10 +32,16 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AsynchronousCounter implements Counter {
 
   private final VertxInternal vertx;
-  private final AtomicLong counter = new AtomicLong();
+  private final AtomicLong counter;
 
   public AsynchronousCounter(VertxInternal vertx) {
     this.vertx = vertx;
+    this.counter = new AtomicLong();
+  }
+
+  public AsynchronousCounter(VertxInternal vertx, AtomicLong counter) {
+    this.vertx = vertx;
+    this.counter = counter;
   }
 
   @Override

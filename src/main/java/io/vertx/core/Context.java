@@ -127,4 +127,9 @@ public interface Context {
    */
   boolean remove(String key);
 
+  /**
+   * @return The Vertx instance that created the context
+   */
+  Vertx owner();
+
 }

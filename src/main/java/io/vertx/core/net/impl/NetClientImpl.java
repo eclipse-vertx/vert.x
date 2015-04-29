@@ -153,7 +153,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     ContextImpl context = vertx.getOrCreateContext();
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.getEventLoop());
+    bootstrap.group(context.eventLoop());
     bootstrap.channel(NioSocketChannel.class);
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override

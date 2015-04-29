@@ -82,14 +82,12 @@ public class VertxTestBase extends AsyncTestBase {
     if (vertices != null) {
       CountDownLatch latch = new CountDownLatch(vertices.length);
       for (Vertx vertx: vertices) {
-        if (vertx != null) {
-          vertx.close(ar -> {
-            if (ar.failed()) {
-              log.error("Failed to shutdown vert.x", ar.cause());
-            }
-            latch.countDown();
-          });
-        }
+        vertx.close(ar -> {
+          if (ar.failed()) {
+            log.error("Failed to shutdown vert.x", ar.cause());
+          }
+          latch.countDown();
+        });
       }
       assertTrue(latch.await(180, TimeUnit.SECONDS));
     }

@@ -76,7 +76,7 @@ public interface VertxInternal extends Vertx {
 
   Deployment getDeployment(String deploymentID);
 
-  void failoverCompleteHandler(Handler<Boolean> failoverCompleteHandler);
+  void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
 
   boolean isKilled();
 

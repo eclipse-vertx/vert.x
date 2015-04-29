@@ -16,17 +16,11 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.eventbus.impl.codecs.*;
-import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.Closeable;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -90,6 +84,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<Class, MessageCodec> defaultCodecMap = new ConcurrentHashMap<>();
+  private final HAManager haManager;
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
   private final EventBusMetrics metrics;
@@ -108,15 +103,18 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     this.server = null;
     this.subs = null;
     this.clusterMgr = null;
+    this.haManager = null;
     this.metrics = vertx.metricsSPI().createMetrics(this);
     this.systemCodecs = systemCodecs();
   }
 
   public EventBusImpl(VertxInternal vertx, long pingInterval, long pingReplyInterval, ClusterManager clusterManager,
+                      HAManager haManager,
                       AsyncMultiMap<String, ServerID> subs, ServerID serverID,
                       EventBusNetServer server) {
     this.vertx = vertx;
     this.clusterMgr = clusterManager;
+    this.haManager = haManager;
     this.metrics = vertx.metricsSPI().createMetrics(this);
     this.pingInterval = pingInterval;
     this.pingReplyInterval = pingReplyInterval;
@@ -125,6 +123,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     this.serverID = serverID;
     this.server = server.netServer;
     setServerHandler(server);
+    addFailoverCompleteHandler();
   }
 
   @Override
@@ -261,6 +260,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
+    unregisterAllHandlers();
     if (server != null) {
       server.close(ar -> {
         if (ar.failed()) {
@@ -270,16 +270,19 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         for (ConnectionHolder holder: connections.values()) {
           holder.close(false);
         }
-        // Unregister all handlers explicitly - don't rely on context hooks
-        for (Handlers handlers: handlerMap.values()) {
-          for (HandlerHolder holder: handlers.list) {
-            holder.handler.unregister();
-          }
-        }
         closeClusterManager(completionHandler);
       });
     } else {
       closeClusterManager(completionHandler);
+    }
+  }
+
+  private void unregisterAllHandlers() {
+    // Unregister all handlers explicitly - don't rely on context hooks
+    for (Handlers handlers: handlerMap.values()) {
+      for (HandlerHolder holder: handlers.list) {
+        holder.handler.unregister();
+      }
     }
   }
 
@@ -406,6 +409,16 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       socket.handler(parser);
     };
     server.setHandler(sockHandler);
+  }
+
+  private void addFailoverCompleteHandler() {
+    haManager.addFailoverCompleteHandler((failedNodeID, haInfo, failed) -> {
+      JsonObject jsid = haInfo.getJsonObject("server_id");
+      if (jsid != null) {
+        ServerID sid = new ServerID(jsid.getInteger("port"), jsid.getString("host"));
+        cleanSubsForServerID(sid);
+      }
+    });
   }
 
   private <T> void sendToSubs(ChoosableIterable<ServerID> subs, MessageImpl message,
@@ -846,29 +859,26 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       });
     }
 
-    void writeMessage(MessageImpl message) {
+    // TODO optimise this (contention on monitor)
+    synchronized void writeMessage(MessageImpl message) {
       if (connected) {
         Buffer data = message.encodeToWire();
         metrics.messageWritten(message.address(), data.length());
         socket.write(data);
       } else {
-        synchronized (this) {
-          if (connected) {
-            Buffer data = message.encodeToWire();
-            metrics.messageWritten(message.address(), data.length());
-            socket.write(data);
-          } else {
-            pending.add(message);
-          }
-        }
+        pending.add(message);
       }
     }
 
     synchronized void connected(NetSocket socket) {
       this.socket = socket;
       connected = true;
-      socket.exceptionHandler(t -> close(true));
-      socket.closeHandler(v -> close(false));
+      socket.exceptionHandler(t -> {
+        close(true);
+      });
+      socket.closeHandler(v -> {
+        close(false);
+      });
       socket.handler(data -> {
         // Got a pong back
         vertx.cancelTimer(timeoutID);

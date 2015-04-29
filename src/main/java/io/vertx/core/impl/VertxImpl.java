@@ -114,6 +114,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private EventBusImpl eventBus;
   private HAManager haManager;
   private boolean closed;
+  private boolean setFailoverCompleteHandler;
+  private FailoverCompleteHandler failoverCompleteHandler;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -145,12 +147,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         if (ar.failed()) {
           log.error("Failed to join cluster", ar.cause());
         }
-        if (options.isHAEnabled()) {
-          // Provide a memory barrier as we are setting from a different thread
-          synchronized (VertxImpl.this) {
-            haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(), options.getHAGroup());
-          }
-        }
         clusterManager.<String, ServerID>getAsyncMultiMap("subs", ar2 -> {
           if (ar2.succeeded()) {
             AsyncMultiMap<String, ServerID> subs = ar2.result();
@@ -168,8 +164,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                 ServerID serverID = new ServerID(serverPort, serverHost);
                 // Provide a memory barrier as we are setting from a different thread
                 synchronized (VertxImpl.this) {
+                  haManager = new HAManager(this, serverID, deploymentManager, clusterManager,
+                    haEnabled ? options.getQuorumSize() : 0, haEnabled? options.getHAGroup() : null);
                   eventBus = new EventBusImpl(this, options.getClusterPingInterval(), options.getClusterPingReplyInterval(),
-                    clusterManager, subs, serverID, ebServer);
+                    clusterManager, haManager, subs, serverID, ebServer);
                 }
                 if (resultHandler != null) {
                   resultHandler.handle(Future.succeededFuture(this));
@@ -445,9 +443,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
 
     if (closed || eventBus == null) {
-      runOnContext(v -> {
+      // Just call the handler directly since pools shutdown
+      if (completionHandler != null) {
         completionHandler.handle(Future.succeededFuture());
-      });
+      }
+      return;
     }
     closed = true;
     deploymentManager.undeployAll(ar -> {
@@ -575,6 +575,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
+
     context.executeBlocking(action, true, resultHandler);
   }
 
@@ -612,9 +613,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void failoverCompleteHandler(Handler<Boolean> failoverCompleteHandler) {
+  public synchronized void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
     if (haManager() != null) {
-      haManager().failoverCompleteHandler(failoverCompleteHandler);
+      if (!setFailoverCompleteHandler) {
+        haManager().addFailoverCompleteHandler((nodeID, haInfo, failed) -> {
+          if (this.failoverCompleteHandler != null) {
+            this.failoverCompleteHandler.handle(nodeID, haInfo, failed);
+          }
+        });
+        setFailoverCompleteHandler = true;
+      }
+      this.failoverCompleteHandler = failoverCompleteHandler;
     }
   }
 
@@ -691,7 +700,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
-      EventLoop el = context.getEventLoop();
+      EventLoop el = context.eventLoop();
       Runnable toRun = () -> context.runOnContext(this);
       if (periodic) {
         future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
