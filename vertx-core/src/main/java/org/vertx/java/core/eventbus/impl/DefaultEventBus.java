@@ -816,13 +816,17 @@ public class DefaultEventBus implements EventBus {
     completionHandler.handle(new DefaultFutureResult<>((Void) null));
   }
 
-  private void cleanSubsForServerID(ServerID theServerID) {
+  public void cleanSubsForServerID(ServerID theServerID) {
     if (subs != null) {
       subs.removeAllForValue(theServerID, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> event) {
         }
       });
     }
+  }
+
+  public ServerID serverID() {
+    return serverID;
   }
 
   private void cleanupConnection(ServerID theServerID,
@@ -1037,7 +1041,7 @@ public class DefaultEventBus implements EventBus {
           // Note! We call cleanupConnection with failed=true even for close handler being called
           // This is because sometimes Netty only calls the close handler even if the connection abruptly
           // terminates
-          cleanupConnection(theServerID, ConnectionHolder.this, true);
+          cleanupConnection(theServerID, ConnectionHolder.this, false);
         }
       });
       socket.dataHandler(new Handler<Buffer>() {

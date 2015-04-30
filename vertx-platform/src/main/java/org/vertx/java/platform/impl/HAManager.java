@@ -26,12 +26,14 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.spi.Action;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 import org.vertx.java.core.spi.cluster.NodeListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -116,11 +118,11 @@ public class HAManager {
   private final Queue<Runnable> toDeployOnQuorum = new ConcurrentLinkedQueue<>();
   private long quorumTimerID;
   private volatile boolean attainedQuorum;
-  private volatile Handler<Boolean> failoverCompleteHandler;
+  private final List<FailoverCompleteHandler> failoverCompleteHandlers = new CopyOnWriteArrayList<>();
   private volatile boolean failDuringFailover;
   private volatile boolean stopped;
 
-  public HAManager(VertxInternal vertx, PlatformManagerInternal platformManager, ClusterManager clusterManager, int quorumSize, String group) {
+  public HAManager(VertxInternal vertx, ServerID serverID, PlatformManagerInternal platformManager, ClusterManager clusterManager, int quorumSize, String group) {
     this.vertx = vertx;
     this.platformManager = platformManager;
     this.clusterManager = clusterManager;
@@ -130,6 +132,7 @@ public class HAManager {
     this.haMods = new JsonArray();
     haInfo.putArray("mods", haMods);
     haInfo.putString("group", this.group);
+    haInfo.putObject("server_id", new JsonObject().putString("host", serverID.host).putNumber("port", serverID.port));
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
     clusterManager.nodeListener(new NodeListener() {
@@ -212,14 +215,23 @@ public class HAManager {
     }
   }
 
-  // Set a handler that will be called when failover is complete - used in testing
-  public void failoverCompleteHandler(Handler<Boolean> failoverCompleteHandler) {
-    this.failoverCompleteHandler = failoverCompleteHandler;
+  public void addFailoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
+    failoverCompleteHandlers.add(failoverCompleteHandler);
   }
 
   // For testing:
   public void failDuringFailover(boolean fail) {
     failDuringFailover = fail;
+  }
+
+  private void callFailoverCompleteHandlers(final String nodeID, final JsonObject haInfo, final boolean result) {
+    for (FailoverCompleteHandler handler: failoverCompleteHandlers) {
+      try {
+        handler.handle(nodeID, haInfo, result);
+      } catch (Throwable t) {
+        log.error("Failure in calling failure complete handler", t);
+      }
+    }
   }
 
   // A node has joined the cluster
@@ -415,6 +427,19 @@ public class HAManager {
       JsonArray deployments = theHAInfo.getArray("mods");
       String group = theHAInfo.getString("group");
       String chosen = chooseHashedNode(group, failedNodeID.hashCode());
+
+      /*
+      FIXME - what we need to do is:
+      For normal failover use the correct group
+
+      For removing subs - any node will do so choose *ignoring* the group
+
+      We also need to have an enabled flag on HAManager - if not enabled then group becomes __NOGROUP_ so other nodes
+      don't fall over onto a non enabled HAManager
+
+      and also we want to prevent people deploying ha modules on a non enabled HAManager
+       */
+
       if (chosen != null && chosen.equals(this.nodeID)) {
         log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deployments from that node.");
         if (deployments != null) {
@@ -425,16 +450,11 @@ public class HAManager {
         }
         // Failover is complete! We can now remove the failed node from the cluster map
         clusterMap.remove(failedNodeID);
-        if (failoverCompleteHandler != null) {
-          failoverCompleteHandler.handle(true);
-        }
+        callFailoverCompleteHandlers(failedNodeID, theHAInfo, true);
       }
     } catch (Throwable t) {
       log.error("Failed to handle failover", t);
-      // This is used for testing:
-      if (failoverCompleteHandler != null) {
-        failoverCompleteHandler.handle(false);
-      }
+      callFailoverCompleteHandlers(failedNodeID, theHAInfo, false);
     }
   }
 
