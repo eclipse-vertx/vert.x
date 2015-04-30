@@ -338,6 +338,7 @@ public class DefaultVertx implements VertxInternal {
 
   @Override
   public void stop() {
+    System.out.println("Stopping vertx");
     if (sharedHttpServers != null) {
       // Copy set to prevent ConcurrentModificationException
       for (HttpServer server : new HashSet<>(sharedHttpServers.values())) {

@@ -33,7 +33,6 @@ import org.vertx.java.core.spi.cluster.NodeListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -116,18 +115,22 @@ public class HAManager {
   private final Map<String, String> clusterMap;
   private final String nodeID;
   private final Queue<Runnable> toDeployOnQuorum = new ConcurrentLinkedQueue<>();
+  private final boolean enabled;
   private long quorumTimerID;
   private volatile boolean attainedQuorum;
-  private final List<FailoverCompleteHandler> failoverCompleteHandlers = new CopyOnWriteArrayList<>();
+  private volatile FailoverCompleteHandler failoverCompleteHandler;
+  private volatile FailoverCompleteHandler removeSubsHandler;
   private volatile boolean failDuringFailover;
   private volatile boolean stopped;
 
-  public HAManager(VertxInternal vertx, ServerID serverID, PlatformManagerInternal platformManager, ClusterManager clusterManager, int quorumSize, String group) {
+  public HAManager(VertxInternal vertx, ServerID serverID, PlatformManagerInternal platformManager, ClusterManager clusterManager,
+                   int quorumSize, String group, boolean enabled) {
     this.vertx = vertx;
     this.platformManager = platformManager;
     this.clusterManager = clusterManager;
-    this.quorumSize = quorumSize;
-    this.group = group == null ? "__DEFAULT__" : group;
+    this.quorumSize = enabled? quorumSize : 0;
+    this.group = enabled ? (group == null ? "__DEFAULT__" : group) : "__DISABLED__";
+    this.enabled = enabled;
     this.haInfo = new JsonObject();
     this.haMods = new JsonArray();
     haInfo.putArray("mods", haMods);
@@ -215,8 +218,12 @@ public class HAManager {
     }
   }
 
-  public void addFailoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
-    failoverCompleteHandlers.add(failoverCompleteHandler);
+  public void setFailoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
+    this.failoverCompleteHandler = failoverCompleteHandler;
+  }
+
+  public void setRemoveSubsHandler(FailoverCompleteHandler removeSubsHandler) {
+    this.removeSubsHandler = removeSubsHandler;
   }
 
   // For testing:
@@ -224,8 +231,16 @@ public class HAManager {
     failDuringFailover = fail;
   }
 
-  private void callFailoverCompleteHandlers(final String nodeID, final JsonObject haInfo, final boolean result) {
-    for (FailoverCompleteHandler handler: failoverCompleteHandlers) {
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  private void callFailoverCompleteHandler(String nodeID, JsonObject haInfo, boolean result) {
+    callFailoverCompleteHandler(failoverCompleteHandler, nodeID, haInfo, result);
+  }
+
+  private void callFailoverCompleteHandler(FailoverCompleteHandler handler, String nodeID, JsonObject haInfo, boolean result) {
+    if (handler != null) {
       try {
         handler.handle(nodeID, haInfo, result);
       } catch (Throwable t) {
@@ -255,7 +270,9 @@ public class HAManager {
       if (sclusterInfo == null) {
         // Clean close - do nothing
       } else {
-        checkFailover(leftNodeID, new JsonObject(sclusterInfo));
+        JsonObject clusterInfo = new JsonObject(sclusterInfo);
+        checkRemoveSubs(leftNodeID, clusterInfo);
+        checkFailover(leftNodeID, clusterInfo);
       }
 
       // We also check for and potentially resume any previous failovers that might have failed
@@ -304,27 +321,31 @@ public class HAManager {
 
   // Check if there is a quorum for our group
   private void checkQuorum() {
-    List<String> nodes = clusterManager.getNodes();
-    int count = 0;
-    for (String node: nodes) {
-      String json = clusterMap.get(node);
-      if (json != null) {
-        JsonObject clusterInfo = new JsonObject(json);
-        String group = clusterInfo.getString("group");
-        if (group.equals(this.group)) {
-          count++;
+    if (quorumSize == 0) {
+      this.attainedQuorum = true;
+    } else {
+      List<String> nodes = clusterManager.getNodes();
+      int count = 0;
+      for (String node : nodes) {
+        String json = clusterMap.get(node);
+        if (json != null) {
+          JsonObject clusterInfo = new JsonObject(json);
+          String group = clusterInfo.getString("group");
+          if (group.equals(this.group)) {
+            count++;
+          }
         }
       }
-    }
-    boolean attained = count >= quorumSize;
-    if (!attainedQuorum && attained) {
-      // A quorum has been attained so we can deploy any currently undeployed HA deployments
-      log.info("A quorum has been obtained. Any deployments waiting on a quorum will now be deployed");
-      this.attainedQuorum = true;
-    } else if (attainedQuorum && !attained) {
-      // We had a quorum but we lost it - we must undeploy any HA deployments
-      log.info("There is no longer a quorum. Any HA deployments will be undeployed until a quorum is re-attained");
-      this.attainedQuorum = false;
+      boolean attained = count >= quorumSize;
+      if (!attainedQuorum && attained) {
+        // A quorum has been attained so we can deploy any currently undeployed HA deployments
+        log.info("A quorum has been obtained. Any deployments waiting on a quorum will now be deployed");
+        this.attainedQuorum = true;
+      } else if (attainedQuorum && !attained) {
+        // We had a quorum but we lost it - we must undeploy any HA deployments
+        log.info("There is no longer a quorum. Any HA deployments will be undeployed until a quorum is re-attained");
+        this.attainedQuorum = false;
+      }
     }
   }
 
@@ -428,21 +449,9 @@ public class HAManager {
       String group = theHAInfo.getString("group");
       String chosen = chooseHashedNode(group, failedNodeID.hashCode());
 
-      /*
-      FIXME - what we need to do is:
-      For normal failover use the correct group
-
-      For removing subs - any node will do so choose *ignoring* the group
-
-      We also need to have an enabled flag on HAManager - if not enabled then group becomes __NOGROUP_ so other nodes
-      don't fall over onto a non enabled HAManager
-
-      and also we want to prevent people deploying ha modules on a non enabled HAManager
-       */
-
       if (chosen != null && chosen.equals(this.nodeID)) {
-        log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deployments from that node.");
-        if (deployments != null) {
+        if (deployments != null && deployments.size() > 0) {
+          log.info("Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deployments from that node.");
           for (Object obj: deployments) {
             JsonObject app = (JsonObject)obj;
             processFailover(app);
@@ -450,11 +459,18 @@ public class HAManager {
         }
         // Failover is complete! We can now remove the failed node from the cluster map
         clusterMap.remove(failedNodeID);
-        callFailoverCompleteHandlers(failedNodeID, theHAInfo, true);
+        callFailoverCompleteHandler(failedNodeID, theHAInfo, true);
       }
     } catch (Throwable t) {
       log.error("Failed to handle failover", t);
-      callFailoverCompleteHandlers(failedNodeID, theHAInfo, false);
+      callFailoverCompleteHandler(failedNodeID, theHAInfo, false);
+    }
+  }
+
+  private void checkRemoveSubs(String failedNodeID, JsonObject theHAInfo) {
+    String chosen = chooseHashedNode(null, failedNodeID.hashCode());
+    if (chosen != null && chosen.equals(this.nodeID)) {
+      callFailoverCompleteHandler(removeSubsHandler, failedNodeID, theHAInfo, true);
     }
   }
 
@@ -505,7 +521,7 @@ public class HAManager {
       if (sclusterInfo != null) {
         JsonObject clusterInfo = new JsonObject(sclusterInfo);
         String memberGroup = clusterInfo.getString("group");
-        if (group.equals(memberGroup)) {
+        if (group == null || group.equals(memberGroup)) {
           matchingMembers.add(node);
         }
       }

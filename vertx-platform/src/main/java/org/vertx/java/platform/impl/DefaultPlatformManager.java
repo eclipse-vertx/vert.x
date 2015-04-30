@@ -108,16 +108,20 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   }
 
   protected DefaultPlatformManager(int port, String hostname) {
-    this(port, hostname, 0, null);
+    this(port, hostname, 0, null, false);
   }
 
   protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup) {
+    this(port, hostname, quorumSize, haGroup, true);
+  }
+
+  protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup, boolean haEnabled) {
     this.vertx = createVertxSynchronously(port, hostname);
     this.clusterManager = vertx.clusterManager();
     init();
     final DefaultEventBus eb = (DefaultEventBus)vertx.eventBus();
-    this.haManager = new HAManager(vertx, eb.serverID(), this, clusterManager, quorumSize, haGroup);
-    haManager.addFailoverCompleteHandler(new FailoverCompleteHandler() {
+    this.haManager = new HAManager(vertx, eb.serverID(), this, clusterManager, quorumSize, haGroup, haEnabled);
+    haManager.setRemoveSubsHandler(new FailoverCompleteHandler() {
       @Override
       public void handle(String nodeID, JsonObject haInfo, boolean failed) {
         JsonObject jsid = haInfo.getObject("server_id");
@@ -218,7 +222,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public synchronized void deployModule(final String moduleName, final JsonObject config, final int instances, final boolean ha,
                                         final Handler<AsyncResult<String>> doneHandler) {
 
-    if (ha && haManager != null) {
+    if (ha && haManager != null && haManager.isEnabled()) {
       final File currentModDir = getDeploymentModDir();
       if (currentModDir != null) {
         throw new IllegalStateException("Only top-level modules can be deployed with HA");

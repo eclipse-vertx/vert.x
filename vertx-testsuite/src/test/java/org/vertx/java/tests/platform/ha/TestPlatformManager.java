@@ -16,7 +16,6 @@
 
 package org.vertx.java.tests.platform.ha;
 
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.impl.DefaultPlatformManager;
 import org.vertx.java.platform.impl.Deployment;
 import org.vertx.java.platform.impl.FailoverCompleteHandler;
@@ -45,23 +44,9 @@ public class TestPlatformManager extends DefaultPlatformManager {
     return deployments;
   }
 
-  private boolean setFailoverCompleteHandler;
-  private FailoverCompleteHandler failoverCompleteHandler;
-
   public synchronized void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
     if (haManager != null) {
-      if (!setFailoverCompleteHandler) {
-        haManager.addFailoverCompleteHandler(new FailoverCompleteHandler() {
-          @Override
-          public void handle(String nodeID, JsonObject haInfo, boolean failed) {
-            if (TestPlatformManager.this.failoverCompleteHandler != null) {
-              TestPlatformManager.this.failoverCompleteHandler.handle(nodeID, haInfo, failed);
-            }
-          }
-        });
-        setFailoverCompleteHandler = true;
-      }
-      this.failoverCompleteHandler = failoverCompleteHandler;
+      haManager.setFailoverCompleteHandler(failoverCompleteHandler);
     }
   }
 
