@@ -74,7 +74,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     vertxOptions.setMaxWorkerExecuteTime(1000000000);
     vertxOptions.setWarningExceptionTime(1000000000);
     Vertx newVertx = Vertx.vertx(vertxOptions);
-    DeploymentOptions depolymentOptions = new DeploymentOptions(); 
+    DeploymentOptions depolymentOptions = new DeploymentOptions();
     depolymentOptions.setWorker(true);
     newVertx.deployVerticle(verticle, depolymentOptions);
     await();
