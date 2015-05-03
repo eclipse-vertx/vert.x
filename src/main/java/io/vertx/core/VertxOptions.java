@@ -77,7 +77,7 @@ public class VertxOptions {
   /**
    * The default value of max event loop execute time = 2000000000 ns (2 seconds)
    */
-  public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2000l * 1000000;
+  public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2l * 1000 * 1000000;
 
   /**
    * The default value of max worker execute time = 60000000000 ns (60 seconds)
@@ -99,6 +99,13 @@ public class VertxOptions {
    */
   public static final boolean DEFAULT_METRICS_ENABLED = false;
 
+  /**
+   * The default value of warning exception time 5000000000 ns (5 seconds)
+   * If a thread is blocked longer than this threshold, the warning log
+   * contains a stack trace
+   */
+  private static final long DEFAULT_WARNING_EXECPTION_TIME = 5l * 1000 * 1000000;
+
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -115,6 +122,8 @@ public class VertxOptions {
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup;
   private MetricsOptions metrics;
+
+  private long warningExceptionTime = DEFAULT_WARNING_EXECPTION_TIME;
 
   /**
    * Default constructor
@@ -144,6 +153,7 @@ public class VertxOptions {
     this.quorumSize = other.getQuorumSize();
     this.haGroup = other.getHAGroup();
     this.metrics = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
+    this.warningExceptionTime = other.warningExceptionTime;
   }
 
   /**
@@ -168,6 +178,7 @@ public class VertxOptions {
     this.haGroup = json.getString("haGroup", null);
     JsonObject metricsJson = json.getJsonObject("metricsOptions");
     this.metrics = metricsJson != null ? new MetricsOptions(metricsJson) : null;
+    this.warningExceptionTime = json.getLong("warningExceptionTime", DEFAULT_WARNING_EXECPTION_TIME);
   }
 
   /**
@@ -545,6 +556,26 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Get the threshold value above this, the blocked warning contains a stack trace.
+   *
+   * @return the warning exception time threshold
+   */
+  public long getWarningExceptionTime() {
+    return warningExceptionTime ;
+  }
+
+  /**
+   * Set the threshold value above this, the blocked warning contains a stack trace.
+   *
+   * @param warningExceptionTime
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setWarningExceptionTime(long warningExceptionTime) {
+    this.warningExceptionTime = warningExceptionTime;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -566,6 +597,7 @@ public class VertxOptions {
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
+    if (warningExceptionTime != that.warningExceptionTime) return false;
 
     return true;
   }
@@ -585,6 +617,7 @@ public class VertxOptions {
     result = 31 * result + (haEnabled ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
+    result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
     return result;
   }
 }

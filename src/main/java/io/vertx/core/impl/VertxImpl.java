@@ -125,7 +125,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime(),
-                                       options.getMaxWorkerExecuteTime());
+                                       options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
                                            new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
