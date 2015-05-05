@@ -506,7 +506,6 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public void close(Handler<AsyncResult<Void>> doneHandler) {
-    System.out.println("Closing eventbus");
     // Explicitly unregister all handlers on close
     unregisterAllHandlers();
 		if (clusterMgr != null) {
@@ -518,7 +517,6 @@ public class DefaultEventBus implements EventBus {
   }
 
   private void unregisterAllHandlers() {
-    System.out.println("Unregistering all handlers on close of eventbus");
     // Unregister all handlers explicitly - don't rely on context hooks
     for (Map.Entry<String, Handlers> entry: handlerMap.entrySet()) {
       for (HandlerHolder holder: entry.getValue().list) {

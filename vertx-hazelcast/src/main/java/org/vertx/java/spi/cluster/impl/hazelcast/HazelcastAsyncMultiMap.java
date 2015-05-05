@@ -68,7 +68,6 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
         V wrappedVal = HazelcastServerID.convertServerID(val);
-        System.out.println("Removing all for value: " + wrappedVal);
         for (Map.Entry<K, V> entry : map.entrySet()) {
           V v = entry.getValue();
           if (wrappedVal.equals(v)) {
@@ -140,7 +139,6 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
       public Void perform() {
         V vv = HazelcastServerID.convertServerID(v);
         boolean removed = map.remove(k, vv);
-        System.out.println("Removing entry " + k + ":" + vv + " from subs map. result=" + removed);
         return null;
       }
     }, completionHandler);

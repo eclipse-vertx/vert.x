@@ -16,7 +16,6 @@
 
 package vertx.tests.core.websockets;
 
-import com.sun.org.apache.xpath.internal.operations.Mult;
 import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.*;
