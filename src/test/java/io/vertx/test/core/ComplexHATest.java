@@ -194,7 +194,7 @@ public class ComplexHATest extends VertxTestBase {
     for (int i = 0; i < nodes; i++) {
       aliveNodes.add(i);
       int pos = i;
-      ((VertxInternal)vertices[i]).failoverCompleteHandler(succeeded -> {
+      ((VertxInternal)vertices[i]).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
         failedOverOnto(pos);
       });
     }

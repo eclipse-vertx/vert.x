@@ -646,7 +646,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler,
                                Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
     Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.getEventLoop());
+    bootstrap.group(context.eventLoop());
     bootstrap.channel(NioSocketChannel.class);
     sslHelper.validate(vertx);
     bootstrap.handler(new ChannelInitializer<Channel>() {

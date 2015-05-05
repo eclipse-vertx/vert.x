@@ -20,16 +20,14 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -362,4 +360,68 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     });
     await();
   }
+
+  @Test
+  public void testSubsRemovedForClosedNode() throws Exception {
+    testSubsRemoved(latch -> {
+      vertices[1].close(onSuccess(v -> {
+        latch.countDown();
+      }));
+    });
+
+  }
+
+  @Test
+  public void testSubsRemovedForKilledNode() throws Exception {
+    testSubsRemoved(latch -> {
+      VertxInternal vi = (VertxInternal)vertices[1];
+      vi.getClusterManager().leave(onSuccess(v -> {
+        latch.countDown();
+      }));
+    });
+
+  }
+
+  private void testSubsRemoved(Consumer<CountDownLatch> action) throws Exception {
+    startNodes(3);
+    CountDownLatch regLatch = new CountDownLatch(1);
+    AtomicInteger cnt = new AtomicInteger();
+    vertices[0].eventBus().consumer(ADDRESS1, msg -> {
+      int c = cnt.getAndIncrement();
+      assertEquals(msg.body(), "foo" + c);
+      if (c == 9) {
+        testComplete();
+      }
+      if (c > 9) {
+        fail("too many messages");
+      }
+    }).completionHandler(onSuccess(v -> {
+      vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+        fail("shouldn't get message");
+      }).completionHandler(onSuccess(v2 -> {
+        regLatch.countDown();
+      }));
+      regLatch.countDown();
+    }));
+    awaitLatch(regLatch);
+
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    action.accept(closeLatch);
+    awaitLatch(closeLatch);
+
+    // Allow time for kill to be propagate
+    Thread.sleep(2000);
+
+    vertices[2].runOnContext(v -> {
+      // Now send some messages from node 2 - they should ALL go to node 0
+      EventBus ebSender = vertices[2].eventBus();
+      for (int i = 0; i < 10; i++) {
+        ebSender.send(ADDRESS1, "foo" + i);
+      }
+    });
+
+    await();
+
+  }
+
 }

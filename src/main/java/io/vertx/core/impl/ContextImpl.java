@@ -18,11 +18,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Starter;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
@@ -43,7 +39,7 @@ public abstract class ContextImpl implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
-  protected final VertxInternal owner;
+  public final VertxInternal owner;
   protected final String deploymentID;
   protected final JsonObject config;
   private Deployment deployment;
@@ -208,8 +204,12 @@ public abstract class ContextImpl implements Context {
     return Starter.PROCESS_ARGS;
   }
 
-  public EventLoop getEventLoop() {
+  public EventLoop eventLoop() {
     return eventLoop;
+  }
+
+  public Vertx owner() {
+    return owner;
   }
 
   // Execute an internal task on the internal blocking ordered executor
