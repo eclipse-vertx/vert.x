@@ -27,7 +27,6 @@ import io.vertx.core.spi.cluster.NodeListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -110,20 +109,24 @@ public class HAManager {
   private final Map<String, String> clusterMap;
   private final String nodeID;
   private final Queue<Runnable> toDeployOnQuorum = new ConcurrentLinkedQueue<>();
+  private final boolean enabled;
 
   private long quorumTimerID;
   private volatile boolean attainedQuorum;
-  private final List<FailoverCompleteHandler> failoverCompleteHandlers = new CopyOnWriteArrayList<>();
+  private volatile FailoverCompleteHandler failoverCompleteHandler;
+  private volatile FailoverCompleteHandler removeSubsHandler;
   private volatile boolean failDuringFailover;
   private volatile boolean stopped;
   private volatile boolean killed;
 
-  public HAManager(VertxInternal vertx, ServerID serverID, DeploymentManager deploymentManager, ClusterManager clusterManager, int quorumSize, String group) {
+  public HAManager(VertxInternal vertx, ServerID serverID, DeploymentManager deploymentManager,
+                   ClusterManager clusterManager, int quorumSize, String group, boolean enabled) {
     this.vertx = vertx;
     this.deploymentManager = deploymentManager;
     this.clusterManager = clusterManager;
-    this.quorumSize = quorumSize;
-    this.group = group == null ? "__DEFAULT__" : group;
+    this.quorumSize = enabled ? quorumSize : 0;
+    this.group = enabled ? group : "__DISABLED__";
+    this.enabled = enabled;
     this.haInfo = new JsonObject();
     haInfo.put("verticles", new JsonArray());
     haInfo.put("group", this.group);
@@ -205,13 +208,20 @@ public class HAManager {
     }
   }
 
-  // Set a handler that will be called when failover is complete - used in testing
-  public void addFailoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
-    failoverCompleteHandlers.add(failoverCompleteHandler);
+  public void setFailoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
+    this.failoverCompleteHandler = failoverCompleteHandler;
+  }
+
+  public void setRemoveSubsHandler(FailoverCompleteHandler removeSubsHandler) {
+    this.removeSubsHandler = removeSubsHandler;
   }
 
   public boolean isKilled() {
     return killed;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
   }
 
   // For testing:
@@ -256,7 +266,9 @@ public class HAManager {
       if (sclusterInfo == null) {
         // Clean close - do nothing
       } else {
-        checkFailover(leftNodeID, new JsonObject(sclusterInfo));
+        JsonObject clusterInfo = new JsonObject(sclusterInfo);
+        checkRemoveSubs(leftNodeID, clusterInfo);
+        checkFailover(leftNodeID, clusterInfo);
       }
 
       // We also check for and potentially resume any previous failovers that might have failed
@@ -435,24 +447,33 @@ public class HAManager {
         }
         // Failover is complete! We can now remove the failed node from the cluster map
         clusterMap.remove(failedNodeID);
-        callFailoverCompleteHandlers(failedNodeID, theHAInfo, true);
+        callFailoverCompleteHandler(failedNodeID, theHAInfo, true);
       }
     } catch (Throwable t) {
       log.error("Failed to handle failover", t);
-      callFailoverCompleteHandlers(failedNodeID, theHAInfo, false);
+      callFailoverCompleteHandler(failedNodeID, theHAInfo, false);
     }
   }
 
-  private void callFailoverCompleteHandlers(String nodeID, JsonObject haInfo, boolean result) {
-    if (!failoverCompleteHandlers.isEmpty()) {
-      CountDownLatch latch = new CountDownLatch(failoverCompleteHandlers.size());
-      for (FailoverCompleteHandler handler: failoverCompleteHandlers) {
-        // The testsuite requires that this is called on a Vert.x thread
-        vertx.runOnContext(v -> {
-          handler.handle(nodeID, haInfo, result);
-          latch.countDown();
-        });
-      }
+  private void checkRemoveSubs(String failedNodeID, JsonObject theHAInfo) {
+    String chosen = chooseHashedNode(null, failedNodeID.hashCode());
+    if (chosen != null && chosen.equals(this.nodeID)) {
+      callFailoverCompleteHandler(removeSubsHandler, failedNodeID, theHAInfo, true);
+    }
+  }
+
+  private void callFailoverCompleteHandler(String nodeID, JsonObject haInfo, boolean result) {
+    callFailoverCompleteHandler(failoverCompleteHandler, nodeID, haInfo, result);
+  }
+
+  private void callFailoverCompleteHandler(FailoverCompleteHandler handler, String nodeID, JsonObject haInfo, boolean result) {
+    if (handler != null) {
+      CountDownLatch latch = new CountDownLatch(1);
+      // The testsuite requires that this is called on a Vert.x thread
+      vertx.runOnContext(v -> {
+        handler.handle(nodeID, haInfo, result);
+        latch.countDown();
+      });
       try {
         latch.await(30, TimeUnit.SECONDS);
       } catch (InterruptedException ignore) {
@@ -513,7 +534,7 @@ public class HAManager {
       if (sclusterInfo != null) {
         JsonObject clusterInfo = new JsonObject(sclusterInfo);
         String memberGroup = clusterInfo.getString("group");
-        if (group.equals(memberGroup)) {
+        if (group == null || group.equals(memberGroup)) {
           matchingMembers.add(node);
         }
       }
