@@ -22,6 +22,7 @@ import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.impl.DefaultEventBus;
 import org.vertx.java.core.file.impl.ClasspathPathResolver;
 import org.vertx.java.core.file.impl.ModuleFileSystemPathResolver;
 import org.vertx.java.core.impl.*;
@@ -29,6 +30,7 @@ import org.vertx.java.core.json.DecodeException;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 import org.vertx.java.platform.PlatformManagerException;
 import org.vertx.java.platform.Verticle;
@@ -105,30 +107,30 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
     init();
   }
 
-  protected DefaultPlatformManager(String hostname) {
-    DefaultVertx v = new DefaultVertx(hostname);
-    this.vertx = new WrappedVertx(v);
-    this.clusterManager = v.clusterManager();
-    init();
-  }
-
   protected DefaultPlatformManager(int port, String hostname) {
-    this.vertx = createVertxSynchronously(port, hostname);
-    this.clusterManager = vertx.clusterManager();
-    init();
+    this(port, hostname, 0, null, false);
   }
 
   protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup) {
+    this(port, hostname, quorumSize, haGroup, true);
+  }
+
+  protected DefaultPlatformManager(int port, String hostname, int quorumSize, String haGroup, boolean haEnabled) {
     this.vertx = createVertxSynchronously(port, hostname);
     this.clusterManager = vertx.clusterManager();
     init();
-    this.haManager = new HAManager(vertx, this, clusterManager, quorumSize, haGroup);
-  }
-
-  private DefaultPlatformManager(DefaultVertx vertx) {
-    this.vertx = new WrappedVertx(vertx);
-    this.clusterManager = vertx.clusterManager();
-    init();
+    final DefaultEventBus eb = (DefaultEventBus)vertx.eventBus();
+    this.haManager = new HAManager(vertx, eb.serverID(), this, clusterManager, quorumSize, haGroup, haEnabled);
+    haManager.setRemoveSubsHandler(new FailoverCompleteHandler() {
+      @Override
+      public void handle(String nodeID, JsonObject haInfo, boolean failed) {
+        JsonObject jsid = haInfo.getObject("server_id");
+        if (jsid != null) {
+          ServerID sid = new ServerID(jsid.getInteger("port"), jsid.getString("host"));
+          eb.cleanSubsForServerID(sid);
+        }
+      }
+    });
   }
 
   private VertxInternal createVertxSynchronously(int port, String hostname) {
@@ -220,7 +222,7 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
   public synchronized void deployModule(final String moduleName, final JsonObject config, final int instances, final boolean ha,
                                         final Handler<AsyncResult<String>> doneHandler) {
 
-    if (ha && haManager != null) {
+    if (ha && haManager != null && haManager.isEnabled()) {
       final File currentModDir = getDeploymentModDir();
       if (currentModDir != null) {
         throw new IllegalStateException("Only top-level modules can be deployed with HA");

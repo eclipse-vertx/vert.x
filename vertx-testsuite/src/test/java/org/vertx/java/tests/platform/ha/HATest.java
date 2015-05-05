@@ -22,6 +22,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.fakecluster.FakeClusterManager;
 import org.vertx.java.platform.impl.Deployment;
+import org.vertx.java.platform.impl.FailoverCompleteHandler;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -604,9 +605,9 @@ public class HATest extends TestCase {
       final AtomicInteger afailoverNode = new AtomicInteger(-1);
       for (int i = 0; i < pms.size(); i++) {
         final int nodeID = i;
-        pms.get(i).failoverCompleteHandler(new Handler<Boolean>() {
+        pms.get(i).failoverCompleteHandler(new FailoverCompleteHandler() {
           @Override
-          public void handle(Boolean b) {
+          public void handle(String n, JsonObject haInfo, boolean b) {
             if (b) {
               afailoverNode.set(nodeID);
             }

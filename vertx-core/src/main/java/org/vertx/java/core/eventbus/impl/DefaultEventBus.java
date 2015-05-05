@@ -44,6 +44,7 @@ import org.vertx.java.core.spi.cluster.ChoosableIterable;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -505,12 +506,23 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public void close(Handler<AsyncResult<Void>> doneHandler) {
+    // Explicitly unregister all handlers on close
+    unregisterAllHandlers();
 		if (clusterMgr != null) {
 			clusterMgr.leave();
 		}
 		if (server != null) {
 			server.close(doneHandler);
 		}
+  }
+
+  private void unregisterAllHandlers() {
+    // Unregister all handlers explicitly - don't rely on context hooks
+    for (Map.Entry<String, Handlers> entry: handlerMap.entrySet()) {
+      for (HandlerHolder holder: entry.getValue().list) {
+        unregisterHandler(entry.getKey(), holder.handler);
+      }
+    }
   }
 
   @Override
@@ -816,13 +828,17 @@ public class DefaultEventBus implements EventBus {
     completionHandler.handle(new DefaultFutureResult<>((Void) null));
   }
 
-  private void cleanSubsForServerID(ServerID theServerID) {
+  public void cleanSubsForServerID(ServerID theServerID) {
     if (subs != null) {
       subs.removeAllForValue(theServerID, new Handler<AsyncResult<Void>>() {
         public void handle(AsyncResult<Void> event) {
         }
       });
     }
+  }
+
+  public ServerID serverID() {
+    return serverID;
   }
 
   private void cleanupConnection(ServerID theServerID,
@@ -841,13 +857,8 @@ public class DefaultEventBus implements EventBus {
 
     // The holder can be null or different if the target server is restarted with same serverid
     // before the cleanup for the previous one has been processed
-    // So we only actually remove the entry if no new entry has been added
     if (connections.remove(theServerID, holder)) {
       log.debug("Cluster connection closed: " + theServerID + " holder " + holder);
-
-      if (failed) {
-        cleanSubsForServerID(theServerID);
-      }
     }
   }
 
@@ -1034,10 +1045,7 @@ public class DefaultEventBus implements EventBus {
       });
       socket.closeHandler(new VoidHandler() {
         public void handle() {
-          // Note! We call cleanupConnection with failed=true even for close handler being called
-          // This is because sometimes Netty only calls the close handler even if the connection abruptly
-          // terminates
-          cleanupConnection(theServerID, ConnectionHolder.this, true);
+          cleanupConnection(theServerID, ConnectionHolder.this, false);
         }
       });
       socket.dataHandler(new Handler<Buffer>() {
