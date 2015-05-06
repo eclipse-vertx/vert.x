@@ -227,6 +227,37 @@ public class HATest extends VertxTestBase {
   }
 
   @Test
+  public void testNoFailoverToNonHANode() throws Exception {
+    Vertx vertx1 = startVertx();
+    // Create a non HA node
+    Vertx vertx2 = startVertx(null, 0, false);
+
+    CountDownLatch latch1 = new CountDownLatch(1);
+    vertx1.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
+      assertTrue(ar.succeeded());
+      assertTrue(vertx1.deploymentIDs().contains(ar.result()));
+      latch1.countDown();
+    });
+    awaitLatch(latch1);
+
+    ((VertxInternal) vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+      fail("Should not failover here 2");
+    });
+    ((VertxInternal) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+      fail("Should not failover here 1");
+    });
+    ((VertxInternal) vertx1).simulateKill();
+    vertx2.close(ar -> {
+      vertx.setTimer(500, tid -> {
+        // Wait a bit in case failover happens
+        testComplete();
+      });
+    });
+    await();
+    closeVertices(vertx2);
+  }
+
+  @Test
   public void testNonHADeployments() throws Exception {
     Vertx vertx1 = startVertx();
     Vertx vertx2 = startVertx();
@@ -352,8 +383,18 @@ public class HATest extends VertxTestBase {
   }
 
   protected Vertx startVertx(String haGroup, int quorumSize) throws Exception {
-    VertxOptions options = new VertxOptions().setHAEnabled(true).setQuorumSize(quorumSize).setHAGroup(haGroup).setClustered(true).
+    return startVertx(haGroup, quorumSize, true);
+  }
+
+  protected Vertx startVertx(String haGroup, int quorumSize, boolean ha) throws Exception {
+    VertxOptions options = new VertxOptions().setHAEnabled(ha).setClustered(true).
       setClusterHost("localhost").setClusterManager(getClusterManager());
+    if (ha) {
+      options.setQuorumSize(quorumSize);
+      if (haGroup != null) {
+        options.setHAGroup(haGroup);
+      }
+    }
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Vertx> vertxRef = new AtomicReference<>();
     Vertx.clusteredVertx(options, onSuccess(vertx -> {

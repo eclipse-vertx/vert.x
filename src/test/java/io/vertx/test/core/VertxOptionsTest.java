@@ -158,11 +158,17 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
-    assertNull(options.getHAGroup());
+    assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
     randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setHAGroup(randString));
     assertEquals(randString, options.getHAGroup());
 
+    try {
+      options.setHAGroup(null);
+      fail("Should throw exception");
+    } catch (NullPointerException e) {
+      // OK
+    }
     assertNull(options.getMetricsOptions());
   }
 
@@ -257,7 +263,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime());
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
-    assertNull(options.getHAGroup());
+    assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
     assertNull(options.getMetricsOptions());
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();

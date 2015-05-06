@@ -412,7 +412,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   private void addFailoverCompleteHandler() {
-    haManager.addFailoverCompleteHandler((failedNodeID, haInfo, failed) -> {
+    haManager.setRemoveSubsHandler((failedNodeID, haInfo, failed) -> {
       JsonObject jsid = haInfo.getJsonObject("server_id");
       if (jsid != null) {
         ServerID sid = new ServerID(jsid.getInteger("port"), jsid.getString("host"));
@@ -834,14 +834,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
       // The holder can be null or different if the target server is restarted with same serverid
       // before the cleanup for the previous one has been processed
-      // So we only actually remove the entry if no new entry has been added
       if (connections.remove(theServerID, this)) {
         log.debug("Cluster connection closed: " + theServerID + " holder " + this);
-        if (failed) {
-          // Remove entries for that server in all subscriptions, so we don't try and send messages to that server
-          // again
-          cleanSubsForServerID(theServerID);
-        }
       }
     }
 

@@ -21,6 +21,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 
+import java.util.Objects;
+
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
  * 
@@ -90,6 +92,11 @@ public class VertxOptions {
   public static final int DEFAULT_QUORUM_SIZE = 1;
 
   /**
+   * The default value of Ha group is "__DEFAULT__"
+   */
+  public static final String DEFAULT_HA_GROUP = "__DEFAULT__";
+
+  /**
    * The default value of HA enabled = false
    */
   public static final boolean DEFAULT_HA_ENABLED = false;
@@ -113,7 +120,7 @@ public class VertxOptions {
   private ClusterManager clusterManager;
   private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
-  private String haGroup;
+  private String haGroup = DEFAULT_HA_GROUP;
   private MetricsOptions metrics;
 
   /**
@@ -165,7 +172,7 @@ public class VertxOptions {
     this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAX_WORKER_EXECUTE_TIME);
     this.haEnabled = json.getBoolean("haEnabled", false);
     this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUM_SIZE);
-    this.haGroup = json.getString("haGroup", null);
+    this.haGroup = json.getString("haGroup", DEFAULT_HA_GROUP);
     JsonObject metricsJson = json.getJsonObject("metricsOptions");
     this.metrics = metricsJson != null ? new MetricsOptions(metricsJson) : null;
   }
@@ -523,6 +530,7 @@ public class VertxOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setHAGroup(String haGroup) {
+    Objects.requireNonNull(haGroup, "ha group cannot be null");
     this.haGroup = haGroup;
     return this;
   }

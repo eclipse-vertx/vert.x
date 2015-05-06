@@ -114,8 +114,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private EventBusImpl eventBus;
   private HAManager haManager;
   private boolean closed;
-  private boolean setFailoverCompleteHandler;
-  private FailoverCompleteHandler failoverCompleteHandler;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -165,7 +163,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                 // Provide a memory barrier as we are setting from a different thread
                 synchronized (VertxImpl.this) {
                   haManager = new HAManager(this, serverID, deploymentManager, clusterManager,
-                    haEnabled ? options.getQuorumSize() : 0, haEnabled? options.getHAGroup() : null);
+                    options.getQuorumSize(), options.getHAGroup(), haEnabled);
                   eventBus = new EventBusImpl(this, options.getClusterPingInterval(), options.getClusterPingReplyInterval(),
                     clusterManager, haManager, subs, serverID, ebServer);
                 }
@@ -526,7 +524,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    if (options.isHa() && haManager() != null) {
+    if (options.isHa() && haManager() != null && haManager().isEnabled()) {
       haManager().deployVerticle(name, options, completionHandler);
     } else {
       deploymentManager.deployVerticle(name, options, completionHandler);
@@ -546,7 +544,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    if (haManager() != null) {
+    if (haManager() != null && haManager().isEnabled()) {
       haManager().removeFromHA(deploymentID);
     }
     deploymentManager.undeployVerticle(deploymentID, completionHandler);
@@ -615,15 +613,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public synchronized void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
     if (haManager() != null) {
-      if (!setFailoverCompleteHandler) {
-        haManager().addFailoverCompleteHandler((nodeID, haInfo, failed) -> {
-          if (this.failoverCompleteHandler != null) {
-            this.failoverCompleteHandler.handle(nodeID, haInfo, failed);
-          }
-        });
-        setFailoverCompleteHandler = true;
-      }
-      this.failoverCompleteHandler = failoverCompleteHandler;
+      haManager.setFailoverCompleteHandler(failoverCompleteHandler);
     }
   }
 

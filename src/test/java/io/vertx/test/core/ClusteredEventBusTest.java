@@ -303,33 +303,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
 
-  // Make sure connection times out correctly on no pong
-  @Test
-  public void testConnectionTimesOutNoPong() throws Exception {
-    // Set an unreasonably quick reply time so it's bound to timeout
-    startNodes(2, new VertxOptions().setClusterPingInterval(1).setClusterPingReplyInterval(1));
-    VertxInternal vertxI = (VertxInternal)vertices[0];
-    vertxI.simulateEventBusUnresponsive();
-    AtomicBoolean sending = new AtomicBoolean();
-    MessageConsumer<String> consumer = vertices[0].eventBus().<String>consumer("foobar").handler(msg -> {
-      if (!sending.get()) {
-        sending.set(true);
-        vertx.setTimer(2000, id -> {
-          vertices[1].eventBus().send("foobar", "whatever2");
-        });
-      } else {
-        fail("should not receive message");
-      }
-    });
-    consumer.completionHandler(ar -> {
-      assertTrue(ar.succeeded());
-      vertices[1].eventBus().send("foobar", "whatever");
-    });
-    // wait a while for the message to get there (which it never will)
-    vertx.setTimer(4000, id -> testComplete());
-    await();
-  }
-
   @Test
   public void testConsumerHandlesCompletionAsynchronously1() {
     startNodes(2);
