@@ -1150,7 +1150,17 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     @Override
     public synchronized MessageConsumer<T> endHandler(Handler<Void> endHandler) {
-      this.endHandler = endHandler;
+      if (endHandler != null) {
+        // We should use the HandlerHolder context to properly do this (needs small refactoring)
+        Context endCtx = vertx.getOrCreateContext();
+        this.endHandler = v1 -> {
+          endCtx.runOnContext(v2 -> {
+            endHandler.handle(null);
+          });
+        };
+      } else {
+        this.endHandler = null;
+      }
       return this;
     }
 
