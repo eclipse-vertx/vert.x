@@ -65,21 +65,30 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private Vertx vertx;
   private EventBus eb;
+  private boolean running;
 
   public void setUp() throws Exception {
     super.setUp();
     vertx = Vertx.vertx();
     eb = vertx.eventBus();
+    running = true;
   }
 
   protected void tearDown() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    vertx.close(ar -> {
-      assertTrue(ar.succeeded());
-      latch.countDown();
-    });
-    assertTrue(latch.await(30, TimeUnit.SECONDS));
+    closeVertx();
     super.tearDown();
+  }
+
+  private void closeVertx() throws Exception {
+    if (running) {
+      CountDownLatch latch = new CountDownLatch(1);
+      vertx.close(ar -> {
+        assertTrue(ar.succeeded());
+        latch.countDown();
+      });
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
+      running = false;
+    }
   }
 
   @Test
@@ -1381,6 +1390,27 @@ public class LocalEventBusTest extends EventBusTestBase {
           fail();
       }
     });
+    await();
+  }
+
+  @Test
+  public void testCloseCallsEndHandlerWithRegistrationContext() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
+    CountDownLatch registered = new CountDownLatch(1);
+    ctx.runOnContext(v1 -> {
+      MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+      consumer.endHandler(v2 -> {
+        assertSame(Vertx.currentContext(), ctx);
+        testComplete();
+      });
+      consumer.handler(msg -> {});
+      consumer.completionHandler(ar -> {
+        assertTrue(ar.succeeded());
+        registered.countDown();
+      });
+    });
+    awaitLatch(registered);
+    closeVertx();
     await();
   }
 }
