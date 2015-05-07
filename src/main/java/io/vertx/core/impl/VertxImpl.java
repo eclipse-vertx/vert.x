@@ -174,7 +174,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                 if (resultHandler != null) {
                   resultHandler.handle(Future.failedFuture(asyncResult.cause()));
                 } else {
-                  log.error(ar.cause());
+                  log.error(asyncResult.cause());
                 }
              }
             });
@@ -182,7 +182,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             if (resultHandler != null) {
               resultHandler.handle(Future.failedFuture(ar2.cause()));
             } else {
-              log.error(ar.cause());
+              log.error(ar2.cause());
             }
           }
         });
