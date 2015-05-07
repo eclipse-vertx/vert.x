@@ -229,6 +229,10 @@ public class Starter {
     boolean clustered = args.map.get("-cluster") != null || ha;
 
     Vertx vertx = startVertx(clustered, ha, args);
+    if (vertx == null) {
+      // Throwable should have been logged at this point
+      return;
+    }
 
     String sinstances = args.map.get("-instances");
     int instances;
