@@ -268,7 +268,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
         // Close all outbound connections explicitly - don't rely on context hooks
         for (ConnectionHolder holder: connections.values()) {
-          holder.close(false);
+          holder.close();
         }
         closeClusterManager(completionHandler);
       });
@@ -819,7 +819,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       client = new NetClientImpl(vertx, new NetClientOptions().setConnectTimeout(60 * 1000), false);
     }
 
-    void close(boolean failed) {
+    void close() {
       if (timeoutID != -1) {
         vertx.cancelTimer(timeoutID);
       }
@@ -845,7 +845,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         timeoutID = vertx.setTimer(pingReplyInterval, id2 -> {
           // Didn't get pong in time - consider connection dead
           log.warn("No pong from server " + serverID + " - will consider it dead");
-          close(true);
+          close();
         });
         MessageImpl pingMessage = new MessageImpl<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true);
         Buffer data = pingMessage.encodeToWire();
@@ -868,10 +868,10 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       this.socket = socket;
       connected = true;
       socket.exceptionHandler(t -> {
-        close(true);
+        close();
       });
       socket.closeHandler(v -> {
-        close(false);
+        close();
       });
       socket.handler(data -> {
         // Got a pong back
@@ -893,7 +893,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         if (res.succeeded()) {
           connected(res.result());
         } else {
-          close(true);
+          close();
         }
       });
     }
