@@ -1499,7 +1499,8 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
         String entryName = zipinfo.oldStyle ? removeTopDir(entry.getName()) : entry.getName();
         if (!entryName.isEmpty()) {
           if (entry.isDirectory()) {
-            if (!new File(directory, entryName).mkdir()) {
+            File entryFile = new File(directory, entryName);
+            if (!entryFile.exists() && !entryFile.mkdirs()) {
               throw new PlatformManagerException("Failed to create directory");
             }
           } else {
