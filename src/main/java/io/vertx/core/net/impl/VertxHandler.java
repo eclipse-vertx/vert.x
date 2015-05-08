@@ -72,7 +72,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     C conn = connectionMap.get(ch);
     if (conn != null) {
       ContextImpl context = getContext(conn);
-      context.executeSync(conn::handleInterestedOpsChanged);
+      context.executeFromIO(conn::handleInterestedOpsChanged);
     }
   }
 
@@ -83,7 +83,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     C connection = connectionMap.get(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
-      context.executeSync(() -> {
+      context.executeFromIO(() -> {
         try {
           if (ch.isOpen()) {
             ch.close();
@@ -103,7 +103,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     C connection = connectionMap.remove(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
-      context.executeSync(connection::handleClosed);
+      context.executeFromIO(connection::handleClosed);
     }
   }
 
@@ -112,7 +112,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     C conn = connectionMap.get(ctx.channel());
     if (conn != null) {
       ContextImpl context = getContext(conn);
-      context.executeSync(conn::endReadAndFlush);
+      context.executeFromIO(conn::endReadAndFlush);
     }
   }
 
@@ -124,7 +124,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     ContextImpl context;
     if (connection != null) {
       context = getContext(connection);
-      context.executeSync(connection::startRead);
+      context.executeFromIO(connection::startRead);
     } else {
       context = null;
     }

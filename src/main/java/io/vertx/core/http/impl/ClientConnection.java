@@ -172,7 +172,7 @@ class ClientConnection extends ConnectionBase {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       super.channelInactive(ctx);
-      context.executeSync(() -> {
+      context.executeFromIO(() -> {
         // if still handshaking this means we not got any response back from the server and so need to notify the client
         // about it as otherwise the client would never been notified.
         if (handshaking) {
@@ -183,7 +183,7 @@ class ClientConnection extends ConnectionBase {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      context.executeSync(() -> {
+      context.executeFromIO(() -> {
         synchronized (ClientConnection.this) {
           if (handshaker != null && handshaking) {
             if (msg instanceof HttpResponse) {

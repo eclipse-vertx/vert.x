@@ -92,8 +92,8 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isWorker()) {
-        throw new IllegalStateException("Cannot use NetServer in a worker verticle");
+      if (creatingContext.isMultiThreadedWorkerContext()) {
+        throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(this);
     }
@@ -433,7 +433,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     }
 
     private void connected(Channel ch, HandlerHolder<NetSocket> handler) {
-      handler.context.executeSync(() -> doConnected(ch, handler));
+      handler.context.executeFromIO(() -> doConnected(ch, handler));
     }
 
     private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {

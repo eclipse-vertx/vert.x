@@ -98,8 +98,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     this.vertx = vertx;
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isWorker()) {
-        throw new IllegalStateException("Cannot use HttpServer in a worker verticle");
+      if (creatingContext.isMultiThreadedWorkerContext()) {
+        throw new IllegalStateException("Cannot use HttpServer in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(this);
     }
@@ -555,12 +555,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     private void createConnAndHandle(HandlerHolder<HttpServerRequest> reqHandler, Channel ch, HttpRequest request,
                                      WebSocketServerHandshaker shake) {
-      // We need to set the context manually as this is executed directly, not via context.execute()
-      ContextImpl.setContext(reqHandler.context);
-      ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
-      conn.requestHandler(reqHandler.handler);
-      connectionMap.put(ch, conn);
-      conn.handleMessage(request);
+      reqHandler.context.executeFromIO(() -> {
+        ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
+        conn.requestHandler(reqHandler.handler);
+        connectionMap.put(ch, conn);
+        conn.handleMessage(request);
+      });
     }
 
     private void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
@@ -584,45 +584,46 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else {
 
-        // Set context manually
-        ContextImpl.setContext(wsHandler.context);
-        URI theURI;
-        try {
-          theURI = new URI(request.getUri());
-        } catch (URISyntaxException e2) {
-          throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
-        }
-
-        ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-          serverOrigin, shake, metrics);
-        wsConn.wsHandler(wsHandler.handler);
-
-        Runnable connectRunnable = () -> {
-          connectionMap.put(ch, wsConn);
+        wsHandler.context.executeFromIO(() -> {
+          URI theURI;
           try {
-            shake.handshake(ch, request);
-          } catch (WebSocketHandshakeException e) {
-            wsConn.handleException(e);
-          } catch (Exception e) {
-            log.error("Failed to generate shake response", e);
+            theURI = new URI(request.getUri());
+          } catch (URISyntaxException e2) {
+            throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
           }
-        };
 
-        ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
-          theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
-          connectRunnable, options.getMaxWebsocketFrameSize());
-        ws.metric = metrics.connected(wsConn.metric(), ws);
-        wsConn.handleWebsocketConnect(ws);
-        if (!ws.isRejected()) {
-          ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
-          if (handler != null) {
-            // remove compressor as its not needed anymore once connection was upgraded to websockets
-            ctx.pipeline().remove(handler);
+          ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
+            serverOrigin, shake, metrics);
+          wsConn.wsHandler(wsHandler.handler);
+
+          Runnable connectRunnable = () -> {
+            connectionMap.put(ch, wsConn);
+            try {
+              shake.handshake(ch, request);
+            } catch (WebSocketHandshakeException e) {
+              wsConn.handleException(e);
+            } catch (Exception e) {
+              log.error("Failed to generate shake response", e);
+            }
+          };
+
+          ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
+            theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
+            connectRunnable, options.getMaxWebsocketFrameSize());
+          ws.metric = metrics.connected(wsConn.metric(), ws);
+          wsConn.handleWebsocketConnect(ws);
+          if (!ws.isRejected()) {
+            ChannelHandler handler = ctx.pipeline().get(HttpChunkContentCompressor.class);
+            if (handler != null) {
+              // remove compressor as its not needed anymore once connection was upgraded to websockets
+              ctx.pipeline().remove(handler);
+            }
+            ws.connectNow();
+          } else {
+            ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
           }
-          ws.connectNow();
-        } else {
-          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
-        }
+        });
+
       }
     }
   }

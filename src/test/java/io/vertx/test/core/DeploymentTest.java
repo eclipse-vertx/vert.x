@@ -237,8 +237,8 @@ public class DeploymentTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, ar -> {
       assertDeployment(1, verticle, null, ar);
-      assertFalse(verticle.startContext.isMultiThreaded());
-      assertFalse(verticle.startContext.isWorker());
+      assertFalse(verticle.startContext.isMultiThreadedWorkerContext());
+      assertFalse(verticle.startContext.isWorkerContext());
       assertTrue(verticle.startContext.isEventLoopContext());
       testComplete();
     });
@@ -301,8 +301,8 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject conf = generateJSONObject();
     vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setWorker(true), ar -> {
       assertDeployment(1, verticle, conf, ar);
-      assertFalse(verticle.startContext.isMultiThreaded());
-      assertTrue(verticle.startContext.isWorker());
+      assertFalse(verticle.startContext.isMultiThreadedWorkerContext());
+      assertTrue(verticle.startContext.isWorkerContext());
       assertFalse(verticle.startContext.isEventLoopContext());
       vertx.undeploy(ar.result(), ar2 -> {
         assertTrue(ar2.succeeded());
@@ -319,8 +319,8 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject conf = generateJSONObject();
     vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setWorker(true).setMultiThreaded(true), ar -> {
       assertDeployment(1, verticle, conf, ar);
-      assertTrue(verticle.startContext.isMultiThreaded());
-      assertTrue(verticle.startContext.isWorker());
+      assertTrue(verticle.startContext.isMultiThreadedWorkerContext());
+      assertTrue(verticle.startContext.isWorkerContext());
       assertFalse(verticle.startContext.isEventLoopContext());
       vertx.undeploy(ar.result(), ar2 -> {
         assertTrue(ar2.succeeded());
@@ -328,6 +328,105 @@ public class DeploymentTest extends VertxTestBase {
         testComplete();
       });
     });
+    await();
+  }
+
+  @Test
+  public void testWorkerRightThread() throws Exception {
+    assertFalse(Context.isOnVertxThread());
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Context.isOnVertxThread());
+        assertTrue(Context.isOnWorkerThread());
+        assertFalse(Context.isOnEventLoopThread());
+      }
+
+      @Override
+      public void stop() throws Exception {
+        assertTrue(Context.isOnVertxThread());
+        assertTrue(Context.isOnWorkerThread());
+        assertFalse(Context.isOnEventLoopThread());
+      }
+    };
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true), onSuccess(res -> {
+      assertTrue(Context.isOnVertxThread());
+      assertFalse(Context.isOnWorkerThread());
+      assertTrue(Context.isOnEventLoopThread());
+      vertx.undeploy(res, onSuccess(res2 -> {
+        assertTrue(Context.isOnVertxThread());
+        assertFalse(Context.isOnWorkerThread());
+        assertTrue(Context.isOnEventLoopThread());
+        testComplete();
+      }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testMTWorkerRightThread() throws Exception {
+    assertFalse(Context.isOnVertxThread());
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Context.isOnVertxThread());
+        assertTrue(Context.isOnWorkerThread());
+        assertFalse(Context.isOnEventLoopThread());
+      }
+
+      @Override
+      public void stop() throws Exception {
+        assertTrue(Context.isOnVertxThread());
+        assertTrue(Context.isOnWorkerThread());
+        assertFalse(Context.isOnEventLoopThread());
+      }
+    };
+    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true).setMultiThreaded(true), onSuccess(res -> {
+      assertTrue(Context.isOnVertxThread());
+      assertFalse(Context.isOnWorkerThread());
+      assertTrue(Context.isOnEventLoopThread());
+      vertx.undeploy(res, onSuccess(res2 -> {
+        assertTrue(Context.isOnVertxThread());
+        assertFalse(Context.isOnWorkerThread());
+        assertTrue(Context.isOnEventLoopThread());
+        testComplete();
+      }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testStandardRightThread() throws Exception {
+    assertFalse(Context.isOnVertxThread());
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Context.isOnVertxThread());
+        assertFalse(Context.isOnWorkerThread());
+        assertTrue(Context.isOnEventLoopThread());
+      }
+
+      @Override
+      public void stop() throws Exception {
+        assertTrue(Context.isOnVertxThread());
+        assertFalse(Context.isOnWorkerThread());
+        assertTrue(Context.isOnEventLoopThread());
+      }
+    };
+    vertx.deployVerticle(verticle, onSuccess(res -> {
+      assertTrue(Context.isOnVertxThread());
+      assertFalse(Context.isOnWorkerThread());
+      assertTrue(Context.isOnEventLoopThread());
+      vertx.undeploy(res, onSuccess(res2 -> {
+        assertTrue(Context.isOnVertxThread());
+        assertFalse(Context.isOnWorkerThread());
+        assertTrue(Context.isOnEventLoopThread());
+        testComplete();
+      }));
+    }));
+
     await();
   }
 

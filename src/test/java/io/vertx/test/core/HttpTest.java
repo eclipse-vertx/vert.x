@@ -3952,6 +3952,61 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testInWorker() throws Exception {
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Vertx.currentContext().isWorkerContext());
+        assertTrue(Context.isOnWorkerThread());
+        HttpServer server1 = vertx.createHttpServer(new HttpServerOptions()
+          .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+        server1.requestHandler(req -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          req.response().end();
+        }).listen(onSuccess(s -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          HttpClient client = vertx.createHttpClient();
+          client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+            assertEquals(200, resp.statusCode());
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            testComplete();
+          });
+        }));
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testInMultithreadedWorker() throws Exception {
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Vertx.currentContext().isWorkerContext());
+        assertTrue(Vertx.currentContext().isMultiThreadedWorkerContext());
+        assertTrue(Context.isOnWorkerThread());
+        try {
+          vertx.createHttpServer();
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          vertx.createHttpClient();
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      }
+    }, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    await();
+  }
+
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
       req.response().setChunked(true);

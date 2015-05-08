@@ -72,7 +72,7 @@ public final class DnsClientImpl implements DnsClient {
   public DnsClientImpl(VertxInternal vertx, int port, String host) {
 
     ContextImpl creatingContext = vertx.getContext();
-    if (creatingContext != null && creatingContext.isMultiThreaded()) {
+    if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DnsClient in a multi-threaded worker verticle");
     }
 
@@ -289,7 +289,7 @@ public final class DnsClientImpl implements DnsClient {
     if (r.isComplete()) {
       return;
     }
-    actualCtx.executeSync(() -> {
+    actualCtx.executeFromIO(() -> {
       if (result instanceof Throwable) {
         r.fail((Throwable) result);
       } else {

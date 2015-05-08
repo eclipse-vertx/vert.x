@@ -103,7 +103,6 @@ public abstract class ContextImpl implements Context {
     }
   }
 
-
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
     if (closeHooksRun) {
       // Sanity check
@@ -146,9 +145,11 @@ public abstract class ContextImpl implements Context {
 
   protected abstract void executeAsync(Handler<Void> task);
 
+  @Override
   public abstract boolean isEventLoopContext();
 
-  public abstract boolean isMultiThreaded();
+  @Override
+  public abstract boolean isMultiThreadedWorkerContext();
 
   public abstract Map<String, Object> contextData();
 
@@ -168,12 +169,37 @@ public abstract class ContextImpl implements Context {
     return contextData().remove(key) != null;
   }
 
-  public boolean isWorker() {
+  @Override
+  public boolean isWorkerContext() {
     return !isEventLoopContext();
   }
 
-  // We should already be on the event loop, but check this anyway, then execute directly
-  public void executeSync(ContextTask task) {
+  public static boolean isOnWorkerThread() {
+    return isOnVertxThread(true);
+  }
+
+  public static boolean isOnEventLoopThread() {
+    return isOnVertxThread(false);
+  }
+
+  public static boolean isOnVertxThread() {
+    Thread t = Thread.currentThread();
+    return (t instanceof VertxThread);
+  }
+
+  private static boolean isOnVertxThread(boolean worker) {
+    Thread t = Thread.currentThread();
+    if (t instanceof VertxThread) {
+      VertxThread vt = (VertxThread)t;
+      return vt.isWorker() == worker;
+    }
+    return false;
+  }
+
+  // This is called to execute code where the origin is IO (from Netty probably).
+  // In such a case we should already be on an event loop thread (as Netty manages the event loops)
+  // but check this anyway, then execute directly
+  public void executeFromIO(ContextTask task) {
     checkCorrectThread();
     wrapTask(task, null, true).run();
   }

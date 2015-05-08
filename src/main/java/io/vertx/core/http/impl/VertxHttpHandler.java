@@ -68,7 +68,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
       }
     }
     if (connection != null) {
-      context.executeSync(() -> doMessageReceived(connection, chctx, msg));
+      context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
     } else {
       // We execute this directly as we don't have a context yet, the context will have to be set manually
       // inside doMessageReceived();

@@ -57,7 +57,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
           new DatagramSocketOptions(options)), vertx.getOrCreateContext(), vertx.metricsSPI().createMetrics(null, options));
     ContextImpl creatingContext = vertx.getContext();
-    if (creatingContext != null && creatingContext.isMultiThreaded()) {
+    if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
     }
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
@@ -306,7 +306,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
-    context.executeSync(() -> handler.handle(Future.failedFuture(cause)));
+    context.executeFromIO(() -> handler.handle(Future.failedFuture(cause)));
   }
 
   @Override
