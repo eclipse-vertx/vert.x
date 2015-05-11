@@ -281,7 +281,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Unregister all handlers explicitly - don't rely on context hooks
     for (Handlers handlers: handlerMap.values()) {
       for (HandlerHolder holder: handlers.list) {
-        holder.handler.unregister();
+        holder.handler.unregister(true);
       }
     }
   }
@@ -986,7 +986,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     private AsyncResult<Void> result;
     private Handler<AsyncResult<Void>> completionHandler;
     private Handler<Void> endHandler;
-    private Handler<Throwable> exceptionHandler;
     private Handler<Message<T>> discardHandler;
     private int maxBufferedMessages;
     private final Queue<Message<T>> pending = new ArrayDeque<>(8);
@@ -1033,17 +1032,21 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     @Override
     public synchronized void unregister() {
-      doUnregister(null);
+      unregister(false);
     }
 
     @Override
     public synchronized void unregister(Handler<AsyncResult<Void>> completionHandler) {
       Objects.requireNonNull(completionHandler);
-      doUnregister(completionHandler);
+      doUnregister(completionHandler, false);
     }
 
-    private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
-      if (endHandler != null) {
+    void unregister(boolean callEndHandler) {
+      doUnregister(null, callEndHandler);
+    }
+
+    private void doUnregister(Handler<AsyncResult<Void>> completionHandler, boolean callEndHandler) {
+      if (endHandler != null && callEndHandler) {
         Handler<Void> theEndHandler = endHandler;
         Handler<AsyncResult<Void>> handler = completionHandler;
         completionHandler = ar -> {
@@ -1166,7 +1169,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     @Override
     public synchronized MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
-      this.exceptionHandler = handler;
       return this;
     }
 
