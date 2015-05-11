@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,7 +40,7 @@ public abstract class ContextImpl implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
-  public final VertxInternal owner;
+  protected final VertxInternal owner;
   protected final String deploymentID;
   protected final JsonObject config;
   private Deployment deployment;
@@ -50,6 +51,7 @@ public abstract class ContextImpl implements Context {
   protected final Executor workerExec;
   protected VertxThread contextThread;
   private volatile boolean closeHooksRun;
+  private Map<String, Object> contextData;
 
   protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
@@ -151,8 +153,6 @@ public abstract class ContextImpl implements Context {
   @Override
   public abstract boolean isMultiThreadedWorkerContext();
 
-  public abstract Map<String, Object> contextData();
-
   @Override
   @SuppressWarnings("unchecked")
   public <T> T get(String key) {
@@ -245,6 +245,13 @@ public abstract class ContextImpl implements Context {
 
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(null, blockingCodeHandler, false, resultHandler);
+  }
+
+  protected synchronized Map<String, Object> contextData() {
+    if (contextData == null) {
+      contextData = new ConcurrentHashMap<>();
+    }
+    return contextData;
   }
 
   private <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler, boolean internal,
