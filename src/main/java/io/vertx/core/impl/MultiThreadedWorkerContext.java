@@ -37,7 +37,7 @@ public class MultiThreadedWorkerContext extends WorkerContext {
   }
 
   @Override
-  public boolean isMultiThreaded() {
+  public boolean isMultiThreadedWorkerContext() {
     return true;
   }
 }

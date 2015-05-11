@@ -44,7 +44,7 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  public boolean isMultiThreaded() {
+  public boolean isMultiThreadedWorkerContext() {
     return false;
   }
 
@@ -62,6 +62,15 @@ public class WorkerContext extends ContextImpl {
     }
     return contextData;
   }
+
+  // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
+  // so we need to execute it on the worker thread
+  @Override
+  public void executeFromIO(ContextTask task) {
+    workerExec.execute(wrapTask(task, null, true));
+  }
+
+
 
 
 }

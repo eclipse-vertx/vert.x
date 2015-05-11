@@ -16,35 +16,14 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.NetSocketStream;
-import io.vertx.core.net.NetworkOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
 import org.junit.Assume;
@@ -56,11 +35,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -69,7 +44,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -1698,7 +1674,7 @@ public class NetTest extends VertxTestBase {
           assertTrue(ctx instanceof EventLoopContext);
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createNetServer(new NetServerOptions().setPort(1234));
+        server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("localhost"));
         server.connectHandler(sock -> {
           sock.handler(buff -> {
             sock.write(buff);
@@ -1916,6 +1892,44 @@ public class NetTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testInWorker() throws Exception {
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Vertx.currentContext().isWorkerContext());
+        assertTrue(Context.isOnWorkerThread());
+        final Context context = Vertx.currentContext();
+        NetServer server1 = vertx.createNetServer(new NetServerOptions().setHost("localhost").setPort(1234));
+        server1.connectHandler(conn -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          assertSame(context, Vertx.currentContext());
+          conn.handler(conn::write);
+        }).listen(onSuccess(s -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          assertSame(context, Vertx.currentContext());
+          NetClient client = vertx.createNetClient();
+          client.connect(1234, "localhost", onSuccess(res -> {
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            assertSame(context, Vertx.currentContext());
+            res.write("foo");
+            res.handler(buff -> {
+              assertTrue(Vertx.currentContext().isWorkerContext());
+              assertTrue(Context.isOnWorkerThread());
+              assertSame(context, Vertx.currentContext());
+              testComplete();
+            });
+          }));
+        }));
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);

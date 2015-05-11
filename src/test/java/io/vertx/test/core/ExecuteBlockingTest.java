@@ -76,9 +76,12 @@ public class ExecuteBlockingTest extends VertxTestBase {
 
     vertx.runOnContext(v -> {
       Context ctx = vertx.getOrCreateContext();
+      assertTrue(ctx.isEventLoopContext());
       vertx.executeBlocking(future -> {
         assertSame(ctx, vertx.getOrCreateContext());
         assertTrue(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
+        assertTrue(Context.isOnWorkerThread());
+        assertFalse(Context.isOnEventLoopThread());
         try {
           Thread.sleep(1000);
         } catch (Exception ignore) {
@@ -86,11 +89,15 @@ public class ExecuteBlockingTest extends VertxTestBase {
         vertx.runOnContext(v2 -> {
           assertSame(ctx, vertx.getOrCreateContext());
           assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
+          assertFalse(Context.isOnWorkerThread());
+          assertTrue(Context.isOnEventLoopThread());
           future.complete("done!");
         });
       }, onSuccess(res -> {
         assertSame(ctx, vertx.getOrCreateContext());
         assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
+        assertFalse(Context.isOnWorkerThread());
+        assertTrue(Context.isOnEventLoopThread());
         assertEquals("done!", res);
         testComplete();
       }));

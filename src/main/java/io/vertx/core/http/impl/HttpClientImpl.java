@@ -98,8 +98,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       completionHandler.handle(Future.succeededFuture());
     };
     if (creatingContext != null) {
-      if (creatingContext.isWorker()) {
-        throw new IllegalStateException("Cannot use HttpClient in a worker verticle");
+      if (creatingContext.isMultiThreadedWorkerContext()) {
+        throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(closeHook);
     }
@@ -725,7 +725,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
                          Handler<Throwable> exceptionHandler,
                          ConnectionLifeCycleListener listener) {
-    context.executeSync(() -> createConn(context, port, host, ch, connectHandler, exceptionHandler, listener));
+    context.executeFromIO(() -> createConn(context, port, host, ch, connectHandler, exceptionHandler, listener));
   }
 
   private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
@@ -750,7 +750,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Handler<Throwable> exHandler =
       connectionExceptionHandler == null ? log::error : connectionExceptionHandler;
 
-    context.executeSync(() -> {
+    context.executeFromIO(() -> {
       listener.connectionClosed(null);
       try {
         ch.close();

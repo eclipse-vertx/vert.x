@@ -47,7 +47,7 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
   @SuppressWarnings("unchecked")
   @Override
   protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
-    context.executeSync(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
+    context.executeFromIO(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
   }
 
   @Override

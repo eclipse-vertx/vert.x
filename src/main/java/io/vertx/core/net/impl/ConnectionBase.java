@@ -164,7 +164,7 @@ public abstract class ConnectionBase {
   protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
     if (future != null) {
       future.addListener(channelFuture -> {
-        context.executeSync(() -> {
+        context.executeFromIO(() -> {
           if (completionHandler != null) {
             if (channelFuture.isSuccess()) {
               completionHandler.handle(Future.succeededFuture());

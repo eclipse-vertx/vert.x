@@ -81,8 +81,8 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     if (useCreatingContext) {
       creatingContext = vertx.getContext();
       if (creatingContext != null) {
-        if (creatingContext.isWorker()) {
-          throw new IllegalStateException("Cannot use NetClient in a worker verticle");
+        if (creatingContext.isMultiThreadedWorkerContext()) {
+          throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
         }
         creatingContext.addCloseHook(closeHook);
       }
@@ -199,7 +199,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
         }
       } else {
         if (remainingAttempts > 0 || remainingAttempts == -1) {
-          context.executeSync(() -> {
+          context.executeFromIO(() -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid -> {
@@ -215,7 +215,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
-    context.executeSync(() -> doConnected(context, ch, connectHandler));
+    context.executeFromIO(() -> doConnected(context, ch, connectHandler));
   }
 
   private void doConnected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
@@ -226,7 +226,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
 
   private void failed(ContextImpl context, Channel ch, Throwable t, Handler<AsyncResult<NetSocket>> connectHandler) {
     ch.close();
-    context.executeSync(() -> doFailed(connectHandler, t));
+    context.executeFromIO(() -> doFailed(connectHandler, t));
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {

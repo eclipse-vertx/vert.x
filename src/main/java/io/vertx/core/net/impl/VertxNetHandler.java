@@ -39,7 +39,7 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
   protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
       ByteBuf buf = (ByteBuf) msg;
-      context.executeSync(() -> sock.handleDataReceived(Buffer.buffer(buf)));
+      context.executeFromIO(() -> sock.handleDataReceived(Buffer.buffer(buf)));
     } else {
       // just discard
     }
