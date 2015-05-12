@@ -174,7 +174,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       public void handle(AsyncResult<Void> ar) {
         assertTrue(ar.succeeded());
         if (registerCount.incrementAndGet() == 2) {
-          vertices[0].eventBus().publish(ADDRESS1, (T)val);
+          vertices[0].eventBus().publish(ADDRESS1, val);
         }
       }
     }
