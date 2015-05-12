@@ -44,7 +44,7 @@ public class PackageHelper {
   public List<JavaFileObject> find(String packageName) throws IOException {
     String javaPackageName = packageName.replaceAll("\\.", "/");
 
-    List<JavaFileObject> result = new ArrayList<JavaFileObject>();
+    List<JavaFileObject> result = new ArrayList<>();
 
     Enumeration<URL> urlEnumeration = classLoader.getResources(javaPackageName);
     while (urlEnumeration.hasMoreElements()) {
@@ -66,7 +66,7 @@ public class PackageHelper {
   }
 
   private static List<JavaFileObject> browseDir(String packageName, File directory) {
-    List<JavaFileObject> result = new ArrayList<JavaFileObject>();
+    List<JavaFileObject> result = new ArrayList<>();
     for (File childFile : directory.listFiles()) {
       if (childFile.isFile() && childFile.getName().endsWith(CLASS_FILE)) {
         String binaryName = packageName + "." + childFile.getName().replaceAll(CLASS_FILE + "$", "");
@@ -77,7 +77,7 @@ public class PackageHelper {
   }
 
   private static List<JavaFileObject> browseJar(URL packageFolderURL) {
-    List<JavaFileObject> result = new ArrayList<JavaFileObject>();
+    List<JavaFileObject> result = new ArrayList<>();
     try {
       String jarUri = packageFolderURL.toExternalForm().split("!")[0];
       JarURLConnection jarConn = (JarURLConnection) packageFolderURL.openConnection();

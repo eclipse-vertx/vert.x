@@ -205,7 +205,7 @@ class ServerConnection extends ConnectionBase {
 
   NetSocket createNetSocket() {
     NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics);
-    Map<Channel, NetSocketImpl> connectionMap = new HashMap<Channel, NetSocketImpl>(1);
+    Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
     // Flush out all pending data
