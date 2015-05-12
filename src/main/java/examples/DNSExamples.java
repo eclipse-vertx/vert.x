@@ -70,7 +70,7 @@ public class DNSExamples {
     client.resolveA("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
-        for (String record: records) {
+        for (String record : records) {
           System.out.println(record);
         }
       } else {
@@ -84,7 +84,7 @@ public class DNSExamples {
     client.resolveAAAA("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
-        for (String record: records) {
+        for (String record : records) {
           System.out.println(record);
         }
       } else {
@@ -98,7 +98,7 @@ public class DNSExamples {
     client.resolveCNAME("vertx.io", ar -> {
       if (ar.succeeded()) {
         List<String> records = ar.result();
-        for (String record: records) {
+        for (String record : records) {
           System.out.println(record);
         }
       } else {
@@ -121,12 +121,7 @@ public class DNSExamples {
     });
   }
 
-  private static MxRecord getMxRecord() {
-    return null;
-  }
-
-  public void example9() {
-    MxRecord record = getMxRecord();
+  public void example9(MxRecord record) {
     record.priority();
     record.name();
   }
@@ -177,8 +172,7 @@ public class DNSExamples {
     return null;
   }
 
-  public void example13() {
-    SrvRecord record = getSrvRecord();
+  public void example13(SrvRecord record) {
     record.priority();
     record.name();
     record.weight();

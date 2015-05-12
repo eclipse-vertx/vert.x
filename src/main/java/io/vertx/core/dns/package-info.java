@@ -164,7 +164,7 @@
  * Be aware that the List will contain the SrvRecords sorted by the priority of them, which means SrvRecords
  * with smaller priority coming first in the List.
  *
- * The SrvRecord allows you to access all informations contained in the SRV record itself:
+ * The {@link io.vertx.core.dns.SrvRecord} allows you to access all informations contained in the SRV record itself:
  *
  * [source,$lang]
  * ----
