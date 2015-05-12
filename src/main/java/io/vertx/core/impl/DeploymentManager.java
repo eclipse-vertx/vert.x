@@ -631,19 +631,17 @@ public class DeploymentManager {
     }
 
     private void doStartRedeployTimer() {
-      redeployTimerID = vertx.setTimer(options.getRedeployScanPeriod(), tid -> {
-        vertx.executeBlockingInternal(redeployer, res -> {
-          if (res.succeeded()) {
-            if (res.result()) {
-              doRedeploy();
-            } else if (!undeployed || broken) {
-              doStartRedeployTimer();
-            }
-          } else {
-            log.error("Failure in redeployer", res.cause());
+      redeployTimerID = vertx.setTimer(options.getRedeployScanPeriod(), tid -> vertx.executeBlockingInternal(redeployer, res -> {
+        if (res.succeeded()) {
+          if (res.result()) {
+            doRedeploy();
+          } else if (!undeployed || broken) {
+            doStartRedeployTimer();
           }
-        });
-      });
+        } else {
+          log.error("Failure in redeployer", res.cause());
+        }
+      }));
     }
 
     private void doRedeploy() {

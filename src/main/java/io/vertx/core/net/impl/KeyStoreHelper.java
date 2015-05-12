@@ -56,7 +56,7 @@ public abstract class KeyStoreHelper {
       if (jks.getPath() != null) {
         value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(jks.getPath()).getAbsolutePath());
       } else if (jks.getValue() != null) {
-        value = () -> jks.getValue();
+        value = jks::getValue;
       } else {
         return null;
       }
@@ -67,7 +67,7 @@ public abstract class KeyStoreHelper {
       if (pkcs12.getPath() != null) {
         value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(pkcs12.getPath()).getAbsolutePath());
       } else if (pkcs12.getValue() != null) {
-        value = () -> pkcs12.getValue();
+        value = pkcs12::getValue;
       } else {
         return null;
       }

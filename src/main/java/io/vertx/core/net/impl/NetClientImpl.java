@@ -202,10 +202,10 @@ public class NetClientImpl implements NetClient, MetricsProvider {
           context.executeFromIO(() -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
-            vertx.setTimer(options.getReconnectInterval(), tid -> {
+            vertx.setTimer(options.getReconnectInterval(), tid ->
               connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                - 1);
-            });
+                - 1)
+            );
           });
         } else {
           failed(context, ch, channelFuture.cause(), connectHandler);

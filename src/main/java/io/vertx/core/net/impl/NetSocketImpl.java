@@ -250,15 +250,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       sslHandler = helper.createSslHandler(vertx, client);
       channel.pipeline().addFirst(sslHandler);
     }
-    sslHandler.handshakeFuture().addListener(future -> {
-      context.executeFromIO(() -> {
-        if (future.isSuccess()) {
-          handler.handle(null);
-        } else {
-          log.error(future.cause());
-        }
-      });
-    });
+    sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
+      if (future.isSuccess()) {
+        handler.handle(null);
+      } else {
+        log.error(future.cause());
+      }
+    }));
     return this;
   }
 
