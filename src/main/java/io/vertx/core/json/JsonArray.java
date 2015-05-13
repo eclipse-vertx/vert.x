@@ -400,6 +400,18 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Appends all of the elements in the specified array to the end of this JSON array.
+   *
+   * @param array the array
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonArray addAll(JsonArray array) {
+    Objects.requireNonNull(array);
+    list.addAll(array.list);
+    return this;
+  }
+
+  /**
    * Does the JSON array contain the specified value? This method will scan the entire array until it finds a value
    * or reaches the end.
    *
