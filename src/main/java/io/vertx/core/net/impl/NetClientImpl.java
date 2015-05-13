@@ -104,11 +104,15 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       for (NetSocket sock : socketMap.values()) {
         sock.close();
       }
-      if (creatingContext != null) {
-        creatingContext.removeCloseHook(closeHook);
-      }
       closed = true;
-      metrics.close();
+      if (creatingContext != null) {
+        creatingContext.runOnContext(v -> {
+          metrics.close();
+        });
+        creatingContext.removeCloseHook(closeHook);
+      } else {
+        metrics.close();
+      }
     }
   }
 

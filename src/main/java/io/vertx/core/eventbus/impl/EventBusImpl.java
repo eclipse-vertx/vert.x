@@ -261,6 +261,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
     unregisterAllHandlers();
+    if (metrics != null) {
+      metrics.close();
+    }
     if (server != null) {
       server.close(ar -> {
         if (ar.failed()) {
@@ -574,12 +577,20 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       }
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
-        subs.add(address, serverID, registration::setResult);
+        subs.add(address, serverID, ar -> {
+          holder.context.runOnContext(v -> {
+            registration.setResult(ar);
+          });
+        });
       } else {
-        registration.setResult(Future.succeededFuture());
+        holder.context.runOnContext(v -> {
+          registration.setResult(Future.succeededFuture());
+        });
       }
     } else {
-      registration.setResult(Future.succeededFuture());
+      holder.context.runOnContext(v -> {
+        registration.setResult(Future.succeededFuture());
+      });
     }
 
     handlers.list.add(holder);
@@ -772,7 +783,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
       }
       if (unregisterMetric) {
-        metrics.handlerUnregistered(handler.metric);
+        context.runOnContext(v -> {
+          metrics.handlerUnregistered(handler.metric);
+        });
       }
     }
 
@@ -991,6 +1004,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     private final Queue<Message<T>> pending = new ArrayDeque<>(8);
     private boolean paused;
     private Object metric;
+    private Context context;
 
     public HandlerRegistration(String address, boolean replyHandler, boolean localOnly, long timeoutID) {
       this.address = address;
@@ -1065,8 +1079,12 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       registered = false;
     }
 
+    /**
+     * This method must be invoked the handler registration context/thread.
+     */
     private synchronized void setResult(AsyncResult<Void> result) {
       this.result = result;
+      this.context = Vertx.currentContext();
       if (completionHandler != null) {
         if (result.succeeded()) {
           metric = metrics.handlerRegistered(address, replyHandler);

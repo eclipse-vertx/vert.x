@@ -22,7 +22,12 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.SocketAddress;
 
 /**
- * The http client metrics SPI that Vert.x will use to call when http client events occur.
+ * The http client metrics SPI that Vert.x will use to call when http client events occur.<p/>
+ *
+ * All the methods on this object including the methods inherited from the super interfaces are invoked
+ * with {@link io.vertx.core.Context} and thread of the http client and therefore are the same than
+ * the {@link io.vertx.core.spi.metrics.VertxMetrics} {@code createMetrics} method that created and returned
+ * this metrics object.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */

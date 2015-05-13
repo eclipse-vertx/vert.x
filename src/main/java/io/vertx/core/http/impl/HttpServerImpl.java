@@ -407,7 +407,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     if (metrics != null) {
-      metrics.close();
+      listenContext.runOnContext(v -> {
+        metrics.close();
+      });
     }
 
     ChannelGroupFuture fut = serverChannelGroup.close();

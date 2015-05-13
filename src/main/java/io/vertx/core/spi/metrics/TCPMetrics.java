@@ -20,7 +20,12 @@ import io.vertx.core.net.SocketAddress;
 
 /**
  * An SPI used internally by Vert.x to gather metrics on a net socket which serves
- * as a base class for things like HttpServer and HttpClient, all of which serve TCP connections.
+ * as a base class for things like HttpServer and HttpClient, all of which serve TCP connections.<p/>
+ *
+ * All the methods on this object including the methods inherited from the super interfaces are invoked
+ * with {@link io.vertx.core.Context} and thread of the http server and therefore are the same than
+ * the {@link io.vertx.core.spi.metrics.VertxMetrics} {@code createMetrics} method that created and returned
+ * this metrics object.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
