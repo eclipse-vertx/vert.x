@@ -23,7 +23,7 @@ import io.vertx.core.net.SocketAddress;
  * as a base class for things like HttpServer and HttpClient, all of which serve TCP connections.<p/>
  *
  * All the methods on this object including the methods inherited from the super interfaces are invoked
- * with {@link io.vertx.core.Context} and thread of the http server and therefore are the same than
+ * with {@link io.vertx.core.Context} and thread of the tcp server/client and therefore are the same than
  * the {@link io.vertx.core.spi.metrics.VertxMetrics} {@code createMetrics} method that created and returned
  * this metrics object.
  *

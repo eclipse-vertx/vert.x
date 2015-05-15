@@ -22,7 +22,7 @@ import io.vertx.core.net.SocketAddress;
  * The datagram/udp metrics SPI which Vert.x will use to call when each event occurs pertaining to datagram sockets.<p/>
  *
  * All the methods on this object including the methods inherited from the super interfaces are invoked
- * with {@link io.vertx.core.Context} and thread of the http client and therefore are the same than
+ * with {@link io.vertx.core.Context} and thread of the datagram socket and therefore are the same than
  * the {@link io.vertx.core.spi.metrics.VertxMetrics} {@code createMetrics} method that created and returned
  * this metrics object.
  *
