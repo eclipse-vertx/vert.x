@@ -18,6 +18,7 @@ package io.vertx.core.json;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.impl.Json;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
@@ -783,20 +784,20 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   @Override
-  public Buffer writeToBuffer() {
+  public void writeToBuffer(Buffer buffer) {
     String encoded = encode();
-    byte[] bytes = encoded.getBytes();
-    Buffer buffer = Buffer.buffer(bytes.length + 4);
+    byte[] bytes = encoded.getBytes(Utils.UTF8);
     buffer.appendInt(bytes.length);
     buffer.appendBytes(bytes);
-    return buffer;
   }
 
   @Override
-  public void readFromBuffer(Buffer buffer) {
-    int length = buffer.getInt(0);
-    String encoded = buffer.getString(4, 4 + length);
+  public int readFromBuffer(int pos, Buffer buffer) {
+    int length = buffer.getInt(pos);
+    int start = pos + 4;
+    String encoded = buffer.getString(start, start + length);
     fromJson(encoded);
+    return pos + length + 4;
   }
 
   private void fromJson(String json) {

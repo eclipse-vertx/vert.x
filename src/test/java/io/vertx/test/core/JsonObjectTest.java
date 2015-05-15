@@ -1409,9 +1409,10 @@ public class JsonObjectTest {
   @Test
   public void testClusterSerializable() {
     jsonObject.put("foo", "bar").put("blah", 123);
-    Buffer buff = jsonObject.writeToBuffer();
+    Buffer buff = Buffer.buffer();
+    jsonObject.writeToBuffer(buff);
     JsonObject deserialized = new JsonObject();
-    deserialized.readFromBuffer(buff);
+    deserialized.readFromBuffer(0, buff);
     assertEquals(jsonObject, deserialized);
   }
 

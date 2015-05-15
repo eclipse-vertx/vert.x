@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.Utils;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -49,8 +50,12 @@ public class BufferImpl implements Buffer {
     this(str.getBytes(Charset.forName(Objects.requireNonNull(enc))));
   }
 
+  BufferImpl(String str, Charset cs) {
+    this(str.getBytes(cs));
+  }
+
   BufferImpl(String str) {
-    this(str, "UTF-8");
+    this(str, Utils.UTF8);
   }
 
   BufferImpl(ByteBuf buffer) {
@@ -58,7 +63,7 @@ public class BufferImpl implements Buffer {
   }
 
   public String toString() {
-    return buffer.toString(Charset.forName("UTF-8"));
+    return buffer.toString(Utils.UTF8);
   }
 
   public String toString(String enc) {
@@ -114,8 +119,7 @@ public class BufferImpl implements Buffer {
 
   public String getString(int start, int end) {
     byte[] bytes = getBytes(start, end);
-    Charset cs = Charset.forName("UTF-8");
-    return new String(bytes, cs);
+    return new String(bytes, Utils.UTF8);
   }
 
   public Buffer appendBuffer(Buffer buff) {
@@ -316,12 +320,16 @@ public class BufferImpl implements Buffer {
   }
 
   @Override
-  public Buffer writeToBuffer() {
-    return this;
+  public void writeToBuffer(Buffer buff) {
+    buff.appendInt(this.length());
+    buff.appendBuffer(this);
   }
 
   @Override
-  public void readFromBuffer(Buffer buffer) {
-    this.buffer = buffer.getByteBuf();
+  public int readFromBuffer(int pos, Buffer buffer) {
+    int len = buffer.getInt(pos);
+    Buffer b = buffer.getBuffer(pos + 4, pos + 4 + len);
+    this.buffer = b.getByteBuf();
+    return pos + 4 + len;
   }
 }
