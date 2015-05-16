@@ -583,7 +583,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       creatingContext.removeCloseHook(closeHook);
     }
     closed = true;
-    metrics.close();
+    if (creatingContext != null) {
+      creatingContext.runOnContext(v -> {
+        metrics.close();
+      });
+    } else {
+      metrics.close();
+    }
   }
 
   @Override

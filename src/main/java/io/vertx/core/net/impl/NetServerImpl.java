@@ -204,7 +204,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
               NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
-              metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
+              listenContext.runOnContext(v -> {
+                metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
+              });
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -229,7 +231,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
-        metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
+        listenContext.runOnContext(v -> {
+          metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
+        });
         if (connectStream.handler() != null) {
           actualServer.handlerManager.addHandler(connectStream.handler(), listenContext);
         }
