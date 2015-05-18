@@ -583,9 +583,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
           });
         });
       } else {
-        holder.context.runOnContext(v -> {
-          registration.setResult(Future.succeededFuture());
-        });
+        registration.setResult(Future.succeededFuture());
       }
     } else {
       holder.context.runOnContext(v -> {
