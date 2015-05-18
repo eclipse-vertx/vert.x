@@ -3968,7 +3968,7 @@ public class HttpTest extends HttpTestBase {
           req.handler(buf::appendBuffer);
           req.endHandler(v -> {
             assertEquals("hello", buf.toString());
-            req.response().end();
+            req.response().end("bye");
           });
         }).listen(onSuccess(s -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
@@ -3978,7 +3978,12 @@ public class HttpTest extends HttpTestBase {
             assertEquals(200, resp.statusCode());
             assertTrue(Vertx.currentContext().isWorkerContext());
             assertTrue(Context.isOnWorkerThread());
-            testComplete();
+            resp.handler(buf -> {
+              assertEquals("bye", buf.toString());
+              resp.endHandler(v -> {
+                testComplete();
+              });
+            });
           }).setChunked(true).write(Buffer.buffer("hello")).end();
         }));
       }
