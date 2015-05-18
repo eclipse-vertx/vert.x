@@ -84,7 +84,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the event bus metrics SPI when the event bus is created.<p/>
    *
    * This method is invoked with no specific thread or {@link io.vertx.core.Context}, the context might
-   * event be null.
+   * event be null.<p/>
+   *
+   * This method should be called only once.
    *
    * @param eventBus the Vert.x event bus
    * @return the event bus metrics SPI
@@ -95,7 +97,10 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the http server metrics SPI when an http server is created.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the http server and therefore
-   * might be  different on every invocation.
+   * might be  different on every invocation.<p/>
+   *
+   * Note: this method can be called more than one time for the same {@code localAddress} when a server is
+   * scaled, it is the responsibility of the metrics implementation to eventually merge metrics.
    *
    * @param server the Vert.x http server
    * @param localAddress localAddress the local address the net socket is listening on
@@ -120,8 +125,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the net server metrics SPI when a net server is created.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the net server and therefore
-   * might be  different on every invocation.
+   * might be  different on every invocation.<p/>
    *
+   * Note: this method can be called more than one time for the same {@code localAddress} when a server is
+   * scaled, it is the responsibility of the metrics implementation to eventually merge metrics.
+   * 
    * @param server the Vert.x net server
    * @param localAddress localAddress the local address the net socket is listening on
    * @param options the options used to create the {@link io.vertx.core.net.NetServer}
