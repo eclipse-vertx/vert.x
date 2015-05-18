@@ -555,10 +555,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     private void createConnAndHandle(HandlerHolder<HttpServerRequest> reqHandler, Channel ch, HttpRequest request,
                                      WebSocketServerHandshaker shake) {
+      ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
+      conn.requestHandler(reqHandler.handler);
+      connectionMap.put(ch, conn);
       reqHandler.context.executeFromIO(() -> {
-        ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
-        conn.requestHandler(reqHandler.handler);
-        connectionMap.put(ch, conn);
         conn.handleMessage(request);
       });
     }

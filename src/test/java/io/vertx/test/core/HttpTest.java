@@ -3964,17 +3964,22 @@ public class HttpTest extends HttpTestBase {
         server1.requestHandler(req -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
-          req.response().end();
+          Buffer buf = Buffer.buffer();
+          req.handler(buf::appendBuffer);
+          req.endHandler(v -> {
+            assertEquals("hello", buf.toString());
+            req.response().end();
+          });
         }).listen(onSuccess(s -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           HttpClient client = vertx.createHttpClient();
-          client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+          client.put(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
             assertEquals(200, resp.statusCode());
             assertTrue(Vertx.currentContext().isWorkerContext());
             assertTrue(Context.isOnWorkerThread());
             testComplete();
-          });
+          }).setChunked(true).write(Buffer.buffer("hello")).end();
         }));
       }
     }, new DeploymentOptions().setWorker(true));
