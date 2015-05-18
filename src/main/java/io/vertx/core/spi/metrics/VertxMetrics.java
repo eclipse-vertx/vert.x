@@ -45,7 +45,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * Called when a verticle is deployed in Vert.x .<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the deployed verticle and therefore
-   * are different on every invocation.
+   * might be  different on every invocation.
    *
    * @param verticle the verticle which was deployed
    */
@@ -55,7 +55,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * Called when a verticle is undeployed in Vert.x .<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the deployed verticle and therefore
-   * are different on every invocation, however these are the same than the {@link #verticleDeployed} invocation.
+   * might be  different on every invocation, however these are the same than the {@link #verticleDeployed} invocation.
    *
    * @param verticle the verticle which was undeployed
    */
@@ -95,7 +95,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the http server metrics SPI when an http server is created.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the http server and therefore
-   * are different on every invocation.
+   * might be  different on every invocation.
    *
    * @param server the Vert.x http server
    * @param localAddress localAddress the local address the net socket is listening on
@@ -108,7 +108,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the http client metrics SPI when an http client has been created.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the http client and therefore
-   * are different on every invocation.
+   * might be  different on every invocation.
    *
    * @param client the Vert.x http client
    * @param options the options used to create the {@link io.vertx.core.http.HttpClient}
@@ -120,7 +120,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the net server metrics SPI when a net server is created.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the net server and therefore
-   * are different on every invocation.
+   * might be  different on every invocation.
    *
    * @param server the Vert.x net server
    * @param localAddress localAddress the local address the net socket is listening on
@@ -133,7 +133,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the net client metrics SPI when a net client is created.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the net client and therefore
-   * are different on every invocation.
+   * might be  different on every invocation.
    *
    * @param client the Vert.x net client
    * @param options the options used to create the {@link io.vertx.core.net.NetClient}
@@ -145,7 +145,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * Provides the datagram/udp metrics SPI when a datagram socket is created.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the datagram socket and therefore
-   * are different on every invocation.
+   * might be  different on every invocation.
    *
    * @param socket the Vert.x datagram socket
    * @param options the options used to create the {@link io.vertx.core.datagram.DatagramSocket}

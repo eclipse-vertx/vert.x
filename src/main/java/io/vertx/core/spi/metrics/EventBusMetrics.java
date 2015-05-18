@@ -29,7 +29,7 @@ public interface EventBusMetrics<H> extends Metrics {
    * Called when a handler is registered on the event bus.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
-   * are different on every invocation.
+   * might be different on every invocation.
    *
    * @param address the address used to register the handler
    * @param replyHandler true when the handler is a reply handler
