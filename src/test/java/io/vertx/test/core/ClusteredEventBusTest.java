@@ -26,7 +26,9 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -397,4 +399,29 @@ public class ClusteredEventBusTest extends EventBusTestBase {
 
   }
 
+  @Test
+  public void sendNoContext() throws Exception {
+    int size = 1000;
+    ConcurrentLinkedDeque<Integer> expected = new ConcurrentLinkedDeque<>();
+    ConcurrentLinkedDeque<Integer> obtained = new ConcurrentLinkedDeque<>();
+    startNodes(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[1].eventBus().<Integer>consumer(ADDRESS1, msg -> {
+      obtained.add(msg.body());
+      if (obtained.size() == expected.size()) {
+        assertEquals(new ArrayList<>(expected), new ArrayList<>(obtained));
+        testComplete();
+      }
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    latch.await();
+    EventBus bus = vertices[0].eventBus();
+    for (int i = 0;i < size;i++) {
+      expected.add(i);
+      bus.send(ADDRESS1, i);
+    }
+    await();
+  }
 }

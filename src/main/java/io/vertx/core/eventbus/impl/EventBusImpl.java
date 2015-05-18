@@ -92,6 +92,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private final MessageCodec[] systemCodecs;
   private final ServerID serverID;
   private final NetServer server;
+  private final Context sendNoContext;
   private volatile boolean sendPong = true;
 
   public EventBusImpl(VertxInternal vertx) {
@@ -106,6 +107,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     this.haManager = null;
     this.metrics = vertx.metricsSPI().createMetrics(this);
     this.systemCodecs = systemCodecs();
+    this.sendNoContext = vertx.getOrCreateContext();
   }
 
   public EventBusImpl(VertxInternal vertx, long pingInterval, long pingReplyInterval, ClusterManager clusterManager,
@@ -122,6 +124,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     this.systemCodecs = systemCodecs();
     this.serverID = serverID;
     this.server = server.netServer;
+    this.sendNoContext = vertx.getOrCreateContext();
     setServerHandler(server);
     addFailoverCompleteHandler();
   }
@@ -509,7 +512,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (subs != null) {
         long fTimeoutID = timeoutID;
         Handler<Message<T>> fSimpleReplyHandler = simpleReplyHandler;
-        subs.get(message.address(), asyncResult -> {
+        Handler<AsyncResult<ChoosableIterable<ServerID>>> resultHandler = asyncResult -> {
           if (asyncResult.succeeded()) {
             ChoosableIterable<ServerID> serverIDs = asyncResult.result();
             if (serverIDs != null && !serverIDs.isEmpty()) {
@@ -521,7 +524,15 @@ public class EventBusImpl implements EventBus, MetricsProvider {
           } else {
             log.error("Failed to send message", asyncResult.cause());
           }
-        });
+        };
+        if (Vertx.currentContext() == null) {
+          // Guarantees the order when there is no current context
+          sendNoContext.runOnContext(v -> {
+            subs.get(message.address(), resultHandler);
+          });
+        } else {
+          subs.get(message.address(), resultHandler);
+        }
       } else {
         // Not clustered
         metrics.messageSent(message.address(), !message.send(), true, false);
