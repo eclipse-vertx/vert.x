@@ -16,8 +16,6 @@
 
 package io.vertx.core.impl;
 
-import java.nio.charset.Charset;
-
 /**
  * Simple generic utility methods and constants
  *
@@ -42,5 +40,4 @@ public class Utils {
     return isWindows;
   }
 
-  public static Charset UTF8 = Charset.forName("UTF-8");
 }

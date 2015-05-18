@@ -18,18 +18,11 @@ package io.vertx.core.json;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Utils;
 import io.vertx.core.json.impl.Json;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -786,7 +779,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   @Override
   public void writeToBuffer(Buffer buffer) {
     String encoded = encode();
-    byte[] bytes = encoded.getBytes(Utils.UTF8);
+    byte[] bytes = encoded.getBytes(StandardCharsets.UTF_8);
     buffer.appendInt(bytes.length);
     buffer.appendBytes(bytes);
   }

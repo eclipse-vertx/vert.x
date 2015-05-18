@@ -21,10 +21,10 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.Utils;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -55,7 +55,7 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(String str) {
-    this(str, Utils.UTF8);
+    this(str, StandardCharsets.UTF_8);
   }
 
   BufferImpl(ByteBuf buffer) {
@@ -63,7 +63,7 @@ public class BufferImpl implements Buffer {
   }
 
   public String toString() {
-    return buffer.toString(Utils.UTF8);
+    return buffer.toString(StandardCharsets.UTF_8);
   }
 
   public String toString(String enc) {
@@ -119,7 +119,7 @@ public class BufferImpl implements Buffer {
 
   public String getString(int start, int end) {
     byte[] bytes = getBytes(start, end);
-    return new String(bytes, Utils.UTF8);
+    return new String(bytes, StandardCharsets.UTF_8);
   }
 
   public Buffer appendBuffer(Buffer buff) {
