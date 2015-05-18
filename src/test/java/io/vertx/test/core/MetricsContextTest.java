@@ -905,9 +905,7 @@ public class MetricsContextTest extends AsyncTestBase {
     };
     Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     EventBus eb = vertx.eventBus();
-//    Context context = contextFactory.apply(vertx);
     runOnContext.accept(vertx, v -> {
-//      Thread thread = Thread.currentThread();
       MessageConsumer<Object> consumer = eb.consumer("the_address");
       consumer.handler(msg -> {
         // checker.accept(thread, context);
