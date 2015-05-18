@@ -46,6 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * This class is thread-safe
@@ -562,9 +563,15 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     Objects.requireNonNull(registration.handler, "handler");
     ContextImpl context = vertx.getContext();
     boolean hasContext = context != null;
+    Handler<AsyncResult<Void>> register;
     if (!hasContext) {
       // Embedded
-      context = vertx.createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+      Context newContext = context = vertx.createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+      register = fut -> {
+        newContext.runOnContext(v -> registration.setResult(fut));
+      };
+    } else {
+      register = registration::setResult;
     }
     HandlerHolder holder = new HandlerHolder<T>(registration, replyHandler, localOnly, context, timeoutID);
 
@@ -578,17 +585,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
         subs.add(address, serverID, ar -> {
-          holder.context.runOnContext(v -> {
-            registration.setResult(ar);
-          });
+          register.handle(ar);
         });
       } else {
-        registration.setResult(Future.succeededFuture());
+        register.handle(Future.succeededFuture());
       }
     } else {
-      holder.context.runOnContext(v -> {
-        registration.setResult(Future.succeededFuture());
-      });
+      register.handle(Future.succeededFuture());
     }
 
     handlers.list.add(holder);

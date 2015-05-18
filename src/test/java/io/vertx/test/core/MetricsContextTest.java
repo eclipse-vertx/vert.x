@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -56,6 +57,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -849,16 +851,21 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   @Test
+  public void testMessageHandler() {
+    testMessageHandler((vertx, handler) -> handler.handle(null), eventLoopChecker);
+  }
+
+  @Test
   public void testMessageHandlerEventLoop() {
-    testMessageHandler(eventLoopContextFactory, eventLoopChecker);
+    testMessageHandler((vertx, handler) -> eventLoopContextFactory.apply(vertx).runOnContext(handler), eventLoopChecker);
   }
 
   @Test
   public void testMessageHandlerWorker() {
-    testMessageHandler(workerContextFactory, workerChecker);
+    testMessageHandler((vertx, handler) -> workerContextFactory.apply(vertx).runOnContext(handler), workerChecker);
   }
 
-  private void testMessageHandler(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) {
+  private void testMessageHandler(BiConsumer<Vertx, Handler<Void>> runOnContext, BiConsumer<Thread, Context> checker) {
     AtomicReference<Thread> registerThread = new AtomicReference<>();
     AtomicReference<Context> registerContext = new AtomicReference<>();
     AtomicBoolean unregisteredCalled = new AtomicBoolean();
@@ -898,12 +905,12 @@ public class MetricsContextTest extends AsyncTestBase {
     };
     Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     EventBus eb = vertx.eventBus();
-    Context context = contextFactory.apply(vertx);
-    context.runOnContext(v -> {
-      Thread thread = Thread.currentThread();
+//    Context context = contextFactory.apply(vertx);
+    runOnContext.accept(vertx, v -> {
+//      Thread thread = Thread.currentThread();
       MessageConsumer<Object> consumer = eb.consumer("the_address");
       consumer.handler(msg -> {
-        checker.accept(thread, context);
+        // checker.accept(thread, context);
         executeInVanillaThread(() -> {
           vertx.getOrCreateContext().runOnContext(v2 -> {
             consumer.unregister(ar -> {
