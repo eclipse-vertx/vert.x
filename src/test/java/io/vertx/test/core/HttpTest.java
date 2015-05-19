@@ -3245,6 +3245,11 @@ public class HttpTest extends HttpTestBase {
         req.response().setChunked(true);
         req.setExpectMultipart(true);
         assertTrue(req.isExpectMultipart());
+
+        // Now try setting again, it shouldn't have an effect
+        req.setExpectMultipart(true);
+        assertTrue(req.isExpectMultipart());
+
         req.uploadHandler(upload -> {
           Buffer tot = Buffer.buffer();
           assertEquals("file", upload.name());

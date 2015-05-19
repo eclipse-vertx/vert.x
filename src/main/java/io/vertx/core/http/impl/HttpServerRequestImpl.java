@@ -291,16 +291,18 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public synchronized HttpServerRequest setExpectMultipart(boolean expect) {
     checkEnded();
-    if (expect && decoder == null) {
-      String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
-      if (contentType != null) {
-        HttpMethod method = request.getMethod();
-        String lowerCaseContentType = contentType.toLowerCase();
-        isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
-        if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
+    if (expect) {
+      if (decoder == null) {
+        String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+        if (contentType != null) {
+          HttpMethod method = request.getMethod();
+          String lowerCaseContentType = contentType.toLowerCase();
+          isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+          if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
             (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
-            || method.equals(HttpMethod.DELETE))) {
-          decoder = new HttpPostRequestDecoder(new DataFactory(), request);
+              || method.equals(HttpMethod.DELETE))) {
+            decoder = new HttpPostRequestDecoder(new DataFactory(), request);
+          }
         }
       }
     } else {
