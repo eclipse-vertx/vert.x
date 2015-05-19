@@ -21,14 +21,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.Json;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -783,20 +777,20 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   @Override
-  public Buffer writeToBuffer() {
+  public void writeToBuffer(Buffer buffer) {
     String encoded = encode();
-    byte[] bytes = encoded.getBytes();
-    Buffer buffer = Buffer.buffer(bytes.length + 4);
+    byte[] bytes = encoded.getBytes(StandardCharsets.UTF_8);
     buffer.appendInt(bytes.length);
     buffer.appendBytes(bytes);
-    return buffer;
   }
 
   @Override
-  public void readFromBuffer(Buffer buffer) {
-    int length = buffer.getInt(0);
-    String encoded = buffer.getString(4, 4 + length);
+  public int readFromBuffer(int pos, Buffer buffer) {
+    int length = buffer.getInt(pos);
+    int start = pos + 4;
+    String encoded = buffer.getString(start, start + length);
     fromJson(encoded);
+    return pos + length + 4;
   }
 
   private void fromJson(String json) {

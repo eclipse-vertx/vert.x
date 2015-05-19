@@ -962,9 +962,10 @@ public class JsonArrayTest {
   @Test
   public void testClusterSerializable() {
     jsonArray.add("foo").add(123);
-    Buffer buff = jsonArray.writeToBuffer();
+    Buffer buff = Buffer.buffer();
+    jsonArray.writeToBuffer(buff);
     JsonArray deserialized = new JsonArray();
-    deserialized.readFromBuffer(buff);
+    deserialized.readFromBuffer(0, buff);
     assertEquals(jsonArray, deserialized);
   }
 

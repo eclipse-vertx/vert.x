@@ -564,20 +564,20 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   @Override
-  public Buffer writeToBuffer() {
+  public void writeToBuffer(Buffer buffer) {
     String encoded = encode();
     byte[] bytes = encoded.getBytes();
-    Buffer buffer = Buffer.buffer(bytes.length + 4);
     buffer.appendInt(bytes.length);
     buffer.appendBytes(bytes);
-    return buffer;
   }
 
   @Override
-  public void readFromBuffer(Buffer buffer) {
-    int length = buffer.getInt(0);
-    String encoded = buffer.getString(4, 4 + length);
+  public int readFromBuffer(int pos, Buffer buffer) {
+    int length = buffer.getInt(pos);
+    int start = pos + 4;
+    String encoded = buffer.getString(start, start + length);
     fromJson(encoded);
+    return pos + length + 4;
   }
 
   private void fromJson(String json) {
