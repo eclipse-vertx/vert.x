@@ -18,10 +18,16 @@ package io.vertx.test.core;
 
 
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -30,6 +36,7 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.WebSocketStream;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetSocket;
@@ -48,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -1087,6 +1095,173 @@ public class WebsocketTest extends VertxTestBase {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
       }).end();
     });
+    await();
+  }
+
+  @Test
+  public void testServerWorker() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+        server.websocketHandler(ws -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          ws.handler(buf -> {
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            ws.write(Buffer.buffer("pong"));
+          });
+          ws.endHandler(done -> {
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            testComplete();
+          });
+        });
+        server.listen(onSuccess(server -> {
+          assertSame(context, Vertx.currentContext());
+          assertTrue(Context.isOnWorkerThread());
+          latch.countDown();
+        }));
+      }
+    }, new DeploymentOptions().setWorker(true));
+    awaitLatch(latch);
+    client = vertx.createHttpClient();
+    client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+      ws.handler(buf -> {
+        assertEquals("pong", buf.toString());
+        ws.close();
+      });
+      ws.write(Buffer.buffer("ping"));
+    });
+    await();
+  }
+
+  @Test
+  public void testServerWorkerHandshakeError() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+        ServerWebSocketStream stream = server.websocketStream();
+        stream.exceptionHandler(err -> {
+          assertTrue(err instanceof WebSocketHandshakeException);
+          assertSame(context, Vertx.currentContext());
+          assertTrue(Context.isOnWorkerThread());
+          testComplete();
+        });
+        stream.handler(ws -> {});
+        server.listen(onSuccess(server -> {
+          latch.countDown();
+        }));
+      }
+    }, new DeploymentOptions().setWorker(true));
+    awaitLatch(latch);
+    client = vertx.createHttpClient();
+    HttpClientRequest req = client.get(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {});
+    // Missing Sec-WebSocket-Key to trigger WebSocketHandshakeException in Netty
+    req.putHeader("Host", "localhost");
+    req.putHeader("Upgrade", "websocket");
+    req.putHeader("Connection", "Upgrade");
+    req.putHeader("Sec-WebSocket-Protocol", "chat, superchat");
+    req.putHeader("Sec-WebSocket-Version", "13");
+    req.putHeader("Origin", "http://localhost:8080");
+    req.end();
+    await();
+  }
+
+  @Test
+  public void testClientWorker() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.websocketHandler(ws -> {
+      ws.handler(buf -> {
+        assertEquals("ping", buf.toString());
+        ws.close();
+      });
+      ws.write(Buffer.buffer("ping"));
+    });
+    server.listen(onSuccess(server -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        client = vertx.createHttpClient();
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          assertSame(context, Vertx.currentContext());
+          assertTrue(Context.isOnWorkerThread());
+          ws.handler(buf -> {
+            assertEquals("ping", buf.toString());
+            assertSame(context, Vertx.currentContext());
+            assertTrue(Context.isOnWorkerThread());
+            ws.write(Buffer.buffer("pong"));
+            ws.close();
+          });
+          ws.endHandler(done -> {
+            assertSame(context, Vertx.currentContext());
+            assertTrue(Context.isOnWorkerThread());
+            testComplete();
+          });
+          ws.write(Buffer.buffer("ping"));
+        });
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testClientWorkerHandshakeErrorBadStatus() throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      req.response().setStatusCode(200).end();
+    });
+    testClientWorkerHandshakeError(server, client -> client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/"));
+  }
+
+  @Test
+  public void testClientWorkerHandshakeErrorClose() throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      req.netSocket().close();
+    });
+    testClientWorkerHandshakeError(server, client -> client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/"));
+  }
+
+  @Test
+  public void testClientWorkerHandshakeErrorInvalidSubProtocol() throws Exception {
+    server = vertx.createHttpServer(
+        new HttpServerOptions().
+            setPort(HttpTestBase.DEFAULT_HTTP_PORT).
+            setWebsocketSubProtocol("invalid"));
+    server.websocketHandler(ws -> {
+    });
+    testClientWorkerHandshakeError(server, client -> client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", null, WebsocketVersion.V00, "myprotocol"));
+  }
+
+  private void testClientWorkerHandshakeError(HttpServer server, Function<HttpClient, WebSocketStream> streamFactory) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.listen(onSuccess(s -> latch.countDown()));
+    awaitLatch(latch);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        client = vertx.createHttpClient();
+        WebSocketStream stream = streamFactory.apply(client);
+        stream.exceptionHandler(err -> {
+          assertTrue(err instanceof WebSocketHandshakeException);
+          assertSame(context, Vertx.currentContext());
+          assertTrue(Context.isOnWorkerThread());
+          testComplete();
+        });
+        stream.handler(ws -> {
+          fail();
+        });
+      }
+    }, new DeploymentOptions().setWorker(true));
     await();
   }
 }

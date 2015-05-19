@@ -34,13 +34,12 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
 
-  final Object metric;
+  Object metric;
 
   public WebSocketImpl(VertxInternal vertx,
                        ClientConnection conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
-    metric = conn.metrics().connected(conn.metric(), this);
   }
 
   @Override

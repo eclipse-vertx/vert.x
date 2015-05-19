@@ -590,27 +590,32 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         wsConn.wsHandler(wsHandler.handler);
         connectionMap.put(ch, wsConn);
 
-        wsHandler.context.executeFromIO(() -> {
-          URI theURI;
+        URI theURI;
+        try {
+          theURI = new URI(request.getUri());
+        } catch (URISyntaxException e2) {
+          throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+        }
+
+        Runnable connectRunnable = () -> {
           try {
-            theURI = new URI(request.getUri());
-          } catch (URISyntaxException e2) {
-            throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+            shake.handshake(ch, request);
+          } catch (WebSocketHandshakeException e) {
+            wsHandler.context.executeFromIO(() -> {
+              Handler<Throwable> handler = wsStream.exceptionHandler();
+              if (handler != null) {
+                handler.handle(e);
+              }
+            });
+          } catch (Exception e) {
+            log.error("Failed to generate shake response", e);
           }
+        };
 
-          Runnable connectRunnable = () -> {
-            try {
-              shake.handshake(ch, request);
-            } catch (WebSocketHandshakeException e) {
-              wsConn.handleException(e);
-            } catch (Exception e) {
-              log.error("Failed to generate shake response", e);
-            }
-          };
-
-          ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
+        ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
             connectRunnable, options.getMaxWebsocketFrameSize());
+        wsHandler.context.executeFromIO(() -> {
           wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
           ws.metric = metrics.connected(wsConn.metric(), ws);
           wsConn.handleWebsocketConnect(ws);
@@ -625,7 +630,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
           }
         });
-
       }
     }
   }
@@ -657,6 +661,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private Handler<C> handler;
     private boolean paused;
     private Handler<Void> endHandler;
+    private Handler<Throwable> exceptionHandler;
 
     Handler<C> handler() {
       synchronized (HttpServerImpl.this) {
@@ -717,8 +722,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     public R exceptionHandler(Handler<Throwable> handler) {
-      // Should we use it in the server close exception handler ?
+      synchronized (HttpServerImpl.this) {
+        exceptionHandler = handler;
+      }
       return (R) this;
+    }
+
+    synchronized Handler<Throwable> exceptionHandler() {
+      return exceptionHandler;
     }
   }
 
