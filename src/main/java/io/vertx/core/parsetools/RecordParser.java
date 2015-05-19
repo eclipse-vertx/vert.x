@@ -16,9 +16,12 @@
 
 package io.vertx.core.parsetools;
 
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Arguments;
+import io.vertx.core.parsetools.impl.RecordParserImpl;
 
 import java.util.Objects;
 
@@ -54,44 +57,12 @@ import java.util.Objects;
  * Please see the documentation for more information.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
-public class RecordParser implements Handler<Buffer> {
+@VertxGen
+public interface RecordParser extends Handler<Buffer> {
 
-  private Buffer buff;
-  private int pos;            // Current position in buffer
-  private int start;          // Position of beginning of current record
-  private int delimPos;       // Position of current match in delimiter array
-  private boolean reset;      // Allows user to toggle mode / change delim when records are emitted
-
-  private boolean delimited;
-  private byte[] delim;
-  private int recordSize;
-  private Handler<Buffer> output;
-
-  private RecordParser(Handler<Buffer> output) {
-    this.output = output;
-  }
-
-  public void setOutput(Handler<Buffer> output) {
-    Objects.requireNonNull(output, "output");
-    this.output = output;
-  }
-
-  /**
-   * Helper method to convert a latin-1 String to an array of bytes for use as a delimiter
-   * Please do not use this for non latin-1 characters
-   *
-   * @param str  the string
-   * @return The byte[] form of the string
-   */
-  public static byte[] latin1StringToBytes(String str) {
-    byte[] bytes = new byte[str.length()];
-    for (int i = 0; i < str.length(); i++) {
-      char c = str.charAt(i);
-      bytes[i] = (byte) (c & 0xFF);
-    }
-    return bytes;
-  }
+  void setOutput(Handler<Buffer> output);
 
   /**
    * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
@@ -102,8 +73,8 @@ public class RecordParser implements Handler<Buffer> {
    * @param delim  the initial delimiter string
    * @param output  handler that will receive the output
    */
-  public static RecordParser newDelimited(String delim, Handler<Buffer> output) {
-    return newDelimited(latin1StringToBytes(delim), output);
+  static RecordParser newDelimited(String delim, Handler<Buffer> output) {
+    return RecordParserImpl.newDelimited(delim, output);
   }
 
   /**
@@ -115,11 +86,10 @@ public class RecordParser implements Handler<Buffer> {
    * @param delim  the initial delimiter byte[]
    * @param output  handler that will receive the output
    */
-  public static RecordParser newDelimited(byte[] delim, Handler<Buffer> output) {
-    RecordParser ls = new RecordParser(output);
-    ls.delimitedMode(delim);
-    return ls;
-  }
+  @GenIgnore
+   static RecordParser newDelimited(byte[] delim, Handler<Buffer> output) {
+     return RecordParserImpl.newDelimited(delim, output); 
+   }
 
   /**
    * Create a new {@code RecordParser} instance, initially in fixed size mode, and where the record size is specified
@@ -130,11 +100,8 @@ public class RecordParser implements Handler<Buffer> {
    * @param size  the initial record size
    * @param output  handler that will receive the output
    */
-  public static RecordParser newFixed(int size, Handler<Buffer> output) {
-    Arguments.require(size > 0, "Size must be > 0");
-    RecordParser ls = new RecordParser(output);
-    ls.fixedSizeMode(size);
-    return ls;
+  static RecordParser newFixed(int size, Handler<Buffer> output) {
+    return RecordParserImpl.newFixed(size, output);
   }
 
   /**
@@ -145,9 +112,7 @@ public class RecordParser implements Handler<Buffer> {
    *
    * @param delim  the new delimeter
    */
-  public void delimitedMode(String delim) {
-    delimitedMode(latin1StringToBytes(delim));
-  }
+  void delimitedMode(String delim);
 
   /**
    * Flip the parser into delimited mode, and where the delimiter can be represented
@@ -157,13 +122,8 @@ public class RecordParser implements Handler<Buffer> {
    *
    * @param delim  the new delimiter
    */
-  public void delimitedMode(byte[] delim) {
-    Objects.requireNonNull(delim, "delim");
-    delimited = true;
-    this.delim = delim;
-    delimPos = 0;
-    reset = true;
-  }
+  @GenIgnore
+  void delimitedMode(byte[] delim);
 
   /**
    * Flip the parser into fixed size mode, where the record size is specified by {@code size} in bytes.
@@ -172,77 +132,12 @@ public class RecordParser implements Handler<Buffer> {
    *
    * @param size  the new record size
    */
-  public void fixedSizeMode(int size) {
-    Arguments.require(size > 0, "Size must be > 0");
-    delimited = false;
-    recordSize = size;
-    reset = true;
-  }
-
-  private void handleParsing() {
-    int len = buff.length();
-    do {
-      reset = false;
-      if (delimited) {
-        parseDelimited();
-      } else {
-        parseFixed();
-      }
-    } while (reset);
-
-    if (start == len) {
-      //Nothing left
-      buff = null;
-      pos = 0;
-    } else {
-      buff = buff.getBuffer(start, len);
-      pos = buff.length();
-    }
-    start = 0;
-  }
-
-  private void parseDelimited() {
-    int len = buff.length();
-    for (; pos < len && !reset; pos++) {
-      if (buff.getByte(pos) == delim[delimPos]) {
-        delimPos++;
-        if (delimPos == delim.length) {
-          Buffer ret = buff.getBuffer(start, pos - delim.length + 1);
-          start = pos + 1;
-          delimPos = 0;
-          output.handle(ret);
-        }
-      } else {
-        if (delimPos > 0) {
-          pos -= delimPos;
-          delimPos = 0;
-        }
-      }
-    }
-  }
-
-  private void parseFixed() {
-    int len = buff.length();
-    while (len - start >= recordSize && !reset) {
-      int end = start + recordSize;
-      Buffer ret = buff.getBuffer(start, end);
-      start = end;
-      pos = start - 1;
-      output.handle(ret);
-    }
-  }
+  void fixedSizeMode(int size);
 
   /**
    * This method is called to provide the parser with data.
    *
    * @param buffer  a chunk of data
    */
-  public void handle(Buffer buffer) {
-    if (buff == null) {
-      buff = buffer;
-    } else {
-      buff.appendBuffer(buffer);
-    }
-    handleParsing();
-  }
+  void handle(Buffer buffer);
 }
