@@ -489,13 +489,6 @@ public class MetricsContextTest extends AsyncTestBase {
         ws.write(Buffer.buffer("bye"));
       });
     });
-    server.requestHandler(req -> {
-      req.endHandler(buf -> {
-        HttpServerResponse resp = req.response();
-        resp.setChunked(true).write(Buffer.buffer("bye")).end();
-        resp.close();
-      });
-    });
     CountDownLatch latch = new CountDownLatch(1);
     server.listen(8080, "localhost", ar -> {
       assertTrue(ar.succeeded());

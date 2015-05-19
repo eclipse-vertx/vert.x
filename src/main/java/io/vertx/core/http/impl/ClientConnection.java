@@ -80,7 +80,6 @@ class ClientConnection extends ConnectionBase {
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
-  private final Object metric;
   private final HttpClientMetrics metrics;
 
   private WebSocketClientHandshaker handshaker;
@@ -88,6 +87,7 @@ class ClientConnection extends ConnectionBase {
   private HttpClientResponseImpl currentResponse;
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
+  private Object metric;
 
   ClientConnection(VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
@@ -104,7 +104,10 @@ class ClientConnection extends ConnectionBase {
     this.listener = listener;
     this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress());
+  }
+
+  public void setMetric(Object metric) {
+    this.metric = metric;
   }
 
   @Override
@@ -361,6 +364,7 @@ class ClientConnection extends ConnectionBase {
   NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
     NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics);
+    socket.setMetric(metrics.connected(socket.remoteAddress()));
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 

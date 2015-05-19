@@ -585,6 +585,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else {
 
+        ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
+            serverOrigin, shake, metrics);
+        wsConn.wsHandler(wsHandler.handler);
+        connectionMap.put(ch, wsConn);
+
         wsHandler.context.executeFromIO(() -> {
           URI theURI;
           try {
@@ -593,13 +598,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
           }
 
-          ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-            serverOrigin, shake, metrics);
-          wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
-          wsConn.wsHandler(wsHandler.handler);
-
           Runnable connectRunnable = () -> {
-            connectionMap.put(ch, wsConn);
             try {
               shake.handshake(ch, request);
             } catch (WebSocketHandshakeException e) {
@@ -612,6 +611,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
             connectRunnable, options.getMaxWebsocketFrameSize());
+          wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
           ws.metric = metrics.connected(wsConn.metric(), ws);
           wsConn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {
