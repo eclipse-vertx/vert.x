@@ -204,9 +204,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
               NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
-              listenContext.runOnContext(v -> {
-                metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
-              });
+              metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -231,9 +229,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
-        listenContext.runOnContext(v -> {
-          metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
-        });
+        metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
         if (connectStream.handler() != null) {
           actualServer.handlerManager.addHandler(connectStream.handler(), listenContext);
         }
@@ -390,9 +386,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cg -> {
       if (metrics != null) {
-        listenContext.runOnContext(v -> {
-          metrics.close();
-        });
+        metrics.close();
       }
       executeCloseDone(closeContext, done, fut.cause());
     });

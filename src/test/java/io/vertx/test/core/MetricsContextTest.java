@@ -109,8 +109,8 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   private void testHttpServerRequest(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
+    AtomicReference<Thread> expectedThread = new AtomicReference<>();
+    AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean requestBeginCalled = new AtomicBoolean();
     AtomicBoolean responseEndCalled = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
@@ -121,40 +121,38 @@ public class MetricsContextTest extends AsyncTestBase {
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyHttpServerMetrics() {
           @Override
           public Void requestBegin(Void socketMetric, HttpServerRequest request) {
             requestBeginCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void responseEnd(Void requestMetric, HttpServerResponse response) {
             responseEndCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public Void connected(SocketAddress remoteAddress) {
             socketConnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public boolean isEnabled() {
@@ -163,7 +161,6 @@ public class MetricsContextTest extends AsyncTestBase {
           @Override
           public void close() {
             closeCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
           }
         };
       }
@@ -179,8 +176,8 @@ public class MetricsContextTest extends AsyncTestBase {
       });
       server.listen(8080, "localhost", ar -> {
         assertTrue(ar.succeeded());
-        assertSame(ctx, createContext.get());
-        checker.accept(createThread.get(), createContext.get());
+        expectedThread.set(Thread.currentThread());
+        expectedContext.set(Vertx.currentContext());
         latch.countDown();
       });
     });
@@ -216,8 +213,8 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   private void testHttpServerWebsocket(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
+    AtomicReference<Thread> expectedThread = new AtomicReference<>();
+    AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean websocketConnected = new AtomicBoolean();
     AtomicBoolean websocketDisconnected = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
@@ -228,40 +225,38 @@ public class MetricsContextTest extends AsyncTestBase {
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyHttpServerMetrics() {
           @Override
           public Void connected(Void socketMetric, ServerWebSocket serverWebSocket) {
             websocketConnected.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void disconnected(Void serverWebSocketMetric) {
             websocketDisconnected.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public Void connected(SocketAddress remoteAddress) {
             socketConnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public boolean isEnabled() {
@@ -270,7 +265,6 @@ public class MetricsContextTest extends AsyncTestBase {
           @Override
           public void close() {
             closeCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
           }
         };
       }
@@ -286,7 +280,8 @@ public class MetricsContextTest extends AsyncTestBase {
       });
       server.listen(8080, "localhost", ar -> {
         assertTrue(ar.succeeded());
-        checker.accept(createThread.get(), createContext.get());
+        expectedThread.set(Thread.currentThread());
+        expectedContext.set(Vertx.currentContext());
         latch.countDown();
       });
     });
@@ -324,8 +319,8 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   private void testHttpClientRequest(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
+    AtomicReference<Thread> expectedThread = new AtomicReference<>();
+    AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean requestBeginCalled = new AtomicBoolean();
     AtomicBoolean responseEndCalled = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
@@ -336,8 +331,6 @@ public class MetricsContextTest extends AsyncTestBase {
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyHttpClientMetrics() {
           @Override
           public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
@@ -351,28 +344,27 @@ public class MetricsContextTest extends AsyncTestBase {
           @Override
           public Void connected(SocketAddress remoteAddress) {
             socketConnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void close() {
             closeCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
           }
           @Override
           public boolean isEnabled() {
@@ -398,8 +390,10 @@ public class MetricsContextTest extends AsyncTestBase {
     awaitLatch(latch);
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
+      expectedThread.set(Thread.currentThread());
+      expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
-      checker.accept(createThread.get(), createContext.get());
+      checker.accept(expectedThread.get(), expectedContext.get());
       HttpClientRequest req = client.put(8080, "localhost", "/");
       req.handler(resp -> {
         executeInVanillaThread(() -> {
@@ -433,8 +427,8 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   private void testHttpClientWebsocket(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
+    AtomicReference<Thread> expectedThread = new AtomicReference<>();
+    AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean websocketConnected = new AtomicBoolean();
     AtomicBoolean websocketDisconnected = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
@@ -445,13 +439,11 @@ public class MetricsContextTest extends AsyncTestBase {
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyHttpClientMetrics() {
           @Override
           public Void connected(Void socketMetric, WebSocket webSocket) {
             websocketConnected.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
@@ -461,28 +453,27 @@ public class MetricsContextTest extends AsyncTestBase {
           @Override
           public Void connected(SocketAddress remoteAddress) {
             socketConnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void close() {
             closeCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
           }
           @Override
           public boolean isEnabled() {
@@ -513,8 +504,10 @@ public class MetricsContextTest extends AsyncTestBase {
     awaitLatch(latch);
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
+      expectedThread.set(Thread.currentThread());
+      expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
-      checker.accept(createThread.get(), createContext.get());
+      checker.accept(expectedThread.get(), expectedContext.get());
       client.websocket(8080, "localhost", "/", ws -> {
         ws.handler(buf -> {
           ws.closeHandler(v2 -> {
@@ -551,8 +544,8 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   private void testNetServer(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
+    AtomicReference<Thread> expectedThread = new AtomicReference<>();
+    AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
@@ -561,29 +554,27 @@ public class MetricsContextTest extends AsyncTestBase {
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyTCPMetrics() {
           @Override
           public Void connected(SocketAddress remoteAddress) {
             socketConnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public boolean isEnabled() {
@@ -592,7 +583,6 @@ public class MetricsContextTest extends AsyncTestBase {
           @Override
           public void close() {
             closeCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
           }
         };
       }
@@ -608,7 +598,9 @@ public class MetricsContextTest extends AsyncTestBase {
       });
       server.listen(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
-        checker.accept(createThread.get(), createContext.get());
+        expectedThread.set(Thread.currentThread());
+        expectedContext.set(Vertx.currentContext());
+        checker.accept(expectedThread.get(), expectedContext.get());
         latch.countDown();
       });
     });
@@ -648,8 +640,8 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   private void testNetClient(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
+    AtomicReference<Thread> expectedThread = new AtomicReference<>();
+    AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
@@ -658,29 +650,27 @@ public class MetricsContextTest extends AsyncTestBase {
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyTCPMetrics() {
           @Override
           public Void connected(SocketAddress remoteAddress) {
             socketConnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public boolean isEnabled() {
@@ -689,7 +679,6 @@ public class MetricsContextTest extends AsyncTestBase {
           @Override
           public void close() {
             closeCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
           }
         };
       }
@@ -708,10 +697,9 @@ public class MetricsContextTest extends AsyncTestBase {
     });
     awaitLatch(latch);
     ctx.runOnContext(v1 -> {
-      Thread ctxThread = Thread.currentThread();
       NetClient client = vertx.createNetClient();
-      assertSame(ctxThread, createThread.get());
-      assertSame(ctx, createContext.get());
+      expectedThread.set(Thread.currentThread());
+      expectedContext.set(Vertx.currentContext());
       client.connect(1234, "localhost", ar -> {
         assertTrue(ar.succeeded());
         NetSocket so = ar.result();
@@ -748,8 +736,8 @@ public class MetricsContextTest extends AsyncTestBase {
   }
 
   private void testDatagram(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
+    AtomicReference<Thread> expectedThread = new AtomicReference<>();
+    AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean listening = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
@@ -757,28 +745,25 @@ public class MetricsContextTest extends AsyncTestBase {
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyDatagramMetrics() {
           @Override
           public void listening(SocketAddress localAddress) {
             listening.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
+            checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
           public void close() {
             closeCalled.set(true);
-            checker.accept(createThread.get(), createContext.get());
           }
           @Override
           public boolean isEnabled() {
@@ -790,10 +775,12 @@ public class MetricsContextTest extends AsyncTestBase {
     Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
+      expectedThread.set(Thread.currentThread());
+      expectedContext.set(Vertx.currentContext());
       DatagramSocket socket = vertx.createDatagramSocket();
       socket.listen(1234, "localhost", ar1 -> {
         assertTrue(ar1.succeeded());
-        checker.accept(createThread.get(), createContext.get());
+        checker.accept(expectedThread.get(), expectedContext.get());
         socket.handler(packet -> {
           assertTrue(listening.get());
           assertTrue(bytesReadCalled.get());
@@ -816,14 +803,10 @@ public class MetricsContextTest extends AsyncTestBase {
 
   @Test
   public void testEventBusLifecycle() {
-    AtomicReference<Thread> createThread = new AtomicReference<>();
-    AtomicReference<Context> createContext = new AtomicReference<>();
     AtomicBoolean closeCalled = new AtomicBoolean();
     ConfigurableMetricsFactory.delegate = (vertx, options) -> new DummyVertxMetrics() {
       @Override
       public EventBusMetrics createMetrics(EventBus eventBus) {
-        createThread.set(Thread.currentThread());
-        createContext.set(Vertx.currentContext());
         return new DummyEventBusMetrics() {
           @Override
           public boolean isEnabled() {
@@ -838,8 +821,6 @@ public class MetricsContextTest extends AsyncTestBase {
     };
     Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     vertx.eventBus();
-    assertSame(Thread.currentThread(), createThread.get());
-    assertNull(createContext.get());
     executeInVanillaThread(() -> {
       vertx.close(ar -> {
         assertTrue(ar.succeeded());

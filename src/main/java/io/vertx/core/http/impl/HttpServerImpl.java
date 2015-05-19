@@ -218,16 +218,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
           Channel serverChannel = bindFuture.channel();
           serverChannelGroup.add(serverChannel);
-          bindFuture.addListener(future -> {
-            if (future.isSuccess()) {
-              listenContext.runOnContext(v -> {
-                metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
-              });
-            }
-          });
           bindFuture.addListener(channelFuture -> {
               if (!channelFuture.isSuccess()) {
                 vertx.sharedHttpServers().remove(id);
+              } else {
+                metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
               }
             });
         } catch (final Throwable t) {
@@ -265,9 +260,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           // To reproduce set the boolean parameter on execute (below) to true.
           // Then run Httptest.testTwoServersSameAddressDifferentContext()
           try {
-            listenContext.runOnContext((v) -> {
-              listenHandler.handle(res);
-            });
+            listenContext.runOnContext((v) -> listenHandler.handle(res));
           } catch (Exception e) {
             e.printStackTrace();
           }
@@ -414,9 +407,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     if (metrics != null) {
-      listenContext.runOnContext(v -> {
-        metrics.close();
-      });
+      metrics.close();
     }
 
     ChannelGroupFuture fut = serverChannelGroup.close();

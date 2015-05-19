@@ -106,13 +106,9 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       }
       closed = true;
       if (creatingContext != null) {
-        creatingContext.runOnContext(v -> {
-          metrics.close();
-        });
         creatingContext.removeCloseHook(closeHook);
-      } else {
-        metrics.close();
       }
+      metrics.close();
     }
   }
 

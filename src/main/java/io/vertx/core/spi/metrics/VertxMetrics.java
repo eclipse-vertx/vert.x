@@ -83,8 +83,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the event bus metrics SPI when the event bus is created.<p/>
    *
-   * This method is invoked with no specific thread or {@link io.vertx.core.Context}, the context might
-   * event be null.<p/>
+   * No specific thread and context can be expected when this method is called.<p/>
    *
    * This method should be called only once.
    *
@@ -96,8 +95,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the http server metrics SPI when an http server is created.<p/>
    *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the http server and therefore
-   * might be  different on every invocation.<p/>
+   * No specific thread and context can be expected when this method is called.<p/>
    *
    * Note: this method can be called more than one time for the same {@code localAddress} when a server is
    * scaled, it is the responsibility of the metrics implementation to eventually merge metrics.
@@ -112,8 +110,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the http client metrics SPI when an http client has been created.<p/>
    *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the http client and therefore
-   * might be  different on every invocation.
+   * No specific thread and context can be expected when this method is called.
    *
    * @param client the Vert.x http client
    * @param options the options used to create the {@link io.vertx.core.http.HttpClient}
@@ -124,8 +121,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the net server metrics SPI when a net server is created.<p/>
    *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the net server and therefore
-   * might be  different on every invocation.<p/>
+   * No specific thread and context can be expected when this method is called.<p/>
    *
    * Note: this method can be called more than one time for the same {@code localAddress} when a server is
    * scaled, it is the responsibility of the metrics implementation to eventually merge metrics.
@@ -140,8 +136,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the net client metrics SPI when a net client is created.<p/>
    *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the net client and therefore
-   * might be  different on every invocation.
+   * No specific thread and context can be expected when this method is called.
    *
    * @param client the Vert.x net client
    * @param options the options used to create the {@link io.vertx.core.net.NetClient}
@@ -152,8 +147,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the datagram/udp metrics SPI when a datagram socket is created.<p/>
    *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the datagram socket and therefore
-   * might be  different on every invocation.
+   * No specific thread and context can be expected when this method is called.
    *
    * @param socket the Vert.x datagram socket
    * @param options the options used to create the {@link io.vertx.core.datagram.DatagramSocket}
