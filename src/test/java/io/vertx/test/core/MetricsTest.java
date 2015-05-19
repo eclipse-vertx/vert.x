@@ -416,25 +416,4 @@ public class MetricsTest extends VertxTestBase {
     });
     await();
   }
-
-  @Test
-  public void testMulti() {
-    HttpServer s1 = vertx.createHttpServer();
-    s1.requestHandler(req -> {
-    });
-    s1.listen(8080, ar1 -> {
-      assertTrue(ar1.succeeded());
-      HttpServer s2 = vertx.createHttpServer();
-      s2.requestHandler(req -> {});
-      s2.listen(8080, ar2 -> {
-        assertTrue(ar2.succeeded());
-        FakeHttpServerMetrics metrics1 = FakeMetricsBase.getMetrics(ar1.result());
-        assertSame(ar1.result(), metrics1.server);
-        FakeHttpServerMetrics metrics2 = FakeMetricsBase.getMetrics(ar2.result());
-        assertSame(ar2.result(), metrics2.server);
-        testComplete();
-      });
-    });
-    await();
-  }
 }

@@ -29,7 +29,7 @@ public interface EventBusMetrics<H> extends Metrics {
    * Called when a handler is registered on the event bus.<p/>
    *
    * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
-   * might be different on every invocation.
+   * are different on every invocation.
    *
    * @param address the address used to register the handler
    * @param replyHandler true when the handler is a reply handler
@@ -39,15 +39,8 @@ public interface EventBusMetrics<H> extends Metrics {
   /**
    * Called when a handler has been unregistered from the event bus.<p/>
    *
-   * The thread model depends on the actual context thats registered the handler.<p/>
-   *
-   * <h3>Event loop context</h3>
-   *
-   * This method is invoked with the handler event loop thread.
-   *
-   * <h3>Worker context</h3>
-   *
-   * This method is invoked with a worker thread.
+   * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
+   * are different on every invocation.
    *
    * @param handler the unregistered handler
    */
@@ -56,15 +49,8 @@ public interface EventBusMetrics<H> extends Metrics {
   /**
    * Called when an handler begin to process a message.<p/>
    *
-   * The thread model depends on the actual context thats registered the handler.<p/>
-   *
-   * <h3>Event loop context</h3>
-   *
-   * This method is invoked with the handler event loop thread.
-   *
-   * <h3>Worker context</h3>
-   *
-   * This method is invoked with a worker thread.
+   * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
+   * are different on every invocation.
    *
    * @param handler the handler processing the message
    * @param local when the received message is local
@@ -74,15 +60,8 @@ public interface EventBusMetrics<H> extends Metrics {
   /**
    * Called when an handler finish to process a message.<p/>
    *
-   * The thread model depends on the actual context thats registered the handler.<p/>
-   *
-   * <h3>Event loop context</h3>
-   *
-   * This method is invoked with the handler event loop thread.
-   *
-   * <h3>Worker context</h3>
-   *
-   * This method is invoked with a worker thread.
+   * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
+   * are different on every invocation.
    *
    * @param handler the handler processing the message
    * @param failure an optional failure thrown by handler

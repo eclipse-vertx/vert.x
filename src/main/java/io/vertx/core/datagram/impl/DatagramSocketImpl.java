@@ -241,7 +241,9 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   public void close(final Handler<AsyncResult<Void>> handler) {
     // make sure everything is flushed out on close
     endReadAndFlush();
-    metrics.close();
+    context.runOnContext(v -> {
+      metrics.close();
+    });
     ChannelFuture future = channel.close();
     if (handler != null) {
       future.addListener(new DatagramChannelFutureListener<>(null, handler, context));

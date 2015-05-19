@@ -407,7 +407,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     if (metrics != null) {
-      metrics.close();
+      listenContext.runOnContext(v -> {
+        metrics.close();
+      });
     }
 
     ChannelGroupFuture fut = serverChannelGroup.close();
@@ -559,7 +561,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       conn.requestHandler(reqHandler.handler);
       connectionMap.put(ch, conn);
       reqHandler.context.executeFromIO(() -> {
-        conn.setMetric(metrics.connected(conn.remoteAddress()));
         conn.handleMessage(request);
       });
     }
@@ -585,11 +586,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else {
 
-        ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-            serverOrigin, shake, metrics);
-        wsConn.wsHandler(wsHandler.handler);
-        connectionMap.put(ch, wsConn);
-
         wsHandler.context.executeFromIO(() -> {
           URI theURI;
           try {
@@ -598,7 +594,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
           }
 
+          ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
+            serverOrigin, shake, metrics);
+          wsConn.wsHandler(wsHandler.handler);
+
           Runnable connectRunnable = () -> {
+            connectionMap.put(ch, wsConn);
             try {
               shake.handshake(ch, request);
             } catch (WebSocketHandshakeException e) {
@@ -611,7 +612,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
             connectRunnable, options.getMaxWebsocketFrameSize());
-          wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
           ws.metric = metrics.connected(wsConn.metric(), ws);
           wsConn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {

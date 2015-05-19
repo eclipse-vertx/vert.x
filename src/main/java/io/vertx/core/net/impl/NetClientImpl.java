@@ -106,9 +106,13 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       }
       closed = true;
       if (creatingContext != null) {
+        creatingContext.runOnContext(v -> {
+          metrics.close();
+        });
         creatingContext.removeCloseHook(closeHook);
+      } else {
+        metrics.close();
       }
-      metrics.close();
     }
   }
 
@@ -220,7 +224,6 @@ public class NetClientImpl implements NetClient, MetricsProvider {
 
   private void doConnected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics);
-    sock.setMetric(metrics.connected(sock.remoteAddress()));
     socketMap.put(ch, sock);
     connectHandler.handle(Future.succeededFuture(sock));
   }
