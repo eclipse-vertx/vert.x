@@ -150,38 +150,6 @@ public class VertxTestBase extends AsyncTestBase {
     };
   }
 
-  protected <T> Handler<AsyncResult<T>> onFailure(Consumer<Throwable> consumer) {
-    return result -> {
-      assertFalse(result.succeeded());
-      consumer.accept(result.cause());
-    };
-  }
-
-  protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
-  }
-
-  protected void waitUntil(BooleanSupplier supplier) {
-    waitUntil(supplier, 10000);
-  }
-
-  protected void waitUntil(BooleanSupplier supplier, long timeout) {
-    long start = System.currentTimeMillis();
-    while (true) {
-      if (supplier.getAsBoolean()) {
-        break;
-      }
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException ignore) {
-      }
-      long now = System.currentTimeMillis();
-      if (now - start > timeout) {
-        throw new IllegalStateException("Timed out");
-      }
-    }
-  }
-
   protected void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
     if (options instanceof JksOptions) {
       sslOptions.setKeyStoreOptions((JksOptions) options);

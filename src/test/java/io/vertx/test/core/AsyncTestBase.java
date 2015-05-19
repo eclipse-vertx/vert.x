@@ -16,6 +16,8 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import org.hamcrest.Matcher;
@@ -30,6 +32,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -571,4 +575,37 @@ public class AsyncTestBase {
       handleThrowable(e);
     }
   }
+
+  protected <T> Handler<AsyncResult<T>> onFailure(Consumer<Throwable> consumer) {
+    return result -> {
+      assertFalse(result.succeeded());
+      consumer.accept(result.cause());
+    };
+  }
+
+  protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
+    assertTrue(latch.await(10, TimeUnit.SECONDS));
+  }
+
+  protected void waitUntil(BooleanSupplier supplier) {
+    waitUntil(supplier, 10000);
+  }
+
+  protected void waitUntil(BooleanSupplier supplier, long timeout) {
+    long start = System.currentTimeMillis();
+    while (true) {
+      if (supplier.getAsBoolean()) {
+        break;
+      }
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException ignore) {
+      }
+      long now = System.currentTimeMillis();
+      if (now - start > timeout) {
+        throw new IllegalStateException("Timed out");
+      }
+    }
+  }
+
 }
