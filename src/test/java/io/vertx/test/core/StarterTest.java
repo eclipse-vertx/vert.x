@@ -104,6 +104,23 @@ public class StarterTest extends VertxTestBase {
   }
 
   @Test
+  public void testRunVerticleHA() throws Exception {
+    MyStarter starter = new MyStarter();
+    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-ha"};
+    Thread t = new Thread(() -> {
+      starter.run(args);
+    });
+    t.start();
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertTrue(t.isAlive()); // It's blocked
+    assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    // Now unblock it
+    starter.unblock();
+    waitUntil(() -> !t.isAlive());
+  }
+
+
+  @Test
   public void testRunVerticleWithMainVerticleInManifestNoArgs() throws Exception {
     MyStarter starter = new MyStarter();
     String[] args = new String[0];

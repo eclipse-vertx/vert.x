@@ -194,7 +194,10 @@ public class Starter {
       if (ha) {
         String haGroup = args.map.get("-hagroup");
         int quorumSize = args.getInt("-quorum");
-        options.setHAEnabled(true).setHAGroup(haGroup);
+        options.setHAEnabled(true);
+        if (haGroup != null) {
+          options.setHAGroup(haGroup);
+        }
         if (quorumSize != -1) {
           options.setQuorumSize(quorumSize);
         }
