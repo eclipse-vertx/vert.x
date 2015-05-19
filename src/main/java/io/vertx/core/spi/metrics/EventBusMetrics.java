@@ -26,10 +26,7 @@ import io.vertx.core.eventbus.ReplyFailure;
 public interface EventBusMetrics<H> extends Metrics {
 
   /**
-   * Called when a handler is registered on the event bus.<p/>
-   *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
-   * are different on every invocation.
+   * Called when a handler is registered on the event bus.
    *
    * @param address the address used to register the handler
    * @param replyHandler true when the handler is a reply handler
@@ -37,20 +34,14 @@ public interface EventBusMetrics<H> extends Metrics {
   H handlerRegistered(String address, boolean replyHandler);
 
   /**
-   * Called when a handler has been unregistered from the event bus.<p/>
-   *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
-   * are different on every invocation.
+   * Called when a handler has been unregistered from the event bus.
    *
    * @param handler the unregistered handler
    */
   void handlerUnregistered(H handler);
 
   /**
-   * Called when an handler begin to process a message.<p/>
-   *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
-   * are different on every invocation.
+   * Called when an handler begin to process a message.
    *
    * @param handler the handler processing the message
    * @param local when the received message is local
@@ -58,10 +49,7 @@ public interface EventBusMetrics<H> extends Metrics {
   void beginHandleMessage(H handler, boolean local);
 
   /**
-   * Called when an handler finish to process a message.<p/>
-   *
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the message handler and therefore
-   * are different on every invocation.
+   * Called when an handler finish to process a message.
    *
    * @param handler the handler processing the message
    * @param failure an optional failure thrown by handler
@@ -69,9 +57,7 @@ public interface EventBusMetrics<H> extends Metrics {
   void endHandleMessage(H handler, Throwable failure);
 
   /**
-   * Called when a message has been sent or published.<p/>
-   *
-   * No specific thread and context can be expected when this method is called.
+   * Called when a message has been sent or published.
    *
    * @param address the address
    * @param publish true when the message is published
@@ -81,9 +67,7 @@ public interface EventBusMetrics<H> extends Metrics {
   void messageSent(String address, boolean publish, boolean local, boolean remote);
 
   /**
-   * Called when a message is received.<p/>
-   *
-   * No specific thread and context can be expected when this method is called.
+   * Called when a message is received.
    *
    * @param address the address
    * @param publish true when the message is published
@@ -93,9 +77,7 @@ public interface EventBusMetrics<H> extends Metrics {
   void messageReceived(String address, boolean publish, boolean local, int handlers);
 
   /**
-   * A message has been sent over the network.<p/>
-   *
-   * No specific thread and context can be expected when this method is called.
+   * A message has been sent over the network.
    *
    * @param address the message address
    * @param numberOfBytes the number of bytes written
@@ -103,9 +85,7 @@ public interface EventBusMetrics<H> extends Metrics {
   void messageWritten(String address, int numberOfBytes);
 
   /**
-   * A message has been received from the network.<p/>
-   *
-   * No specific thread and context can be expected when this method is called.
+   * A message has been received from the network.
    *
    * @param address the message address
    * @param numberOfBytes the number of bytes read
@@ -113,9 +93,7 @@ public interface EventBusMetrics<H> extends Metrics {
   void messageRead(String address, int numberOfBytes);
 
   /**
-   * Called whenever there is a reply failure on the event bus.<p/>
-   *
-   * No specific thread and context can be expected when this method is called.
+   * Called whenever there is a reply failure on the event bus
    *
    * @param address the address
    * @param failure the {@link io.vertx.core.eventbus.ReplyFailure}

@@ -108,7 +108,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     return false;
   }
 
-  protected class DummyEventBusMetrics implements EventBusMetrics<Void> {
+  class DummyEventBusMetrics implements EventBusMetrics<Void> {
 
     @Override
     public void messageWritten(String address, int numberOfBytes) {
@@ -157,7 +157,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void, Void> {
+  class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void, Void> {
 
     @Override
     public Void requestBegin(Void socketMetric, HttpServerRequest request) {
@@ -208,7 +208,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void> {
+  class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void> {
 
     @Override
     public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
@@ -259,7 +259,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyTCPMetrics implements TCPMetrics<Void> {
+  class DummyTCPMetrics implements TCPMetrics<Void> {
 
     @Override
     public Void connected(SocketAddress remoteAddress) {
@@ -292,7 +292,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  protected class DummyDatagramMetrics implements DatagramSocketMetrics {
+  class DummyDatagramMetrics implements DatagramSocketMetrics {
 
     @Override
     public void listening(SocketAddress localAddress) {
