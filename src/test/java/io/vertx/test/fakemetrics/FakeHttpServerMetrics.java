@@ -33,13 +33,15 @@ import java.util.concurrent.ConcurrentMap;
 public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServerMetrics<Void, WebSocketMetric, SocketMetric> {
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
-
-  public WebSocketMetric getMetric(ServerWebSocket ws) {
-    return webSockets.get(ws);
-  }
+  public final HttpServer server;
 
   public FakeHttpServerMetrics(HttpServer server) {
     super(server);
+    this.server = server;
+  }
+
+  public WebSocketMetric getMetric(ServerWebSocket ws) {
+    return webSockets.get(ws);
   }
 
   @Override

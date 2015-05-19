@@ -138,6 +138,5 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   public void close() {
-    throw new UnsupportedOperationException();
   }
 }

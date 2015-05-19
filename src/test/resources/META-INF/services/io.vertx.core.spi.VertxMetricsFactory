@@ -30,4 +30,4 @@
 #  You may elect to redistribute this code under either of these licenses.
 #
 
-io.vertx.test.fakemetrics.FakeMetricsFactory
+io.vertx.test.core.ConfigurableMetricsFactory
