@@ -21,12 +21,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 
 /**
- * The http server metrics SPI that Vert.x will use to call when each http server event occurs.<p/>
- *
- * All the methods on this object including the methods inherited from the super interfaces are invoked
- * with {@link io.vertx.core.Context} and thread of the http server and therefore are the same than
- * the {@link io.vertx.core.spi.metrics.VertxMetrics} {@code createMetrics} method that created and returned
- * this metrics object.
+ * The http server metrics SPI that Vert.x will use to call when each http server event occurs.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */

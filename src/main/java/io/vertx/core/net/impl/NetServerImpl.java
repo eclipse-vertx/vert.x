@@ -386,9 +386,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cg -> {
       if (metrics != null) {
-        listenContext.runOnContext(v -> {
-          metrics.close();
-        });
+        metrics.close();
       }
       executeCloseDone(closeContext, done, fut.cause());
     });
