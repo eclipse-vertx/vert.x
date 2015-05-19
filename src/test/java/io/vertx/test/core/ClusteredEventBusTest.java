@@ -55,11 +55,14 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(received, msg.body());
-        if (options != null && options.getHeaders() != null) {
+        if (options != null) {
           assertNotNull(msg.headers());
-          assertEquals(options.getHeaders().size(), msg.headers().size());
-          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
-            assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+          int numHeaders = options.getHeaders() != null ? options.getHeaders().size() : 0;
+          assertEquals(numHeaders, msg.headers().size());
+          if (numHeaders != 0) {
+            for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
+              assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+            }
           }
         }
       } else {
@@ -424,4 +427,5 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     }
     await();
   }
+
 }

@@ -250,7 +250,7 @@ public class MessageImpl<U, V> implements Message<V> {
 
   private void decodeHeaders() {
     int length = wireBuffer.getInt(headersPos);
-    if (length != 0) {
+    if (length != 4) {
       headersPos += 4;
       int numHeaders = wireBuffer.getInt(headersPos);
       headersPos += 4;

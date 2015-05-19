@@ -325,6 +325,11 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
+  public void testSendWithDeliveryOptionsButNoHeaders() {
+    testSend("foo", "foo", null, new DeliveryOptions());
+  }
+
+  @Test
   public void testReplyWithHeaders() {
     testReply("foo", "foo", null, new DeliveryOptions().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
