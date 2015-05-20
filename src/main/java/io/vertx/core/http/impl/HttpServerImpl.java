@@ -559,6 +559,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       conn.requestHandler(reqHandler.handler);
       connectionMap.put(ch, conn);
       reqHandler.context.executeFromIO(() -> {
+        conn.setMetric(metrics.connected(conn.remoteAddress()));
         conn.handleMessage(request);
       });
     }
@@ -584,32 +585,38 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else {
 
-        wsHandler.context.executeFromIO(() -> {
-          URI theURI;
-          try {
-            theURI = new URI(request.getUri());
-          } catch (URISyntaxException e2) {
-            throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
-          }
-
-          ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
+        ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
             serverOrigin, shake, metrics);
-          wsConn.wsHandler(wsHandler.handler);
+        wsConn.wsHandler(wsHandler.handler);
+        connectionMap.put(ch, wsConn);
 
-          Runnable connectRunnable = () -> {
-            connectionMap.put(ch, wsConn);
-            try {
-              shake.handshake(ch, request);
-            } catch (WebSocketHandshakeException e) {
-              wsConn.handleException(e);
-            } catch (Exception e) {
-              log.error("Failed to generate shake response", e);
-            }
-          };
+        URI theURI;
+        try {
+          theURI = new URI(request.getUri());
+        } catch (URISyntaxException e2) {
+          throw new IllegalArgumentException("Invalid uri " + request.getUri()); //Should never happen
+        }
 
-          ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
+        Runnable connectRunnable = () -> {
+          try {
+            shake.handshake(ch, request);
+          } catch (WebSocketHandshakeException e) {
+            wsHandler.context.executeFromIO(() -> {
+              Handler<Throwable> handler = wsStream.exceptionHandler();
+              if (handler != null) {
+                handler.handle(e);
+              }
+            });
+          } catch (Exception e) {
+            log.error("Failed to generate shake response", e);
+          }
+        };
+
+        ServerWebSocketImpl ws = new ServerWebSocketImpl(vertx, theURI.toString(), theURI.getPath(),
             theURI.getQuery(), new HeadersAdaptor(request.headers()), wsConn, shake.version() != WebSocketVersion.V00,
             connectRunnable, options.getMaxWebsocketFrameSize());
+        wsHandler.context.executeFromIO(() -> {
+          wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
           ws.metric = metrics.connected(wsConn.metric(), ws);
           wsConn.handleWebsocketConnect(ws);
           if (!ws.isRejected()) {
@@ -623,7 +630,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
           }
         });
-
       }
     }
   }
@@ -655,6 +661,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private Handler<C> handler;
     private boolean paused;
     private Handler<Void> endHandler;
+    private Handler<Throwable> exceptionHandler;
 
     Handler<C> handler() {
       synchronized (HttpServerImpl.this) {
@@ -715,8 +722,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     public R exceptionHandler(Handler<Throwable> handler) {
-      // Should we use it in the server close exception handler ?
+      synchronized (HttpServerImpl.this) {
+        exceptionHandler = handler;
+      }
       return (R) this;
+    }
+
+    synchronized Handler<Throwable> exceptionHandler() {
+      return exceptionHandler;
     }
   }
 
