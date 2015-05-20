@@ -46,6 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * This class is thread-safe
@@ -264,6 +265,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
     unregisterAllHandlers();
+    if (metrics != null) {
+      metrics.close();
+    }
     if (server != null) {
       server.close(ar -> {
         if (ar.failed()) {

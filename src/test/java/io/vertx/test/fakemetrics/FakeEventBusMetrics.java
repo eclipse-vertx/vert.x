@@ -18,7 +18,6 @@ package io.vertx.test.fakemetrics;
 
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.metrics.Measured;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
 import java.util.ArrayList;
@@ -138,6 +137,5 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   public void close() {
-    throw new UnsupportedOperationException();
   }
 }

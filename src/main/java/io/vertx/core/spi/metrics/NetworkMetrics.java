@@ -20,7 +20,7 @@ import io.vertx.core.net.SocketAddress;
 
 /**
  * An SPI used internally by Vert.x to gather metrics on a net socket which serves
- * as a base class for TCP or UDP.
+ * as a base class for TCP or UDP.<p/>
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
