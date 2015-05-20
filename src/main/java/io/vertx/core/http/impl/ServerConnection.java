@@ -80,7 +80,6 @@ class ServerConnection extends ConnectionBase {
   private final HttpServerImpl server;
   private final WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
-  private final Object metric;
 
   private Object requestMetric;
   private Handler<HttpServerRequest> requestHandler;
@@ -94,6 +93,7 @@ class ServerConnection extends ConnectionBase {
   private boolean sentCheck;
   private long bytesRead;
   private long bytesWritten;
+  private Object metric;
 
   ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
                    WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
@@ -102,12 +102,15 @@ class ServerConnection extends ConnectionBase {
     this.server = server;
     this.handshaker = handshaker;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress());
   }
 
   @Override
-  protected Object metric() {
+  protected synchronized Object metric() {
     return metric;
+  }
+
+  void setMetric(Object metric) {
+    this.metric = metric;
   }
 
   public synchronized void pause() {
