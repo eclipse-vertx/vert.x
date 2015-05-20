@@ -79,15 +79,14 @@ public interface RecordParser extends Handler<Buffer> {
 
   /**
    * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
-   * by the {@code byte[]} delim.
+   * by the {@code Buffer} delim.
    * <p>
    * {@code output} Will receive whole records which have been parsed.
    *
-   * @param delim  the initial delimiter byte[]
+   * @param delim  the initial delimiter buffer
    * @param output  handler that will receive the output
    */
-  @GenIgnore
-   static RecordParser newDelimited(byte[] delim, Handler<Buffer> output) {
+   static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
      return RecordParserImpl.newDelimited(delim, output); 
    }
 
@@ -122,8 +121,7 @@ public interface RecordParser extends Handler<Buffer> {
    *
    * @param delim  the new delimiter
    */
-  @GenIgnore
-  void delimitedMode(byte[] delim);
+  void delimitedMode(Buffer delim);
 
   /**
    * Flip the parser into fixed size mode, where the record size is specified by {@code size} in bytes.

@@ -56,13 +56,13 @@ public class RecordParserImpl implements RecordParser {
    * @param str  the string
    * @return The byte[] form of the string
    */
-  public static byte[] latin1StringToBytes(String str) {
+  public static Buffer latin1StringToBytes(String str) {
     byte[] bytes = new byte[str.length()];
     for (int i = 0; i < str.length(); i++) {
       char c = str.charAt(i);
       bytes[i] = (byte) (c & 0xFF);
     }
-    return bytes;
+    return Buffer.buffer(bytes);
   }
 
   /**
@@ -80,14 +80,14 @@ public class RecordParserImpl implements RecordParser {
 
   /**
    * Create a new {@code RecordParser} instance, initially in delimited mode, and where the delimiter can be represented
-   * by the {@code byte[]} delim.
+   * by the {@code buffer} delim.
    * <p>
    * {@code output} Will receive whole records which have been parsed.
    *
-   * @param delim  the initial delimiter byte[]
+   * @param delim  the initial delimiter buffer
    * @param output  handler that will receive the output
    */
-  public static RecordParser newDelimited(byte[] delim, Handler<Buffer> output) {
+  public static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
     RecordParserImpl ls = new RecordParserImpl(output);
     ls.delimitedMode(delim);
     return ls;
@@ -129,10 +129,10 @@ public class RecordParserImpl implements RecordParser {
    *
    * @param delim  the new delimiter
    */
-  public void delimitedMode(byte[] delim) {
+  public void delimitedMode(Buffer delim) {
     Objects.requireNonNull(delim, "delim");
     delimited = true;
-    this.delim = delim;
+    this.delim = delim.getBytes();
     delimPos = 0;
     reset = true;
   }
