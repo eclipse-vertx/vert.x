@@ -112,10 +112,9 @@ public class Json {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public static <T> T decodeValue(String str, Class<?> clazz) throws DecodeException {
+  public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
     try {
-      return (T)mapper.readValue(str, clazz);
+      return mapper.readValue(str, clazz);
     }
     catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage());
