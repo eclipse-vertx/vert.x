@@ -46,6 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * This class is thread-safe
@@ -264,6 +265,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
     unregisterAllHandlers();
+    if (metrics != null) {
+      metrics.close();
+    }
     if (server != null) {
       server.close(ar -> {
         if (ar.failed()) {
@@ -570,9 +574,15 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     Objects.requireNonNull(registration.handler, "handler");
     ContextImpl context = vertx.getContext();
     boolean hasContext = context != null;
+    Handler<AsyncResult<Void>> register;
     if (!hasContext) {
       // Embedded
-      context = vertx.createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+      Context newContext = context = vertx.createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+      register = fut -> {
+        newContext.runOnContext(v -> registration.setResult(fut));
+      };
+    } else {
+      register = registration::setResult;
     }
     HandlerHolder holder = new HandlerHolder<T>(registration, replyHandler, localOnly, context, timeoutID);
 
@@ -585,12 +595,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       }
       if (subs != null && !replyHandler && !localOnly) {
         // Propagate the information
-        subs.add(address, serverID, registration::setResult);
+        subs.add(address, serverID, ar -> {
+          register.handle(ar);
+        });
       } else {
-        registration.setResult(Future.succeededFuture());
+        register.handle(Future.succeededFuture());
       }
     } else {
-      registration.setResult(Future.succeededFuture());
+      register.handle(Future.succeededFuture());
     }
 
     handlers.list.add(holder);
@@ -783,7 +795,9 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
       }
       if (unregisterMetric) {
-        metrics.handlerUnregistered(handler.metric);
+        context.runOnContext(v -> {
+          metrics.handlerUnregistered(handler.metric);
+        });
       }
     }
 
@@ -1002,6 +1016,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     private final Queue<Message<T>> pending = new ArrayDeque<>(8);
     private boolean paused;
     private Object metric;
+    private Context context;
 
     public HandlerRegistration(String address, boolean replyHandler, boolean localOnly, long timeoutID) {
       this.address = address;
@@ -1076,8 +1091,12 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       registered = false;
     }
 
+    /**
+     * This method must be invoked the handler registration context/thread.
+     */
     private synchronized void setResult(AsyncResult<Void> result) {
       this.result = result;
+      this.context = Vertx.currentContext();
       if (completionHandler != null) {
         if (result.succeeded()) {
           metric = metrics.handlerRegistered(address, replyHandler);
