@@ -109,7 +109,7 @@ class ServerConnection extends ConnectionBase {
     return metric;
   }
 
-  void setMetric(Object metric) {
+  synchronized void setMetric(Object metric) {
     this.metric = metric;
   }
 
