@@ -18,6 +18,9 @@ package io.vertx.test.core;
 
 
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
@@ -26,10 +29,12 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.WebSocketStream;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetSocket;
@@ -37,11 +42,13 @@ import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -540,10 +547,10 @@ public class WebsocketTest extends VertxTestBase {
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
     sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-      "Upgrade: WebSocket\r\n" +
-      "Connection: Upgrade\r\n" +
-      "Sec-WebSocket-Accept: " + encoded + "\r\n" +
-      "\r\n");
+        "Upgrade: WebSocket\r\n" +
+        "Connection: Upgrade\r\n" +
+        "Sec-WebSocket-Accept: " + encoded + "\r\n" +
+        "\r\n");
     return sock;
   }
 
@@ -927,7 +934,8 @@ public class WebsocketTest extends VertxTestBase {
     ReadStream<ServerWebSocket> stream = server.websocketStream();
     AtomicBoolean closed = new AtomicBoolean();
     stream.endHandler(v -> closed.set(true));
-    stream.handler(ws -> {});
+    stream.handler(ws -> {
+    });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       assertFalse(closed.get());
@@ -1086,6 +1094,29 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
       }).end();
+    });
+    await();
+  }
+
+  @Test
+  public void testRaceConditionWithWebsocketClientWorker() throws Exception {
+    int size = getOptions().getWorkerPoolSize() - 4;
+    List<Context> workers = createWorkers(size + 1);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.websocketHandler(ws -> {
+      ws.write(Buffer.buffer("hello"));
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      workers.get(0).runOnContext(v -> {
+        WebSocketStream webSocketStream = client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/");
+        webSocketStream.handler(ws -> {
+          ws.handler(buf -> {
+            assertEquals("hello", buf.toString());
+            testComplete();
+          });
+        });
+      });
     });
     await();
   }
