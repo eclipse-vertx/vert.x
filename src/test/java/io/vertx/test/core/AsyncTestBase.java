@@ -608,4 +608,14 @@ public class AsyncTestBase {
     }
   }
 
+  protected <T> Handler<AsyncResult<T>> onSuccess(Consumer<T> consumer) {
+    return result -> {
+      if (result.failed()) {
+        result.cause().printStackTrace();
+        fail(result.cause().getMessage());
+      } else {
+        consumer.accept(result.result());
+      }
+    };
+  }
 }

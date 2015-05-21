@@ -89,12 +89,11 @@ public class MetricsContextTest extends AsyncTestBase {
       metricsContext.set(Vertx.currentContext());
       return new DummyVertxMetrics();
     };
-    Vertx.clusteredVertx(new VertxOptions().setClustered(true).setMetricsOptions(new MetricsOptions().setEnabled(true)), ar -> {
-      assertTrue(ar.succeeded());
+    Vertx.clusteredVertx(new VertxOptions().setClustered(true).setMetricsOptions(new MetricsOptions().setEnabled(true)), onSuccess(vertx -> {
       assertSame(testThread, metricsThread.get());
       assertNull(metricsContext.get());
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -174,12 +173,11 @@ public class MetricsContextTest extends AsyncTestBase {
         response.setStatusCode(200).setChunked(true).write("bye").end();
         response.close();
       });
-      server.listen(8080, "localhost", ar -> {
-        assertTrue(ar.succeeded());
+      server.listen(8080, "localhost", onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
-      });
+      }));
     });
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient();
@@ -278,12 +276,11 @@ public class MetricsContextTest extends AsyncTestBase {
           ws.write(Buffer.buffer("bye"));
         });
       });
-      server.listen(8080, "localhost", ar -> {
-        assertTrue(ar.succeeded());
+      server.listen(8080, "localhost", onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
-      });
+      }));
     });
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient();
@@ -383,10 +380,9 @@ public class MetricsContextTest extends AsyncTestBase {
       });
     });
     CountDownLatch latch = new CountDownLatch(1);
-    server.listen(8080, "localhost", ar -> {
-      assertTrue(ar.succeeded());
+    server.listen(8080, "localhost", onSuccess(s -> {
       latch.countDown();
-    });
+    }));
     awaitLatch(latch);
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
@@ -490,10 +486,9 @@ public class MetricsContextTest extends AsyncTestBase {
       });
     });
     CountDownLatch latch = new CountDownLatch(1);
-    server.listen(8080, "localhost", ar -> {
-      assertTrue(ar.succeeded());
+    server.listen(8080, "localhost", onSuccess(s -> {
       latch.countDown();
-    });
+    }));
     awaitLatch(latch);
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
@@ -589,19 +584,16 @@ public class MetricsContextTest extends AsyncTestBase {
           so.write("bye");
         });
       });
-      server.listen(1234, "localhost", ar -> {
-        assertTrue(ar.succeeded());
+      server.listen(1234, "localhost", onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         checker.accept(expectedThread.get(), expectedContext.get());
         latch.countDown();
-      });
+      }));
     });
     awaitLatch(latch);
     NetClient client = vertx.createNetClient();
-    client.connect(1234, "localhost", ar -> {
-      assertTrue(ar.succeeded());
-      NetSocket so = ar.result();
+    client.connect(1234, "localhost", onSuccess(so -> {
       so.handler(buf -> {
         so.closeHandler(v -> {
           executeInVanillaThread(() -> {
@@ -618,7 +610,7 @@ public class MetricsContextTest extends AsyncTestBase {
         so.close();
       });
       so.write("hello");
-    });
+    }));
     await();
   }
 
@@ -684,18 +676,15 @@ public class MetricsContextTest extends AsyncTestBase {
         so.write("bye");
       });
     });
-    server.listen(1234, "localhost", ar -> {
-      assertTrue(ar.succeeded());
+    server.listen(1234, "localhost", onSuccess(s -> {
       latch.countDown();
-    });
+    }));
     awaitLatch(latch);
     ctx.runOnContext(v1 -> {
       NetClient client = vertx.createNetClient();
       expectedThread.set(Thread.currentThread());
       expectedContext.set(Vertx.currentContext());
-      client.connect(1234, "localhost", ar -> {
-        assertTrue(ar.succeeded());
-        NetSocket so = ar.result();
+      client.connect(1234, "localhost", onSuccess(so -> {
         so.handler(buf -> {
           so.closeHandler(v -> {
             assertTrue(bytesReadCalled.get());
@@ -713,7 +702,7 @@ public class MetricsContextTest extends AsyncTestBase {
           so.close();
         });
         so.write("hello");
-      });
+      }));
     });
     await();
   }
@@ -815,11 +804,10 @@ public class MetricsContextTest extends AsyncTestBase {
     Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     vertx.eventBus();
     executeInVanillaThread(() -> {
-      vertx.close(ar -> {
-        assertTrue(ar.succeeded());
+      vertx.close(onSuccess(v -> {
         assertTrue(closeCalled.get());
         testComplete();
-      });
+      }));
     });
     await();
   }
@@ -880,19 +868,18 @@ public class MetricsContextTest extends AsyncTestBase {
         checker.accept(consumerThread.get(), consumerContext.get());
         executeInVanillaThread(() -> {
           vertx.getOrCreateContext().runOnContext(v2 -> {
-            consumer.unregister(ar -> {
+            consumer.unregister(onSuccess(v3 -> {
               assertTrue(registeredCalled.get());
               assertTrue(beginHandleCalled.get());
               assertTrue(endHandleCalled.get());
               waitUntil(() -> unregisteredCalled.get());
               testComplete();
-            });
+            }));
           });
         });
-      }).completionHandler(ar -> {
-        assertTrue(ar.succeeded());
+      }).completionHandler(onSuccess(v2 -> {
         eb.send("the_address", "the_msg");
-      });
+      }));
     });
     await();
   }
