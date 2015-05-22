@@ -1961,7 +1961,7 @@ public class NetTest extends VertxTestBase {
       });
       server.listen(1234, ar -> {
         assertTrue(ar.succeeded());
-        // Borrow all worker threads for one second
+        // Create a one second worker starvation
         for (int i = 1; i < workers.size(); i++) {
           workers.get(i).runOnContext(v2 -> {
             latch1.countDown();
@@ -1983,4 +1983,48 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testClientWorkerMissBufferWhenBufferArriveBeforeConnectCallback() throws Exception {
+    int size = getOptions().getWorkerPoolSize();
+    List<Context> workers = createWorkers(size + 1);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(size);
+    NetServer server = vertx.createNetServer();
+    server.connectHandler(so -> {
+      try {
+        awaitLatch(latch2);
+      } catch (InterruptedException e) {
+        fail(e.getMessage());
+        return;
+      }
+      so.write(Buffer.buffer("hello"));
+    });
+    server.listen(1234, ar -> {
+      assertTrue(ar.succeeded());
+      latch1.countDown();
+    });
+    awaitLatch(latch1);
+    workers.get(0).runOnContext(v -> {
+      NetClient client = vertx.createNetClient();
+      client.connect(1234, "localhost", ar -> {
+        assertTrue(ar.succeeded());
+        NetSocket so = ar.result();
+        so.handler(buf -> {
+          assertEquals("hello", buf.toString());
+          testComplete();
+        });
+      });
+      // Create a one second worker starvation
+      for (int i = 1; i < workers.size(); i++) {
+        workers.get(i).runOnContext(v2 -> {
+          latch2.countDown();
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException ignore) {
+          }
+        });
+      }
+    });
+    await();
+  }
 }
