@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1945,4 +1946,40 @@ public class NetTest extends VertxTestBase {
     return file;
   }
 
+  @Test
+  public void testClientSendBufferWithServerWorkerStarvation() throws Exception {
+    int size = getOptions().getWorkerPoolSize();
+    List<Context> workers = createWorkers(size + 1);
+    CountDownLatch latch1 = new CountDownLatch(workers.size() - 1);
+    workers.get(0).runOnContext(v -> {
+      NetServer server = vertx.createNetServer();
+      server.connectHandler(so -> {
+        so.handler(buf -> {
+          assertEquals("hello", buf.toString());
+          testComplete();
+        });
+      });
+      server.listen(1234, ar -> {
+        assertTrue(ar.succeeded());
+        // Borrow all worker threads for one second
+        for (int i = 1; i < workers.size(); i++) {
+          workers.get(i).runOnContext(v2 -> {
+            latch1.countDown();
+            try {
+              Thread.sleep(1000);
+            } catch (InterruptedException ignore) {
+            }
+          });
+        }
+      });
+    });
+    awaitLatch(latch1);
+    NetClient client = vertx.createNetClient();
+    client.connect(1234, "localhost", ar -> {
+      assertTrue(ar.succeeded());
+      NetSocket so = ar.result();
+      so.write(Buffer.buffer("hello"));
+    });
+    await();
+  }
 }

@@ -433,13 +433,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     }
 
     private void connected(Channel ch, HandlerHolder<NetSocket> handler) {
-      handler.context.executeFromIO(() -> doConnected(ch, handler));
-    }
-
-    private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
       NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics);
       socketMap.put(ch, sock);
-      handler.handler.handle(sock);
+      handler.context.executeFromIO(() -> handler.handler.handle(sock));
     }
   }
 
