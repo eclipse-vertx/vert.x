@@ -1947,7 +1947,7 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testClientSendBufferWithServerWorkerStarvation() throws Exception {
+  public void testServerWorkerMissBufferWhenBufferArriveBeforeConnectCallback() throws Exception {
     int size = getOptions().getWorkerPoolSize();
     List<Context> workers = createWorkers(size + 1);
     CountDownLatch latch1 = new CountDownLatch(workers.size() - 1);
@@ -1982,4 +1982,5 @@ public class NetTest extends VertxTestBase {
     });
     await();
   }
+
 }
