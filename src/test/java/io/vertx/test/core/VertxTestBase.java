@@ -16,7 +16,10 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
@@ -37,6 +40,9 @@ import org.junit.Rule;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -310,4 +316,39 @@ public class VertxTestBase extends AsyncTestBase {
       "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5"
     };
 
+  /**
+   * Create a worker verticle for the current Vert.x and return its context.
+   *
+   * @return the context
+   * @throws Exception anything preventing the creation of the worker
+   */
+  protected Context createWorker() throws Exception {
+    CompletableFuture<Context> fut = new CompletableFuture<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        fut.complete(context);
+      }
+    }, new DeploymentOptions().setWorker(true), ar -> {
+      if (ar.failed()) {
+        fut.completeExceptionally(ar.cause());
+      }
+    });
+    return fut.get();
+  }
+
+  /**
+   * Create worker verticles for the current Vert.x and returns the list of their contexts.
+   *
+   * @param num the number of verticles to create
+   * @return the contexts
+   * @throws Exception anything preventing the creation of the workers
+   */
+  protected List<Context> createWorkers(int num) throws Exception {
+    List<Context> contexts = new ArrayList<>();
+    for (int i = 0;i < num;i++) {
+      contexts.add(createWorker());
+    }
+    return contexts;
+  }
 }
