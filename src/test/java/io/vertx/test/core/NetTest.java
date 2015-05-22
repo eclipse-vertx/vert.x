@@ -1961,7 +1961,7 @@ public class NetTest extends VertxTestBase {
       });
       server.listen(1234, ar -> {
         assertTrue(ar.succeeded());
-        // Borrow all worker threads for one second
+        // Create a one second worker starvation
         for (int i = 1; i < workers.size(); i++) {
           workers.get(i).runOnContext(v2 -> {
             latch1.countDown();
@@ -2014,7 +2014,7 @@ public class NetTest extends VertxTestBase {
           testComplete();
         });
       });
-      // Borrow all worker threads for one second
+      // Create a one second worker starvation
       for (int i = 1; i < workers.size(); i++) {
         workers.get(i).runOnContext(v2 -> {
           latch2.countDown();
