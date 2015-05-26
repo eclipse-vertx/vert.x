@@ -22,10 +22,7 @@ import com.hazelcast.core.*;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.spi.VertxSPI;
-import org.vertx.java.core.spi.cluster.AsyncMap;
-import org.vertx.java.core.spi.cluster.AsyncMultiMap;
-import org.vertx.java.core.spi.cluster.ClusterManager;
-import org.vertx.java.core.spi.cluster.NodeListener;
+import org.vertx.java.core.spi.cluster.*;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -34,13 +31,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A cluster manager that uses Hazelcast
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class HazelcastClusterManager implements ClusterManager, MembershipListener {
+class HazelcastClusterManager implements ExtendedClusterManager, MembershipListener {
 
   private static final Logger log = LoggerFactory.getLogger(HazelcastClusterManager.class);
   // Hazelcast config file
@@ -51,7 +49,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
 
   private final VertxSPI vertx;
 
-  private HazelcastInstance hazelcast;
+  public HazelcastInstance hazelcast;
   private String nodeID;
   private String membershipListenerId;
 
@@ -130,6 +128,15 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   public <K, V> Map<K, V> getSyncMap(String name) {
     IMap<K, V> map = hazelcast.getMap(name);
     return map;
+  }
+
+  public void beforeLeave() {
+    ILock lock = hazelcast.getLock("vertx.shutdownlock");
+    try {
+      lock.tryLock(30, TimeUnit.SECONDS);
+    } catch (InterruptedException ignore) {
+    }
+    // The lock should be automatically released when the node is shutdown
   }
 
   public synchronized void leave() {

@@ -42,6 +42,7 @@ import org.vertx.java.core.parsetools.RecordParser;
 import org.vertx.java.core.spi.cluster.AsyncMultiMap;
 import org.vertx.java.core.spi.cluster.ChoosableIterable;
 import org.vertx.java.core.spi.cluster.ClusterManager;
+import org.vertx.java.core.spi.cluster.ExtendedClusterManager;
 
 import java.util.List;
 import java.util.Map;
@@ -506,8 +507,15 @@ public class DefaultEventBus implements EventBus {
 
   @Override
   public void close(Handler<AsyncResult<Void>> doneHandler) {
+
+    if (clusterMgr != null && clusterMgr instanceof ExtendedClusterManager) {
+      ExtendedClusterManager ecm = (ExtendedClusterManager)clusterMgr;
+      ecm.beforeLeave();
+    }
+
     // Explicitly unregister all handlers on close
     unregisterAllHandlers();
+
 		if (clusterMgr != null) {
 			clusterMgr.leave();
 		}
