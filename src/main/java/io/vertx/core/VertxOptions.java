@@ -572,6 +572,9 @@ public class VertxOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setWarningExceptionTime(long warningExceptionTime) {
+    if (warningExceptionTime < 1) {
+      throw new IllegalArgumentException("warningExceptionTime must be > 0");
+    }
     this.warningExceptionTime = warningExceptionTime;
     return this;
   }
