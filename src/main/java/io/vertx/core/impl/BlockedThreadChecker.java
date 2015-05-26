@@ -45,8 +45,8 @@ public class BlockedThreadChecker {
         for (VertxThread thread: threads.keySet()) {
           long execStart = thread.startTime();
           long dur = now - execStart;
-          if (execStart != 0 && dur > (thread.isWorker() ? maxWorkerExecTime : maxEventLoopExecTime)) {
-            long timeLimit = thread.isWorker() ? maxWorkerExecTime : maxEventLoopExecTime;
+          final long timeLimit = thread.isWorker() ? maxWorkerExecTime : maxEventLoopExecTime;
+          if (execStart != 0 && dur > timeLimit) {
             final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + (timeLimit / 1000000);
             if (dur <= warningExceptionTime) {
               log.warn(message);
