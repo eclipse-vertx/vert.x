@@ -562,7 +562,7 @@ public class VertxOptions {
    * @return the warning exception time threshold
    */
   public long getWarningExceptionTime() {
-    return warningExceptionTime ;
+    return warningExceptionTime;
   }
 
   /**
