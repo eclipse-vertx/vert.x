@@ -96,5 +96,10 @@ public interface ClusterManager {
    */
   void leave(Handler<AsyncResult<Void>> resultHandler);
 
+  /**
+   * Is the cluster manager active?
+   *
+   * @return  true if active, false otherwise
+   */
   boolean isActive();
 }

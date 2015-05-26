@@ -46,7 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+
 
 /**
  * This class is thread-safe
@@ -264,6 +264,15 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
+
+    /*
+    Workaround fo Hazelcast bug https://github.com/hazelcast/hazelcast/issues/5220
+     */
+    if (clusterMgr != null && clusterMgr instanceof ExtendedClusterManager) {
+      ExtendedClusterManager ecm = (ExtendedClusterManager)clusterMgr;
+      ecm.beforeLeave();
+    }
+
     unregisterAllHandlers();
     if (metrics != null) {
       metrics.close();
