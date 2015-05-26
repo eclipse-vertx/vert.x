@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.json.impl;
+package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -23,10 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.EncodeException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -39,8 +35,8 @@ import java.util.Map;
  */
 public class Json {
 
-  private final static ObjectMapper mapper = new ObjectMapper();
-  private final static ObjectMapper prettyMapper = new ObjectMapper();
+  public static ObjectMapper mapper = new ObjectMapper();
+  public static ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
@@ -56,8 +52,34 @@ public class Json {
     prettyMapper.registerModule(module);
   }
 
+  public static String encode(Object obj) throws EncodeException {
+    try {
+      return mapper.writeValueAsString(obj);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
+  public static String encodePrettily(Object obj) throws EncodeException {
+    try {
+      return prettyMapper.writeValueAsString(obj);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
   @SuppressWarnings("unchecked")
-  public static Object checkAndCopy(Object val, boolean copy) {
+  public static <T> T decodeValue(String str, Class<?> clazz) throws DecodeException {
+    try {
+      return (T)mapper.readValue(str, clazz);
+    }
+    catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage());
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  static Object checkAndCopy(Object val, boolean copy) {
     if (val == null) {
       // OK
     } else if (val instanceof Number && !(val instanceof BigDecimal)) {
@@ -94,32 +116,6 @@ public class Json {
       throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
     }
     return val;
-  }
-
-  public static String encode(Object obj) throws EncodeException {
-    try {
-      return mapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
-  }
-
-  public static String encodePrettily(Object obj) throws EncodeException {
-    try {
-      return prettyMapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> T decodeValue(String str, Class<?> clazz) throws DecodeException {
-    try {
-      return (T)mapper.readValue(str, clazz);
-    }
-    catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage());
-    }
   }
 
   private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {

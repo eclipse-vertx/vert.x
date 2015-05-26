@@ -18,7 +18,6 @@ package io.vertx.core.json;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.Json;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.nio.charset.StandardCharsets;
