@@ -1117,7 +1117,22 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testParamPercentDecoding() throws UnsupportedEncodingException {
     testParamDecoding("%");
-  } 
+  }
+
+  @Test
+  public void testParamSpaceDecoding() throws UnsupportedEncodingException {
+    testParamDecoding(" ");
+  }
+
+  @Test
+  public void testParamNormalDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("hello");
+  }
+
+  @Test
+  public void testParamAltogetherDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("äüö+% hello");
+  }
 
   private void testParamDecoding(String value) throws UnsupportedEncodingException {
     
@@ -1129,9 +1144,9 @@ public class HttpTest extends HttpTestBase {
       });
       req.response().end();
     });
-    String postData = "param="+URLEncoder.encode(value,"UTF-8");
+    String postData = "param=" + URLEncoder.encode(value,"UTF-8");
     server.listen(onSuccess(server -> {
-      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST,"/")
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
         .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
         .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(postData.length()))
         .handler(resp -> {
