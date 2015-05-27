@@ -29,7 +29,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.WebSocketBase;
@@ -1099,7 +1098,75 @@ public class WebsocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testRaceConditionWithWebsocketClientEventLoop() {
+    testRaceConditionWithWebsocketClient(vertx.getOrCreateContext());
+  }
+
+  @Test
   public void testRaceConditionWithWebsocketClientWorker() throws Exception {
+    CompletableFuture<Context> fut = new CompletableFuture<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        fut.complete(context);
+      }
+    }, new DeploymentOptions().setWorker(true), ar -> {
+      if (ar.failed()) {
+        fut.completeExceptionally(ar.cause());
+      }
+    });
+    testRaceConditionWithWebsocketClient(fut.get());
+  }
+
+  private void testRaceConditionWithWebsocketClient(Context context) {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    // Handcrafted websocket handshake for sending a frame immediatly after the handshake
+    server.requestHandler(req -> {
+      byte[] accept;
+      try {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
+        digest.update(inputBytes);
+        byte[] hashedBytes = digest.digest();
+        accept = Base64.getEncoder().encode(hashedBytes);
+      } catch (NoSuchAlgorithmException e) {
+        fail(e.getMessage());
+        return;
+      }
+      NetSocket so = req.netSocket();
+      Buffer data = Buffer.buffer();
+      data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
+      data.appendString("Upgrade: websocket\r\n");
+      data.appendString("Connection: Upgrade\r\n");
+      data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
+      data.appendString("\r\n");
+      data.appendBytes(new byte[]{
+          (byte) 0x82,
+          0x05,
+          0x68,
+          0x65,
+          0x6c,
+          0x6c,
+          0x6f,
+      });
+      so.write(data);
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      context.runOnContext(v -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.handler(buf -> {
+            assertEquals("hello", buf.toString());
+            testComplete();
+          });
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testRaceConditionWithWebsocketClientWorker2() throws Exception {
     int size = getOptions().getWorkerPoolSize() - 4;
     List<Context> workers = createWorkers(size + 1);
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
