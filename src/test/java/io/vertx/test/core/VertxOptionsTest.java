@@ -170,6 +170,15 @@ public class VertxOptionsTest extends VertxTestBase {
       // OK
     }
     assertNull(options.getMetricsOptions());
+
+    try {
+      options.setWarningExceptionTime(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    assertEquals(options, options.setWarningExceptionTime(1000000000l));
+    assertEquals(1000000000l, options.getWarningExceptionTime());
   }
 
   @Test
@@ -192,6 +201,7 @@ public class VertxOptionsTest extends VertxTestBase {
     boolean metricsEnabled = rand.nextBoolean();
     int quorumSize = 51214;
     String haGroup = TestUtils.randomAlphaString(100);
+    long warningExceptionTime = TestUtils.randomPositiveLong();
     options.setClusterPort(clusterPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
     options.setInternalBlockingPoolSize(internalBlockingPoolSize);
@@ -208,6 +218,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setMetricsOptions(
         new MetricsOptions().
             setEnabled(metricsEnabled));
+    options.setWarningExceptionTime(warningExceptionTime);
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
     assertEquals(clusterPingInterval, options.getClusterPingInterval());
@@ -225,6 +236,7 @@ public class VertxOptionsTest extends VertxTestBase {
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertNotNull(metricsOptions);
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
+    assertEquals(warningExceptionTime, options.getWarningExceptionTime());
   }
 
   @Test
@@ -244,6 +256,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.isHAEnabled(), json.isHAEnabled());
     assertEquals(def.getQuorumSize(), json.getQuorumSize());
     assertEquals(def.getHAGroup(), json.getHAGroup());
+    assertEquals(def.getWarningExceptionTime(), json.getWarningExceptionTime());
   }
 
   @Test
@@ -265,6 +278,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(1, options.getQuorumSize());
     assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
     assertNull(options.getMetricsOptions());
+    assertEquals(5000000000l, options.getWarningExceptionTime());
     int clusterPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
     int internalBlockingPoolSize = TestUtils.randomPositiveInt();
@@ -276,6 +290,7 @@ public class VertxOptionsTest extends VertxTestBase {
     int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
     int maxWorkerExecuteTime = TestUtils.randomPositiveInt();
     int proxyOperationTimeout = TestUtils.randomPositiveInt();
+    long warningExceptionTime = TestUtils.randomPositiveLong();
     Random rand = new Random();
     boolean haEnabled = rand.nextBoolean();
     int quorumSize = TestUtils.randomShort() + 1;
@@ -298,6 +313,7 @@ public class VertxOptionsTest extends VertxTestBase {
         put("haEnabled", haEnabled).
         put("quorumSize", quorumSize).
         put("haGroup", haGroup).
+        put("warningExceptionTime", warningExceptionTime).
         put("metricsOptions", new JsonObject().
             put("enabled", metricsEnabled).
             put("jmxEnabled", jmxEnabled).
@@ -319,5 +335,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haGroup, options.getHAGroup());
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
+    assertEquals(warningExceptionTime, options.getWarningExceptionTime());
   }
 }

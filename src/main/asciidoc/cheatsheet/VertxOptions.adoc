@@ -84,4 +84,9 @@ Set the HA group to be used when HA is enabled.+++
 |`link:MetricsOptions.html[MetricsOptions]`
 |+++
 Set the metrics options+++
+
+|[[warningExceptionTime]]`warningExceptionTime`
+|`Number`
+|+++
+Set the threshold value above this, the blocked warning contains a stack trace.+++
 |===
