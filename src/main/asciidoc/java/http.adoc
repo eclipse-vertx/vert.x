@@ -583,7 +583,7 @@ If you want to configure options for the client, you create it as follows:
 [source,java]
 ----
 HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
-HttpClient client = vertx.createHttpClient();
+HttpClient client = vertx.createHttpClient(options);
 ----
 
 === Making requests
