@@ -226,6 +226,8 @@ class ClientConnection extends ConnectionBase {
         context.executeFromIO(() -> {
           exceptionHandler.handle(e);
         });
+      } else {
+        log.error("Error in websocket handshake", e);
       }
     }
 
@@ -236,7 +238,8 @@ class ClientConnection extends ConnectionBase {
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation, client.getOptions().getMaxWebsocketFrameSize());
+      WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
+                                                  client.getOptions().getMaxWebsocketFrameSize());
       ws = webSocket;
       handshaker.finishHandshake(channel, response);
       context.executeFromIO(() -> {
