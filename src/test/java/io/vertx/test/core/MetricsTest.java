@@ -270,7 +270,8 @@ public class MetricsTest extends VertxTestBase {
         assertEquals(ADDRESS1, registration.address);
         assertEquals(false, registration.replyHandler);
         assertEquals(1, registration.beginCount.get());
-        assertEquals(1, registration.endCount.get());
+        // This might take a little time
+        waitUntil(() -> 1 == registration.endCount.get());
         assertEquals(0, registration.failureCount.get());
         assertEquals(expectedLocalCoult, registration.localCount.get());
         testComplete();
