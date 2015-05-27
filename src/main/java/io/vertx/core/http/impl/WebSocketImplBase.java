@@ -44,7 +44,6 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   private final boolean supportsContinuation;
   private final String textHandlerID;
   private final String binaryHandlerID;
-  private final VertxInternal vertx;
   private final int maxWebSocketFrameSize;
   private final MessageConsumer binaryHandlerRegistration;
   private final MessageConsumer textHandlerRegistration;
@@ -61,7 +60,6 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize) {
     this.supportsContinuation = supportsContinuation;
-    this.vertx = vertx;
     this.textHandlerID = UUID.randomUUID().toString();
     this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
