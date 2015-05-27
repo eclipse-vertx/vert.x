@@ -349,11 +349,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
           if (data instanceof Attribute) {
             Attribute attr = (Attribute) data;
             try {
-              if (isURLEncoded) {
-                attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
-              } else {
                 attributes().add(attr.getName(), attr.getValue());
-              }
             } catch (Exception e) {
               // Will never happen, anyway handle it somehow just in case
               handleException(e);
