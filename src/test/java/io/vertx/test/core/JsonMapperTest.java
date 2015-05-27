@@ -32,6 +32,7 @@ public class JsonMapperTest extends VertxTestBase {
     ObjectMapper newMapper = new ObjectMapper();
     Json.mapper = newMapper;
     assertSame(newMapper, Json.mapper);
+    Json.mapper = mapper;
   }
 
   @Test
@@ -41,5 +42,6 @@ public class JsonMapperTest extends VertxTestBase {
     ObjectMapper newMapper = new ObjectMapper();
     Json.prettyMapper = newMapper;
     assertSame(newMapper, Json.prettyMapper);
+    Json.prettyMapper = mapper;
   }
 }
