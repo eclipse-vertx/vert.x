@@ -54,7 +54,7 @@
   <properties>
 
     <netty.version>4.0.25.Final</netty.version>
-    <jackson.version>2.4.3</jackson.version>
+    <jackson.version>2.5.3</jackson.version>
     <metrics.version>3.0.2</metrics.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.7</slf4j.version>
