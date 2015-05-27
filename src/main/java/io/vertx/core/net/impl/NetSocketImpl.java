@@ -64,7 +64,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private final MessageConsumer registration;
   private final SSLHelper helper;
   private final boolean client;
-  private final Object metric;
+  private Object metric;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -77,13 +77,16 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     this.helper = helper;
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
-    this.metric = metrics.connected(remoteAddress());
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }
 
+  protected synchronized void setMetric(Object metric) {
+    this.metric = metric;
+  }
+
   @Override
-  protected Object metric() {
+  protected synchronized Object metric() {
     return metric;
   }
 

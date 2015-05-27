@@ -244,6 +244,7 @@ class ClientConnection extends ConnectionBase {
       handshaker.finishHandshake(channel, response);
       context.executeFromIO(() -> {
         log.debug("WebSocket handshake complete");
+        webSocket.setMetric(metrics().connected(metric(), webSocket));
         wsConnect.handle(webSocket);
       });
     }

@@ -39,7 +39,6 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@Ignore
 public class MetricsContextTest extends AsyncTestBase {
 
   @Test
