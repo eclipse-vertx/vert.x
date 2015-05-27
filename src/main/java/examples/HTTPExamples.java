@@ -16,13 +16,11 @@
 
 package examples;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
 /**
@@ -257,7 +255,7 @@ public class HTTPExamples {
 
   public void example29(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
-    HttpClient client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient(options);
   }
 
   public void example30(Vertx vertx) {
