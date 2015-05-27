@@ -1105,6 +1105,45 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testParamUmlauteDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("äüö");
+  } 
+  
+  @Test
+  public void testParamPlusDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("+");
+  } 
+
+  @Test
+  public void testParamPercentDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("%");
+  } 
+
+  private void testParamDecoding(String value) throws UnsupportedEncodingException {
+    
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.endHandler(v -> {
+        MultiMap formAttributes = req.formAttributes();
+        assertEquals(value, formAttributes.get("param"));
+      });
+      req.response().end();
+    });
+    String postData = "param="+URLEncoder.encode(value,"UTF-8");
+    server.listen(onSuccess(server -> {
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST,"/")
+        .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
+        .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(postData.length()))
+        .handler(resp -> {
+          testComplete();
+        })
+    .write(postData).end();
+    }));
+
+    await();
+  }
+
+  @Test
   public void testParamsAmpersand() {
     testParams('&');
   }
