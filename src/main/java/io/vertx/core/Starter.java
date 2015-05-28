@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.impl.LoggerFactory;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.spi.VertxMetricsFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,6 +37,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.ServiceLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -166,7 +168,14 @@ public class Starter {
   }
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
-    MetricsOptions metricsOptions = new MetricsOptions();
+    MetricsOptions metricsOptions;
+    ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
+    if (factories.iterator().hasNext()) {
+      VertxMetricsFactory factory = factories.iterator().next();
+      metricsOptions = factory.newOptions();
+    } else {
+      metricsOptions = new MetricsOptions();
+    }
     configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);
     options = new VertxOptions().setMetricsOptions(metricsOptions);
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);

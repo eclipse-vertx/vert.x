@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -32,5 +33,10 @@ public class ConfigurableMetricsFactory implements VertxMetricsFactory {
   @Override
   public VertxMetrics metrics(Vertx vertx, VertxOptions options) {
     return delegate != null ? delegate.metrics(vertx, options) : new DummyVertxMetrics();
+  }
+
+  @Override
+  public MetricsOptions newOptions() {
+    return delegate != null ? delegate.newOptions() : new MetricsOptions();
   }
 }
