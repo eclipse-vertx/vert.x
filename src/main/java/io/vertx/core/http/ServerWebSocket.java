@@ -16,12 +16,15 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.MultiMap;
-import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 
 /**
  * Represents a server side WebSocket.
@@ -101,4 +104,12 @@ public interface ServerWebSocket extends WebSocketBase {
    * You might use this method, if for example you only want to accept WebSockets with a particular path.
    */
   void reject();
+
+  /**
+   * @return an array of the peer certificates. Returns null if connection is
+   *         not SSL.
+   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  @GenIgnore
+  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 }

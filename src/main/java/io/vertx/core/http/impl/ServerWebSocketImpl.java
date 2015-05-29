@@ -24,6 +24,9 @@ import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
  *
@@ -86,6 +89,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
       throw new IllegalStateException("Cannot reject websocket, it has already been written to");
     }
     rejected = true;
+  }
+
+  @Override
+  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    return conn.getPeerCertificateChain();
   }
 
   @Override

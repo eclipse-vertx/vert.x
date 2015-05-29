@@ -31,12 +31,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1093,6 +1094,19 @@ public class NetTest extends VertxTestBase {
     options.setPort(4043);
     server = vertx.createNetServer(options);
     Handler<NetSocket> serverHandler = socket -> {
+      try {
+        X509Certificate[] certs = socket.peerCertificateChain();
+        if (clientCert) {
+          assertNotNull(certs);
+          assertEquals(1, certs.length);
+        } else {
+          assertNull(certs);
+        }
+        System.out.println("certs are " + certs);
+      } catch (SSLPeerUnverifiedException e) {
+        assertTrue(clientTrust || clientTrustAll);
+      }
+
       AtomicBoolean upgradedServer = new AtomicBoolean();
       socket.handler(buff -> {
         socket.write(buff); // echo the data
