@@ -61,7 +61,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private Handler<Void> headersEndHandler;
+  private Handler<Future> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private boolean chunked;
   private boolean closed;
@@ -284,17 +284,18 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private void end0(ByteBuf data) {
     checkWritten();
     if (!headWritten) {
-      // if the head was not written yet we can write out everything in on go
+      // if the head was not written yet we can write out everything in one go
       // which is cheaper.
-      prepareHeaders();
-      FullHttpResponse resp;
-      if (trailing != null) {
-        resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders(), trailing.getDecoderResult());
-      }  else {
-        resp = new AssembledFullHttpResponse(response, data);
-      }
-      channelFuture = conn.writeToChannel(resp);
-      headWritten = true;
+      prepareHeaders(() -> {
+        FullHttpResponse resp;
+        if (trailing != null) {
+          resp = new AssembledFullHttpResponse(response, data, trailing.trailingHeaders(), trailing.getDecoderResult());
+        }  else {
+          resp = new AssembledFullHttpResponse(response, data);
+        }
+        channelFuture = conn.writeToChannel(resp);
+        headWritten = true;
+      });
     } else {
       if (!data.isReadable()) {
         if (trailing == null) {
@@ -346,7 +347,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public synchronized HttpServerResponse headersEndHandler(Handler<Void> handler) {
+  public synchronized HttpServerResponse headersEndHandler(Handler<Future> handler) {
     this.headersEndHandler = handler;
     return this;
   }
@@ -377,47 +378,49 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         }
       }
     }
-    prepareHeaders();
+    prepareHeaders(() -> {
 
-    RandomAccessFile raf;
-    try {
-      raf = new RandomAccessFile(file, "r");
-      conn.queueForWrite(response);
-      conn.sendFile(raf, fileLength);
-    } catch (IOException e) {
+      RandomAccessFile raf;
+      try {
+        raf = new RandomAccessFile(file, "r");
+        conn.queueForWrite(response);
+        conn.sendFile(raf, fileLength);
+      } catch (IOException e) {
+        if (resultHandler != null) {
+          ContextImpl ctx = vertx.getOrCreateContext();
+          ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
+        } else {
+          log.error("Failed to send file", e);
+        }
+        return;
+      }
+
+      // write an empty last content to let the http encoder know the response is complete
+      channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+      headWritten = written = true;
+
       if (resultHandler != null) {
         ContextImpl ctx = vertx.getOrCreateContext();
-        ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
-      } else {
-        log.error("Failed to send file", e);
+        channelFuture.addListener(future -> {
+          AsyncResult<Void> res;
+          if (future.isSuccess()) {
+            res = Future.succeededFuture();
+          } else {
+            res = Future.failedFuture(future.cause());
+          }
+          ctx.runOnContext((v) -> resultHandler.handle(res));
+        });
       }
-      return;
-    }
 
-    // write an empty last content to let the http encoder know the response is complete
-    channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
-    headWritten = written = true;
+      if (!keepAlive) {
+        closeConnAfterWrite();
+      }
+      conn.responseComplete();
 
-    if (resultHandler != null) {
-      ContextImpl ctx = vertx.getOrCreateContext();
-      channelFuture.addListener(future -> {
-        AsyncResult<Void> res;
-        if (future.isSuccess()) {
-          res = Future.succeededFuture();
-        } else {
-          res = Future.failedFuture(future.cause());
-        }
-        ctx.runOnContext((v) -> resultHandler.handle(res));
-      });
-    }
-
-    if (!keepAlive) {
-      closeConnAfterWrite();
-    }
-    conn.responseComplete();
-    if (bodyEndHandler != null) {
-      bodyEndHandler.handle(null);
-    }
+      if (bodyEndHandler != null) {
+        bodyEndHandler.handle(null);
+      }
+    });
   }
 
   private synchronized boolean contentLengthSet() {
@@ -464,7 +467,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private void prepareHeaders() {
+  private void prepareHeaders(Runnable after) {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
       response.headers().set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
     }
@@ -473,8 +476,23 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
       response.headers().set(HttpHeaders.CONTENT_LENGTH, "0");
     }
+
     if (headersEndHandler != null) {
-      headersEndHandler.handle(null);
+      Future<Void> fut = Future.future();
+      fut.setHandler(res -> {
+        if (res.succeeded()) {
+          after.run();
+        } else {
+          if (exceptionHandler != null) {
+            exceptionHandler.handle(res.cause());
+          } else {
+            log.error("Failure in headers end handler", res.cause());
+          }
+        }
+      });
+      headersEndHandler.handle(fut);
+    } else {
+      after.run();
     }
   }
 
@@ -486,9 +504,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
 
     if (!headWritten) {
-      prepareHeaders();
-      channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));
-      headWritten = true;
+      prepareHeaders(() -> {
+        channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));
+        headWritten = true;
+      });
     }  else {
       channelFuture = conn.writeToChannel(new DefaultHttpContent(chunk));
     }
