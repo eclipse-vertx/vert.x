@@ -725,7 +725,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
                          Handler<Throwable> exceptionHandler,
                          ConnectionLifeCycleListener listener) {
-    context.executeFromIO(() -> createConn(context, port, host, ch, connectHandler, exceptionHandler, listener));
+    createConn(context, port, host, ch, connectHandler, exceptionHandler, listener);
   }
 
   private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
@@ -740,7 +740,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       listener.connectionClosed(conn);
     });
     connectionMap.put(ch, conn);
-    connectHandler.handle(conn);
+    context.executeFromIO(() -> {
+      conn.setMetric(metrics.connected(conn.remoteAddress()));
+      connectHandler.handle(conn);
+    });
   }
 
   private void connectionFailed(ContextImpl context, Channel ch, Handler<Throwable> connectionExceptionHandler,
