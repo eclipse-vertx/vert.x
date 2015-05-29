@@ -28,6 +28,7 @@ import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.*;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -393,6 +394,10 @@ public class MetricsContextTest extends AsyncTestBase {
     testHttpClientWebsocket(eventLoopContextFactory, eventLoopChecker);
   }
 
+  @Rule
+  public RepeatRule repeatRule = new RepeatRule();
+
+  @Repeat(times = 1)
   @Test
   public void testHttpClientWebsocketWorker() throws Exception {
     testHttpClientWebsocket(workerContextFactory, workerChecker);

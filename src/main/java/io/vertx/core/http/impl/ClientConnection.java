@@ -80,9 +80,9 @@ class ClientConnection extends ConnectionBase {
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
-  private final Object metric;
   private final HttpClientMetrics metrics;
 
+  private Object metric;
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
   private HttpClientResponseImpl currentResponse;
@@ -104,11 +104,14 @@ class ClientConnection extends ConnectionBase {
     this.listener = listener;
     this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress());
+  }
+
+  public synchronized void setMetric(Object metric) {
+    this.metric = metric;
   }
 
   @Override
-  protected Object metric() {
+  protected synchronized Object metric() {
     return metric;
   }
 
