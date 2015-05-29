@@ -236,6 +236,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  /**
+   * Set the idle timeout, in seconds. zero means don't timeout.
+   * This determines if a connection will timeout and be closed if no data is received within the timeout.
+   *
+   * @param idleTimeout  the timeout, in seconds
+   * @return a reference to this, so the API can be used fluently
+   */
   public TCPSSLOptions setIdleTimeout(int idleTimeout) {
     if (idleTimeout < 0) {
       throw new IllegalArgumentException("idleTimeout must be >= 0");
@@ -245,7 +252,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return  the idle timeout
+   * @return  the idle timeout, in seconds
    */
   public int getIdleTimeout() {
     return idleTimeout;
