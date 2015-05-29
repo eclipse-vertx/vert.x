@@ -14,21 +14,22 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.test.fakemetrics;
+package io.vertx.test.core;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.metrics.MetricsOptions;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeMetricsFactory implements VertxMetricsFactory {
+public class CustomMetricsOptions extends MetricsOptions {
 
-  @Override
-  public VertxMetrics metrics(Vertx vertx, VertxOptions options) {
-    return new FakeVertxMetrics(vertx);
+  private String value;
+
+  public String getCustomProperty() {
+    return value;
   }
 
+  public void setCustomProperty(String value) {
+    this.value = value;
+  }
 }

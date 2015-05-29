@@ -79,8 +79,4 @@ public class MetricsOptions {
     this.enabled = enable;
     return this;
   }
-
-  public JsonObject toJson() {
-    return new JsonObject().put("enabled", enabled);
-  }
 }

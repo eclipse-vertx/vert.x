@@ -18,6 +18,7 @@ package io.vertx.core.spi;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 /**
@@ -37,4 +38,16 @@ public interface VertxMetricsFactory {
    * @return the metrics implementation
    */
   VertxMetrics metrics(Vertx vertx, VertxOptions options);
+
+  /**
+   * Create an empty metrics options. Providers can override this method to provide a custom metrics options subclass
+   * that exposes custom configuration. It is used by the {@link io.vertx.core.Starter} class when
+   * creating new options when building a CLI vert.x
+   *
+   * @return new metrics options
+   */
+  default MetricsOptions newOptions() {
+    return new MetricsOptions();
+  }
+
 }

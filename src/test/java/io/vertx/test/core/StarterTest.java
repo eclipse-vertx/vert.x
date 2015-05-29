@@ -21,6 +21,10 @@ import io.vertx.core.Starter;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -250,6 +254,36 @@ public class StarterTest extends VertxTestBase {
     }
     for (String propName: toClear) {
       System.clearProperty(propName);
+    }
+  }
+
+  @Test
+  public void testCustomMetricsOptions() throws Exception {
+    try {
+      ConfigurableMetricsFactory.delegate = new VertxMetricsFactory() {
+        @Override
+        public VertxMetrics metrics(Vertx vertx, VertxOptions options) {
+          return new DummyVertxMetrics();
+        }
+        @Override
+        public MetricsOptions newOptions() {
+          return new CustomMetricsOptions();
+        }
+      };
+      System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
+      System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "customProperty", "customPropertyValue");
+      MyStarter starter = new MyStarter();
+      String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName()};
+      Thread t = new Thread(() -> {
+        starter.run(args);
+      });
+      t.start();
+      waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+      VertxOptions opts = starter.getVertxOptions();
+      CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
+      assertEquals("customPropertyValue", custom.getCustomProperty());
+    } finally {
+      ConfigurableMetricsFactory.delegate = null;
     }
   }
 
