@@ -461,14 +461,21 @@
  * {@link examples.CoreExamples#example13}
  * ----
  *
- * This configuration is then available via the {@link io.vertx.core.Context} object.
+ * This configuration is then available via the {@link io.vertx.core.Context} object or directly using the
+ * {@link io.vertx.core.AbstractVerticle#config()} method. The configuration is returned as a JSON object so you can
+ * retrieve data as follows:
  *
- * TODO
- *
+ * [source,$lang]
+ * ----
+ * {@link examples.ConfigurableVerticleExamples#start()}
+ * ----
  *
  * === Accessing environment variables in a Verticle
  *
- * TODO
+ * Environment variables and system properties are accessible from a verticle by following the Java way. To retrieve
+ * system properties, use {@link java.lang.System#getProperty(java.lang.String)}
+ * (or {@link java.lang.System#getProperty(java.lang.String, java.lang.String)}). You can also retrieve the
+ * environment variables using {@link java.lang.System#getenv(java.lang.String)}.
  *
  * === Verticle Isolation Groups
  *
