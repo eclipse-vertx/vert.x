@@ -36,6 +36,17 @@ import java.util.stream.Stream;
  */
 public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterSerializable {
 
+  // Caches the json object so we don't need to recreate a new wrapper
+  static class JsonMap extends LinkedHashMap<String, Object> {
+    final JsonObject owner;
+    public JsonMap(JsonObject owner) {
+      this.owner = owner;
+    }
+    public JsonMap() {
+      this.owner = new JsonObject(this);
+    }
+  }
+
   private Map<String, Object> map;
 
   /**
@@ -51,7 +62,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Create a new, empty instance
    */
   public JsonObject() {
-    map = new LinkedHashMap<>();
+    map = new JsonMap(this);
   }
 
   /**
@@ -174,7 +185,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public JsonObject getJsonObject(String key) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
-    if (val instanceof Map) {
+    if (val instanceof JsonMap) {
+      val = ((JsonMap) val).owner;
+    } else if (val instanceof Map) {
       val = new JsonObject((Map)val);
     }
     return (JsonObject)val;
@@ -190,7 +203,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public JsonArray getJsonArray(String key) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
-    if (val instanceof List) {
+    if (val instanceof JsonArray.JsonList) {
+      val = ((JsonArray.JsonList) val).owner;
+    } else if (val instanceof List) {
       val = new JsonArray((List)val);
     }
     return (JsonArray)val;
@@ -223,8 +238,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public Object getValue(String key) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
-    if (val instanceof Map) {
+    if (val instanceof JsonMap) {
+      val = ((JsonMap) val).owner;
+    } else if (val instanceof Map) {
       val = new JsonObject((Map)val);
+    } else if (val instanceof JsonArray.JsonList) {
+      val = ((JsonArray.JsonList) val).owner;
     } else if (val instanceof List) {
       val = new JsonArray((List)val);
     }
@@ -547,7 +566,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public JsonObject put(String key, JsonObject value) {
     Objects.requireNonNull(key);
-    map.put(key, value);
+    map.put(key, value != null ? value.map : null);
     return this;
   }
 
@@ -560,7 +579,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public JsonObject put(String key, JsonArray value) {
     Objects.requireNonNull(key);
-    map.put(key, value);
+    map.put(key, value != null ? value.getList() : null);
     return this;
   }
 
@@ -752,9 +771,6 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (o1 instanceof Map<?, ?>) {
       return objectEquals((Map<?, ?>) o1, o2);
     }
-    if (o1 instanceof JsonArray) {
-      return JsonArray.arrayEquals(((JsonArray) o1).getList(), o2);
-    }
     if (o1 instanceof List<?>) {
       return JsonArray.arrayEquals((List<?>) o1, o2);
     }
@@ -793,7 +809,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    map = Json.decodeValue(json, Map.class);
+    map = Json.decodeValue(json, JsonMap.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {
@@ -812,8 +828,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     @Override
     public Map.Entry<String, Object> next() {
       Map.Entry<String, Object> entry = mapIter.next();
-      if (entry.getValue() instanceof Map) {
+      if (entry.getValue() instanceof JsonMap) {
+        entry.setValue(((JsonMap) entry.getValue()).owner);
+      } else if (entry.getValue() instanceof Map) {
         entry.setValue(new JsonObject((Map)entry.getValue()));
+      } else if (entry.getValue() instanceof JsonArray.JsonList) {
+        entry.setValue(((JsonArray.JsonList) entry.getValue()).owner);
       } else if (entry.getValue() instanceof List) {
         entry.setValue(new JsonArray((List) entry.getValue()));
       }
