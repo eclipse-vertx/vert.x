@@ -52,7 +52,10 @@ Set whether Netty pooled buffers are enabled+++
 
 |[[idleTimeout]]`idleTimeout`
 |`Number`
-|-
+|+++
+Set the idle timeout, in seconds. zero means don't timeout.
+ This determines if a connection will timeout and be closed if no data is received within the timeout.+++
+
 |[[ssl]]`ssl`
 |`Boolean`
 |+++
