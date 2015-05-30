@@ -1246,7 +1246,7 @@ public class JsonObjectTest {
     assertTrue(iter.hasNext());
     entry = iter.next();
     assertEquals("wibble", entry.getKey());
-    assertEquals(obj.getMap(), entry.getValue());
+    assertEquals(obj, entry.getValue());
     assertFalse(iter.hasNext());
   }
 
@@ -1338,7 +1338,7 @@ public class JsonObjectTest {
     assertFalse(map.containsKey("quux"));
     jsonObject.put("wooble", "plink");
     assertTrue(map.containsKey("wooble"));
-    assertSame(obj.getMap(), map.get("wibble"));
+    assertSame(obj, map.get("wibble"));
   }
 
   @Test
@@ -1500,35 +1500,6 @@ public class JsonObjectTest {
     return obj;
   }
 
-  @Test
-  public void testCacheJsonObject() {
-    JsonObject nested = new JsonObject();
-    jsonObject.put("nested", nested);
-    assertSame(nested, jsonObject.getJsonObject("nested"));
-    assertSame(nested, jsonObject.getValue("nested"));
-  }
-
-  @Test
-  public void testStoreJsonObjectAsMap() {
-    JsonObject nested = new JsonObject();
-    jsonObject.put("nested", nested);
-    assertTrue(jsonObject.getMap().get("nested") instanceof Map);
-  }
-
-  @Test
-  public void testCacheJsonArray() {
-    JsonArray nested = new JsonArray();
-    jsonObject.put("nested", nested);
-    assertSame(nested, jsonObject.getJsonArray("nested"));
-    assertSame(nested, jsonObject.getValue("nested"));
-  }
-
-  @Test
-  public void testStoreJsonArrayAsList() {
-    JsonArray nested = new JsonArray();
-    jsonObject.put("nested", nested);
-    assertTrue(jsonObject.getMap().get("nested") instanceof List);
-  }
 }
 
 

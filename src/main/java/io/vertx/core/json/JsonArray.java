@@ -39,17 +39,6 @@ import java.util.stream.Stream;
  */
 public class JsonArray implements Iterable<Object>, ClusterSerializable {
 
-  // Caches the json array so we don't need to recreate a new wrapper
-  static class JsonList extends ArrayList<Object> {
-    final JsonArray owner;
-    public JsonList(JsonArray owner) {
-      this.owner = owner;
-    }
-    public JsonList() {
-      this.owner = new JsonArray(this);
-    }
-  }
-
   private List<Object> list;
 
   /**
@@ -65,7 +54,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * Create an empty instance
    */
   public JsonArray() {
-    list = new JsonList(this);
+    list = new ArrayList<>();
   }
 
   /**
@@ -181,9 +170,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    */
   public JsonObject getJsonObject(int pos) {
     Object val = list.get(pos);
-    if (val instanceof JsonObject.JsonMap) {
-      return ((JsonObject.JsonMap) val).owner;
-    } else if (val instanceof Map) {
+    if (val instanceof Map) {
       val = new JsonObject((Map)val);
     }
     return (JsonObject)val;
@@ -198,9 +185,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    */
   public JsonArray getJsonArray(int pos) {
     Object val = list.get(pos);
-    if (val instanceof JsonList) {
-      val = ((JsonList) val).owner;
-    } else if (val instanceof List) {
+    if (val instanceof List) {
       val = new JsonArray((List)val);
     }
     return (JsonArray)val;
@@ -235,12 +220,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    */
   public Object getValue(int pos) {
     Object val = list.get(pos);
-    if (val instanceof JsonObject.JsonMap) {
-      return ((JsonObject.JsonMap) val).owner;
-    } else if (val instanceof Map) {
+    if (val instanceof Map) {
       val = new JsonObject((Map)val);
-    } if (val instanceof JsonList) {
-      val = ((JsonList) val).owner;
     } else if (val instanceof List) {
       val = new JsonArray((List)val);
     }
@@ -374,7 +355,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    */
   public JsonArray add(JsonObject value) {
     Objects.requireNonNull(value);
-    list.add(value.getMap());
+    list.add(value);
     return this;
   }
 
@@ -386,7 +367,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    */
   public JsonArray add(JsonArray value) {
     Objects.requireNonNull(value);
-    list.add(value.list);
+    list.add(value);
     return this;
   }
 
@@ -413,11 +394,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   public JsonArray add(Object value) {
     Objects.requireNonNull(value);
     value = Json.checkAndCopy(value, false);
-    if (value instanceof JsonObject) {
-      value = ((JsonObject) value).getMap();
-    } else if (value instanceof JsonArray) {
-      value = ((JsonArray) value).getList();
-    }
     list.add(value);
     return this;
   }
@@ -430,11 +406,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * @return  true if it contains the value, false if not
    */
   public boolean contains(Object value) {
-    if (value instanceof JsonObject) {
-      value = ((JsonObject) value).getMap();
-    } else if (value instanceof JsonArray) {
-      value = ((JsonArray) value).getList();
-    }
     return list.contains(value);
   }
 
@@ -609,7 +580,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   private void fromJson(String json) {
-    list = Json.decodeValue(json, JsonList.class);
+    list = Json.decodeValue(json, List.class);
   }
 
   private class Iter implements Iterator<Object> {
@@ -628,12 +599,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     @Override
     public Object next() {
       Object val = listIter.next();
-      if (val instanceof JsonObject.JsonMap) {
-        val = ((JsonObject.JsonMap) val).owner;
-      } else if (val instanceof Map) {
+      if (val instanceof Map) {
         val = new JsonObject((Map)val);
-      } else if (val instanceof JsonArray.JsonList) {
-        val = ((JsonList) val).owner;
       } else if (val instanceof List) {
         val = new JsonArray((List)val);
       }
