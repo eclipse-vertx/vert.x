@@ -25,7 +25,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
@@ -647,7 +646,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.eventLoop());
-    bootstrap.channel(NioSocketChannel.class);
+    bootstrap.channel(vertx.getNettyTransportFactory().chooseSocketChannel());
     sslHelper.validate(vertx);
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
