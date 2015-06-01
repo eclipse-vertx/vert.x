@@ -46,6 +46,13 @@ public interface VertxInternal extends Vertx {
 
   EventLoopGroup getEventLoopGroup();
 
+  /**
+   * get NettyTransportFactory instance
+   * 
+   * @return NettyTransportFactory instance
+   */
+  NettyTransportFactory getNettyTransportFactory();
+
   ExecutorService getWorkerPool();
 
   Map<ServerID, HttpServerImpl> sharedHttpServers();
