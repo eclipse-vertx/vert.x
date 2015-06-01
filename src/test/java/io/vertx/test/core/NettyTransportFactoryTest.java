@@ -31,16 +31,17 @@ public class NettyTransportFactoryTest {
 
 	/**
 	 * test 4 method of NettyTransportFactory in GNU/Linux or other OS.
+	 * 
 	 * @throws Exception
 	 */
 	@Test
 	public void testFactory() throws Exception {
 
 		NettyTransportFactory factory = NettyTransportFactory.getDefaultFactory();
-		
+
 		if (Utils.isLinux()) {
 			factory.setNettyTransport(VertxOptions.NETTY_TRANSPORT_EPOLL);
-			
+
 			Class<? extends ServerChannel> serverSocketChannel = factory.chooseServerSocketChannel();
 			Class<? extends Channel> socketChannel = factory.chooseSocketChannel();
 			Class<? extends DatagramChannel> datagramChannel = factory.chooseDatagramChannel();
@@ -56,9 +57,9 @@ public class NettyTransportFactoryTest {
 			assertEquals(EpollEventLoopGroup.class, elgInstance.getClass());
 		}
 
-		{			
+		{
 			factory.setNettyTransport(VertxOptions.NETTY_TRANSPORT_NIO);
-			
+
 			Class<? extends ServerChannel> serverSocketChannel = factory.chooseServerSocketChannel();
 			Class<? extends Channel> socketChannel = factory.chooseSocketChannel();
 			Class<? extends DatagramChannel> datagramChannel = factory.chooseDatagramChannel();
@@ -74,16 +75,18 @@ public class NettyTransportFactoryTest {
 
 		}
 	}
-	
+
 	@Test
 	public void testVertxWithOption() {
-	    VertxOptions options = new VertxOptions().setNettyTransport(VertxOptions.NETTY_TRANSPORT_EPOLL);
-	    Vertx vertx = Vertx.vertx(options);
-	    if (Utils.isLinux()) {
-	    	assertEquals(VertxOptions.NETTY_TRANSPORT_EPOLL, ((VertxInternal)vertx).getNettyTransportFactory().getNettyTransport());
-	    } else {
-	    	assertEquals(VertxOptions.NETTY_TRANSPORT_NIO, ((VertxInternal)vertx).getNettyTransportFactory().getNettyTransport());
-	    }
+		VertxOptions options = new VertxOptions().setNettyTransport(VertxOptions.NETTY_TRANSPORT_EPOLL);
+		Vertx vertx = Vertx.vertx(options);
+		if (Utils.isLinux()) {
+			assertEquals(VertxOptions.NETTY_TRANSPORT_EPOLL, ((VertxInternal) vertx).getNettyTransportFactory()
+			    .getNettyTransport());
+		} else {
+			assertEquals(VertxOptions.NETTY_TRANSPORT_NIO, ((VertxInternal) vertx).getNettyTransportFactory()
+			    .getNettyTransport());
+		}
 	}
-	
+
 }
