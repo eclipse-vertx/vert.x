@@ -18,7 +18,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -114,6 +113,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private EventBusImpl eventBus;
   private HAManager haManager;
   private boolean closed;
+  private NettyTransportFactory nettyTransportFactory;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -124,9 +124,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+	nettyTransportFactory = new NettyTransportFactory();
+	nettyTransportFactory.setNettyTransport(options.getNettyTransport());
+	
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime(),
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
-    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
+    eventLoopGroup = getNettyTransportFactory().instantiateEventLoopGroup(options.getEventLoopPoolSize(),
                                            new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
@@ -301,6 +304,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public EventLoopGroup getEventLoopGroup() {
     return eventLoopGroup;
+  }
+
+  /**
+   * get NettyTransportFactory instance
+   * 
+   * @return NettyTransportFactory instance
+   */
+  public NettyTransportFactory getNettyTransportFactory() {
+	  return nettyTransportFactory;
   }
 
   public ContextImpl getOrCreateContext() {

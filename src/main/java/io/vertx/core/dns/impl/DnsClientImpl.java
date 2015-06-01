@@ -24,7 +24,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -81,7 +80,7 @@ public final class DnsClientImpl implements DnsClient {
     actualCtx = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.eventLoop());
-    bootstrap.channel(NioDatagramChannel.class);
+    bootstrap.channel(vertx.getNettyTransportFactory().chooseDatagramChannel());
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
       @Override
