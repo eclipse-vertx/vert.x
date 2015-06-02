@@ -281,6 +281,9 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setWebsocketSubProtocol("foo"));
     assertEquals("foo", options.getWebsocketSubProtocols());
 
+    HttpServerOptions optionsCopy = new HttpServerOptions(options);
+    assertEquals(options, optionsCopy.setWebsocketSubProtocol(new String(options.getWebsocketSubProtocols())));
+
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
     assertEquals(options, options.addEnabledCipherSuite("bar"));
