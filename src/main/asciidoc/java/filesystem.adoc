@@ -24,7 +24,7 @@ fs.copy("foo.txt", "bar.txt", res -> {
 });
 ----
 
-The blocking versions are named  and return the results or throw exceptions directly.
+The blocking versions are named `xxxBlocking` and return the results or throw exceptions directly.
 
 
 In many cases, depending on the operating system and file system,some of the potentially blocking operations

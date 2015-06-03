@@ -3,25 +3,26 @@
 @code{
 
   /**
-   * Render a doc comment to html markup.
+   * Render a collection of comment tokens to html markup.
    *
    * params:
    * margin : left margin
-   * doc : io.vertx.codegen.doc.Doc object
+   * tokens : a collection of io.vertx.codegen.doc.Token objects
    * linkToHtml : a function that takes as input io.vertx.codegen.doc.Tag$Link and returns an html string
+   * lineSep : the line separator
    *
    * return: the renderer HTML
    */
-  def renderDocToHtml(margin, doc, linkToHtml) {
+  def renderTokensToHtml(margin, tokens, linkToHtml, lineSep) {
     var need = true;
     var html = new StringBuilder();
-    for (token : doc.tokens) {
+    for (token : tokens) {
       if (need) {
         html.append(margin);
         need = false;
       }
       if (token.lineBreak) {
-        html.append("\n");
+        html.append(lineSep);
         need = true;
       } else {
         if (token.text) {
@@ -44,8 +45,22 @@
       }
     }
     if (!need) {
-      html.append("\n");
+      html.append(lineSep);
     }
     return html.toString();
+  }
+
+  /**
+   * Render a doc comment to html markup.
+   *
+   * params:
+   * margin : left margin
+   * doc : io.vertx.codegen.doc.Doc object
+   * linkToHtml : a function that takes as input io.vertx.codegen.doc.Tag$Link and returns an html string
+   *
+   * return: the renderer HTML
+   */
+  def renderDocToHtml(margin, doc, linkToHtml) {
+    return renderTokensToHtml(margin, doc.tokens, linkToHtml, "\n");
   }
 }
