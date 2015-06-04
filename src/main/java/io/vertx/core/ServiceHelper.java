@@ -30,9 +30,9 @@ public class ServiceHelper {
     if (factories.iterator().hasNext()) {
       return factories.iterator().next();
     } else {
-      // By default ServiceLoader.load uses the TCCL, this may not be enough in environement deadling with
-      // classloaders differently such as OSGi. So try with the classloader having loaded this class. In OSGi
-      // this would be the bundle exposing vert.x
+      // By default ServiceLoader.load uses the TCCL, this may not be enough in environment deading with
+      // classloaders differently such as OSGi. So we should try to use the  classloader having loaded this
+      // class. In OSGi it would be the bundle exposing vert.x and so have access to all its classes.
       factories = ServiceLoader.load(clazz, ServiceHelper.class.getClassLoader());
       if (factories.iterator().hasNext()) {
         return factories.iterator().next();
