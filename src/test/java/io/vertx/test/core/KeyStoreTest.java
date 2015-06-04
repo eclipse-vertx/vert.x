@@ -334,6 +334,27 @@ public class KeyStoreTest extends VertxTestBase {
     testTrustStore(options);
   }
 
+  @Test
+  public void testKeyOptionsEquality() {
+    JksOptions jksOptions = (JksOptions) getServerCertOptions(KeyCert.JKS);
+    JksOptions jksOptionsCopy = new JksOptions(jksOptions);
+
+    PfxOptions pfxOptions = (PfxOptions) getServerCertOptions(KeyCert.PKCS12);
+    PfxOptions pfxOptionsCopy = new PfxOptions(pfxOptions);
+
+    PemKeyCertOptions pemKeyCertOptions = (PemKeyCertOptions) getServerCertOptions(KeyCert.PEM);
+    PemKeyCertOptions pemKeyCertOptionsCopy = new PemKeyCertOptions(pemKeyCertOptions);
+
+    assertEquals(jksOptions, jksOptionsCopy);
+    assertEquals(jksOptions.hashCode(), jksOptionsCopy.hashCode());
+
+    assertEquals(pfxOptions, pfxOptionsCopy);
+    assertEquals(pfxOptions.hashCode(), pfxOptionsCopy.hashCode());
+
+    assertEquals(pemKeyCertOptions, pemKeyCertOptionsCopy);
+    assertEquals(pemKeyCertOptions.hashCode(), pemKeyCertOptionsCopy.hashCode());
+  }
+
   private void testKeyStore(KeyCertOptions options) throws Exception {
     KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, options);
     KeyManager[] keyManagers = helper.getKeyMgrs((VertxInternal) vertx);

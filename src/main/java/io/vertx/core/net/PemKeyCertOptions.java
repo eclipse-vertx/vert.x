@@ -190,6 +190,43 @@ public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
   }
 
   @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof PemKeyCertOptions)) {
+      return false;
+    }
+
+    PemKeyCertOptions that = (PemKeyCertOptions) o;
+    if (keyPath != null ? !keyPath.equals(that.keyPath) : that.keyPath != null) {
+      return false;
+    }
+    if (keyValue != null ? !keyValue.equals(that.keyValue) : that.keyValue != null) {
+      return false;
+    }
+    if (certPath != null ? !certPath.equals(that.certPath) : that.certPath != null) {
+      return false;
+    }
+    if (certValue != null ? !certValue.equals(that.certValue) : that.certValue != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = 1;
+    result += 31 * result + (keyPath != null ? keyPath.hashCode() : 0);
+    result += 31 * result + (keyValue != null ? keyValue.hashCode() : 0);
+    result += 31 * result + (certPath != null ? certPath.hashCode() : 0);
+    result += 31 * result + (certValue != null ? certValue.hashCode() : 0);
+
+    return result;
+  }
+
+  @Override
   public PemKeyCertOptions clone() {
     return new PemKeyCertOptions(this);
   }

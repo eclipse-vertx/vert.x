@@ -283,7 +283,7 @@ public class HttpServerOptions extends NetServerOptions {
 
     if (compressionSupported != that.compressionSupported) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
-    if (websocketSubProtocols != that.websocketSubProtocols) return false;
+    if (websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null) return false;
 
     return true;
   }
