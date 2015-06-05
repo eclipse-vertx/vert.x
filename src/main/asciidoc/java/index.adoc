@@ -533,6 +533,7 @@ Verticles can be deployed with High Availability (HA) enabled.
 
 TODO
 
+
 === Running Verticles from the command line
 
 You can use Vert.x directly in your Maven or Gradle projects in the normal way by adding a dependency to the Vert.x
@@ -542,6 +543,8 @@ However you can also run Vert.x verticles directly from the command line if you 
 
 To do this you need to download and install a Vert.x distribution, and add the `bin` directory of the installation
 to your `PATH` environment variable. Also make sure you have a Java 8 JDK on your `PATH`.
+
+NOTE: The JDK is required to support on the fly compilation of Java code.
 
 You can now run verticles by using the `vertx run` command. Here are some examples:
 
@@ -707,6 +710,178 @@ Here is a working deployment on Apache Felix 4.6.1:
   23|Active     |    1|Netty/Transport (4.0.27.Final)
   25|Active     |    1|Vert.x Core (3.0.0.SNAPSHOT)
 ----
+
+== The 'vertx' command line
+
+The `vertx` command is used to interact with Vert.x from the command line. It's main use is to run Vert.x verticles.
+To do this you need to download and install a Vert.x distribution, and add the `bin` directory of the installation
+to your `PATH` environment variable. Also make sure you have a Java 8 JDK on your `PATH`.
+
+NOTE: The JDK is required to support on the fly compilation of Java code.
+
+=== Run verticles
+
+You can run raw Vert.x verticles directly from the command line using `vertx run`. Here is a couple of examples:
+
+[source]
+----
+vertx run my-verticle.js                                 (1)
+vertx run my-verticle.groovy                             (2)
+vertx run my-verticle.rb                                 (3)
+
+vertx run io.vertx.example.MyVerticle                    (4)
+vertx run io.vertx.example.MVerticle -cp my-verticle.jar (5)
+
+vertx run MyVerticle.java                                (6)
+----
+1. Deploys a JavaScript verticle
+2. Deploys a Groovy verticle
+3. Deploys a Ruby verticle
+4. Deploys an already compiled Java verticle. Classpath root is the current directory
+5. Deploys a verticle packaged in a Jar, the jar need to be in the classpath
+6. Compiles the Java source and deploys it
+
+As you can see in the case of Java, the name can either be the fully qualified class name of the verticle, or
+you can specify the Java Source file directly and Vert.x compiles it for you.
+
+You can also prefix the verticle with the name of the language implementation to use. For example if the verticle is
+a compiled Groovy class, you prefix it with `groovy:` so that Vert.x knows it's a Groovy class not a Java class.
+
+[source]
+----
+vertx run groovy:io.vertx.example.MyGroovyVerticle
+----
+
+The `vertx run` command can take a few optional parameters, they are:
+
+ * `-conf <config_file>` - Provides some configuration to the verticle. `config_file` is the name of a text file
+ containing a JSON object that represents the configuration for the verticle. This is optional.
+ * `-cp <path>` - The path on which to search for the verticle and any other resources used by the verticle. This
+ defaults to `.` (current directory). If your verticle references other scripts, classes or other resources
+ (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by
+ `:` (colon) or `;` (semi-colon) depending on the operating system. Each path entry can be an absolute or relative
+ path to a directory containing scripts, or absolute or relative filenames for jar or zip files. An example path
+ might be `-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar`. Always use the path to reference any
+ resources that your verticle requires. Do **not** put them on the system classpath as this can cause isolation
+ issues between deployed verticles.
+* `-instances <instances>`  - The number of instances of the verticle to instantiate. Each verticle instance is
+strictly single threaded so to scale your application across available cores you might want to deploy more than
+one instance. If omitted a single instance will be deployed.
+ * `-worker` - This option determines whether the verticle is a worker verticle or not.
+ * `-cluster` -  This option determines whether the Vert.x instance will attempt to form a cluster with other Vert.x
+ instances on the network. Clustering Vert.x instances allows Vert.x to form a distributed event bus with
+ other nodes. Default is `false` (not clustered).
+ * `-cluster-port` - If the cluster option has also been specified then this determines which port will be used for
+ cluster communication with other Vert.x instances. Default is `0` - which means '_choose a free random port_'. You
+ don't usually need to specify this parameter unless you really need to bind to a specific port.
+ * `-cluster-host` - If the cluster option has also been specified then this determines which host address will be
+ used for cluster communication with other Vert.x instances. By default it will try and pick one from the available
+ interfaces. If you have more than one interface and you want to use a specific one, specify it here.
+ * `-ha` - if specified the verticle will be deployed as  high availability (HA) deployment. See related section
+ for more details
+ * `-quorum` - used in conjunction with `-ha`. It specifies the minimum number of nodes in the cluster for any _HA
+ deploymentIDs_ to be active. Defaults to 0.
+ * `-hagroup` - used in conjunction with `-ha`. It specifies the HA group this node will join. There can be
+ multiple HA groups in a cluster. Nodes will only failover to other nodes in the same group. The default value is `
+ +++__DEFAULT__+++`
+ * `-redeploy` - Enables automatic redeployment of the verticle
+
+Here are some more examples:
+
+Run a JavaScript verticle server.js with default settings
+[source]
+----
+vertx run server.js
+----
+
+Run 10 instances of a pre-compiled Java verticle specifying classpath
+[source]
+----
+vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+----
+
+Run 10 instances of a Java verticle by source _file_
+[source]
+----
+vertx run MyVerticle.java -instances 10
+----
+
+Run 20 instances of a ruby worker verticle
+[source]
+----
+vertx run order_worker.rb -instances 20 -worker
+----
+
+Run two JavaScript verticles on the same machine and let them cluster together with each other and any other servers
+on the network
+[source]
+----
+vertx run handler.js -cluster
+vertx run sender.js -cluster
+----
+
+Run a Ruby verticle passing it some config
+[source]
+----
+vertx run my_verticle.rb -conf my_verticle.conf
+----
+Where `my_verticle.conf` might contain something like:
+
+[source, json]
+----
+{
+ "name": "foo",
+ "num_widgets": 46
+}
+----
+
+The config will be available inside the verticle via the core API.
+
+=== Executing verticles packaged as a fat jar
+
+A _fat jar_ is an executable jar embedding its dependencies. This means you don't have to have Vert.x pre-installed
+on the machine on which you execute the jar. A verticle packaged as a _fat jar_ can just be launched using:
+
+[source]
+----
+java -jar my-verticle-fat.jar
+----
+
+The _fat jar_ must have a _manifest_ with:
+
+* `Main-Class` set to `io.vertx.core.Starter`
+* `Main-Verticle` specifying the main verticle (fully qualified name)
+
+You can also provide the usual command line arguments that you would pass to `vertx run`:
+[source]
+----
+java -jar my-verticle-fat.jar -cluster -conf myconf.json
+java -jar my-verticle-fat.jar -cluster -conf myconf.json -cp path/to/dir/conf/cluster_xml
+----
+
+NOTE: _fat jar_ can be built using Gradle build or the Maven plugin. Check the vertx examples for instructions.
+
+=== Displaying version of Vert.x
+To display the vert.x version, just launch:
+
+[source]
+----
+vertx -version
+----
+
+=== Using the redeploy argument
+
+When a verticle is launched with `vertx run .... -redeploy`, vertx redeploys the verticle every time the verticle
+file change. This mode makes the development much more fun and efficient as you don't have to restart the
+application.
+
+[source]
+----
+vertx run server.js -redeploy
+vertx run Server.java -redeploy
+----
+
+When using Java source file, vert.x recompiles the class on the fly and redeploys the verticle.
 
 == Clustering
 
