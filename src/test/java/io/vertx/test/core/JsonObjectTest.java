@@ -25,16 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -1246,7 +1237,7 @@ public class JsonObjectTest {
     assertTrue(iter.hasNext());
     entry = iter.next();
     assertEquals("wibble", entry.getKey());
-    assertEquals(obj.getMap(), entry.getValue());
+    assertEquals(obj, entry.getValue());
     assertFalse(iter.hasNext());
   }
 
@@ -1486,6 +1477,24 @@ public class JsonObjectTest {
     assertEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 3L))));
     assertNotEquals(array, new JsonArray(Collections.singletonList(Collections.singletonMap("def", 4))));
     assertNotEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 4))));
+  }
+
+  @Test
+  public void testJsonObjectEquality2() {
+    JsonObject obj1 = new JsonObject().put("arr", new JsonArray().add("x"));
+    List<Object> list = new ArrayList<>();
+    list.add("x");
+    Map<String, Object> map = new HashMap<>();
+    map.put("arr", list);
+    JsonObject obj2 = new JsonObject(map);
+    Iterator<Map.Entry<String, Object>> iter = obj2.iterator();
+    // There was a bug where iteration of entries caused the underlying object to change resulting in a
+    // subsequent equals changing
+    while (iter.hasNext()) {
+      Map.Entry<String, Object> entry = iter.next();
+
+    }
+    assertEquals(obj2, obj1);
   }
 
   private JsonObject createJsonObject() {

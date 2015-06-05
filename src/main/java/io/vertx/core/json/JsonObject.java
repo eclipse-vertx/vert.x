@@ -23,6 +23,7 @@ import io.vertx.core.shareddata.impl.ClusterSerializable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A representation of a <a href="http://json.org/">JSON</a> object in Java.
@@ -683,7 +684,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a stream of the entries.
    */
   public Stream<Map.Entry<String, Object>> stream() {
-    return map.entrySet().stream();
+    Iterator<Map.Entry<String, Object>> iterator = iterator();
+    Iterable<Map.Entry<String, Object>> iterable = () -> iterator;
+    return StreamSupport.stream(iterable.spliterator(), false);
   }
 
   /**
@@ -745,8 +748,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     } else {
       return false;
     }
-    if (m1.size() != m2.size())
+    if (m1.size() != m2.size()) {
       return false;
+    }
     for (Map.Entry<?, ?> entry : m1.entrySet()) {
       Object val = entry.getValue();
       if (val == null) {
@@ -763,8 +767,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   static boolean equals(Object o1, Object o2) {
-    if (o1 == o2)
+    if (o1 == o2) {
       return true;
+    }
     if (o1 instanceof JsonObject) {
       return objectEquals(((JsonObject) o1).map, o2);
     }
@@ -828,14 +833,16 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     @Override
     public Map.Entry<String, Object> next() {
       Map.Entry<String, Object> entry = mapIter.next();
-      if (entry.getValue() instanceof JsonMap) {
-        entry.setValue(((JsonMap) entry.getValue()).owner);
-      } else if (entry.getValue() instanceof Map) {
-        entry.setValue(new JsonObject((Map)entry.getValue()));
-      } else if (entry.getValue() instanceof JsonArray.JsonList) {
-        entry.setValue(((JsonArray.JsonList) entry.getValue()).owner);
-      } else if (entry.getValue() instanceof List) {
-        entry.setValue(new JsonArray((List) entry.getValue()));
+      String key = entry.getKey();
+      Object val = entry.getValue();
+      if (val instanceof JsonMap) {
+        entry = new Entry(key, ((JsonMap) val).owner);
+      } else if (val instanceof Map) {
+        entry = new Entry(key, new JsonObject((Map)val));
+      } else if (val instanceof JsonArray.JsonList) {
+        entry = new Entry(key, ((JsonArray.JsonList) val).owner);
+      } else if (val instanceof List) {
+        entry = new Entry(key, new JsonArray((List) val));
       }
       return entry;
     }
@@ -843,6 +850,32 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     @Override
     public void remove() {
       mapIter.remove();
+    }
+  }
+
+  private static class Entry implements Map.Entry<String, Object> {
+
+    final String key;
+    final Object value;
+
+    public Entry(String key, Object value) {
+      this.key = key;
+      this.value = value;
+    }
+
+    @Override
+    public String getKey() {
+      return key;
+    }
+
+    @Override
+    public Object getValue() {
+      return value;
+    }
+
+    @Override
+    public Object setValue(Object value) {
+      throw new UnsupportedOperationException();
     }
   }
 }
