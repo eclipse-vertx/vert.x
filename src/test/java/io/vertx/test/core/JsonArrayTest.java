@@ -690,7 +690,7 @@ public class JsonArrayTest {
     assertEquals(123, entry);
     assertTrue(iter.hasNext());
     entry = iter.next();
-    assertEquals(obj, entry);
+    assertEquals(obj.getMap(), entry);
     assertFalse(iter.hasNext());
   }
 
@@ -870,7 +870,7 @@ public class JsonArrayTest {
     assertFalse(jsonArray.contains("foo"));
     list.add("floob");
     assertTrue(jsonArray.contains("floob"));
-    assertSame(obj, list.get(1));
+    assertSame(obj.getMap(), list.get(1));
     obj.remove("quux");
   }
 
@@ -987,4 +987,33 @@ public class JsonArrayTest {
     assertNotEquals(array, new JsonArray(Collections.singletonList(new JsonArray().add(4))));
   }
 
+  @Test
+  public void testCacheJsonObject() {
+    JsonObject nested = new JsonObject();
+    jsonArray.add(nested);
+    assertSame(nested, jsonArray.getJsonObject(0));
+    assertSame(nested, jsonArray.getValue(0));
+  }
+
+  @Test
+  public void testStoreJsonObjectAsMap() {
+    JsonObject nested = new JsonObject();
+    jsonArray.add(nested);
+    assertTrue(jsonArray.getList().get(0) instanceof Map);
+  }
+
+  @Test
+  public void testCacheJsonArray() {
+    JsonArray nested = new JsonArray();
+    jsonArray.add(nested);
+    assertSame(nested, jsonArray.getJsonArray(0));
+    assertSame(nested, jsonArray.getValue(0));
+  }
+
+  @Test
+  public void testStoreJsonArrayAsList() {
+    JsonArray nested = new JsonArray();
+    jsonArray.add(nested);
+    assertTrue(jsonArray.getList().get(0) instanceof List);
+  }
 }
