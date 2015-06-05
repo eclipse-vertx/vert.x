@@ -19,7 +19,7 @@ package io.vertx.core;
 import java.util.ServiceLoader;
 
 /**
- * A helper class for loading factories from the classpath.
+ * A helper class for loading factories from the classpath and from the vert.x OSGi bundle.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -30,7 +30,15 @@ public class ServiceHelper {
     if (factories.iterator().hasNext()) {
       return factories.iterator().next();
     } else {
-      throw new IllegalStateException("Cannot find META-INF/services/" + clazz.getName() + " on classpath");
+      // By default ServiceLoader.load uses the TCCL, this may not be enough in environment deading with
+      // classloaders differently such as OSGi. So we should try to use the  classloader having loaded this
+      // class. In OSGi it would be the bundle exposing vert.x and so have access to all its classes.
+      factories = ServiceLoader.load(clazz, ServiceHelper.class.getClassLoader());
+      if (factories.iterator().hasNext()) {
+        return factories.iterator().next();
+      } else {
+        throw new IllegalStateException("Cannot find META-INF/services/" + clazz.getName() + " on classpath");
+      }
     }
   }
 }
