@@ -94,12 +94,10 @@ public class Json {
       if (copy) {
         val = ((JsonObject) val).copy();
       }
-      val = ((JsonObject) val).getMap();
     } else if (val instanceof JsonArray) {
       if (copy) {
         val = ((JsonArray) val).copy();
       }
-      val = ((JsonArray) val).getList();
     } else if (val instanceof Map) {
       if (copy) {
         val = (new JsonObject((Map)val)).copy();
