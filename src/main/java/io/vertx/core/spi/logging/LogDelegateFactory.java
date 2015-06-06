@@ -14,20 +14,13 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging.impl;
+package io.vertx.core.spi.logging;
 
 /**
- * A {@link LogDelegateFactory} which creates {@link Log4jLogDelegate} instances.
+ * I am responsible for creating {@link LogDelegate} instances.
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
- *
- *
  */
-public class Log4jLogDelegateFactory implements LogDelegateFactory
-{
-   public LogDelegate createDelegate(final String name)
-   {
-      return new Log4jLogDelegate(name);
-   }
-
+public interface LogDelegateFactory {
+  LogDelegate createDelegate(String name);
 }

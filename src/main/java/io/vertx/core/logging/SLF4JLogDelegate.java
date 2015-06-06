@@ -14,9 +14,10 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging.impl;
+package io.vertx.core.logging;
 
 
+import io.vertx.core.spi.logging.LogDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LocationAwareLogger;
@@ -26,7 +27,7 @@ import static org.slf4j.spi.LocationAwareLogger.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SLF4JLogDelegate implements LogDelegate{
+public class SLF4JLogDelegate implements LogDelegate {
   private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
 
   private final Logger logger;

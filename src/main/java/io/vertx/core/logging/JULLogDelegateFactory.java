@@ -14,14 +14,17 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging.impl;
+package io.vertx.core.logging;
+
+import io.vertx.core.spi.logging.LogDelegate;
+import io.vertx.core.spi.logging.LogDelegateFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.LogManager;
 
 /**
- * A {@link LogDelegateFactory} which creates {@link JULLogDelegate} instances.
+ * A {@link io.vertx.core.spi.logging.LogDelegateFactory} which creates {@link JULLogDelegate} instances.
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  * @author <a href="http://tfox.org">Tim Fox</a>

@@ -20,7 +20,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;

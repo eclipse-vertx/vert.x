@@ -18,10 +18,11 @@ package examples;
 
 import io.vertx.core.*;
 import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.Arrays;
 
@@ -170,6 +171,18 @@ public class CoreExamples {
 
   public void example17(Vertx vertx, long timerID) {
     vertx.cancelTimer(timerID);
+  }
+
+  public void example18(String className, Exception exception) {
+
+    // Note -these classes are Java only
+
+    // You would normally maintain one static instance of Logger per Java class:
+
+    Logger logger = LoggerFactory.getLogger(className);
+
+    logger.info("something happened");
+    logger.error("oops!", exception);
   }
 
 

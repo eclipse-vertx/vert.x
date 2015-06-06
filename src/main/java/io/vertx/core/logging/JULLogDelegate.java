@@ -14,13 +14,15 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging.impl;
+package io.vertx.core.logging;
+
+import io.vertx.core.spi.logging.LogDelegate;
 
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 /**
- * A {@link LogDelegate} which delegates to java.util.logging
+ * A {@link io.vertx.core.spi.logging.LogDelegate} which delegates to java.util.logging
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
