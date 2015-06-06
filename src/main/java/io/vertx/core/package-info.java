@@ -942,11 +942,15 @@
  * === Web applications
  *
  * If writing a web application it's highly recommended that you use Vert.x-Web instead of Vert.x core directly for
- * serving resources and handling file uploads. Vert.x-Web normalises the path in requests to prevent malicious clients
- * from crafting URLs to access resources outside of the web root. Similarly for file uploads Vert,x-Web provides
- * functionality for uploading to a known place on disk and does not rely on the filename provided by the client in the
- * upload which could be crafted to upload to a different place on disk. Vert.x core itself does not provide such checks
- * so it would be up to you as a developer to implement them yourself.
+ * serving resources and handling file uploads.
+ *
+ * Vert.x-Web normalises the path in requests to prevent malicious clients from crafting URLs to access resources
+ * outside of the web root.
+ *
+ * Similarly for file uploads Vert.x-Web provides functionality for uploading to a known place on disk and does not rely
+ * on the filename provided by the client in the upload which could be crafted to upload to a different place on disk.
+ *
+ * Vert.x core itself does not provide such checks so it would be up to you as a developer to implement them yourself.
  *
  * === Clustered event bus traffic
  *
