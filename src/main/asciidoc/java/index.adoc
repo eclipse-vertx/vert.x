@@ -668,7 +668,15 @@ include::parsetools.adoc[]
 
 == Thread safety
 
-Notes on thread safety of Vert.x objects
+Most Vert.x objects are safe to access from different threads. _However_ performance is optimised when they are
+accessed from the same context they were created from.
+
+For example if you have deployed a verticle which creates a `link:../../apidocs/io/vertx/core/net/NetServer.html[NetServer]` which provides
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` instances in it's handler, then it's best to always access that socket instance
+from the event loop of the verticle.
+
+If you stick to the standard Vert.x verticle deployment model and avoid sharing objects between verticles then this
+should be the case without you having to think about it.
 
 == Metrics SPI
 
@@ -872,7 +880,7 @@ vertx -version
 === Using the redeploy argument
 
 When a verticle is launched with `vertx run .... -redeploy`, vertx redeploys the verticle every time the verticle
-file change. This mode makes the development much more fun and efficient as you don't have to restart the
+files change. This mode makes the development much more fun and efficient as you don't have to restart the
 application.
 
 [source]
@@ -883,18 +891,110 @@ vertx run Server.java -redeploy
 
 When using Java source file, vert.x recompiles the class on the fly and redeploys the verticle.
 
-== Clustering
+== Cluster Managers
 
-=== Trouble-shooting clustering
+In Vert.x a cluster manager is used for various functions including:
+
+* Discovery and group membership of Vert.x nodes in a cluster
+* Maintaining cluster wide topic subscriber lists (so we know which nodes are interested in which event bus addresses)
+* Distributed Map support
+* Distributed Locks
+* Distributed Counters
+
+Cluster managers _do not_ handle the event bus inter-node transport, this is done directly by Vert.x with TCP connections.
+
+The default cluster manager used in the Vert.x distributions is one that uses http://hazelcast.com[Hazelcast] but this
+can be easily replaced by a different implementation as Vert.x cluster managers are pluggable.
+
+A cluster manager must implement the interface `link:../../apidocs/io/vertx/core/spi/cluster/ClusterManager.html[ClusterManager]`. Vert.x locates
+cluster managers at run-time by using the Java `link:../../apidocs/java/util/ServiceLoader.html[ServiceLoader]` functionality to locate instances of
+`link:../../apidocs/io/vertx/core/spi/cluster/ClusterManager.html[ClusterManager]` on the classpath.
+
+If you are using Vert.x at the command line and you want to use clustering you should make sure the `lib` directory
+of the Vert.x installation contains your cluster manager jar.
+
+If you are using Vert.x from a Maven or Gradle project just add the cluster manager jar as a dependency of your project.
+
+You can also specify cluster managers programmatically if embedding Vert.x using
+`link:../../apidocs/io/vertx/core/VertxOptions.html#setClusterManager-io.vertx.core.spi.cluster.ClusterManager-[setClusterManager]`.
+
+== Logging
+
+Vert.x logs using it's in-built logging API. The default implementation uses the JDK (JUL) logging so no extra
+logging dependencies are needed.
+
+=== Configuring JUL logging
+
+A JUL logging configuration file can be specified in the normal JUL way by providing a system property called:
+`java.util.logging.config.file` with the value being your configuration file. For more information on this and
+the structure of a JUL config file please consult the JUL logging documentation.
+
+Vert.x also provides a slightly more convenient way to specify a configuration file without having to set a system
+property. Just provide a JUL config file with the name `default-jul-logging.properties` on your classpath (e.g.
+inside your fatjar) and Vert.x will use that to configure JUL.
+
+=== Using another logging framework
+
+If you don't want Vert.x to use JUL for it's own logging you can configure it to use another logging framework, e.g.
+Log4J or SLF4J.
+
+To do this you should set a system property called `vertx.logger-delegate-factory-class-name` with the name of a Java
+class which implements the interface `link:../../apidocs/io/vertx/core/logging/LoggerFactory.html[LoggerFactory]`. We provide pre-built implementations for
+Log4J and SLF4J with the class names `io.vertx.core.logging.Log4jLogDelegateFactory` and `io.vertx.core.logging.SLF4JLogDelegateFactory`
+respectively. If you want to use these implementations you should also make sure the relevant Log4J or SLF4J jars
+are on your classpath.
+
+=== Logging from your application
+
+Vert.x itself is just a library and you can use whatever logging library you prefer to log from your own application,
+using that logging library's API.
+
+However, if you prefer you can use the Vert.x logging facility as described above to provide logging for your
+application too.
+
+To do that you use `link:../../apidocs/io/vertx/core/logging/LoggerFactory.html[LoggerFactory]` to get an instance of `link:../../apidocs/io/vertx/core/logging/Logger.html[Logger]`
+which you then use for logging, e.g.
+
+[source,java]
+----
+Logger logger = LoggerFactory.getLogger(className);
+
+logger.info("something happened");
+logger.error("oops!", exception);
+----
 
 === High Availability
 
 == Security notes
 
-Warn about file uploads and serving files from arbitrary locations
+Vert.x is a toolkit, not an opinionated framework where we force you to do things in a certain way. This gives you
+great power as a developer but with that comes great responsibility.
 
-Vert.x is a tool kit
+As with any toolkit, it's possible to write insecure applications, so you should always be careful when developing
+your application especially if it's exposed to the public (e.g. over the internet).
 
-Run in a security sandbox
+=== Web applications
 
-Use Apex
+If writing a web application it's highly recommended that you use Vert.x-Web instead of Vert.x core directly for
+serving resources and handling file uploads.
+
+Vert.x-Web normalises the path in requests to prevent malicious clients from crafting URLs to access resources
+outside of the web root.
+
+Similarly for file uploads Vert.x-Web provides functionality for uploading to a known place on disk and does not rely
+on the filename provided by the client in the upload which could be crafted to upload to a different place on disk.
+
+Vert.x core itself does not provide such checks so it would be up to you as a developer to implement them yourself.
+
+=== Clustered event bus traffic
+
+When clustering the event bus between different Vert.x nodes on a network, the traffic is sent un-encrypted across the
+wire, so do not use this if you have confidential data to send and your Vert.x nodes are not on a trusted network.
+
+=== Standard security best practices
+
+Any service can have potentially vulnerabilities whether it's written using Vert.x or any other toolkit so always
+follow security best practice, especially if your service is public facing.
+
+For example you should always run them in a DMZ and with an user account that has limited rights in order to limit
+the extent of damage in case the service was compromised.

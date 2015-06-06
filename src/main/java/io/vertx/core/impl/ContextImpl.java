@@ -21,7 +21,7 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;

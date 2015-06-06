@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging.impl;
+package io.vertx.core.logging;
 
 import io.vertx.core.impl.Utils;
 

@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.logging.impl;
+package io.vertx.core.spi.logging;
 
 /**
  * I represent operations that are delegated to underlying logging frameworks.
@@ -22,6 +22,7 @@ package io.vertx.core.logging.impl;
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public interface LogDelegate {
+
   boolean isInfoEnabled();
 
   boolean isDebugEnabled();
