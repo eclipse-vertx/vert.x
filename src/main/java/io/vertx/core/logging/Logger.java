@@ -33,6 +33,7 @@ import io.vertx.core.logging.impl.LogDelegate;
  * required by your favourite log framework are on your classpath.
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
+ * @author Patrick Sauts
  */
 public class Logger {
 
@@ -58,48 +59,95 @@ public class Logger {
     delegate.fatal(message);
   }
 
-  public void fatal(final Object message, final Throwable t) {
-    delegate.fatal(message, t);
+  public void fatal(String format, Object arg) {
+    delegate.fatal(format, arg);
+  }
+
+  public void fatal(String format, Object arg1, Object arg2) {
+    delegate.fatal(format, arg1, arg2);
+  }
+
+  public void fatal(String format, Object... arguments) {
+    delegate.fatal(format, arguments);
   }
 
   public void error(final Object message) {
     delegate.error(message);
   }
 
-  public void error(final Object message, final Throwable t) {
-    delegate.error(message, t);
+  public void error(String format, Object arg) {
+    delegate.error(format, arg);
+  }
+
+  public void error(String format, Object arg1, Object arg2) {
+    delegate.error(format, arg1, arg2);
+  }
+
+  public void error(String format, Object... arguments) {
+    delegate.error(format, arguments);
   }
 
   public void warn(final Object message) {
     delegate.warn(message);
   }
 
-  public void warn(final Object message, final Throwable t) {
-    delegate.warn(message, t);
+  public void warn(String format, Object arg) {
+    delegate.warn(format, arg);
+  }
+
+  public void warn(String format, Object arg1, Object arg2) {
+    delegate.warn(format, arg1, arg2);
+  }
+
+  public void warn(String format, Object... arguments) {
+    delegate.warn(format, arguments);
   }
 
   public void info(final Object message) {
     delegate.info(message);
   }
 
-  public void info(final Object message, final Throwable t) {
-    delegate.info(message, t);
+  public void info(String format, Object arg) {
+    delegate.info(format, arg);
+  }
+
+  public void info(String format, Object arg1, Object arg2) {
+    delegate.info(format, arg1, arg2);
+  }
+
+  public void info(String format, Object... arguments) {
+    delegate.info(format, arguments);
   }
 
   public void debug(final Object message) {
     delegate.debug(message);
   }
 
-  public void debug(final Object message, final Throwable t) {
-    delegate.debug(message, t);
+  public void debug(String format, Object arg) {
+    delegate.debug(format, arg);
+  }
+
+  public void debug(String format, Object arg1, Object arg2) {
+    delegate.debug(format, arg1, arg2);
+  }
+
+  public void debug(String format, Object... arguments) {
+    delegate.debug(format, arguments);
   }
 
   public void trace(final Object message) {
     delegate.trace(message);
   }
 
-  public void trace(final Object message, final Throwable t) {
-    delegate.trace(message, t);
+  public void trace(String format, Object arg) {
+    delegate.trace(format, arg);
   }
 
+  public void trace(String format, Object arg1, Object arg2) {
+    delegate.trace(format, arg1, arg2);
+  }
+
+  public void trace(String format, Object... arguments) {
+    delegate.trace(format, arguments);
+  }
 }

@@ -16,7 +16,6 @@
 
 package io.vertx.core.logging.impl;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LocationAwareLogger;
@@ -25,8 +24,9 @@ import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Patrick Sauts
  */
-public class SLF4JLogDelegate implements LogDelegate{
+public class SLF4JLogDelegate implements LogDelegate {
   private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
 
   private final Logger logger;
@@ -107,24 +107,114 @@ public class SLF4JLogDelegate implements LogDelegate{
       l.log(null, FQCN, level, msg, null, t);
     } else {
       switch (level) {
-        case TRACE_INT:
-          logger.trace(msg, t);
-          break;
-        case DEBUG_INT:
-          logger.debug(msg, t);
-          break;
-        case INFO_INT:
-          logger.info(msg, t);
-          break;
-        case WARN_INT:
-          logger.warn(msg, t);
-          break;
-        case ERROR_INT:
-          logger.error(msg, t);
-          break;
-        default:
-          throw new IllegalArgumentException("Unknown log level " + level);
+      case TRACE_INT:
+        logger.trace(msg, t);
+        break;
+      case DEBUG_INT:
+        logger.debug(msg, t);
+        break;
+      case INFO_INT:
+        logger.info(msg, t);
+        break;
+      case WARN_INT:
+        logger.warn(msg, t);
+        break;
+      case ERROR_INT:
+        logger.error(msg, t);
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown log level " + level);
       }
     }
+  }
+
+  @Override
+  public void fatal(String format, Object arg) {
+    logger.error(format, arg);
+  }
+
+  @Override
+  public void fatal(String format, Object arg1, Object arg2) {
+    logger.error(format, arg1, arg2);
+  }
+
+  @Override
+  public void fatal(String format, Object... arguments) {
+    logger.error(format, arguments);
+  }
+
+  @Override
+  public void error(String format, Object arg) {
+    logger.error(format, arg);
+  }
+
+  @Override
+  public void error(String format, Object arg1, Object arg2) {
+    logger.error(format, arg1, arg2);
+  }
+
+  @Override
+  public void error(String format, Object... arguments) {
+    logger.error(format, arguments);
+  }
+
+  @Override
+  public void warn(String format, Object arg) {
+    logger.warn(format, arg);
+  }
+
+  @Override
+  public void warn(String format, Object arg1, Object arg2) {
+    logger.warn(format, arg1, arg2);
+  }
+
+  @Override
+  public void warn(String format, Object... arguments) {
+    logger.warn(format, arguments);
+  }
+
+  @Override
+  public void info(String format, Object arg) {
+    logger.info(format, arg);
+  }
+
+  @Override
+  public void info(String format, Object arg1, Object arg2) {
+    logger.info(format, arg1, arg2);
+  }
+
+  @Override
+  public void info(String format, Object... arguments) {
+    logger.info(format, arguments);
+  }
+
+  @Override
+  public void debug(String format, Object arg) {
+    logger.debug(format, arg);
+  }
+
+  @Override
+  public void debug(String format, Object arg1, Object arg2) {
+    logger.debug(format, arg1, arg2);
+  }
+
+  @Override
+  public void debug(String format, Object... arguments) {
+    logger.debug(format, arguments);
+  }
+
+  @Override
+  public void trace(String format, Object arg) {
+    logger.trace(format, arg);
+  }
+
+  @Override
+  public void trace(String format, Object arg1, Object arg2) {
+    logger.trace(format, arg1, arg2);
+  }
+
+  @Override
+  public void trace(String format, Object... arguments) {
+    logger.trace(format, arguments);
   }
 }
