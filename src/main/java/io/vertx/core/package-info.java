@@ -841,7 +841,7 @@
  * === Using the redeploy argument
  *
  * When a verticle is launched with `vertx run .... -redeploy`, vertx redeploys the verticle every time the verticle
- * file change. This mode makes the development much more fun and efficient as you don't have to restart the
+ * files change. This mode makes the development much more fun and efficient as you don't have to restart the
  * application.
  *
  * [source]
@@ -852,9 +852,33 @@
  *
  * When using Java source file, vert.x recompiles the class on the fly and redeploys the verticle.
  *
- * == Clustering
+ * == Cluster Managers
  *
- * === Trouble-shooting clustering
+ * In Vert.x a cluster manager is used for various functions including:
+ *
+ * * Discovery and group membership of Vert.x nodes in a cluster
+ * * Maintaining cluster wide topic subscriber lists (so we know which nodes are interested in which event bus addresses)
+ * * Distributed Map support
+ * * Distributed Locks
+ * * Distributed Counters
+ *
+ * Cluster managers _do not_ handle the event bus inter-node transport, this is done directly by Vert.x with TCP connections.
+ *
+ * The default cluster manager used in the Vert.x distributions is one that uses http://hazelcast.com[Hazelcast] but this
+ * can be easily replaced by a different implementation as Vert.x cluster managers are pluggable.
+ *
+ * A cluster manager must implement the interface {@link io.vertx.core.spi.cluster.ClusterManager}. Vert.x locates
+ * cluster managers at run-time by using the Java {@link java.util.ServiceLoader} functionality to locate instances of
+ * {@link io.vertx.core.spi.cluster.ClusterManager} on the classpath.
+ *
+ * If you are using Vert.x at the command line and you want to use clustering you should make sure the `lib` directory
+ * of the Vert.x installation contains your cluster manager jar.
+ *
+ * If you are using Vert.x from a Maven or Gradle project just add the cluster manager jar as a dependency of your project.
+ *
+ * You can also specify cluster managers programmatically if embedding Vert.x using
+ * {@link io.vertx.core.VertxOptions#setClusterManager(io.vertx.core.spi.cluster.ClusterManager)}.
+ *
  *
  * === High Availability
  *
