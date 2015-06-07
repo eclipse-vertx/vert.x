@@ -45,6 +45,13 @@ public interface VertxInternal extends Vertx {
   ContextImpl getOrCreateContext();
 
   EventLoopGroup getEventLoopGroup();
+  
+  /**
+   * get NettyTransportFactory instance
+   * 
+   * @return NettyTransportFactory instance
+   */
+  NettyTransportFactory getNettyTransportFactory();
 
   ExecutorService getWorkerPool();
 
