@@ -592,9 +592,11 @@
  *
  * The argument passed into the timer event handler is also the unique timer id:
  *
- * Keep in mind that the timer will fire on a periodic basis. If your periodic treatment takes a long amount of time to proceed, your treatments could run continuously or even worse : stack up. 
+ * Keep in mind that the timer will fire on a periodic basis. If your periodic treatment takes a long amount of time to proceed,
+ * your timer events could run continuously or even worse : stack up.
  * 
- * In this case, you should consider using {@link io.vertx.core.Vertx#setTimer} instead. Once your treatment has finished, you can set the next timer.
+ * In this case, you should consider using {@link io.vertx.core.Vertx#setTimer} instead. Once your treatment has
+ * finished, you can set the next timer.
  * 
  * [source,$lang]
  * ----
