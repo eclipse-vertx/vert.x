@@ -24,7 +24,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>5</version>
+    <version>6-SNAPSHOT</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
@@ -52,12 +52,11 @@
   </scm>
 
   <properties>
-
-    <netty.version>4.0.25.Final</netty.version>
+    <netty.version>4.0.28.Final</netty.version>
     <jackson.version>2.5.3</jackson.version>
     <log4j.version>1.2.17</log4j.version>
-    <slf4j.version>1.7.7</slf4j.version>
-    <junit.version>4.11</junit.version>
+    <slf4j.version>1.7.12</slf4j.version>
+    <junit.version>4.12</junit.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
     <stack.version>3.0.0-SNAPSHOT</stack.version>
