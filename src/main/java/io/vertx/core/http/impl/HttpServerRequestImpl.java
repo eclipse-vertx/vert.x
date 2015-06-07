@@ -272,9 +272,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public synchronized MultiMap formAttributes() {
-    if (decoder == null) {
-      throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
-    }
     return attributes();
   }
 
