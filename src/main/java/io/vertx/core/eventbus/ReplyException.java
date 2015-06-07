@@ -39,7 +39,7 @@ public class ReplyException extends VertxException {
    * @param message  the failure message
    */
   public ReplyException(ReplyFailure failureType, int failureCode, String message) {
-      super("(" + failureType + "," + failureCode + ") " + (message != null ? message : ""));
+      super(message);
       this.failureType = failureType;
       this.failureCode = failureCode;
   }
@@ -79,6 +79,12 @@ public class ReplyException extends VertxException {
    */
   public int failureCode() {
     return failureCode;
+  }
+
+  @Override
+  public String toString() {
+    String message = getMessage();
+    return "(" + failureType + "," + failureCode + ") " + (message != null ? message : "");
   }
 
 }
