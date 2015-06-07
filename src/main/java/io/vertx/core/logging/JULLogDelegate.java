@@ -16,6 +16,7 @@
 
 package io.vertx.core.logging;
 
+import io.vertx.core.logging.LogFormatter.LogTuple;
 import io.vertx.core.spi.logging.LogDelegate;
 
 import java.util.logging.Level;
@@ -25,6 +26,7 @@ import java.util.logging.LogRecord;
  * A {@link io.vertx.core.spi.logging.LogDelegate} which delegates to java.util.logging
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
+ * @author Patrick Sauts
  */
 public class JULLogDelegate implements LogDelegate {
   private final java.util.logging.Logger logger;
@@ -49,48 +51,24 @@ public class JULLogDelegate implements LogDelegate {
     log(Level.SEVERE, message);
   }
 
-  public void fatal(final Object message, final Throwable t) {
-    log(Level.SEVERE, message, t);
-  }
-
   public void error(final Object message) {
     log(Level.SEVERE, message);
-  }
-
-  public void error(final Object message, final Throwable t) {
-    log(Level.SEVERE, message, t);
   }
 
   public void warn(final Object message) {
     log(Level.WARNING, message);
   }
 
-  public void warn(final Object message, final Throwable t) {
-    log(Level.WARNING, message, t);
-  }
-
   public void info(final Object message) {
     log(Level.INFO, message);
-  }
-
-  public void info(final Object message, final Throwable t) {
-    log(Level.INFO, message, t);
   }
 
   public void debug(final Object message) {
     log(Level.FINE, message);
   }
 
-  public void debug(final Object message, final Throwable t) {
-    log(Level.FINE, message, t);
-  }
-
   public void trace(final Object message) {
     log(Level.FINEST, message);
-  }
-
-  public void trace(final Object message, final Throwable t) {
-    log(Level.FINEST, message, t);
   }
 
   private void log(Level level, Object message) {
@@ -110,5 +88,144 @@ public class JULLogDelegate implements LogDelegate {
     record.setSourceClassName(null);
 
     logger.log(record);
+  }
+
+  @Override
+  public void fatal(String format, Object arg) {
+    if (logger.isLoggable(Level.SEVERE)) {
+      logger.severe(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void fatal(String format, Object arg1, Object arg2) {
+    if (logger.isLoggable(Level.SEVERE)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.SEVERE, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void fatal(String format, Object... arguments) {
+    if (logger.isLoggable(Level.SEVERE)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.SEVERE, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void error(String format, Object arg) {
+    if (logger.isLoggable(Level.SEVERE)) {
+      logger.severe(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void error(String format, Object arg1, Object arg2) {
+    if (logger.isLoggable(Level.SEVERE)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.SEVERE, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void error(String format, Object... arguments) {
+    if (logger.isLoggable(Level.SEVERE)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.SEVERE, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void warn(String format, Object arg) {
+    if (logger.isLoggable(Level.WARNING)) {
+      logger.warning(LogFormatter.format(format, arg).getMessage());
+    }
+
+  }
+
+  @Override
+  public void warn(String format, Object arg1, Object arg2) {
+    if (logger.isLoggable(Level.WARNING)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.WARNING, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void warn(String format, Object... arguments) {
+    if (logger.isLoggable(Level.WARNING)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.WARNING, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void info(String format, Object arg) {
+    if (logger.isLoggable(Level.INFO)) {
+      logger.info(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void info(String format, Object arg1, Object arg2) {
+    if (logger.isLoggable(Level.INFO)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.INFO, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void info(String format, Object... arguments) {
+    if (logger.isLoggable(Level.INFO)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.INFO, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void debug(String format, Object arg) {
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void debug(String format, Object arg1, Object arg2) {
+    if (logger.isLoggable(Level.FINE)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.FINE, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void debug(String format, Object... arguments) {
+    if (logger.isLoggable(Level.FINE)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.FINE, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void trace(String format, Object arg) {
+    if (logger.isLoggable(Level.FINEST)) {
+      logger.finest(LogFormatter.format(format, arg).getMessage());
+    }
+
+  }
+
+  @Override
+  public void trace(String format, Object arg1, Object arg2) {
+    if (logger.isLoggable(Level.FINEST)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.FINEST, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void trace(String format, Object... arguments) {
+    if (logger.isLoggable(Level.FINEST)) {
+      logger.finest(LogFormatter.format(format, arguments).getMessage());
+    }
   }
 }
