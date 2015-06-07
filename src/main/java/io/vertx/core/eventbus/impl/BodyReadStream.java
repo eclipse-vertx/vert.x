@@ -43,9 +43,7 @@ public class BodyReadStream<T> implements ReadStream<T> {
   @Override
   public ReadStream<T> handler(Handler<T> handler) {
     if (handler != null) {
-      delegate.handler(message -> {
-        handler.handle(message.body());
-      });
+      delegate.handler(message -> handler.handle(message.body()));
     } else {
       delegate.handler(null);
     }

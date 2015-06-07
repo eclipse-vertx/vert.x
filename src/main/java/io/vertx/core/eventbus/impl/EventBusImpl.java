@@ -587,7 +587,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // Embedded
       context = vertx.createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
     }
-    HandlerHolder holder = new HandlerHolder<T>(registration, replyHandler, localOnly, context, timeoutID);
+    HandlerHolder holder = new HandlerHolder<>(registration, replyHandler, localOnly, context, timeoutID);
 
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
@@ -609,7 +609,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     handlers.list.add(holder);
 
     if (hasContext) {
-      HandlerEntry entry = new HandlerEntry<T>(address, registration);
+      HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
     }
   }
@@ -640,7 +640,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
             } else {
               callCompletionHandlerAsync(completionHandler);
             }
-            holder.context.removeCloseHook(new HandlerEntry<T>(address, handler));
+            holder.context.removeCloseHook(new HandlerEntry<>(address, handler));
             break;
           }
         }
@@ -654,9 +654,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
     if (completionHandler != null) {
-      vertx.runOnContext(v -> {
-        completionHandler.handle(Future.succeededFuture());
-      });
+      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
     }
   }
 
@@ -891,12 +889,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     synchronized void connected(NetSocket socket) {
       this.socket = socket;
       connected = true;
-      socket.exceptionHandler(t -> {
-        close();
-      });
-      socket.closeHandler(v -> {
-        close();
-      });
+      socket.exceptionHandler(t -> close());
+      socket.closeHandler(v -> close());
       socket.handler(data -> {
         // Got a pong back
         vertx.cancelTimer(timeoutID);
@@ -1180,11 +1174,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (endHandler != null) {
         // We should use the HandlerHolder context to properly do this (needs small refactoring)
         Context endCtx = vertx.getOrCreateContext();
-        this.endHandler = v1 -> {
-          endCtx.runOnContext(v2 -> {
-            endHandler.handle(null);
-          });
-        };
+        this.endHandler = v1 -> endCtx.runOnContext(v2 -> endHandler.handle(null));
       } else {
         this.endHandler = null;
       }

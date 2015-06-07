@@ -51,7 +51,7 @@ public final class RecordDecoderFactory {
       RecordDecoderFactory.factory = factory;
     }
 
-    private final Map<Integer, RecordDecoder<?>> decoders = new HashMap<Integer, RecordDecoder<?>>();
+    private final Map<Integer, RecordDecoder<?>> decoders = new HashMap<>();
 
     /**
      * Creates a new {@link io.vertx.core.dns.impl.netty.decoder.RecordDecoderFactory} only using the default

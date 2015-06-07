@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
+import static io.vertx.core.http.HttpHeaders.*;
+
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
  * However it can be used safely from other threads.
@@ -207,11 +209,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized boolean writeQueueFull() {
     checkComplete();
-    if (conn != null) {
-      return conn.isNotWritable();
-    } else {
-      return false;
-    }
+    return conn != null && conn.isNotWritable();
   }
 
   @Override
@@ -276,7 +274,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     checkComplete();
     checkResponseHandler();
     if (!chunked && !contentLengthSet()) {
-      headers().set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
+      headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     write(chunk.getByteBuf(), true);
   }
@@ -575,11 +573,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
 
   private boolean contentLengthSet() {
-    if (headers != null) {
-      return request.headers().contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
-    } else {
-      return false;
-    }
+    return headers != null && request.headers().contains(CONTENT_LENGTH);
   }
 
   private void writeHead() {
@@ -600,16 +594,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private void prepareHeaders() {
     HttpHeaders headers = request.headers();
-    headers.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
-    if (!headers.contains(io.vertx.core.http.HttpHeaders.HOST)) {
-      request.headers().set(io.vertx.core.http.HttpHeaders.HOST, conn.hostHeader());
+    headers.remove(TRANSFER_ENCODING);
+    if (!headers.contains(HOST)) {
+      request.headers().set(HOST, conn.hostHeader());
     }
     if (chunked) {
       HttpHeaders.setTransferEncodingChunked(request);
     }
-    if (client.getOptions().isTryUseCompression() && request.headers().get(io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING) == null) {
+    if (client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
-      request.headers().set(io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING, io.vertx.core.http.HttpHeaders.DEFLATE_GZIP);
+      request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
     }
   }
 
