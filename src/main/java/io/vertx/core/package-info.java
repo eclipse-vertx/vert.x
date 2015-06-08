@@ -506,9 +506,20 @@
  *
  * === High Availability
  *
- * Verticles can be deployed with High Availability (HA) enabled.
+ * Verticles can be deployed with High Availability (HA) enabled. In that context, when a verticle is deployed on
+ * a vert.x instance that dies abruptly, the verticle is redeployed on another vert.x instance from the cluster.
  *
- * TODO
+ * To run an verticle with the high availability enabled, just append the `-ha` switch:
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha
+ * ----
+ *
+ * When enabling high availability, no need to add `-cluster`.
+ *
+ * More details about the high availability feature and configuration in the <<High Availability and Fail-Over>>
+ *   section.
  *
  *
  * === Running Verticles from the command line
@@ -946,7 +957,146 @@
  * {@link examples.CoreExamples#example18}
  * ----
  *
- * === High Availability
+ * == High Availability and Fail-Over
+ *
+ * Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x
+ * instance running a verticle dies abruptly, the verticle is migrated to another vertx instance. The vert.x
+ * instances must be in the same cluster.
+ *
+ * === Automatic failover
+ *
+ * When vert.x runs with _HA_ enabled, if a vert.x instance where a verticle runs fails or dies, the verticle is
+ * redeployed automatically on another vert.x instance of the cluster. We call this _verticle fail-over_.
+ *
+ * To run vert.x with the _HA_ enabled, just add the `-ha` flag to the command line:
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha
+ * ----
+ *
+ * Now for HA to work, you need more than one Vert.x instances in the cluster, so let's say you have another
+ * Vert.x instance that you have already started, for example:
+ *
+ * [source]
+ * ----
+ * vertx run my-other-verticle.js -ha
+ * ----
+ *
+ * If the Vert.x instance that is running `my-verticle.js` now dies (you can test this by killing the process
+ * with `kill -9`), the Vert.x instance that is running `my-other-verticle.js` will automatic deploy `my-verticle
+ * .js` so now that Vert.x instance is running both verticles.
+ *
+ * NOTE: the migration is only possible if the second vert.x instance has access to the verticle file (here
+ * `my-verticle.js`).
+ *
+ * IMPORTANT: Please note that cleanly closing a Vert.x instance will not cause failover to occur, e.g. `CTRL-C`
+ * or `kill -SIGINT`
+ *
+ * You can also start _bare_ Vert.x instances - i.e. instances that are not initially running any verticles, they
+ * will also failover for nodes in the cluster. To start a bare instance you simply do:
+ *
+ * [source]
+ * ----
+ * vertx run -ha
+ * ----
+ *
+ * When using the `-ha` switch you do not need to provide the `-cluster` switch, as a cluster is assumed if you
+ * want HA.
+ *
+ * NOTE: depending on your cluster configuration, you may need to customize the cluster manager configuration
+ * (Hazelcast by default), and/or add the `cluster-host` and `cluster-port` parameters.
+ *
+ * === HA groups
+ *
+ * When running a Vert.x instance with HA you can also optional specify a _HA group_. A HA group denotes a
+ * logical group of nodes in the cluster. Only nodes with the same HA group will failover onto one another. If
+ * you don't specify a HA group the default group `+++__DEFAULT__+++` is used.
+ *
+ * To specify an HA group you use the `-hagroup` switch when running the verticle, e.g.
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha -ha-group my-group
+ * ----
+ *
+ * Let's look at an example:
+ *
+ * In a first terminal:
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha -hagroup g1
+ * ----
+ *
+ * In a second terminal, let's run another verticle using the same group:
+ *
+ * [source]
+ * ----
+ * vertx run my-other-verticle.js -ha -hagroup g1
+ * ----
+ *
+ * Finally, in a third terminal, launch another verticle using a different group:
+ *
+ * [source]
+ * ----
+ * vertx run yet-another-verticle.js -ha -hagroup g2
+ * ----
+ *
+ * If we kill the instance in terminal 1, it will fail over to the instance in terminal 2, not the instance in
+ * terminal 3 as that has a different group.
+ *
+ * If we kill the instance in terminal 3, it won't get failed over as there is no other vert.x instance in that
+ * group.
+ *
+ * === Dealing with network partitions - Quora
+ *
+ * The HA implementation also supports quora. A quorum is the minimum number of votes that a distributed
+ * transaction has to obtain in order to be allowed to perform an operation in a distributed system.
+ *
+ * When starting a Vert.x instance you can instruct it that it requires a `quorum` before any HA deployments will
+ * be deployed. In this context, a quorum is a minimum number of nodes for a particular group in the cluster.
+ * Typically you chose your quorum size to `Q = 1 + N/2` where `N` is the number of nodes in the group. If there
+ * are less than `Q` nodes in the cluster the HA deployments will undeploy. They will redeploy again if/when a
+ * quorum is re-attained. By doing this you can prevent against network partitions, a.k.a. _split brain_.
+ *
+ * There is more information on quora http://en.wikipedia.org/wiki/Quorum_(distributed_computing)[here].
+ *
+ * To run vert.x instances with a quorum you specify `-quorum` on the command line, e.g.
+ *
+ * In a first terminal:
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha -quorum 3
+ * ----
+ *
+ * At this point the Vert.x instance will start but not deploy the module (yet) because there is only one node
+ * in the cluster, not 3.
+ *
+ * In a second terminal:
+ * [source]
+ * ----
+ * vertx run my-other-verticle.js -ha -quorum 3
+ * ----
+ *
+ * At this point the Vert.x instance will start but not deploy the module (yet) because there are only two nodes
+ * in the cluster, not 3.
+ *
+ * In a third console, you can start another instance of vert.x:
+ *
+ * [source]
+ * ----
+ * vertx run yet-another-verticle.js -ha -quorum 3
+ * ----
+ *
+ * Yay! - we have three nodes, that's a quorum. At this point the modules will automatically deploy on all
+ * instances.
+ *
+ * If we now close or kill one of the nodes the modules will automatically undeploy on the other nodes, as there
+ * is no longer a quorum.
+ *
+ * Quora can also be used in conjunction with ha groups. In that case, quora are resolved for each particular
+ * group.
  *
  * == Security notes
  *
