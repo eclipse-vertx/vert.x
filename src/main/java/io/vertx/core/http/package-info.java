@@ -603,7 +603,7 @@
  * When you're writing to a request, the first call to `write` will result in the request headers being written
  * out to the wire.
  *
- * The actual write is asychronous and might not occur until some time after the call has returned.
+ * The actual write is asynchronous and might not occur until some time after the call has returned.
  *
  * Non-chunked HTTP requests with a request body require a `Content-Length` header to be provided.
  *
@@ -686,17 +686,23 @@
  *
  * ==== Handling exceptions
  *
- * You can handle exceptions corresponding to a request by setting an exception handler on the {@link io.vertx.core.http.HttpClientRequest}
- * instance:
+ * You can handle exceptions corresponding to a request by setting an exception handler on the
+ * {@link io.vertx.core.http.HttpClientRequest} instance:
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example42}
  * ----
  *
- * TODO - what about exceptions in the getNow methods where no exception handler can be provided??
+ * This does not handle non _2xx_ response that need to be handled in the
+ * {@link io.vertx.core.http.HttpClientResponse} code:
  *
- * Maybe need a catch all exception handler??
+ * [source, $lang]
+ * ----
+ * {@link examples.HTTPExamples#statusCodeHandling}
+ * ----
+ *
+ * IMPORTANT: `XXXNow` methods cannot receive an exception handler.
  *
  * ==== Specifying a handler on the client request
  *

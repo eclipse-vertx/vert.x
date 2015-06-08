@@ -416,6 +416,20 @@ public class HTTPExamples {
     });
   }
 
+  public void  statusCodeHandling(HttpClient client) {
+    HttpClientRequest request = client.post("some-uri", response -> {
+      if (response.statusCode() == 200) {
+        System.out.println("Everything fine");
+        return;
+      }
+      if (response.statusCode() == 500) {
+        System.out.println("Unexpected behavior on the server side");
+        return;
+      }
+    });
+    request.end();
+  }
+
   public void example43(HttpClient client) {
 
     HttpClientRequest request = client.post("some-uri");

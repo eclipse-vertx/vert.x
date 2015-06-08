@@ -741,7 +741,7 @@ request.end(buffer);
 When you're writing to a request, the first call to `write` will result in the request headers being written
 out to the wire.
 
-The actual write is asychronous and might not occur until some time after the call has returned.
+The actual write is asynchronous and might not occur until some time after the call has returned.
 
 Non-chunked HTTP requests with a request body require a `Content-Length` header to be provided.
 
@@ -836,8 +836,8 @@ If the request does not return any data within the timeout period an exception w
 
 ==== Handling exceptions
 
-You can handle exceptions corresponding to a request by setting an exception handler on the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]`
-instance:
+You can handle exceptions corresponding to a request by setting an exception handler on the
+`link:../../apidocs/io/vertx/core/http/HttpClientRequest.html[HttpClientRequest]` instance:
 
 [source,java]
 ----
@@ -850,9 +850,25 @@ request.exceptionHandler(e -> {
 });
 ----
 
-TODO - what about exceptions in the getNow methods where no exception handler can be provided??
+This does not handle non _2xx_ response that need to be handled in the
+`link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` code:
 
-Maybe need a catch all exception handler??
+[source, java]
+----
+HttpClientRequest request = client.post("some-uri", response -> {
+  if (response.statusCode() == 200) {
+    System.out.println("Everything fine");
+    return;
+  }
+  if (response.statusCode() == 500) {
+    System.out.println("Unexpected behavior on the server side");
+    return;
+  }
+});
+request.end();
+----
+
+IMPORTANT: `XXXNow` methods cannot receive an exception handler.
 
 ==== Specifying a handler on the client request
 
