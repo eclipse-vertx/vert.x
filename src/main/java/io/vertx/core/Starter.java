@@ -143,6 +143,10 @@ public class Starter {
           runVerticle(main, args);
           return;
         }
+      } else if (first.equals("-ha")) {
+        // Create a bare instance
+        runBare(args);
+        return;
       }
     }
 
@@ -234,6 +238,21 @@ public class Starter {
       vertx = Vertx.vertx(options);
     }
     return vertx;
+  }
+
+  private void runBare(Args args) {
+    // ha is necessarily true here,
+    // so clustered is
+    Vertx vertx = startVertx(true, true, args);
+    if (vertx == null) {
+      // Throwable should have been logged at this point
+      return;
+    }
+
+    // As we do not deploy a verticle, other options are irrelevant (instances, worker, conf and redeploy)
+
+    addShutdownHook(vertx);
+    block();
   }
 
   private void runVerticle(String main, Args args) {
