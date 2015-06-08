@@ -559,7 +559,46 @@
  *
  * === The Context object
  *
- * TODO
+ * When Vert.x provides an event to a handler or calls the start or stop methods of a
+ * {@link io.vertx.core.Verticle}, the execution is associated with a `Context`. Usually a context is an
+ * *event-loop context* and is tied to a specific event loop thread. So executions for that context always occur
+ * on that exact same event loop thread. In the case of worker verticles and running inline blocking code a
+ * worker context will be associated with the execution which will use a thread from the worker thread pool.
+ *
+ * To retrieve the context, use the {@link io.vertx.core.Vertx#getOrCreateContext()} method:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#retrieveContext(io.vertx.core.Vertx)}
+ * ----
+ *
+ * If the current thread has a context associated with it, it reuses the context object. If not a new instance of
+ * context is created. You can test the _type_ of context you have retrieved:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#retrieveContextType(io.vertx.core.Vertx)}
+ * ----
+ *
+ * When you have retrieved the context object, you can run code in this context asynchronously. In other words,
+ * you submit a task that will be eventually run in the same context, but later:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#runInContext(io.vertx.core.Vertx)}
+ * ----
+ *
+ * When several handlers run in the same context, they may want to share data. The context object offers methods to
+ * store and retrieve data shared in the context. For instance, it lets you pass data to some action run with
+ * {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#runInContextWithData(io.vertx.core.Vertx)}
+ * ----
+ *
+ * The context object also let you access verticle configuration using the {@link io.vertx.core.Context#config()}
+ * method. Check the <<Passing configuration to a verticle>> section for more details about this configuration.
  *
  * === Executing periodic and delayed actions
  *

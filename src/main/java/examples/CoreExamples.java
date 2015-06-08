@@ -185,6 +185,37 @@ public class CoreExamples {
     logger.error("oops!", exception);
   }
 
+  public void retrieveContext(Vertx vertx) {
+    Context context = vertx.getOrCreateContext();
+  }
+
+  public void retrieveContextType(Vertx vertx) {
+    Context context = vertx.getOrCreateContext();
+    if (context.isEventLoopContext()) {
+      System.out.println("Context attached to Event Loop");
+    } else if (context.isWorkerContext()) {
+      System.out.println("Context attached to Worker Thread");
+    } else if (context.isMultiThreadedWorkerContext()) {
+      System.out.println("Context attached to Worker Thread - multi threaded worker");
+    } else if (! Context.isOnVertxThread()) {
+      System.out.println("Context not attached to a thread managed by vert.x");
+    }
+  }
+
+  public void runInContext(Vertx vertx) {
+    vertx.getOrCreateContext().runOnContext( (v) -> {
+      System.out.println("This will be executed asynchronously in the same context");
+    });
+  }
+
+  public void runInContextWithData(Vertx vertx) {
+    final Context context = vertx.getOrCreateContext();
+    context.put("data", "hello");
+    context.runOnContext((v) -> {
+      String hello = context.get("data");
+    });
+  }
+
 
 
 

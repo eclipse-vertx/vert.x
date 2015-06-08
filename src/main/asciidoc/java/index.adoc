@@ -582,7 +582,61 @@ This will shut-down all internal thread pools and close other resources, and wil
 
 === The Context object
 
-TODO
+When Vert.x provides an event to a handler or calls the start or stop methods of a
+`link:../../apidocs/io/vertx/core/Verticle.html[Verticle]`, the execution is associated with a `Context`. Usually a context is an
+*event-loop context* and is tied to a specific event loop thread. So executions for that context always occur
+on that exact same event loop thread. In the case of worker verticles and running inline blocking code a
+worker context will be associated with the execution which will use a thread from the worker thread pool.
+
+To retrieve the context, use the `link:../../apidocs/io/vertx/core/Vertx.html#getOrCreateContext--[getOrCreateContext]` method:
+
+[source, java]
+----
+Context context = vertx.getOrCreateContext();
+----
+
+If the current thread has a context associated with it, it reuses the context object. If not a new instance of
+context is created. You can test the _type_ of context you have retrieved:
+
+[source, java]
+----
+Context context = vertx.getOrCreateContext();
+if (context.isEventLoopContext()) {
+  System.out.println("Context attached to Event Loop");
+} else if (context.isWorkerContext()) {
+  System.out.println("Context attached to Worker Thread");
+} else if (context.isMultiThreadedWorkerContext()) {
+  System.out.println("Context attached to Worker Thread - multi threaded worker");
+} else if (! Context.isOnVertxThread()) {
+  System.out.println("Context not attached to a thread managed by vert.x");
+}
+----
+
+When you have retrieved the context object, you can run code in this context asynchronously. In other words,
+you submit a task that will be eventually run in the same context, but later:
+
+[source, java]
+----
+vertx.getOrCreateContext().runOnContext( (v) -> {
+  System.out.println("This will be executed asynchronously in the same context");
+});
+----
+
+When several handlers run in the same context, they may want to share data. The context object offers methods to
+store and retrieve data shared in the context. For instance, it lets you pass data to some action run with
+`link:../../apidocs/io/vertx/core/Context.html#runOnContext-io.vertx.core.Handler-[runOnContext]`:
+
+[source, java]
+----
+final Context context = vertx.getOrCreateContext();
+context.put("data", "hello");
+context.runOnContext((v) -> {
+  String hello = context.get("data");
+});
+----
+
+The context object also let you access verticle configuration using the `link:../../apidocs/io/vertx/core/Context.html#config--[config]`
+method. Check the <<Passing configuration to a verticle>> section for more details about this configuration.
 
 === Executing periodic and delayed actions
 
