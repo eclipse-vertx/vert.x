@@ -916,6 +916,17 @@ Where `my_verticle.conf` might contain something like:
 
 The config will be available inside the verticle via the core API.
 
+When using the high-availability feature of vert.x you may want to create a _bare_ instance of vert.x. This
+instance does not deploy any verticles when launched, but will receive a verticle if another node of the cluster
+dies. To create a _bare_ instance, launch:
+
+[source]
+----
+vertx -ha
+----
+
+Depending on your cluster configuration, you may have to append the `cluster-host` and `cluster-port` parameters.
+
 === Executing verticles packaged as a fat jar
 
 A _fat jar_ is an executable jar embedding its dependencies. This means you don't have to have Vert.x pre-installed

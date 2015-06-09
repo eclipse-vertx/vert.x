@@ -16,9 +16,11 @@
 
 package io.vertx.core;
 
+import com.sun.org.apache.xpath.internal.operations.Mult;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,15 @@ import java.util.Set;
  */
 @VertxGen
 public interface MultiMap extends Iterable<Map.Entry<String, String>> {
+
+  /**
+   * Create a multi-map implementation with case insensitive keys, for instance it can be used to hold some HTTP headers.
+   *
+   * @return the multi-map
+   */
+  static MultiMap caseInsensitiveMultiMap() {
+    return new CaseInsensitiveHeaders();
+  }
 
   @GenIgnore
   String get(CharSequence name);
