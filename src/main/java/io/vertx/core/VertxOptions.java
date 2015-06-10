@@ -113,6 +113,18 @@ public class VertxOptions {
    */
   private static final long DEFAULT_WARNING_EXECPTION_TIME = 5l * 1000 * 1000000;
 
+  /**
+   * default socket transport in netty
+   */
+  public static final String NETTY_TRANSPORT_NIO = "nio";
+  
+  /**
+   * Since 4.0.16, Netty provides the native socket transport for GNU/Linux using JNI
+   * This transport has higher performance and produces less garbage
+   * But multicast not supported
+   */
+  public static final String NETTY_TRANSPORT_EPOLL = "epoll";
+
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -131,6 +143,8 @@ public class VertxOptions {
   private MetricsOptions metrics;
 
   private long warningExceptionTime = DEFAULT_WARNING_EXECPTION_TIME;
+
+  private String nettyTransport = NETTY_TRANSPORT_NIO;
 
   /**
    * Default constructor
@@ -161,6 +175,7 @@ public class VertxOptions {
     this.haGroup = other.getHAGroup();
     this.metrics = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
     this.warningExceptionTime = other.warningExceptionTime;
+    this.nettyTransport = other.nettyTransport;
   }
 
   /**
@@ -186,6 +201,7 @@ public class VertxOptions {
     JsonObject metricsJson = json.getJsonObject("metricsOptions");
     this.metrics = metricsJson != null ? new MetricsOptions(metricsJson) : null;
     this.warningExceptionTime = json.getLong("warningExceptionTime", DEFAULT_WARNING_EXECPTION_TIME);
+    this.nettyTransport = json.getString("nettyTransport", NETTY_TRANSPORT_NIO);
   }
 
   /**
@@ -587,6 +603,30 @@ public class VertxOptions {
     return this;
   }
 
+  
+
+  /**
+   * Get the netty transport to be used.
+   * 
+   * @return the netty transport
+   */
+  public String getNettyTransport() {
+    return nettyTransport;
+  }
+
+  /**
+   * Set the netty transport to be used while in GNU/Linux, the choices include: nio, epoll
+   * Since 4.0.16, Netty provides the native socket transport for GNU/Linux using JNI - epoll
+   * The epoll transport has higher performance and produces less garbage, but multicast not supported
+   * 
+   * @param nettyTransport
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setNettyTransport(String nettyTransport) {
+    this.nettyTransport = nettyTransport;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -609,6 +649,7 @@ public class VertxOptions {
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
     if (warningExceptionTime != that.warningExceptionTime) return false;
+    if (nettyTransport != null ? !nettyTransport.equals(that.nettyTransport) : that.nettyTransport != null) return false;
 
     return true;
   }
@@ -629,6 +670,7 @@ public class VertxOptions {
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
+    result = 31 * result + (nettyTransport != null ? nettyTransport.hashCode() : 0);
     return result;
   }
 }
