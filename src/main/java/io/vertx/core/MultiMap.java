@@ -16,7 +16,6 @@
 
 package io.vertx.core;
 
-import com.sun.org.apache.xpath.internal.operations.Mult;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
