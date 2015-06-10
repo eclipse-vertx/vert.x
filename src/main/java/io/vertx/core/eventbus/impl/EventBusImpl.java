@@ -94,7 +94,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private final ServerID serverID;
   private final NetServer server;
   private final Context sendNoContext;
-  private volatile boolean sendPong = true;
 
   public EventBusImpl(VertxInternal vertx) {
     this.vertx = vertx;
@@ -320,11 +319,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
   }
 
-  // Used in testing
-  public void simulateUnresponsive() {
-    sendPong = false;
-  }
-
   MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec;
@@ -412,9 +406,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
             size = -1;
             if (received.codec() == PING_MESSAGE_CODEC) {
               // Just send back pong directly on connection
-              if (sendPong) {
-                socket.write(PONG);
-              }
+              socket.write(PONG);
             } else {
               receiveMessage(received, -1, null, null, false);
             }

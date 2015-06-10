@@ -806,7 +806,7 @@ public class FileSystemImpl implements FileSystem {
      * Run the blocking action using a thread from the worker pool.
      */
     public void run() {
-      context.executeBlocking(this, true, handler);
+      context.executeBlocking(this, handler);
     }
   }
 }
