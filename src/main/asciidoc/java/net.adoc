@@ -775,3 +775,22 @@ NetClientOptions options = new NetClientOptions().
     addCrlValue(myCrlAsABuffer);
 NetClient client = vertx.createNetClient(options);
 ----
+
+==== Configuring the Cipher suite
+
+By default, the TLS configuration will uses the Cipher suite of the JVM running Vert.x. This Cipher suite can be
+configured with a suite of enabled ciphers:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setKeyStoreOptions(keyStoreOptions).
+    addEnabledCipherSuite("ECDHE-RSA-AES128-GCM-SHA256").
+    addEnabledCipherSuite("ECDHE-ECDSA-AES128-GCM-SHA256").
+    addEnabledCipherSuite("ECDHE-RSA-AES256-GCM-SHA384").
+    addEnabledCipherSuite("CDHE-ECDSA-AES256-GCM-SHA384");
+NetServer server = vertx.createNetServer(options);
+----
+
+Cipher suite can be specified on the `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` or `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` configuration.
