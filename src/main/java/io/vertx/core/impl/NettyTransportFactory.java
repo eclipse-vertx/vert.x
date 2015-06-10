@@ -43,131 +43,131 @@ import java.util.concurrent.ThreadFactory;
  * @author <a href="http://vertxer.org">Xiaoyong Bai</a>
  */
 public class NettyTransportFactory {
-	private static final Logger log = LoggerFactory.getLogger(NettyTransportFactory.class);
+  private static final Logger log = LoggerFactory.getLogger(NettyTransportFactory.class);
 
-	private String nettyTransport = VertxOptions.NETTY_TRANSPORT_NIO;
+  private String nettyTransport = VertxOptions.NETTY_TRANSPORT_NIO;
 
-	/**
-	 * Get the netty socket transport to be used.
-	 * 
-	 * @return the netty transport
-	 */
-	public String getNettyTransport() {
-		return nettyTransport;
-	}
+  /**
+   * Get the netty socket transport to be used.
+   * 
+   * @return the netty transport
+   */
+  public String getNettyTransport() {
+    return nettyTransport;
+  }
 
-	/**
-	 * Set the netty transport to be used while in GNU/Linux, the choices include:
-	 * nio, epoll Since 4.0.16, Netty provides the native socket transport for
-	 * GNU/Linux using JNI - epoll The epoll transport has higher performance and
-	 * produces less garbage, but multicast not supported
-	 * 
-	 * @param nettyTransport
-	 * @return a reference to this, so the API can be used fluently
-	 */
-	public NettyTransportFactory setNettyTransport(String nettyTransport) {
-		if (!Utils.isLinux() && VertxOptions.NETTY_TRANSPORT_EPOLL.equals(nettyTransport)) {
-			log.warn("can not set nettyTransport to epoll while in non-linux");
-		} else {
-			this.nettyTransport = nettyTransport;
-		}
-		return this;
-	}
+  /**
+   * Set the netty transport to be used while in GNU/Linux, the choices include:
+   * nio, epoll Since 4.0.16, Netty provides the native socket transport for
+   * GNU/Linux using JNI - epoll The epoll transport has higher performance and
+   * produces less garbage, but multicast not supported
+   * 
+   * @param nettyTransport
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NettyTransportFactory setNettyTransport(String nettyTransport) {
+    if (!Utils.isLinux() && VertxOptions.NETTY_TRANSPORT_EPOLL.equals(nettyTransport)) {
+      log.warn("can not set nettyTransport to epoll while in non-linux");
+    } else {
+      this.nettyTransport = nettyTransport;
+    }
+    return this;
+  }
 
-	private boolean isEpoll() {
-		return VertxOptions.NETTY_TRANSPORT_EPOLL.equals(nettyTransport);
-	}
+  private boolean isEpoll() {
+    return VertxOptions.NETTY_TRANSPORT_EPOLL.equals(nettyTransport);
+  }
 
-	// default factory instance
-	private static NettyTransportFactory defaultFactory;
-	static {
-		defaultFactory = new NettyTransportFactory();
-		if (VertxOptions.NETTY_TRANSPORT_EPOLL.equals(System.getProperty("nettyTransport"))) {
-			defaultFactory.setNettyTransport(VertxOptions.NETTY_TRANSPORT_EPOLL);
-		}
-	}
+  // default factory instance
+  private static NettyTransportFactory defaultFactory;
+  static {
+    defaultFactory = new NettyTransportFactory();
+    if (VertxOptions.NETTY_TRANSPORT_EPOLL.equals(System.getProperty("nettyTransport"))) {
+      defaultFactory.setNettyTransport(VertxOptions.NETTY_TRANSPORT_EPOLL);
+    }
+  }
 
-	/**
-	 * return the default netty socket transport factory
-	 * 
-	 * @return
-	 */
-	public static NettyTransportFactory getDefaultFactory() {
-		return defaultFactory;
-	}
+  /**
+   * return the default netty socket transport factory
+   * 
+   * @return
+   */
+  public static NettyTransportFactory getDefaultFactory() {
+    return defaultFactory;
+  }
 
-	/**
-	 * @return
-	 */
-	public Class<? extends ServerChannel> chooseServerSocketChannel() {
-		if (isEpoll()) {
-			return EpollServerSocketChannel.class;
-		}
-		return NioServerSocketChannel.class;
-	}
+  /**
+   * @return
+   */
+  public Class<? extends ServerChannel> chooseServerSocketChannel() {
+    if (isEpoll()) {
+      return EpollServerSocketChannel.class;
+    }
+    return NioServerSocketChannel.class;
+  }
 
-	/**
-	 * @return
-	 */
-	public Class<? extends Channel> chooseSocketChannel() {
-		if (isEpoll()) {
-			return EpollSocketChannel.class;
-		}
-		return NioSocketChannel.class;
-	}
+  /**
+   * @return
+   */
+  public Class<? extends Channel> chooseSocketChannel() {
+    if (isEpoll()) {
+      return EpollSocketChannel.class;
+    }
+    return NioSocketChannel.class;
+  }
 
-	/**
-	 * @return
-	 */
-	public Class<? extends DatagramChannel> chooseDatagramChannel() {
-		if (isEpoll()) {
-			return EpollDatagramChannel.class;
-		}
-		return NioDatagramChannel.class;
-	}
+  /**
+   * @return
+   */
+  public Class<? extends DatagramChannel> chooseDatagramChannel() {
+    if (isEpoll()) {
+      return EpollDatagramChannel.class;
+    }
+    return NioDatagramChannel.class;
+  }
 
-	/**
-	 * @return
-	 */
-	public DatagramChannel instantiateDatagramChannel() {
-		if (isEpoll()) {
-			return new EpollDatagramChannel();
-		}
-		return new NioDatagramChannel();
-	}
+  /**
+   * @return
+   */
+  public DatagramChannel instantiateDatagramChannel() {
+    if (isEpoll()) {
+      return new EpollDatagramChannel();
+    }
+    return new NioDatagramChannel();
+  }
 
-	/**
-	 * @param ipFamily
-	 * @return
-	 */
-	public DatagramChannel instantiateDatagramChannel(InternetProtocolFamily ipFamily) {
-		if (isEpoll()) {
-			// EpollDatagramChannel use default constructor
-			return new EpollDatagramChannel();
-		}
-		return new NioDatagramChannel(ipFamily);
-	}
+  /**
+   * @param ipFamily
+   * @return
+   */
+  public DatagramChannel instantiateDatagramChannel(InternetProtocolFamily ipFamily) {
+    if (isEpoll()) {
+      // EpollDatagramChannel use default constructor
+      return new EpollDatagramChannel();
+    }
+    return new NioDatagramChannel(ipFamily);
+  }
 
-	/**
-	 * @return
-	 */
-	public Class<? extends EventLoopGroup> chooseEventLoopGroup() {
-		if (isEpoll()) {
-			return EpollEventLoopGroup.class;
-		}
-		return NioEventLoopGroup.class;
-	}
+  /**
+   * @return
+   */
+  public Class<? extends EventLoopGroup> chooseEventLoopGroup() {
+    if (isEpoll()) {
+      return EpollEventLoopGroup.class;
+    }
+    return NioEventLoopGroup.class;
+  }
 
-	/**
-	 * @param nThreads
-	 * @param threadFactory
-	 * @return
-	 */
-	public EventLoopGroup instantiateEventLoopGroup(int nThreads, ThreadFactory threadFactory) {
-		if (isEpoll()) {
-			return new EpollEventLoopGroup(nThreads, threadFactory);
-		}
-		return new NioEventLoopGroup(nThreads, threadFactory);
-	}
+  /**
+   * @param nThreads
+   * @param threadFactory
+   * @return
+   */
+  public EventLoopGroup instantiateEventLoopGroup(int nThreads, ThreadFactory threadFactory) {
+    if (isEpoll()) {
+      return new EpollEventLoopGroup(nThreads, threadFactory);
+    }
+    return new NioEventLoopGroup(nThreads, threadFactory);
+  }
 
 }

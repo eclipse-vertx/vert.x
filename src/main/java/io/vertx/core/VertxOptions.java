@@ -116,14 +116,14 @@ public class VertxOptions {
   /**
    * default socket transport in netty
    */
-  public final static String NETTY_TRANSPORT_NIO = "nio";
+  public static final String NETTY_TRANSPORT_NIO = "nio";
   
   /**
    * Since 4.0.16, Netty provides the native socket transport for GNU/Linux using JNI
    * This transport has higher performance and produces less garbage
    * But multicast not supported
    */
-  public final static String NETTY_TRANSPORT_EPOLL = "epoll";
+  public static final String NETTY_TRANSPORT_EPOLL = "epoll";
 
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
