@@ -455,7 +455,15 @@ public interface Vertx extends Measured {
    *
    * @param blockingCodeHandler  handler representing the blocking code to run
    * @param resultHandler  handler that will be called when the blocking code is complete
+   * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
+   *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
+   *                 guarantees
    * @param <T> the type of the result
+   */
+  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler);
+
+  /**
+   * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
 

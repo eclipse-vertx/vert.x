@@ -574,13 +574,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
 
-    context.executeBlocking(action, true, resultHandler);
+    context.executeBlocking(action, resultHandler);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered,
+                                  Handler<AsyncResult<T>> asyncResultHandler) {
     ContextImpl context = getOrCreateContext();
-    context.executeBlocking(blockingCodeHandler, asyncResultHandler);
+    context.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
+  }
+
+  @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
+                                  Handler<AsyncResult<T>> asyncResultHandler) {
+    executeBlocking(blockingCodeHandler, true, asyncResultHandler);
   }
 
   @Override
@@ -598,11 +605,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (haManager() != null) {
       haManager().simulateKill();
     }
-  }
-
-  @Override
-  public void simulateEventBusUnresponsive() {
-    eventBus.simulateUnresponsive();
   }
 
   @Override

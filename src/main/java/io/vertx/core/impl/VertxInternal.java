@@ -72,8 +72,6 @@ public interface VertxInternal extends Vertx {
 
   void simulateKill();
 
-  void simulateEventBusUnresponsive();
-
   Deployment getDeployment(String deploymentID);
 
   void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
@@ -89,4 +87,5 @@ public interface VertxInternal extends Vertx {
   <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
 
   ClusterManager getClusterManager();
+
 }
