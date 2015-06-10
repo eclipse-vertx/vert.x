@@ -34,6 +34,7 @@ public class MetricsOptions {
   public static final boolean DEFAULT_METRICS_ENABLED = false;
 
   private boolean enabled;
+  private JsonObject json; // Keep a copy of the original json, so we don't lose info when building options subclasses
 
   /**
    * Default constructor
@@ -57,7 +58,8 @@ public class MetricsOptions {
    * @param json the JsonObject to create it from
    */
   public MetricsOptions(JsonObject json) {
-    enabled = json.getBoolean("enabled", DEFAULT_METRICS_ENABLED);
+    this.enabled = json.getBoolean("enabled", DEFAULT_METRICS_ENABLED);
+    this.json = json.copy();
   }
 
   /**
@@ -78,5 +80,9 @@ public class MetricsOptions {
   public MetricsOptions setEnabled(boolean enable) {
     this.enabled = enable;
     return this;
+  }
+
+  public JsonObject toJson() {
+    return json != null ? json.copy() : new JsonObject();
   }
 }

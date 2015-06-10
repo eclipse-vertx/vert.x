@@ -53,9 +53,13 @@ public class MetricsOptionsTest extends VertxTestBase {
     assertFalse(options.isEnabled());
     Random rand = new Random();
     boolean metricsEnabled = rand.nextBoolean();
+    String customValue = TestUtils.randomAlphaString(10);
     options = new MetricsOptions(new JsonObject().
-        put("enabled", metricsEnabled)
+        put("enabled", metricsEnabled).
+        put("custom", customValue)
     );
     assertEquals(metricsEnabled, options.isEnabled());
+    assertEquals(metricsEnabled, options.toJson().getBoolean("enabled"));
+    assertEquals(customValue, options.toJson().getString("custom"));
   }
 }
