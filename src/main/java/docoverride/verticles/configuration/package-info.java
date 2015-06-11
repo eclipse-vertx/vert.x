@@ -35,10 +35,12 @@
  *
  * === Accessing environment variables in a Verticle
  *
- * Environment variables and system properties are accessible from a verticle by following the Java way. To
- * retrieve system properties, use {@link java.lang.System#getProperty(java.lang.String)}
- * (or {@link java.lang.System#getProperty(java.lang.String, java.lang.String)}). You can also retrieve the
- * environment variables using {@link java.lang.System#getenv(java.lang.String)}.
+ * Environment variables and system properties are accessible using the Java API:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#systemAndEnvProperties()}
+ * ----
  *
  */
 @Document(fileName = "override/verticle-configuration.adoc")

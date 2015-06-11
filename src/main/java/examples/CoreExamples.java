@@ -216,6 +216,11 @@ public class CoreExamples {
     });
   }
 
+  public void systemAndEnvProperties() {
+    System.getProperty("prop");
+    System.getenv("HOME");
+  }
+
 
 
 

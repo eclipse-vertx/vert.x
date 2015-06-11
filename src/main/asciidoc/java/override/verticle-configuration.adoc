@@ -22,7 +22,10 @@ System.out.println("Configuration: " + config().getString("name"));
 
 === Accessing environment variables in a Verticle
 
-Environment variables and system properties are accessible from a verticle by following the Java way. To
-retrieve system properties, use `link:../../apidocs/java/lang/System.html#getProperty-java.lang.String-[System.getProperty]`
-(or `link:../../apidocs/java/lang/System.html#getProperty-java.lang.String-java.lang.String-[System.getProperty]`). You can also retrieve the
-environment variables using `link:../../apidocs/java/lang/System.html#getenv-java.lang.String-[System.getenv]`.
+Environment variables and system properties are accessible using the Java API:
+
+[source,java]
+----
+System.getProperty("prop");
+System.getenv("HOME");
+----
