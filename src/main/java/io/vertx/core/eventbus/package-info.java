@@ -177,15 +177,7 @@
  * {@link examples.EventBusExamples#example6}
  * ----
  *
- * ==== Setting headers on messages
- *
- * Messages sent over the event bus can also contain headers. This can be specified by providing a
- * {@link io.vertx.core.eventbus.DeliveryOptions} when sending or publishing:
- *
- * [source,$lang]
- * ----
- * {@link examples.EventBusExamples#example7}
- * ----
+ * include::override/eventbus_headers.adoc[]
  *
  * ==== The Message object
  *
@@ -266,7 +258,7 @@
  *
  * You can run Vert.x clustered on the command line with
  *
- *  vertx run MyVerticle -cluster
+ *  vertx run my-verticle.js -cluster
  *
  * === Automatic clean-up in verticles
  *
