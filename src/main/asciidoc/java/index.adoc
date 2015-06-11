@@ -276,7 +276,16 @@ vertx.executeBlocking(future -> {
 });
 ----
 
+By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
+the different executeBlocking are executed _serially_ (i.e. one after another).
+
+If you don't care about ordering you can call `link:../../apidocs/io/vertx/core/Vertx.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]`
+specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
+on the worker pool.
+
 An alternative way to run blocking code is to use a <<worker_verticles, worker verticle>>
+
+A worker verticle is always executed with a thread from the worker pool.
 
 == Verticles
 

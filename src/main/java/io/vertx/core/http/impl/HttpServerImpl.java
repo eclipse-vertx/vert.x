@@ -21,7 +21,6 @@ import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -182,7 +181,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
-        bootstrap.channel(NioServerSocketChannel.class);
+        bootstrap.channel(vertx.getNettyTransportFactory().chooseServerSocketChannel());
         applyConnectionOptions(bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {

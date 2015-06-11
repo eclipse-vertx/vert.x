@@ -215,6 +215,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setHAEnabled(haEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
+    options.setNettyTransport(VertxOptions.NETTY_TRANSPORT_NIO);
     options.setMetricsOptions(
         new MetricsOptions().
             setEnabled(metricsEnabled));
@@ -233,6 +234,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(haEnabled, options.isHAEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
+    assertEquals(VertxOptions.NETTY_TRANSPORT_NIO, options.getNettyTransport());
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertNotNull(metricsOptions);
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
@@ -257,6 +259,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getQuorumSize(), json.getQuorumSize());
     assertEquals(def.getHAGroup(), json.getHAGroup());
     assertEquals(def.getWarningExceptionTime(), json.getWarningExceptionTime());
+    assertEquals(def.getNettyTransport(), json.getNettyTransport());
   }
 
   @Test
@@ -277,6 +280,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
     assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
+    assertEquals(VertxOptions.NETTY_TRANSPORT_NIO, options.getNettyTransport());
     assertNull(options.getMetricsOptions());
     assertEquals(5000000000l, options.getWarningExceptionTime());
     int clusterPort = TestUtils.randomPortInt();
