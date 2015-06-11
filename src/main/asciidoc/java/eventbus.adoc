@@ -197,17 +197,7 @@ You can send a message with `link:../../apidocs/io/vertx/core/eventbus/EventBus.
 eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
 ----
 
-==== Setting headers on messages
-
-Messages sent over the event bus can also contain headers. This can be specified by providing a
-`link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` when sending or publishing:
-
-[source,java]
-----
-DeliveryOptions options = new DeliveryOptions();
-options.addHeader("some-header", "some-value");
-eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
-----
+include::override/eventbus_headers.adoc[]
 
 ==== The Message object
 
@@ -305,7 +295,7 @@ for example the default `HazelcastClusterManager`.
 
 You can run Vert.x clustered on the command line with
 
- vertx run MyVerticle -cluster
+ vertx run my-verticle.js -cluster
 
 === Automatic clean-up in verticles
 
