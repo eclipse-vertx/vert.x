@@ -569,6 +569,21 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testAddAllJsonArray() {
+    jsonArray.add("bar");
+    JsonArray arr = new JsonArray().add("foo").add(48);
+    assertSame(jsonArray, jsonArray.addAll(arr));
+    assertEquals(arr.getString(0), jsonArray.getString(1));
+    assertEquals(arr.getInteger(1), jsonArray.getInteger(2));
+    try {
+      jsonArray.add((JsonArray)null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
   public void testAddNull() {
     assertSame(jsonArray, jsonArray.addNull());
     assertEquals(null, jsonArray.getString(0));

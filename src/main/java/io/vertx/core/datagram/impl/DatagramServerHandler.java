@@ -34,7 +34,7 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
   private final DatagramSocketImpl server;
 
   DatagramServerHandler(VertxInternal vertx, DatagramSocketImpl server) {
-        super(vertx, new HashMap<Channel, DatagramSocketImpl>());
+        super(vertx, new HashMap<>());
     this.server = server;
   }
 

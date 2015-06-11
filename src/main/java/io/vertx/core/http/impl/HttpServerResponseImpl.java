@@ -30,7 +30,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +43,8 @@ import java.io.RandomAccessFile;
  *
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
+ * It's important we don't have different locks for connection and request/response to avoid deadlock conditions
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -81,7 +83,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public synchronized MultiMap headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(response.headers());
     }
@@ -89,7 +91,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public synchronized MultiMap trailers() {
+  public MultiMap trailers() {
     if (trailers == null) {
       if (trailing == null) {
         trailing = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, false);
@@ -117,116 +119,148 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public synchronized HttpServerResponse setStatusMessage(String statusMessage) {
-    this.statusMessage = statusMessage;
-    this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), statusMessage));
-    return this;
-  }
-
-  @Override
-  public synchronized HttpServerResponseImpl setChunked(boolean chunked) {
-    checkWritten();
-    // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
-    if (version != HttpVersion.HTTP_1_0) {
-      this.chunked = chunked;
+  public HttpServerResponse setStatusMessage(String statusMessage) {
+    synchronized (conn) {
+      this.statusMessage = statusMessage;
+      this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), statusMessage));
+      return this;
     }
-    return this;
   }
 
   @Override
-  public synchronized boolean isChunked() {
-    return chunked;
+  public HttpServerResponseImpl setChunked(boolean chunked) {
+    synchronized (conn) {
+      checkWritten();
+      // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
+      if (version != HttpVersion.HTTP_1_0) {
+        this.chunked = chunked;
+      }
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponseImpl putHeader(String key, String value) {
-    checkWritten();
-    headers().set(key, value);
-    return this;
+  public boolean isChunked() {
+    synchronized (conn) {
+      return chunked;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
-    checkWritten();
-    headers().set(key, values);
-    return this;
+  public HttpServerResponseImpl putHeader(String key, String value) {
+    synchronized (conn) {
+      checkWritten();
+      headers().set(key, value);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponseImpl putTrailer(String key, String value) {
-    checkWritten();
-    trailers().set(key, value);
-    return this;
+  public HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
+    synchronized (conn) {
+      checkWritten();
+      headers().set(key, values);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponseImpl putTrailer(String key, Iterable<String> values) {
-    checkWritten();
-    trailers().set(key, values);
-    return this;
+  public HttpServerResponseImpl putTrailer(String key, String value) {
+    synchronized (conn) {
+      checkWritten();
+      trailers().set(key, value);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse putHeader(CharSequence name, CharSequence value) {
-    checkWritten();
-    headers().set(name, value);
-    return this;
+  public HttpServerResponseImpl putTrailer(String key, Iterable<String> values) {
+    synchronized (conn) {
+      checkWritten();
+      trailers().set(key, values);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
-    checkWritten();
-    headers().set(name, values);
-    return this;
+  public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
+    synchronized (conn) {
+      checkWritten();
+      headers().set(name, value);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
-    checkWritten();
-    trailers().set(name, value);
-    return this;
+  public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
+    synchronized (conn) {
+      checkWritten();
+      headers().set(name, values);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
-    checkWritten();
-    trailers().set(name, value);
-    return this;
+  public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
+    synchronized (conn) {
+      checkWritten();
+      trailers().set(name, value);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse setWriteQueueMaxSize(int size) {
-    checkWritten();
-    conn.doSetWriteQueueMaxSize(size);
-    return this;
+  public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
+    synchronized (conn) {
+      checkWritten();
+      trailers().set(name, value);
+      return this;
+    }
   }
 
   @Override
-  public synchronized boolean writeQueueFull() {
-    checkWritten();
-    return conn.isNotWritable();
+  public HttpServerResponse setWriteQueueMaxSize(int size) {
+    synchronized (conn) {
+      checkWritten();
+      conn.doSetWriteQueueMaxSize(size);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse drainHandler(Handler<Void> handler) {
-    checkWritten();
-    this.drainHandler = handler;
-    conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
-    return this;
+  public boolean writeQueueFull() {
+    synchronized (conn) {
+      checkWritten();
+      return conn.isNotWritable();
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
-    checkWritten();
-    this.exceptionHandler = handler;
-    return this;
+  public HttpServerResponse drainHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkWritten();
+      this.drainHandler = handler;
+      conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerResponse closeHandler(Handler<Void> handler) {
-    checkWritten();
-    this.closeHandler = handler;
-    return this;
+  public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
+    synchronized (conn) {
+      checkWritten();
+      this.exceptionHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public HttpServerResponse closeHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkWritten();
+      this.closeHandler = handler;
+      return this;
+    }
   }
 
   @Override
@@ -256,29 +290,77 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public synchronized void end(Buffer chunk) {
-    if (!chunked && !contentLengthSet()) {
-      headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
-    }
-    ByteBuf buf = chunk.getByteBuf();
-    end0(buf);
-  }
-
-  @Override
-  public synchronized void close() {
-    if (!closed) {
-      if (headWritten) {
-        closeConnAfterWrite();
-      } else {
-        conn.close();
+  public void end(Buffer chunk) {
+    synchronized (conn) {
+      if (!chunked && !contentLengthSet()) {
+        headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
       }
-      closed = true;
+      ByteBuf buf = chunk.getByteBuf();
+      end0(buf);
     }
   }
 
   @Override
-  public synchronized void end() {
-    end0(Unpooled.EMPTY_BUFFER);
+  public void close() {
+    synchronized (conn) {
+      if (!closed) {
+        if (headWritten) {
+          closeConnAfterWrite();
+        } else {
+          conn.close();
+        }
+        closed = true;
+      }
+    }
+  }
+
+  @Override
+  public void end() {
+    synchronized (conn) {
+      end0(Unpooled.EMPTY_BUFFER);
+    }
+  }
+
+  @Override
+  public HttpServerResponseImpl sendFile(String filename) {
+    doSendFile(filename, null);
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+    doSendFile(filename, resultHandler);
+    return this;
+  }
+
+  @Override
+  public boolean ended() {
+    synchronized (conn) {
+      return written;
+    }
+  }
+
+  @Override
+  public boolean headWritten() {
+    synchronized (conn) {
+      return headWritten;
+    }
+  }
+
+  @Override
+  public HttpServerResponse headersEndHandler(Handler<Future> handler) {
+    synchronized (conn) {
+      this.headersEndHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public HttpServerResponse bodyEndHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      this.bodyEndHandler = handler;
+      return this;
+    }
   }
 
   private void end0(ByteBuf data) {
@@ -324,113 +406,81 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  @Override
-  public HttpServerResponseImpl sendFile(String filename) {
-    doSendFile(filename, null);
-    return this;
-  }
-
-  @Override
-  public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
-    doSendFile(filename, resultHandler);
-    return this;
-  }
-
-  @Override
-  public boolean ended() {
-    return written;
-  }
-
-  @Override
-  public boolean headWritten() {
-    return headWritten;
-  }
-
-  @Override
-  public synchronized HttpServerResponse headersEndHandler(Handler<Future> handler) {
-    this.headersEndHandler = handler;
-    return this;
-  }
-
-  @Override
-  public synchronized HttpServerResponse bodyEndHandler(Handler<Void> handler) {
-    this.bodyEndHandler = handler;
-    return this;
-  }
-
-  private synchronized void doSendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
-    if (headWritten) {
-      throw new IllegalStateException("Head already written");
-    }
-    checkWritten();
-    File file = vertx.resolveFile(filename);
-    long fileLength = file.length();
-    if (!contentLengthSet()) {
-      putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileLength));
-    }
-    if (!contentTypeSet()) {
-      int li = filename.lastIndexOf('.');
-      if (li != -1 && li != filename.length() - 1) {
-        String ext = filename.substring(li + 1, filename.length());
-        String contentType = MimeMapping.getMimeTypeForExtension(ext);
-        if (contentType != null) {
-          putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+  private void doSendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+    synchronized (conn) {
+      if (headWritten) {
+        throw new IllegalStateException("Head already written");
+      }
+      checkWritten();
+      File file = vertx.resolveFile(filename);
+      long fileLength = file.length();
+      if (!contentLengthSet()) {
+        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileLength));
+      }
+      if (!contentTypeSet()) {
+        int li = filename.lastIndexOf('.');
+        if (li != -1 && li != filename.length() - 1) {
+          String ext = filename.substring(li + 1, filename.length());
+          String contentType = MimeMapping.getMimeTypeForExtension(ext);
+          if (contentType != null) {
+            putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+          }
         }
       }
-    }
-    prepareHeaders(() -> {
+      prepareHeaders(() -> {
 
-      RandomAccessFile raf;
-      try {
-        raf = new RandomAccessFile(file, "r");
-        conn.queueForWrite(response);
-        conn.sendFile(raf, fileLength);
-      } catch (IOException e) {
+        RandomAccessFile raf;
+        try {
+          raf = new RandomAccessFile(file, "r");
+          conn.queueForWrite(response);
+          conn.sendFile(raf, fileLength);
+        } catch (IOException e) {
+          if (resultHandler != null) {
+            ContextImpl ctx = vertx.getOrCreateContext();
+            ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
+          } else {
+            log.error("Failed to send file", e);
+          }
+          return;
+        }
+
+        // write an empty last content to let the http encoder know the response is complete
+        channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+        headWritten = written = true;
+
         if (resultHandler != null) {
           ContextImpl ctx = vertx.getOrCreateContext();
-          ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
-        } else {
-          log.error("Failed to send file", e);
+          channelFuture.addListener(future -> {
+            AsyncResult<Void> res;
+            if (future.isSuccess()) {
+              res = Future.succeededFuture();
+            } else {
+              res = Future.failedFuture(future.cause());
+            }
+            ctx.runOnContext((v) -> resultHandler.handle(res));
+          });
         }
-        return;
-      }
 
-      // write an empty last content to let the http encoder know the response is complete
-      channelFuture = conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
-      headWritten = written = true;
+        if (!keepAlive) {
+          closeConnAfterWrite();
+        }
+        conn.responseComplete();
 
-      if (resultHandler != null) {
-        ContextImpl ctx = vertx.getOrCreateContext();
-        channelFuture.addListener(future -> {
-          AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture();
-          } else {
-            res = Future.failedFuture(future.cause());
-          }
-          ctx.runOnContext((v) -> resultHandler.handle(res));
-        });
-      }
-
-      if (!keepAlive) {
-        closeConnAfterWrite();
-      }
-      conn.responseComplete();
-
-      if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
-      }
-    });
+        if (bodyEndHandler != null) {
+          bodyEndHandler.handle(null);
+        }
+      });
+    }
   }
 
-  private synchronized boolean contentLengthSet() {
+  private boolean contentLengthSet() {
     if (headers == null) {
       return false;
     }
     return response.headers().contains(HttpHeaders.CONTENT_LENGTH);
   }
 
-  private synchronized boolean contentTypeSet() {
+  private boolean contentTypeSet() {
     if (headers == null) {
       return false;
     }
@@ -443,21 +493,27 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  synchronized void handleDrained() {
-    if (drainHandler != null) {
-      drainHandler.handle(null);
+  void handleDrained() {
+    synchronized (conn) {
+      if (drainHandler != null) {
+        drainHandler.handle(null);
+      }
     }
   }
 
-  synchronized void handleException(Throwable t) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(t);
+  void handleException(Throwable t) {
+    synchronized (conn) {
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(t);
+      }
     }
   }
 
-  synchronized void handleClosed() {
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+  void handleClosed() {
+    synchronized (conn) {
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
   }
 
@@ -496,23 +552,25 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private synchronized HttpServerResponseImpl write(ByteBuf chunk, final Handler<AsyncResult<Void>> completionHandler) {
-    checkWritten();
-    if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-                                              + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
-    }
+  private HttpServerResponseImpl write(ByteBuf chunk, Handler<AsyncResult<Void>> completionHandler) {
+    synchronized (conn) {
+      checkWritten();
+      if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
 
-    if (!headWritten) {
-      prepareHeaders(() -> {
-        channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));
-        headWritten = true;
-      });
-    }  else {
-      channelFuture = conn.writeToChannel(new DefaultHttpContent(chunk));
-    }
+      if (!headWritten) {
+        prepareHeaders(() -> {
+          channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));
+          headWritten = true;
+        });
+      } else {
+        channelFuture = conn.writeToChannel(new DefaultHttpContent(chunk));
+      }
 
-    conn.addFuture(completionHandler, channelFuture);
-    return this;
+      conn.addFuture(completionHandler, channelFuture);
+      return this;
+    }
   }
 }

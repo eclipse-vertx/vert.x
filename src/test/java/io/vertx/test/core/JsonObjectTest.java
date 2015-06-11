@@ -1488,6 +1488,23 @@ public class JsonObjectTest {
     assertNotEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 4))));
   }
 
+  @Test
+  public void testJsonObjectEquality2() {
+    JsonObject obj1 = new JsonObject().put("arr", new JsonArray().add("x"));
+    List < Object > list = new ArrayList<>();
+    list.add("x");
+    Map<String, Object> map = new HashMap<>();
+    map.put("arr", list);
+    JsonObject obj2 = new JsonObject(map);
+    Iterator<Map.Entry<String, Object>> iter = obj2.iterator();
+    // There was a bug where iteration of entries caused the underlying object to change resulting in a
+    // subsequent equals changing
+    while (iter.hasNext()) {
+      Map.Entry<String, Object> entry = iter.next();
+    }
+    assertEquals(obj2, obj1);
+  }
+
   private JsonObject createJsonObject() {
     JsonObject obj = new JsonObject();
     obj.put("mystr", "bar");

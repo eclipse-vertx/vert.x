@@ -39,9 +39,9 @@ public class ReplyException extends VertxException {
    * @param message  the failure message
    */
   public ReplyException(ReplyFailure failureType, int failureCode, String message) {
-    super(message);
-    this.failureType = failureType;
-    this.failureCode = failureCode;
+      super(message);
+      this.failureType = failureType;
+      this.failureCode = failureCode;
   }
 
   /**
@@ -51,9 +51,7 @@ public class ReplyException extends VertxException {
    * @param message  the failure message
    */
   public ReplyException(ReplyFailure failureType, String message) {
-    super(message);
-    this.failureType = failureType;
-    this.failureCode = -1;
+    this(failureType, -1, message);
   }
 
   /**
@@ -62,9 +60,7 @@ public class ReplyException extends VertxException {
    * @param failureType  the failure type
    */
   public ReplyException(ReplyFailure failureType) {
-    super((String)null);
-    this.failureType = failureType;
-    this.failureCode = -1;
+    this(failureType, -1, null);
   }
 
   /**
@@ -83,6 +79,12 @@ public class ReplyException extends VertxException {
    */
   public int failureCode() {
     return failureCode;
+  }
+
+  @Override
+  public String toString() {
+    String message = getMessage();
+    return "(" + failureType + "," + failureCode + ") " + (message != null ? message : "");
   }
 
 }

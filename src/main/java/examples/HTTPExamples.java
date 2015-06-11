@@ -90,7 +90,6 @@ public class HTTPExamples {
   }
 
 
-
   public void example8(HttpServerRequest request) {
 
     MultiMap headers = request.headers();
@@ -104,9 +103,9 @@ public class HTTPExamples {
 
   public void example9(HttpServerRequest request) {
 
-   request.handler(buffer -> {
-     System.out.println("I have received a chunk of the body of length " + buffer.length());
-   });
+    request.handler(buffer -> {
+      System.out.println("I have received a chunk of the body of length " + buffer.length());
+    });
   }
 
   public void example10(HttpServerRequest request) {
@@ -147,7 +146,7 @@ public class HTTPExamples {
     server.requestHandler(request -> {
       request.setExpectMultipart(true);
       request.uploadHandler(upload -> {
-        System.out.println("Got a file upload " +  upload.name());
+        System.out.println("Got a file upload " + upload.name());
       });
     });
   }
@@ -417,6 +416,20 @@ public class HTTPExamples {
     });
   }
 
+  public void  statusCodeHandling(HttpClient client) {
+    HttpClientRequest request = client.post("some-uri", response -> {
+      if (response.statusCode() == 200) {
+        System.out.println("Everything fine");
+        return;
+      }
+      if (response.statusCode() == 500) {
+        System.out.println("Unexpected behavior on the server side");
+        return;
+      }
+    });
+    request.end();
+  }
+
   public void example43(HttpClient client) {
 
     HttpClientRequest request = client.post("some-uri");
@@ -577,4 +590,21 @@ public class HTTPExamples {
     });
 
   }
+
+  public void serversharing(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      request.response().end("Hello from server " + this);
+    }).listen(8080);
+  }
+
+  public void serversharingclient(Vertx vertx) {
+    vertx.setPeriodic(100, (l) -> {
+      vertx.createHttpClient().getNow(8080, "localhost", "/", resp -> {
+        resp.bodyHandler(body -> {
+          System.out.println(body.toString("ISO-8859-1"));
+        });
+      });
+    });
+  }
+
 }

@@ -29,7 +29,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.SocketAddress;
@@ -163,19 +163,17 @@ public abstract class ConnectionBase {
 
   protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
     if (future != null) {
-      future.addListener(channelFuture -> {
-        context.executeFromIO(() -> {
-          if (completionHandler != null) {
-            if (channelFuture.isSuccess()) {
-              completionHandler.handle(Future.succeededFuture());
-            } else {
-              completionHandler.handle(Future.failedFuture(channelFuture.cause()));
-            }
-          } else if (!channelFuture.isSuccess()) {
-            handleException(channelFuture.cause());
+      future.addListener(channelFuture -> context.executeFromIO(() -> {
+        if (completionHandler != null) {
+          if (channelFuture.isSuccess()) {
+            completionHandler.handle(Future.succeededFuture());
+          } else {
+            completionHandler.handle(Future.failedFuture(channelFuture.cause()));
           }
-        });
-      });
+        } else if (!channelFuture.isSuccess()) {
+          handleException(channelFuture.cause());
+        }
+      }));
     }
   }
 

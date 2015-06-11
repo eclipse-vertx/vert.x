@@ -40,7 +40,7 @@ public class TextDecoder implements RecordDecoder<List<String>> {
      */
     @Override
     public List<String> decode(DnsResponse response, DnsResource resource) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         ByteBuf data = resource.content().readerIndex(response.originalIndex());
         int index = data.readerIndex();
         while (index < data.writerIndex()) {

@@ -52,14 +52,14 @@ Buffer buff = Buffer.buffer(10000);
 
 There are two ways to write to a buffer: appending, and random access.
 In either case buffers will always expand automatically to encompass the bytes. It's not possible to get
-an  with a buffer.
+an `IndexOutOfBoundsException` with a buffer.
 
 ==== Appending to a Buffer
 
-To append to a buffer, you use the  methods.
+To append to a buffer, you use the `appendXXX` methods.
 Append methods exist for appending various different types.
 
-The return value of the  methods is the buffer itself, so these can be chained:
+The return value of the `appendXXX` methods is the buffer itself, so these can be chained:
 
 [source,java]
 ----
@@ -72,7 +72,7 @@ socket.write(buff);
 
 ==== Random access buffer writes
 
-You can also write into the buffer at a specific index, by using the  methods.
+You can also write into the buffer at a specific index, by using the `setXXX` methods.
 Set methods exist for various different data types. All the set methods take an index as the first argument - this
 represents the position in the buffer where to start writing the data.
 
@@ -88,7 +88,7 @@ buff.setString(0, "hello");
 
 === Reading from a Buffer
 
-Data is read from a buffer using the  methods. Get methods exist for various datatypes.
+Data is read from a buffer using the `getXXX` methods. Get methods exist for various datatypes.
 The first argument to these methods is an index in the buffer from where to get the data.
 
 [source,java]

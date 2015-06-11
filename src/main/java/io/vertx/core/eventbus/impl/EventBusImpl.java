@@ -24,7 +24,7 @@ import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -94,7 +94,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   private final ServerID serverID;
   private final NetServer server;
   private final Context sendNoContext;
-  private volatile boolean sendPong = true;
 
   public EventBusImpl(VertxInternal vertx) {
     this.vertx = vertx;
@@ -320,11 +319,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
   }
 
-  // Used in testing
-  public void simulateUnresponsive() {
-    sendPong = false;
-  }
-
   MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec;
@@ -412,9 +406,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
             size = -1;
             if (received.codec() == PING_MESSAGE_CODEC) {
               // Just send back pong directly on connection
-              if (sendPong) {
-                socket.write(PONG);
-              }
+              socket.write(PONG);
             } else {
               receiveMessage(received, -1, null, null, false);
             }
@@ -587,7 +579,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // Embedded
       context = vertx.createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
     }
-    HandlerHolder holder = new HandlerHolder<T>(registration, replyHandler, localOnly, context, timeoutID);
+    HandlerHolder holder = new HandlerHolder<>(registration, replyHandler, localOnly, context, timeoutID);
 
     Handlers handlers = handlerMap.get(address);
     if (handlers == null) {
@@ -609,7 +601,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     handlers.list.add(holder);
 
     if (hasContext) {
-      HandlerEntry entry = new HandlerEntry<T>(address, registration);
+      HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
     }
   }
@@ -640,7 +632,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
             } else {
               callCompletionHandlerAsync(completionHandler);
             }
-            holder.context.removeCloseHook(new HandlerEntry<T>(address, handler));
+            holder.context.removeCloseHook(new HandlerEntry<>(address, handler));
             break;
           }
         }
@@ -654,9 +646,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
     if (completionHandler != null) {
-      vertx.runOnContext(v -> {
-        completionHandler.handle(Future.succeededFuture());
-      });
+      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
     }
   }
 
@@ -891,12 +881,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     synchronized void connected(NetSocket socket) {
       this.socket = socket;
       connected = true;
-      socket.exceptionHandler(t -> {
-        close();
-      });
-      socket.closeHandler(v -> {
-        close();
-      });
+      socket.exceptionHandler(t -> close());
+      socket.closeHandler(v -> close());
       socket.handler(data -> {
         // Got a pong back
         vertx.cancelTimer(timeoutID);
@@ -1180,11 +1166,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       if (endHandler != null) {
         // We should use the HandlerHolder context to properly do this (needs small refactoring)
         Context endCtx = vertx.getOrCreateContext();
-        this.endHandler = v1 -> {
-          endCtx.runOnContext(v2 -> {
-            endHandler.handle(null);
-          });
-        };
+        this.endHandler = v1 -> endCtx.runOnContext(v2 -> endHandler.handle(null));
       } else {
         this.endHandler = null;
       }

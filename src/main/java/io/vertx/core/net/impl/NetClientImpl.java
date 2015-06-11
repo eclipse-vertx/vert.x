@@ -34,7 +34,7 @@ import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -202,10 +202,10 @@ public class NetClientImpl implements NetClient, MetricsProvider {
           context.executeFromIO(() -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
-            vertx.setTimer(options.getReconnectInterval(), tid -> {
+            vertx.setTimer(options.getReconnectInterval(), tid ->
               connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                - 1);
-            });
+                - 1)
+            );
           });
         } else {
           failed(context, ch, channelFuture.cause(), connectHandler);

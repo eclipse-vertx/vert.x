@@ -53,13 +53,11 @@
 
   <properties>
 
-    <netty.version>4.0.25.Final</netty.version>
+    <netty.version>4.0.28.Final</netty.version>
     <jackson.version>2.5.3</jackson.version>
-    <metrics.version>3.0.2</metrics.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.7</slf4j.version>
     <junit.version>4.11</junit.version>
-    <asciidoclet.version>1.5.1</asciidoclet.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
     <stack.version>3.0.0-SNAPSHOT</stack.version>
@@ -277,6 +275,57 @@
               <descriptors>
                 <descriptor>src/main/assembly/docs.xml</descriptor>
               </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <configuration>
+              <archive>
+                <!-- Generate a jar INDEX.LIST -->
+                <index>true</index>
+                <!-- A manifest containing the OSGi metadata has been generated using the maven-bundle-plugin -->
+                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                <!-- Add the Maven coordinates in the manifest -->
+                <manifestEntries>
+                  <Maven-Group-Id>${project.groupId}</Maven-Group-Id>
+                  <Maven-Artifact-Id>${project.artifactId}</Maven-Artifact-Id>
+                  <Maven-Version>${project.version}</Maven-Version>
+                </manifestEntries>
+              </archive>
+              <!-- Remove examples and docoverride -->
+              <excludes>
+                <exclude>/docoverride/**</exclude>
+                <exclude>/examples/**</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.5.3</version>
+        <executions>
+          <execution>
+            <id>bundle-manifest</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>manifest</goal>
+            </goals>
+            <configuration>
+              <instructions>
+                <Export-Package>io.vertx.core*</Export-Package>
+                <Private-Package>!docoverride*, !examples*</Private-Package>
+                <Import-Package>org.slf4j*;resolution:=optional,
+                  org.apache.log4j;resolution:=optional,
+                  *
+                </Import-Package>
+              </instructions>
             </configuration>
           </execution>
         </executions>

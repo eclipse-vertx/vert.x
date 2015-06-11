@@ -33,7 +33,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -255,15 +255,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
       sslHandler = helper.createSslHandler(vertx, client);
       channel.pipeline().addFirst(sslHandler);
     }
-    sslHandler.handshakeFuture().addListener(future -> {
-      context.executeFromIO(() -> {
-        if (future.isSuccess()) {
-          handler.handle(null);
-        } else {
-          log.error(future.cause());
-        }
-      });
-    });
+    sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
+      if (future.isSuccess()) {
+        handler.handle(null);
+      } else {
+        log.error(future.cause());
+      }
+    }));
     return this;
   }
 

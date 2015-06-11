@@ -552,6 +552,18 @@
  * {@link examples.NetExamples#example43}
  * ----
  *
+ * ==== Configuring the Cipher suite
+ *
+ * By default, the TLS configuration will uses the Cipher suite of the JVM running Vert.x. This Cipher suite can be
+ * configured with a suite of enabled ciphers:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example44}
+ * ----
+ *
+ * Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
+ *
  */
 @Document(fileName = "net.adoc")
 package io.vertx.core.net;

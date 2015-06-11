@@ -19,7 +19,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;

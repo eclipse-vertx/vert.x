@@ -480,4 +480,15 @@ public class NetExamples {
         addCrlValue(myCrlAsABuffer);
     NetClient client = vertx.createNetClient(options);
   }
+
+  public void example44(Vertx vertx, JksOptions keyStoreOptions) {
+    NetServerOptions options = new NetServerOptions().
+        setSsl(true).
+        setKeyStoreOptions(keyStoreOptions).
+        addEnabledCipherSuite("ECDHE-RSA-AES128-GCM-SHA256").
+        addEnabledCipherSuite("ECDHE-ECDSA-AES128-GCM-SHA256").
+        addEnabledCipherSuite("ECDHE-RSA-AES256-GCM-SHA384").
+        addEnabledCipherSuite("CDHE-ECDSA-AES256-GCM-SHA384");
+    NetServer server = vertx.createNetServer(options);
+  }
 }

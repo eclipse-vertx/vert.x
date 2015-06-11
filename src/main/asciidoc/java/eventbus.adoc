@@ -299,7 +299,7 @@ Vertx.clusteredVertx(options, res -> {
 ----
 
 You should also make sure you have a `link:../../apidocs/io/vertx/core/spi/cluster/ClusterManager.html[ClusterManager]` implementation on your classpath,
-for example the default .
+for example the default `HazelcastClusterManager`.
 
 ==== Clustering on the command line
 

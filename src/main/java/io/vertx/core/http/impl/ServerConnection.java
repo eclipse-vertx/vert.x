@@ -46,7 +46,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -208,7 +208,7 @@ class ServerConnection extends ConnectionBase {
 
   NetSocket createNetSocket() {
     NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics);
-    Map<Channel, NetSocketImpl> connectionMap = new HashMap<Channel, NetSocketImpl>(1);
+    Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
     // Flush out all pending data

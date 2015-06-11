@@ -278,7 +278,16 @@
  * {@link examples.CoreExamples#example7}
  * ----
  *
+ * By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
+ * the different executeBlocking are executed _serially_ (i.e. one after another).
+ *
+ * If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler, boolean, io.vertx.core.Handler)}
+ * specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
+ * on the worker pool.
+ *
  * An alternative way to run blocking code is to use a <<worker_verticles, worker verticle>>
+ *
+ * A worker verticle is always executed with a thread from the worker pool.
  *
  * == Verticles
  *
@@ -461,14 +470,21 @@
  * {@link examples.CoreExamples#example13}
  * ----
  *
- * This configuration is then available via the {@link io.vertx.core.Context} object.
+ * This configuration is then available via the {@link io.vertx.core.Context} object or directly using the
+ * {@link io.vertx.core.AbstractVerticle#config()} method. The configuration is returned as a JSON object so you can
+ * retrieve data as follows:
  *
- * TODO
- *
+ * [source,$lang]
+ * ----
+ * {@link examples.ConfigurableVerticleExamples#start()}
+ * ----
  *
  * === Accessing environment variables in a Verticle
  *
- * TODO
+ * Environment variables and system properties are accessible from a verticle by following the Java way. To retrieve
+ * system properties, use {@link java.lang.System#getProperty(java.lang.String)}
+ * (or {@link java.lang.System#getProperty(java.lang.String, java.lang.String)}). You can also retrieve the
+ * environment variables using {@link java.lang.System#getenv(java.lang.String)}.
  *
  * === Verticle Isolation Groups
  *
@@ -499,9 +515,21 @@
  *
  * === High Availability
  *
- * Verticles can be deployed with High Availability (HA) enabled.
+ * Verticles can be deployed with High Availability (HA) enabled. In that context, when a verticle is deployed on
+ * a vert.x instance that dies abruptly, the verticle is redeployed on another vert.x instance from the cluster.
  *
- * TODO
+ * To run an verticle with the high availability enabled, just append the `-ha` switch:
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha
+ * ----
+ *
+ * When enabling high availability, no need to add `-cluster`.
+ *
+ * More details about the high availability feature and configuration in the <<High Availability and Fail-Over>>
+ *   section.
+ *
  *
  * === Running Verticles from the command line
  *
@@ -512,6 +540,8 @@
  *
  * To do this you need to download and install a Vert.x distribution, and add the `bin` directory of the installation
  * to your `PATH` environment variable. Also make sure you have a Java 8 JDK on your `PATH`.
+ *
+ * NOTE: The JDK is required to support on the fly compilation of Java code.
  *
  * You can now run verticles by using the `vertx run` command. Here are some examples:
  *
@@ -549,7 +579,46 @@
  *
  * === The Context object
  *
- * TODO
+ * When Vert.x provides an event to a handler or calls the start or stop methods of a
+ * {@link io.vertx.core.Verticle}, the execution is associated with a `Context`. Usually a context is an
+ * *event-loop context* and is tied to a specific event loop thread. So executions for that context always occur
+ * on that exact same event loop thread. In the case of worker verticles and running inline blocking code a
+ * worker context will be associated with the execution which will use a thread from the worker thread pool.
+ *
+ * To retrieve the context, use the {@link io.vertx.core.Vertx#getOrCreateContext()} method:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#retrieveContext(io.vertx.core.Vertx)}
+ * ----
+ *
+ * If the current thread has a context associated with it, it reuses the context object. If not a new instance of
+ * context is created. You can test the _type_ of context you have retrieved:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#retrieveContextType(io.vertx.core.Vertx)}
+ * ----
+ *
+ * When you have retrieved the context object, you can run code in this context asynchronously. In other words,
+ * you submit a task that will be eventually run in the same context, but later:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#runInContext(io.vertx.core.Vertx)}
+ * ----
+ *
+ * When several handlers run in the same context, they may want to share data. The context object offers methods to
+ * store and retrieve data shared in the context. For instance, it lets you pass data to some action run with
+ * {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.CoreExamples#runInContextWithData(io.vertx.core.Vertx)}
+ * ----
+ *
+ * The context object also let you access verticle configuration using the {@link io.vertx.core.Context#config()}
+ * method. Check the <<Passing configuration to a verticle>> section for more details about this configuration.
  *
  * === Executing periodic and delayed actions
  *
@@ -582,6 +651,12 @@
  *
  * The argument passed into the timer event handler is also the unique timer id:
  *
+ * Keep in mind that the timer will fire on a periodic basis. If your periodic treatment takes a long amount of time to proceed,
+ * your timer events could run continuously or even worse : stack up.
+ * 
+ * In this case, you should consider using {@link io.vertx.core.Vertx#setTimer} instead. Once your treatment has
+ * finished, you can set the next timer.
+ * 
  * [source,$lang]
  * ----
  * {@link examples.CoreExamples#example16}
@@ -627,7 +702,15 @@
  *
  * == Thread safety
  *
- * Notes on thread safety of Vert.x objects
+ * Most Vert.x objects are safe to access from different threads. _However_ performance is optimised when they are
+ * accessed from the same context they were created from.
+ *
+ * For example if you have deployed a verticle which creates a {@link io.vertx.core.net.NetServer} which provides
+ * {@link io.vertx.core.net.NetSocket} instances in it's handler, then it's best to always access that socket instance
+ * from the event loop of the verticle.
+ *
+ * If you stick to the standard Vert.x verticle deployment model and avoid sharing objects between verticles then this
+ * should be the case without you having to think about it.
  *
  * == Metrics SPI
  *
@@ -636,22 +719,466 @@
  * order to gather metrics. For more information on this, please consult the
  * {@link io.vertx.core.spi.metrics.VertxMetrics API Documentation}.
  *
- * == Clustering
+ * == OSGi
  *
- * === Trouble-shooting clustering
+ * Vert.x Core is packaged as an OSGi bundle, so can be used in any OSGi R4.2+ environment such as Apache Felix
+ * or Eclipse Equinox. The bundle exports `io.vertx.core*`.
  *
- * === High Availability
+ * However, the bundle has some dependencies on Jackson and Netty. To get the vert.x core bundle resolved deploy:
+ *
+ * * Jackson Annotation [2.5.0,3)
+ * * Jackson Core [2.5.0,3)
+ * * Jackson Databind [2.5.0,3)
+ * * Netty Buffer [4.0.27,5)
+ * * Netty Codec [4.0.27,5)
+ * * Netty Codec/Socks [4.0.27,5)
+ * * Netty Codec/Common [4.0.27,5)
+ * * Netty Codec/Handler [4.0.27,5)
+ * * Netty Codec/Transport [4.0.27,5)
+ *
+ * Here is a working deployment on Apache Felix 4.6.1:
+ *
+ *[source]
+ *----
+ *   14|Active     |    1|Jackson-annotations (2.5.3)
+ *   15|Active     |    1|Jackson-core (2.5.3)
+ *   16|Active     |    1|jackson-databind (2.5.3)
+ *   17|Active     |    1|Netty/Buffer (4.0.27.Final)
+ *   18|Active     |    1|Netty/Codec (4.0.27.Final)
+ *   19|Active     |    1|Netty/Codec/HTTP (4.0.27.Final)
+ *   20|Active     |    1|Netty/Codec/Socks (4.0.27.Final)
+ *   21|Active     |    1|Netty/Common (4.0.27.Final)
+ *   22|Active     |    1|Netty/Handler (4.0.27.Final)
+ *   23|Active     |    1|Netty/Transport (4.0.27.Final)
+ *   25|Active     |    1|Vert.x Core (3.0.0.SNAPSHOT)
+ *----
+ *
+ * == The 'vertx' command line
+ *
+ * The `vertx` command is used to interact with Vert.x from the command line. It's main use is to run Vert.x verticles.
+ * To do this you need to download and install a Vert.x distribution, and add the `bin` directory of the installation
+ * to your `PATH` environment variable. Also make sure you have a Java 8 JDK on your `PATH`.
+ *
+ * NOTE: The JDK is required to support on the fly compilation of Java code.
+ *
+ * === Run verticles
+ *
+ * You can run raw Vert.x verticles directly from the command line using `vertx run`. Here is a couple of examples:
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js                                 (1)
+ * vertx run my-verticle.groovy                             (2)
+ * vertx run my-verticle.rb                                 (3)
+ *
+ * vertx run io.vertx.example.MyVerticle                    (4)
+ * vertx run io.vertx.example.MVerticle -cp my-verticle.jar (5)
+ *
+ * vertx run MyVerticle.java                                (6)
+ * ----
+ * 1. Deploys a JavaScript verticle
+ * 2. Deploys a Groovy verticle
+ * 3. Deploys a Ruby verticle
+ * 4. Deploys an already compiled Java verticle. Classpath root is the current directory
+ * 5. Deploys a verticle packaged in a Jar, the jar need to be in the classpath
+ * 6. Compiles the Java source and deploys it
+ *
+ * As you can see in the case of Java, the name can either be the fully qualified class name of the verticle, or
+ * you can specify the Java Source file directly and Vert.x compiles it for you.
+ *
+ * You can also prefix the verticle with the name of the language implementation to use. For example if the verticle is
+ * a compiled Groovy class, you prefix it with `groovy:` so that Vert.x knows it's a Groovy class not a Java class.
+ *
+ * [source]
+ * ----
+ * vertx run groovy:io.vertx.example.MyGroovyVerticle
+ * ----
+ *
+ * The `vertx run` command can take a few optional parameters, they are:
+ *
+ *  * `-conf <config_file>` - Provides some configuration to the verticle. `config_file` is the name of a text file
+ *  containing a JSON object that represents the configuration for the verticle. This is optional.
+ *  * `-cp <path>` - The path on which to search for the verticle and any other resources used by the verticle. This
+ *  defaults to `.` (current directory). If your verticle references other scripts, classes or other resources
+ *  (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by
+ *  `:` (colon) or `;` (semi-colon) depending on the operating system. Each path entry can be an absolute or relative
+ *  path to a directory containing scripts, or absolute or relative filenames for jar or zip files. An example path
+ *  might be `-cp classes:lib/otherscripts:jars/myjar.jar:jars/otherjar.jar`. Always use the path to reference any
+ *  resources that your verticle requires. Do **not** put them on the system classpath as this can cause isolation
+ *  issues between deployed verticles.
+ * * `-instances <instances>`  - The number of instances of the verticle to instantiate. Each verticle instance is
+ * strictly single threaded so to scale your application across available cores you might want to deploy more than
+ * one instance. If omitted a single instance will be deployed.
+ *  * `-worker` - This option determines whether the verticle is a worker verticle or not.
+ *  * `-cluster` -  This option determines whether the Vert.x instance will attempt to form a cluster with other Vert.x
+ *  instances on the network. Clustering Vert.x instances allows Vert.x to form a distributed event bus with
+ *  other nodes. Default is `false` (not clustered).
+ *  * `-cluster-port` - If the cluster option has also been specified then this determines which port will be used for
+ *  cluster communication with other Vert.x instances. Default is `0` - which means '_choose a free random port_'. You
+ *  don't usually need to specify this parameter unless you really need to bind to a specific port.
+ *  * `-cluster-host` - If the cluster option has also been specified then this determines which host address will be
+ *  used for cluster communication with other Vert.x instances. By default it will try and pick one from the available
+ *  interfaces. If you have more than one interface and you want to use a specific one, specify it here.
+ *  * `-ha` - if specified the verticle will be deployed as  high availability (HA) deployment. See related section
+ *  for more details
+ *  * `-quorum` - used in conjunction with `-ha`. It specifies the minimum number of nodes in the cluster for any _HA
+ *  deploymentIDs_ to be active. Defaults to 0.
+ *  * `-hagroup` - used in conjunction with `-ha`. It specifies the HA group this node will join. There can be
+ *  multiple HA groups in a cluster. Nodes will only failover to other nodes in the same group. The default value is `
+ *  +++__DEFAULT__+++`
+ *  * `-redeploy` - Enables automatic redeployment of the verticle
+ *
+ * Here are some more examples:
+ *
+ * Run a JavaScript verticle server.js with default settings
+ * [source]
+ * ----
+ * vertx run server.js
+ * ----
+ *
+ * Run 10 instances of a pre-compiled Java verticle specifying classpath
+ * [source]
+ * ----
+ * vertx run com.acme.MyVerticle -cp "classes:lib/myjar.jar" -instances 10
+ * ----
+ *
+ * Run 10 instances of a Java verticle by source _file_
+ * [source]
+ * ----
+ * vertx run MyVerticle.java -instances 10
+ * ----
+ *
+ * Run 20 instances of a ruby worker verticle
+ * [source]
+ * ----
+ * vertx run order_worker.rb -instances 20 -worker
+ * ----
+ *
+ * Run two JavaScript verticles on the same machine and let them cluster together with each other and any other servers
+ * on the network
+ * [source]
+ * ----
+ * vertx run handler.js -cluster
+ * vertx run sender.js -cluster
+ * ----
+ *
+ * Run a Ruby verticle passing it some config
+ * [source]
+ * ----
+ * vertx run my_verticle.rb -conf my_verticle.conf
+ * ----
+ * Where `my_verticle.conf` might contain something like:
+ *
+ * [source, json]
+ * ----
+ * {
+ *  "name": "foo",
+ *  "num_widgets": 46
+ * }
+ * ----
+ *
+ * The config will be available inside the verticle via the core API.
+ *
+ * When using the high-availability feature of vert.x you may want to create a _bare_ instance of vert.x. This
+ * instance does not deploy any verticles when launched, but will receive a verticle if another node of the cluster
+ * dies. To create a _bare_ instance, launch:
+ *
+ * [source]
+ * ----
+ * vertx -ha
+ * ----
+ *
+ * Depending on your cluster configuration, you may have to append the `cluster-host` and `cluster-port` parameters.
+ *
+ * === Executing verticles packaged as a fat jar
+ *
+ * A _fat jar_ is an executable jar embedding its dependencies. This means you don't have to have Vert.x pre-installed
+ * on the machine on which you execute the jar. A verticle packaged as a _fat jar_ can just be launched using:
+ *
+ * [source]
+ * ----
+ * java -jar my-verticle-fat.jar
+ * ----
+ *
+ * The _fat jar_ must have a _manifest_ with:
+ *
+ * * `Main-Class` set to `io.vertx.core.Starter`
+ * * `Main-Verticle` specifying the main verticle (fully qualified name)
+ *
+ * You can also provide the usual command line arguments that you would pass to `vertx run`:
+ * [source]
+ * ----
+ * java -jar my-verticle-fat.jar -cluster -conf myconf.json
+ * java -jar my-verticle-fat.jar -cluster -conf myconf.json -cp path/to/dir/conf/cluster_xml
+ * ----
+ *
+ * NOTE: _fat jar_ can be built using Gradle build or the Maven plugin. Check the vertx examples for instructions.
+ *
+ * === Displaying version of Vert.x
+ * To display the vert.x version, just launch:
+ *
+ * [source]
+ * ----
+ * vertx -version
+ * ----
+ *
+ * === Using the redeploy argument
+ *
+ * When a verticle is launched with `vertx run .... -redeploy`, vertx redeploys the verticle every time the verticle
+ * files change. This mode makes the development much more fun and efficient as you don't have to restart the
+ * application.
+ *
+ * [source]
+ * ----
+ * vertx run server.js -redeploy
+ * vertx run Server.java -redeploy
+ * ----
+ *
+ * When using Java source file, vert.x recompiles the class on the fly and redeploys the verticle.
+ *
+ * == Cluster Managers
+ *
+ * In Vert.x a cluster manager is used for various functions including:
+ *
+ * * Discovery and group membership of Vert.x nodes in a cluster
+ * * Maintaining cluster wide topic subscriber lists (so we know which nodes are interested in which event bus addresses)
+ * * Distributed Map support
+ * * Distributed Locks
+ * * Distributed Counters
+ *
+ * Cluster managers _do not_ handle the event bus inter-node transport, this is done directly by Vert.x with TCP connections.
+ *
+ * The default cluster manager used in the Vert.x distributions is one that uses http://hazelcast.com[Hazelcast] but this
+ * can be easily replaced by a different implementation as Vert.x cluster managers are pluggable.
+ *
+ * A cluster manager must implement the interface {@link io.vertx.core.spi.cluster.ClusterManager}. Vert.x locates
+ * cluster managers at run-time by using the Java {@link java.util.ServiceLoader} functionality to locate instances of
+ * {@link io.vertx.core.spi.cluster.ClusterManager} on the classpath.
+ *
+ * If you are using Vert.x at the command line and you want to use clustering you should make sure the `lib` directory
+ * of the Vert.x installation contains your cluster manager jar.
+ *
+ * If you are using Vert.x from a Maven or Gradle project just add the cluster manager jar as a dependency of your project.
+ *
+ * You can also specify cluster managers programmatically if embedding Vert.x using
+ * {@link io.vertx.core.VertxOptions#setClusterManager(io.vertx.core.spi.cluster.ClusterManager)}.
+ *
+ * == Logging
+ *
+ * Vert.x logs using it's in-built logging API. The default implementation uses the JDK (JUL) logging so no extra
+ * logging dependencies are needed.
+ *
+ * === Configuring JUL logging
+ *
+ * A JUL logging configuration file can be specified in the normal JUL way by providing a system property called:
+ * `java.util.logging.config.file` with the value being your configuration file. For more information on this and
+ * the structure of a JUL config file please consult the JUL logging documentation.
+ *
+ * Vert.x also provides a slightly more convenient way to specify a configuration file without having to set a system
+ * property. Just provide a JUL config file with the name `default-jul-logging.properties` on your classpath (e.g.
+ * inside your fatjar) and Vert.x will use that to configure JUL.
+ *
+ * === Using another logging framework
+ *
+ * If you don't want Vert.x to use JUL for it's own logging you can configure it to use another logging framework, e.g.
+ * Log4J or SLF4J.
+ *
+ * To do this you should set a system property called `vertx.logger-delegate-factory-class-name` with the name of a Java
+ * class which implements the interface {@link io.vertx.core.logging.LoggerFactory}. We provide pre-built implementations for
+ * Log4J and SLF4J with the class names `io.vertx.core.logging.Log4jLogDelegateFactory` and `io.vertx.core.logging.SLF4JLogDelegateFactory`
+ * respectively. If you want to use these implementations you should also make sure the relevant Log4J or SLF4J jars
+ * are on your classpath.
+ *
+ * === Logging from your application
+ *
+ * Vert.x itself is just a library and you can use whatever logging library you prefer to log from your own application,
+ * using that logging library's API.
+ *
+ * However, if you prefer you can use the Vert.x logging facility as described above to provide logging for your
+ * application too.
+ *
+ * To do that you use {@link io.vertx.core.logging.LoggerFactory} to get an instance of {@link io.vertx.core.logging.Logger}
+ * which you then use for logging, e.g.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#example18}
+ * ----
+ *
+ * == High Availability and Fail-Over
+ *
+ * Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x
+ * instance running a verticle dies abruptly, the verticle is migrated to another vertx instance. The vert.x
+ * instances must be in the same cluster.
+ *
+ * === Automatic failover
+ *
+ * When vert.x runs with _HA_ enabled, if a vert.x instance where a verticle runs fails or dies, the verticle is
+ * redeployed automatically on another vert.x instance of the cluster. We call this _verticle fail-over_.
+ *
+ * To run vert.x with the _HA_ enabled, just add the `-ha` flag to the command line:
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha
+ * ----
+ *
+ * Now for HA to work, you need more than one Vert.x instances in the cluster, so let's say you have another
+ * Vert.x instance that you have already started, for example:
+ *
+ * [source]
+ * ----
+ * vertx run my-other-verticle.js -ha
+ * ----
+ *
+ * If the Vert.x instance that is running `my-verticle.js` now dies (you can test this by killing the process
+ * with `kill -9`), the Vert.x instance that is running `my-other-verticle.js` will automatic deploy `my-verticle
+ * .js` so now that Vert.x instance is running both verticles.
+ *
+ * NOTE: the migration is only possible if the second vert.x instance has access to the verticle file (here
+ * `my-verticle.js`).
+ *
+ * IMPORTANT: Please note that cleanly closing a Vert.x instance will not cause failover to occur, e.g. `CTRL-C`
+ * or `kill -SIGINT`
+ *
+ * You can also start _bare_ Vert.x instances - i.e. instances that are not initially running any verticles, they
+ * will also failover for nodes in the cluster. To start a bare instance you simply do:
+ *
+ * [source]
+ * ----
+ * vertx run -ha
+ * ----
+ *
+ * When using the `-ha` switch you do not need to provide the `-cluster` switch, as a cluster is assumed if you
+ * want HA.
+ *
+ * NOTE: depending on your cluster configuration, you may need to customize the cluster manager configuration
+ * (Hazelcast by default), and/or add the `cluster-host` and `cluster-port` parameters.
+ *
+ * === HA groups
+ *
+ * When running a Vert.x instance with HA you can also optional specify a _HA group_. A HA group denotes a
+ * logical group of nodes in the cluster. Only nodes with the same HA group will failover onto one another. If
+ * you don't specify a HA group the default group `+++__DEFAULT__+++` is used.
+ *
+ * To specify an HA group you use the `-hagroup` switch when running the verticle, e.g.
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha -ha-group my-group
+ * ----
+ *
+ * Let's look at an example:
+ *
+ * In a first terminal:
+ *
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha -hagroup g1
+ * ----
+ *
+ * In a second terminal, let's run another verticle using the same group:
+ *
+ * [source]
+ * ----
+ * vertx run my-other-verticle.js -ha -hagroup g1
+ * ----
+ *
+ * Finally, in a third terminal, launch another verticle using a different group:
+ *
+ * [source]
+ * ----
+ * vertx run yet-another-verticle.js -ha -hagroup g2
+ * ----
+ *
+ * If we kill the instance in terminal 1, it will fail over to the instance in terminal 2, not the instance in
+ * terminal 3 as that has a different group.
+ *
+ * If we kill the instance in terminal 3, it won't get failed over as there is no other vert.x instance in that
+ * group.
+ *
+ * === Dealing with network partitions - Quora
+ *
+ * The HA implementation also supports quora. A quorum is the minimum number of votes that a distributed
+ * transaction has to obtain in order to be allowed to perform an operation in a distributed system.
+ *
+ * When starting a Vert.x instance you can instruct it that it requires a `quorum` before any HA deployments will
+ * be deployed. In this context, a quorum is a minimum number of nodes for a particular group in the cluster.
+ * Typically you chose your quorum size to `Q = 1 + N/2` where `N` is the number of nodes in the group. If there
+ * are less than `Q` nodes in the cluster the HA deployments will undeploy. They will redeploy again if/when a
+ * quorum is re-attained. By doing this you can prevent against network partitions, a.k.a. _split brain_.
+ *
+ * There is more information on quora http://en.wikipedia.org/wiki/Quorum_(distributed_computing)[here].
+ *
+ * To run vert.x instances with a quorum you specify `-quorum` on the command line, e.g.
+ *
+ * In a first terminal:
+ * [source]
+ * ----
+ * vertx run my-verticle.js -ha -quorum 3
+ * ----
+ *
+ * At this point the Vert.x instance will start but not deploy the module (yet) because there is only one node
+ * in the cluster, not 3.
+ *
+ * In a second terminal:
+ * [source]
+ * ----
+ * vertx run my-other-verticle.js -ha -quorum 3
+ * ----
+ *
+ * At this point the Vert.x instance will start but not deploy the module (yet) because there are only two nodes
+ * in the cluster, not 3.
+ *
+ * In a third console, you can start another instance of vert.x:
+ *
+ * [source]
+ * ----
+ * vertx run yet-another-verticle.js -ha -quorum 3
+ * ----
+ *
+ * Yay! - we have three nodes, that's a quorum. At this point the modules will automatically deploy on all
+ * instances.
+ *
+ * If we now close or kill one of the nodes the modules will automatically undeploy on the other nodes, as there
+ * is no longer a quorum.
+ *
+ * Quora can also be used in conjunction with ha groups. In that case, quora are resolved for each particular
+ * group.
  *
  * == Security notes
  *
- * Warn about file uploads and serving files from arbitrary locations
+ * Vert.x is a toolkit, not an opinionated framework where we force you to do things in a certain way. This gives you
+ * great power as a developer but with that comes great responsibility.
  *
- * Vert.x is a tool kit
+ * As with any toolkit, it's possible to write insecure applications, so you should always be careful when developing
+ * your application especially if it's exposed to the public (e.g. over the internet).
  *
- * Run in a security sandbox
+ * === Web applications
  *
- * Use Apex
+ * If writing a web application it's highly recommended that you use Vert.x-Web instead of Vert.x core directly for
+ * serving resources and handling file uploads.
  *
+ * Vert.x-Web normalises the path in requests to prevent malicious clients from crafting URLs to access resources
+ * outside of the web root.
+ *
+ * Similarly for file uploads Vert.x-Web provides functionality for uploading to a known place on disk and does not rely
+ * on the filename provided by the client in the upload which could be crafted to upload to a different place on disk.
+ *
+ * Vert.x core itself does not provide such checks so it would be up to you as a developer to implement them yourself.
+ *
+ * === Clustered event bus traffic
+ *
+ * When clustering the event bus between different Vert.x nodes on a network, the traffic is sent un-encrypted across the
+ * wire, so do not use this if you have confidential data to send and your Vert.x nodes are not on a trusted network.
+ *
+ * === Standard security best practices
+ *
+ * Any service can have potentially vulnerabilities whether it's written using Vert.x or any other toolkit so always
+ * follow security best practice, especially if your service is public facing.
+ *
+ * For example you should always run them in a DMZ and with an user account that has limited rights in order to limit
+ * the extent of damage in case the service was compromised.
  *
  */
 @Document(fileName = "index.adoc")

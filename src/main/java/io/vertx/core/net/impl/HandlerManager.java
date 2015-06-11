@@ -20,7 +20,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,7 +58,7 @@ public class HandlerManager<T> {
   public synchronized void addHandler(Handler<T> handler, ContextImpl context) {
     EventLoop worker = context.eventLoop();
     availableWorkers.addWorker(worker);
-    Handlers<T> handlers = new Handlers<T>();
+    Handlers<T> handlers = new Handlers<>();
     Handlers<T> prev = handlerMap.putIfAbsent(worker, handlers);
     if (prev != null) {
       handlers = prev;

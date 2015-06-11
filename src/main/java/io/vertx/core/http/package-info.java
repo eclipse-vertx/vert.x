@@ -603,7 +603,7 @@
  * When you're writing to a request, the first call to `write` will result in the request headers being written
  * out to the wire.
  *
- * The actual write is asychronous and might not occur until some time after the call has returned.
+ * The actual write is asynchronous and might not occur until some time after the call has returned.
  *
  * Non-chunked HTTP requests with a request body require a `Content-Length` header to be provided.
  *
@@ -686,17 +686,23 @@
  *
  * ==== Handling exceptions
  *
- * You can handle exceptions corresponding to a request by setting an exception handler on the {@link io.vertx.core.http.HttpClientRequest}
- * instance:
+ * You can handle exceptions corresponding to a request by setting an exception handler on the
+ * {@link io.vertx.core.http.HttpClientRequest} instance:
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example42}
  * ----
  *
- * TODO - what about exceptions in the getNow methods where no exception handler can be provided??
+ * This does not handle non _2xx_ response that need to be handled in the
+ * {@link io.vertx.core.http.HttpClientResponse} code:
  *
- * Maybe need a catch all exception handler??
+ * [source, $lang]
+ * ----
+ * {@link examples.HTTPExamples#statusCodeHandling}
+ * ----
+ *
+ * IMPORTANT: `XXXNow` methods cannot receive an exception handler.
  *
  * ==== Specifying a handler on the client request
  *
@@ -893,8 +899,44 @@
  *
  * === Server sharing
  *
- * TODO
- * round robin requests etc
+ * When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
+ * round-robin strategy.
+ *
+ * Let's take a verticle creating a HTTP server such as:
+ *
+ * .io.vertx.examples.http.sharing.HttpServerVerticle
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#serversharing(io.vertx.core.Vertx)}
+ * ----
+ *
+ * This service is listening on the port 8080. So, when this verticle is instantiated multiple times as with:
+ * `vertx run io.vertx.examples.http.sharing.HttpServerVerticle -instances 2`, what's happening ? If both
+ * verticles would bind to the same port, you would receive a socket exception. Fortunately, vert.x is handling
+ * this case for you. When you deploy another server on the same host and port as an existing server it doesn't
+ * actually try and create a new server listening on the same host/port. It binds only once to the socket. When
+ * receiving a request it calls the server handlers following a round robin strategy.
+ *
+ * Let's now imagine a client such as:
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#serversharingclient(io.vertx.core.Vertx)}
+ * ----
+ *
+ * Vert.x delegates the requests to one of the server sequentially:
+ *
+ * [source]
+ * ----
+ * Hello from i.v.e.h.s.HttpServerVerticle@1
+ * Hello from i.v.e.h.s.HttpServerVerticle@2
+ * Hello from i.v.e.h.s.HttpServerVerticle@1
+ * Hello from i.v.e.h.s.HttpServerVerticle@2
+ * ...
+ * ----
+ *
+ * Consequently the servers can scale over available cores while each Vert.x verticle instance remains strictly
+ * single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your
+ * server on your multi-core machine.
  *
  * === Using HTTPS with Vert.x
  *

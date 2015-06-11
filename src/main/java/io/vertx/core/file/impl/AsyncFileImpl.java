@@ -28,7 +28,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -352,7 +352,7 @@ public class AsyncFileImpl implements AsyncFile {
       } catch (IOException e) {
         throw new FileSystemException(e);
       }
-    }, true, handler);
+    }, handler);
   }
 
   private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {

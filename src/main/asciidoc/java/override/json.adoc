@@ -39,7 +39,7 @@ object.put("foo", "bar").put("num", 123).put("mybool", true);
 
 ==== Getting values from a JSON object
 
-You get values from a JSON object using the  methods, for example:
+You get values from a JSON object using the `getXXX` methods, for example:
 
 [source,java]
 ----
@@ -83,7 +83,7 @@ array.add("foo").add(123).add(false);
 
 ==== Getting values from a JSON array
 
-You get values from a JSON array using the  methods, for example:
+You get values from a JSON array using the `getXXX` methods, for example:
 
 [source,java]
 ----

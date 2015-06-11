@@ -21,7 +21,7 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -239,12 +239,12 @@ public abstract class ContextImpl implements Context {
   }
 
   // Execute an internal task on the internal blocking ordered executor
-  public <T> void executeBlocking(Action<T> action, boolean internal, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, null, internal, resultHandler);
+  public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(action, null, true, true, resultHandler);
   }
 
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, false, resultHandler);
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(null, blockingCodeHandler, false, ordered, resultHandler);
   }
 
   protected synchronized Map<String, Object> contextData() {
@@ -255,9 +255,9 @@ public abstract class ContextImpl implements Context {
   }
 
   private <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler, boolean internal,
-                                  Handler<AsyncResult<T>> resultHandler) {
+                                   boolean ordered, Handler<AsyncResult<T>> resultHandler) {
     try {
-      Executor exec = internal ? orderedInternalPoolExec : workerExec;
+      Executor exec = internal ? orderedInternalPoolExec : (ordered ? workerExec : owner.getWorkerPool());
       exec.execute(() -> {
         Future<T> res = Future.future();
         try {
