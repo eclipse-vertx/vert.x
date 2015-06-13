@@ -38,7 +38,7 @@ final class VertxThread extends Thread {
   }
 
   void setContext(ContextImpl context) {
-    //this.contextRef = new WeakReference<>(context);
+    this.contextRef = new WeakReference<>(context);
   }
 
   public void executeStart() {
