@@ -461,30 +461,7 @@
  * This is useful for scaling easily across multiple cores. For example you might have a web-server verticle to deploy
  * and multiple cores on your machine, so you want to deploy multiple instances to take utilise all the cores.
  *
- * === Passing configuration to a verticle
- *
- * Configuration in the form of JSON can be passed to a verticle at deployment time:
- *
- * [source,$lang]
- * ----
- * {@link examples.CoreExamples#example13}
- * ----
- *
- * This configuration is then available via the {@link io.vertx.core.Context} object or directly using the
- * {@link io.vertx.core.AbstractVerticle#config()} method. The configuration is returned as a JSON object so you can
- * retrieve data as follows:
- *
- * [source,$lang]
- * ----
- * {@link examples.ConfigurableVerticleExamples#start()}
- * ----
- *
- * === Accessing environment variables in a Verticle
- *
- * Environment variables and system properties are accessible from a verticle by following the Java way. To retrieve
- * system properties, use {@link java.lang.System#getProperty(java.lang.String)}
- * (or {@link java.lang.System#getProperty(java.lang.String, java.lang.String)}). You can also retrieve the
- * environment variables using {@link java.lang.System#getenv(java.lang.String)}.
+ * include::override/verticle-configuration.adoc[]
  *
  * === Verticle Isolation Groups
  *

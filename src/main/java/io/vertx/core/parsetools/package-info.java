@@ -15,9 +15,46 @@
  */
 
 /**
- * == Parse tools
+ * == Record Parser
  *
- * TODO
+ * The record parser allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
+ * size records. It transforms an sequence of input buffer to a sequence of buffer structured as configured (either
+ * fixed size or separated records).
+ *
+ * For example, if you have a simple ASCII text protocol delimited by '\n' and the input is the following:
+ *
+ * [source]
+ * ----
+ * buffer1:HELLO\nHOW ARE Y
+ * buffer2:OU?\nI AM
+ * buffer3: DOING OK
+ * buffer4:\n
+ * ----
+ *
+ * The record parser would produce
+ *[source]
+ * ----
+ * buffer1:HELLO
+ * buffer2:HOW ARE YOU?
+ * buffer3:I AM DOING OK
+ * ----
+ *
+ * Let's see the associated code:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.RecordParserExamples#example1()}
+ * ----
+ *
+ * You can also produce fixed sized chunks as follows:
+ *
+ * [source, $lang]
+ * ----
+ * {@link examples.RecordParserExamples#example2()}
+ * ----
+ *
+ * For more details, check out the {@link io.vertx.core.parsetools.RecordParser} class.
+ *
  */
 @Document(fileName = "parsetools.adoc")
 package io.vertx.core.parsetools;

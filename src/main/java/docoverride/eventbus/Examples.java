@@ -43,6 +43,12 @@ public class Examples {
     eventBus.send("orders", new MyPOJO());
   }
 
+  public void headers(EventBus eventBus) {
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("some-header", "some-value");
+    eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
+  }
+
   class MyPOJO {
 
   }

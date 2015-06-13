@@ -1,0 +1,13 @@
+==== Setting headers on messages
+
+Messages sent over the event bus can also contain headers.
+
+This can be specified by providing a
+`link:../../apidocs/io/vertx/core/eventbus/DeliveryOptions.html[DeliveryOptions]` when sending or publishing:
+
+[source,java]
+----
+DeliveryOptions options = new DeliveryOptions();
+options.addHeader("some-header", "some-value");
+eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
+----
