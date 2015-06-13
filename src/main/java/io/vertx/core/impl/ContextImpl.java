@@ -74,7 +74,7 @@ public abstract class ContextImpl implements Context {
     if (current instanceof VertxThread) {
       ((VertxThread)current).setContext(context);
       if (context != null) {
-        context.setTCCL();
+        //context.setTCCL();
       } else {
         Thread.currentThread().setContextClassLoader(null);
       }
