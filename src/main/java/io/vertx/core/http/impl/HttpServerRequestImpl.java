@@ -244,7 +244,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
           absoluteURI = uri.toString();
         } else {
-          absoluteURI = new URI(conn.getServerOrigin() + uri).toString();
+          String host = headers().get(HttpHeaders.Names.HOST);
+          if (host != null) {
+            absoluteURI = (conn.isSSL() ? "https://" : "http://") + host + uri;
+          } else {
+            // Fall back to the server origin
+            absoluteURI = conn.getServerOrigin() + uri;
+          }
         }
       } catch (URISyntaxException e) {
         log.error("Failed to create abs uri", e);

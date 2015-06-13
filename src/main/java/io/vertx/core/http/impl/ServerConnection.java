@@ -206,6 +206,10 @@ class ServerConnection extends ConnectionBase {
     return ws;
   }
 
+  boolean isSSL() {
+    return server.getSslHelper().isSSL();
+  }
+
   NetSocket createNetSocket() {
     NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
