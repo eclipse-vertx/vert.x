@@ -125,6 +125,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     if (connection != null) {
       context = getContext(connection);
       context.executeFromIO(connection::startRead);
+      System.out.println("start read");
     } else {
       context = null;
     }

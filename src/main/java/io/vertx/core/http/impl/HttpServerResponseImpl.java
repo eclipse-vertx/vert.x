@@ -396,7 +396,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
     }
 
-    System.out.println("keep alive?" + keepAlive);
     if (!keepAlive) {
       closeConnAfterWrite();
     }
