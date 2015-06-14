@@ -40,6 +40,9 @@ public abstract class ContextImpl implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
+  public static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
+  private static final boolean THREAD_CHECKS = System.getProperty(THREAD_CHECKS_PROP_NAME) != null;
+  
   protected final VertxInternal owner;
   protected final String deploymentID;
   protected final JsonObject config;
@@ -301,7 +304,7 @@ public abstract class ContextImpl implements Context {
 
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {
     return () -> {
-      if (checkThread) {
+      if (THREAD_CHECKS && checkThread) {
         executeStart();
       }
       try {
@@ -315,7 +318,7 @@ public abstract class ContextImpl implements Context {
         log.error("Unhandled exception", t);
       } finally {
         setContext(null);
-        if (checkThread) {
+        if (THREAD_CHECKS && checkThread) {
           executeEnd();
         }
       }
