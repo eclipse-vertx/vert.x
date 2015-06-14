@@ -97,7 +97,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private HttpServerImpl actualServer;
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
+
   private boolean expectingWebsockets = false;
+  private boolean handle100Continue = false;
+
+  boolean isHandle100Continue() {
+    return handle100Continue;
+  }
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -544,10 +550,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       Channel ch = ctx.channel();
 
-//      if (HttpHeaders.is100ContinueExpected(request)) {
-//          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
-//        }
-
       if (expectingWebsockets) {
         if (msg instanceof HttpRequest) {
 
@@ -575,6 +577,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 wsRequest.headers().set(request.headers());
               }
             }
+          } else {
+            handleHttp(conn, ch, msg);
           }
         } else if (msg instanceof WebSocketFrameInternal) {
           //Websocket frame
@@ -613,15 +617,19 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           }
         }
       } else {
-        // HTTP request or HTTP content
-        if (conn == null) {
-          HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-          if (reqHandler != null) {
-            createConnAndHandle(reqHandler, ch, (HttpRequest) msg, null);
-          }
-        } else {
-          conn.handleMessage(msg);
+        handleHttp(conn, ch, msg);
+      }
+    }
+
+    private void handleHttp(ServerConnection conn, Channel ch, Object msg) {
+      // HTTP request or HTTP content
+      if (conn == null) {
+        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+        if (reqHandler != null) {
+          createConnAndHandle(reqHandler, ch, (HttpRequest) msg, null);
         }
+      } else {
+        conn.handleMessage(msg);
       }
     }
 
