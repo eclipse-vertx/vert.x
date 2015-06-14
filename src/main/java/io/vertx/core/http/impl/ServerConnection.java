@@ -127,19 +127,18 @@ class ServerConnection extends ConnectionBase {
   }
 
   synchronized void handleMessage(Object msg) {
-// FIXME - this block here has effect on performance (probably instanceof??)
-//    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
-//      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-//      pending.add(msg);
-//      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-//        //We pause the channel too, to prevent the queue growing too large, but we don't do this
-//        //until the queue reaches a certain size, to avoid pausing it too often
-//        super.doPause();
-//        channelPaused = true;
-//      }
-//    } else {
+    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
+      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+      pending.add(msg);
+      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+        //We pause the channel too, to prevent the queue growing too large, but we don't do this
+        //until the queue reaches a certain size, to avoid pausing it too often
+        super.doPause();
+        channelPaused = true;
+      }
+    } else {
       processMessage(msg);
-   // }
+    }
   }
 
   synchronized void responseComplete() {
@@ -379,8 +378,7 @@ class ServerConnection extends ConnectionBase {
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
-    }
-    if (msg instanceof HttpContent) {
+    } else if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(chunk.content());
