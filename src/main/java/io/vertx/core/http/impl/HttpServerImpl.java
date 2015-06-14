@@ -545,9 +545,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
 
-        if (HttpHeaders.is100ContinueExpected(request)) {
-          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
-        }
+//        if (HttpHeaders.is100ContinueExpected(request)) {
+//          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+//        }
 
         if (false && request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
