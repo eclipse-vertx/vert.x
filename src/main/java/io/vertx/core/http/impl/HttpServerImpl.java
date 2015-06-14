@@ -16,12 +16,15 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.bootstrap.ChannelFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -57,6 +60,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.channels.SocketChannel;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -164,6 +169,48 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return listen(port, "0.0.0.0", listenHandler);
   }
 
+  static class VertxHttpChannelFactory implements ChannelFactory<VertxServerSocketChannel> {
+
+    @Override
+    public VertxServerSocketChannel newChannel() {
+      return new VertxServerSocketChannel();
+    }
+  }
+
+  static class VertxServerSocketChannel extends NioServerSocketChannel {
+
+    @Override
+    protected int doReadMessages(List<Object> buf) throws Exception {
+      SocketChannel ch = javaChannel().accept();
+
+      try {
+        if (ch != null) {
+          buf.add(new VertxSocketChannel(this, ch));
+          return 1;
+        }
+      } catch (Throwable t) {
+        t.printStackTrace();
+
+        try {
+          ch.close();
+        } catch (Throwable t2) {
+          t2.printStackTrace();
+        }
+      }
+
+      return 0;
+    }
+
+  }
+
+  static class VertxSocketChannel extends NioSocketChannel {
+    ServerConnection conn;
+
+    public VertxSocketChannel(Channel parent, SocketChannel socket) {
+      super(parent, socket);
+    }
+  }
+
 
   public synchronized HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
@@ -182,7 +229,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
-        bootstrap.channel(NioServerSocketChannel.class);
+        //bootstrap.channel(NioServerSocketChannel.class);
+        bootstrap.channelFactory(new VertxHttpChannelFactory());
         applyConnectionOptions(bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
@@ -446,6 +494,49 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     FullHttpRequest wsRequest;
 
     @Override
+    public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+      Object message = safeObject(msg, chctx.alloc());
+
+      Channel ch = chctx.channel();
+      VertxSocketChannel vch = (VertxSocketChannel)ch;
+
+      //ServerConnection connection = connectionMap.get(chctx.channel());
+      ServerConnection connection = vch.conn;
+
+      ContextImpl context;
+      if (connection != null) {
+        context = getContext(connection);
+//      context.executeFromIO(connection::startRead);
+        connection.startRead();
+      } else {
+        context = null;
+      }
+      channelRead(connection, context, chctx, message);
+    }
+
+    @Override
+    protected void channelRead(final ServerConnection connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
+      if (msg instanceof HttpObject) {
+        DecoderResult result = ((HttpObject) msg).getDecoderResult();
+        if (result.isFailure()) {
+          chctx.pipeline().fireExceptionCaught(result.cause());
+          return;
+        }
+      }
+      if (connection != null) {
+        context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
+      } else {
+        // We execute this directly as we don't have a context yet, the context will have to be set manually
+        // inside doMessageReceived();
+        try {
+          doMessageReceived(null, chctx, msg);
+        } catch (Throwable t) {
+          chctx.pipeline().fireExceptionCaught(t);
+        }
+      }
+    }
+
+    @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       Channel ch = ctx.channel();
 
@@ -557,6 +648,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                                      WebSocketServerHandshaker shake) {
       ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
       conn.requestHandler(reqHandler.handler);
+      VertxSocketChannel vch = (VertxSocketChannel)ch;
+      vch.conn = conn;
       connectionMap.put(ch, conn);
       reqHandler.context.executeFromIO(() -> {
         conn.setMetric(metrics.connected(conn.remoteAddress()));

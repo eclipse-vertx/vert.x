@@ -119,6 +119,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = safeObject(msg, chctx.alloc());
+
     C connection = connectionMap.get(chctx.channel());
 
     ContextImpl context;
