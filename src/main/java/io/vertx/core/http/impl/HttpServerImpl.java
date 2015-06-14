@@ -24,6 +24,7 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -513,13 +514,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     protected void channelRead(final ServerConnection connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-//      if (msg instanceof HttpObject) {
-//        DecoderResult result = ((HttpObject) msg).getDecoderResult();
-//        if (result.isFailure()) {
-//          chctx.pipeline().fireExceptionCaught(result.cause());
-//          return;
-//        }
-//      }
+      if (msg instanceof HttpObject) {
+        DecoderResult result = ((HttpObject) msg).getDecoderResult();
+        if (result.isFailure()) {
+          chctx.pipeline().fireExceptionCaught(result.cause());
+          return;
+        }
+      }
       if (connection != null) {
         context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
         //doMessageReceived2(context, connection, chctx, msg);
