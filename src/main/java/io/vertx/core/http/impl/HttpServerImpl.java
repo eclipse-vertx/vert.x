@@ -27,6 +27,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
@@ -524,8 +525,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       }
       if (connection != null) {
-        //context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
-        doMessageReceived2(context, connection, chctx, msg);
+        context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
+        //doMessageReceived2(context, connection, chctx, msg);
       } else {
         // We execute this directly as we don't have a context yet, the context will have to be set manually
         // inside doMessageReceived();
@@ -537,25 +538,25 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    protected void doMessageReceived2(ContextImpl context, ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
-      ContextImpl.setContext(context);
-      doMessageReceivedSimplified(conn, ctx, msg);
+//    protected void doMessageReceived2(ContextImpl context, ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+//      ContextImpl.setContext(context);
+//      doMessageReceived(conn, ctx, msg);
+//
+//    }
 
-    }
-
-    protected void doMessageReceivedSimplified(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
-      Channel ch = ctx.channel();
-
-      //HTTP request
-      if (conn == null) {
-        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-        if (reqHandler != null) {
-          createConnAndHandle(reqHandler, ch, (HttpRequest)msg, null);
-        }
-      } else {
-        conn.handleMessage(msg);
-      }
-    }
+//    protected void doMessageReceivedSimplified(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+//      Channel ch = ctx.channel();
+//
+//      //HTTP request
+//      if (conn == null) {
+//        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+//        if (reqHandler != null) {
+//          createConnAndHandle(reqHandler, ch, (HttpRequest)msg, null);
+//        }
+//      } else {
+//        conn.handleMessage(msg);
+//      }
+//    }
 
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -570,30 +571,30 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 //          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
 //        }
 
-//        if (false && request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
-//          // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
-//          // it doesn't send a normal 'Connection: Upgrade' header. Instead it
-//          // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
-//          String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
-//          if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
-//            sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
-//            return;
-//          }
-//
-//          if (request.getMethod() != HttpMethod.GET) {
-//            sendError(null, METHOD_NOT_ALLOWED, ch);
-//            return;
-//          }
-//
-//          if (wsRequest == null) {
-//            if (request instanceof FullHttpRequest) {
-//              handshake((FullHttpRequest) request, ch, ctx);
-//            } else {
-//              wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
-//              wsRequest.headers().set(request.headers());
-//            }
-//          }
-//        } else {
+        if (false && request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
+          // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
+          // it doesn't send a normal 'Connection: Upgrade' header. Instead it
+          // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+          String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+          if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
+            sendError("\"Connection\" must be \"Upgrade\".", HttpResponseStatus.BAD_REQUEST, ch);
+            return;
+          }
+
+          if (request.getMethod() != HttpMethod.GET) {
+            sendError(null, METHOD_NOT_ALLOWED, ch);
+            return;
+          }
+
+          if (wsRequest == null) {
+            if (request instanceof FullHttpRequest) {
+              handshake((FullHttpRequest) request, ch, ctx);
+            } else {
+              wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
+              wsRequest.headers().set(request.headers());
+            }
+          }
+        } else {
           //HTTP request
           if (conn == null) {
             HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
@@ -603,7 +604,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           } else {
             conn.handleMessage(msg);
           }
-      //  }
+        }
       } else if (msg instanceof WebSocketFrameInternal) {
         //Websocket frame
         WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
