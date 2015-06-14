@@ -523,6 +523,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
+  private static CharSequence ZERO_LENGTH = HttpHeaders.createOptimized("0");
+
   private void prepareHeaders(Runnable after) {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
       response.headers().set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
@@ -530,7 +532,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (chunked) {
       response.headers().set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
     } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
-      response.headers().set(HttpHeaders.CONTENT_LENGTH, "0");
+      response.headers().set(HttpHeaders.CONTENT_LENGTH, ZERO_LENGTH);
     }
 
     if (headersEndHandler != null) {
