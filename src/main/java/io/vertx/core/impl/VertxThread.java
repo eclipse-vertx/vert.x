@@ -16,8 +16,6 @@
 
 package io.vertx.core.impl;
 
-import java.lang.ref.WeakReference;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -25,8 +23,8 @@ final class VertxThread extends Thread {
 
   private final boolean worker;
   private long execStart;
-  // We use a weak reference so threads don't hold on to reference after context is no longer in use
-  private WeakReference<ContextImpl> contextRef;
+
+  private ContextImpl context;
 
   public VertxThread(Runnable target, String name, boolean worker) {
     super(target, name);
@@ -34,11 +32,11 @@ final class VertxThread extends Thread {
   }
 
   ContextImpl getContext() {
-    return contextRef == null ? null : contextRef.get();
+    return context;
   }
 
   void setContext(ContextImpl context) {
-    this.contextRef = new WeakReference<>(context);
+    this.context = context;
   }
 
   public void executeStart() {
