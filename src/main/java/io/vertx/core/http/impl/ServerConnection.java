@@ -17,17 +17,10 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FileRegion;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -47,11 +40,11 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -127,18 +120,18 @@ class ServerConnection extends ConnectionBase {
   }
 
   synchronized void handleMessage(Object msg) {
-    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
-      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      pending.add(msg);
-      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-        //We pause the channel too, to prevent the queue growing too large, but we don't do this
-        //until the queue reaches a certain size, to avoid pausing it too often
-        super.doPause();
-        channelPaused = true;
-      }
-    } else {
+//    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
+//      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+//      pending.add(msg);
+//      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+//        //We pause the channel too, to prevent the queue growing too large, but we don't do this
+//        //until the queue reaches a certain size, to avoid pausing it too often
+//        super.doPause();
+//        channelPaused = true;
+//      }
+//    } else {
       processMessage(msg);
-    }
+   // }
   }
 
   synchronized void responseComplete() {
@@ -378,28 +371,29 @@ class ServerConnection extends ConnectionBase {
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
-    } else if (msg instanceof HttpContent) {
-        HttpContent chunk = (HttpContent) msg;
-      if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
-      }
-
-      //TODO chunk trailers
-      if (msg instanceof LastHttpContent) {
-        if (!paused) {
-          handleEnd();
-        } else {
-          // Requeue
-          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
-        }
-      }
-    } else if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      handleWsFrame(frame);
     }
+//    if (msg instanceof HttpContent) {
+//        HttpContent chunk = (HttpContent) msg;
+//      if (chunk.content().isReadable()) {
+//        Buffer buff = Buffer.buffer(chunk.content());
+//        handleChunk(buff);
+//      }
+//
+//      //TODO chunk trailers
+//      if (msg instanceof LastHttpContent) {
+//        if (!paused) {
+//          handleEnd();
+//        } else {
+//          // Requeue
+//          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+//        }
+//      }
+//    } else if (msg instanceof WebSocketFrameInternal) {
+//      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+//      handleWsFrame(frame);
+//    }
 
-    checkNextTick();
+    //checkNextTick();
   }
 
   private void checkNextTick() {
