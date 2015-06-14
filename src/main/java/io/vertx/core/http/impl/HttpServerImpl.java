@@ -514,13 +514,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     protected void channelRead(final ServerConnection connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-      if (msg instanceof HttpObject) {
+
+      // FIXME: This little block here gives a big boost to perf if removed
+      //if (msg instanceof HttpObject) {
         DecoderResult result = ((HttpObject) msg).getDecoderResult();
         if (result.isFailure()) {
           chctx.pipeline().fireExceptionCaught(result.cause());
           return;
         }
-      }
+      //}
+      // End FIXME
+
       if (connection != null) {
         context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
         //doMessageReceived2(context, connection, chctx, msg);
