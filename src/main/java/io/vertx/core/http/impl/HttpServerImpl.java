@@ -524,7 +524,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       }
       if (connection != null) {
-        context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
+        //context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
+        doMessageReceived2(context, connection, chctx, msg);
       } else {
         // We execute this directly as we don't have a context yet, the context will have to be set manually
         // inside doMessageReceived();
@@ -534,6 +535,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           chctx.pipeline().fireExceptionCaught(t);
         }
       }
+    }
+
+    protected void doMessageReceived2(ContextImpl context, ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+      ContextImpl.setContext(context);
+      doMessageReceived(conn, ctx, msg);
+
     }
 
     @Override
