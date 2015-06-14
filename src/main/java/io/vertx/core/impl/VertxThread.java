@@ -16,8 +16,6 @@
 
 package io.vertx.core.impl;
 
-import java.lang.ref.WeakReference;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -25,8 +23,7 @@ final class VertxThread extends Thread {
 
   private final boolean worker;
   private long execStart;
-  // We use a weak reference so threads don't hold on to reference after context is no longer in use
-  private WeakReference<ContextImpl> contextRef;
+  private ContextImpl context;
 
   public VertxThread(Runnable target, String name, boolean worker) {
     super(target, name);
@@ -34,11 +31,25 @@ final class VertxThread extends Thread {
   }
 
   ContextImpl getContext() {
-    return contextRef == null ? null : contextRef.get();
+//    if (outsideExec) {
+//      System.out.println("********************************************************* context is " + context);
+//      new Exception().printStackTrace();
+//      throw new IllegalStateException("getContext called from outside");
+//    }
+    return context;
   }
 
+  // FIXME - renable this code and re-investigate running test suite
+  //boolean outsideExec = true;
+
   void setContext(ContextImpl context) {
-    this.contextRef = new WeakReference<>(context);
+    this.context = context;
+//    if (context == null) {
+//      //System.out.println("Setting context to null");
+//      outsideExec = true;
+//    } else {
+//      outsideExec = false;
+//    }
   }
 
   public void executeStart() {

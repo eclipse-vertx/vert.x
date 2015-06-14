@@ -314,7 +314,7 @@ public abstract class ContextImpl implements Context {
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
       } finally {
-        // TODO - we might have to restore the thread name in case it's been changed during the execution
+        setContext(null);
         if (checkThread) {
           executeEnd();
         }

@@ -71,7 +71,6 @@ public abstract class ConnectionBase {
   }
 
   protected synchronized final void startRead() {
-    checkContext();
     read = true;
   }
 

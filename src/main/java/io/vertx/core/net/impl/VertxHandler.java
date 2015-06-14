@@ -111,8 +111,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     C conn = connectionMap.get(ctx.channel());
     if (conn != null) {
-      ContextImpl context = getContext(conn);
-      context.executeFromIO(conn::endReadAndFlush);
+      conn.endReadAndFlush();
     }
   }
 
@@ -120,11 +119,10 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = safeObject(msg, chctx.alloc());
     C connection = connectionMap.get(chctx.channel());
-
     ContextImpl context;
     if (connection != null) {
       context = getContext(connection);
-      context.executeFromIO(connection::startRead);
+      connection.startRead();
     } else {
       context = null;
     }

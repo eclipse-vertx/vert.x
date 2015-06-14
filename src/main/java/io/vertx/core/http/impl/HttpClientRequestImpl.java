@@ -19,19 +19,13 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -419,7 +413,9 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           public synchronized NetSocket netSocket() {
             if (!resumed) {
               resumed = true;
-              vertx.getContext().runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
+              ContextImpl ctx = vertx.getContext();
+              System.out.println("in netSocket() ctx is " + ctx);
+              ctx.runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
             }
             return socket;
           }
