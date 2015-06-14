@@ -42,7 +42,7 @@ public abstract class ContextImpl implements Context {
 
   public static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   private static final boolean THREAD_CHECKS = System.getProperty(THREAD_CHECKS_PROP_NAME) != null;
-  
+
   protected final VertxInternal owner;
   protected final String deploymentID;
   protected final JsonObject config;
@@ -75,14 +75,18 @@ public abstract class ContextImpl implements Context {
   public static void setContext(ContextImpl context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-      ((VertxThread)current).setContext(context);
-      if (context != null) {
-        context.setTCCL();
-      } else {
-        Thread.currentThread().setContextClassLoader(null);
-      }
+      setContext((VertxThread)current, context);
     } else {
       throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
+    }
+  }
+
+  private static void setContext(VertxThread thread, ContextImpl context) {
+    thread.setContext(context);
+    if (context != null) {
+      context.setTCCL();
+    } else {
+      Thread.currentThread().setContextClassLoader(null);
     }
   }
 
@@ -307,8 +311,9 @@ public abstract class ContextImpl implements Context {
       if (THREAD_CHECKS && checkThread) {
         executeStart();
       }
+      VertxThread current = (VertxThread)Thread.currentThread();
       try {
-        setContext(ContextImpl.this);
+        setContext(current, ContextImpl.this);
         if (cTask != null) {
           cTask.run();
         } else {
@@ -317,7 +322,7 @@ public abstract class ContextImpl implements Context {
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
       } finally {
-        setContext(null);
+        setContext(current, null);
         if (THREAD_CHECKS && checkThread) {
           executeEnd();
         }
