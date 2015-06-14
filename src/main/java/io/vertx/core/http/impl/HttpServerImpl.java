@@ -539,8 +539,22 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     protected void doMessageReceived2(ContextImpl context, ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       ContextImpl.setContext(context);
-      doMessageReceived(conn, ctx, msg);
+      doMessageReceivedSimplified(conn, ctx, msg);
 
+    }
+
+    protected void doMessageReceivedSimplified(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+      Channel ch = ctx.channel();
+
+      //HTTP request
+      if (conn == null) {
+        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+        if (reqHandler != null) {
+          createConnAndHandle(reqHandler, ch, (HttpRequest)msg, null);
+        }
+      } else {
+        conn.handleMessage(msg);
+      }
     }
 
     @Override
