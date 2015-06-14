@@ -24,7 +24,6 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -42,8 +41,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -516,16 +513,16 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     @Override
     protected void channelRead(final ServerConnection connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-      if (msg instanceof HttpObject) {
-        DecoderResult result = ((HttpObject) msg).getDecoderResult();
-        if (result.isFailure()) {
-          chctx.pipeline().fireExceptionCaught(result.cause());
-          return;
-        }
-      }
+//      if (msg instanceof HttpObject) {
+//        DecoderResult result = ((HttpObject) msg).getDecoderResult();
+//        if (result.isFailure()) {
+//          chctx.pipeline().fireExceptionCaught(result.cause());
+//          return;
+//        }
+//      }
       if (connection != null) {
-        //context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
-        doMessageReceived2(context, connection, chctx, msg);
+        context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
+        //doMessageReceived2(context, connection, chctx, msg);
       } else {
         // We execute this directly as we don't have a context yet, the context will have to be set manually
         // inside doMessageReceived();
@@ -561,15 +558,15 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       Channel ch = ctx.channel();
 
-      if (msg instanceof HttpRequest) {
-        final HttpRequest request = (HttpRequest) msg;
-
-        //if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
-
-//        if (HttpHeaders.is100ContinueExpected(request)) {
-//          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
-//        }
-
+//      if (msg instanceof HttpRequest) {
+//        final HttpRequest request = (HttpRequest) msg;
+//
+//        //if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
+//
+////        if (HttpHeaders.is100ContinueExpected(request)) {
+////          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+////        }
+//
 //        if (false && request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
 //          // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
 //          // it doesn't send a normal 'Connection: Upgrade' header. Instead it
@@ -603,49 +600,49 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           } else {
             conn.handleMessage(msg);
           }
-       // }
-      } else if (msg instanceof WebSocketFrameInternal) {
-        //Websocket frame
-        WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
-        switch (wsFrame.type()) {
-          case BINARY:
-          case CONTINUATION:
-          case TEXT:
-            if (conn != null) {
-              conn.handleMessage(msg);
-            }
-            break;
-          case PING:
-            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
-            break;
-          case CLOSE:
-            if (!closeFrameSent) {
-              // Echo back close frame and close the connection once it was written.
-              // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
-              closeFrameSent = true;
-            }
-            break;
-          default:
-            throw new IllegalStateException("Invalid type: " + wsFrame.type());
-        }
-      } else if (msg instanceof HttpContent) {
-        if (wsRequest != null) {
-          wsRequest.content().writeBytes(((HttpContent) msg).content());
-          if (msg instanceof LastHttpContent) {
-            FullHttpRequest req = wsRequest;
-            wsRequest = null;
-            handshake(req, ch, ctx);
-            return;
-          }
-        }
-        if (conn != null) {
-          conn.handleMessage(msg);
-        }
-      } else {
-        throw new IllegalStateException("Invalid message " + msg);
-      }
+//        }
+//      } else if (msg instanceof WebSocketFrameInternal) {
+//        //Websocket frame
+//        WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
+//        switch (wsFrame.type()) {
+//          case BINARY:
+//          case CONTINUATION:
+//          case TEXT:
+//            if (conn != null) {
+//              conn.handleMessage(msg);
+//            }
+//            break;
+//          case PING:
+//            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+//            ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
+//            break;
+//          case CLOSE:
+//            if (!closeFrameSent) {
+//              // Echo back close frame and close the connection once it was written.
+//              // This is specified in the WebSockets RFC 6455 Section  5.4.1
+//              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
+//              closeFrameSent = true;
+//            }
+//            break;
+//          default:
+//            throw new IllegalStateException("Invalid type: " + wsFrame.type());
+//        }
+//      } else if (msg instanceof HttpContent) {
+//        if (wsRequest != null) {
+//          wsRequest.content().writeBytes(((HttpContent) msg).content());
+//          if (msg instanceof LastHttpContent) {
+//            FullHttpRequest req = wsRequest;
+//            wsRequest = null;
+//            handshake(req, ch, ctx);
+//            return;
+//          }
+//        }
+//        if (conn != null) {
+//          conn.handleMessage(msg);
+//        }
+//      } else {
+//        throw new IllegalStateException("Invalid message " + msg);
+//      }
     }
 
     private String getWebSocketLocation(ChannelPipeline pipeline, FullHttpRequest req) throws Exception {
