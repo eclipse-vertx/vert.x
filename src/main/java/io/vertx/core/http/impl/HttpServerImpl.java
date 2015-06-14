@@ -24,7 +24,6 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -562,6 +561,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       Channel ch = ctx.channel();
+
+// FIXME - the instanceof checks and casts here have a significant effect on performance
 
 //      if (msg instanceof HttpRequest) {
 //        final HttpRequest request = (HttpRequest) msg;
