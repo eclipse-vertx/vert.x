@@ -530,10 +530,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private void handleHttp(ServerConnection conn, Channel ch, Object msg) {
       //HTTP request
       if (conn == null) {
-        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-        if (reqHandler != null) {
-          createConnAndHandle(reqHandler, ch, (HttpRequest)msg, null);
-        }
+        createConnAndHandle(ch, msg, null);
       } else {
         conn.handleMessage(msg);
       }
@@ -556,16 +553,20 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       return loc;
     }
 
-    private void createConnAndHandle(HandlerHolder<HttpServerRequest> reqHandler, Channel ch, HttpRequest request,
+    private void createConnAndHandle(Channel ch, Object msg,
                                      WebSocketServerHandshaker shake) {
-      ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin,
-                                                   shake, metrics, handle100Continue);
-      conn.requestHandler(reqHandler.handler);
-      connectionMap.put(ch, conn);
-      reqHandler.context.executeFromIO(() -> {
-        conn.setMetric(metrics.connected(conn.remoteAddress()));
-        conn.handleMessage(request);
-      });
+      HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+      if (reqHandler != null) {
+        ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin,
+          shake, metrics, handle100Continue);
+        HttpRequest request = (HttpRequest) msg;
+        conn.requestHandler(reqHandler.handler);
+        connectionMap.put(ch, conn);
+        reqHandler.context.executeFromIO(() -> {
+          conn.setMetric(metrics.connected(conn.remoteAddress()));
+          conn.handleMessage(request);
+        });
+      }
     }
 
     private void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
@@ -597,10 +598,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
 
       if (wsHandler == null) {
-        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-        if (reqHandler != null) {
-          createConnAndHandle(reqHandler, ch, request, shake);
-        }
+        createConnAndHandle(ch, request, shake);
       } else {
 
         wsHandler.context.executeFromIO(() -> {
