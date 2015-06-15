@@ -58,7 +58,9 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
@@ -122,6 +124,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   @Override
   public HttpServer websocketHandler(Handler<ServerWebSocket> handler) {
     websocketStream().handler(handler);
+    expectingWebsockets = true;
     return this;
   }
 
@@ -359,6 +362,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     connectionMap.remove(channel);
   }
 
+  void expectWebsockets() {
+    expectingWebsockets = true;
+  }
+
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
@@ -460,25 +467,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       Channel ch = ctx.channel();
 
       if (msg instanceof HttpRequest) {
-        final HttpRequest request = (HttpRequest) msg;
+        HttpRequest request = (HttpRequest) msg;
 
         if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
 
         if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
-          // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
-          // it doesn't send a normal 'Connection: Upgrade' header. Instead it
-          // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
-          String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
-          if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
-            sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
-            return;
-          }
-
-          if (request.getMethod() != HttpMethod.GET) {
-            sendError(null, METHOD_NOT_ALLOWED, ch);
-            return;
-          }
-
           if (wsRequest == null) {
             if (request instanceof FullHttpRequest) {
               handshake((FullHttpRequest) request, ch, ctx);
@@ -576,6 +569,20 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
 
     private void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
+
+      // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
+      // it doesn't send a normal 'Connection: Upgrade' header. Instead it
+      // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+      String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+      if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
+        sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
+        return;
+      }
+
+      if (request.getMethod() != HttpMethod.GET) {
+        sendError(null, METHOD_NOT_ALLOWED, ch);
+        return;
+      }
 
       WebSocketServerHandshakerFactory factory =
           new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
