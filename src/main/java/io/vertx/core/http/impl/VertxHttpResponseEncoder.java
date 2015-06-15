@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
 import java.util.List;
 
@@ -37,7 +36,7 @@ final class VertxHttpResponseEncoder extends HttpResponseEncoder {
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    this.context = PartialPooledByteBufAllocator.forceDirectAllocator(ctx);
+    this.context = ctx;
     super.handlerAdded(ctx);
   }
 }

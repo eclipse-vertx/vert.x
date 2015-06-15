@@ -16,6 +16,7 @@
 package io.vertx.core.dns.impl;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -45,7 +46,6 @@ import io.vertx.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import io.vertx.core.dns.impl.netty.decoder.record.ServiceRecord;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -82,7 +82,7 @@ public final class DnsClientImpl implements DnsClient {
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.eventLoop());
     bootstrap.channel(NioDatagramChannel.class);
-    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
       @Override
       protected void initChannel(DatagramChannel ch) throws Exception {

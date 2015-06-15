@@ -17,6 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -343,7 +344,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     if (options.getTrafficClass() != -1) {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
-    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    if (options.isUsePooledBuffers()) {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+    }
 
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());

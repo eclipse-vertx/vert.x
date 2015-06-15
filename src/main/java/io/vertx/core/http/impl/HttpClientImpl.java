@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
@@ -618,7 +619,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
     }
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    if (options.isUsePooledBuffers()) {
+      bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+    }
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
   }
