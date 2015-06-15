@@ -75,7 +75,7 @@ public abstract class ContextImpl implements Context {
   public static void setContext(ContextImpl context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-      setContext((VertxThread)current, context);
+      setContext((VertxThread) current, context);
     } else {
       throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
     }
@@ -311,7 +311,7 @@ public abstract class ContextImpl implements Context {
       if (THREAD_CHECKS && checkThread) {
         executeStart();
       }
-      VertxThread current = (VertxThread)Thread.currentThread();
+      VertxThread current = getCurrentThread();
       try {
         setContext(current, ContextImpl.this);
         if (cTask != null) {
@@ -328,6 +328,10 @@ public abstract class ContextImpl implements Context {
         }
       }
     };
+  }
+
+  private VertxThread getCurrentThread() {
+    return (VertxThread)Thread.currentThread();
   }
 
   private void setTCCL() {
