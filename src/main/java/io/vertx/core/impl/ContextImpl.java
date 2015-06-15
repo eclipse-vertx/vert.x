@@ -207,7 +207,9 @@ public abstract class ContextImpl implements Context {
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
   public void executeFromIO(ContextTask task) {
-    checkCorrectThread();
+    if (THREAD_CHECKS) {
+      checkCorrectThread();
+    }
     wrapTask(task, null, true).run();
   }
 
