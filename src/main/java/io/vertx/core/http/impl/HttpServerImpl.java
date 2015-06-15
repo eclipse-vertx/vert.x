@@ -382,7 +382,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
     if (options.isUsePooledBuffers()) {
-      ByteBufAllocator allocator = PooledByteBufAllocator.DEFAULT;
+      //ByteBufAllocator allocator = PooledByteBufAllocator.DEFAULT;
+      ByteBufAllocator allocator = new PooledByteBufAllocator(40, 40, 8192, 11);
       System.out.println("Using pooled buffers: " + allocator + " direct preferred? " + PlatformDependent.directBufferPreferred());
       bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
     } else {

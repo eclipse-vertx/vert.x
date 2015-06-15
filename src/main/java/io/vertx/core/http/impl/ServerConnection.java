@@ -383,6 +383,7 @@ class ServerConnection extends ConnectionBase {
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
     }
+    //FIXME - can speed things up a bit by removing following section
     if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
