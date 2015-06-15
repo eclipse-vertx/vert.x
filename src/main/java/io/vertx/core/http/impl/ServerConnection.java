@@ -17,14 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FileRegion;
-import io.netty.handler.codec.DecoderResult;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -45,11 +38,11 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -375,11 +368,11 @@ class ServerConnection extends ConnectionBase {
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
-      DecoderResult result = request.getDecoderResult();
-      if (result.isFailure()) {
-        channel.pipeline().fireExceptionCaught(result.cause());
-        return;
-      }
+//      DecoderResult result = request.getDecoderResult();
+//      if (result.isFailure()) {
+//        channel.pipeline().fireExceptionCaught(result.cause());
+//        return;
+//      }
       if (handle100Continue) {
         if (HttpHeaders.is100ContinueExpected(request)) {
           channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
@@ -389,26 +382,26 @@ class ServerConnection extends ConnectionBase {
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
     }
-    if (msg instanceof HttpContent) {
-        HttpContent chunk = (HttpContent) msg;
-      if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
-      }
-
-      //TODO chunk trailers
-      if (msg instanceof LastHttpContent) {
-        if (!paused) {
-          handleEnd();
-        } else {
-          // Requeue
-          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
-        }
-      }
-    } else if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      handleWsFrame(frame);
-    }
+//    if (msg instanceof HttpContent) {
+//        HttpContent chunk = (HttpContent) msg;
+//      if (chunk.content().isReadable()) {
+//        Buffer buff = Buffer.buffer(chunk.content());
+//        handleChunk(buff);
+//      }
+//
+//      //TODO chunk trailers
+//      if (msg instanceof LastHttpContent) {
+//        if (!paused) {
+//          handleEnd();
+//        } else {
+//          // Requeue
+//          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+//        }
+//      }
+//    } else if (msg instanceof WebSocketFrameInternal) {
+//      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+//      handleWsFrame(frame);
+//    }
 
     checkNextTick();
   }
