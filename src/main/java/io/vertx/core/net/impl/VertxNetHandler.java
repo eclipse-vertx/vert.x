@@ -31,8 +31,21 @@ import java.util.Map;
  */
 public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
+  private final Map<Channel, NetSocketImpl> connectionMap;
+
   public VertxNetHandler(VertxInternal vertx, Map<Channel, NetSocketImpl> connectionMap) {
-    super(vertx, connectionMap);
+    super(vertx);
+    this.connectionMap = connectionMap;
+  }
+
+  @Override
+  protected NetSocketImpl getConnection(Channel channel) {
+    return connectionMap.get(channel);
+  }
+
+  @Override
+  protected NetSocketImpl removeConnection(Channel channel) {
+    return connectionMap.remove(channel);
   }
 
   @Override

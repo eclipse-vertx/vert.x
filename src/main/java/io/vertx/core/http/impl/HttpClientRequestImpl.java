@@ -414,7 +414,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
             if (!resumed) {
               resumed = true;
               ContextImpl ctx = vertx.getContext();
-              System.out.println("in netSocket() ctx is " + ctx);
               ctx.runOnContext((v) -> socket.resume()); // resume the socket now as the user had the chance to register a dataHandler
             }
             return socket;
