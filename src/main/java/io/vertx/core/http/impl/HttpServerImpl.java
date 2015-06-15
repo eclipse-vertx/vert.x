@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -58,9 +59,7 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
@@ -380,7 +379,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (options.getTrafficClass() != -1) {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
-    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    if (options.isUsePooledBuffers()) {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+    }
 
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
