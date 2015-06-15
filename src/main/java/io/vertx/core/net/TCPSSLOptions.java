@@ -50,9 +50,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final int DEFAULT_SO_LINGER = SocketDefaults.instance.getSoLinger();
 
   /**
-   * The default value of Netty use pooled buffers = false
+   * The default value of Netty use pooled buffers = true
    */
-  public static final boolean DEFAULT_USE_POOLED_BUFFERS = false;
+  public static final boolean DEFAULT_USE_POOLED_BUFFERS = true;
 
   /**
    * SSL enable by default = false
