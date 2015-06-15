@@ -16,10 +16,14 @@
 
 package io.vertx.core.impl;
 
+import io.netty.util.concurrent.FastThreadLocalThread;
+
 /**
+ * We extend FastThreadLocalThread as then Netty can do fast thread local lookups
+ *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class VertxThread extends Thread {
+final class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
   private long execStart;
