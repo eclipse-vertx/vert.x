@@ -202,7 +202,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, false));
               }
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
-              pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
+              pipeline.addLast("httpEncoder", new HttpResponseEncoder());
               if (options.isCompressionSupported()) {
                 pipeline.addLast("deflater", new HttpChunkContentCompressor());
               }
