@@ -130,18 +130,18 @@ class ServerConnection extends ConnectionBase {
   }
 
   synchronized void handleMessage(Object msg) {
-//    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
-//      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-//      pending.add(msg);
-//      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-//        //We pause the channel too, to prevent the queue growing too large, but we don't do this
-//        //until the queue reaches a certain size, to avoid pausing it too often
-//        super.doPause();
-//        channelPaused = true;
-//      }
-//    } else {
+    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
+      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+      pending.add(msg);
+      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+        //We pause the channel too, to prevent the queue growing too large, but we don't do this
+        //until the queue reaches a certain size, to avoid pausing it too often
+        super.doPause();
+        channelPaused = true;
+      }
+    } else {
       processMessage(msg);
-   // }
+    }
   }
 
   synchronized void responseComplete() {
@@ -410,7 +410,7 @@ class ServerConnection extends ConnectionBase {
       handleWsFrame(frame);
     }
 
-    //checkNextTick();
+    checkNextTick();
   }
 
   private void checkNextTick() {
