@@ -83,6 +83,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final String subProtocols;
   private String serverOrigin;
 
+  private boolean expectingWebsockets = false;
+  private boolean handle100Continue = false;
+
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
   private ChannelFuture bindFuture;
@@ -445,15 +448,21 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       Channel ch = ctx.channel();
+      if (expectingWebsockets) {
+         handleExpectWebsockets(conn, ctx, msg);
+      } else {
+        // Separate out into a separate method where we involve instanceof checks and checks for websocket handshake headers
+        handleHttp(conn, ch, msg);
+      }
+    }
+
+    private void handleExpectWebsockets(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+      Channel ch = ctx.channel();
 
       if (msg instanceof HttpRequest) {
         final HttpRequest request = (HttpRequest) msg;
 
         if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
-
-        if (HttpHeaders.is100ContinueExpected(request)) {
-          ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
-        }
 
         if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
           // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
@@ -479,15 +488,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             }
           }
         } else {
-          //HTTP request
-          if (conn == null) {
-            HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-            if (reqHandler != null) {
-              createConnAndHandle(reqHandler, ch, (HttpRequest)msg, null);
-            }
-          } else {
-            conn.handleMessage(msg);
-          }
+          handleHttp(conn, ch, msg);
         }
       } else if (msg instanceof WebSocketFrameInternal) {
         //Websocket frame
@@ -533,6 +534,18 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
+    private void handleHttp(ServerConnection conn, Channel ch, Object msg) {
+      //HTTP request
+      if (conn == null) {
+        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+        if (reqHandler != null) {
+          createConnAndHandle(reqHandler, ch, (HttpRequest)msg, null);
+        }
+      } else {
+        conn.handleMessage(msg);
+      }
+    }
+
     private String getWebSocketLocation(ChannelPipeline pipeline, FullHttpRequest req) throws Exception {
       String prefix;
       if (pipeline.get(SslHandler.class) == null) {
@@ -552,7 +565,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     private void createConnAndHandle(HandlerHolder<HttpServerRequest> reqHandler, Channel ch, HttpRequest request,
                                      WebSocketServerHandshaker shake) {
-      ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
+      ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin,
+                                                   shake, metrics, handle100Continue);
       conn.requestHandler(reqHandler.handler);
       connectionMap.put(ch, conn);
       reqHandler.context.executeFromIO(() -> {
@@ -591,7 +605,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           }
 
           ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-            serverOrigin, shake, metrics);
+            serverOrigin, shake, metrics, handle100Continue);
           wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
           wsConn.wsHandler(wsHandler.handler);
 

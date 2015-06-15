@@ -58,6 +58,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
 /**
  *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -92,14 +95,16 @@ class ServerConnection extends ConnectionBase {
   private long bytesRead;
   private long bytesWritten;
   private Object metric;
+  private boolean handle100Continue = false;
 
   ServerConnection(VertxInternal vertx, HttpServerImpl server, Channel channel, ContextImpl context, String serverOrigin,
-                   WebSocketServerHandshaker handshaker, HttpServerMetrics metrics) {
+                   WebSocketServerHandshaker handshaker, HttpServerMetrics metrics, boolean handle100Continue) {
     super(vertx, channel, context, metrics);
     this.serverOrigin = serverOrigin;
     this.server = server;
     this.handshaker = handshaker;
     this.metrics = metrics;
+    this.handle100Continue = handle100Continue;
   }
 
   @Override
@@ -373,6 +378,11 @@ class ServerConnection extends ConnectionBase {
       if (result.isFailure()) {
         channel.pipeline().fireExceptionCaught(result.cause());
         return;
+      }
+      if (handle100Continue) {
+        if (HttpHeaders.is100ContinueExpected(request)) {
+          channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+        }
       }
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
