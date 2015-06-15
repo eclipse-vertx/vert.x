@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -368,11 +369,11 @@ class ServerConnection extends ConnectionBase {
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
-//      DecoderResult result = request.getDecoderResult();
-//      if (result.isFailure()) {
-//        channel.pipeline().fireExceptionCaught(result.cause());
-//        return;
-//      }
+      DecoderResult result = request.getDecoderResult();
+      if (result.isFailure()) {
+        channel.pipeline().fireExceptionCaught(result.cause());
+        return;
+      }
       if (handle100Continue) {
         if (HttpHeaders.is100ContinueExpected(request)) {
           channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
@@ -382,26 +383,26 @@ class ServerConnection extends ConnectionBase {
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
     }
-//    if (msg instanceof HttpContent) {
-//        HttpContent chunk = (HttpContent) msg;
-//      if (chunk.content().isReadable()) {
-//        Buffer buff = Buffer.buffer(chunk.content());
-//        handleChunk(buff);
-//      }
-//
-//      //TODO chunk trailers
-//      if (msg instanceof LastHttpContent) {
-//        if (!paused) {
-//          handleEnd();
-//        } else {
-//          // Requeue
-//          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
-//        }
-//      }
-//    } else if (msg instanceof WebSocketFrameInternal) {
-//      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-//      handleWsFrame(frame);
-//    }
+    if (msg instanceof HttpContent) {
+        HttpContent chunk = (HttpContent) msg;
+      if (chunk.content().isReadable()) {
+        Buffer buff = Buffer.buffer(chunk.content());
+        handleChunk(buff);
+      }
+
+      //TODO chunk trailers
+      if (msg instanceof LastHttpContent) {
+        if (!paused) {
+          handleEnd();
+        } else {
+          // Requeue
+          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+        }
+      }
+    } else if (msg instanceof WebSocketFrameInternal) {
+      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      handleWsFrame(frame);
+    }
 
     checkNextTick();
   }
