@@ -52,9 +52,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * The default value of Netty use pooled buffers = false
    */
-  // FIXME - should be false!!
-  public static final boolean DEFAULT_USE_POOLED_BUFFERS = true;
-  // FIXME
+  public static final boolean DEFAULT_USE_POOLED_BUFFERS = false;
 
   /**
    * SSL enable by default = false
