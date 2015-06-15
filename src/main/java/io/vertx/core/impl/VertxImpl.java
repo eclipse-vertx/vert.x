@@ -108,7 +108,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final ExecutorService internalBlockingPool;
   private final OrderedExecutorFactory workerOrderedFact;
   private final OrderedExecutorFactory internalOrderedFact;
-  private final EventLoopGroup eventLoopGroup;
+  private final NioEventLoopGroup eventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
   private EventBusImpl eventBus;
@@ -128,6 +128,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
                                            new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
+    // FIXME!!!!
+    eventLoopGroup.setIoRatio(100);
+    // FIXME!!!
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
