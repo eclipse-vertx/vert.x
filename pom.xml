@@ -132,25 +132,25 @@
   <build>
     <pluginManagement>
       <plugins>
-        <!--<plugin>-->
-          <!--<groupId>org.apache.maven.plugins</groupId>-->
-          <!--<artifactId>maven-compiler-plugin</artifactId>-->
-          <!--<executions>-->
-            <!--<execution>-->
-              <!--<id>default-compile</id>-->
-              <!--<configuration>-->
-                <!--<annotationProcessors>-->
-                  <!--<annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>-->
-                  <!--<annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>-->
-                <!--</annotationProcessors>-->
-                <!--<compilerArgs>-->
-                  <!--<arg>-Adocgen.output=${asciidoc.dir}/java</arg>-->
-                  <!--<arg>-AoutputDirectory=${project.basedir}/src/main</arg>-->
-                <!--</compilerArgs>-->
-              <!--</configuration>-->
-            <!--</execution>-->
-          <!--</executions>-->
-        <!--</plugin>-->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-compile</id>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+                <compilerArgs>
+                  <arg>-Adocgen.output=${asciidoc.dir}/java</arg>
+                  <arg>-AoutputDirectory=${project.basedir}/src/main</arg>
+                </compilerArgs>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -177,33 +177,33 @@
             <reuseForks>true</reuseForks>
           </configuration>
         </plugin>
-        <!--<plugin>-->
-          <!--<groupId>org.asciidoctor</groupId>-->
-          <!--<artifactId>asciidoctor-maven-plugin</artifactId>-->
-          <!--<version>1.5.2</version>-->
-          <!--<configuration>-->
-            <!--<sourceDirectory>${asciidoc.dir}</sourceDirectory>-->
-            <!--<outputDirectory>${project.build.directory}/docs/vertx-core</outputDirectory>-->
-            <!--<preserveDirectories>true</preserveDirectories>-->
-            <!--<relativeBaseDir>true</relativeBaseDir>-->
-            <!--<backend>html</backend>-->
-            <!--<doctype>book</doctype>-->
-          <!--</configuration>-->
-          <!--<executions>-->
-            <!--<execution>-->
-              <!--<goals>-->
-                <!--<goal>process-asciidoc</goal>-->
-              <!--</goals>-->
-              <!--<phase>package</phase>-->
-            <!--</execution>-->
-          <!--</executions>-->
-        <!--</plugin>-->
-        <!--<plugin>-->
-          <!--<artifactId>maven-javadoc-plugin</artifactId>-->
-          <!--<configuration>-->
-            <!--<reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>-->
-          <!--</configuration>-->
-        <!--</plugin>-->
+        <plugin>
+          <groupId>org.asciidoctor</groupId>
+          <artifactId>asciidoctor-maven-plugin</artifactId>
+          <version>1.5.2</version>
+          <configuration>
+            <sourceDirectory>${asciidoc.dir}</sourceDirectory>
+            <outputDirectory>${project.build.directory}/docs/vertx-core</outputDirectory>
+            <preserveDirectories>true</preserveDirectories>
+            <relativeBaseDir>true</relativeBaseDir>
+            <backend>html</backend>
+            <doctype>book</doctype>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>process-asciidoc</goal>
+              </goals>
+              <phase>package</phase>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
+          </configuration>
+        </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <executions>
@@ -219,67 +219,67 @@
             </execution>
           </executions>
         </plugin>
-        <!--<plugin>-->
-          <!--<groupId>org.apache.maven.plugins</groupId>-->
-          <!--<artifactId>maven-source-plugin</artifactId>-->
-          <!--<executions>-->
-            <!--<execution>-->
-              <!--<id>attach-sources</id>-->
-              <!--<configuration>-->
-                <!--<excludes>-->
-                  <!--<exclude>docoverride/**</exclude>-->
-                <!--</excludes>-->
-              <!--</configuration>-->
-            <!--</execution>-->
-          <!--</executions>-->
-        <!--</plugin>-->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <configuration>
+                <excludes>
+                  <exclude>docoverride/**</exclude>
+                </excludes>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
 
 
       <!-- Transform the Asciidoctor to html -->
-      <!--<plugin>-->
-        <!--<groupId>org.asciidoctor</groupId>-->
-        <!--<artifactId>asciidoctor-maven-plugin</artifactId>-->
-        <!--<executions>-->
-          <!--<execution>-->
-            <!--<goals>-->
-              <!--<goal>process-asciidoc</goal>-->
-            <!--</goals>-->
-            <!--<phase>package</phase>-->
-          <!--</execution>-->
-        <!--</executions>-->
-      <!--</plugin>-->
-      <!--<plugin>-->
-        <!--<artifactId>maven-javadoc-plugin</artifactId>-->
-        <!--<executions>-->
-          <!--<execution>-->
-            <!--<phase>package</phase>-->
-            <!--<goals>-->
-              <!--<goal>javadoc</goal>-->
-            <!--</goals>-->
-          <!--</execution>-->
-        <!--</executions>-->
-      <!--</plugin>-->
-      <!--<plugin>-->
-        <!--<artifactId>maven-assembly-plugin</artifactId>-->
-        <!--<executions>-->
-          <!--<execution>-->
-            <!--<id>assemble-docs</id>-->
-            <!--<phase>package</phase>-->
-            <!--<goals>-->
-              <!--<goal>single</goal>-->
-            <!--</goals>-->
-            <!--<configuration>-->
-              <!--<attach>true</attach>-->
-              <!--<descriptors>-->
-                <!--<descriptor>src/main/assembly/docs.xml</descriptor>-->
-              <!--</descriptors>-->
-            <!--</configuration>-->
-          <!--</execution>-->
-        <!--</executions>-->
-      <!--</plugin>-->
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>javadoc</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>assemble-docs</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <attach>true</attach>
+              <descriptors>
+                <descriptor>src/main/assembly/docs.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <executions>

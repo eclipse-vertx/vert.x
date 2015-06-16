@@ -1,0 +1,18 @@
+== MetricsOptions
+
+++++
+ Vert.x metrics base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[enabled]]`enabled`
+|`Boolean`
+|+++
+Set whether metrics will be enabled on the Vert.x instance.+++
+|===

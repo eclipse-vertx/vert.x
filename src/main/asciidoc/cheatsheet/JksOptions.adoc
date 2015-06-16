@@ -1,0 +1,40 @@
+== JksOptions
+
+++++
+ Key or trust store options configuring private key and/or certificates based on Java Keystore files.
+ <p>
+ When used as a key store, it should point to a store containing a private key and its certificate.
+ When used as a trust store, it should point to a store containing a list of trusted certificates.
+ <p>
+ The store can either be loaded by Vert.x from the filesystem:
+ <p>
+ <pre>
+ HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ options.setKeyStore(JKSOptions.options().setPath("/mykeystore.jks").setPassword("foo"));
+ </pre>
+
+ Or directly provided as a buffer:
+ <p>
+
+ <pre>
+ Buffer store = vertx.fileSystem().readFileSync("/mykeystore.jks");
+ options.setKeyStore(JKSOptions.options().setValue(store).setPassword("foo"));
+ </pre>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[password]]`password`
+|`String`
+|+++
+Set the password for the key store+++
+
+|[[path]]`path`
+|`String`
+|+++
+Set the path to the key store+++
+|===

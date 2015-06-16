@@ -1,0 +1,796 @@
+== Writing TCP servers and clients
+
+Vert.x allows you to easily write non blocking TCP clients and servers.
+
+=== Creating a TCP server
+
+The simplest way to create a TCP server, using all default options is as follows:
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+----
+
+=== Configuring a TCP server
+
+If you don't want the default, a server can be configured by passing in a `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`
+instance when creating it:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setPort(4321);
+NetServer server = vertx.createNetServer(options);
+----
+
+=== Start the Server Listening
+
+To tell the server to listen for incoming requests you use one of the `link:../../apidocs/io/vertx/core/net/NetServer.html#listen--[listen]`
+alternatives.
+
+To tell the server to listen at the host and port as specified in the options:
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen();
+----
+
+Or to specify the host and port in the call to listen, ignoring what is configured in the options:
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen(1234, "localhost");
+----
+
+The default host is `0.0.0.0` which means 'listen on all available addresses' and the default port is `0`, which is a
+special value that instructs the server to find a random unused local port and use that.
+
+The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to
+listen has returned.
+
+If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
+For example:
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen(1234, "localhost", res -> {
+  if (res.succeeded()) {
+    System.out.println("Server is now listening!");
+  } else {
+    System.out.println("Failed to bind!");
+  }
+});
+----
+
+=== Listening on a random port
+
+If `0` is used as the listening port, the server will find an unused random port to listen on.
+
+To find out the real port the server is listening on you can call `link:../../apidocs/io/vertx/core/net/NetServer.html#actualPort--[actualPort]`.
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.listen(0, "localhost", res -> {
+  if (res.succeeded()) {
+    System.out.println("Server is now listening on actual port: " + server.actualPort());
+  } else {
+    System.out.println("Failed to bind!");
+  }
+});
+----
+
+=== Getting notified of incoming connections
+
+To be notified when a connection is made you need to set a `link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]`:
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.connectHandler(socket -> {
+  // Handle the connection in here
+});
+----
+
+When a connection is made the handler will be called with an instance of `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`.
+
+This is a socket-like interface to the actual connection, and allows you to read and write data as well as do various
+other things like close the socket.
+
+=== Reading data from the socket
+
+To read data from the socket you set the `link:../../apidocs/io/vertx/core/net/NetSocket.html#handler-io.vertx.core.Handler-[handler]` on the
+socket.
+
+This handler will be called with an instance of `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]` every time data is received on
+the socket.
+
+[source,java]
+----
+NetServer server = vertx.createNetServer();
+server.connectHandler(socket -> {
+  socket.handler(buffer -> {
+    System.out.println("I received some bytes: " + buffer.length());
+  });
+});
+----
+
+=== Writing data to a socket
+
+You write to a socket using one of `link:../../apidocs/io/vertx/core/net/NetSocket.html#write-io.vertx.core.buffer.Buffer-[write]`.
+
+[source,java]
+----
+Buffer buffer = Buffer.buffer().appendFloat(12.34f).appendInt(123);
+socket.write(buffer);
+
+// Write a string in UTF-8 encoding
+socket.write("some data");
+
+// Write a string using the specified encoding
+socket.write("some data", "UTF-16");
+----
+
+Write operations are asynchronous and may not occur until some time after the call to write has returned.
+
+=== Closed handler
+
+If you want to be notified when a socket is closed, you can set a `link:../../apidocs/io/vertx/core/net/NetSocket.html#closeHandler-io.vertx.core.Handler-[closeHandler]`
+on it:
+
+[source,java]
+----
+socket.closeHandler(v -> {
+  System.out.println("The socket has been closed");
+});
+----
+
+=== Handling exceptions
+
+You can set an `link:../../apidocs/io/vertx/core/net/NetSocket.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]` to receive any
+exceptions that happen on the socket.
+
+=== Event bus write handler
+
+Every socket automatically registers a handler on the event bus, and when any buffers are received in this handler,
+it writes them to itself.
+
+This enables you to write data to a socket which is potentially in a completely different verticle or even in a
+different Vert.x instance by sending the buffer to the address of that handler.
+
+The address of the handler is given by `link:../../apidocs/io/vertx/core/net/NetSocket.html#writeHandlerID--[writeHandlerID]`
+
+=== Local and remote addresses
+
+The local address of a `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` can be retrieved using `link:../../apidocs/io/vertx/core/net/NetSocket.html#localAddress--[localAddress]`.
+
+The remote address, (i.e. the address of the other end of the connection) of a `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]`
+can be retrieved using `link:../../apidocs/io/vertx/core/net/NetSocket.html#remoteAddress--[remoteAddress]`.
+
+=== Sending files
+
+Files can be written to the socket directly using `link:../../apidocs/io/vertx/core/net/NetSocket.html#sendFile-java.lang.String-[sendFile]`. This can be a very
+efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
+
+[source,java]
+----
+socket.sendFile("myfile.dat");
+----
+
+=== Streaming sockets
+
+Instances of `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` are also `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]` and
+`link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instances so they can be used to pump data to or from other
+read and write streams.
+
+See the chapter on <<streams, streams and pumps>> for more information.
+
+=== Upgrading connections to SSL/TLS
+
+A non SSL/TLS connection can be upgraded to SSL/TLS using `link:../../apidocs/io/vertx/core/net/NetSocket.html#upgradeToSsl-io.vertx.core.Handler-[upgradeToSsl]`.
+
+The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
+for more information.
+
+=== Closing a TCP Server
+
+Call `link:../../apidocs/io/vertx/core/net/NetServer.html#close--[close]` to close the server. Closing the server closes any open connections
+and releases all server resources.
+
+The close is actually asynchronous and might not complete until some time after the call has returned.
+If you want to be notified when the actual close has completed then you can pass in a handler.
+
+This handler will then be called when the close has fully completed.
+
+[source,java]
+----
+server.close(res -> {
+  if (res.succeeded()) {
+    System.out.println("Server is now closed");
+  } else {
+    System.out.println("close failed");
+  }
+});
+----
+
+=== Automatic clean-up in verticles
+
+If you're creating TCP servers and clients from inside verticles, those servers and clients will be automatically closed
+when the verticle is undeployed.
+
+=== Scaling - sharing TCP servers
+
+The handlers of any TCP server are always executed on the same event loop thread.
+
+This means that if you are running on a server with a lot of cores, and you only have this one instance
+deployed then you will have at most one core utilised on your server.
+
+In order to utilise more cores of your server you will need to deploy more instances of the server.
+
+You can instantiate more instances programmatically in your code:
+
+[source,java]
+----
+for (int i = 0; i < 10; i++) {
+  NetServer server = vertx.createNetServer();
+  server.connectHandler(socket -> {
+    socket.handler(buffer -> {
+      // Just echo back the data
+      socket.write(buffer);
+    });
+  });
+  server.listen(1234, "localhost");
+}
+----
+
+or, if you are using verticles you can simply deploy more instances of your server verticle by using the `-instances` option
+on the command line:
+
+ vertx run com.mycompany.MyVerticle -instances 10
+
+or when programmatically deploying your verticle
+
+[source,java]
+----
+DeploymentOptions options = new DeploymentOptions().setInstances(10);
+vertx.deployVerticle("com.mycompany.MyVerticle", options);
+----
+
+Once you do this you will find the echo server works functionally identically to before, but all your cores on your
+server can be utilised and more work can be handled.
+
+At this point you might be asking yourself *'How can you have more than one server listening on the
+same host and port? Surely you will get port conflicts as soon as you try and deploy more than one instance?'*
+
+_Vert.x does a little magic here.*_
+
+When you deploy another server on the same host and port as an existing server it doesn't actually try and create a
+new server listening on the same host/port.
+
+Instead it internally maintains just a single server, and, as incoming connections arrive it distributes
+them in a round-robin fashion to any of the connect handlers.
+
+Consequently Vert.x TCP servers can scale over available cores while each instance remains single threaded.
+
+=== Creating a TCP client
+
+The simplest way to create a TCP client, using all default options is as follows:
+
+[source,java]
+----
+NetClient client = vertx.createNetClient();
+----
+
+=== Configuring a TCP client
+
+If you don't want the default, a client can be configured by passing in a `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]`
+instance when creating it:
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
+NetClient client = vertx.createNetClient(options);
+----
+
+=== Making connections
+
+To make a connection to a server you use `link:../../apidocs/io/vertx/core/net/NetClient.html#connect-int-java.lang.String-io.vertx.core.Handler-[connect]`,
+specifying the port and host of the server and a handler that will be called with a result containing the
+`link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` when connection is successful or with a failure if connection failed.
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
+NetClient client = vertx.createNetClient(options);
+client.connect(4321, "localhost", res -> {
+  if (res.succeeded()) {
+    System.out.println("Connected!");
+    NetSocket socket = res.result();
+  } else {
+    System.out.println("Failed to connect: " + res.cause().getMessage());
+  }
+});
+----
+
+=== Configuring connection attempts
+
+A client can be configured to automatically retry connecting to the server in the event that it cannot connect.
+This is configured with `link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectInterval-long-[setReconnectInterval]` and
+`link:../../apidocs/io/vertx/core/net/NetClientOptions.html#setReconnectAttempts-int-[setReconnectAttempts]`.
+
+NOTE: Currently Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
+only apply to creating initial connections.
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions();
+options.setReconnectAttempts(10).setReconnectInterval(500);
+
+NetClient client = vertx.createNetClient(options);
+----
+
+By default, multiple connection attempts are disabled.
+
+[[ssl]]
+=== Configuring servers and clients to work with SSL/TLS
+
+TCP clients and servers can be configured to use http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security]
+- earlier versions of TLS were known as SSL.
+
+The APIs of the servers and clients are identical whether or not SSL/TLS is used, and it's enabled by configuring
+the `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` or `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` instances used
+to create the servers or clients.
+
+==== Enabling SSL/TLS on the server
+
+SSL/TLS is enabled with  `link:../../apidocs/io/vertx/core/net/NetServerOptions.html#setSsl-boolean-[ssl]`.
+
+By default it is disabled.
+
+==== Specifying key/certificate for the server
+
+SSL/TLS servers usually provide certificates to clients in order verify their identity to clients.
+
+Certificates/keys can be configured for servers in several ways:
+
+The first method is by specifying the location of a Java key-store which contains the certificate and private key.
+
+Java key stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+utility which ships with the JDK.
+
+The password for the key store should also be provided:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setKeyStoreOptions(
+    new JksOptions().
+        setPath("/path/to/your/server-keystore.jks").
+        setPassword("password-of-your-keystore")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+Alternatively you can read the key store yourself as a buffer and provide that directly:
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.jks");
+JksOptions jksOptions = new JksOptions().
+    setValue(myKeyStoreAsABuffer).
+    setPassword("password-of-your-keystore");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setKeyStoreOptions(jksOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS key stores:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setPfxKeyCertOptions(
+    new PfxOptions().
+        setPath("/path/to/your/server-keystore.pfx").
+        setPassword("password-of-your-keystore")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.pfx");
+PfxOptions pfxOptions = new PfxOptions().
+    setValue(myKeyStoreAsABuffer).
+    setPassword("password-of-your-keystore");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setPfxKeyCertOptions(pfxOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+Another way of providing server private key and certificate separately using `.pem` files.
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().setSsl(true).setPemKeyCertOptions(
+    new PemKeyCertOptions().
+        setKeyPath("/path/to/your/server-key.pem").
+        setCertPath("/path/to/your/server-cert.pem")
+);
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myKeyAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-key.pem");
+Buffer myCertAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-cert.pem");
+PemKeyCertOptions pemOptions = new PemKeyCertOptions().
+    setKeyValue(myKeyAsABuffer).
+    setCertValue(myCertAsABuffer);
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setPemKeyCertOptions(pemOptions);
+NetServer server = vertx.createNetServer(options);
+----
+
+Keep in mind that pem configuration, the private key is not crypted.
+
+==== Specifying trust for the server
+
+SSL/TLS servers can use a certificate authority in order to verify the identity of the clients.
+
+Certificate authorities can be configured for servers in several ways:
+
+Java trust stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+utility which ships with the JDK.
+
+The password for the trust store should also be provided:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setTrustStoreOptions(
+        new JksOptions().
+            setPath("/path/to/your/truststore.jks").
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Alternatively you can read the trust store yourself as a buffer and provide that directly:
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setTrustStoreOptions(
+        new JksOptions().
+            setValue(myTrustStoreAsABuffer).
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS trust stores:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPfxTrustOptions(
+        new PfxOptions().
+            setPath("/path/to/your/truststore.pfx").
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPfxTrustOptions(
+        new PfxOptions().
+            setValue(myTrustStoreAsABuffer).
+            setPassword("password-of-your-truststore")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Another way of providing server certificate authority using a list `.pem` files.
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPemTrustOptions(
+        new PemTrustOptions().
+            addCertPath("/path/to/your/server-ca.pem")
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myCaAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-ca.pfx");
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setClientAuthRequired(true).
+    setPemTrustOptions(
+        new PemTrustOptions().
+            addCertValue(myCaAsABuffer)
+    );
+NetServer server = vertx.createNetServer(options);
+----
+
+==== Enabling SSL/TLS on the client
+
+Net Clients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
+
+To enable SSL on a NetClient the function setSSL(true) is called.
+
+==== Client trust configuration
+
+If the `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustALl]` is set to true on the client, then the client will
+trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't
+be sure who you are connecting to. Use this with caution. Default value is false.
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setTrustAll(true);
+NetClient client = vertx.createNetClient(options);
+----
+
+If `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustAll]` is not set then a client trust store must be
+configured and should contain the certificates of the servers that the client trusts.
+
+Likewise server configuration, the client trust can be configured in several ways:
+
+The first method is by specifying the location of a Java trust-store which contains the certificate authority.
+
+It is just a standard Java key store, the same as the key stores on the server side. The client
+trust store location is set by using the function `link:../../apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]` on the
+`link:../../apidocs/io/vertx/core/net/JksOptions.html[jks options]`. If a server presents a certificate during connection which is not
+in the client trust store, the connection attempt will not succeed.
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setTrustStoreOptions(
+        new JksOptions().
+            setPath("/path/to/your/truststore.jks").
+            setPassword("password-of-your-truststore")
+    );
+NetClient client = vertx.createNetClient(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setTrustStoreOptions(
+        new JksOptions().
+            setValue(myTrustStoreAsABuffer).
+            setPassword("password-of-your-truststore")
+    );
+NetClient client = vertx.createNetClient(options);
+----
+
+Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS trust stores:
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setPfxTrustOptions(
+        new PfxOptions().
+            setPath("/path/to/your/truststore.pfx").
+            setPassword("password-of-your-truststore")
+    );
+NetClient client = vertx.createNetClient(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setPfxTrustOptions(
+        new PfxOptions().
+            setValue(myTrustStoreAsABuffer).
+            setPassword("password-of-your-truststore")
+    );
+NetClient client = vertx.createNetClient(options);
+----
+
+Another way of providing server certificate authority using a list `.pem` files.
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setPemTrustOptions(
+        new PemTrustOptions().
+            addCertPath("/path/to/your/ca-cert.pem")
+    );
+NetClient client = vertx.createNetClient(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/ca-cert.pem");
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setPemTrustOptions(
+        new PemTrustOptions().
+            addCertValue(myTrustStoreAsABuffer)
+    );
+NetClient client = vertx.createNetClient(options);
+----
+
+==== Specifying key/certificate for the client
+
+If the server requires client authentication then the client must present its own certificate to the server when
+connecting. The client can be configured in several ways:
+
+The first method is by specifying the location of a Java key-store which contains the key and certificate.
+Again it's just a regular Java key store. The client keystore location is set by using the function
+`link:../../apidocs/io/vertx/core/net/JksOptions.html#setPath-java.lang.String-[path]` on the
+`link:../../apidocs/io/vertx/core/net/JksOptions.html[jks options]`.
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setSsl(true).setKeyStoreOptions(
+    new JksOptions().
+        setPath("/path/to/your/client-keystore.jks").
+        setPassword("password-of-your-keystore")
+);
+NetClient client = vertx.createNetClient(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-keystore.jks");
+JksOptions jksOptions = new JksOptions().
+    setValue(myKeyStoreAsABuffer).
+    setPassword("password-of-your-keystore");
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setKeyStoreOptions(jksOptions);
+NetClient client = vertx.createNetClient(options);
+----
+
+Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS key stores:
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setSsl(true).setPfxKeyCertOptions(
+    new PfxOptions().
+        setPath("/path/to/your/client-keystore.pfx").
+        setPassword("password-of-your-keystore")
+);
+NetClient client = vertx.createNetClient(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-keystore.pfx");
+PfxOptions pfxOptions = new PfxOptions().
+    setValue(myKeyStoreAsABuffer).
+    setPassword("password-of-your-keystore");
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setPfxKeyCertOptions(pfxOptions);
+NetClient client = vertx.createNetClient(options);
+----
+
+Another way of providing server private key and certificate separately using `.pem` files.
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().setSsl(true).setPemKeyCertOptions(
+    new PemKeyCertOptions().
+        setKeyPath("/path/to/your/client-key.pem").
+        setCertPath("/path/to/your/client-cert.pem")
+);
+NetClient client = vertx.createNetClient(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myKeyAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-key.pem");
+Buffer myCertAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-cert.pem");
+PemKeyCertOptions pemOptions = new PemKeyCertOptions().
+    setKeyValue(myKeyAsABuffer).
+    setCertValue(myCertAsABuffer);
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setPemKeyCertOptions(pemOptions);
+NetClient client = vertx.createNetClient(options);
+----
+
+Keep in mind that pem configuration, the private key is not crypted.
+
+==== Revoking certificate authorities
+
+Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
+longer be trusted. The `link:../../apidocs/io/vertx/core/net/NetClientOptions.html#addCrlPath-java.lang.String-[crlPath]` configures
+the crl list to use:
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setTrustStoreOptions(trustOptions).
+    addCrlPath("/path/to/your/crl.pem");
+NetClient client = vertx.createNetClient(options);
+----
+
+Buffer configuration is also supported:
+
+[source,java]
+----
+Buffer myCrlAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/crl.pem");
+NetClientOptions options = new NetClientOptions().
+    setSsl(true).
+    setTrustStoreOptions(trustOptions).
+    addCrlValue(myCrlAsABuffer);
+NetClient client = vertx.createNetClient(options);
+----
+
+==== Configuring the Cipher suite
+
+By default, the TLS configuration will uses the Cipher suite of the JVM running Vert.x. This Cipher suite can be
+configured with a suite of enabled ciphers:
+
+[source,java]
+----
+NetServerOptions options = new NetServerOptions().
+    setSsl(true).
+    setKeyStoreOptions(keyStoreOptions).
+    addEnabledCipherSuite("ECDHE-RSA-AES128-GCM-SHA256").
+    addEnabledCipherSuite("ECDHE-ECDSA-AES128-GCM-SHA256").
+    addEnabledCipherSuite("ECDHE-RSA-AES256-GCM-SHA384").
+    addEnabledCipherSuite("CDHE-ECDSA-AES256-GCM-SHA384");
+NetServer server = vertx.createNetServer(options);
+----
+
+Cipher suite can be specified on the `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` or `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` configuration.

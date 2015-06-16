@@ -1,0 +1,62 @@
+== PemKeyCertOptions
+
+++++
+ Key store options configuring a private key and its certificate based on
+ <i>Privacy-enhanced Electronic Email</i> (PEM) files.
+ <p>
+
+ The key file must contain a <b>non encrypted</b> private key in <b>PKCS8</b> format wrapped in a PEM
+ block, for example:
+ <p>
+
+ <pre>
+ -----BEGIN PRIVATE KEY-----
+ MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDV6zPk5WqLwS0a
+ ...
+ K5xBhtm1AhdnZjx5KfW3BecE
+ -----END PRIVATE KEY-----
+ </pre><p>
+
+ The certificate file must contain an X.509 certificate wrapped in a PEM block, for example:
+ <p>
+
+ <pre>
+ -----BEGIN CERTIFICATE-----
+ MIIDezCCAmOgAwIBAgIEZOI/3TANBgkqhkiG9w0BAQsFADBuMRAwDgYDVQQGEwdV
+ ...
+ +tmLSvYS39O2nqIzzAUfztkYnUlZmB0l/mKkVqbGJA==
+ -----END CERTIFICATE-----
+ </pre>
+
+ The key and certificate can either be loaded by Vert.x from the filesystem:
+ <p>
+ <pre>
+ HttpServerOptions options = new HttpServerOptions();
+ options.setPemKeyCertOptions(new PemKeyCertOptions().setKeyPath("/mykey.pem").setCertPath("/mycert.pem"));
+ </pre>
+
+ Or directly provided as a buffer:<p>
+
+ <pre>
+ Buffer key = vertx.fileSystem().readFileSync("/mykey.pem");
+ Buffer cert = vertx.fileSystem().readFileSync("/mycert.pem");
+ options.setPemKeyCertOptions(new PemKeyCertOptions().setKeyValue(key).setCertValue(cert));
+ </pre>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[keyPath]]`keyPath`
+|`String`
+|+++
+Set the path to the key file+++
+
+|[[certPath]]`certPath`
+|`String`
+|+++
+Set the path to the certificate+++
+|===

@@ -1,0 +1,54 @@
+== DeploymentOptions
+
+++++
+ Options for configuring a verticle deployment.
+ <p>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[worker]]`worker`
+|`Boolean`
+|+++
+Set whether the verticle(s) should be deployed as a worker verticle+++
+
+|[[multiThreaded]]`multiThreaded`
+|`Boolean`
+|+++
+Set whether the verticle(s) should be deployed as a multi-threaded worker verticle+++
+
+|[[isolationGroup]]`isolationGroup`
+|`String`
+|+++
+Set the isolation group that will be used when deploying the verticle(s)+++
+
+|[[ha]]`ha`
+|`Boolean`
+|+++
+Set whether the verticle(s) will be deployed as HA.+++
+
+|[[extraClasspath]]`extraClasspath`
+|`Array of String`
+|+++
+Set any extra classpath to be used when deploying the verticle.
+ <p>
+ Ignored if no isolation group is set.+++
+
+|[[instances]]`instances`
+|`Number`
+|+++
+Set the number of instances that should be deployed.+++
+
+|[[redeploy]]`redeploy`
+|`Boolean`
+|-
+|[[redeployScanPeriod]]`redeployScanPeriod`
+|`Number`
+|-
+|[[redeployGracePeriod]]`redeployGracePeriod`
+|`Number`
+|-|===
