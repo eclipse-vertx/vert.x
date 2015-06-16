@@ -102,21 +102,21 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  protected synchronized Object metric() {
+  protected  Object metric() {
     return metric;
   }
 
-  synchronized void setMetric(Object metric) {
+   void setMetric(Object metric) {
     this.metric = metric;
   }
 
-  public synchronized void pause() {
+  public  void pause() {
     if (!paused) {
       paused = true;
     }
   }
 
-  public synchronized void resume() {
+  public  void resume() {
     if (paused) {
       paused = false;
       checkNextTick();
@@ -138,7 +138,7 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  synchronized void responseComplete() {
+   void responseComplete() {
     if (metrics.isEnabled()) {
       reportBytesWritten(bytesWritten);
       bytesWritten = 0;
@@ -148,11 +148,11 @@ class ServerConnection extends ConnectionBase {
     checkNextTick();
   }
 
-  synchronized void requestHandler(Handler<HttpServerRequest> handler) {
+   void requestHandler(Handler<HttpServerRequest> handler) {
     this.requestHandler = handler;
   }
 
-  synchronized void wsHandler(Handler<ServerWebSocket> handler) {
+   void wsHandler(Handler<ServerWebSocket> handler) {
     this.wsHandler = handler;
   }
 
@@ -287,7 +287,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  public synchronized void handleInterestedOpsChanged() {
+  public  void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
       if (pendingResponse != null) {
         pendingResponse.handleDrained();
@@ -308,20 +308,20 @@ class ServerConnection extends ConnectionBase {
   }
 
 
-  synchronized void handleWebsocketConnect(ServerWebSocketImpl ws) {
+   void handleWebsocketConnect(ServerWebSocketImpl ws) {
     if (wsHandler != null) {
       wsHandler.handle(ws);
       this.ws = ws;
     }
   }
 
-  synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
+   private void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
       ws.handleFrame(frame);
     }
   }
 
-  synchronized protected void handleClosed() {
+   protected void handleClosed() {
     if (ws != null) {
       metrics.disconnected(ws.metric);
       ws.metric = null;
@@ -340,7 +340,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  protected synchronized void handleException(Throwable t) {
+  protected  void handleException(Throwable t) {
     super.handleException(t);
     if (currentRequest != null) {
       currentRequest.handleException(t);

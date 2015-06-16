@@ -190,11 +190,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpServerRequest handler(Handler<Buffer> dataHandler) {
-    synchronized (conn) {
+   // synchronized (conn) {
       checkEnded();
       this.dataHandler = dataHandler;
       return this;
-    }
+    //}
   }
 
   @Override
@@ -207,27 +207,27 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpServerRequest pause() {
-    synchronized (conn) {
+    //synchronized (conn) {
       conn.pause();
       return this;
-    }
+    //}
   }
 
   @Override
   public HttpServerRequest resume() {
-    synchronized (conn) {
+   // synchronized (conn) {
       conn.resume();
       return this;
-    }
+   // }
   }
 
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
-    synchronized (conn) {
+   // synchronized (conn) {
       checkEnded();
       this.endHandler = handler;
       return this;
-    }
+   // }
   }
 
   @Override
@@ -358,7 +358,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   void handleEnd() {
-    synchronized (conn) {
+   // synchronized (conn) {
       ended = true;
       if (decoder != null) {
         try {
@@ -387,7 +387,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       if (endHandler != null) {
         endHandler.handle(null);
       }
-    }
+   // }
   }
 
   void handleException(Throwable t) {

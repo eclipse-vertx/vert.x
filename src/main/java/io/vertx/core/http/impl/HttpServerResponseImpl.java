@@ -148,11 +148,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponseImpl putHeader(String key, String value) {
-    synchronized (conn) {
+   // synchronized (conn) {
       checkWritten();
       headers().set(key, value);
       return this;
-    }
+   // }
   }
 
   @Override
@@ -184,20 +184,20 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
-    synchronized (conn) {
+   // synchronized (conn) {
       checkWritten();
       headers().set(name, value);
       return this;
-    }
+   // }
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
-    synchronized (conn) {
+   // synchronized (conn) {
       checkWritten();
       headers().set(name, values);
       return this;
-    }
+  //  }
   }
 
   @Override
@@ -510,11 +510,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   void handleClosed() {
-    synchronized (conn) {
+   // synchronized (conn) {
       if (closeHandler != null) {
         closeHandler.handle(null);
       }
-    }
+    //}
   }
 
   private void checkWritten() {
@@ -553,7 +553,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private HttpServerResponseImpl write(ByteBuf chunk, Handler<AsyncResult<Void>> completionHandler) {
-    synchronized (conn) {
+   // synchronized (conn) {
       checkWritten();
       if (!headWritten && version != HttpVersion.HTTP_1_0 && !chunked && !contentLengthSet()) {
         throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
@@ -571,6 +571,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       conn.addFuture(completionHandler, channelFuture);
       return this;
-    }
+   // }
   }
 }

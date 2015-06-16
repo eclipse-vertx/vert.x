@@ -78,7 +78,6 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
 
   @Override
   protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-
     if (connection != null) {
       context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
     } else {
