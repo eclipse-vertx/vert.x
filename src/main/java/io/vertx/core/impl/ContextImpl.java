@@ -289,31 +289,17 @@ public abstract class ContextImpl implements Context {
     }
   }
 
-  protected void executeStart() {
-    Thread thread = Thread.currentThread();
-    // Sanity check - make sure Netty is really delivering events on the correct thread
-    if (this.contextThread == null) {
-      if (thread instanceof VertxThread) {
-        this.contextThread = (VertxThread)thread;
-      } else {
-        throw new IllegalStateException("Not a vert.x thread!");
-      }
-    } else if (this.contextThread != thread && !this.contextThread.isWorker()) {
-      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + this.contextThread + " got " + thread);
-    }
-    this.contextThread.executeStart();
-  }
-
-  protected void executeEnd() {
-    contextThread.executeEnd();
-  }
-
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {
     return () -> {
-      if (THREAD_CHECKS && checkThread) {
-        executeStart();
-      }
       VertxThread current = getCurrentThread();
+    //  if (THREAD_CHECKS && checkThread) {
+        if (contextThread == null) {
+          contextThread = current;
+        } else if (contextThread != current && !contextThread.isWorker()) {
+          throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
+        }
+        contextThread.executeStart();
+    //  }
       try {
         setContext(current, ContextImpl.this);
         if (cTask != null) {
@@ -325,9 +311,9 @@ public abstract class ContextImpl implements Context {
         log.error("Unhandled exception", t);
       } finally {
         setContext(current, null);
-        if (THREAD_CHECKS && checkThread) {
-          executeEnd();
-        }
+      //  if (THREAD_CHECKS && checkThread) {
+          contextThread.executeEnd();
+      //  }
       }
     };
   }
