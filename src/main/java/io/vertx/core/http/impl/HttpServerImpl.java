@@ -463,7 +463,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
 
     @Override
-    protected final void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected final void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, HttpObject msg) throws Exception {
       if (expectingWebsockets) {
         handleExpectWebsockets(conn, ctx, msg);
       } else {
@@ -471,7 +471,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    private void handleExpectWebsockets(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+    private void handleExpectWebsockets(ServerConnection conn, ChannelHandlerContext ctx, HttpObject msg) throws Exception {
       Channel ch = ctx.channel();
 
       if (msg instanceof HttpRequest) {
@@ -535,7 +535,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    private void handleHttp(ServerConnection conn, ChannelHandlerContext ctx, Object msg) {
+    private void handleHttp(ServerConnection conn, ChannelHandlerContext ctx, HttpObject msg) {
       //HTTP request
       if (conn == null) {
         createConnAndHandle(ctx.channel(), msg, null);

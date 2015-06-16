@@ -22,6 +22,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.impl.ContextImpl;
@@ -117,7 +118,8 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    Object message = safeObject(msg, chctx.alloc());
+    HttpObject object = (HttpObject)msg;
+    HttpObject message = safeObject(object, chctx.alloc());
     C connection = getConnection(chctx.channel());
 
     ContextImpl context;
@@ -127,7 +129,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     } else {
       context = null;
     }
-    channelRead(connection, context, chctx, msg);
+    channelRead(connection, context, chctx, message);
   }
 
   @Override
@@ -137,7 +139,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     }
   }
 
-  protected abstract void channelRead(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception;
+  protected abstract void channelRead(C connection, ContextImpl context, ChannelHandlerContext chctx, HttpObject msg) throws Exception;
 
-  protected abstract Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception;
+  protected abstract HttpObject safeObject(HttpObject msg, ByteBufAllocator allocator) throws Exception;
 }

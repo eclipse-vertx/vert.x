@@ -762,7 +762,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
 
     @Override
-    protected void doMessageReceived(ClientConnection conn, ChannelHandlerContext ctx, Object msg) {
+    protected void doMessageReceived(ClientConnection conn, ChannelHandlerContext ctx, HttpObject msg) {
       if (conn == null) {
         return;
       }

@@ -22,10 +22,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.AssembledLastHttpContent;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -75,7 +72,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
+  protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final HttpObject msg) throws Exception {
     if (connection != null) {
       context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
     } else {
@@ -90,8 +87,8 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (HttpTypeHelper.isHttpContent(msg)) {
+  protected HttpObject safeObject(HttpObject msg, ByteBufAllocator allocator) throws Exception {
+    if (msg.isContent()) {
       HttpContent content = (HttpContent) msg;
       ByteBuf buf = content.content();
       if (buf != Unpooled.EMPTY_BUFFER && buf.isDirect()) {
@@ -165,6 +162,6 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
     ctx.write(msg, promise);
   }
 
-  protected abstract void doMessageReceived(C connection, ChannelHandlerContext ctx, Object msg) throws Exception;
+  protected abstract void doMessageReceived(C connection, ChannelHandlerContext ctx, HttpObject msg) throws Exception;
 
 }

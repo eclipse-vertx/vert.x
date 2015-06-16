@@ -25,7 +25,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.stream.ChunkedFile;
-import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -42,7 +41,6 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
-import io.vertx.core.net.impl.VertxNetHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.IOException;
@@ -70,7 +68,7 @@ class ServerConnection extends ConnectionBase {
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
 
-  private final Queue<Object> pending = new ArrayDeque<>(8);
+  private final Queue<HttpObject> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final HttpServerImpl server;
   private final WebSocketServerHandshaker handshaker;
@@ -123,8 +121,8 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  synchronized void handleMessage(Object msg) {
-    if (paused || (pendingResponse != null && HttpTypeHelper.isHttpRequest(msg)) || !pending.isEmpty()) {
+  synchronized void handleMessage(HttpObject msg) {
+    if (paused || (pendingResponse != null && msg.isRequest()) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
@@ -223,31 +221,31 @@ class ServerConnection extends ConnectionBase {
     if (pipeline.get("chunkedWriter") != null) {
       pipeline.remove("chunkedWriter");
     }
-
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(vertx, connectionMap) {
-      @Override
-      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
-        // remove from the real mapping
-        server.removeChannel(channel);
-        super.exceptionCaught(chctx, t);
-      }
-
-      @Override
-      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-        // remove from the real mapping
-        server.removeChannel(channel);
-        super.channelInactive(chctx);
-      }
-
-      @Override
-      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-        if (msg instanceof HttpContent) {
-          ReferenceCountUtil.release(msg);
-          return;
-        }
-        super.channelRead(chctx, msg);
-      }
-    });
+//
+//    channel.pipeline().replace("handler", "handler", new VertxNetHandler(vertx, connectionMap) {
+//      @Override
+//      public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
+//        // remove from the real mapping
+//        server.removeChannel(channel);
+//        super.exceptionCaught(chctx, t);
+//      }
+//
+//      @Override
+//      public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+//        // remove from the real mapping
+//        server.removeChannel(channel);
+//        super.channelInactive(chctx);
+//      }
+//
+//      @Override
+//      public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+//        if (msg instanceof HttpContent) {
+//          ReferenceCountUtil.release(msg);
+//          return;
+//        }
+//        super.channelRead(chctx, msg);
+//      }
+//    });
 
     // check if the encoder can be removed yet or not.
     if (lastWriteFuture == null) {
@@ -366,8 +364,8 @@ class ServerConnection extends ConnectionBase {
     return super.sendFile(file, fileLength);
   }
 
-  private void processMessage(Object msg) {
-    if (HttpTypeHelper.isHttpRequest(msg)) {
+  private void processMessage(HttpObject msg) {
+    if (msg.isRequest()) {
       HttpRequest request = (HttpRequest) msg;
       DecoderResult result = request.getDecoderResult();
       if (result.isFailure()) {
@@ -382,13 +380,13 @@ class ServerConnection extends ConnectionBase {
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
-    } else if (HttpTypeHelper.isHttpContent(msg)) {
+    } else if (msg.isContent()) {
         HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(chunk.content());
         handleChunk(buff);
       }
-      if (HttpTypeHelper.isLastHttpContent(msg)) {
+      if (msg.isLast()) {
         if (!paused) {
           handleEnd();
         } else {
@@ -408,13 +406,13 @@ class ServerConnection extends ConnectionBase {
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || HttpTypeHelper.isHttpContent(pending.peek()))) {
+    if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek().isContent())) {
       sentCheck = true;
       vertx.runOnContext(new VoidHandler() {
         public void handle() {
           sentCheck = false;
           if (!paused) {
-            Object msg = pending.poll();
+            HttpObject msg = pending.poll();
             if (msg != null) {
               processMessage(msg);
             }

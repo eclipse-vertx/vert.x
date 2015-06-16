@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -49,7 +50,7 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
   }
 
   @Override
-  protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+  protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, HttpObject msg) throws Exception {
     if (sock != null) {
       ByteBuf buf = (ByteBuf) msg;
       context.executeFromIO(() -> sock.handleDataReceived(Buffer.buffer(buf)));
@@ -59,10 +60,10 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
   }
 
   @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof ByteBuf) {
-      return safeBuffer((ByteBuf) msg, allocator);
-    }
+  protected HttpObject safeObject(HttpObject msg, ByteBufAllocator allocator) throws Exception {
+//    if (msg instanceof ByteBuf) {
+//      return safeBuffer((ByteBuf) msg, allocator);
+//    }
     return msg;
   }
 }
