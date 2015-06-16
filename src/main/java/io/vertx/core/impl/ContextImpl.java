@@ -292,14 +292,14 @@ public abstract class ContextImpl implements Context {
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {
     return () -> {
       VertxThread current = getCurrentThread();
-    //  if (THREAD_CHECKS && checkThread) {
+      if (THREAD_CHECKS && checkThread) {
         if (contextThread == null) {
           contextThread = current;
         } else if (contextThread != current && !contextThread.isWorker()) {
           throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
         }
-        contextThread.executeStart();
-    //  }
+      }
+      contextThread.executeStart();
       try {
         setContext(current, ContextImpl.this);
         if (cTask != null) {
@@ -311,9 +311,7 @@ public abstract class ContextImpl implements Context {
         log.error("Unhandled exception", t);
       } finally {
         setContext(current, null);
-      //  if (THREAD_CHECKS && checkThread) {
-          contextThread.executeEnd();
-      //  }
+        contextThread.executeEnd();
       }
     };
   }

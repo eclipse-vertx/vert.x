@@ -56,11 +56,11 @@ final class VertxThread extends FastThreadLocalThread {
 //    }
   }
 
-  public void executeStart() {
+  public final void executeStart() {
     execStart = System.nanoTime();
   }
 
-  public void executeEnd() {
+  public final void executeEnd() {
     execStart = 0;
   }
 
