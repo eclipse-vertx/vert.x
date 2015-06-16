@@ -124,7 +124,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   synchronized void handleMessage(Object msg) {
-    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
+    if (paused || (pendingResponse != null && HttpTypeHelper.isHttpRequest(msg)) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);
       if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
@@ -367,7 +367,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   private void processMessage(Object msg) {
-    if (msg instanceof HttpRequest) {
+    if (HttpTypeHelper.isHttpRequest(msg)) {
       HttpRequest request = (HttpRequest) msg;
       DecoderResult result = request.getDecoderResult();
       if (result.isFailure()) {
@@ -382,13 +382,13 @@ class ServerConnection extends ConnectionBase {
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
-    } else if (msg instanceof HttpContent) {
+    } else if (HttpTypeHelper.isHttpContent(msg)) {
         HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(chunk.content());
         handleChunk(buff);
       }
-      if (msg instanceof LastHttpContent) {
+      if (HttpTypeHelper.isLastHttpContent(msg)) {
         if (!paused) {
           handleEnd();
         } else {
@@ -396,17 +396,19 @@ class ServerConnection extends ConnectionBase {
           pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
         }
       }
-    } else if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      handleWsFrame(frame);
     }
+    //FIXME - sort this out
+//    else if (msg instanceof WebSocketFrameInternal) {
+//      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+//      handleWsFrame(frame);
+//    }
 
     checkNextTick();
   }
 
   private void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
+    if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || HttpTypeHelper.isHttpContent(pending.peek()))) {
       sentCheck = true;
       vertx.runOnContext(new VoidHandler() {
         public void handle() {

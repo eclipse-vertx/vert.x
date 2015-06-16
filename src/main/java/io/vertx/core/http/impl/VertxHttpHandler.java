@@ -25,9 +25,6 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.*;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -93,7 +90,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
 
   @Override
   protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof HttpContent) {
+    if (HttpTypeHelper.isHttpContent(msg)) {
       HttpContent content = (HttpContent) msg;
       ByteBuf buf = content.content();
       if (buf != Unpooled.EMPTY_BUFFER && buf.isDirect()) {
@@ -105,62 +102,65 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
           return new DefaultHttpContent(newBuf);
         }
       }
-    } else if (msg instanceof WebSocketFrame) {
-      ByteBuf payload = safeBuffer((WebSocketFrame) msg, allocator);
-      boolean isFinal = ((WebSocketFrame) msg).isFinalFragment();
-        FrameType frameType;
-      if (msg instanceof BinaryWebSocketFrame) {
-        frameType = FrameType.BINARY;
-      } else if (msg instanceof CloseWebSocketFrame) {
-        frameType = FrameType.CLOSE;
-      } else if (msg instanceof PingWebSocketFrame) {
-        frameType = FrameType.PING;
-      } else if (msg instanceof PongWebSocketFrame) {
-        frameType = FrameType.PONG;
-      } else if (msg instanceof TextWebSocketFrame) {
-        frameType = FrameType.TEXT;
-      } else if (msg instanceof ContinuationWebSocketFrame) {
-        frameType = FrameType.CONTINUATION;
-      } else {
-        throw new IllegalStateException("Unsupported websocket msg " + msg);
-      }
-      return new WebSocketFrameImpl(frameType, payload, isFinal);
     }
+    // FIXME - uncomment this!! and deal with instanceof
+//    else if (msg instanceof WebSocketFrame) {
+//      ByteBuf payload = safeBuffer((WebSocketFrame) msg, allocator);
+//      boolean isFinal = ((WebSocketFrame) msg).isFinalFragment();
+//        FrameType frameType;
+//      if (msg instanceof BinaryWebSocketFrame) {
+//        frameType = FrameType.BINARY;
+//      } else if (msg instanceof CloseWebSocketFrame) {
+//        frameType = FrameType.CLOSE;
+//      } else if (msg instanceof PingWebSocketFrame) {
+//        frameType = FrameType.PING;
+//      } else if (msg instanceof PongWebSocketFrame) {
+//        frameType = FrameType.PONG;
+//      } else if (msg instanceof TextWebSocketFrame) {
+//        frameType = FrameType.TEXT;
+//      } else if (msg instanceof ContinuationWebSocketFrame) {
+//        frameType = FrameType.CONTINUATION;
+//      } else {
+//        throw new IllegalStateException("Unsupported websocket msg " + msg);
+//      }
+//      return new WebSocketFrameImpl(frameType, payload, isFinal);
+//    }
     return msg;
   }
 
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-    if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      ByteBuf buf = frame.getBinaryData();
-      if (buf != Unpooled.EMPTY_BUFFER) {
-         buf = safeBuffer(buf, ctx.alloc());
-      }
-      switch (frame.type()) {
-        case BINARY:
-          msg = new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case TEXT:
-          msg = new TextWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case CLOSE:
-          msg = new CloseWebSocketFrame(true, 0, buf);
-          break;
-        case CONTINUATION:
-          msg = new ContinuationWebSocketFrame(frame.isFinal(), 0, buf);
-          break;
-        case PONG:
-          msg = new PongWebSocketFrame(buf);
-          break;
-        case PING:
-          msg = new PingWebSocketFrame(buf);
-          break;
-        default:
-          throw new IllegalStateException("Unsupported websocket msg " + msg);
-      }
-    }
+    // FIXME - uncomment and sort this out!!
+//    if (msg instanceof WebSocketFrameInternal) {
+//      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+//      ByteBuf buf = frame.getBinaryData();
+//      if (buf != Unpooled.EMPTY_BUFFER) {
+//         buf = safeBuffer(buf, ctx.alloc());
+//      }
+//      switch (frame.type()) {
+//        case BINARY:
+//          msg = new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
+//          break;
+//        case TEXT:
+//          msg = new TextWebSocketFrame(frame.isFinal(), 0, buf);
+//          break;
+//        case CLOSE:
+//          msg = new CloseWebSocketFrame(true, 0, buf);
+//          break;
+//        case CONTINUATION:
+//          msg = new ContinuationWebSocketFrame(frame.isFinal(), 0, buf);
+//          break;
+//        case PONG:
+//          msg = new PongWebSocketFrame(buf);
+//          break;
+//        case PING:
+//          msg = new PingWebSocketFrame(buf);
+//          break;
+//        default:
+//          throw new IllegalStateException("Unsupported websocket msg " + msg);
+//      }
+//    }
     ctx.write(msg, promise);
   }
 
