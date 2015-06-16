@@ -55,9 +55,10 @@ public abstract class ContextImpl implements Context {
   protected VertxThread contextThread;
   private volatile boolean closeHooksRun;
   private Map<String, Object> contextData;
+  private final boolean timings;
 
   protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
-                        ClassLoader tccl) {
+                        ClassLoader tccl, boolean timings) {
     this.orderedInternalPoolExec = orderedInternalPoolExec;
     this.workerExec = workerExec;
     this.deploymentID = deploymentID;
@@ -70,6 +71,7 @@ public abstract class ContextImpl implements Context {
     }
     this.tccl = tccl;
     this.owner = vertx;
+    this.timings = timings;
   }
 
   public static void setContext(ContextImpl context) {
@@ -299,7 +301,9 @@ public abstract class ContextImpl implements Context {
           throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
         }
       }
-      current.executeStart();
+      if (timings) {
+        current.executeStart();
+      }
       try {
         setContext(current, ContextImpl.this);
         if (cTask != null) {
@@ -311,7 +315,9 @@ public abstract class ContextImpl implements Context {
         log.error("Unhandled exception", t);
       } finally {
         setContext(current, null);
-        current.executeEnd();
+        if (timings) {
+          current.executeEnd();
+        }
       }
     };
   }
