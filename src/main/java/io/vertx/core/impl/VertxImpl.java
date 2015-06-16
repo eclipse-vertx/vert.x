@@ -16,6 +16,8 @@
 
 package io.vertx.core.impl;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -86,6 +88,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
+  private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
+  private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
 
   static {
     // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
@@ -111,6 +115,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NioEventLoopGroup eventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
+  private final ByteBufAllocator allocator;
   private EventBusImpl eventBus;
   private HAManager haManager;
   private boolean closed;
@@ -125,11 +130,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     long blockedCheckPeriod = options.getBlockedThreadCheckPeriod();
-    checker = blockedCheckPeriod == 0 ?  null : new BlockedThreadChecker(blockedCheckPeriod, options.getMaxEventLoopExecuteTime(),
+    checker = new BlockedThreadChecker(blockedCheckPeriod, options.getMaxEventLoopExecuteTime(),
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
                                            new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
-    eventLoopGroup.setIoRatio(options.getIoRatio());
+    eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
+    int numArenas = 2 * Runtime.getRuntime().availableProcessors();
+    allocator = new PooledByteBufAllocator(numArenas, numArenas, 8192, 11);
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
@@ -344,7 +351,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl) {
     return new EventLoopContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
-                                config, tccl, checker != null);
+                                config, tccl);
   }
 
   @Override
@@ -409,10 +416,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                          ClassLoader tccl) {
     if (multiThreaded) {
       return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config,
-                                            tccl, checker != null);
+                                            tccl);
     } else {
       return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
-                               config, tccl, checker != null);
+                               config, tccl);
     }
   }
 
@@ -434,6 +441,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public ClusterManager getClusterManager() {
     return clusterManager;
+  }
+
+  @Override
+  public ByteBufAllocator getAllocator() {
+    return allocator;
   }
 
   @Override
@@ -656,9 +668,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         metrics.close();
       }
 
-      if (checker != null) {
-        checker.close();
-      }
+      checker.close();
 
       ContextImpl.setContext(null);
 

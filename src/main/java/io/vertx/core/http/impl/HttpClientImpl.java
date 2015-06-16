@@ -620,7 +620,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
     if (options.isUsePooledBuffers()) {
-      bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+      bootstrap.option(ChannelOption.ALLOCATOR, vertx.getAllocator());
     }
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());

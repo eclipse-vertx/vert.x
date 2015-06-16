@@ -113,8 +113,6 @@ public class VertxOptions {
    */
   private static final long DEFAULT_WARNING_EXECPTION_TIME = 5l * 1000 * 1000000;
 
-  private static final int DEFAULT_IO_RATIO = 50;
-
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -131,7 +129,6 @@ public class VertxOptions {
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
   private MetricsOptions metrics;
-  private int ioRatio = DEFAULT_IO_RATIO;
 
   private long warningExceptionTime = DEFAULT_WARNING_EXECPTION_TIME;
 
@@ -164,7 +161,6 @@ public class VertxOptions {
     this.haGroup = other.getHAGroup();
     this.metrics = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
     this.warningExceptionTime = other.warningExceptionTime;
-    this.ioRatio = other.ioRatio;
   }
 
   /**
@@ -190,7 +186,6 @@ public class VertxOptions {
     JsonObject metricsJson = json.getJsonObject("metricsOptions");
     this.metrics = metricsJson != null ? new MetricsOptions(metricsJson) : null;
     this.warningExceptionTime = json.getLong("warningExceptionTime", DEFAULT_WARNING_EXECPTION_TIME);
-    this.ioRatio = json.getInteger("ioRatio", DEFAULT_IO_RATIO);
   }
 
   /**
@@ -366,13 +361,12 @@ public class VertxOptions {
   /**
    * Sets the value of blocked thread check period, in ms.
    *
-   * @param blockedThreadCheckPeriod  the value of blocked thread check period, in ms. or if zero - means no checks will
-   *                                  be done
+   * @param blockedThreadCheckPeriod  the value of blocked thread check period, in ms.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setBlockedThreadCheckPeriod(long blockedThreadCheckPeriod) {
-    if (blockedThreadCheckPeriod < 0) {
-      throw new IllegalArgumentException("blockedThreadCheckPeriod must be >= 0");
+    if (blockedThreadCheckPeriod < 1) {
+      throw new IllegalArgumentException("blockedThreadCheckPeriod must be > 0");
     }
     this.blockedThreadCheckPeriod = blockedThreadCheckPeriod;
     return this;
@@ -590,18 +584,6 @@ public class VertxOptions {
       throw new IllegalArgumentException("warningExceptionTime must be > 0");
     }
     this.warningExceptionTime = warningExceptionTime;
-    return this;
-  }
-
-  public int getIoRatio() {
-    return ioRatio;
-  }
-
-  public VertxOptions setIoRatio(int ioRatio) {
-    if (ioRatio < 1 || ioRatio > 100) {
-      throw new IllegalArgumentException("ioRatio should be >=1 and <= 100");
-    }
-    this.ioRatio = ioRatio;
     return this;
   }
 

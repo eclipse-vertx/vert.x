@@ -31,8 +31,8 @@ public class EventLoopContext extends ContextImpl {
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
   public EventLoopContext(VertxInternal vertx, Executor internalBlockingExec, Executor workerExec, String deploymentID, JsonObject config,
-                          ClassLoader tccl, boolean timings) {
-    super(vertx, internalBlockingExec, workerExec, deploymentID, config, tccl, timings);
+                          ClassLoader tccl) {
+    super(vertx, internalBlockingExec, workerExec, deploymentID, config, tccl);
   }
 
   public void executeAsync(Handler<Void> task) {

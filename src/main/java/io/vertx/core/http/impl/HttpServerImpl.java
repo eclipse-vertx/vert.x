@@ -17,8 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -381,13 +379,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
     if (options.isUsePooledBuffers()) {
-      int numArenas = 2 * Runtime.getRuntime().availableProcessors();
-      ByteBufAllocator allocator = new PooledByteBufAllocator(numArenas, numArenas, 8192, 11);
-      bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
-    } else {
-      System.out.println("Not using pooled buffers");
+      bootstrap.childOption(ChannelOption.ALLOCATOR, vertx.getAllocator());
     }
-
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
     bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());

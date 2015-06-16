@@ -89,7 +89,4 @@ Set the metrics options+++
 |`Number`
 |+++
 Set the threshold value above this, the blocked warning contains a stack trace.+++
-
-|[[ioRatio]]`ioRatio`
-|`Number`
-|-|===
+|===

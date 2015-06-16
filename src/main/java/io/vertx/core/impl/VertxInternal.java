@@ -17,6 +17,7 @@
 package io.vertx.core.impl;
 
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -87,5 +88,7 @@ public interface VertxInternal extends Vertx {
   <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
 
   ClusterManager getClusterManager();
+
+  ByteBufAllocator getAllocator();
 
 }

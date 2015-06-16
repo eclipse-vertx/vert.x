@@ -40,8 +40,10 @@ public abstract class ContextImpl implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
-  public static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
-  private static final boolean THREAD_CHECKS = System.getProperty(THREAD_CHECKS_PROP_NAME) != null;
+  private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
+  private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
+  private static final boolean THREAD_CHECKS = "true".equalsIgnoreCase(System.getProperty(THREAD_CHECKS_PROP_NAME));
+  private static final boolean DISABLE_TIMINGS = "true".equalsIgnoreCase(System.getProperty(DISABLE_TIMINGS_PROP_NAME));
 
   protected final VertxInternal owner;
   protected final String deploymentID;
@@ -55,10 +57,9 @@ public abstract class ContextImpl implements Context {
   protected VertxThread contextThread;
   private volatile boolean closeHooksRun;
   private Map<String, Object> contextData;
-  private final boolean timings;
 
   protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
-                        ClassLoader tccl, boolean timings) {
+                        ClassLoader tccl) {
     this.orderedInternalPoolExec = orderedInternalPoolExec;
     this.workerExec = workerExec;
     this.deploymentID = deploymentID;
@@ -71,7 +72,6 @@ public abstract class ContextImpl implements Context {
     }
     this.tccl = tccl;
     this.owner = vertx;
-    this.timings = timings;
   }
 
   public static void setContext(ContextImpl context) {
@@ -301,7 +301,7 @@ public abstract class ContextImpl implements Context {
           throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
         }
       }
-      if (timings) {
+      if (!DISABLE_TIMINGS) {
         current.executeStart();
       }
       try {
@@ -315,7 +315,7 @@ public abstract class ContextImpl implements Context {
         log.error("Unhandled exception", t);
       } finally {
         setContext(current, null);
-        if (timings) {
+        if (!DISABLE_TIMINGS) {
           current.executeEnd();
         }
       }

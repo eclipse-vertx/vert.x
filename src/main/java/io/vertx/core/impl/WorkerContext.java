@@ -27,8 +27,8 @@ import java.util.concurrent.Executor;
 public class WorkerContext extends ContextImpl {
 
   public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID,
-                       JsonObject config, ClassLoader tccl, boolean timings) {
-    super(vertx, orderedInternalPoolExec, workerExec, deploymentID, config, tccl, timings);
+                       JsonObject config, ClassLoader tccl) {
+    super(vertx, orderedInternalPoolExec, workerExec, deploymentID, config, tccl);
   }
 
   @Override
