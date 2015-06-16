@@ -157,11 +157,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
-    synchronized (conn) {
+    //synchronized (conn) {
       checkWritten();
       headers().set(key, values);
       return this;
-    }
+   // }
   }
 
   @Override
@@ -291,13 +291,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void end(Buffer chunk) {
-    synchronized (conn) {
+   // synchronized (conn) {
       if (!chunked && !contentLengthSet()) {
         headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
       }
       ByteBuf buf = chunk.getByteBuf();
       end0(buf);
-    }
+   // }
   }
 
   @Override
@@ -316,9 +316,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void end() {
-    synchronized (conn) {
+    //synchronized (conn) {
       end0(Unpooled.EMPTY_BUFFER);
-    }
+   // }
   }
 
   @Override

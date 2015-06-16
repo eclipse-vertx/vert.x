@@ -123,7 +123,7 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
-  synchronized void handleMessage(Object msg) {
+  void handleMessage(Object msg) {
     if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
       //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
       pending.add(msg);

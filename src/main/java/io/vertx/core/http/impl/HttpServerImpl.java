@@ -462,6 +462,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     FullHttpRequest wsRequest;
 
 
+    // FIXME - the following flattening into a single method doesn't make noticeable difference
+
     @Override
     public final void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
       Object message = safeObject(msg, chctx.alloc());
@@ -476,6 +478,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
       if (connection != null) {
         //context.executeFromIO(() -> doMessageReceived(connection, chctx, message));
+        // FIXME - the following refactor into a direct call doesn't make noticeable difference
         ContextImpl.setContext(context);
         doMessageReceived(connection, chctx, message);
         ContextImpl.setContext(null);
