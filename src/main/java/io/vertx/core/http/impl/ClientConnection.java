@@ -363,7 +363,7 @@ class ClientConnection extends ConnectionBase {
 
   NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics, metric);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 

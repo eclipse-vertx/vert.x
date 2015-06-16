@@ -16,22 +16,19 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.net.SocketAddress;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpServerRequest;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SocketMetric {
+public class HttpServerMetric {
 
-  public final SocketAddress remoteAddress;
-  public final AtomicBoolean connected = new AtomicBoolean(true);
-  public final AtomicLong bytesRead = new AtomicLong();
-  public final AtomicLong bytesWritten = new AtomicLong();
+  public final HttpServerRequest request;
+  public final SocketMetric socket;
 
-  public SocketMetric(SocketAddress remoteAddress) {
-    this.remoteAddress = remoteAddress;
+  public HttpServerMetric(HttpServerRequest request, SocketMetric socket) {
+    this.request = request;
+    this.socket = socket;
   }
 }

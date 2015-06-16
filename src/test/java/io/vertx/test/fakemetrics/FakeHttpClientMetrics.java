@@ -30,12 +30,17 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<Void, WebSocketMetric, SocketMetric> {
+public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric> {
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
+  private final ConcurrentMap<HttpClientRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
 
   public WebSocketMetric getMetric(WebSocket ws) {
     return webSockets.get(ws);
+  }
+
+  public HttpClientMetric getMetric(HttpClientRequest request) {
+    return requests.get(request);
   }
 
   public FakeHttpClientMetrics(HttpClient measured) {
@@ -55,12 +60,15 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   @Override
-  public Void requestBegin(SocketMetric socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
-    return null;
+  public HttpClientMetric requestBegin(SocketMetric socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
+    HttpClientMetric metric = new HttpClientMetric(request, socketMetric);
+    requests.put(request, metric);
+    return metric;
   }
 
   @Override
-  public void responseEnd(Void requestMetric, HttpClientResponse response) {
+  public void responseEnd(HttpClientMetric requestMetric, HttpClientResponse response) {
+    requests.remove(requestMetric.request);
   }
 
   @Override
@@ -70,14 +78,17 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   @Override
   public void disconnected(SocketMetric socketMetric, SocketAddress remoteAddress) {
+    socketMetric.connected.set(false);
   }
 
   @Override
   public void bytesRead(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    socketMetric.bytesRead.addAndGet(numberOfBytes);
   }
 
   @Override
   public void bytesWritten(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    socketMetric.bytesWritten.addAndGet(numberOfBytes);
   }
 
   @Override
@@ -86,7 +97,7 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   @Override
   public boolean isEnabled() {
-    return false;
+    return true;
   }
 
   @Override
