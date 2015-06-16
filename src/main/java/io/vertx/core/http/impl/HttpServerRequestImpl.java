@@ -207,18 +207,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpServerRequest pause() {
-    synchronized (conn) {
-      conn.pause();
-      return this;
-    }
+    conn.pause();
+    return this;
   }
 
   @Override
   public HttpServerRequest resume() {
-    synchronized (conn) {
-      conn.resume();
-      return this;
-    }
+    conn.resume();
+    return this;
   }
 
   @Override
