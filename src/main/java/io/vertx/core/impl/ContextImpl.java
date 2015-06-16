@@ -299,7 +299,7 @@ public abstract class ContextImpl implements Context {
           throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
         }
       }
-      contextThread.executeStart();
+      current.executeStart();
       try {
         setContext(current, ContextImpl.this);
         if (cTask != null) {
@@ -311,7 +311,7 @@ public abstract class ContextImpl implements Context {
         log.error("Unhandled exception", t);
       } finally {
         setContext(current, null);
-        contextThread.executeEnd();
+        current.executeEnd();
       }
     };
   }
