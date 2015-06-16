@@ -367,7 +367,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   private void processMessage(Object msg) {
-  //  if (msg instanceof HttpRequest) {
+    if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
       DecoderResult result = request.getDecoderResult();
       if (result.isFailure()) {
@@ -382,30 +382,30 @@ class ServerConnection extends ConnectionBase {
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
-  //  }
-//    //FIXME - can speed things up a bit by removing following section
-//    if (msg instanceof HttpContent) {
-//        HttpContent chunk = (HttpContent) msg;
-//      if (chunk.content().isReadable()) {
-//        Buffer buff = Buffer.buffer(chunk.content());
-//        handleChunk(buff);
-//      }
-//
-//      //TODO chunk trailers
-//      if (msg instanceof LastHttpContent) {
-//        if (!paused) {
-//          handleEnd();
-//        } else {
-//          // Requeue
-//          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
-//        }
-//      }
-//    } else if (msg instanceof WebSocketFrameInternal) {
-//      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-//      handleWsFrame(frame);
-//    }
-//
-//    checkNextTick();
+    }
+    //FIXME - can speed things up a bit by removing following section
+    if (msg instanceof HttpContent) {
+        HttpContent chunk = (HttpContent) msg;
+      if (chunk.content().isReadable()) {
+        Buffer buff = Buffer.buffer(chunk.content());
+        handleChunk(buff);
+      }
+
+      //TODO chunk trailers
+      if (msg instanceof LastHttpContent) {
+        if (!paused) {
+          handleEnd();
+        } else {
+          // Requeue
+          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+        }
+      }
+    } else if (msg instanceof WebSocketFrameInternal) {
+      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+      handleWsFrame(frame);
+    }
+
+    checkNextTick();
   }
 
   private void checkNextTick() {
