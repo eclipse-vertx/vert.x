@@ -475,7 +475,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         context = null;
       }
       if (connection != null) {
-        context.executeFromIO(() -> doMessageReceived(connection, chctx, message));
+        //context.executeFromIO(() -> doMessageReceived(connection, chctx, message));
+        ContextImpl.setContext(context);
+        doMessageReceived(connection, chctx, message);
+        ContextImpl.setContext(null);
       } else {
         // We execute this directly as we don't have a context yet, the context will have to be set manually
         // inside doMessageReceived();
