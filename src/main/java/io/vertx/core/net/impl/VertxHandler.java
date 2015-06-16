@@ -117,7 +117,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    Object message = safeObject(msg, chctx.alloc());
+    //Object message = safeObject(msg, chctx.alloc());
     C connection = getConnection(chctx.channel());
 
     ContextImpl context;
@@ -127,7 +127,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     } else {
       context = null;
     }
-    channelRead(connection, context, chctx, message);
+    channelRead(connection, context, chctx, msg);
   }
 
   @Override
