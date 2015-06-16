@@ -134,7 +134,8 @@ class ServerConnection extends ConnectionBase {
 //        channelPaused = true;
 //      }
 //    } else {
-      processMessage(msg);
+      //processMessage(msg);
+    processMessageOptimisedForSmall(msg);
     //}
   }
 
@@ -364,6 +365,35 @@ class ServerConnection extends ConnectionBase {
 
   protected ChannelFuture sendFile(RandomAccessFile file, long fileLength) throws IOException {
     return super.sendFile(file, fileLength);
+  }
+
+  private void processMessageOptimisedForSmall(Object msg) {
+    FullHttpRequest request = (FullHttpRequest)msg;
+    DecoderResult result = request.getDecoderResult();
+    if (result.isFailure()) {
+      channel.pipeline().fireExceptionCaught(result.cause());
+      return;
+    }
+    if (handle100Continue) {
+      if (HttpHeaders.is100ContinueExpected(request)) {
+        channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+      }
+    }
+    HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
+    HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
+    handleRequest(req, resp);
+
+    if (request.content().isReadable()) {
+      Buffer buff = Buffer.buffer(request.content());
+      handleChunk(buff);
+    }
+
+    if (!paused) {
+      handleEnd();
+    } else {
+      // Requeue
+      pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+    }
   }
 
   private void processMessage(Object msg) {

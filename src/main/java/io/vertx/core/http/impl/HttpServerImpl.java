@@ -203,6 +203,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
               pipeline.addLast("httpEncoder", new HttpResponseEncoder());
+              pipeline.addLast("httpAgregator", new HttpObjectAggregator(1024));
               if (options.isCompressionSupported()) {
                 pipeline.addLast("deflater", new HttpChunkContentCompressor());
               }
