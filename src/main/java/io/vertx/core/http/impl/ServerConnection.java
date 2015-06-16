@@ -102,43 +102,43 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  protected  Object metric() {
+  protected synchronized Object metric() {
     return metric;
   }
 
-   void setMetric(Object metric) {
+  synchronized void setMetric(Object metric) {
     this.metric = metric;
   }
 
-  public  void pause() {
+  public synchronized void pause() {
     if (!paused) {
       paused = true;
     }
   }
 
-  public  void resume() {
+  public synchronized void resume() {
     if (paused) {
       paused = false;
       checkNextTick();
     }
   }
 
-  void handleMessage(Object msg) {
-    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
-      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      pending.add(msg);
-      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
-        //We pause the channel too, to prevent the queue growing too large, but we don't do this
-        //until the queue reaches a certain size, to avoid pausing it too often
-        super.doPause();
-        channelPaused = true;
-      }
-    } else {
+  synchronized void handleMessage(Object msg) {
+//    if (paused || (pendingResponse != null && msg instanceof HttpRequest) || !pending.isEmpty()) {
+//      //We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+//      pending.add(msg);
+//      if (pending.size() == CHANNEL_PAUSE_QUEUE_SIZE) {
+//        //We pause the channel too, to prevent the queue growing too large, but we don't do this
+//        //until the queue reaches a certain size, to avoid pausing it too often
+//        super.doPause();
+//        channelPaused = true;
+//      }
+//    } else {
       processMessage(msg);
-    }
+    //}
   }
 
-   void responseComplete() {
+  synchronized void responseComplete() {
     if (metrics.isEnabled()) {
       reportBytesWritten(bytesWritten);
       bytesWritten = 0;
@@ -148,11 +148,11 @@ class ServerConnection extends ConnectionBase {
     checkNextTick();
   }
 
-   void requestHandler(Handler<HttpServerRequest> handler) {
+  synchronized void requestHandler(Handler<HttpServerRequest> handler) {
     this.requestHandler = handler;
   }
 
-   void wsHandler(Handler<ServerWebSocket> handler) {
+  synchronized void wsHandler(Handler<ServerWebSocket> handler) {
     this.wsHandler = handler;
   }
 
@@ -287,7 +287,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  public  void handleInterestedOpsChanged() {
+  public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
       if (pendingResponse != null) {
         pendingResponse.handleDrained();
@@ -308,20 +308,20 @@ class ServerConnection extends ConnectionBase {
   }
 
 
-   void handleWebsocketConnect(ServerWebSocketImpl ws) {
+  synchronized void handleWebsocketConnect(ServerWebSocketImpl ws) {
     if (wsHandler != null) {
       wsHandler.handle(ws);
       this.ws = ws;
     }
   }
 
-   private void handleWsFrame(WebSocketFrameInternal frame) {
+  synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
       ws.handleFrame(frame);
     }
   }
 
-   protected void handleClosed() {
+  synchronized protected void handleClosed() {
     if (ws != null) {
       metrics.disconnected(ws.metric);
       ws.metric = null;
@@ -340,7 +340,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   @Override
-  protected  void handleException(Throwable t) {
+  protected synchronized void handleException(Throwable t) {
     super.handleException(t);
     if (currentRequest != null) {
       currentRequest.handleException(t);
@@ -367,7 +367,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   private void processMessage(Object msg) {
-    if (msg instanceof HttpRequest) {
+  //  if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
       DecoderResult result = request.getDecoderResult();
       if (result.isFailure()) {
@@ -382,30 +382,30 @@ class ServerConnection extends ConnectionBase {
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
-    }
-    //FIXME - can speed things up a bit by removing following section
-    if (msg instanceof HttpContent) {
-        HttpContent chunk = (HttpContent) msg;
-      if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
-      }
-
-      //TODO chunk trailers
-      if (msg instanceof LastHttpContent) {
-        if (!paused) {
-          handleEnd();
-        } else {
-          // Requeue
-          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
-        }
-      }
-    } else if (msg instanceof WebSocketFrameInternal) {
-      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-      handleWsFrame(frame);
-    }
-
-    checkNextTick();
+  //  }
+//    //FIXME - can speed things up a bit by removing following section
+//    if (msg instanceof HttpContent) {
+//        HttpContent chunk = (HttpContent) msg;
+//      if (chunk.content().isReadable()) {
+//        Buffer buff = Buffer.buffer(chunk.content());
+//        handleChunk(buff);
+//      }
+//
+//      //TODO chunk trailers
+//      if (msg instanceof LastHttpContent) {
+//        if (!paused) {
+//          handleEnd();
+//        } else {
+//          // Requeue
+//          pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
+//        }
+//      }
+//    } else if (msg instanceof WebSocketFrameInternal) {
+//      WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
+//      handleWsFrame(frame);
+//    }
+//
+//    checkNextTick();
   }
 
   private void checkNextTick() {

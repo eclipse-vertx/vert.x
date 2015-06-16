@@ -70,11 +70,11 @@ public abstract class ConnectionBase {
     this.metrics = metrics;
   }
 
-  public final void startRead() {
+  protected synchronized final void startRead() {
     read = true;
   }
 
-  protected final void endReadAndFlush() {
+  protected synchronized final void endReadAndFlush() {
     read = false;
     if (needsFlush) {
       needsFlush = false;
@@ -83,12 +83,12 @@ public abstract class ConnectionBase {
     }
   }
 
-  public ChannelFuture queueForWrite(final Object obj) {
+  public synchronized ChannelFuture queueForWrite(final Object obj) {
     needsFlush = true;
     return channel.write(obj);
   }
 
-  public ChannelFuture writeToChannel(Object obj) {
+  public synchronized ChannelFuture writeToChannel(Object obj) {
     if (read) {
       return queueForWrite(obj);
     }
@@ -140,7 +140,7 @@ public abstract class ConnectionBase {
 
   protected abstract Object metric();
 
-  protected  void handleException(Throwable t) {
+  protected synchronized void handleException(Throwable t) {
     metrics.exceptionOccurred(metric(), remoteAddress(), t);
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
@@ -149,7 +149,7 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected  void handleClosed() {
+  protected synchronized void handleClosed() {
     if (metrics instanceof TCPMetrics) {
       ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
     }
