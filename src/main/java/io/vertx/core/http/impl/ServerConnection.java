@@ -134,8 +134,7 @@ class ServerConnection extends ConnectionBase {
 //        channelPaused = true;
 //      }
 //    } else {
-      //processMessage(msg);
-    processMessageOptimisedForSmall(msg);
+      processMessage(msg);
     //}
   }
 
@@ -367,35 +366,6 @@ class ServerConnection extends ConnectionBase {
     return super.sendFile(file, fileLength);
   }
 
-  private void processMessageOptimisedForSmall(Object msg) {
-    FullHttpRequest request = (FullHttpRequest)msg;
-    DecoderResult result = request.getDecoderResult();
-    if (result.isFailure()) {
-      channel.pipeline().fireExceptionCaught(result.cause());
-      return;
-    }
-    if (handle100Continue) {
-      if (HttpHeaders.is100ContinueExpected(request)) {
-        channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
-      }
-    }
-    HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
-    HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
-    handleRequest(req, resp);
-
-    if (request.content().isReadable()) {
-      Buffer buff = Buffer.buffer(request.content());
-      handleChunk(buff);
-    }
-
-    if (!paused) {
-      handleEnd();
-    } else {
-      // Requeue
-      pending.add(LastHttpContent.EMPTY_LAST_CONTENT);
-    }
-  }
-
   private void processMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
@@ -412,16 +382,12 @@ class ServerConnection extends ConnectionBase {
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
-    }
-    //FIXME - can speed things up a bit by removing following section
-    if (msg instanceof HttpContent) {
+    } else if (msg instanceof HttpContent) {
         HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(chunk.content());
         handleChunk(buff);
       }
-
-      //TODO chunk trailers
       if (msg instanceof LastHttpContent) {
         if (!paused) {
           handleEnd();
