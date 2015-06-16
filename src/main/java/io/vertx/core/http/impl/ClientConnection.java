@@ -226,7 +226,7 @@ class ClientConnection extends ConnectionBase {
       // Need to set context before constructor is called as writehandler registration needs this
       ContextImpl.setContext(context);
       WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
-                                                  client.getOptions().getMaxWebsocketFrameSize());
+        client.getOptions().getMaxWebsocketFrameSize());
       ws = webSocket;
       handshaker.finishHandshake(channel, response);
       context.executeFromIO(() -> {

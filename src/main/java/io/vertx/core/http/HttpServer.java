@@ -69,7 +69,7 @@ public interface HttpServer extends Measured {
 
   /**
    * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
-   * new {@link ServerWebSocket} instance will be created and passed to the handler.
+   * new {@link ServerWebSocket} instance will be created and passed to the handler.h
    *
    * @return a reference to this, so the API can be used fluently
    */

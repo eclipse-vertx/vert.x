@@ -33,10 +33,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -82,10 +79,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final HttpServerRequestStreamImpl requestStream = new HttpServerRequestStreamImpl();
   private final String subProtocols;
   private String serverOrigin;
-
   private boolean expectingWebsockets = false;
-  private boolean handle100Continue = false;
-
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
   private ChannelFuture bindFuture;
@@ -138,6 +132,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public ServerWebSocketStream websocketStream() {
+    expectingWebsockets = true;
     return wsStream;
   }
 
@@ -433,22 +428,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       super(vertx, HttpServerImpl.this.connectionMap);
     }
 
-    private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
-      FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
-      if (status.code() == METHOD_NOT_ALLOWED.code()) {
-        // SockJS requires this
-        resp.headers().set(io.vertx.core.http.HttpHeaders.ALLOW, io.vertx.core.http.HttpHeaders.GET);
-      }
-      if (err != null) {
-        resp.content().writeBytes(err.toString().getBytes(CharsetUtil.UTF_8));
-        HttpHeaders.setContentLength(resp, err.length());
-      } else {
-        HttpHeaders.setContentLength(resp, 0);
-      }
-
-      ch.writeAndFlush(resp);
-    }
-
     FullHttpRequest wsRequest;
 
     @Override
@@ -535,29 +514,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
-    private String getWebSocketLocation(ChannelPipeline pipeline, FullHttpRequest req) throws Exception {
-      String prefix;
-      if (pipeline.get(SslHandler.class) == null) {
-        prefix = "ws://";
-      } else {
-        prefix = "wss://";
-      }
-      URI uri = new URI(req.getUri());
-      String path = uri.getRawPath();
-      String loc =  prefix + HttpHeaders.getHost(req) + path;
-      String query = uri.getRawQuery();
-      if (query != null) {
-        loc += "?" + query;
-      }
-      return loc;
-    }
-
     private void createConnAndHandle(Channel ch, Object msg,
                                      WebSocketServerHandshaker shake) {
       HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
       if (reqHandler != null) {
         ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin,
-          shake, metrics, handle100Continue);
+          shake, metrics, options.isHandle100Continue());
         HttpRequest request = (HttpRequest) msg;
         conn.requestHandler(reqHandler.handler);
         connectionMap.put(ch, conn);
@@ -570,28 +532,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     private void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
 
-      // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
-      // it doesn't send a normal 'Connection: Upgrade' header. Instead it
-      // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
-      String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
-      if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
-        sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
-        return;
-      }
-
-      if (request.getMethod() != HttpMethod.GET) {
-        sendError(null, METHOD_NOT_ALLOWED, ch);
-        return;
-      }
-
-      WebSocketServerHandshakerFactory factory =
-          new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
-                                               options.getMaxWebsocketFrameSize());
-      WebSocketServerHandshaker shake = factory.newHandshaker(request);
-
+      WebSocketServerHandshaker shake = createHandshaker(ch, request);
       if (shake == null) {
-        log.error("Unrecognised websockets handshake");
-        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
         return;
       }
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
@@ -609,7 +551,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           }
 
           ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
-            serverOrigin, shake, metrics, handle100Continue);
+            serverOrigin, shake, metrics, options.isHandle100Continue());
           wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
           wsConn.wsHandler(wsHandler.handler);
 
@@ -643,6 +585,72 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       }
     }
+  }
+
+  WebSocketServerHandshaker createHandshaker(Channel ch, HttpRequest request)  {
+    // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
+    // it doesn't send a normal 'Connection: Upgrade' header. Instead it
+    // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+    String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+    if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
+      sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
+      return null;
+    }
+
+    if (request.getMethod() != HttpMethod.GET) {
+      sendError(null, METHOD_NOT_ALLOWED, ch);
+      return null;
+    }
+
+    try {
+
+      WebSocketServerHandshakerFactory factory =
+        new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
+          options.getMaxWebsocketFrameSize());
+      WebSocketServerHandshaker shake = factory.newHandshaker(request);
+
+      if (shake == null) {
+        log.error("Unrecognised websockets handshake");
+        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+      }
+
+      return shake;
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
+  }
+
+  private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
+    FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
+    if (status.code() == METHOD_NOT_ALLOWED.code()) {
+      // SockJS requires this
+      resp.headers().set(io.vertx.core.http.HttpHeaders.ALLOW, io.vertx.core.http.HttpHeaders.GET);
+    }
+    if (err != null) {
+      resp.content().writeBytes(err.toString().getBytes(CharsetUtil.UTF_8));
+      HttpHeaders.setContentLength(resp, err.length());
+    } else {
+      HttpHeaders.setContentLength(resp, 0);
+    }
+
+    ch.writeAndFlush(resp);
+  }
+
+  private String getWebSocketLocation(ChannelPipeline pipeline, HttpRequest req) throws Exception {
+    String prefix;
+    if (pipeline.get(SslHandler.class) == null) {
+      prefix = "ws://";
+    } else {
+      prefix = "wss://";
+    }
+    URI uri = new URI(req.getUri());
+    String path = uri.getRawPath();
+    String loc =  prefix + HttpHeaders.getHost(req) + path;
+    String query = uri.getRawQuery();
+    if (query != null) {
+      loc += "?" + query;
+    }
+    return loc;
   }
 
   @Override

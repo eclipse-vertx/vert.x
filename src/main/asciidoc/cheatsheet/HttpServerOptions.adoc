@@ -135,4 +135,7 @@ Set the websocket subprotocols supported by the server.+++
 |`Boolean`
 |+++
 Set whether client auth is required+++
-|===
+
+|[[handle100Continue]]`handle100Continue`
+|`Boolean`
+|-|===

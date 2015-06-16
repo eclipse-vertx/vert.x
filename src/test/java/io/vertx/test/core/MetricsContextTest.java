@@ -734,7 +734,9 @@ public class MetricsContextTest extends AsyncTestBase {
     };
     Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     Context ctx = contextFactory.apply(vertx);
+
     ctx.runOnContext(v1 -> {
+
       expectedThread.set(Thread.currentThread());
       expectedContext.set(Vertx.currentContext());
       DatagramSocket socket = vertx.createDatagramSocket();

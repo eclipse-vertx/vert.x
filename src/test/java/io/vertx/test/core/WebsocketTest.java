@@ -23,18 +23,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.ServerWebSocketStream;
-import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.WebSocketStream;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
@@ -42,11 +31,7 @@ import org.junit.Test;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -55,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

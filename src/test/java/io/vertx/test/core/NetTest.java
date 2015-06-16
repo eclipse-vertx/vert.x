@@ -129,7 +129,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
-    assertFalse(options.isUsePooledBuffers());
+    assertTrue(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
 
@@ -223,7 +223,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
-    assertFalse(options.isUsePooledBuffers());
+    assertTrue(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
 

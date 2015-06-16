@@ -152,6 +152,8 @@ public abstract class ContextImpl implements Context {
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
+    // Now remove context references from threads
+    VertxThreadFactory.unsetContext(this);
   }
 
   protected abstract void executeAsync(Handler<Void> task);
@@ -314,7 +316,8 @@ public abstract class ContextImpl implements Context {
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
       } finally {
-        setContext(current, null);
+        // We don't unset the context after execution - this is done later when the context is closed via
+        // VertxThreadFactory
         if (!DISABLE_TIMINGS) {
           current.executeEnd();
         }

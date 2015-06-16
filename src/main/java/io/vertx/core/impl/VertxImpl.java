@@ -115,7 +115,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NioEventLoopGroup eventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
-  private final ByteBufAllocator allocator;
+  private final PooledByteBufAllocator allocator;
   private EventBusImpl eventBus;
   private HAManager haManager;
   private boolean closed;
@@ -671,6 +671,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       checker.close();
 
       ContextImpl.setContext(null);
+
+      allocator.freeThreadLocalCache();
 
       if (completionHandler != null) {
         // Call directly - we have no context

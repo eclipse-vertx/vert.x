@@ -68,7 +68,8 @@ public class HttpTest extends HttpTestBase {
   public void setUp() throws Exception {
     super.setUp();
     testDir = testFolder.newFolder();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).
+      setHost(DEFAULT_HTTP_HOST).setHandle100Continue(true));
     client = vertx.createHttpClient(new HttpClientOptions());
   }
 
@@ -117,7 +118,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
-    assertFalse(options.isUsePooledBuffers());
+    assertTrue(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
 
@@ -229,7 +230,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(rand, options.getSoLinger());
     assertIllegalArgumentException(() -> options.setSoLinger(-1));
 
-    assertFalse(options.isUsePooledBuffers());
+    assertTrue(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
     assertTrue(options.isUsePooledBuffers());
 
@@ -290,6 +291,10 @@ public class HttpTest extends HttpTestBase {
     assertNotNull(options.getEnabledCipherSuites());
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
+
+    assertFalse(options.isHandle100Continue());
+    assertEquals(options, options.setHandle100Continue(true));
+    assertTrue(options.isHandle100Continue());
 
     testComplete();
   }

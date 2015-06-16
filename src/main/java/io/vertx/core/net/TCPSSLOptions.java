@@ -121,7 +121,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.tcpNoDelay = json.getBoolean("tcpNoDelay", DEFAULT_TCP_NO_DELAY);
     this.tcpKeepAlive = json.getBoolean("tcpKeepAlive", DEFAULT_TCP_KEEP_ALIVE);
     this.soLinger = json.getInteger("soLinger", DEFAULT_SO_LINGER);
-    this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
+    this.usePooledBuffers = json.getBoolean("usePooledBuffers", DEFAULT_USE_POOLED_BUFFERS);
     this.idleTimeout = json.getInteger("idleTimeout", 0);
     this.ssl = json.getBoolean("ssl", false);
     JsonObject keyCertJson = json.getJsonObject("keyStoreOptions");
