@@ -35,7 +35,6 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Future;
@@ -382,9 +381,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
     if (options.isUsePooledBuffers()) {
-      //ByteBufAllocator allocator = PooledByteBufAllocator.DEFAULT;
-      ByteBufAllocator allocator = new PooledByteBufAllocator(40, 40, 8192, 11);
-      System.out.println("Using pooled buffers: " + allocator + " direct preferred? " + PlatformDependent.directBufferPreferred());
+      int numArenas = 2 * Runtime.getRuntime().availableProcessors();
+      ByteBufAllocator allocator = new PooledByteBufAllocator(numArenas, numArenas, 8192, 11);
       bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
     } else {
       System.out.println("Not using pooled buffers");
