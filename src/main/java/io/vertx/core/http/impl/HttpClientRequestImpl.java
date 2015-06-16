@@ -581,6 +581,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     prepareHeaders();
     if (end) {
       conn.writeToChannel(new AssembledFullHttpRequest(request, buf));
+      conn.writeToChannel(new AssembledFullHttpRequest(request, buf));
     } else {
       conn.writeToChannel(new AssembledHttpRequest(request, buf));
     }
