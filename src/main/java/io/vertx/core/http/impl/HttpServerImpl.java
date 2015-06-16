@@ -383,6 +383,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     if (options.isUsePooledBuffers()) {
       //ByteBufAllocator allocator = PooledByteBufAllocator.DEFAULT;
+      ///FIXME need to make num arenas properly configurable
       ByteBufAllocator allocator = new PooledByteBufAllocator(40, 40, 8192, 11);
       System.out.println("Using pooled buffers: " + allocator + " direct preferred? " + PlatformDependent.directBufferPreferred());
       bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
@@ -460,89 +461,198 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     FullHttpRequest wsRequest;
 
+
     @Override
-    protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+    public final void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+      Object message = safeObject(msg, chctx.alloc());
+      ServerConnection connection = getConnection(chctx.channel());
+
+      ContextImpl context;
+      if (connection != null) {
+        context = getContext(connection);
+        connection.startRead();
+      } else {
+        context = null;
+      }
+      if (connection != null) {
+        context.executeFromIO(() -> doMessageReceived(connection, chctx, message));
+      } else {
+        // We execute this directly as we don't have a context yet, the context will have to be set manually
+        // inside doMessageReceived();
+        try {
+          doMessageReceived(null, chctx, message);
+        } catch (Throwable t) {
+          chctx.pipeline().fireExceptionCaught(t);
+        }
+      }
+    }
+
+//    @Override
+//    protected void channelRead(final ServerConnection connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
+//
+//      if (connection != null) {
+//        context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
+//      } else {
+//        // We execute this directly as we don't have a context yet, the context will have to be set manually
+//        // inside doMessageReceived();
+//        try {
+//          doMessageReceived(null, chctx, msg);
+//        } catch (Throwable t) {
+//          chctx.pipeline().fireExceptionCaught(t);
+//        }
+//      }
+//    }
+
+    @Override
+    protected final void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
       Channel ch = ctx.channel();
       if (expectingWebsockets) {
-         handleExpectWebsockets(conn, ctx, msg);
-      } else {
-        // Separate out into a separate method where we involve instanceof checks and checks for websocket handshake headers
-        handleHttp(conn, ch, msg);
-      }
-    }
+        if (msg instanceof HttpRequest) {
+          HttpRequest request = (HttpRequest) msg;
 
-    private void handleExpectWebsockets(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
-      Channel ch = ctx.channel();
+          if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
 
-      if (msg instanceof HttpRequest) {
-        HttpRequest request = (HttpRequest) msg;
-
-        if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
-
-        if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
-          if (wsRequest == null) {
-            if (request instanceof FullHttpRequest) {
-              handshake((FullHttpRequest) request, ch, ctx);
-            } else {
-              wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
-              wsRequest.headers().set(request.headers());
+          if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
+            if (wsRequest == null) {
+              if (request instanceof FullHttpRequest) {
+                handshake((FullHttpRequest) request, ch, ctx);
+              } else {
+                wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
+                wsRequest.headers().set(request.headers());
+              }
             }
-          }
-        } else {
-          handleHttp(conn, ch, msg);
-        }
-      } else if (msg instanceof WebSocketFrameInternal) {
-        //Websocket frame
-        WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
-        switch (wsFrame.type()) {
-          case BINARY:
-          case CONTINUATION:
-          case TEXT:
-            if (conn != null) {
+          } else {
+            //HTTP request
+            if (conn == null) {
+              createConnAndHandle(ch, msg, null);
+            } else {
               conn.handleMessage(msg);
             }
-            break;
-          case PING:
-            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
-            break;
-          case CLOSE:
-            if (!closeFrameSent) {
-              // Echo back close frame and close the connection once it was written.
-              // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
-              closeFrameSent = true;
-            }
-            break;
-          default:
-            throw new IllegalStateException("Invalid type: " + wsFrame.type());
-        }
-      } else if (msg instanceof HttpContent) {
-        if (wsRequest != null) {
-          wsRequest.content().writeBytes(((HttpContent) msg).content());
-          if (msg instanceof LastHttpContent) {
-            FullHttpRequest req = wsRequest;
-            wsRequest = null;
-            handshake(req, ch, ctx);
-            return;
           }
-        }
-        if (conn != null) {
-          conn.handleMessage(msg);
+        } else if (msg instanceof WebSocketFrameInternal) {
+          //Websocket frame
+          WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
+          switch (wsFrame.type()) {
+            case BINARY:
+            case CONTINUATION:
+            case TEXT:
+              if (conn != null) {
+                conn.handleMessage(msg);
+              }
+              break;
+            case PING:
+              // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+              ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
+              break;
+            case CLOSE:
+              if (!closeFrameSent) {
+                // Echo back close frame and close the connection once it was written.
+                // This is specified in the WebSockets RFC 6455 Section  5.4.1
+                ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
+                closeFrameSent = true;
+              }
+              break;
+            default:
+              throw new IllegalStateException("Invalid type: " + wsFrame.type());
+          }
+        } else if (msg instanceof HttpContent) {
+          if (wsRequest != null) {
+            wsRequest.content().writeBytes(((HttpContent) msg).content());
+            if (msg instanceof LastHttpContent) {
+              FullHttpRequest req = wsRequest;
+              wsRequest = null;
+              handshake(req, ch, ctx);
+              return;
+            }
+          }
+          if (conn != null) {
+            conn.handleMessage(msg);
+          }
+        } else {
+          throw new IllegalStateException("Invalid message " + msg);
         }
       } else {
-        throw new IllegalStateException("Invalid message " + msg);
+        // HTTP request
+        if (conn == null) {
+          createConnAndHandle(ch, msg, null);
+        } else {
+          conn.handleMessage(msg);
+        }
       }
     }
 
-    private void handleHttp(ServerConnection conn, Channel ch, Object msg) {
-      //HTTP request
-      if (conn == null) {
-        createConnAndHandle(ch, msg, null);
-      } else {
-        conn.handleMessage(msg);
-      }
-    }
+//    private void handleExpectWebsockets(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
+//      Channel ch = ctx.channel();
+//
+//      if (msg instanceof HttpRequest) {
+//        HttpRequest request = (HttpRequest) msg;
+//
+//        if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
+//
+//        if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
+//          if (wsRequest == null) {
+//            if (request instanceof FullHttpRequest) {
+//              handshake((FullHttpRequest) request, ch, ctx);
+//            } else {
+//              wsRequest = new DefaultFullHttpRequest(request.getProtocolVersion(), request.getMethod(), request.getUri());
+//              wsRequest.headers().set(request.headers());
+//            }
+//          }
+//        } else {
+//          handleHttp(conn, ch, msg);
+//        }
+//      } else if (msg instanceof WebSocketFrameInternal) {
+//        //Websocket frame
+//        WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
+//        switch (wsFrame.type()) {
+//          case BINARY:
+//          case CONTINUATION:
+//          case TEXT:
+//            if (conn != null) {
+//              conn.handleMessage(msg);
+//            }
+//            break;
+//          case PING:
+//            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+//            ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
+//            break;
+//          case CLOSE:
+//            if (!closeFrameSent) {
+//              // Echo back close frame and close the connection once it was written.
+//              // This is specified in the WebSockets RFC 6455 Section  5.4.1
+//              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
+//              closeFrameSent = true;
+//            }
+//            break;
+//          default:
+//            throw new IllegalStateException("Invalid type: " + wsFrame.type());
+//        }
+//      } else if (msg instanceof HttpContent) {
+//        if (wsRequest != null) {
+//          wsRequest.content().writeBytes(((HttpContent) msg).content());
+//          if (msg instanceof LastHttpContent) {
+//            FullHttpRequest req = wsRequest;
+//            wsRequest = null;
+//            handshake(req, ch, ctx);
+//            return;
+//          }
+//        }
+//        if (conn != null) {
+//          conn.handleMessage(msg);
+//        }
+//      } else {
+//        throw new IllegalStateException("Invalid message " + msg);
+//      }
+//    }
+//
+//    private void handleHttp(ServerConnection conn, Channel ch, Object msg) {
+//      //HTTP request
+//      if (conn == null) {
+//        createConnAndHandle(ch, msg, null);
+//      } else {
+//        conn.handleMessage(msg);
+//      }
+//    }
 
     private String getWebSocketLocation(ChannelPipeline pipeline, FullHttpRequest req) throws Exception {
       String prefix;

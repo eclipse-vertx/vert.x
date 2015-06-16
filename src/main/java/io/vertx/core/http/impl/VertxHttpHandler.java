@@ -52,7 +52,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected C getConnection(Channel channel) {
+  protected final C getConnection(Channel channel) {
     @SuppressWarnings("unchecked")
     VertxNioSocketChannel<C> vch = (VertxNioSocketChannel<C>)channel;
     // As an optimisation we store the connection on the channel - this prevents a lookup every time
@@ -69,7 +69,7 @@ public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHa
   }
 
   @Override
-  protected C removeConnection(Channel channel) {
+  protected final C removeConnection(Channel channel) {
     @SuppressWarnings("unchecked")
     VertxNioSocketChannel<C> vch = (VertxNioSocketChannel<C>)channel;
     vch.conn = null;

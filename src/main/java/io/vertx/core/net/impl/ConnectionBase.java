@@ -70,7 +70,7 @@ public abstract class ConnectionBase {
     this.metrics = metrics;
   }
 
-  protected synchronized final void startRead() {
+  public synchronized final void startRead() {
     read = true;
   }
 
