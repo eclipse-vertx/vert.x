@@ -124,7 +124,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    checker = new BlockedThreadChecker(options.getBlockedThreadCheckPeriod(), options.getMaxEventLoopExecuteTime(),
+    long blockedCheckPeriod = options.getBlockedThreadCheckPeriod();
+    checker = blockedCheckPeriod == 0 ?  null : new BlockedThreadChecker(blockedCheckPeriod, options.getMaxEventLoopExecuteTime(),
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
                                            new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
@@ -342,7 +343,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl) {
-    return new EventLoopContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID, config, tccl);
+    return new EventLoopContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
+                                config, tccl, checker != null);
   }
 
   @Override
@@ -406,10 +408,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config,
                                          ClassLoader tccl) {
     if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config, tccl);
+      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config,
+                                            tccl, checker != null);
     } else {
       return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
-                               config, tccl);
+                               config, tccl, checker != null);
     }
   }
 
@@ -653,7 +656,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         metrics.close();
       }
 
-      checker.close();
+      if (checker != null) {
+        checker.close();
+      }
 
       ContextImpl.setContext(null);
 

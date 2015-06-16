@@ -366,12 +366,13 @@ public class VertxOptions {
   /**
    * Sets the value of blocked thread check period, in ms.
    *
-   * @param blockedThreadCheckPeriod  the value of blocked thread check period, in ms.
+   * @param blockedThreadCheckPeriod  the value of blocked thread check period, in ms. or if zero - means no checks will
+   *                                  be done
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setBlockedThreadCheckPeriod(long blockedThreadCheckPeriod) {
-    if (blockedThreadCheckPeriod < 1) {
-      throw new IllegalArgumentException("blockedThreadCheckPeriod must be > 0");
+    if (blockedThreadCheckPeriod < 0) {
+      throw new IllegalArgumentException("blockedThreadCheckPeriod must be >= 0");
     }
     this.blockedThreadCheckPeriod = blockedThreadCheckPeriod;
     return this;
