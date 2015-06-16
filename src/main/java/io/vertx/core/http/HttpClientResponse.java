@@ -16,6 +16,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -79,6 +80,15 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    * @return the header value
    */
   String getHeader(String headerName);
+
+  /**
+   * Return the first header value with the specified name
+   *
+   * @param headerName  the header
+   * @return the header value
+   */
+  @GenIgnore
+  String getHeader(CharSequence headerName);
 
   /**
    * Return the first trailer value with the specified name
