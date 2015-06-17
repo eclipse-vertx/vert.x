@@ -238,6 +238,8 @@ class ClientConnection extends ConnectionBase {
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
+      // Need to set context before constructor is called as writehandler registration needs this
+      ContextImpl.setContext(context);
       WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
                                                   client.getOptions().getMaxWebsocketFrameSize());
       ws = webSocket;
