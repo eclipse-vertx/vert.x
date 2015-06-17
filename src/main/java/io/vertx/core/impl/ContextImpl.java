@@ -42,8 +42,8 @@ public abstract class ContextImpl implements Context {
 
   private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
-  private static final boolean THREAD_CHECKS = "true".equalsIgnoreCase(System.getProperty(THREAD_CHECKS_PROP_NAME));
-  private static final boolean DISABLE_TIMINGS = "true".equalsIgnoreCase(System.getProperty(DISABLE_TIMINGS_PROP_NAME));
+  private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
+  private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
   protected final VertxInternal owner;
   protected final String deploymentID;

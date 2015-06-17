@@ -71,6 +71,8 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
+  private static final String FLASH_POLICY_HANDLER_PROP_NAME = "vertx.flashPolicyHandler";
+  private static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
 
   private final HttpServerOptions options;
   private final VertxInternal vertx;
@@ -196,7 +198,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               if (sslHelper.isSSL()) {
                 pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, false));
               }
-              pipeline.addLast("flashpolicy", new FlashPolicyHandler());
+              if (USE_FLASH_POLICY_HANDLER) {
+                pipeline.addLast("flashpolicy", new FlashPolicyHandler());
+              }
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(4096, 8192, 8192, false));
               pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
               if (options.isCompressionSupported()) {
