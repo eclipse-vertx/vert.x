@@ -117,7 +117,9 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     if (gracefulShutdown.compareAndSet(false, true)) {
       final AtomicInteger counter = new AtomicInteger(workers.size());
       for (EventLoopHolder holder : workers) {
-        holder.worker.shutdownGracefully().addListener(future -> {
+        Future<?> fut = holder.worker.shutdownGracefully();
+        // Explicitly type this just to keep IntelliJ happy as it reports a syntax error in IDE otherwise
+        fut.addListener((Future<?> future) -> {
           if (counter.decrementAndGet() == 0) {
             terminationFuture.setSuccess(null);
           }
