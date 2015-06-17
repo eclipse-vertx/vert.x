@@ -17,9 +17,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
@@ -36,7 +36,9 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.impl.*;
+import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.VertxChannelFactory;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -776,35 +778,48 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         HttpContent chunk = (HttpContent) msg;
         if (chunk.content().isReadable()) {
           Buffer buff = Buffer.buffer(chunk.content().slice());
-          conn.handleResponseChunk(buff);
+          try {
+            conn.handleResponseChunk(buff);
+          } finally {
+            buff.release();
+          }
         }
         if (chunk instanceof LastHttpContent) {
           conn.handleResponseEnd((LastHttpContent)chunk);
         }
         valid = true;
-      } else if (msg instanceof WebSocketFrameInternal) {
-        WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-        switch (frame.type()) {
-          case BINARY:
-          case CONTINUATION:
-          case TEXT:
-            conn.handleWsFrame(frame);
-            break;
-          case PING:
-            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
-            break;
-          case CLOSE:
-            if (!closeFrameSent) {
-              // Echo back close frame and close the connection once it was written.
-              // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              ctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
-              closeFrameSent = true;
-            }
-            break;
-          default:
-            throw new IllegalStateException("Invalid type: " + frame.type());
+      } else if (msg instanceof io.netty.handler.codec.http.websocketx.WebSocketFrame) {
+
+        io.netty.handler.codec.http.websocketx.WebSocketFrame nettyFrame =
+          (io.netty.handler.codec.http.websocketx.WebSocketFrame)msg;
+        boolean isFinal = nettyFrame.isFinalFragment();
+        FrameType frameType;
+        if (msg instanceof BinaryWebSocketFrame) {
+          frameType = FrameType.BINARY;
+        } else if (msg instanceof TextWebSocketFrame) {
+          frameType = FrameType.TEXT;
+        } else if (msg instanceof ContinuationWebSocketFrame) {
+          frameType = FrameType.CONTINUATION;
+        } else if (msg instanceof CloseWebSocketFrame) {
+          if (!closeFrameSent) {
+            // Echo back close frame and close the connection once it was written.
+            // This is specified in the WebSockets RFC 6455 Section  5.4.1
+            ctx.writeAndFlush(nettyFrame).addListener(ChannelFutureListener.CLOSE);
+            closeFrameSent = true;
+          }
+          return;
+        } else if (msg instanceof PingWebSocketFrame) {
+          // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+          ctx.writeAndFlush(new PongWebSocketFrame(nettyFrame.content()));
+          return;
+        } else if (msg instanceof PongWebSocketFrame) {
+          return;
+        } else {
+          throw new IllegalStateException("Unsupported websocket msg " + msg);
         }
+
+        WebSocketFrameInternal frame = new WebSocketFrameImpl(frameType, nettyFrame.content(), isFinal);
+        conn.handleWsFrame(frame);
         valid = true;
       }
       if (!valid) {

@@ -17,7 +17,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.buffer.Buffer;
@@ -50,19 +49,20 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
   @Override
   protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
+    ByteBuf buf = (ByteBuf) msg;
     if (sock != null) {
-      ByteBuf buf = (ByteBuf) msg;
-      context.executeFromIO(() -> sock.handleDataReceived(Buffer.buffer(buf)));
+      context.executeFromIO(() -> {
+        Buffer buff = Buffer.buffer(buf);
+        try {
+          sock.handleDataReceived(buff);
+        } finally {
+          buff.release();
+        }
+      });
     } else {
       // just discard
+      buf.release();
     }
   }
 
-  @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
-    if (msg instanceof ByteBuf) {
-      return safeBuffer((ByteBuf) msg, allocator);
-    }
-    return msg;
-  }
 }

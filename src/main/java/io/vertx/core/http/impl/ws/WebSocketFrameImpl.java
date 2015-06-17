@@ -36,6 +36,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   private final FrameType type;
   private final boolean isFinalFrame;
   private ByteBuf binaryData;
+  private Buffer bBinaryData;
 
   /**
    * Creates a new empty text frame.
@@ -71,7 +72,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * Creates a new frame with the specified frame type and the specified data.
    *
    * @param type       the type of the frame. {@code 0} is the only allowed type currently.
-   * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
+   * @param binaryData the content of the frame.  If <tt>b(type &amp; 0x80 == 0)</tt>,
    *                   it must be encoded in UTF-8.
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
@@ -113,11 +114,14 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   public String textData() {
-    return getBinaryData().toString(CharsetUtil.UTF_8);
+    return binaryData.toString(CharsetUtil.UTF_8);
   }
 
   public Buffer binaryData() {
-    return Buffer.buffer(binaryData);
+    if (bBinaryData == null) {
+      bBinaryData = Buffer.buffer(binaryData);
+    }
+    return bBinaryData;
   }
 
   public void setBinaryData(ByteBuf binaryData) {

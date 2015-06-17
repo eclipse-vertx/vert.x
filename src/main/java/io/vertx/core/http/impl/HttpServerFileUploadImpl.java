@@ -174,15 +174,19 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void doReceiveData(Buffer data) {
-    if (!paused) {
-      if (dataHandler != null) {
-        dataHandler.handle(data);
+    try {
+      if (!paused) {
+        if (dataHandler != null) {
+          dataHandler.handle(data);
+        }
+      } else {
+        if (pauseBuff == null) {
+          pauseBuff = Buffer.buffer();
+        }
+        pauseBuff.appendBuffer(data);
       }
-    } else {
-      if (pauseBuff == null) {
-        pauseBuff = Buffer.buffer();
-      }
-      pauseBuff.appendBuffer(data);
+    } finally {
+      data.release();
     }
   }
 

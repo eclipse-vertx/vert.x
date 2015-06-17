@@ -153,14 +153,17 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   }
 
   synchronized void handleFrame(WebSocketFrameInternal frame) {
-    conn.reportBytesRead(frame.binaryData().length());
-    if (dataHandler != null) {
-      Buffer buff = Buffer.buffer(frame.getBinaryData());
-      dataHandler.handle(buff);
-    }
-
-    if (frameHandler != null) {
-      frameHandler.handle(frame);
+    Buffer buff = frame.binaryData();
+    conn.reportBytesRead(buff.length());
+    try {
+      if (dataHandler != null) {
+        dataHandler.handle(buff);
+      }
+      if (frameHandler != null) {
+        frameHandler.handle(frame);
+      }
+    } finally {
+      buff.release();
     }
   }
 

@@ -278,6 +278,18 @@ public class BufferImpl implements Buffer {
     return buffer.duplicate();
   }
 
+  @Override
+  public Buffer retain() {
+    buffer.retain();
+    return this;
+  }
+
+  @Override
+  public Buffer release() {
+    buffer.release();
+    return this;
+  }
+
   private Buffer append(String str, Charset charset) {
     byte[] bytes = str.getBytes(charset);
     buffer.writeBytes(bytes);

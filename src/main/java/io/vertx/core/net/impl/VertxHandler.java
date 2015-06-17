@@ -15,10 +15,6 @@
  */
 package io.vertx.core.net.impl;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -44,26 +40,6 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   protected ContextImpl getContext(C connection) {
     return connection.getContext();
-  }
-
-  protected static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
-    if (buf == Unpooled.EMPTY_BUFFER) {
-      return buf;
-    }
-    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
-      try {
-        if (buf.isReadable()) {
-          ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
-          buffer.writeBytes(buf);
-          return buffer;
-        } else {
-          return Unpooled.EMPTY_BUFFER;
-        }
-      } finally {
-        buf.release();
-      }
-    }
-    return buf;
   }
 
   @Override
@@ -117,9 +93,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    Object message = safeObject(msg, chctx.alloc());
     C connection = getConnection(chctx.channel());
-
     ContextImpl context;
     if (connection != null) {
       context = getContext(connection);
@@ -127,7 +101,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     } else {
       context = null;
     }
-    channelRead(connection, context, chctx, message);
+    channelRead(connection, context, chctx, msg);
   }
 
   @Override
@@ -139,5 +113,4 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   protected abstract void channelRead(C connection, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception;
 
-  protected abstract Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception;
 }

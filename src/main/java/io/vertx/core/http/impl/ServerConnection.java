@@ -389,7 +389,11 @@ class ServerConnection extends ConnectionBase {
         HttpContent chunk = (HttpContent) msg;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(chunk.content());
-        handleChunk(buff);
+        try {
+          handleChunk(buff);
+        } finally {
+          buff.release();
+        }
       }
       if (msg instanceof LastHttpContent) {
         if (!paused) {

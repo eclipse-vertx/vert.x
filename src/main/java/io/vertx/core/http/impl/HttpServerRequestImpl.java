@@ -342,7 +342,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     synchronized (conn) {
       if (decoder != null) {
         try {
-          decoder.offer(new DefaultHttpContent(data.getByteBuf().duplicate()));
+          decoder.offer(new DefaultHttpContent(data.getByteBuf()));
         } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
           handleException(e);
         }

@@ -16,7 +16,6 @@
 package io.vertx.core.datagram.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -52,22 +51,20 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
     return socket;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   protected void channelRead(final DatagramSocketImpl server, final ContextImpl context, ChannelHandlerContext chctx, final Object msg) throws Exception {
-    context.executeFromIO(() -> server.handlePacket((io.vertx.core.datagram.DatagramPacket) msg));
-  }
 
-  @Override
-  protected Object safeObject(Object msg, ByteBufAllocator allocator) throws Exception {
     if (msg instanceof DatagramPacket) {
       DatagramPacket packet = (DatagramPacket) msg;
       ByteBuf content = packet.content();
-      if (content.isDirect())  {
-        content = safeBuffer(content, allocator);
-      }
-      return new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));
+      io.vertx.core.datagram.DatagramPacket pack = new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));
+      context.executeFromIO(() -> {
+        try {
+          server.handlePacket(pack);
+        } finally {
+          content.release();
+        }
+      });
     }
-    return msg;
   }
 }

@@ -399,6 +399,20 @@ public interface Buffer extends ClusterSerializable {
   @GenIgnore
   ByteBuf getByteBuf();
 
+  /**
+   * Retain the buffer so it will not be reused.
+   * Buffers that come from IO and are passed to handlers are automatically released when the handler that provided
+   * it has finished executing. If you wish to retain a buffer longer than that you should call this method.
+   * When you are then finished with it you should call {@link #release}.
+   */
+  Buffer retain();
+
+  /**
+   * Release the buffer so it's memory can be reclaimed and reused. Call this after you have previously called
+   * {@link #retain} to retain a buffer.
+   */
+  Buffer release();
+
   static final BufferFactory factory = ServiceHelper.loadFactory(BufferFactory.class);
 
 }

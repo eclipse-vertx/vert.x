@@ -24,10 +24,7 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
-import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
-import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
-import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -461,32 +458,39 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         } else {
           handleHttp(conn, ch, msg);
         }
-      } else if (msg instanceof WebSocketFrameInternal) {
-        //Websocket frame
-        WebSocketFrameInternal wsFrame = (WebSocketFrameInternal)msg;
-        switch (wsFrame.type()) {
-          case BINARY:
-          case CONTINUATION:
-          case TEXT:
-            if (conn != null) {
-              conn.handleMessage(msg);
-            }
-            break;
-          case PING:
-            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
-            break;
-          case CLOSE:
-            if (!closeFrameSent) {
-              // Echo back close frame and close the connection once it was written.
-              // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              ch.writeAndFlush(wsFrame).addListener(ChannelFutureListener.CLOSE);
-              closeFrameSent = true;
-            }
-            break;
-          default:
-            throw new IllegalStateException("Invalid type: " + wsFrame.type());
+
+      } else if (msg instanceof io.netty.handler.codec.http.websocketx.WebSocketFrame) {
+
+        io.netty.handler.codec.http.websocketx.WebSocketFrame nettyFrame =
+          (io.netty.handler.codec.http.websocketx.WebSocketFrame)msg;
+        boolean isFinal = nettyFrame.isFinalFragment();
+        FrameType frameType;
+        if (msg instanceof BinaryWebSocketFrame) {
+          frameType = FrameType.BINARY;
+        } else if (msg instanceof TextWebSocketFrame) {
+          frameType = FrameType.TEXT;
+        } else if (msg instanceof ContinuationWebSocketFrame) {
+          frameType = FrameType.CONTINUATION;
+        } else if (msg instanceof CloseWebSocketFrame) {
+          if (!closeFrameSent) {
+            // Echo back close frame and close the connection once it was written.
+            // This is specified in the WebSockets RFC 6455 Section  5.4.1
+            ctx.writeAndFlush(nettyFrame).addListener(ChannelFutureListener.CLOSE);
+            closeFrameSent = true;
+          }
+          return;
+        } else if (msg instanceof PingWebSocketFrame) {
+          // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+          ctx.writeAndFlush(new PongWebSocketFrame(nettyFrame.content()));
+          return;
+        } else if (msg instanceof PongWebSocketFrame) {
+          return;
+        } else {
+          throw new IllegalStateException("Unsupported websocket msg " + msg);
         }
+        WebSocketFrameImpl frame = new WebSocketFrameImpl(frameType, nettyFrame.content(), isFinal);
+        conn.handleMessage(frame);
+
       } else if (msg instanceof HttpContent) {
         if (wsRequest != null) {
           wsRequest.content().writeBytes(((HttpContent) msg).content());
