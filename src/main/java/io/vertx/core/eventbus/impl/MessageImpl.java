@@ -164,9 +164,6 @@ public class MessageImpl<U, V> implements Message<V> {
     encodeHeaders(buffer);
     writeBody(buffer);
     buffer.setInt(0, buffer.length() - 4);
-//    if (buffer.length()> length) {
-//      log.warn("Overshot length " + length + " actual " + buffer.length());
-//    }
     return buffer;
   }
 
@@ -223,6 +220,7 @@ public class MessageImpl<U, V> implements Message<V> {
     bodyPos = pos;
     sender = new ServerID(senderPort, senderHost);
     wireBuffer = buffer;
+    buffer.retain();
     this.socket = socket;
   }
 
@@ -334,5 +332,11 @@ public class MessageImpl<U, V> implements Message<V> {
     }
   }
 
-
+  @Override
+  protected void finalize() throws Throwable {
+    if (wireBuffer != null) {
+      wireBuffer.release();
+    }
+    super.finalize();
+  }
 }

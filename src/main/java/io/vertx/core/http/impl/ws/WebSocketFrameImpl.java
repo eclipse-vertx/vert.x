@@ -19,7 +19,6 @@ package io.vertx.core.http.impl.ws;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCounted;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
 
@@ -30,27 +29,13 @@ import io.vertx.core.http.impl.FrameType;
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
-public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
-
+public class WebSocketFrameImpl implements WebSocketFrameInternal {
 
   private final FrameType type;
   private final boolean isFinalFrame;
   private ByteBuf binaryData;
   private Buffer bBinaryData;
 
-  /**
-   * Creates a new empty text frame.
-   */
-  public WebSocketFrameImpl() {
-    this(null, Unpooled.EMPTY_BUFFER, true);
-  }
-
-  /**
-   * Creates a new empty text frame.
-   */
-  public WebSocketFrameImpl(FrameType frameType) {
-    this(frameType, Unpooled.EMPTY_BUFFER, true);
-  }
 
   /**
    * Creates a new text frame from with the specified string.
@@ -94,7 +79,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   public WebSocketFrameImpl(FrameType type, ByteBuf binaryData, boolean isFinalFrame) {
     this.type = type;
     this.isFinalFrame = isFinalFrame;
-    this.binaryData = Unpooled.unreleasableBuffer(binaryData);
+    this.binaryData = binaryData;
   }
 
   public boolean isText() {
@@ -124,49 +109,10 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
     return bBinaryData;
   }
 
-  public void setBinaryData(ByteBuf binaryData) {
-    if (this.binaryData != null) {
-      this.binaryData.release();
-    }
-    this.binaryData = binaryData;
-  }
-
-  public void setTextData(String textData) {
-    if (this.binaryData != null) {
-      this.binaryData.release();
-    }
-    this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
-  }
-
   @Override
   public String toString() {
     return getClass().getSimpleName() +
         "(type: " + type + ", " + "data: " + getBinaryData() + ')';
-  }
-
-  @Override
-  public int refCnt() {
-    return binaryData.refCnt();
-  }
-
-  @Override
-  public ReferenceCounted retain() {
-    return binaryData.retain();
-  }
-
-  @Override
-  public ReferenceCounted retain(int increment) {
-    return binaryData.retain(increment);
-  }
-
-  @Override
-  public boolean release() {
-    return binaryData.release();
-  }
-
-  @Override
-  public boolean release(int decrement) {
-    return binaryData.release(decrement);
   }
 
   @Override

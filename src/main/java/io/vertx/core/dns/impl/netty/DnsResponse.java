@@ -16,13 +16,12 @@
 package io.vertx.core.dns.impl.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufHolder;
 
 /**
  * A DNS response packet which is sent to a client after a server receives a
  * query.
  */
-public class DnsResponse extends DnsMessage<DnsResponseHeader> implements ByteBufHolder {
+public class DnsResponse extends DnsMessage<DnsResponseHeader> {
 
   private final ByteBuf rawPacket;
   private final int originalIndex;
@@ -35,53 +34,10 @@ public class DnsResponse extends DnsMessage<DnsResponseHeader> implements ByteBu
   /**
    * Returns the non-decoded DNS response packet.
    */
-  @Override
   public ByteBuf content() {
     return rawPacket;
   }
 
-  @Override
-  public int refCnt() {
-    return rawPacket.refCnt();
-  }
-
-  @Override
-  public boolean release() {
-    return rawPacket.release();
-  }
-
-  /**
-   * Returns a deep copy of this DNS response.
-   */
-  @Override
-  public DnsResponse copy() {
-    return DnsResponseDecoder.decodeResponse(rawPacket.copy(), rawPacket.alloc());
-  }
-
-  /**
-   * Returns a duplicate of this DNS response.
-   */
-  @Override
-  public ByteBufHolder duplicate() {
-    return DnsResponseDecoder.decodeResponse(rawPacket.duplicate(), rawPacket.alloc());
-  }
-
-  @Override
-  public DnsResponse retain() {
-    rawPacket.retain();
-    return this;
-  }
-
-  @Override
-  public DnsResponse retain(int increment) {
-    rawPacket.retain(increment);
-    return this;
-  }
-
-  @Override
-  public boolean release(int decrement) {
-    return rawPacket.release(decrement);
-  }
 
   /**
    * Returns the original index at which the DNS response packet starts for the {@link io.netty.buffer.ByteBuf}

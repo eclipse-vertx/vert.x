@@ -57,12 +57,13 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
     if (msg instanceof DatagramPacket) {
       DatagramPacket packet = (DatagramPacket) msg;
       ByteBuf content = packet.content();
-      io.vertx.core.datagram.DatagramPacket pack = new DatagramPacketImpl(packet.sender(), Buffer.buffer(content));
+      Buffer buff = Buffer.buffer(content);
+      io.vertx.core.datagram.DatagramPacket pack = new DatagramPacketImpl(packet.sender(), buff);
       context.executeFromIO(() -> {
         try {
           server.handlePacket(pack);
         } finally {
-          content.release();
+          buff.release();
         }
       });
     }

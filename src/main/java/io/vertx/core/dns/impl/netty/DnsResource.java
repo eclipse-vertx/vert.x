@@ -16,13 +16,12 @@
 package io.vertx.core.dns.impl.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufHolder;
 
 /**
  * Represents any resource record (answer, authority, or additional resource
  * records).
  */
-public class DnsResource extends DnsEntry implements ByteBufHolder {
+public class DnsResource extends DnsEntry  {
 
   private final int contentIndex;
   private final long ttl;
@@ -68,55 +67,9 @@ public class DnsResource extends DnsEntry implements ByteBufHolder {
     return content.writerIndex() - content.readerIndex();
   }
 
-  /**
-   * Returns the data contained in this resource record.
-   */
-  @Override
   public ByteBuf content() {
     return content;
   }
 
-  /**
-   * Returns a deep copy of this resource record.
-   */
-  @Override
-  public DnsResource copy() {
-    return new DnsResource(name(), type(), dnsClass(), ttl, contentIndex, content.copy());
-  }
-
-  /**
-   * Returns a duplicate of this resource record.
-   */
-  @Override
-  public ByteBufHolder duplicate() {
-    return new DnsResource(name(), type(), dnsClass(), ttl, contentIndex, content.duplicate());
-  }
-
-  @Override
-  public int refCnt() {
-    return content.refCnt();
-  }
-
-  @Override
-  public DnsResource retain() {
-    content.retain();
-    return this;
-  }
-
-  @Override
-  public DnsResource retain(int increment) {
-    content.retain(increment);
-    return this;
-  }
-
-  @Override
-  public boolean release() {
-    return content.release();
-  }
-
-  @Override
-  public boolean release(int decrement) {
-    return content.release(decrement);
-  }
 
 }

@@ -33,22 +33,5 @@ public interface WebSocketFrameInternal extends WebSocketFrame {
    */
   ByteBuf getBinaryData();
 
-  /**
-   * Sets the type and the content of this frame.
-   *
-   * @param binaryData the content of the frame.  If <tt>(type &amp; 0x80 == 0)</tt>,
-   *                   it must be encoded in UTF-8.
-   * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
-   *                                  in UTF-8
-   */
-  void setBinaryData(ByteBuf binaryData);
-
-  /**
-   * Set the type of the content of this frame and populate it with the given content
-   *
-   * @param textData the content of the frame. Must be valid UTF-8
-   */
-  void setTextData(String textData);
-
   FrameType type();
 }

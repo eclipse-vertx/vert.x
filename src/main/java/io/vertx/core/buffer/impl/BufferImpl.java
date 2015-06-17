@@ -59,7 +59,7 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(ByteBuf buffer) {
-    this.buffer = Unpooled.unreleasableBuffer(buffer);
+    this.buffer = buffer;
   }
 
   public String toString() {
@@ -286,7 +286,10 @@ public class BufferImpl implements Buffer {
 
   @Override
   public Buffer release() {
-    buffer.release();
+    System.out.println("Calling release");
+    if (buffer.refCnt() > 0) {
+      buffer.release();
+    }
     return this;
   }
 
