@@ -52,6 +52,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
 /**
  *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -66,6 +69,8 @@ class ServerConnection extends ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
+  public static final String HANDLE_100_CONTINUE_PROP_NAME = "vertx.handle100Continue";
+  private static final boolean HANDLE_100_CONTINUE = Boolean.getBoolean(HANDLE_100_CONTINUE_PROP_NAME);
 
   private final Queue<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
@@ -369,6 +374,12 @@ class ServerConnection extends ConnectionBase {
         channel.pipeline().fireExceptionCaught(result.cause());
         return;
       }
+      if (HANDLE_100_CONTINUE) {
+        if (HttpHeaders.is100ContinueExpected(request)) {
+          channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+        }
+      }
+
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);
