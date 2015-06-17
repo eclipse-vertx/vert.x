@@ -75,7 +75,7 @@ class ServerConnection extends ConnectionBase {
   private final Queue<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final HttpServerImpl server;
-  private final WebSocketServerHandshaker handshaker;
+  private WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
 
   private Object requestMetric;
@@ -181,14 +181,17 @@ class ServerConnection extends ConnectionBase {
     if (ws != null) {
       return ws;
     }
-    if (handshaker == null || !(nettyReq instanceof FullHttpRequest)) {
+    handshaker = server.createHandshaker(channel, nettyReq);
+    if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
+
+    server.expectWebsockets();
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize());
     try {
-      handshaker.handshake(channel, (FullHttpRequest)nettyReq);
+      handshaker.handshake(channel, nettyReq);
     } catch (WebSocketHandshakeException e) {
       handleException(e);
     } catch (Exception e) {

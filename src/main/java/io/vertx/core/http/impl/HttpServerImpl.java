@@ -33,10 +33,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
@@ -93,6 +90,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private HttpServerImpl actualServer;
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
+  private boolean expectingWebsockets = false;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -121,6 +119,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public HttpServer websocketHandler(Handler<ServerWebSocket> handler) {
+    expectingWebsockets = true;
     websocketStream().handler(handler);
     return this;
   }
@@ -137,6 +136,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public ServerWebSocketStream websocketStream() {
+    expectingWebsockets = true;
     return wsStream;
   }
 
@@ -362,6 +362,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     connectionMap.remove(channel);
   }
 
+  void expectWebsockets() {
+    expectingWebsockets = true;
+  }
+
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
@@ -430,25 +434,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       super(HttpServerImpl.this.connectionMap);
     }
 
-    private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
-      FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
-      if (status.code() == METHOD_NOT_ALLOWED.code()) {
-        // SockJS requires this
-        resp.headers().set(io.vertx.core.http.HttpHeaders.ALLOW, io.vertx.core.http.HttpHeaders.GET);
-      }
-      if (err != null) {
-        resp.content().writeBytes(err.toString().getBytes(CharsetUtil.UTF_8));
-        HttpHeaders.setContentLength(resp, err.length());
-      } else {
-        HttpHeaders.setContentLength(resp, 0);
-      }
-
-      ch.writeAndFlush(resp);
-    }
-
     FullHttpRequest wsRequest;
-
-    private boolean expectingWebsockets = false;
 
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -488,10 +474,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           } else {
             //HTTP request
             if (conn == null) {
-              HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-              if (reqHandler != null) {
-                createConnAndHandle(reqHandler, ch, (HttpRequest) msg, null);
-              }
+              createConnAndHandle(ch, msg, null);
             } else {
               conn.handleMessage(msg);
             }
@@ -540,63 +523,37 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else {
         if (conn == null) {
-          HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-          if (reqHandler != null) {
-            createConnAndHandle(reqHandler, ch, (HttpRequest) msg, null);
-          }
+          createConnAndHandle(ch, msg, null);
         } else {
           conn.handleMessage(msg);
         }
       }
     }
 
-    private String getWebSocketLocation(ChannelPipeline pipeline, FullHttpRequest req) throws Exception {
-      String prefix;
-      if (pipeline.get(SslHandler.class) == null) {
-        prefix = "ws://";
-      } else {
-        prefix = "wss://";
-      }
-      URI uri = new URI(req.getUri());
-      String path = uri.getRawPath();
-      String loc =  prefix + HttpHeaders.getHost(req) + path;
-      String query = uri.getRawQuery();
-      if (query != null) {
-        loc += "?" + query;
-      }
-      return loc;
-    }
-
-    private void createConnAndHandle(HandlerHolder<HttpServerRequest> reqHandler, Channel ch, HttpRequest request,
+    private void createConnAndHandle(Channel ch, Object msg,
                                      WebSocketServerHandshaker shake) {
-      ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
-      conn.requestHandler(reqHandler.handler);
-      connectionMap.put(ch, conn);
-      reqHandler.context.executeFromIO(() -> {
-        conn.setMetric(metrics.connected(conn.remoteAddress()));
-        conn.handleMessage(request);
-      });
+      HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+      if (reqHandler != null) {
+        ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
+        conn.requestHandler(reqHandler.handler);
+        connectionMap.put(ch, conn);
+        reqHandler.context.executeFromIO(() -> {
+          conn.setMetric(metrics.connected(conn.remoteAddress()));
+          conn.handleMessage(msg);
+        });
+      }
     }
 
     private void handshake(FullHttpRequest request, Channel ch, ChannelHandlerContext ctx) throws Exception {
 
-      WebSocketServerHandshakerFactory factory =
-          new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
-                                               options.getMaxWebsocketFrameSize());
-      WebSocketServerHandshaker shake = factory.newHandshaker(request);
-
+      WebSocketServerHandshaker shake = createHandshaker(ch, request);
       if (shake == null) {
-        log.error("Unrecognised websockets handshake");
-        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
         return;
       }
       HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
 
       if (wsHandler == null) {
-        HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
-        if (reqHandler != null) {
-          createConnAndHandle(reqHandler, ch, request, shake);
-        }
+        createConnAndHandle(ch, request, shake);
       } else {
 
         wsHandler.context.executeFromIO(() -> {
@@ -639,9 +596,74 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             ch.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, BAD_GATEWAY));
           }
         });
-
       }
     }
+  }
+
+  WebSocketServerHandshaker createHandshaker(Channel ch, HttpRequest request)  {
+    // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
+    // it doesn't send a normal 'Connection: Upgrade' header. Instead it
+    // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+    String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+    if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
+      sendError("\"Connection\" must be \"Upgrade\".", BAD_REQUEST, ch);
+      return null;
+    }
+
+    if (request.getMethod() != HttpMethod.GET) {
+      sendError(null, METHOD_NOT_ALLOWED, ch);
+      return null;
+    }
+
+    try {
+
+      WebSocketServerHandshakerFactory factory =
+        new WebSocketServerHandshakerFactory(getWebSocketLocation(ch.pipeline(), request), subProtocols, false,
+          options.getMaxWebsocketFrameSize());
+      WebSocketServerHandshaker shake = factory.newHandshaker(request);
+
+      if (shake == null) {
+        log.error("Unrecognised websockets handshake");
+        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+      }
+
+      return shake;
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
+  }
+
+  private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {
+    FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
+    if (status.code() == METHOD_NOT_ALLOWED.code()) {
+      // SockJS requires this
+      resp.headers().set(io.vertx.core.http.HttpHeaders.ALLOW, io.vertx.core.http.HttpHeaders.GET);
+    }
+    if (err != null) {
+      resp.content().writeBytes(err.toString().getBytes(CharsetUtil.UTF_8));
+      HttpHeaders.setContentLength(resp, err.length());
+    } else {
+      HttpHeaders.setContentLength(resp, 0);
+    }
+
+    ch.writeAndFlush(resp);
+  }
+
+  private String getWebSocketLocation(ChannelPipeline pipeline, HttpRequest req) throws Exception {
+    String prefix;
+    if (pipeline.get(SslHandler.class) == null) {
+      prefix = "ws://";
+    } else {
+      prefix = "wss://";
+    }
+    URI uri = new URI(req.getUri());
+    String path = uri.getRawPath();
+    String loc =  prefix + HttpHeaders.getHost(req) + path;
+    String query = uri.getRawQuery();
+    if (query != null) {
+      loc += "?" + query;
+    }
+    return loc;
   }
 
   @Override
