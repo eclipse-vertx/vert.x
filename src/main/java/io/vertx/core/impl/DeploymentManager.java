@@ -669,7 +669,7 @@ public class DeploymentManager {
           undeployed = false;
           log.trace("Redeployed ok");
         } else {
-          log.trace("Failed to deploy!!");
+          log.trace("Failed to deploy!!", res2.cause());
           broken = true;
           doStartRedeployTimer();
         }
