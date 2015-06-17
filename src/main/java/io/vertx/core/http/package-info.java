@@ -294,7 +294,7 @@
  * ----
  *
  * WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
- * to arbitrary places on your filesystem. See <<security_notes, security notes>> for more information.
+ * to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
  *
  * === Sending back responses
  *
@@ -942,7 +942,7 @@
  *
  * Vert.x http servers and clients can be configured to use HTTPS in exactly the same way as net servers.
  *
- * Please see <<netserver_ssl, configuring net servers to use SSL>> for more information.
+ * Please see <<ssl, configuring net servers to use SSL>> for more information.
  *
  * === WebSockets
  *
