@@ -266,6 +266,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponseImpl write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
+    buf.retain(); // When it's actually written Netty will release it
     return write(buf, null);
   }
 
@@ -296,6 +297,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         headers().set(HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
       }
       ByteBuf buf = chunk.getByteBuf();
+      buf.retain(); // When it's actually written Netty will release it
       end0(buf);
     }
   }

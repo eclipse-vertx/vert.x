@@ -100,6 +100,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   @Override
   public NetSocket write(Buffer data) {
     ByteBuf buf = data.getByteBuf();
+    buf.retain(); // When it's actually written Netty will release it
     write(buf);
     return this;
   }

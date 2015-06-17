@@ -179,7 +179,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         vertx.runOnContext(new VoidHandler() {
           @Override
           protected void handle() {
-            handleChunk(theChunk);
+            try {
+              handleChunk(theChunk);
+            } finally {
+              theChunk.release();
+            }
           }
         });
       }
@@ -204,6 +208,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         pausedChunks = new ArrayDeque<>();
       }
       pausedChunks.add(data);
+      data.retain();
     } else {
       request.dataReceived();
       if (dataHandler != null) {

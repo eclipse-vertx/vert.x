@@ -53,16 +53,13 @@ public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
     if (sock != null) {
       context.executeFromIO(() -> {
         Buffer buff = Buffer.buffer(buf);
-        System.out.println("Ref count going in: " + buf.refCnt());
         try {
           sock.handleDataReceived(buff);
         } finally {
-          System.out.println("Ref count in finally: " + buf.refCnt());
           buff.release();
         }
       });
     } else {
-      // just discard ?
       buf.release();
     }
   }

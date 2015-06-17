@@ -137,12 +137,13 @@ public abstract class WebSocketImplBase implements WebSocketBase {
 
   protected void writeTextFrameInternal(String str) {
     WebSocketFrame frame = new WebSocketFrameImpl(str);
-    writeFrame(frame);
+    writeFrame(frame);h
   }
 
   protected synchronized void writeFrameInternal(WebSocketFrame frame) {
     checkClosed();
     conn.reportBytesWritten(frame.binaryData().length());
+    frame.binaryData().retain(); // When it's actually written Netty will release it
     conn.writeToChannel(frame);
   }
 

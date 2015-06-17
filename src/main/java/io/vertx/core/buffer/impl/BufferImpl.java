@@ -59,6 +59,9 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(ByteBuf buffer) {
+    if (buffer == null) {
+      throw new NullPointerException("buffer");
+    }
     this.buffer = buffer;
   }
 
@@ -286,10 +289,7 @@ public class BufferImpl implements Buffer {
 
   @Override
   public Buffer release() {
-    System.out.println("Calling release");
-    if (buffer.refCnt() > 0) {
-      buffer.release();
-    }
+    buffer.release();
     return this;
   }
 

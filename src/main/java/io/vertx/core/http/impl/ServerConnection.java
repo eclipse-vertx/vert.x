@@ -29,7 +29,6 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
@@ -415,19 +414,17 @@ class ServerConnection extends ConnectionBase {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!pending.isEmpty() && !sentCheck && !paused && (pendingResponse == null || pending.peek() instanceof HttpContent)) {
       sentCheck = true;
-      vertx.runOnContext(new VoidHandler() {
-        public void handle() {
-          sentCheck = false;
-          if (!paused) {
-            Object msg = pending.poll();
-            if (msg != null) {
-              processMessage(msg);
-            }
-            if (channelPaused && pending.isEmpty()) {
-              //Resume the actual channel
-              ServerConnection.super.doResume();
-              channelPaused = false;
-            }
+      vertx.runOnContext(v -> {
+        sentCheck = false;
+        if (!paused) {
+          Object msg = pending.poll();
+          if (msg != null) {
+            processMessage(msg);
+          }
+          if (channelPaused && pending.isEmpty()) {
+            //Resume the actual channel
+            ServerConnection.super.doResume();
+            channelPaused = false;
           }
         }
       });

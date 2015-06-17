@@ -170,6 +170,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     checkComplete();
     checkResponseHandler();
     ByteBuf buf = chunk.getByteBuf();
+    buf.retain(); // When it's actually written Netty will release it
     write(buf, false);
     return this;
   }
@@ -270,6 +271,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     if (!chunked && !contentLengthSet()) {
       headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
+    ByteBuf buf = chunk.getByteBuf();
+    buf.retain(); // When it's actually written Netty will release it
     write(chunk.getByteBuf(), true);
   }
 

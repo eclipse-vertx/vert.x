@@ -17,7 +17,6 @@ package io.vertx.core.dns.impl.netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageDecoder;
@@ -193,9 +192,9 @@ public class DnsResponseDecoder extends MessageToMessageDecoder<DatagramPacket> 
    */
   @Override
   protected void decode(ChannelHandlerContext ctx, DatagramPacket packet, List<Object> out) throws Exception {
-    ByteBuf content = packet.content();
-    ByteBuf copied = Unpooled.unreleasableBuffer(content);
-    out.add(decodeResponse(copied, ctx.alloc()));
+    ByteBuf content = packet.content().retain();
+    //ByteBuf copied = Unpooled.unreleasableBuffer(content);
+    out.add(decodeResponse(content, ctx.alloc()));
     content.release();
   }
 
