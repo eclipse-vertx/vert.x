@@ -664,7 +664,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         if (options.getIdleTimeout() > 0) {
           pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
         }
-        pipeline.addLast("handler", new ClientHandler(context));
+        pipeline.addLast("handler", new ClientHandler(vertx, context));
       }
     });
     applyConnectionOptions(bootstrap);
@@ -768,8 +768,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     private boolean closeFrameSent;
     private ContextImpl context;
 
-    public ClientHandler(ContextImpl context) {
-      super(vertx, HttpClientImpl.this.connectionMap);
+    public ClientHandler(VertxInternal vertx, ContextImpl context) {
+      super(HttpClientImpl.this.connectionMap);
       this.context = context;
     }
 

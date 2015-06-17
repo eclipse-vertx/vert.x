@@ -377,7 +377,7 @@ class ClientConnection extends ConnectionBase {
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler", new VertxNetHandler(client.getVertx(), connectionMap) {
+    pipeline.replace("handler", "handler", new VertxNetHandler(connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping

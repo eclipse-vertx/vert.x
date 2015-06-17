@@ -25,7 +25,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 
 import java.util.Map;
 
@@ -34,11 +33,9 @@ import java.util.Map;
  */
 public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
-  protected final VertxInternal vertx;
   protected final Map<Channel, C> connectionMap;
 
-  protected VertxHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
-    this.vertx = vertx;
+  protected VertxHandler(Map<Channel, C> connectionMap) {
     this.connectionMap = connectionMap;
   }
 

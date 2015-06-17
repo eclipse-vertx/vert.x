@@ -22,7 +22,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 
 import java.util.Map;
 
@@ -31,8 +30,8 @@ import java.util.Map;
  */
 public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
-  public VertxNetHandler(VertxInternal vertx, Map<Channel, NetSocketImpl> connectionMap) {
-    super(vertx, connectionMap);
+  public VertxNetHandler(Map<Channel, NetSocketImpl> connectionMap) {
+    super(connectionMap);
   }
 
   @Override

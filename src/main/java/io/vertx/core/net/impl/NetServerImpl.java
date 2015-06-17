@@ -401,7 +401,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
-      super(NetServerImpl.this.vertx, socketMap);
+      super(socketMap);
     }
 
     @Override

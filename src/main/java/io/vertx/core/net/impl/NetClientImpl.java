@@ -170,7 +170,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
         if (options.getIdleTimeout() > 0) {
           pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
         }
-        pipeline.addLast("handler", new VertxNetHandler(vertx, socketMap));
+        pipeline.addLast("handler", new VertxNetHandler(socketMap));
       }
     });
 

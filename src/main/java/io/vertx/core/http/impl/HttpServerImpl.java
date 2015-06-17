@@ -209,7 +209,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               if (options.getIdleTimeout() > 0) {
                 pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
               }
-              pipeline.addLast("handler", new ServerHandler());
+              pipeline.addLast("handler", new ServerHandler(vertx));
             }
         });
 
@@ -423,8 +423,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public class ServerHandler extends VertxHttpHandler<ServerConnection> {
     private boolean closeFrameSent;
 
-    public ServerHandler() {
-      super(vertx, HttpServerImpl.this.connectionMap);
+    public ServerHandler(VertxInternal vertx) {
+      super(HttpServerImpl.this.connectionMap);
     }
 
     private void sendError(CharSequence err, HttpResponseStatus status, Channel ch) {

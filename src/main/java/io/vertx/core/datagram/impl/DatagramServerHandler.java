@@ -17,12 +17,10 @@ package io.vertx.core.datagram.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.VertxHandler;
 
 import java.util.HashMap;
@@ -33,8 +31,8 @@ import java.util.HashMap;
 final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
   private final DatagramSocketImpl server;
 
-  DatagramServerHandler(VertxInternal vertx, DatagramSocketImpl server) {
-        super(vertx, new HashMap<>());
+  DatagramServerHandler(DatagramSocketImpl server) {
+        super(new HashMap<>());
     this.server = server;
   }
 
