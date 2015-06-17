@@ -26,18 +26,14 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.impl.ContextImpl;
 
-import java.util.Map;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
-  protected final Map<Channel, C> connectionMap;
+  protected abstract C getConnection(Channel ch);
 
-  protected VertxHandler(Map<Channel, C> connectionMap) {
-    this.connectionMap = connectionMap;
-  }
+  protected abstract C removeConnection(Channel ch);
 
   protected ContextImpl getContext(C connection) {
     return connection.getContext();
@@ -66,7 +62,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     Channel ch = ctx.channel();
-    C conn = connectionMap.get(ch);
+    C conn = getConnection(ch);
     if (conn != null) {
       ContextImpl context = getContext(conn);
       context.executeFromIO(conn::handleInterestedOpsChanged);
@@ -77,7 +73,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
     Channel ch = chctx.channel();
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
-    C connection = connectionMap.get(ch);
+    C connection = getConnection(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
       context.executeFromIO(() -> {
@@ -97,7 +93,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     Channel ch = chctx.channel();
-    C connection = connectionMap.remove(ch);
+    C connection = removeConnection(ch);
     if (connection != null) {
       ContextImpl context = getContext(connection);
       context.executeFromIO(connection::handleClosed);
@@ -106,7 +102,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    C conn = connectionMap.get(ctx.channel());
+    C conn = getConnection(ctx.channel());
     if (conn != null) {
       ContextImpl context = getContext(conn);
       context.executeFromIO(conn::endReadAndFlush);
@@ -116,7 +112,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = safeObject(msg, chctx.alloc());
-    C connection = connectionMap.get(chctx.channel());
+    C connection = getConnection(chctx.channel());
 
     ContextImpl context;
     if (connection != null) {

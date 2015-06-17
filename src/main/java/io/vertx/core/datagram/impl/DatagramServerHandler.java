@@ -17,30 +17,39 @@ package io.vertx.core.datagram.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.impl.VertxHandler;
 
-import java.util.HashMap;
-
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
-  private final DatagramSocketImpl server;
 
-  DatagramServerHandler(DatagramSocketImpl server) {
-        super(new HashMap<>());
-    this.server = server;
+  private final DatagramSocketImpl socket;
+
+  DatagramServerHandler(DatagramSocketImpl socket) {
+    this.socket = socket;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
-    connectionMap.put(ctx.channel(), server);
   }
+
+  @Override
+  protected DatagramSocketImpl getConnection(Channel channel) {
+    return socket;
+  }
+
+  @Override
+  protected DatagramSocketImpl removeConnection(Channel channel) {
+    return socket;
+  }
+
 
   @SuppressWarnings("unchecked")
   @Override

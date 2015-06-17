@@ -30,9 +30,22 @@ import java.util.Map;
  */
 public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
+  private final Map<Channel, NetSocketImpl> connectionMap;
+
   public VertxNetHandler(Map<Channel, NetSocketImpl> connectionMap) {
-    super(connectionMap);
+    this.connectionMap = connectionMap;
   }
+
+  @Override
+  protected NetSocketImpl getConnection(Channel channel) {
+    return connectionMap.get(channel);
+  }
+
+  @Override
+  protected NetSocketImpl removeConnection(Channel channel) {
+    return connectionMap.remove(channel);
+  }
+
 
   @Override
   protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {

@@ -39,12 +39,39 @@ import java.util.Map;
  */
 public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHandler<C> {
 
-  protected VertxHttpHandler(Map<Channel, C> connectionMap) {
-    super(connectionMap);
-  }
-
   private static ByteBuf safeBuffer(ByteBufHolder holder, ByteBufAllocator allocator) {
     return safeBuffer(holder.content(), allocator);
+  }
+
+  protected Map<Channel, C> connectionMap;
+
+  protected VertxHttpHandler(Map<Channel, C> connectionMap) {
+    this.connectionMap = connectionMap;
+  }
+
+  @Override
+  protected C getConnection(Channel channel) {
+    @SuppressWarnings("unchecked")
+    VertxNioSocketChannel<C> vch = (VertxNioSocketChannel<C>)channel;
+    // As an optimisation we store the connection on the channel - this prevents a lookup every time
+    // an event from Netty arrives
+    if (vch.conn != null) {
+      return vch.conn;
+    } else {
+      C conn = connectionMap.get(channel);
+      if (conn != null) {
+        vch.conn = conn;
+      }
+      return conn;
+    }
+  }
+
+  @Override
+  protected C removeConnection(Channel channel) {
+    @SuppressWarnings("unchecked")
+    VertxNioSocketChannel<C> vch = (VertxNioSocketChannel<C>)channel;
+    vch.conn = null;
+    return connectionMap.remove(channel);
   }
 
   @Override
