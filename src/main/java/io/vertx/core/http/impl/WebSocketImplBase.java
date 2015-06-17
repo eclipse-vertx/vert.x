@@ -137,7 +137,7 @@ public abstract class WebSocketImplBase implements WebSocketBase {
 
   protected void writeTextFrameInternal(String str) {
     WebSocketFrame frame = new WebSocketFrameImpl(str);
-    writeFrame(frame);h
+    writeFrame(frame);
   }
 
   protected synchronized void writeFrameInternal(WebSocketFrame frame) {
