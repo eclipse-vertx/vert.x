@@ -433,7 +433,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     }
 
     private void connected(Channel ch, HandlerHolder<NetSocket> handler) {
-      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics);
+      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics, null);
       socketMap.put(ch, sock);
       handler.context.executeFromIO(() -> {
         sock.setMetric(metrics.connected(sock.remoteAddress()));

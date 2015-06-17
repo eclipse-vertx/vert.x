@@ -207,7 +207,7 @@ class ServerConnection extends ConnectionBase {
   }
 
   NetSocket createNetSocket() {
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, server.getSslHelper(), false, metrics, metric);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 

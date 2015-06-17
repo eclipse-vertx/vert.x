@@ -1,4 +1,4 @@
-== Record Parser tools
+== Record Parser
 
 The record parser allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
 size records.

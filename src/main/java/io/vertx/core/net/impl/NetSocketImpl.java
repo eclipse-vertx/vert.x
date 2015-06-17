@@ -74,11 +74,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private boolean paused = false;
   private ChannelFuture writeFuture;
 
-  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, TCPMetrics metrics) {
+  public NetSocketImpl(VertxInternal vertx, Channel channel, ContextImpl context, SSLHelper helper, boolean client, TCPMetrics metrics, Object metric) {
     super(vertx, channel, context, metrics);
     this.helper = helper;
     this.client = client;
     this.writeHandlerID = UUID.randomUUID().toString();
+    this.metric = metric;
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
   }

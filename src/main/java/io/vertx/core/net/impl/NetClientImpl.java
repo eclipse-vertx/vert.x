@@ -215,7 +215,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
-    NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics);
+    NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics, null);
     socketMap.put(ch, sock);
     context.executeFromIO(() -> {
       sock.setMetric(metrics.connected(sock.remoteAddress()));

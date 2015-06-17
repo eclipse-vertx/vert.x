@@ -40,6 +40,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -223,8 +225,10 @@ public class SSLHelper {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
       engine.setEnabledCipherSuites(toUse);
     }
-    engine.setEnabledProtocols(ENABLED_PROTOCOLS);
     engine.setUseClientMode(client);
+    Set<String> enabledProtocols = new HashSet<>(Arrays.asList(ENABLED_PROTOCOLS));
+    enabledProtocols.retainAll(Arrays.asList(engine.getEnabledProtocols()));
+    engine.setEnabledProtocols(enabledProtocols.toArray(new String[0]));
     if (!client) {
       switch (getClientAuth()) {
         case REQUEST: {
