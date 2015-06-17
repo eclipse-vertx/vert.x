@@ -1015,12 +1015,12 @@ public class DeploymentTest extends VertxTestBase {
       totalReportedInstances.addAndGet((int)event.body());
       if(messageCount.intValue() == 3) {
         assertEquals(9, totalReportedInstances.get());
+        testComplete();
       }
     });
 
     vertx.deployVerticle(TestVerticle3.class.getCanonicalName(), new DeploymentOptions().setInstances(3), ar -> {
       assertTrue(ar.succeeded());
-      testComplete();
     });
     await();
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
