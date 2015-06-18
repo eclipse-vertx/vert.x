@@ -127,7 +127,7 @@ public abstract class ContextImpl implements Context {
       if (num != 0) {
         AtomicInteger count = new AtomicInteger();
         AtomicBoolean failed = new AtomicBoolean();
-        for (Closeable hook: copy) {
+        for (Closeable hook : copy) {
           try {
             hook.close(ar -> {
               if (ar.failed()) {
@@ -167,7 +167,7 @@ public abstract class ContextImpl implements Context {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T get(String key) {
-    return (T)contextData().get(key);
+    return (T) contextData().get(key);
   }
 
   @Override
@@ -201,7 +201,7 @@ public abstract class ContextImpl implements Context {
   private static boolean isOnVertxThread(boolean worker) {
     Thread t = Thread.currentThread();
     if (t instanceof VertxThread) {
-      VertxThread vt = (VertxThread)t;
+      VertxThread vt = (VertxThread) t;
       return vt.isWorker() == worker;
     }
     return false;
@@ -326,12 +326,23 @@ public abstract class ContextImpl implements Context {
   }
 
   private VertxThread getCurrentThread() {
-    return (VertxThread)Thread.currentThread();
+    return (VertxThread) Thread.currentThread();
   }
 
   private void setTCCL() {
     Thread.currentThread().setContextClassLoader(tccl);
   }
 
+  public int getInstanceCount() {
+    // the no verticle case
+    if (deployment == null) {
+      return 0;
+    }
 
+    // the single verticle without an instance flag explicitly defined
+    if (deployment.deploymentOptions() == null) {
+      return 1;
+    }
+    return deployment.deploymentOptions().getInstances();
+  }
 }

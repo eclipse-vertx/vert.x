@@ -180,4 +180,10 @@ public interface Context {
    */
   Vertx owner();
 
+  /**
+   * @return  the number of instances of the verticle that were deployed in the deployment (if any) related
+   * to this context
+   */
+  int getInstanceCount();
+
 }
