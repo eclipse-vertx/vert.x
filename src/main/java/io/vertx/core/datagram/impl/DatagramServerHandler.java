@@ -36,11 +36,6 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
   }
 
   @Override
-  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    super.handlerAdded(ctx);
-  }
-
-  @Override
   protected DatagramSocketImpl getConnection(Channel channel) {
     return socket;
   }
