@@ -86,6 +86,7 @@ public class StarterTest extends VertxTestBase {
     assertTrue(t.isAlive()); // It's blocked
     List<String> processArgs = TestVerticle.processArgs;
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    starter.assertHooksInvoked();
     // Now unblock it
     starter.unblock();
     waitUntil(() -> !t.isAlive());
@@ -102,6 +103,7 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertTrue(t.isAlive()); // It's blocked
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    starter.assertHooksInvoked();
     // Now unblock it
     starter.unblock();
     waitUntil(() -> !t.isAlive());
@@ -118,6 +120,7 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertTrue(t.isAlive()); // It's blocked
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    starter.assertHooksInvoked();
     // Now unblock it
     starter.unblock();
     waitUntil(() -> !t.isAlive());
@@ -342,6 +345,9 @@ public class StarterTest extends VertxTestBase {
   }
 
   class MyStarter extends Starter {
+    boolean beforeStartingVertxInvoked = false;
+    boolean afterStartingVertxInvoked = false;
+    
     public Vertx getVert() {
       return vertx;
     }
@@ -360,6 +366,20 @@ public class StarterTest extends VertxTestBase {
     @Override
     public void run(String commandLine) {
       super.run(commandLine);
+    }
+    
+    @Override
+    public void beforeStartingVertx(VertxOptions options) {
+      beforeStartingVertxInvoked = true;
+    }
+    
+    public void afterStartingVertx() {
+      afterStartingVertxInvoked = true;
+    };
+    
+    public void assertHooksInvoked() {
+      assertTrue(beforeStartingVertxInvoked);
+      assertTrue(afterStartingVertxInvoked);
     }
   }
 }

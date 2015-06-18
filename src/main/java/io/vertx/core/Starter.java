@@ -171,6 +171,20 @@ public class Starter {
     stopLatch.countDown();
   }
 
+  /**
+   * Hook for sub classes of {@link Starter} before the vertx instance is started.
+   */
+  protected void beforeStartingVertx(VertxOptions options) {
+    
+  }
+  
+  /**
+   * Hook for sub classes of {@link Starter} after the vertx instance is started.
+   */
+  protected void afterStartingVertx() {
+    
+  }
+
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     MetricsOptions metricsOptions;
     ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
@@ -215,6 +229,7 @@ public class Starter {
           options.setQuorumSize(quorumSize);
         }
       }
+      beforeStartingVertx(options);
       Vertx.clusteredVertx(options, ar -> {
         result.set(ar);
         latch.countDown();
@@ -235,8 +250,10 @@ public class Starter {
       }
       vertx = result.get().result();
     } else {
+      beforeStartingVertx(options);
       vertx = Vertx.vertx(options);
     }
+    afterStartingVertx();
     return vertx;
   }
 
