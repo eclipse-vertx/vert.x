@@ -929,8 +929,9 @@
  * can be easily replaced by a different implementation as Vert.x cluster managers are pluggable.
  *
  * A cluster manager must implement the interface {@link io.vertx.core.spi.cluster.ClusterManager}. Vert.x locates
- * cluster managers at run-time by using the Java {@link java.util.ServiceLoader} functionality to locate instances of
- * {@link io.vertx.core.spi.cluster.ClusterManager} on the classpath.
+ * cluster managers at run-time by using the Java
+ * https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[Service Loader] functionality to locate
+ * instances of {@link io.vertx.core.spi.cluster.ClusterManager} on the classpath.
  *
  * If you are using Vert.x at the command line and you want to use clustering you should make sure the `lib` directory
  * of the Vert.x installation contains your cluster manager jar.
