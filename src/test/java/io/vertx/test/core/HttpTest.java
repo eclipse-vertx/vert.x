@@ -4096,7 +4096,6 @@ public class HttpTest extends HttpTestBase {
       String host = "localhost";
       String path = "/path";
       int port = 8080;
-      System.out.println("Client: GET Request-URI = http://" + host + ":" + port + path);
       client.getNow(port, host, path, resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
