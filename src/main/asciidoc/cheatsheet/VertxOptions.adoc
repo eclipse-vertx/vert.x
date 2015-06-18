@@ -89,4 +89,11 @@ Set the metrics options+++
 |`Number`
 |+++
 Set the threshold value above this, the blocked warning contains a stack trace.+++
+
+|[[nettyTransport]]`nettyTransport`
+|`String`
+|+++
+Set the netty transport to be used while in GNU/Linux, the choices include: nio, epoll
+ Since 4.0.16, Netty provides the native socket transport for GNU/Linux using JNI - epoll
+ The epoll transport has higher performance and produces less garbage, but multicast not supported+++
 |===

@@ -27,10 +27,12 @@ public class Utils {
   public static String LINE_SEPARATOR = System.getProperty("line.separator");
 
   private static final boolean isWindows;
+  private static final boolean isLinux;
 
   static {
     String os = System.getProperty("os.name").toLowerCase();
     isWindows = os.contains("win");
+    isLinux = os.contains("linux");
   }
 
   /**
@@ -39,5 +41,13 @@ public class Utils {
   public static boolean isWindows() {
     return isWindows;
   }
+
+  /**
+   * @return true, if running on GNU/Linux
+   */
+  public static boolean isLinux() {
+    return isLinux;
+  }
+
 
 }
