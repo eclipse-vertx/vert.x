@@ -17,20 +17,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
@@ -38,14 +26,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketStream;
-import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
@@ -53,11 +35,11 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -647,7 +629,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.eventLoop());
-    bootstrap.channel(NioSocketChannel.class);
+    bootstrap.channelFactory(new VertxNioSocketChannelFactory());
     sslHelper.validate(vertx);
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
@@ -664,7 +646,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         if (options.getIdleTimeout() > 0) {
           pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
         }
-        pipeline.addLast("handler", new ClientHandler(context));
+        pipeline.addLast("handler", new ClientHandler(vertx, context));
       }
     });
     applyConnectionOptions(bootstrap);
@@ -768,8 +750,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     private boolean closeFrameSent;
     private ContextImpl context;
 
-    public ClientHandler(ContextImpl context) {
-      super(vertx, HttpClientImpl.this.connectionMap);
+    public ClientHandler(VertxInternal vertx, ContextImpl context) {
+      super(HttpClientImpl.this.connectionMap);
       this.context = context;
     }
 

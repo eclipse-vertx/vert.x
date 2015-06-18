@@ -40,6 +40,11 @@ public abstract class ContextImpl implements Context {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
+  private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
+  private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
+  private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
+  private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
+
   protected final VertxInternal owner;
   protected final String deploymentID;
   protected final JsonObject config;
@@ -72,14 +77,18 @@ public abstract class ContextImpl implements Context {
   public static void setContext(ContextImpl context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-      ((VertxThread)current).setContext(context);
-      if (context != null) {
-        context.setTCCL();
-      } else {
-        Thread.currentThread().setContextClassLoader(null);
-      }
+      setContext((VertxThread) current, context);
     } else {
       throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
+    }
+  }
+
+  private static void setContext(VertxThread thread, ContextImpl context) {
+    thread.setContext(context);
+    if (context != null) {
+      context.setTCCL();
+    } else {
+      Thread.currentThread().setContextClassLoader(null);
     }
   }
 
@@ -143,6 +152,8 @@ public abstract class ContextImpl implements Context {
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
+    // Now remove context references from threads
+    VertxThreadFactory.unsetContext(this);
   }
 
   protected abstract void executeAsync(Handler<Void> task);
@@ -200,7 +211,9 @@ public abstract class ContextImpl implements Context {
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
   public void executeFromIO(ContextTask task) {
-    checkCorrectThread();
+    if (THREAD_CHECKS) {
+      checkCorrectThread();
+    }
     wrapTask(task, null, true).run();
   }
 
@@ -280,32 +293,21 @@ public abstract class ContextImpl implements Context {
     }
   }
 
-  protected void executeStart() {
-    Thread thread = Thread.currentThread();
-    // Sanity check - make sure Netty is really delivering events on the correct thread
-    if (this.contextThread == null) {
-      if (thread instanceof VertxThread) {
-        this.contextThread = (VertxThread)thread;
-      } else {
-        throw new IllegalStateException("Not a vert.x thread!");
-      }
-    } else if (this.contextThread != thread && !this.contextThread.isWorker()) {
-      throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + this.contextThread + " got " + thread);
-    }
-    this.contextThread.executeStart();
-  }
-
-  protected void executeEnd() {
-    contextThread.executeEnd();
-  }
-
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {
     return () -> {
-      if (checkThread) {
-        executeStart();
+      VertxThread current = getCurrentThread();
+      if (THREAD_CHECKS && checkThread) {
+        if (contextThread == null) {
+          contextThread = current;
+        } else if (contextThread != current && !contextThread.isWorker()) {
+          throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
+        }
+      }
+      if (!DISABLE_TIMINGS) {
+        current.executeStart();
       }
       try {
-        setContext(ContextImpl.this);
+        setContext(current, ContextImpl.this);
         if (cTask != null) {
           cTask.run();
         } else {
@@ -314,12 +316,17 @@ public abstract class ContextImpl implements Context {
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
       } finally {
-        // TODO - we might have to restore the thread name in case it's been changed during the execution
-        if (checkThread) {
-          executeEnd();
+        // We don't unset the context after execution - this is done later when the context is closed via
+        // VertxThreadFactory
+        if (!DISABLE_TIMINGS) {
+          current.executeEnd();
         }
       }
     };
+  }
+
+  private VertxThread getCurrentThread() {
+    return (VertxThread)Thread.currentThread();
   }
 
   private void setTCCL() {

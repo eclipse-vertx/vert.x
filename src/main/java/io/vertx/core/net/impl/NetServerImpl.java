@@ -401,7 +401,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
-      super(NetServerImpl.this.vertx, socketMap);
+      super(socketMap);
     }
 
     @Override
@@ -433,6 +433,8 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     }
 
     private void connected(Channel ch, HandlerHolder<NetSocket> handler) {
+      // Need to set context before constructor is called as writehandler registration needs this
+      ContextImpl.setContext(handler.context);
       NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics, null);
       socketMap.put(ch, sock);
       handler.context.executeFromIO(() -> {

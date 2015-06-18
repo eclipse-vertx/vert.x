@@ -62,7 +62,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     }
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     context.eventLoop().register(channel);
-    channel.pipeline().addLast("handler", new DatagramServerHandler(this.vertx, this));
+    channel.pipeline().addLast("handler", new DatagramServerHandler(this));
     channel().config().setMaxMessagesPerRead(1);
   }
 

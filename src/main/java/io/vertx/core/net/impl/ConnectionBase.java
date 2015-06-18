@@ -208,7 +208,9 @@ public abstract class ConnectionBase {
       FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
       writeFuture = writeToChannel(region);
     }
-    writeFuture.addListener(fut -> raf.close());
+    if (writeFuture != null) {
+      writeFuture.addListener(fut -> raf.close());
+    }
     return writeFuture;
   }
 

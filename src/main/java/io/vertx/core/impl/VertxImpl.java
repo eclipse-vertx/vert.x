@@ -87,6 +87,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 
+  private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
+  private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
+
   static {
     // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
     ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
@@ -108,7 +111,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final ExecutorService internalBlockingPool;
   private final OrderedExecutorFactory workerOrderedFact;
   private final OrderedExecutorFactory internalOrderedFact;
-  private final EventLoopGroup eventLoopGroup;
+  private final NioEventLoopGroup eventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
   private EventBusImpl eventBus;
@@ -128,6 +131,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
                                            new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
+    eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),

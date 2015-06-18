@@ -238,6 +238,8 @@ class ClientConnection extends ConnectionBase {
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
+      // Need to set context before constructor is called as writehandler registration needs this
+      ContextImpl.setContext(context);
       WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
                                                   client.getOptions().getMaxWebsocketFrameSize());
       ws = webSocket;
@@ -377,7 +379,7 @@ class ClientConnection extends ConnectionBase {
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler", new VertxNetHandler(client.getVertx(), connectionMap) {
+    pipeline.replace("handler", "handler", new VertxNetHandler(connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping

@@ -17,17 +17,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FileRegion;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.channel.*;
+import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -47,11 +39,11 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -59,6 +51,9 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+
+import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  *
@@ -74,11 +69,13 @@ class ServerConnection extends ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
+  public static final String HANDLE_100_CONTINUE_PROP_NAME = "vertx.handle100Continue";
+  private static final boolean HANDLE_100_CONTINUE = Boolean.getBoolean(HANDLE_100_CONTINUE_PROP_NAME);
 
   private final Queue<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final HttpServerImpl server;
-  private final WebSocketServerHandshaker handshaker;
+  private WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
 
   private Object requestMetric;
@@ -184,14 +181,17 @@ class ServerConnection extends ConnectionBase {
     if (ws != null) {
       return ws;
     }
-    if (handshaker == null || !(nettyReq instanceof FullHttpRequest)) {
+    handshaker = server.createHandshaker(channel, nettyReq);
+    if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
+
+    server.expectWebsockets();
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize());
     try {
-      handshaker.handshake(channel, (FullHttpRequest)nettyReq);
+      handshaker.handshake(channel, nettyReq);
     } catch (WebSocketHandshakeException e) {
       handleException(e);
     } catch (Exception e) {
@@ -230,7 +230,7 @@ class ServerConnection extends ConnectionBase {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(vertx, connectionMap) {
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler(connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
@@ -373,8 +373,20 @@ class ServerConnection extends ConnectionBase {
   }
 
   private void processMessage(Object msg) {
+
     if (msg instanceof HttpRequest) {
       HttpRequest request = (HttpRequest) msg;
+      DecoderResult result = ((HttpObject) msg).getDecoderResult();
+      if (result.isFailure()) {
+        channel.pipeline().fireExceptionCaught(result.cause());
+        return;
+      }
+      if (HANDLE_100_CONTINUE) {
+        if (HttpHeaders.is100ContinueExpected(request)) {
+          channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+        }
+      }
+
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);

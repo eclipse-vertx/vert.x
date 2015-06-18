@@ -24,8 +24,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
@@ -66,6 +66,7 @@ public class FileResolver {
     } else {
       cwd = null;
     }
+    setupCacheDir();
   }
 
   public void deleteCacheDir(Handler<AsyncResult<Void>> handler) {
@@ -86,7 +87,6 @@ public class FileResolver {
       return file;
     }
     if (!file.exists()) {
-      setupCacheDir();
       // Look for it in local file cache
       File cacheFile = new File(cacheDir, fileName);
       if (enableCaching && cacheFile.exists()) {
@@ -125,7 +125,9 @@ public class FileResolver {
     if (!isDirectory) {
       cacheFile.getParentFile().mkdirs();
       try {
-        Files.copy(resource.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(resource.toPath(), cacheFile.toPath());
+      } catch (FileAlreadyExistsException ignore) {
+        // OK - this can happen if this is called multiple times on different threads
       } catch (IOException e) {
         throw new VertxException(e);
       }
@@ -160,7 +162,9 @@ public class FileResolver {
           } else {
             file.getParentFile().mkdirs();
             try (InputStream is = zip.getInputStream(entry)) {
-              Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+              Files.copy(is, file.toPath());
+            } catch (FileAlreadyExistsException ignore) {
+              // OK - this can happen if this is called multiple times on different threads
             }
           }
         }
@@ -182,16 +186,10 @@ public class FileResolver {
   }
 
   private void setupCacheDir() {
-    if (cacheDir == null) {
-      String cacheDirName = ".vertx/file-cache-" + UUID.randomUUID().toString();
-      cacheDir = new File(cacheDirName);
-      if (cacheDir.exists()) {
-        vertx.fileSystem().deleteRecursiveBlocking(cacheDir.getAbsolutePath(), true);
-      } else {
-        if (!cacheDir.mkdirs()) {
-          throw new IllegalStateException("Failed to create cache dir");
-        }
-      }
+    String cacheDirName = ".vertx/file-cache-" + UUID.randomUUID().toString();
+    cacheDir = new File(cacheDirName);
+    if (!cacheDir.mkdirs()) {
+      throw new IllegalStateException("Failed to create cache dir");
     }
   }
 
