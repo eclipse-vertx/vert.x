@@ -4082,6 +4082,30 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testAbsoluteURIServer() {
+    server.close();
+    // Listen on all addresses 
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("0.0.0.0"));
+    server.requestHandler(req -> {
+      String absURI = req.absoluteURI();
+      assertEquals("http://localhost:8080/path", absURI);
+      req.response().end();
+    });
+    server.listen(onSuccess(s -> {
+      String host = "localhost";
+      String path = "/path";
+      int port = 8080;
+      System.out.println("Client: GET Request-URI = http://" + host + ":" + port + path);
+      client.getNow(port, host, path, resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    }));
+
+    await();
+  }
+
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
       req.response().setChunked(true);
