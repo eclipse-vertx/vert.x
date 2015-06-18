@@ -1251,24 +1251,24 @@ client.websocket("/some-uri", websocket -> {
 
 ==== Writing messages to WebSockets
 
-If you wish to write a single binary WebSocket message containing a single WebSocket frame to the WebSocket (a
-common case) the simplest way to do this is to use `link:../../apidocs/io/vertx/core/http/WebSocket.html#writeMessage-io.vertx.core.buffer.Buffer-[writeMessage]`:
+If you wish to write a single binary WebSocket message to the WebSocket you can do this with
+`link:../../apidocs/io/vertx/core/http/WebSocket.html#writeBinaryMessage-io.vertx.core.buffer.Buffer-[writeBinaryMessage]`:
 
 [source,java]
 ----
 Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
 
-websocket.writeMessage(buffer);
+websocket.writeBinaryMessage(buffer);
 ----
 
-If the websocket message is larger than the maximum websocket frame size as configured with
+If the WebSocket message is larger than the maximum websocket frame size as configured with
 `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxWebsocketFrameSize-int-[setMaxWebsocketFrameSize]`
 then Vert.x will split it into multiple WebSocket frames before sending it on the wire.
 
 ==== Writing frames to WebSockets
 
 A WebSocket message can be composed of multiple frames. In this case the first frame is either a _binary_ or _text_ frame
-followed by one or more _continuation_ frames.
+followed by zero or more _continuation_ frames.
 
 The last frame in the message is marked as _final_.
 
@@ -1291,6 +1291,23 @@ websocket.writeFrame(frame2);
 // Write the final frame
 WebSocketFrame frame3 = WebSocketFrame.continuationFrame(buffer2, true);
 websocket.writeFrame(frame3);
+----
+
+In many cases you just want to send a websocket message that consists of a single final frame, so we provide a couple
+of shortcut methods to do that with `link:../../apidocs/io/vertx/core/http/WebSocket.html#writeFinalBinaryFrame-io.vertx.core.buffer.Buffer-[writeFinalBinaryFrame]`
+and `link:../../apidocs/io/vertx/core/http/WebSocket.html#writeFinalTextFrame-java.lang.String-[writeFinalTextFrame]`.
+
+Here's an example:
+
+[source,java]
+----
+websocket.writeFinalTextFrame("Geronimo!");
+
+// Send a websocket messages consisting of a single final binary frame:
+
+Buffer buff = Buffer.buffer().appendInt(12).appendString("foo");
+
+websocket.writeFinalBinaryFrame(buff);
 ----
 
 ==== Reading frames from WebSockets
