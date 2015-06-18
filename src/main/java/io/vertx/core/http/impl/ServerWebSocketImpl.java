@@ -201,7 +201,17 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
   }
 
   @Override
-  public synchronized ServerWebSocket writeMessage(Buffer data) {
+  public ServerWebSocket writeFinalTextFrame(String text) {
+    return writeFrame(WebSocketFrame.textFrame(text, true));
+  }
+
+  @Override
+  public ServerWebSocket writeFinalBinaryFrame(Buffer data) {
+    return writeFrame(WebSocketFrame.binaryFrame(data, true));
+  }
+
+  @Override
+  public synchronized ServerWebSocket writeBinaryMessage(Buffer data) {
     checkClosed();
     writeMessageInternal(data);
     return this;
