@@ -66,7 +66,10 @@ public class LoggerFactory {
   }
 
   public static Logger getLogger(final Class<?> clazz) {
-    return getLogger(clazz.getCanonicalName());
+    String name = clazz.isAnonymousClass() ?
+      clazz.getEnclosingClass().getCanonicalName() :
+      clazz.getCanonicalName();
+    return getLogger(name);
   }
 
   public static Logger getLogger(final String name) {
