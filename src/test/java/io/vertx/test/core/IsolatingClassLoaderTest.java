@@ -1,5 +1,6 @@
-package io.vertx.core.impl;
+package io.vertx.test.core;
 
+import io.vertx.core.impl.IsolatingClassLoader;
 import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
