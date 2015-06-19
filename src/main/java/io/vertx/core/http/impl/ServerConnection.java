@@ -185,8 +185,7 @@ class ServerConnection extends ConnectionBase {
     if (handshaker == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
-
-    server.expectWebsockets();
+    
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize());

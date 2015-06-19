@@ -69,6 +69,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
   private static final String FLASH_POLICY_HANDLER_PROP_NAME = "vertx.flashPolicyHandler";
   private static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
+  private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
+  private static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
 
   private final HttpServerOptions options;
   private final VertxInternal vertx;
@@ -90,7 +92,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private HttpServerImpl actualServer;
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
-  private boolean expectingWebsockets = true;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.options = new HttpServerOptions(options);
@@ -119,7 +120,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public HttpServer websocketHandler(Handler<ServerWebSocket> handler) {
-    expectingWebsockets = true;
     websocketStream().handler(handler);
     return this;
   }
@@ -136,7 +136,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public ServerWebSocketStream websocketStream() {
-    expectingWebsockets = true;
     return wsStream;
   }
 
@@ -362,10 +361,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     connectionMap.remove(channel);
   }
 
-  void expectWebsockets() {
-    expectingWebsockets = true;
-  }
-
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
     bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     if (options.getSendBufferSize() != -1) {
@@ -441,7 +436,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
       Channel ch = ctx.channel();
 
-      if (expectingWebsockets) {
+      // As a performance optimisation you can set a system property to disable websockets altogether which avoids
+      // some casting and a header check
+      if (!DISABLE_WEBSOCKETS) {
 
         if (msg instanceof HttpRequest) {
           final HttpRequest request = (HttpRequest) msg;
