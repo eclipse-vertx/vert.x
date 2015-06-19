@@ -953,7 +953,7 @@
  * the structure of a JUL config file please consult the JUL logging documentation.
  *
  * Vert.x also provides a slightly more convenient way to specify a configuration file without having to set a system
- * property. Just provide a JUL config file with the name `default-jul-logging.properties` on your classpath (e.g.
+ * property. Just provide a JUL config file with the name `vertx-default-jul-logging.properties` on your classpath (e.g.
  * inside your fatjar) and Vert.x will use that to configure JUL.
  *
  * === Using another logging framework
