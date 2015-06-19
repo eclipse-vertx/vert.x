@@ -92,14 +92,32 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writeFrame(WebSocketFrame frame);
 
   /**
-   * Writes a (potentially large) piece of data to the connection. This data might be written as multiple frames
+   * Write a final WebSocket text frame to the connection
+   *
+   * @param text  The text to write
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  WebSocketBase writeFinalTextFrame(String text);
+
+  /**
+   * Write a final WebSocket binary frame to the connection
+   *
+   * @param data  The data to write
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  WebSocketBase writeFinalBinaryFrame(Buffer data);
+
+  /**
+   * Writes a (potentially large) piece of binary data to the connection. This data might be written as multiple frames
    * if it exceeds the maximum WebSocket frame size.
    *
    * @param data  the data to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  WebSocketBase writeMessage(Buffer data);
+  WebSocketBase writeBinaryMessage(Buffer data);
 
   /**
    * Set a close handler. This will be called when the WebSocket is closed.

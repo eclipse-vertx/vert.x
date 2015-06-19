@@ -566,7 +566,7 @@ public class HTTPExamples {
     // Write a simple message
     Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
 
-    websocket.writeMessage(buffer);
+    websocket.writeBinaryMessage(buffer);
   }
 
   public void example56(WebSocket websocket, Buffer buffer1, Buffer buffer2, Buffer buffer3) {
@@ -580,6 +580,21 @@ public class HTTPExamples {
     // Write the final frame
     WebSocketFrame frame3 = WebSocketFrame.continuationFrame(buffer2, true);
     websocket.writeFrame(frame3);
+
+  }
+
+  public void example56_1(WebSocket websocket) {
+
+    // Send a websocket messages consisting of a single final text frame:
+
+    websocket.writeFinalTextFrame("Geronimo!");
+
+    // Send a websocket messages consisting of a single final binary frame:
+
+    Buffer buff = Buffer.buffer().appendInt(12).appendString("foo");
+
+    websocket.writeFinalBinaryFrame(buff);
+
 
   }
 
