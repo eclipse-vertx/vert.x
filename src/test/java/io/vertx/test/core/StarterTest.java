@@ -347,6 +347,7 @@ public class StarterTest extends VertxTestBase {
   class MyStarter extends Starter {
     boolean beforeStartingVertxInvoked = false;
     boolean afterStartingVertxInvoked = false;
+    boolean beforeDeployingVerticle = false;
     
     public Vertx getVert() {
       return vertx;
@@ -372,14 +373,19 @@ public class StarterTest extends VertxTestBase {
     public void beforeStartingVertx(VertxOptions options) {
       beforeStartingVertxInvoked = true;
     }
-    
+    @Override
     public void afterStartingVertx() {
       afterStartingVertxInvoked = true;
-    };
+    }
+    @Override
+    protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
+      beforeDeployingVerticle = true;
+    }
     
     public void assertHooksInvoked() {
       assertTrue(beforeStartingVertxInvoked);
       assertTrue(afterStartingVertxInvoked);
+      assertTrue(beforeDeployingVerticle);
     }
   }
 }

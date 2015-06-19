@@ -184,6 +184,13 @@ public class Starter {
   protected void afterStartingVertx() {
     
   }
+  
+  /**
+   * Hook for sub classes of {@link Starter} before the verticle is deployed.
+   */
+  protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
+    
+  }
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     MetricsOptions metricsOptions;
@@ -332,8 +339,9 @@ public class Starter {
 
     boolean redeploy = args.map.get("-redeploy") != null;
 
-    vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances)
-                                 .setRedeploy(redeploy), createLoggingHandler(message, res -> {
+    deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances).setRedeploy(redeploy);
+    beforeDeployingVerticle(deploymentOptions);
+    vertx.deployVerticle(main, deploymentOptions, createLoggingHandler(message, res -> {
       if (res.failed()) {
         // Failed to deploy
         unblock();
