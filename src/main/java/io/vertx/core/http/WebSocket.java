@@ -56,7 +56,13 @@ public interface WebSocket extends WebSocketBase {
   WebSocket writeFrame(WebSocketFrame frame);
 
   @Override
-  WebSocket writeMessage(Buffer data);
+  WebSocket writeFinalTextFrame(String text);
+
+  @Override
+  WebSocket writeFinalBinaryFrame(Buffer data);
+
+  @Override
+  WebSocket writeBinaryMessage(Buffer data);
 
   @Override
   WebSocket closeHandler(Handler<Void> handler);

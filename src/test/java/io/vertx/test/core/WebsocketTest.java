@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -696,6 +697,63 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testWriteFinalTextFrame() throws Exception {
+    testWriteFinalFrame(false);
+  }
+
+  @Test
+  public void testWriteFinalBinaryFrame() throws Exception {
+    testWriteFinalFrame(true);
+  }
+
+  private void testWriteFinalFrame(boolean binary) throws Exception {
+
+    String text = TestUtils.randomUnicodeString(100);
+    Buffer data = TestUtils.randomBuffer(100);
+
+    Consumer<WebSocketFrame> frameConsumer = frame -> {
+      if (binary) {
+        assertTrue(frame.isBinary());
+        assertFalse(frame.isText());
+        assertEquals(data, frame.binaryData());
+      } else {
+        assertFalse(frame.isBinary());
+        assertTrue(frame.isText());
+        assertEquals(text, frame.textData());
+      }
+      assertTrue(frame.isFinal());
+    };
+
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws ->
+      ws.frameHandler(frame -> {
+        frameConsumer.accept(frame);
+        if (binary) {
+          ws.writeFinalBinaryFrame(frame.binaryData());
+        } else {
+          ws.writeFinalTextFrame(frame.textData());
+        }
+      })
+    );
+
+    server.listen(onSuccess(s ->
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        ws.frameHandler(frame -> {
+          frameConsumer.accept(frame);
+          testComplete();
+        });
+
+        if (binary) {
+          ws.writeFinalBinaryFrame(data);
+        } else {
+          ws.writeFinalTextFrame(text);
+        }
+      })
+    ));
+
+    await();
+  }
+
   private void testContinuationWriteFromConnectHandler(WebsocketVersion version) throws Exception {
     String path = "/some/path";
     String firstFrame = "AAA";
@@ -873,7 +931,7 @@ public class WebsocketTest extends VertxTestBase {
     String path = "/some/path";
     byte[] expected = TestUtils.randomByteArray(size);
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      ws.writeMessage(Buffer.buffer(expected));
+      ws.writeBinaryMessage(Buffer.buffer(expected));
       ws.close();
     });
     server.listen(ar -> {
@@ -900,7 +958,7 @@ public class WebsocketTest extends VertxTestBase {
     ReadStream<ServerWebSocket> stream = server.websocketStream();
     stream.handler(ws -> {
       assertFalse(paused.get());
-      ws.writeMessage(Buffer.buffer("whatever"));
+      ws.writeBinaryMessage(Buffer.buffer("whatever"));
       ws.close();
     });
     server.listen(listenAR -> {

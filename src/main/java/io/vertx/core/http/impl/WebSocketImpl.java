@@ -21,7 +21,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -80,7 +79,17 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   }
 
   @Override
-  public WebSocket writeMessage(Buffer data) {
+  public WebSocket writeFinalTextFrame(String text) {
+    return writeFrame(WebSocketFrame.textFrame(text, true));
+  }
+
+  @Override
+  public WebSocket writeFinalBinaryFrame(Buffer data) {
+    return writeFrame(WebSocketFrame.binaryFrame(data, true));
+  }
+
+  @Override
+  public WebSocket writeBinaryMessage(Buffer data) {
     writeMessageInternal(data);
     return this;
   }

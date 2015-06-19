@@ -1007,22 +1007,22 @@
  *
  * ==== Writing messages to WebSockets
  *
- * If you wish to write a single binary WebSocket message containing a single WebSocket frame to the WebSocket (a
- * common case) the simplest way to do this is to use {@link io.vertx.core.http.WebSocket#writeMessage(io.vertx.core.buffer.Buffer)}:
+ * If you wish to write a single binary WebSocket message to the WebSocket you can do this with
+ * {@link io.vertx.core.http.WebSocket#writeBinaryMessage(io.vertx.core.buffer.Buffer)}:
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example55}
  * ----
  *
- * If the websocket message is larger than the maximum websocket frame size as configured with
+ * If the WebSocket message is larger than the maximum websocket frame size as configured with
  * {@link io.vertx.core.http.HttpClientOptions#setMaxWebsocketFrameSize(int)}
  * then Vert.x will split it into multiple WebSocket frames before sending it on the wire.
  *
  * ==== Writing frames to WebSockets
  *
  * A WebSocket message can be composed of multiple frames. In this case the first frame is either a _binary_ or _text_ frame
- * followed by one or more _continuation_ frames.
+ * followed by zero or more _continuation_ frames.
  *
  * The last frame in the message is marked as _final_.
  *
@@ -1037,6 +1037,17 @@
  * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example56}
+ * ----
+ *
+ * In many cases you just want to send a websocket message that consists of a single final frame, so we provide a couple
+ * of shortcut methods to do that with {@link io.vertx.core.http.WebSocket#writeFinalBinaryFrame(io.vertx.core.buffer.Buffer)}
+ * and {@link io.vertx.core.http.WebSocket#writeFinalTextFrame(String)}.
+ *
+ * Here's an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example56_1}
  * ----
  *
  * ==== Reading frames from WebSockets
