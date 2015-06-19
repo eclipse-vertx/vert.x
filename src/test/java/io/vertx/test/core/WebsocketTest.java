@@ -1050,14 +1050,34 @@ public class WebsocketTest extends VertxTestBase {
 
   @Test
   public void testUpgrade() {
+    testUpgrade(false);
+  }
+
+  @Test
+  public void testUpgradeDelayed() {
+    testUpgrade(true);
+  }
+
+  private void testUpgrade(boolean delayed) {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     server.requestHandler(request -> {
-      ServerWebSocket ws = request.upgrade();
-      ws.handler(buff -> {
-        ws.write(Buffer.buffer("helloworld"));
-        ws.close();
-      });
+      Runnable runner = () -> {
+        ServerWebSocket ws = request.upgrade();
+        ws.handler(buff -> {
+          ws.write(Buffer.buffer("helloworld"));
+          ws.close();
+        });
+      };
+      if (delayed) {
+        // This tests the case where the last http content comes of the request (its not full) comes in
+        // before the upgrade has happened and before HttpServerImpl.expectWebsockets is true
+        vertx.runOnContext(v -> {
+          runner.run();
+        });
+      } else {
+        runner.run();
+      }
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -1076,6 +1096,8 @@ public class WebsocketTest extends VertxTestBase {
     });
     await();
   }
+
+
 
   @Test
   public void testUpgradeInvalidRequest() {
