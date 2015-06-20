@@ -1102,7 +1102,6 @@ public class NetTest extends VertxTestBase {
         } else {
           assertNull(certs);
         }
-        System.out.println("certs are " + certs);
       } catch (SSLPeerUnverifiedException e) {
         assertTrue(clientTrust || clientTrustAll);
       }

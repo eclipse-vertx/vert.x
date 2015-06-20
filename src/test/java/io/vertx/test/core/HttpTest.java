@@ -1623,6 +1623,35 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientExceptionHandlerCalledWhenServerTerminatesConnection() throws Exception {
+    int numReqs = 10;
+    CountDownLatch latch = new CountDownLatch(numReqs);
+    server.requestHandler(request -> {
+      request.response().close();
+    }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+      // Exception handler should be called for any requests in the pipeline if connection is closed
+      for (int i = 0; i < numReqs; i++) {
+        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+          exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
+      }
+    }));
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testClientExceptionHandlerCalledWhenServerTerminatesConnectionAfterPartialResponse() throws Exception {
+    server.requestHandler(request -> {
+      //Write partial response then close connection before completing it
+      request.response().setChunked(true).write("foo").close();
+    }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+      // Exception handler should be called for any requests in the pipeline if connection is closed
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp ->
+        resp.exceptionHandler(t -> testComplete())).exceptionHandler(error -> fail()).end();
+    }));
+    await();
+  }
+
+  @Test
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
