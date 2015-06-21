@@ -25,16 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -1225,6 +1216,25 @@ public class JsonObjectTest {
     iter.remove();
     assertFalse(obj.containsKey("wibble"));
     assertEquals(2, jsonObject.size());
+  }
+
+  @Test
+  public void testIteratorDoesntChangeObject() {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("nestedMap", new HashMap<>());
+    map.put("nestedList", new ArrayList<>());
+    JsonObject obj = new JsonObject(map);
+    Iterator<Map.Entry<String, Object>> iter = obj.iterator();
+    Map.Entry<String, Object> entry1 = iter.next();
+    assertEquals("nestedMap", entry1.getKey());
+    Object val1 = entry1.getValue();
+    assertTrue(val1 instanceof JsonObject);
+    Map.Entry<String, Object> entry2 = iter.next();
+    assertEquals("nestedList", entry2.getKey());
+    Object val2 = entry2.getValue();
+    assertTrue(val2 instanceof JsonArray);
+    assertTrue(map.get("nestedMap") instanceof HashMap);
+    assertTrue(map.get("nestedList") instanceof ArrayList);
   }
 
   @Test

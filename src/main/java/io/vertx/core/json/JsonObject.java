@@ -813,9 +813,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     public Map.Entry<String, Object> next() {
       Map.Entry<String, Object> entry = mapIter.next();
       if (entry.getValue() instanceof Map) {
-        entry.setValue(new JsonObject((Map)entry.getValue()));
+        return new Entry(entry.getKey(), new JsonObject((Map)entry.getValue()));
       } else if (entry.getValue() instanceof List) {
-        entry.setValue(new JsonArray((List) entry.getValue()));
+        return new Entry(entry.getKey(), new JsonArray((List) entry.getValue()));
       }
       return entry;
     }
@@ -823,6 +823,31 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     @Override
     public void remove() {
       mapIter.remove();
+    }
+  }
+
+  private static final class Entry implements Map.Entry<String, Object> {
+    final String key;
+    final Object value;
+
+    public Entry(String key, Object value) {
+      this.key = key;
+      this.value = value;
+    }
+
+    @Override
+    public String getKey() {
+      return key;
+    }
+
+    @Override
+    public Object getValue() {
+      return value;
+    }
+
+    @Override
+    public Object setValue(Object value) {
+      throw new UnsupportedOperationException();
     }
   }
 }
