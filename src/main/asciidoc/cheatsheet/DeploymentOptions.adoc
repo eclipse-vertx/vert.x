@@ -46,9 +46,9 @@ Set the number of instances that should be deployed.+++
 |[[redeploy]]`redeploy`
 |`Boolean`
 |-
-|[[redeployScanPeriod]]`redeployScanPeriod`
+|[[redeployScanInterval]]`redeployScanInterval`
 |`Number`
 |-
-|[[redeployGracePeriod]]`redeployGracePeriod`
+|[[redeployGraceInterval]]`redeployGraceInterval`
 |`Number`
 |-|===

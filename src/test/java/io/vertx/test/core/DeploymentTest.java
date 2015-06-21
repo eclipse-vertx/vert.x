@@ -87,33 +87,33 @@ public class DeploymentTest extends VertxTestBase {
     assertFalse(options.isRedeploy());
     assertSame(options, options.setRedeploy(true));
     assertTrue(options.isRedeploy());
-    assertEquals(DeploymentOptions.DEFAULT_REDEPLOY_GRACE_PERIOD, options.getRedeployGracePeriod());
+    assertEquals(DeploymentOptions.DEFAULT_REDEPLOY_GRACE_INTERVAL, options.getRedeployGraceInterval());
     int randInt = TestUtils.randomPositiveInt();
-    assertEquals(options, options.setRedeployGracePeriod(randInt));
-    assertEquals(randInt, options.getRedeployGracePeriod());
+    assertEquals(options, options.setRedeployGraceInterval(randInt));
+    assertEquals(randInt, options.getRedeployGraceInterval());
     randInt = TestUtils.randomPositiveInt();
-    assertEquals(options, options.setRedeployScanPeriod(randInt));
-    assertEquals(randInt, options.getRedeployScanPeriod());
+    assertEquals(options, options.setRedeployScanInterval(randInt));
+    assertEquals(randInt, options.getRedeployScanInterval());
     try {
-      options.setRedeployGracePeriod(-1);
+      options.setRedeployGraceInterval(-1);
       fail();
     } catch (IllegalArgumentException e) {
       // OK
     }
     try {
-      options.setRedeployScanPeriod(-1);
+      options.setRedeployScanInterval(-1);
       fail();
     } catch (IllegalArgumentException e) {
       // OK
     }
     try {
-      options.setRedeployGracePeriod(0);
+      options.setRedeployGraceInterval(0);
       fail();
     } catch (IllegalArgumentException e) {
       // OK
     }
     try {
-      options.setRedeployScanPeriod(0);
+      options.setRedeployScanInterval(0);
       fail();
     } catch (IllegalArgumentException e) {
       // OK
@@ -139,8 +139,8 @@ public class DeploymentTest extends VertxTestBase {
     options.setHa(ha);
     options.setExtraClasspath(cp);
     options.setRedeploy(true);
-    options.setRedeployGracePeriod(gracePeriod);
-    options.setRedeployScanPeriod(scanPeriod);
+    options.setRedeployGraceInterval(gracePeriod);
+    options.setRedeployScanInterval(scanPeriod);
     DeploymentOptions copy = new DeploymentOptions(options);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
@@ -151,8 +151,8 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(cp, copy.getExtraClasspath());
     assertNotSame(cp, copy.getExtraClasspath());
     assertTrue(options.isRedeploy());
-    assertEquals(gracePeriod, options.getRedeployGracePeriod());
-    assertEquals(scanPeriod, options.getRedeployScanPeriod());
+    assertEquals(gracePeriod, options.getRedeployGraceInterval());
+    assertEquals(scanPeriod, options.getRedeployScanInterval());
   }
 
   @Test
@@ -185,8 +185,8 @@ public class DeploymentTest extends VertxTestBase {
     json.put("ha", ha);
     json.put("extraClasspath", new JsonArray(cp));
     json.put("redeploy", true);
-    json.put("redeployGracePeriod", 1234);
-    json.put("redeployScanPeriod", 4567);
+    json.put("redeployGraceInterval", 1234);
+    json.put("redeployScanInterval", 4567);
     DeploymentOptions options = new DeploymentOptions(json);
     assertEquals(worker, options.isWorker());
     assertEquals(multiThreaded, options.isMultiThreaded());
@@ -195,8 +195,8 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(ha, options.isHa());
     assertEquals(cp, options.getExtraClasspath());
     assertTrue(options.isRedeploy());
-    assertEquals(1234, options.getRedeployGracePeriod());
-    assertEquals(4567, options.getRedeployScanPeriod());
+    assertEquals(1234, options.getRedeployGraceInterval());
+    assertEquals(4567, options.getRedeployScanInterval());
   }
 
   @Test
@@ -218,8 +218,8 @@ public class DeploymentTest extends VertxTestBase {
     options.setHa(ha);
     options.setExtraClasspath(cp);
     options.setRedeploy(true);
-    options.setRedeployGracePeriod(gracePeriod);
-    options.setRedeployScanPeriod(scanPeriod);
+    options.setRedeployGraceInterval(gracePeriod);
+    options.setRedeployScanInterval(scanPeriod);
     JsonObject json = options.toJson();
     DeploymentOptions copy = new DeploymentOptions(json);
     assertEquals(worker, copy.isWorker());
@@ -228,8 +228,8 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHa());
     assertEquals(cp, copy.getExtraClasspath());
-    assertEquals(gracePeriod, copy.getRedeployGracePeriod());
-    assertEquals(scanPeriod, copy.getRedeployScanPeriod());
+    assertEquals(gracePeriod, copy.getRedeployGraceInterval());
+    assertEquals(scanPeriod, copy.getRedeployScanInterval());
   }
 
   @Test

@@ -401,7 +401,7 @@ public class DeploymentManager {
           // Probably non file url
         }
       }
-      return new Redeployer(filesToWatch, options.getRedeployGracePeriod());
+      return new Redeployer(filesToWatch, options.getRedeployGraceInterval());
     } else {
       return null;
     }
@@ -631,7 +631,7 @@ public class DeploymentManager {
     }
 
     private void doStartRedeployTimer() {
-      redeployTimerID = vertx.setTimer(options.getRedeployScanPeriod(), tid -> vertx.executeBlockingInternal(redeployer, res -> {
+      redeployTimerID = vertx.setTimer(options.getRedeployScanInterval(), tid -> vertx.executeBlockingInternal(redeployer, res -> {
         if (res.succeeded()) {
           if (res.result()) {
             doRedeploy();

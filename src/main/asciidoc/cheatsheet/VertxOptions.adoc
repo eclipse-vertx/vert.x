@@ -45,7 +45,7 @@ Set the value of cluster ping interval, in ms.+++
 |+++
 Set the value of cluster ping reply interval, in ms.+++
 
-|[[blockedThreadCheckPeriod]]`blockedThreadCheckPeriod`
+|[[blockedThreadCheckInterval]]`blockedThreadCheckInterval`
 |`Number`
 |+++
 Sets the value of blocked thread check period, in ms.+++

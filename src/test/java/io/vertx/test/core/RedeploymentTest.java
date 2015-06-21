@@ -245,14 +245,14 @@ public class RedeploymentTest extends VertxTestBase {
 
   @Test
   public void testDelayedRedeployDueToSequenceOfChanges() throws Exception {
-    testRedeploy(RedeployVerticle.class.getName(), () -> touchJar(), 10, DeploymentOptions.DEFAULT_REDEPLOY_GRACE_PERIOD / 2, 1);
+    testRedeploy(RedeployVerticle.class.getName(), () -> touchJar(), 10, DeploymentOptions.DEFAULT_REDEPLOY_GRACE_INTERVAL / 2, 1);
   }
 
   @Test
   public void testChangeAgainDuringRedeploy() throws Exception {
     testRedeploy(() -> {
       touchJar();
-      vertx.setTimer(DeploymentOptions.DEFAULT_REDEPLOY_GRACE_PERIOD + 1, id -> {
+      vertx.setTimer(DeploymentOptions.DEFAULT_REDEPLOY_GRACE_INTERVAL + 1, id -> {
         touchJar();
       });
     });

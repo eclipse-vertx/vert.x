@@ -72,9 +72,9 @@ public class VertxOptions {
   public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = 20000;
 
   /**
-   * The default value of blocked thread check period = 1000 ms.
+   * The default value of blocked thread check interval = 1000 ms.
    */
-  public static final long DEFAULT_BLOCKED_THREAD_CHECK_PERIOD = 1000;
+  public static final long DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL = 1000;
 
   /**
    * The default value of max event loop execute time = 2000000000 ns (2 seconds)
@@ -121,7 +121,7 @@ public class VertxOptions {
   private int clusterPort = DEFAULT_CLUSTER_PORT;
   private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
   private long clusterPingReplyInterval = DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
-  private long blockedThreadCheckPeriod = DEFAULT_BLOCKED_THREAD_CHECK_PERIOD;
+  private long blockedThreadCheckInterval = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL;
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
   private long maxWorkerExecuteTime = DEFAULT_MAX_WORKER_EXECUTE_TIME;
   private ClusterManager clusterManager;
@@ -151,7 +151,7 @@ public class VertxOptions {
     this.clusterPort = other.getClusterPort();
     this.clusterPingInterval = other.getClusterPingInterval();
     this.clusterPingReplyInterval = other.getClusterPingReplyInterval();
-    this.blockedThreadCheckPeriod = other.getBlockedThreadCheckPeriod();
+    this.blockedThreadCheckInterval = other.getBlockedThreadCheckInterval();
     this.maxEventLoopExecuteTime = other.getMaxEventLoopExecuteTime();
     this.maxWorkerExecuteTime = other.getMaxWorkerExecuteTime();
     this.internalBlockingPoolSize = other.getInternalBlockingPoolSize();
@@ -177,7 +177,7 @@ public class VertxOptions {
     this.clusterPingInterval = json.getLong("clusterPingInterval", DEFAULT_CLUSTER_PING_INTERVAL);
     this.clusterPingReplyInterval = json.getLong("clusterPingReplyInterval", DEFAULT_CLUSTER_PING_REPLY_INTERVAL);
     this.internalBlockingPoolSize = json.getInteger("internalBlockingPoolSize", DEFAULT_INTERNAL_BLOCKING_POOL_SIZE);
-    this.blockedThreadCheckPeriod = json.getLong("blockedThreadCheckPeriod", DEFAULT_BLOCKED_THREAD_CHECK_PERIOD);
+    this.blockedThreadCheckInterval = json.getLong("blockedThreadCheckInterval", DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL);
     this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME);
     this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAX_WORKER_EXECUTE_TIME);
     this.haEnabled = json.getBoolean("haEnabled", false);
@@ -354,21 +354,21 @@ public class VertxOptions {
    *
    * @return the value of blocked thread check period, in ms.
    */
-  public long getBlockedThreadCheckPeriod() {
-    return blockedThreadCheckPeriod;
+  public long getBlockedThreadCheckInterval() {
+    return blockedThreadCheckInterval;
   }
 
   /**
    * Sets the value of blocked thread check period, in ms.
    *
-   * @param blockedThreadCheckPeriod  the value of blocked thread check period, in ms.
+   * @param blockedThreadCheckInterval  the value of blocked thread check period, in ms.
    * @return a reference to this, so the API can be used fluently
    */
-  public VertxOptions setBlockedThreadCheckPeriod(long blockedThreadCheckPeriod) {
-    if (blockedThreadCheckPeriod < 1) {
-      throw new IllegalArgumentException("blockedThreadCheckPeriod must be > 0");
+  public VertxOptions setBlockedThreadCheckInterval(long blockedThreadCheckInterval) {
+    if (blockedThreadCheckInterval < 1) {
+      throw new IllegalArgumentException("blockedThreadCheckInterval must be > 0");
     }
-    this.blockedThreadCheckPeriod = blockedThreadCheckPeriod;
+    this.blockedThreadCheckInterval = blockedThreadCheckInterval;
     return this;
   }
 
@@ -594,7 +594,7 @@ public class VertxOptions {
 
     VertxOptions that = (VertxOptions) o;
 
-    if (blockedThreadCheckPeriod != that.blockedThreadCheckPeriod) return false;
+    if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
     if (clusterPort != that.clusterPort) return false;
     if (clustered != that.clustered) return false;
     if (eventLoopPoolSize != that.eventLoopPoolSize) return false;
@@ -621,7 +621,7 @@ public class VertxOptions {
     result = 31 * result + (clustered ? 1 : 0);
     result = 31 * result + (clusterHost != null ? clusterHost.hashCode() : 0);
     result = 31 * result + clusterPort;
-    result = 31 * result + (int) (blockedThreadCheckPeriod ^ (blockedThreadCheckPeriod >>> 32));
+    result = 31 * result + (int) (blockedThreadCheckInterval ^ (blockedThreadCheckInterval >>> 32));
     result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
     result = 31 * result + (clusterManager != null ? clusterManager.hashCode() : 0);

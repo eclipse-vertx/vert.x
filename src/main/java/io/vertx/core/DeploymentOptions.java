@@ -39,8 +39,8 @@ public class DeploymentOptions {
   public static final boolean DEFAULT_HA = false;
   public static final int DEFAULT_INSTANCES = 1;
   public static final boolean DEFAULT_REDEPLOY = false;
-  public static final long DEFAULT_REDEPLOY_SCAN_PERIOD = 250;
-  public static final long DEFAULT_REDEPLOY_GRACE_PERIOD = 1000;
+  public static final long DEFAULT_REDEPLOY_SCAN_INTERVAL = 250;
+  public static final long DEFAULT_REDEPLOY_GRACE_INTERVAL = 1000;
 
   private JsonObject config;
   private boolean worker;
@@ -50,8 +50,8 @@ public class DeploymentOptions {
   private List<String> extraClasspath;
   private int instances;
   private boolean redeploy;
-  private long redeployScanPeriod;
-  private long redeployGracePeriod;
+  private long redeployScanInterval;
+  private long redeployGraceInterval;
 
   /**
    * Default constructor
@@ -64,8 +64,8 @@ public class DeploymentOptions {
     this.ha = DEFAULT_HA;
     this.instances = DEFAULT_INSTANCES;
     this.redeploy = DEFAULT_REDEPLOY;
-    this.redeployScanPeriod = DEFAULT_REDEPLOY_SCAN_PERIOD;
-    this.redeployGracePeriod = DEFAULT_REDEPLOY_GRACE_PERIOD;
+    this.redeployScanInterval = DEFAULT_REDEPLOY_SCAN_INTERVAL;
+    this.redeployGraceInterval = DEFAULT_REDEPLOY_GRACE_INTERVAL;
   }
 
   /**
@@ -82,8 +82,8 @@ public class DeploymentOptions {
     this.extraClasspath = other.getExtraClasspath() == null ? null : new ArrayList<>(other.getExtraClasspath());
     this.instances = other.instances;
     this.redeploy = other.redeploy;
-    this.redeployScanPeriod = other.redeployScanPeriod;
-    this.redeployGracePeriod = other.redeployGracePeriod;
+    this.redeployScanInterval = other.redeployScanInterval;
+    this.redeployGraceInterval = other.redeployGraceInterval;
   }
 
   /**
@@ -112,8 +112,8 @@ public class DeploymentOptions {
     }
     this.instances = json.getInteger("instances", DEFAULT_INSTANCES);
     this.redeploy = json.getBoolean("redeploy", DEFAULT_REDEPLOY);
-    this.redeployScanPeriod = json.getLong("redeployScanPeriod", DEFAULT_REDEPLOY_SCAN_PERIOD);
-    this.redeployGracePeriod = json.getLong("redeployGracePeriod", DEFAULT_REDEPLOY_GRACE_PERIOD);
+    this.redeployScanInterval = json.getLong("redeployScanInterval", DEFAULT_REDEPLOY_SCAN_INTERVAL);
+    this.redeployGraceInterval = json.getLong("redeployGraceInterval", DEFAULT_REDEPLOY_GRACE_INTERVAL);
   }
 
   /**
@@ -217,11 +217,11 @@ public class DeploymentOptions {
     if (redeploy != DEFAULT_REDEPLOY) {
       json.put("redeploy", redeploy);
     }
-    if (redeployScanPeriod != DEFAULT_REDEPLOY_SCAN_PERIOD) {
-      json.put("redeployScanPeriod", redeployScanPeriod);
+    if (redeployScanInterval != DEFAULT_REDEPLOY_SCAN_INTERVAL) {
+      json.put("redeployScanInterval", redeployScanInterval);
     }
-    if (redeployGracePeriod != DEFAULT_REDEPLOY_GRACE_PERIOD) {
-      json.put("redeployGracePeriod", redeployGracePeriod);
+    if (redeployGraceInterval != DEFAULT_REDEPLOY_GRACE_INTERVAL) {
+      json.put("redeployGraceInterval", redeployGraceInterval);
     }
     return json;
   }
@@ -298,27 +298,27 @@ public class DeploymentOptions {
     return this;
   }
 
-  public long getRedeployScanPeriod() {
-    return redeployScanPeriod;
+  public long getRedeployScanInterval() {
+    return redeployScanInterval;
   }
 
-  public DeploymentOptions setRedeployScanPeriod(long redeployScanPeriod) {
-    if (redeployScanPeriod < 1) {
-      throw new IllegalArgumentException("redeployScanPeriod must be > 0");
+  public DeploymentOptions setRedeployScanInterval(long redeployScanInterval) {
+    if (redeployScanInterval < 1) {
+      throw new IllegalArgumentException("redeployScanInterval must be > 0");
     }
-    this.redeployScanPeriod = redeployScanPeriod;
+    this.redeployScanInterval = redeployScanInterval;
     return this;
   }
 
-  public long getRedeployGracePeriod() {
-    return redeployGracePeriod;
+  public long getRedeployGraceInterval() {
+    return redeployGraceInterval;
   }
 
-  public DeploymentOptions setRedeployGracePeriod(long redeployGracePeriod) {
-    if (redeployGracePeriod < 1) {
-      throw new IllegalArgumentException("redeployGracePeriod must be > 0");
+  public DeploymentOptions setRedeployGraceInterval(long redeployGraceInterval) {
+    if (redeployGraceInterval < 1) {
+      throw new IllegalArgumentException("redeployGraceInterval must be > 0");
     }
-    this.redeployGracePeriod = redeployGracePeriod;
+    this.redeployGraceInterval = redeployGraceInterval;
     return this;
   }
 
@@ -339,8 +339,8 @@ public class DeploymentOptions {
       return false;
     if (instances != that.instances) return false;
     if (redeploy != that.redeploy) return false;
-    if (redeployScanPeriod != that.redeployScanPeriod) return false;
-    if (redeployGracePeriod != that.redeployGracePeriod) return false;
+    if (redeployScanInterval != that.redeployScanInterval) return false;
+    if (redeployGraceInterval != that.redeployGraceInterval) return false;
 
     return true;
   }
@@ -355,8 +355,8 @@ public class DeploymentOptions {
     result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);
     result = 31 * result + instances;
     result = 31 * result + (redeploy ? 1 : 0);
-    result = 31 * result + (int) (redeployScanPeriod ^ (redeployScanPeriod >>> 32));
-    result = 31 * result + (int) (redeployGracePeriod ^ (redeployGracePeriod >>> 32));
+    result = 31 * result + (int) (redeployScanInterval ^ (redeployScanInterval >>> 32));
+    result = 31 * result + (int) (redeployGraceInterval ^ (redeployGraceInterval >>> 32));
     return result;
   }
 }
