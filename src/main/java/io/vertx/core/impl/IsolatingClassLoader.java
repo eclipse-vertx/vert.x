@@ -70,19 +70,19 @@ public class IsolatingClassLoader extends URLClassLoader {
           }
         }
 
-        // Sanity check to see if it's already been loaded by the parent
-        try {
-          Class<?> res = (Class<?>)findLoadedClassMethod.invoke(getParent(), name);
-          if (res != null) {
-            log.warn("Not isolated! " + name + " will not be isolated as it's already been loaded by a parent class");
-            return res;
-          }
-        } catch (Exception e) {
-          throw new VertxException(e);
-        }
-
-
         if (c == null) {
+
+          // Sanity check to see if it's already been loaded by the parent
+          try {
+            Class<?> res = (Class<?>)findLoadedClassMethod.invoke(getParent(), name);
+            if (res != null) {
+              log.warn("Not isolated! " + name + " will not be isolated as it's already been loaded by a parent class");
+              return res;
+            }
+          } catch (Exception e) {
+            throw new VertxException(e);
+          }
+
           // Try and load with this classloader
           try {
             c = findClass(name);
