@@ -127,10 +127,14 @@ public class CompilingClassLoader extends ClassLoader {
 
   @Override
   protected Class<?> findClass(String name) throws ClassNotFoundException {
-    byte[] bytecode = fileManager.getCompiledClass(name);
+    byte[] bytecode = getClassBytes(name);
     if (bytecode == null) {
       throw new ClassNotFoundException(name);
     }
     return defineClass(name, bytecode, 0, bytecode.length);
+  }
+
+  public byte[] getClassBytes(String name) {
+    return fileManager.getCompiledClass(name);
   }
 }

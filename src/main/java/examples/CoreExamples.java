@@ -149,8 +149,9 @@ public class CoreExamples {
 
   public void example14(Vertx vertx) {
     DeploymentOptions options = new DeploymentOptions().setIsolationGroup("mygroup");
-    options.setExtraClasspath(Arrays.asList("lib/jars/some-library.jar"));
-    vertx.deployVerticle("com.mycompany.MyIsolatedVerticle", options);
+    options.setIsolatedClasses(Arrays.asList("com.mycompany.myverticle.*",
+                       "com.mycompany.somepkg.SomeClass", "org.somelibrary.*"));
+    vertx.deployVerticle("com.mycompany.myverticle.VerticleClass", options);
   }
 
   public void example15(Vertx vertx) {

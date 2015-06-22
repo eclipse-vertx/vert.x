@@ -38,9 +38,9 @@ public class TestVerticle extends AbstractVerticle {
   public void start() throws Exception {
     processArgs = context.processArgs();
     conf = context.config();
-    if (Thread.currentThread().getContextClassLoader() != getClass().getClassLoader()) {
-      throw new IllegalStateException("Wrong tccl!");
-    }
+//    if (Thread.currentThread().getContextClassLoader() != getClass().getClassLoader()) {
+//      throw new IllegalStateException("Wrong tccl!");
+//    }
     vertx.eventBus().send("testcounts",
       new JsonObject().put("deploymentID", context.deploymentID()).put("count", instanceCount.incrementAndGet()));
   }

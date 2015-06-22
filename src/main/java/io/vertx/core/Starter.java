@@ -17,7 +17,6 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.Args;
-import io.vertx.core.impl.IsolatingClassLoader;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -31,13 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -74,6 +67,8 @@ public class Starter {
 
     String extraCP = args.map.get("-cp");
     if (extraCP != null) {
+      // If an extra CP is specified (e.g. to provide cp to a jar or cluster.xml) we must create a new classloader
+      // and run the starter using that so it's visible to the rest of the code
       String[] parts = extraCP.split(PATH_SEP);
       URL[] urls = new URL[parts.length];
       for (int p = 0; p < parts.length; p++) {
@@ -86,7 +81,7 @@ public class Starter {
           throw new IllegalStateException(e);
         }
       }
-      IsolatingClassLoader icl = new IsolatingClassLoader(urls, Starter.class.getClassLoader());
+      ClassLoader icl = new URLClassLoader(urls, Starter.class.getClassLoader());
       ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
       Thread.currentThread().setContextClassLoader(icl);
       try {
@@ -273,7 +268,7 @@ public class Starter {
       return;
     }
 
-    // As we do not deploy a verticle, other options are irrelevant (instances, worker, conf and redeploy)
+    // As we do not deploy a verticle, other options are irrelevant (instances, worker, conf)
 
     addShutdownHook(vertx);
     block();
@@ -337,9 +332,13 @@ public class Starter {
     deploymentOptions = new DeploymentOptions();
     configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
 
-    boolean redeploy = args.map.get("-redeploy") != null;
+    String cp = args.map.get("-cp");
+    if (cp == null) {
+      cp = "."; // default to current dir
+    }
 
-    deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances).setRedeploy(redeploy);
+    deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
+
     beforeDeployingVerticle(deploymentOptions);
     vertx.deployVerticle(main, deploymentOptions, createLoggingHandler(message, res -> {
       if (res.failed()) {
@@ -546,8 +545,7 @@ public class Starter {
         "                               HA group this node will join. There can be      \n" +
         "                               multiple HA groups in a cluster. Nodes will only\n" +
         "                               failover to other nodes in the same group.      \n" +
-        "                               Defaults to __DEFAULT__                         \n" +
-        "        -redeploy              Enable automatic redeployment                 \n\n" +
+        "                               Defaults to __DEFAULT__                       \n\n" +
 
         "    vertx -version                                                             \n" +
         "        displays the version";

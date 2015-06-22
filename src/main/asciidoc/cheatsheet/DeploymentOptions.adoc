@@ -43,12 +43,6 @@ Set any extra classpath to be used when deploying the verticle.
 |+++
 Set the number of instances that should be deployed.+++
 
-|[[redeploy]]`redeploy`
-|`Boolean`
-|-
-|[[redeployScanInterval]]`redeployScanInterval`
-|`Number`
-|-
-|[[redeployGraceInterval]]`redeployGraceInterval`
-|`Number`
+|[[isolatedClasses]]`isolatedClasses`
+|`Array of String`
 |-|===

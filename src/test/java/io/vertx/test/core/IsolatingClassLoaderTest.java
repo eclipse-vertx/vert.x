@@ -21,7 +21,6 @@ import static org.junit.Assert.*;
  */
 public class IsolatingClassLoaderTest {
 
-  private String basePath = "src/test/resources/icl";
   private String resourceName = "resource.json";
   private URL url1;
   private URL url2;
@@ -32,12 +31,14 @@ public class IsolatingClassLoaderTest {
   @Before
   public void setUp() throws Exception {
 
+    String basePath = "src/test/resources/icl";
+
     url1 = new File(basePath, "pkg1").toURI().toURL();
     url2 = new File(basePath, "pkg2").toURI().toURL();
     url3 = new File(basePath, "pkg3").toURI().toURL();
 
     ucl = new URLClassLoader(new URL[]{url2, url3});
-    icl = new IsolatingClassLoader(new URL[]{url1}, ucl);
+    icl = new IsolatingClassLoader(new URL[]{url1}, ucl, null);
 
   }
 

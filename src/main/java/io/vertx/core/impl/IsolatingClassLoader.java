@@ -24,17 +24,16 @@ import java.util.Enumeration;
 import java.util.List;
 
 /**
- * Before delegating to the parent, this classloader attempts to load the class first
- * (opposite of normal delegation model).
- * This allows multiple versions of the same class to be loaded by different classloaders which allows
- * us to isolate verticles so they can't easily interact
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class IsolatingClassLoader extends URLClassLoader {
 
-  public IsolatingClassLoader(URL[] urls, ClassLoader parent) {
+  private List<String> isolatedClasses;
+
+  public IsolatingClassLoader(URL[] urls, ClassLoader parent, List<String> isolatedClasses) {
     super(urls, parent);
+    this.isolatedClasses = isolatedClasses;
   }
 
   @Override
@@ -42,30 +41,54 @@ public class IsolatingClassLoader extends URLClassLoader {
     synchronized (getClassLoadingLock(name)) {
       Class<?> c = findLoadedClass(name);
       if (c == null) {
-        // We don't want to load Vert.x (or Vert.x dependency) classes from an isolating loader
-        if (isVertxOrSystemClass(name)) {
-          try {
-            c = super.loadClass(name, false);
-          } catch (ClassNotFoundException e) {
-            // Fall through
+        if (isIsolatedClass(name)) {
+          // We don't want to load Vert.x (or Vert.x dependency) classes from an isolating loader
+          if (isVertxOrSystemClass(name)) {
+            try {
+              c = getParent().loadClass(name);
+            } catch (ClassNotFoundException e) {
+              // Fall through
+            }
           }
-        }
-        if (c == null) {
-          // Try and load with this classloader
-          try {
-            c = findClass(name);
-          } catch (ClassNotFoundException e) {
-            // Now try with parent
-            c = super.loadClass(name, false);
+          if (c == null) {
+            // Try and load with this classloader
+            try {
+              c = findClass(name);
+            } catch (ClassNotFoundException e) {
+              // Now try with parent
+              c = getParent().loadClass(name);
+            }
           }
+          if (resolve) {
+            resolveClass(c);
+          }
+        } else {
+          // Parent first
+          c = super.loadClass(name, resolve);
         }
-      }
-      if (resolve) {
-        resolveClass(c);
       }
       return c;
     }
   }
+
+  private boolean isIsolatedClass(String name) {
+    if (isolatedClasses != null) {
+      for (String isolated : isolatedClasses) {
+        if (isolated.endsWith(".*")) {
+          String isolatedPackage = isolated.substring(0, isolated.length() - 1);
+          String paramPackage = name.substring(0, name.lastIndexOf('.') + 1);
+          if (paramPackage.startsWith(isolatedPackage)) {
+            // Matching package
+            return true;
+          }
+        } else if (isolated.equals(name)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
 
   /**
    * {@inheritDoc}
@@ -108,9 +131,9 @@ public class IsolatingClassLoader extends URLClassLoader {
     return
         name.startsWith("java.") ||
         name.startsWith("javax.") ||
+        name.startsWith("sun.*") ||
         name.startsWith("com.sun.") ||
         name.startsWith("io.vertx.core") ||
-        name.startsWith("com.hazelcast") ||
         name.startsWith("io.netty.") ||
         name.startsWith("com.fasterxml.jackson");
   }

@@ -178,9 +178,6 @@
           <version>${maven.surefire.plugin.version}</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-            <excludes>
-              <exclude>**/RedeploySourceVerticle.java</exclude>
-            </excludes>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
               <additionalClasspathElement>${basedir}/src/test/resources/webroot2.jar</additionalClasspathElement>

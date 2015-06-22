@@ -484,14 +484,26 @@ include::override/verticle-configuration.adoc[]
 
 === Verticle Isolation Groups
 
-By default, Vert.x has a _flat classpath_. I.e, it does everything, including deploying verticles without messing
-with class-loaders. In the majority of cases this is the simplest, clearest and sanest thing to do.
+By default, Vert.x has a _flat classpath_. I.e, when Vert.x deploys verticles it does so with the current classloader -
+it doesn't create a new one. In the majority of cases this is the simplest, clearest and sanest thing to do.
 
 However, in some cases you may want to deploy a verticle so the classes of that verticle are isolated from others in
 your application.
 
 This might be the case, for example, if you want to deploy two different versions of a verticle with the same class name
 in the same Vert.x instance, or if you have two different verticles which use different versions of the same jar library.
+
+When using an isolation group you provide a list of the class names that you want isolated using
+`link:../../apidocs/io/vertx/core/DeploymentOptions.html#setIsolatedClasses-java.util.List-[setIsolatedClasses]`-  an entry can be a fully qualified
+classname such as `com.mycompany.myproject.engine.MyClass` or it can be a wildcard which will match any classes in a package and any
+sub-packages, e.g. `com.mycompany.myproject.*` would match any classes in the package `com.mycompany.myproject` or
+any sub-packages.
+
+Please note that _only_ the classes that match will be isolated - any other classes will be loaded by the current
+class loader.
+
+Extra classpath entries can also be provided with `link:../../apidocs/io/vertx/core/DeploymentOptions.html#setExtraClasspath-java.util.List-[setExtraClasspath]` so if
+you want to load classes or resources that aren't already present on the main claspath you can add this.
 
 WARNING: Use this feature with caution. Class-loaders can be a can of worms, and can make debugging difficult, amongst
 other things.
@@ -501,15 +513,10 @@ Here's an example of using an isolation group to isolate a verticle deployment.
 [source,java]
 ----
 DeploymentOptions options = new DeploymentOptions().setIsolationGroup("mygroup");
-options.setExtraClasspath(Arrays.asList("lib/jars/some-library.jar"));
-vertx.deployVerticle("com.mycompany.MyIsolatedVerticle", options);
+options.setIsolatedClasses(Arrays.asList("com.mycompany.myverticle.*",
+                   "com.mycompany.somepkg.SomeClass", "org.somelibrary.*"));
+vertx.deployVerticle("com.mycompany.myverticle.VerticleClass", options);
 ----
-
-Isolation groups are identified by a name, and the name can be used between different deployments if you want them
-to share an isolated class-loader.
-
-Extra classpath entries can also be provided with `link:../../apidocs/io/vertx/core/DeploymentOptions.html#setExtraClasspath-java.util.List-[setExtraClasspath]` so they
-can locate resources that are isolated to them.
 
 === High Availability
 
@@ -847,7 +854,6 @@ one instance. If omitted a single instance will be deployed.
  * `-hagroup` - used in conjunction with `-ha`. It specifies the HA group this node will join. There can be
  multiple HA groups in a cluster. Nodes will only failover to other nodes in the same group. The default value is `
  +++__DEFAULT__+++`
- * `-redeploy` - Enables automatic redeployment of the verticle
 
 Here are some more examples:
 
@@ -942,20 +948,6 @@ To display the vert.x version, just launch:
 ----
 vertx -version
 ----
-
-=== Using the redeploy argument
-
-When a verticle is launched with `vertx run .... -redeploy`, vertx redeploys the verticle every time the verticle
-files change. This mode makes the development much more fun and efficient as you don't have to restart the
-application.
-
-[source]
-----
-vertx run server.js -redeploy
-vertx run Server.java -redeploy
-----
-
-When using Java source file, vert.x recompiles the class on the fly and redeploys the verticle.
 
 == Cluster Managers
 

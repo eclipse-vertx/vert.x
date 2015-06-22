@@ -218,8 +218,6 @@ public class StarterTest extends VertxTestBase {
     System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "haGroup", "somegroup");
 
-    System.setProperty(Starter.DEPLOYMENT_OPTIONS_PROP_PREFIX + "redeployScanInterval", "612536253");
-
     MyStarter starter = new MyStarter();
     String[] args;
     if (clustered) {
@@ -240,9 +238,6 @@ public class StarterTest extends VertxTestBase {
     assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
 
-    DeploymentOptions depOptions = starter.getDeploymentOptions();
-
-    assertEquals(612536253, depOptions.getRedeployScanInterval());
   }
 
   private void clearProperties() {
