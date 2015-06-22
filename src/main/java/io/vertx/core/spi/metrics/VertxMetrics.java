@@ -98,7 +98,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * No specific thread and context can be expected when this method is called.<p/>
    *
    * Note: this method can be called more than one time for the same {@code localAddress} when a server is
-   * scaled, it is the responsibility of the metrics implementation to eventually merge metrics.
+   * scaled, it is the responsibility of the metrics implementation to eventually merge metrics. In this case
+   * the provided {@code server} argument can be used to distinguish the different {@code HttpServerMetrics}
+   * instances.
    *
    * @param server the Vert.x http server
    * @param localAddress localAddress the local address the net socket is listening on
@@ -124,7 +126,9 @@ public interface VertxMetrics extends Metrics, Measured {
    * No specific thread and context can be expected when this method is called.<p/>
    *
    * Note: this method can be called more than one time for the same {@code localAddress} when a server is
-   * scaled, it is the responsibility of the metrics implementation to eventually merge metrics.
+   * scaled, it is the responsibility of the metrics implementation to eventually merge metrics. In this case
+   * the provided {@code server} argument can be used to distinguish the different {@code TCPMetrics}
+   * instances.
    * 
    * @param server the Vert.x net server
    * @param localAddress localAddress the local address the net socket is listening on
