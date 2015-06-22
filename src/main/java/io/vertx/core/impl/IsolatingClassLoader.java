@@ -16,7 +16,12 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.VertxException;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
@@ -33,9 +38,23 @@ import java.util.List;
  */
 public class IsolatingClassLoader extends URLClassLoader {
 
+  private static final Logger log = LoggerFactory.getLogger(IsolatingClassLoader.class);
+
+
+  private Method findLoadedClassMethod;
+
   public IsolatingClassLoader(URL[] urls, ClassLoader parent) {
     super(urls, parent);
+    Class<?> clazz = ClassLoader.class;
+    try {
+      findLoadedClassMethod = clazz.getDeclaredMethod("findLoadedClass", String.class);
+      findLoadedClassMethod.setAccessible(true);
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
   }
+
+
 
   @Override
   protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -50,7 +69,20 @@ public class IsolatingClassLoader extends URLClassLoader {
             // Fall through
           }
         }
+
         if (c == null) {
+
+          // Sanity check to see if it's already been loaded by the parent
+          try {
+            Class<?> res = (Class<?>)findLoadedClassMethod.invoke(getParent(), name);
+            if (res != null) {
+              log.warn("Not isolated! " + name + " will not be isolated as it's already been loaded by a parent class");
+              return res;
+            }
+          } catch (Exception e) {
+            throw new VertxException(e);
+          }
+
           // Try and load with this classloader
           try {
             c = findClass(name);

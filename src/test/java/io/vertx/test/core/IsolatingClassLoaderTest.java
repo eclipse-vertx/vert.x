@@ -4,6 +4,7 @@ import io.vertx.core.impl.IsolatingClassLoader;
 import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
+import user.VerticleImpl;
 
 import java.io.File;
 import java.io.InputStream;
@@ -119,6 +120,44 @@ public class IsolatingClassLoaderTest {
         assertEquals(ver, json.getLong("ver", -1L).longValue());
       }
     }
+
+  }
+
+  /**
+   * This reproduces the -redeploy issue with Groovy or Metrics that have a current classloader that has an URL
+   * classloader that has the extension class (GroovyVerticle or Metrics classes) in its URL[].
+   *
+   * The problem is that in both cases, the class executing the code does not have the same class loader than
+   * the object it manipulates
+   *
+   * 1/ GroovyVerticleFactory loaded from the current classloader instantiates a GroovyVerticle that has
+   * a different GroovyVerticle class object as it is loaded from IsolatingClassLoader
+   *
+   * 2/ MetricsServiceImpl executed from the Verticle loaded from the IsolatingClassLoader has metrics classes
+   * different than the classes used by the Vertx instance.
+   *
+   * Both issues are the same but executes from different perspectives.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testReproducer() throws Exception {
+
+    // Isolating classloader configuration similar to the -redeploy case
+    URLClassLoader current = (URLClassLoader) Thread.currentThread().getContextClassLoader();
+    IsolatingClassLoader icl = new IsolatingClassLoader(current.getURLs(), current);
+
+
+    Class clazz = icl.loadClass("user.VerticleImpl");
+    assertNotSame(VerticleImpl.class, clazz);
+    Object instance = clazz.newInstance();
+
+    // This can be casted
+    JsonObject core = (JsonObject) clazz.getDeclaredField("core").get(instance);
+
+    // This makes a classcast exception
+    IsolatingClassLoaderTest ext = (IsolatingClassLoaderTest) clazz.getDeclaredField("ext").get(instance);
+
 
   }
 
