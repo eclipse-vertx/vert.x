@@ -23,17 +23,11 @@ import org.junit.Assert;
 /**
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-public class ExtraCPVerticle extends AbstractVerticle {
+public class ExtraCPVerticleAlreadyInParentLoader extends AbstractVerticle {
   @Override
   public void start() throws Exception {
     IsolatingClassLoader cl = (IsolatingClassLoader) Thread.currentThread().getContextClassLoader();
     Class extraCPClass = cl.loadClass("MyVerticle");
-    Assert.assertSame(extraCPClass.getClassLoader(), cl);
-    try {
-      cl.getParent().loadClass("MyVerticle");
-      Assert.fail("Parent classloader should not see this class");
-    } catch (ClassNotFoundException expected) {
-      //
-    }
+    Assert.assertSame(extraCPClass.getClassLoader(), cl.getParent());
   }
 }

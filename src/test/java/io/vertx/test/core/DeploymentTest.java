@@ -954,21 +954,6 @@ public class DeploymentTest extends VertxTestBase {
     testIsolationGroup("somegroup", "someothergroup", 1, 1, isolatedClasses, "java:" + TestVerticle.class.getCanonicalName());
   }
 
-  @Test
-  public void testExtraClasspathLoader() throws Exception {
-
-    String dir = createClassOutsideClasspath("MyVerticle");
-
-    List<String> extraClasspath = Arrays.asList(dir);
-
-    vertx.deployVerticle("java:" + ExtraCPVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
-      setExtraClasspath(extraClasspath), ar -> {
-      assertTrue(ar.succeeded());
-      testComplete();
-    });
-    await();
-  }
-
   private String createClassOutsideClasspath(String className) throws Exception {
     File dir = Files.createTempDirectory("vertx").toFile();
     dir.deleteOnExit();
@@ -987,6 +972,37 @@ public class DeploymentTest extends VertxTestBase {
     Files.write(classFile.toPath(), bytes);
 
     return dir.getAbsolutePath();
+  }
+
+  @Test
+  public void testExtraClasspathLoaderNotInParentLoader() throws Exception {
+    String dir = createClassOutsideClasspath("MyVerticle");
+    List<String> extraClasspath = Arrays.asList(dir);
+    vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
+        setExtraClasspath(extraClasspath), ar -> {
+      assertTrue(ar.succeeded());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testExtraClasspathLoaderAlreadyInParentLoader() throws Exception {
+    String dir = createClassOutsideClasspath("MyVerticle");
+    URLClassLoader loader = new URLClassLoader(new URL[]{new File(dir).toURI().toURL()}, Thread.currentThread().getContextClassLoader());
+    List<String> extraClasspath = Arrays.asList(dir);
+    ClassLoader currentCL = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(loader);
+    try {
+      vertx.deployVerticle("java:" + ExtraCPVerticleAlreadyInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
+          setExtraClasspath(extraClasspath), ar -> {
+        assertTrue(ar.succeeded());
+        testComplete();
+      });
+    } finally {
+      Thread.currentThread().setContextClassLoader(currentCL);
+    }
+    await();
   }
 
   public static class ParentVerticle extends AbstractVerticle {
