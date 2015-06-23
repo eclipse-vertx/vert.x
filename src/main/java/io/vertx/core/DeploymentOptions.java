@@ -252,10 +252,22 @@ public class DeploymentOptions {
     return this;
   }
 
+  /**
+   * Get the list of isolated class names, the names can be a Java class fully qualified name such as
+   * 'com.mycompany.myproject.engine.MyClass' or a wildcard matching such as `com.mycompany.myproject.*`.
+   *
+   * @return the list of isolated classes
+   */
   public List<String> getIsolatedClasses() {
     return isolatedClasses;
   }
 
+  /**
+   * Set the isolated class names.
+   *
+   * @param isolatedClasses the list of isolated class names
+   * @return a reference to this, so the API can be used fluently
+   */
   public DeploymentOptions setIsolatedClasses(List<String> isolatedClasses) {
     this.isolatedClasses = isolatedClasses;
     return this;

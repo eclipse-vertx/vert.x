@@ -484,7 +484,7 @@
  * class loader.
  *
  * Extra classpath entries can also be provided with {@link io.vertx.core.DeploymentOptions#setExtraClasspath} so if
- * you want to load classes or resources that aren't already present on the main claspath you can add this.
+ * you want to load classes or resources that aren't already present on the main classpath you can add this.
  *
  * WARNING: Use this feature with caution. Class-loaders can be a can of worms, and can make debugging difficult, amongst
  * other things.
