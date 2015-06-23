@@ -462,7 +462,7 @@
  *
  * WARNING: If you're going to write web servers directly using Vert.x be careful that users cannot exploit the
  * path to access files outside the directory from which you want to serve them. It may be safer instead to use
- * Vert.x Apex.
+ * Vert.x Web.
  *
  * ==== Pumping responses
  *
