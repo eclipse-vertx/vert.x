@@ -60,21 +60,25 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize) {
     this.supportsContinuation = supportsContinuation;
-    this.textHandlerID = UUID.randomUUID().toString();
-    this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
-    Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
-    binaryHandlerRegistration = vertx.eventBus().<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
-    Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
-    textHandlerRegistration = vertx.eventBus().<String>localConsumer(textHandlerID).handler(textHandler);
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
   }
 
-  public String binaryHandlerID() {
+  public synchronized String binaryHandlerID() {
+    if(binaryHandlerID == null){
+      this.binaryHandlerID = UUID.randomUUID().toString();
+      Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
+      binaryHandlerRegistration = vertx.eventBus().<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
+    }
     return binaryHandlerID;
   }
 
-  public String textHandlerID() {
+  public synchronized String textHandlerID() {
+    if(textHandlerID==null){
+      this.textHandlerID = UUID.randomUUID().toString();
+      Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
+      textHandlerRegistration = vertx.eventBus().<String>localConsumer(textHandlerID).handler(textHandler);
+    }
     return textHandlerID;
   }
 
@@ -190,8 +194,8 @@ public abstract class WebSocketImplBase implements WebSocketBase {
 
   private void cleanupHandlers() {
     if (!closed) {
-      binaryHandlerRegistration.unregister();
-      textHandlerRegistration.unregister();
+      if(binaryHandlerRegistration != null) binaryHandlerRegistration.unregister();
+      if(textHandlerRegistration !=null) textHandlerRegistration.unregister();
       closed = true;
     }
   }
