@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.WebSocketBase;
@@ -42,11 +43,11 @@ import java.util.UUID;
 public abstract class WebSocketImplBase implements WebSocketBase {
 
   private final boolean supportsContinuation;
-  private final String textHandlerID;
-  private final String binaryHandlerID;
+  private String textHandlerID;
+  private String binaryHandlerID;
   private final int maxWebSocketFrameSize;
-  private final MessageConsumer binaryHandlerRegistration;
-  private final MessageConsumer textHandlerRegistration;
+  private MessageConsumer<Buffer> binaryHandlerRegistration;
+  private MessageConsumer<String> textHandlerRegistration;
   protected final ConnectionBase conn;
 
   protected Handler<WebSocketFrame> frameHandler;
@@ -56,28 +57,36 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   protected Handler<Void> closeHandler;
   protected Handler<Void> endHandler;
   protected boolean closed;
-
+  private EventBus eventBus;
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize) {
     this.supportsContinuation = supportsContinuation;
     this.conn = conn;
+    this.eventBus = vertx.eventBus();
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
   }
-
-  public synchronized String binaryHandlerID() {
+  public String binaryHandlerID() {
+	  return binaryHandlerID(false);
+  }
+  
+  public synchronized String binaryHandlerID(boolean cluster) {
     if(binaryHandlerID == null){
       this.binaryHandlerID = UUID.randomUUID().toString();
       Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
-      binaryHandlerRegistration = vertx.eventBus().<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
+      binaryHandlerRegistration =(cluster?eventBus.<Buffer>consumer(binaryHandlerID):eventBus.<Buffer>localConsumer(binaryHandlerID)).handler(binaryHandler);
     }
     return binaryHandlerID;
   }
+  
+  public String textHandlerID() {
+	    return textHandlerID(false);
+  }
 
-  public synchronized String textHandlerID() {
+  public synchronized String textHandlerID(boolean cluster) {
     if(textHandlerID==null){
       this.textHandlerID = UUID.randomUUID().toString();
       Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
-      textHandlerRegistration = vertx.eventBus().<String>localConsumer(textHandlerID).handler(textHandler);
+      textHandlerRegistration = (cluster?eventBus.<String>consumer(textHandlerID):eventBus.<String>localConsumer(textHandlerID)).handler(textHandler);
     }
     return textHandlerID;
   }
