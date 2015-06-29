@@ -117,11 +117,25 @@ public interface Buffer extends ClusterSerializable {
   byte getByte(int pos);
 
   /**
+   * Returns the unsigned {@code byte} at position {@code pos} in the Buffer, as a {@code short}.
+   *
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 1} is greater than the length of the Buffer.
+   */
+  short getUnsignedByte(int pos);
+
+  /**
    * Returns the {@code int} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
    */
   int getInt(int pos);
+
+  /**
+   * Returns the unsigned {@code int} at position {@code pos} in the Buffer, as a {@code long}.
+   *
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
+   */
+  long getUnsignedInt(int pos);
 
   /**
    * Returns the {@code long} at position {@code pos} in the Buffer.
@@ -150,6 +164,13 @@ public interface Buffer extends ClusterSerializable {
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 2} is greater than the length of the Buffer.
    */
   short getShort(int pos);
+
+  /**
+   * Returns the unsigned {@code short} at position {@code pos} in the Buffer, as an {@code int}.
+   *
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 2} is greater than the length of the Buffer.
+   */
+  int getUnsignedShort(int pos);
 
   /**
    * Returns a copy of the entire Buffer as a {@code byte[]}
@@ -223,11 +244,25 @@ public interface Buffer extends ClusterSerializable {
   Buffer appendByte(byte b);
 
   /**
+   * Appends the specified unsigned {@code byte} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
+   * Returns a reference to {@code this} so multiple operations can be appended together.
+   */
+  @Fluent
+  Buffer appendUnsignedByte(short b);
+
+  /**
    * Appends the specified {@code int} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   @Fluent
   Buffer appendInt(int i);
+
+  /**
+   * Appends the specified unsigned {@code int} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
+   * Returns a reference to {@code this} so multiple operations can be appended together.
+   */
+  @Fluent
+  Buffer appendUnsignedInt(long i);
 
   /**
    * Appends the specified {@code long} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
@@ -242,6 +277,13 @@ public interface Buffer extends ClusterSerializable {
    */
   @Fluent
   Buffer appendShort(short s);
+
+  /**
+   * Appends the specified unsigned {@code short} to the end of the Buffer.The buffer will expand as necessary to accommodate any bytes written.<p>
+   * Returns a reference to {@code this} so multiple operations can be appended together.
+   */
+  @Fluent
+  Buffer appendUnsignedShort(int s);
 
   /**
    * Appends the specified {@code float} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
@@ -281,11 +323,24 @@ public interface Buffer extends ClusterSerializable {
   Buffer setByte(int pos, byte b);
 
   /**
+   * Sets the unsigned {@code byte} at position {@code pos} in the Buffer to the value {@code b}.<p>
+   * The buffer will expand as necessary to accommodate any value written.
+   */
+  Buffer setUnsignedByte(int pos, short b);
+
+  /**
    * Sets the {@code int} at position {@code pos} in the Buffer to the value {@code i}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @Fluent
   Buffer setInt(int pos, int i);
+
+  /**
+   * Sets the unsigned {@code int} at position {@code pos} in the Buffer to the value {@code i}.<p>
+   * The buffer will expand as necessary to accommodate any value written.
+   */
+  @Fluent
+  Buffer setUnsignedInt(int pos, long i);
 
   /**
    * Sets the {@code long} at position {@code pos} in the Buffer to the value {@code l}.<p>
@@ -314,6 +369,13 @@ public interface Buffer extends ClusterSerializable {
    */
   @Fluent
   Buffer setShort(int pos, short s);
+
+  /**
+   * Sets the unsigned {@code short} at position {@code pos} in the Buffer to the value {@code s}.<p>
+   * The buffer will expand as necessary to accommodate any value written.
+   */
+  @Fluent
+  Buffer setUnsignedShort(int pos, int s);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b}.<p>
