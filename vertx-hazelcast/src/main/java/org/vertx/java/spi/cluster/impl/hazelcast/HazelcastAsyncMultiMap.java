@@ -163,7 +163,7 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
 
   @Override
   public void entryRemoved(EntryEvent<K, V> entry) {
-    removeEntry(entry.getKey(), entry.getValue());
+    removeEntry(entry.getKey(), entry.getOldValue());
   }
 
   public void mapCleared(MapEvent event) {
