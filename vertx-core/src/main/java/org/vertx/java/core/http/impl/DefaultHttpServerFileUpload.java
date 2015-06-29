@@ -120,8 +120,20 @@ class DefaultHttpServerFileUpload implements HttpServerFileUpload {
         receiveData(pauseBuff);
         pauseBuff = null;
       }
-      if (complete && endHandler != null) {
-        endHandler.handle(null);
+      if (complete) {
+        if (file != null) {
+          file.close(new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(AsyncResult<Void> event) {
+              if (event.failed()) {
+                notifyExceptionHandler(event.cause());
+              }
+              notifyEndHandler();
+            }
+          });
+        } else {
+          notifyEndHandler();
+        }
       }
     }
     return this;
