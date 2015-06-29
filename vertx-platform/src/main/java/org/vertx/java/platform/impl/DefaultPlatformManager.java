@@ -1557,14 +1557,14 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
             }
           } else {
             File dir = entryFile.getParentFile();
-            if (dir != null && dir.isDirectory() && !dir.exists() && !dir.mkdirs()) {
-              throw new PlatformManagerException("Failed to create directory");
+            if (dir != null && !dir.exists() && !dir.mkdirs()) {
+              throw new PlatformManagerException("Failed to create parent directory");
             }
             int count;
             byte[] buff = new byte[BUFFER_SIZE];
             BufferedOutputStream dest = null;
             try {
-              OutputStream fos = new FileOutputStream(new File(directory, entryName));
+              OutputStream fos = new FileOutputStream(entryFile);
               dest = new BufferedOutputStream(fos, BUFFER_SIZE);
               while ((count = zis.read(buff, 0, BUFFER_SIZE)) != -1) {
                 dest.write(buff, 0, count);
