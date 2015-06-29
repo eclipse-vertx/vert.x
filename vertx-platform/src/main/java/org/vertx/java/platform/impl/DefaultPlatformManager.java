@@ -1550,11 +1550,16 @@ public class DefaultPlatformManager implements PlatformManagerInternal, ModuleRe
       while ((entry = zis.getNextEntry()) != null) {
         String entryName = zipinfo.oldStyle ? removeTopDir(entry.getName()) : entry.getName();
         if (!entryName.isEmpty()) {
+          File entryFile = new File(directory, entryName);
           if (entry.isDirectory()) {
-            if (!new File(directory, entryName).mkdir()) {
+            if (!entryFile.exists() && !entryFile.mkdirs()) {
               throw new PlatformManagerException("Failed to create directory");
             }
           } else {
+            File dir = entryFile.getParentFile();
+            if (dir != null && dir.isDirectory() && !dir.exists() && !dir.mkdirs()) {
+              throw new PlatformManagerException("Failed to create directory");
+            }
             int count;
             byte[] buff = new byte[BUFFER_SIZE];
             BufferedOutputStream dest = null;
