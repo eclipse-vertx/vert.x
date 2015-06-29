@@ -74,8 +74,16 @@ public class BufferImpl implements Buffer {
     return buffer.getByte(pos);
   }
 
+  public short getUnsignedByte(int pos) {
+    return buffer.getUnsignedByte(pos);
+  }
+
   public int getInt(int pos) {
     return buffer.getInt(pos);
+  }
+
+  public long getUnsignedInt(int pos) {
+    return buffer.getUnsignedInt(pos);
   }
 
   public long getLong(int pos) {
@@ -92,6 +100,10 @@ public class BufferImpl implements Buffer {
 
   public short getShort(int pos) {
     return buffer.getShort(pos);
+  }
+
+  public int getUnsignedShort(int pos) {
+    return buffer.getUnsignedShort(pos);
   }
 
   public byte[] getBytes() {
@@ -149,8 +161,18 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
+  public Buffer appendUnsignedByte(short b) {
+    buffer.writeByte(b);
+    return this;
+  }
+
   public Buffer appendInt(int i) {
     buffer.writeInt(i);
+    return this;
+  }
+
+  public Buffer appendUnsignedInt(long i) {
+    buffer.writeInt((int) i);
     return this;
   }
 
@@ -160,6 +182,11 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer appendShort(short s) {
+    buffer.writeShort(s);
+    return this;
+  }
+
+  public Buffer appendUnsignedShort(int s) {
     buffer.writeShort(s);
     return this;
   }
@@ -188,9 +215,21 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
+  public Buffer setUnsignedByte(int pos, short b) {
+    ensureWritable(pos, 1);
+    buffer.setByte(pos, b);
+    return this;
+  }
+
   public Buffer setInt(int pos, int i) {
     ensureWritable(pos, 4);
     buffer.setInt(pos, i);
+    return this;
+  }
+
+  public Buffer setUnsignedInt(int pos, long i) {
+    ensureWritable(pos, 4);
+    buffer.setInt(pos, (int) i);
     return this;
   }
 
@@ -213,6 +252,12 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer setShort(int pos, short s) {
+    ensureWritable(pos, 2);
+    buffer.setShort(pos, s);
+    return this;
+  }
+
+  public Buffer setUnsignedShort(int pos, int s) {
     ensureWritable(pos, 2);
     buffer.setShort(pos, s);
     return this;
