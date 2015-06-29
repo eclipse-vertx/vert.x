@@ -189,8 +189,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         writeHead();
       }
     } else {
-      connect();
       writeHead = true;
+      connect();
     }
     return this;
   }
