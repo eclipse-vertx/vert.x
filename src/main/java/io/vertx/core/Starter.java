@@ -59,8 +59,8 @@ public class Starter {
   public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
 
   private static final String PATH_SEP = System.getProperty("path.separator");
-  private static final Logger log = LoggerFactory.getLogger(Starter.class);
   public static List<String> PROCESS_ARGS;
+  protected final Logger log = LoggerFactory.getLogger(getClass());
 
   public static void main(String[] sargs) {
     Args args = new Args(sargs);
@@ -494,7 +494,7 @@ public class Starter {
         Manifest manifest = new Manifest(resources.nextElement().openStream());
         Attributes attributes = manifest.getMainAttributes();
         String mainClass = attributes.getValue("Main-Class");
-        if (Starter.class.getName().equals(mainClass)) {
+        if (getClass().getName().equals(mainClass)) {
           String theMainVerticle = attributes.getValue("Main-Verticle");
           if (theMainVerticle != null) {
             return theMainVerticle;
