@@ -20,15 +20,9 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.TimeoutStream;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -49,9 +43,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
-import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -65,18 +56,13 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -111,6 +97,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final ExecutorService internalBlockingPool;
   private final OrderedExecutorFactory workerOrderedFact;
   private final OrderedExecutorFactory internalOrderedFact;
+  private final ThreadFactory eventLoopThreadFactory;
   private final NioEventLoopGroup eventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
@@ -129,8 +116,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getMaxEventLoopExecuteTime(),
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
-    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(),
-                                           new VertxThreadFactory("vert.x-eventloop-thread-", checker, false));
+    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false);
+    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
     eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
@@ -645,25 +632,32 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return fileResolver.resolveFile(fileName);
   }
 
+  @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
     fileResolver.deleteCacheDir(res -> {
 
       workerPool.shutdownNow();
       internalBlockingPool.shutdownNow();
-      eventLoopGroup.shutdownNow();
 
-      if (metrics != null) {
-        metrics.close();
-      }
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
+        @Override
+        public void operationComplete(io.netty.util.concurrent.Future future) throws Exception {
+          if (!future.isSuccess()) {
+            log.warn("Failure in shutting down event loop group", future.cause());
+          }
+          if (metrics != null) {
+            metrics.close();
+          }
 
-      checker.close();
+          checker.close();
 
-      ContextImpl.setContext(null);
-
-      if (completionHandler != null) {
-        // Call directly - we have no context
-        completionHandler.handle(Future.succeededFuture());
-      }
+          if (completionHandler != null) {
+            eventLoopThreadFactory.newThread(() -> {
+              completionHandler.handle(Future.succeededFuture());
+            }).start();
+          }
+        }
+      });
     });
   }
 
