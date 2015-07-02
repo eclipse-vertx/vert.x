@@ -292,7 +292,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse headersEndHandler(Handler<Future> handler);
+  HttpServerResponse headersEndHandler(Handler<Future<?>> handler);
 
   /**
    * Provide a handler that will be called just before the last part of the body is written to the wire
