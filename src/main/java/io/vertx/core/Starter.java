@@ -174,6 +174,16 @@ public class Starter {
     
   }
 
+  /**
+   * A deployment failure has been encountered. You can override this method to customize the behavior.
+   * By default it closes the `vertx` instance.
+   */
+  protected void handleDeployFailed() {
+    // Default behaviour is to close Vert.x if the deploy failed
+    vertx.close();
+  }
+  
+
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     MetricsOptions metricsOptions;
     ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
@@ -327,12 +337,6 @@ public class Starter {
       }
     }));
   }
-
-  protected void handleDeployFailed() {
-    // Default behaviour is to close Vert.x if the deploy failed
-    vertx.close();
-  }
-
 
   private <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
     return res -> {
