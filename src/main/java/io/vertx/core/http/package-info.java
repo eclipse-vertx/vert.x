@@ -831,6 +831,17 @@
  * {@link examples.HTTPExamples#example50}
  * ----
  *
+ * On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
+ * when it receives an `Expect: 100-Continue` header.
+ * This is done by setting the option {@link io.vertx.core.http.HttpServerOptions#setHandle100ContinueAutomatically(boolean)}.
+ *
+ * If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
+ * `false` (the default), then you can inspect the headers and call {@link io.vertx.core.http.HttpServerResponse#writeContinue()}
+ * if you wish the client to continue sending the body or you can reject the request by sending back a failure status code
+ * if you don't want it to send the body. For example:
+ *
+ *
+ *
  * === Enabling compression on the client
  *
  * The http client comes with support for HTTP Compression out of the box.

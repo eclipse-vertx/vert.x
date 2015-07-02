@@ -280,6 +280,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public HttpServerResponse writeContinue() {
+    conn.write100Continue();
+    return this;
+  }
+
+  @Override
   public void end(String chunk) {
     end(Buffer.buffer(chunk));
   }

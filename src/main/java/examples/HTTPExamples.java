@@ -523,6 +523,26 @@ public class HTTPExamples {
     });
   }
 
+  public void example50_1(HttpServer httpServer) {
+
+    httpServer.requestHandler(request -> {
+      if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
+        // Now decide if you want to accept the request
+
+        boolean accept = true;
+        if (accept) {
+          request.response().writeContinue();
+          request.bodyHandler(body -> {
+            // Do something with body
+          });
+        } else {
+          // Reject with a failure code
+          request.response().setStatusCode(405).end();
+        }
+      }
+    });
+  }
+
   public void example51(HttpServer server) {
 
     server.websocketHandler(websocket -> {
