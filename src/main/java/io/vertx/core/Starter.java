@@ -38,7 +38,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 /**
- * A {@code main()} class that can be used to deploy verticles.
+ * A {@code main()} class that can be used to create Vert.x instance and deploy a verticle, or run a bare Vert.x instance.
  * <p>
  * This class is used by the {@code vertx} command line utility to deploy verticles from the command line.
  * <p>
@@ -104,7 +104,6 @@ public class Starter {
     new Starter().run(commandLine);
   }
 
-  private final CountDownLatch stopLatch = new CountDownLatch(1);
   protected Vertx vertx;
   protected VertxOptions options;
   protected DeploymentOptions deploymentOptions;
@@ -154,18 +153,6 @@ public class Starter {
     }
   }
 
-  public void block() {
-    try {
-      stopLatch.await();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public void unblock() {
-    stopLatch.countDown();
-  }
-
   /**
    * Hook for sub classes of {@link Starter} before the vertx instance is started.
    */
@@ -186,6 +173,16 @@ public class Starter {
   protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
     
   }
+
+  /**
+   * A deployment failure has been encountered. You can override this method to customize the behavior.
+   * By default it closes the `vertx` instance.
+   */
+  protected void handleDeployFailed() {
+    // Default behaviour is to close Vert.x if the deploy failed
+    vertx.close();
+  }
+  
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
     MetricsOptions metricsOptions;
@@ -255,6 +252,7 @@ public class Starter {
       beforeStartingVertx(options);
       vertx = Vertx.vertx(options);
     }
+    addShutdownHook();
     afterStartingVertx();
     return vertx;
   }
@@ -269,9 +267,6 @@ public class Starter {
     }
 
     // As we do not deploy a verticle, other options are irrelevant (instances, worker, conf)
-
-    addShutdownHook(vertx);
-    block();
   }
 
   private void runVerticle(String main, Args args) {
@@ -332,25 +327,16 @@ public class Starter {
     deploymentOptions = new DeploymentOptions();
     configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
 
-    String cp = args.map.get("-cp");
-    if (cp == null) {
-      cp = "."; // default to current dir
-    }
-
     deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
 
     beforeDeployingVerticle(deploymentOptions);
     vertx.deployVerticle(main, deploymentOptions, createLoggingHandler(message, res -> {
       if (res.failed()) {
         // Failed to deploy
-        unblock();
+        handleDeployFailed();
       }
     }));
-
-    addShutdownHook(vertx);
-    block();
   }
-
 
   private <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
     return res -> {
@@ -426,10 +412,10 @@ public class Starter {
     return null;
   }
 
-  private void addShutdownHook(Vertx vertx) {
+  private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        final CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(1);
         vertx.close(ar -> {
           if (!ar.succeeded()) {
             log.error("Failure in stopping Vert.x", ar.cause());
