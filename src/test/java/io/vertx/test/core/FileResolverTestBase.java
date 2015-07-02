@@ -46,7 +46,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Override
   protected void tearDown() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    resolver.deleteCacheDir(onSuccess(res -> {
+    resolver.close(onSuccess(res -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -177,7 +177,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
-    resolver2.deleteCacheDir(onSuccess(res -> {
+    resolver2.close(onSuccess(res -> {
       assertFalse(cacheDir.exists());
       vertx2.close(res2 -> {
         testComplete();
