@@ -634,7 +634,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
-    fileResolver.deleteCacheDir(res -> {
+    fileResolver.close(res -> {
 
       workerPool.shutdownNow();
       internalBlockingPool.shutdownNow();
