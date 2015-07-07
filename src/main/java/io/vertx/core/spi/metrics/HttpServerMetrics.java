@@ -59,6 +59,15 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
   void responseEnd(R requestMetric, HttpServerResponse response);
 
   /**
+   * Called when an http server request is upgrade to a websocket.
+   *
+   * @param requestMetric the request metric
+   * @param serverWebSocket the server web socket
+   * @return the server web socket metric
+   */
+  W upgrade(R requestMetric, ServerWebSocket serverWebSocket);
+
+  /**
    * Called when a server web socket connects.
    *
    * @param socketMetric the socket metric

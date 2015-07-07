@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.fakemetrics.*;
@@ -375,6 +376,35 @@ public class MetricsTest extends VertxTestBase {
     HttpServer server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      WebSocketMetric metric = metrics.getMetric(ws);
+      assertNotNull(metric);
+      assertNotNull(metric.soMetric);
+      ws.handler(buffer -> {
+        ws.close();
+      });
+      ws.closeHandler(closed -> {
+        assertNull(metrics.getMetric(ws));
+        testComplete();
+      });
+    });
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
+      assertTrue(ar.succeeded());
+      HttpClient client = vertx.createHttpClient();
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        ws.write(Buffer.buffer("wibble"));
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testServerWebSocketUpgrade() throws Exception {
+    HttpServer server = vertx.createHttpServer();
+    server.requestHandler(req -> {
+      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      assertNotNull(metrics.getMetric(req));
+      ServerWebSocket ws = req.upgrade();
+      assertNull(metrics.getMetric(req));
       WebSocketMetric metric = metrics.getMetric(ws);
       assertNotNull(metric);
       assertNotNull(metric.soMetric);

@@ -1,5 +1,5 @@
 If you are using Maven or Gradle, add the following dependency to the _dependencies_ section of your
-project descriptor to access the Vert.x API:
+project descriptor to access the Vert.x Core API:
 
 * Maven (in your `pom.xml`):
 

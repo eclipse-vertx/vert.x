@@ -62,6 +62,14 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
+  public WebSocketMetric upgrade(HttpServerMetric requestMetric, ServerWebSocket serverWebSocket) {
+    requests.remove(requestMetric.request);
+    WebSocketMetric metric = new WebSocketMetric(requestMetric.socket, serverWebSocket);
+    webSockets.put(serverWebSocket, metric);
+    return metric;
+  }
+
+  @Override
   public WebSocketMetric connected(SocketMetric socketMetric, ServerWebSocket serverWebSocket) {
     WebSocketMetric metric = new WebSocketMetric(socketMetric, serverWebSocket);
     webSockets.put(serverWebSocket, metric);
