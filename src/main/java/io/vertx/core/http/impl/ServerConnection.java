@@ -329,8 +329,8 @@ class ServerConnection extends ConnectionBase {
 
   synchronized protected void handleClosed() {
     if (ws != null) {
-      metrics.disconnected(ws.metric);
-      ws.metric = null;
+      metrics.disconnected(ws.getMetric());
+      ws.setMetric(null);
     }
     super.handleClosed();
     if (ws != null) {

@@ -2891,6 +2891,7 @@ public class HttpTest extends HttpTestBase {
       });
       req.exceptionHandler(t -> {
         if (shouldPass) {
+          t.printStackTrace();
           fail("Should not throw exception");
         } else {
           testComplete();

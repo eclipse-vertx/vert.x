@@ -78,7 +78,11 @@ public class FileResolver {
   public void close(Handler<AsyncResult<Void>> handler) {
     deleteCacheDir(handler);
     if (shutdownHook != null) {
-      Runtime.getRuntime().removeShutdownHook(shutdownHook);
+      // May throw IllegalStateException if called from other shutdown hook so ignore that
+      try {
+        Runtime.getRuntime().removeShutdownHook(shutdownHook);
+      } catch (IllegalStateException ignore) {
+      }
     }
   }
 
