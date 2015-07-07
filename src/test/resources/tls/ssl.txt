@@ -2,22 +2,26 @@
 
 1) Create a private key + certificate for the server in a new key store:
 
-keytool -genkey -alias test-store -keyalg RSA -keystore server-keystore.jks -keysize 2048
+keytool -genkey -alias test-store -keyalg RSA -keystore server-keystore.jks -keysize 2048 -validity 1095 -dname CN=localhost -keypass wibble -storepass wibble
 
 2) Export the cert from the store
 
-keytool -export -alias test-store -file localhost.crt -keystore server-keystore.jks
+keytool -export -alias test-store -file localhost.crt -keystore server-keystore.jks -keypass wibble -storepass wibble
 
 3) Import the cert into a new trust-store for the client
 
-keytool -import -trustcacerts -alias test-store -file localhost.crt -keystore client-truststore.jks
+keytool -import -trustcacerts -alias test-store -file localhost.crt -keystore client-truststore.jks -keypass wibble -storepass wibble
+
+4) Transform JKS to PKCS12
+
+keytool -importkeystore -srckeystore client-truststore.jks -destkeystore client-truststore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
 
 
 # PKCS12
 
 1) Transform JKS to PKCS12
 
-keytool -importkeystore -srckeystore server-keystore.jks -destkeystore server-keystore.p12 -deststoretype PKCS12
+keytool -importkeystore -srckeystore server-keystore.jks -destkeystore server-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
 
 
 # PEM
@@ -35,7 +39,7 @@ openssl pkcs12 -in server-keystore.p12 -nokeys -out server-cert.pem
 
 1) Generate a Certificate Signing Request for the server cert
 
-keytool -certreq -alias test-store -file server-csr.pem -keystore server-keystore.jks
+keytool -certreq -alias test-store -file server-csr.pem -keystore server-keystore.jks -keypass wibble -storepass wibble
 
 2) Create a CA database
 
@@ -61,21 +65,21 @@ openssl pkcs12 -export -name test-store -in server-cert-ca.pem -inkey server-key
 
 1) Convert the PKCS#12 key-store to the JKS format
 
-keytool -importkeystore -destkeystore server-keystore-ca.jks -srckeystore server-keystore-ca.p12 -srcstoretype pkcs12 -alias test-store
+keytool -importkeystore -destkeystore server-keystore-ca.jks -srckeystore server-keystore-ca.p12 -srcstoretype pkcs12 -alias test-store -keypass wibble -storepass wibble
 
 
 # JKS trust store signed by CA
 
 1) Create a JKS trust-store containing the CA
 
-keytool -import -trustcacerts -alias test-store -file ca/ca-cert.pem -keystore client-truststore-ca.jks
+keytool -import -trustcacerts -alias test-store -file ca/ca-cert.pem -keystore client-truststore-ca.jks -keypass wibble -storepass wibble
 
 
 # PKCS#12 trust store signed by CA
 
 1) Convert the JKS trust-store ca signed to the PKCS#12 format
 
-keytool -importkeystore -srckeystore client-truststore-ca.jks -destkeystore client-truststore-ca.p12 -deststoretype PKCS12
+keytool -importkeystore -srckeystore client-truststore-ca.jks -destkeystore client-truststore-ca.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
 
 
 # Certificate Revocation List
@@ -87,3 +91,63 @@ openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -revo
 2) Generate the Certificate Revocation List
 
 openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -gencrl -out ca/crl.pem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# JKS (Java KeyStore)
+
+1) Create a private key + certificate for the client in a new key store:
+
+keytool -genkey -alias test-store -keyalg RSA -keystore client-keystore.jks -keysize 2048 -validity 1095 -dname CN=localhost -keypass wibble -storepass wibble
+
+2) Export the cert from the store
+
+keytool -export -alias test-store -file localhost.crt -keystore client-keystore.jks -keypass wibble -storepass wibble
+
+3) Import the cert into a new trust-store for the server
+
+keytool -import -trustcacerts -alias test-store -file localhost.crt -keystore server-truststore.jks -keypass wibble -storepass wibble
+
+4) Transform JKS to PKCS12
+
+keytool -importkeystore -srckeystore server-truststore.jks -destkeystore server-truststore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
+
+
+# PKCS12
+
+1) Transform JKS to PKCS12
+
+keytool -importkeystore -srckeystore client-keystore.jks -destkeystore client-keystore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
+
+
+# PEM
+
+1) Extract the private key from the PCS12 store and convert it to PKCS8 format
+
+openssl pkcs12 -in client-keystore.p12 -nodes | openssl pkcs8 -topk8 -inform PEM -outform PEM -out client-key.pem -nocrypt
+
+2) Extract the X.509 certificate from the PCS12 store
+
+openssl pkcs12 -in client-keystore.p12 -nokeys -out client-cert.pem
+
+
+# PEM signed by CA
+
+1) Generate a Certificate Signing Request for the client cert
+
+keytool -certreq -alias test-store -file client-csr.pem -keystore client-keystore.jks -keypass wibble -storepass wibble
+
+2) Sign the client cert with the CA and convert it to the X.509 format
+
+openssl ca -config openssl.cnf -keyfile ca/ca-key.pem -cert ca/ca-cert.pem -in client-csr.pem | openssl x509 -out client-cert-ca.pem -outform PEM
