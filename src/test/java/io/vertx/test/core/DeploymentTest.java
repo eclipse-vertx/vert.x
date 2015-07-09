@@ -885,6 +885,44 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testChildUndeployedDirectly() throws Exception {
+    Verticle parent = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+
+        Verticle child = new AbstractVerticle() {
+          @Override
+          public void start(Future<Void> startFuture) throws Exception {
+            startFuture.complete();
+
+            // Undeploy it directly
+            vertx.runOnContext(v -> vertx.undeploy(context.deploymentID()));
+          }
+        };
+
+        vertx.deployVerticle(child, onSuccess(depID -> {
+          startFuture.complete();
+        }));
+
+      }
+
+      @Override
+      public void stop(Future<Void> stopFuture) throws Exception {
+        super.stop(stopFuture);
+      }
+    };
+
+    vertx.deployVerticle(parent, onSuccess(depID -> {
+      vertx.setTimer(10, tid -> vertx.undeploy(depID, onSuccess(v -> {
+        testComplete();
+      })));
+    }));
+
+
+    await();
+  }
+
+  @Test
   public void testCloseHooksCalled() throws Exception {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = completionHandler -> {
