@@ -186,6 +186,7 @@ class ServerConnection extends ConnectionBase {
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize());
+    ws.setMetric(metrics.upgrade(requestMetric, ws));
     try {
       handshaker.handshake(channel, nettyReq);
     } catch (WebSocketHandshakeException e) {
@@ -329,8 +330,8 @@ class ServerConnection extends ConnectionBase {
 
   synchronized protected void handleClosed() {
     if (ws != null) {
-      metrics.disconnected(ws.metric);
-      ws.metric = null;
+      metrics.disconnected(ws.getMetric());
+      ws.setMetric(null);
     }
     super.handleClosed();
     if (ws != null) {

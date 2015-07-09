@@ -157,6 +157,27 @@ public class BufferTest {
   }
 
   @Test
+  public void testAppendUnsignedByte() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    b.appendUnsignedByte((short) (Byte.MAX_VALUE + Byte.MAX_VALUE / 2));
+    assertEquals(101, b.length());
+  }
+
+  @Test
+  public void testAppendUnsignedShort() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    b.appendUnsignedShort(Short.MAX_VALUE + Short.MAX_VALUE / 2);
+    assertEquals(102, b.length());
+  }
+
+  @Test
+  public void testAppendUnsignedInt() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    b.appendUnsignedInt(Integer.MAX_VALUE + (long) Integer.MAX_VALUE / 2);
+    assertEquals(104, b.length());
+  }
+
+  @Test
   public void testAppendString1() throws Exception {
 
     String str = TestUtils.randomUnicodeString(100);
@@ -257,6 +278,17 @@ public class BufferTest {
   }
 
   @Test
+  public void testGetUnsignedByte() throws Exception {
+    int bytesLen = 100;
+    byte[] bytes = TestUtils.randomByteArray(bytesLen);
+
+    Buffer b = Buffer.buffer(bytes);
+    for (int i = 0; i < bytesLen; i++) {
+      assertEquals(Byte.toUnsignedLong(bytes[i]), b.getUnsignedByte(i));
+    }
+  }
+
+  @Test
   public void testGetInt() throws Exception {
     int numInts = 100;
     Buffer b = Buffer.buffer(numInts * 4);
@@ -266,6 +298,19 @@ public class BufferTest {
 
     for (int i = 0; i < numInts; i++) {
       assertEquals(i, b.getInt(i * 4));
+    }
+  }
+
+  @Test
+  public void testGetUnsignedInt() throws Exception {
+    int numInts = 100;
+    Buffer b = Buffer.buffer(numInts * 4);
+    for (int i = 0; i < numInts; i++) {
+      b.setInt(i * 4, (int) (Integer.MAX_VALUE + (long) i));
+    }
+
+    for (int i = 0; i < numInts; i++) {
+      assertEquals(Integer.toUnsignedLong(Integer.MAX_VALUE + i), b.getUnsignedInt(i * 4));
     }
   }
 
@@ -322,6 +367,19 @@ public class BufferTest {
   }
 
   @Test
+  public void testGetUnsignedShort() throws Exception {
+    int numShorts = 100;
+    Buffer b = Buffer.buffer(numShorts * 2);
+    for (short i = 0; i < numShorts; i++) {
+      b.setShort(i * 2, (short) (Short.MAX_VALUE + (int) i));
+    }
+
+    for (short i = 0; i < numShorts; i++) {
+      assertEquals(Integer.toUnsignedLong(Short.MAX_VALUE + i), b.getUnsignedShort(i * 2));
+    }
+  }
+
+  @Test
   public void testGetString() throws Exception {
     String str = TestUtils.randomAlphaString(100);
     Buffer b = Buffer.buffer(str, "UTF-8"); // encode ascii as UTF-8 so one byte per char
@@ -372,6 +430,27 @@ public class BufferTest {
   }
 
   @Test
+  public void testSetUnsignedInt() throws Exception {
+    testSetUnsignedInt(Buffer.buffer(numSets * 4));
+  }
+
+  @Test
+  public void testSetUnsignedIntExpandBuffer() throws Exception {
+    testSetUnsignedInt(Buffer.buffer());
+  }
+
+  private void testSetUnsignedInt(Buffer buff) throws Exception {
+    for (int i = 0; i < numSets; i++) {
+      long val = Integer.toUnsignedLong(Integer.MAX_VALUE + i);
+      buff.setUnsignedInt(i * 4, val);
+    }
+    for (int i = 0; i < numSets; i++) {
+      long val = Integer.toUnsignedLong(Integer.MAX_VALUE + i);
+      assertEquals(val, buff.getUnsignedInt(i * 4));
+    }
+  }
+
+  @Test
   public void testSetLong() throws Exception {
     testSetLong(Buffer.buffer(numSets * 8));
   }
@@ -406,6 +485,27 @@ public class BufferTest {
     }
     for (int i = 0; i < numSets; i++) {
       assertEquals(i, buff.getByte(i));
+    }
+  }
+
+  @Test
+  public void testSetUnsignedByte() throws Exception {
+    testSetUnsignedByte(Buffer.buffer(numSets));
+  }
+
+  @Test
+  public void testSetUnsignedByteExpandBuffer() throws Exception {
+    testSetUnsignedByte(Buffer.buffer());
+  }
+
+  private void testSetUnsignedByte(Buffer buff) throws Exception {
+    for (int i = 0; i < numSets; i++) {
+      int val = Byte.MAX_VALUE + i;
+      buff.setUnsignedByte(i, (short) val);
+    }
+    for (int i = 0; i < numSets; i++) {
+      int val = Byte.MAX_VALUE + i;
+      assertEquals(val, buff.getUnsignedByte(i));
     }
   }
 
@@ -447,7 +547,6 @@ public class BufferTest {
     }
   }
 
-
   @Test
   public void testSetShort() throws Exception {
     testSetShort(Buffer.buffer(numSets * 2));
@@ -464,6 +563,27 @@ public class BufferTest {
     }
     for (int i = 0; i < numSets; i++) {
       assertEquals(i, buff.getShort(i * 2));
+    }
+  }
+
+  @Test
+  public void testSetUnsignedShort() throws Exception {
+    testSetUnsignedShort(Buffer.buffer(numSets * 2));
+  }
+
+  @Test
+  public void testSetUnsignedShortExpandBuffer() throws Exception {
+    testSetUnsignedShort(Buffer.buffer());
+  }
+
+  private void testSetUnsignedShort(Buffer buff) throws Exception {
+    for (int i = 0; i < numSets; i++) {
+      int val = Short.MAX_VALUE + i;
+      buff.setUnsignedShort(i * 2, val);
+    }
+    for (int i = 0; i < numSets; i++) {
+      int val = Short.MAX_VALUE + i;
+      assertEquals(val, buff.getUnsignedShort(i * 2));
     }
   }
 

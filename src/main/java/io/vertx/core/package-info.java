@@ -50,6 +50,8 @@
  *
  * From now on we'll just use the word *core* to refer to Vert.x core.
  *
+ * include::override/dependencies.adoc[]
+ *
  * Let's discuss the different concepts and features in core.
  *
  * == In the beginning there was Vert.x

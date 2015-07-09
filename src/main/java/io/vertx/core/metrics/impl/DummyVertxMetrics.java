@@ -169,6 +169,11 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
+    public Void upgrade(Void requestMetric, ServerWebSocket serverWebSocket) {
+      return null;
+    }
+
+    @Override
     public Void connected(SocketAddress remoteAddress) {
       return null;
     }
