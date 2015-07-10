@@ -26,6 +26,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
@@ -134,9 +135,12 @@ public class FileResolver {
     if (!isDirectory) {
       cacheFile.getParentFile().mkdirs();
       try {
-        Files.copy(resource.toPath(), cacheFile.toPath());
+        if (ENABLE_CACHING) {
+          Files.copy(resource.toPath(), cacheFile.toPath());
+        } else {
+          Files.copy(resource.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
       } catch (FileAlreadyExistsException ignore) {
-        // OK - this can happen if this is called multiple times on different threads
       } catch (IOException e) {
         throw new VertxException(e);
       }
@@ -171,9 +175,12 @@ public class FileResolver {
           } else {
             file.getParentFile().mkdirs();
             try (InputStream is = zip.getInputStream(entry)) {
-              Files.copy(is, file.toPath());
+              if (ENABLE_CACHING) {
+                Files.copy(is, file.toPath());
+              } else {
+                Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+              }
             } catch (FileAlreadyExistsException ignore) {
-              // OK - this can happen if this is called multiple times on different threads
             }
           }
         }
