@@ -106,6 +106,21 @@
  * {@link examples.BufferExamples#example8}
  * ----
  *
+ * === Working with unsigned numbers
+ *
+ * Unsigned numbers can be read from or appended/set to a buffer with the {@code getUnsignedXXX},
+ * {@code appendUnsignedXXX} and {@code setUnsignedXXX} methods. This is useful when implementing a codec for a
+ * network protocol optimized to minimize bandwidth consumption.
+ *
+ * In the following example, value 200 is set at specified position with just one byte:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.BufferExamples#example9}
+ * ----
+ *
+ * The console shows '200'.
+ *
  * === Buffer length
  *
  * Use {@link io.vertx.core.buffer.Buffer#length} to obtain the length of the buffer.
