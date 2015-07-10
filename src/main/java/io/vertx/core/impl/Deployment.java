@@ -30,6 +30,8 @@ public interface Deployment {
 
   void addChild(Deployment deployment);
 
+  void removeChild(Deployment deployment);
+
   void undeploy(Handler<AsyncResult<Void>> completionHandler);
 
   void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler);
