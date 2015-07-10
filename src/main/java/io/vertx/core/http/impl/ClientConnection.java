@@ -287,6 +287,7 @@ class ClientConnection extends ConnectionBase {
     if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
       listener.responseEnded(this);
     }
+    currentResponse = null;
   }
 
   synchronized void handleWsFrame(WebSocketFrameInternal frame) {

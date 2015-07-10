@@ -1664,6 +1664,25 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testNoExceptionHandlerCalledWhenResponseReceivedOK() throws Exception {
+    server.requestHandler(request -> {
+      request.response().end();
+    }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          vertx.setTimer(100, tid -> testComplete());
+        });
+        resp.exceptionHandler(t -> {
+          fail("Should not be called");
+        });
+      }).exceptionHandler(t -> {
+        fail("Should not be called");
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
