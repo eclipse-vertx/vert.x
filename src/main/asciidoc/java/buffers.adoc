@@ -99,6 +99,24 @@ for (int i = 0; i < buff.length(); i += 4) {
 }
 ----
 
+=== Working with unsigned numbers
+
+Unsigned numbers can be read from or appended/set to a buffer with the `getUnsignedXXX`,
+`appendUnsignedXXX` and `setUnsignedXXX` methods. This is useful when implementing a codec for a
+network protocol optimized to minimize bandwidth consumption.
+
+In the following example, value 200 is set at specified position with just one byte:
+
+[source,java]
+----
+Buffer buff = Buffer.buffer(128);
+int pos = 15;
+buff.setUnsignedByte(pos, (short) 200);
+System.out.println(buff.getUnsignedByte(pos));
+----
+
+The console shows '200'.
+
 === Buffer length
 
 Use `link:../../apidocs/io/vertx/core/buffer/Buffer.html#length--[length]` to obtain the length of the buffer.
