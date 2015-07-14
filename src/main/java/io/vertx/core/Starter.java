@@ -494,7 +494,7 @@ public class Starter {
         Manifest manifest = new Manifest(resources.nextElement().openStream());
         Attributes attributes = manifest.getMainAttributes();
         String mainClass = attributes.getValue("Main-Class");
-        if (Starter.class.getName().equals(mainClass)) {
+        if (this.getClass().getName().equals(mainClass)) {
           String theMainVerticle = attributes.getValue("Main-Verticle");
           if (theMainVerticle != null) {
             return theMainVerticle;
