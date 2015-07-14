@@ -183,7 +183,14 @@ public class Starter {
   /**
    * Hook for sub classes of {@link Starter} before the verticle is deployed.
    */
-  protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
+  protected void beforeDeployingVerticle(String verticle, DeploymentOptions deploymentOptions) {
+    
+  }
+
+  /**
+   * Hook for sub classes of {@link Starter} after the verticle is deployed.
+   */
+  protected void afterDeployingVerticle(String verticle, AsyncResult<String> result) {
     
   }
 
@@ -339,8 +346,9 @@ public class Starter {
 
     deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
 
-    beforeDeployingVerticle(deploymentOptions);
+    beforeDeployingVerticle(main, deploymentOptions);
     vertx.deployVerticle(main, deploymentOptions, createLoggingHandler(message, res -> {
+      afterDeployingVerticle(main, res);
       if (res.failed()) {
         // Failed to deploy
         unblock();
