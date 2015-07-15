@@ -43,7 +43,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import javax.net.ssl.SSLHandshakeException;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
@@ -650,10 +649,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
     });
     applyConnectionOptions(bootstrap);
-    ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
-    future.addListener((ChannelFuture channelFuture) -> {
-      Channel ch = channelFuture.channel();
-      if (channelFuture.isSuccess()) {
+    AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+    future.addListener(res -> {
+      if (res.succeeded()) {
+        Channel ch = res.result().channel();
         if (options.isSsl()) {
           // TCP connected, so now we must do the SSL handshake
 
@@ -672,7 +671,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           connected(context, port, host, ch, connectHandler, connectErrorHandler, listener);
         }
       } else {
-        connectionFailed(context, ch, connectErrorHandler, channelFuture.cause(), listener);
+        connectionFailed(context, null, connectErrorHandler, res.cause(), listener);
       }
     });
   }

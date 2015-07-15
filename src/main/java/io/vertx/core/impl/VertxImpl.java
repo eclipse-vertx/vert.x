@@ -61,6 +61,8 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -630,6 +632,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public File resolveFile(String fileName) {
     return fileResolver.resolveFile(fileName);
+  }
+
+  @Override
+  public void resolveAsync(String host, Handler<AsyncResult<String>> resultHandler) {
+    // For now just do a blocking resolve
+    // When Netty 4.1 is released we can use async DNS resolution
+    executeBlockingInternal(() -> {
+      try {
+        return InetAddress.getByName(host).getHostAddress();
+      } catch (UnknownHostException e) {
+        throw new VertxException(e);
+      }
+    }, resultHandler);
   }
 
   @SuppressWarnings("unchecked")
