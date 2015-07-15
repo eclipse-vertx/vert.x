@@ -88,4 +88,6 @@ public interface VertxInternal extends Vertx {
 
   ClusterManager getClusterManager();
 
+  void resolveAsync(String host, Handler<AsyncResult<String>> resultHandler);
+
 }
