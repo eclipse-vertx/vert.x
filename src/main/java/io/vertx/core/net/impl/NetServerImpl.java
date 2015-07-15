@@ -17,14 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
-import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -38,19 +31,19 @@ import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Closeable;
+import io.vertx.core.http.impl.AsyncResolveBindConnectHelper;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.NetSocketStream;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.TCPMetrics;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
@@ -80,9 +73,8 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private volatile boolean listening;
   private volatile ServerID id;
   private NetServerImpl actualServer;
-  private ChannelFuture bindFuture;
+  private AsyncResolveBindConnectHelper<ChannelFuture> bindFuture;
   private volatile int actualPort;
-  private boolean listenersRun;
   private ContextImpl listenContext;
   private TCPMetrics metrics;
 
@@ -195,21 +187,22 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
         }
 
         try {
-          InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host), port);
-          bindFuture = bootstrap.bind(addr).addListener(future -> runListeners());
-          this.addListener(() -> {
-            if (bindFuture.isSuccess()) {
-              log.trace("Net server listening on " + host + ":" + bindFuture.channel().localAddress());
+          bindFuture = AsyncResolveBindConnectHelper.doBind(vertx, port, host, bootstrap);
+          bindFuture.addListener(res -> {
+            if (res.succeeded()) {
+              Channel ch = res.result().channel();
+              log.trace("Net server listening on " + host + ":" + ch.localAddress());
               // Update port to actual port - wildcard port 0 might have been used
-              NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
+              NetServerImpl.this.actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
+              serverChannelGroup.add(ch);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
               metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
             } else {
               vertx.sharedNetServers().remove(id);
             }
           });
-          serverChannelGroup.add(bindFuture.channel());
+
         } catch (Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
@@ -236,23 +229,22 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       }
 
       // just add it to the future so it gets notified once the bind is complete
-      actualServer.addListener(() -> {
+      actualServer.bindFuture.addListener(res -> {
         if (listenHandler != null) {
-          AsyncResult<NetServer> res;
-          if (actualServer.bindFuture.isSuccess()) {
-            res = Future.succeededFuture(NetServerImpl.this);
+          AsyncResult<NetServer> ares;
+          if (res.succeeded()) {
+            ares = Future.succeededFuture(NetServerImpl.this);
           } else {
             listening = false;
-
-            res = Future.failedFuture(actualServer.bindFuture.cause());
+            ares = Future.failedFuture(res.cause());
           }
           // Call with expectRightThread = false as if server is already listening
           // Netty will call future handler immediately with calling thread
           // which might be a non Vert.x thread (if running embedded)
-          listenContext.runOnContext(v -> listenHandler.handle(res));
-        } else if (!actualServer.bindFuture.isSuccess()) {
+          listenContext.runOnContext(v -> listenHandler.handle(ares));
+        } else if (res.failed()) {
           // No handler - log so user can see failure
-          log.error("Failed to listen", actualServer.bindFuture.cause());
+          log.error("Failed to listen", res.cause());
           listening = false;
         }
       });
@@ -351,23 +343,6 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
     if (options.getAcceptBacklog() != -1) {
       bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
     }
-  }
-
-  private synchronized void addListener(Runnable runner) {
-    if (!listenersRun) {
-      bindListeners.add(runner);
-    } else {
-      // Run it now
-      runner.run();
-    }
-  }
-
-  private synchronized void runListeners() {
-    Runnable runner;
-    while ((runner = bindListeners.poll()) != null) {
-      runner.run();
-    }
-    listenersRun = true;
   }
 
   private void actualClose(ContextImpl closeContext, Handler<AsyncResult<Void>> done) {
