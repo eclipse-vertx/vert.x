@@ -238,11 +238,6 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     addListener(future, handler);
   }
 
-  public static void main(String[] args) {
-    InetSocketAddress addr = InetSocketAddress.createUnresolved("127.0.0.1", 80);
-    System.out.println("resolved? " + addr.isUnresolved());
-  }
-
   @Override
   public PacketWritestream sender(int port, String host) {
     Arguments.requireInRange(port, 0, 65535, "port p must be in range 0 <= p <= 65535");
