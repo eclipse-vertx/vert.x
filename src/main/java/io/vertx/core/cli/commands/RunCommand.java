@@ -12,10 +12,7 @@ import io.vertx.core.spi.VertxMetricsFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Method;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -141,7 +138,7 @@ public class RunCommand extends DefaultCommand {
     super.setup();
 
     // If cluster-host and / or port is set, cluster need to have been explicitly set
-    if ((! isClustered()) &&
+    if ((!isClustered()) &&
         (executionContext.getCommandLine().hasBeenSet("cluster-host") || executionContext.getCommandLine().hasBeenSet("cluster-port"))) {
       throw new CommandLineException("The option -cluster-host and -cluster-port requires -cluster to be enabled");
     }
@@ -190,36 +187,34 @@ public class RunCommand extends DefaultCommand {
 
     beforeDeployingVerticle(deploymentOptions);
 
-    vertx.deployVerticle(mainVerticle, deploymentOptions, createLoggingHandler(message, res -> {
-      if (res.failed()) {
-        // Failed to deploy
-        handleDeployFailed(res.cause(), vertx, mainVerticle, deploymentOptions);
-      }
-    }));
-
+    final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+    try {
+      ClassLoader classloader = createClassloader();
+      Thread.currentThread().setContextClassLoader(classloader);
+      Class clazz = classloader.loadClass("io.vertx.core.cli.commands.VertxIsolatedDeployer");
+      Object instance = clazz.newInstance();
+      Method method = clazz.getMethod("deploy", String.class, Vertx.class, DeploymentOptions.class, String.class, Object.class);
+      method.invoke(instance, mainVerticle, vertx, deploymentOptions, message, executionContext.main());
+    } catch (Exception e) {
+      log.error("Failed to create the isolated deployer", e);
+    } finally {
+      Thread.currentThread().setContextClassLoader(originalClassLoader);
+    }
   }
 
-  private <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
-    return res -> {
-      if (res.failed()) {
-        Throwable cause = res.cause();
-        if (cause instanceof VertxException) {
-          VertxException ve = (VertxException) cause;
-          log.error(ve.getMessage());
-          if (ve.getCause() != null) {
-            log.error(ve.getCause());
-          }
-        } else {
-          log.error("Failed in " + message, cause);
-        }
-      } else {
-        log.info("Succeeded in " + message);
+  private ClassLoader createClassloader() {
+    URL[] urls = classpath.stream().map(path -> {
+      File file = new File(path);
+      try {
+        return file.toURI().toURL();
+      } catch (MalformedURLException e) {
+        throw new IllegalStateException(e);
       }
-      if (completionHandler != null) {
-        completionHandler.handle(res);
-      }
-    };
+    }).toArray(URL[]::new);
+
+    return new URLClassLoader(urls, this.getClass().getClassLoader());
   }
+
 
   private JsonObject getConfiguration() {
     JsonObject conf = null;
@@ -325,13 +320,6 @@ public class RunCommand extends DefaultCommand {
     final Object main = executionContext.main();
     if (main instanceof VertxLifeycleHooks) {
       ((VertxLifeycleHooks) main).beforeDeployingVerticle(deploymentOptions);
-    }
-  }
-
-  private void handleDeployFailed(Throwable cause, Vertx vertx, String mainVerticle, DeploymentOptions deploymentOptions) {
-    final Object main = executionContext.main();
-    if (main instanceof VertxLifeycleHooks) {
-      ((VertxLifeycleHooks) main).handleDeployFailed(vertx, mainVerticle, deploymentOptions, cause);
     }
   }
 
