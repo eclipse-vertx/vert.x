@@ -102,6 +102,36 @@ public class ArgumentModelTest {
   }
 
   @Test
+  public void testThatInvalidValuesAreReported() throws CommandLineException {
+    CommandLine line = new CommandLine();
+    line.addArgument(ArgumentModel.<Integer>builder().index(0).argName("1").type(Integer.class).build());
+
+    try {
+      line.parse("a");
+      fail("Exception expected");
+    } catch (InvalidValueException e) {
+      assertThat(e.getArgument().getIndex()).isEqualTo(0);
+      assertThat(e.getArgument().getArgName()).isEqualTo("1");
+      assertThat(e.getValue()).isEqualTo("a");
+    }
+
+  }
+
+  @Test
+  public void testThatInvalidValuesAsDefaultValueAreReported() throws CommandLineException {
+    CommandLine line = new CommandLine();
+    try {
+      line.addArgument(ArgumentModel.<Integer>builder().index(0).argName("1").type(Integer.class).defaultValue("a").build());
+    } catch (IllegalArgumentException e) {
+      assertThat(e.getCause()).isInstanceOf(InvalidValueException.class);
+      InvalidValueException cause = (InvalidValueException) e.getCause();
+      assertThat(cause.getArgument().getIndex()).isEqualTo(0);
+      assertThat(cause.getArgument().getArgName()).isEqualTo("1");
+      assertThat(cause.getValue()).isEqualTo("a");
+    }
+  }
+
+  @Test
   public void testThatConvertersAreHandled() throws CommandLineException {
     CommandLine line = new CommandLine();
     final ArgumentModel<Person4> arg = ArgumentModel.<Person4>builder().index(0).argName("person")

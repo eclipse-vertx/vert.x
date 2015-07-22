@@ -75,7 +75,7 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
 
       // Step 5 - cleanup
       cmd.tearDown();
-    } catch (MissingOptionException | MissingValueException e) {
+    } catch (MissingOptionException | MissingValueException | InvalidValueException e) {
       printSpecificException(cmd, line, e);
     } catch (CommandLineException e) {
       // Generic error

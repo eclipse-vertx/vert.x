@@ -3,6 +3,7 @@ package io.vertx.core.cli;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
 
 public class OptionModelTest {
 
@@ -88,6 +89,33 @@ public class OptionModelTest {
     assertThat(option.getValue()).isEqualToIgnoringCase("hello.txt");
     option.setDefaultValue("hello2.txt");
     assertThat(option.getValue()).isEqualToIgnoringCase("hello2.txt");
+  }
+
+  @Test
+  public void testThatInvalidValuesAreReported() throws CommandLineException {
+    CommandLine line = new CommandLine();
+    line.addOption(OptionModel.<Integer>builder().shortName("s").type(Integer.class).build());
+    try {
+      line.parse("-s=a");
+      fail("Exception expected");
+    } catch (InvalidValueException e) {
+      assertThat(e.getOption().getShortName()).isEqualTo("s");
+      assertThat(e.getValue()).isEqualTo("a");
+    }
+
+  }
+
+  @Test
+  public void testThatInvalidValuesAsDefaultValueAreReported() throws CommandLineException {
+    CommandLine line = new CommandLine();
+    try {
+      line.addOption(OptionModel.<Integer>builder().shortName("s").type(Integer.class).defaultValue("a").build());
+    } catch (IllegalArgumentException e) {
+      assertThat(e.getCause()).isInstanceOf(InvalidValueException.class);
+      InvalidValueException cause = (InvalidValueException) e.getCause();
+      assertThat(cause.getOption().getShortName()).isEqualTo("s");
+      assertThat(cause.getValue()).isEqualTo("a");
+    }
   }
 
 }

@@ -1,16 +1,25 @@
 package io.vertx.core.cli.commands;
 
-import io.vertx.core.cli.*;
+import io.vertx.core.cli.CommandLineException;
+import io.vertx.core.cli.DefaultCommand;
+import io.vertx.core.cli.Hidden;
+import io.vertx.core.cli.Option;
 
 @Hidden
 public class HiddenCommand extends DefaultCommand {
 
   public String name;
+  private int count;
 
 
   @Option(longName = "name", shortName = "n", required = true)
   public void setName(String name) {
     this.name = name;
+  }
+
+  @Option(longName = "count", shortName = "c")
+  public void setCount(int count) {
+    this.count = count;
   }
 
   /**

@@ -107,6 +107,18 @@ public class VertxCommandLineInterfaceTest {
   }
 
   @Test
+  public void testInvalidValue() {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(baos);
+    System.setOut(stream);
+
+    itf.execute("hidden", "-n", "vert.x", "-c", "hello");
+
+    assertThat(baos.toString())
+        .contains("The value 'hello' is not accepted by 'count'");
+  }
+
+  @Test
   public void testComplexCommandUsage() {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(baos);
