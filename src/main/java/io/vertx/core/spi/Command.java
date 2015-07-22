@@ -1,4 +1,6 @@
-package io.vertx.core.cli;
+package io.vertx.core.spi;
+
+import io.vertx.core.cli.*;
 
 /**
  * A plug-in to the Vert.x command or {@link io.vertx.core.Starter} class.
