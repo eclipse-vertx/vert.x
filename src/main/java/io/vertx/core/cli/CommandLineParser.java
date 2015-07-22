@@ -11,13 +11,11 @@ import java.util.stream.Collectors;
  */
 public class CommandLineParser {
 
-  //TODO first / last unamed parameters
-  // TODO Option help line
-
   protected String token;
   protected OptionModel current;
   protected List<OptionModel> expectedOpts;
   private CommandLine commandLine;
+  private boolean skipParsing;
 
   /**
    * Remove the hyphens from the beginning of <code>str</code> and
@@ -62,6 +60,7 @@ public class CommandLineParser {
     this.commandLine = commandLine;
 
     current = null;
+    skipParsing = false;
 
     // Reset the option state.
     commandLine.clear();
@@ -110,8 +109,11 @@ public class CommandLineParser {
 
   private void visit(String token) throws CommandLineException {
     this.token = token;
-
-    if (current != null && current.acceptValue() && isArgument(token)) {
+    if (skipParsing) {
+      commandLine.argumentFound(token);
+    } else if (token.equals("--")) {
+      skipParsing = true;
+    } else if (current != null && current.acceptValue() && isValue(token)) {
       current.process(stripLeadingAndTrailingQuotes(token));
     } else if (token.startsWith("--")) {
       handleLongOption(token);
@@ -127,11 +129,11 @@ public class CommandLineParser {
   }
 
   /**
-   * Returns true is the token is a valid argument.
+   * Returns true is the token is a valid value.
    *
    * @param token
    */
-  private boolean isArgument(String token) {
+  private boolean isValue(String token) {
     return !isOption(token) || isNegativeNumber(token);
   }
 
@@ -265,7 +267,7 @@ public class CommandLineParser {
         current.process(value);
         current = null;
       } else {
-        handleArgument(token);
+        throw new InvalidValueException(option, value);
       }
     }
   }
@@ -288,7 +290,6 @@ public class CommandLineParser {
    */
   private void handleShortAndLongOption(String token) throws CommandLineException {
     String t = stripLeadingHyphens(token);
-
     int pos = t.indexOf('=');
 
     if (t.length() == 1) {
@@ -308,11 +309,14 @@ public class CommandLineParser {
       } else {
         // look for a long prefix (-Xmx512m)
         String opt = getLongPrefix(t);
-
-        if (opt != null && getOption(opt).acceptMoreValues()) {
-          handleOption(getOption(opt));
-          current.process(t.substring(opt.length()));
-          current = null;
+        if (opt != null) {
+          if  (getOption(opt).acceptMoreValues()) {
+            handleOption(getOption(opt));
+            current.process(t.substring(opt.length()));
+            current = null;
+          } else {
+            throw new InvalidValueException(getOption(opt), t.substring(opt.length()));
+          }
         } else if (isAValidShortOption(t)) {
           // -SV1 (-Dflag)
           String strip = t.substring(0, 1);
@@ -320,24 +324,30 @@ public class CommandLineParser {
           handleOption(option);
           current.process(t.substring(1));
           current = null;
+        } else {
+          // -S1S2S3 or -S1S2V
+          handleConcatenatedOptions(token);
         }
       }
     } else {
       // equal sign found (-xxx=yyy)
       String opt = t.substring(0, pos);
       String value = t.substring(pos + 1);
-
       if (opt.length() == 1) {
         // -S=V
         OptionModel option = getOption(opt);
-        if (option != null && option.acceptMoreValues()) {
-          handleOption(option);
-          current.process(value);
-          current = null;
+        if (option != null) {
+          if (option.acceptMoreValues()) {
+            handleOption(option);
+            current.process(value);
+            current = null;
+          } else {
+            throw new InvalidValueException(option, value);
+          }
         } else {
           handleArgument(token);
         }
-      } else if (isAValidShortOption(opt)) {
+      } else if (isAValidShortOption(opt) && !hasOptionWithLongName(opt)) {
         // -SV1=V2 (-Dkey=value)
         handleOption(getOption(opt.substring(0, 1)));
         current.process(opt.substring(1) + "=" + value);
@@ -366,7 +376,6 @@ public class CommandLineParser {
         break;
       }
     }
-
     return opt;
   }
 
@@ -431,7 +440,7 @@ public class CommandLineParser {
   private boolean isAValidShortOption(String token) {
     String opt = token.substring(0, 1);
     OptionModel option = getOption(opt);
-    return option != null;
+    return option != null && option.acceptMoreValues();
   }
 
   /**
@@ -447,6 +456,8 @@ public class CommandLineParser {
 
 
     final List<OptionModel> options = commandLine.getOptions();
+
+    // Exact match first
     for (OptionModel option : options) {
       if (opt.equalsIgnoreCase(option.getLongName())) {
         return Collections.singletonList(option);
@@ -460,6 +471,25 @@ public class CommandLineParser {
     }
 
     return matching;
+  }
+
+  protected void handleConcatenatedOptions(String token) throws CommandLineException {
+    for (int i = 1; i < token.length(); i++) {
+      String ch = String.valueOf(token.charAt(i));
+
+      if (hasOptionWithShortName(ch)) {
+        handleOption(getOption(ch));
+
+        if (current != null && token.length() != i + 1) {
+          // add the trail as an argument of the option
+          current.process(token.substring(i + 1));
+          break;
+        }
+      } else {
+        handleArgument(token);
+        break;
+      }
+    }
   }
 
 }

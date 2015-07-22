@@ -61,11 +61,15 @@ public class ArgumentModel<T> {
     return value != null;
   }
 
-  protected T create(String value) {
-    if (converter != null) {
-      return Converters.create(value, converter);
-    } else {
-      return Converters.create(type, value);
+  protected T create(String value) throws InvalidValueException {
+    try {
+      if (converter != null) {
+        return Converters.create(value, converter);
+      } else {
+        return Converters.create(type, value);
+      }
+    } catch (Exception e) {
+      throw new InvalidValueException(this, value, e);
     }
   }
 
@@ -75,7 +79,7 @@ public class ArgumentModel<T> {
     }
   }
 
-  public void process(String value) throws CommandLineException {
+  public void process(String value) throws InvalidValueException {
     this.value = create(value);
   }
 
@@ -109,7 +113,11 @@ public class ArgumentModel<T> {
       }
       model.argName = argName;
       if (defaultValue != null) {
-        model.defaultValue = model.create(defaultValue);
+        try {
+          model.defaultValue = model.create(defaultValue);
+        } catch (InvalidValueException e) {
+          throw new IllegalArgumentException(e);
+        }
         model.required = false;
       }
 

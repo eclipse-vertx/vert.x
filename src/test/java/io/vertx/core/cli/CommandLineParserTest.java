@@ -394,4 +394,31 @@ public class CommandLineParserTest {
     assertThat((String) commandLine.getOptionValue("systemProperty")).isEqualTo("x=y");
     assertThat((boolean) commandLine.getOptionValue("flag")).isTrue();
   }
+
+  @Test
+  public void testConcatenatedOptions() throws CommandLineException {
+    CommandLineParser parser = new CommandLineParser();
+
+    OptionModel[] options = new OptionModel[]{
+        OptionModel.<Boolean>builder().shortName("d").acceptValue(false).type(Boolean.class).build(),
+        OptionModel.<Boolean>builder().shortName("e").acceptValue(false).type(Boolean.class).build(),
+        OptionModel.<Boolean>builder().shortName("f").acceptValue(false).type(Boolean.class).build()
+    };
+
+    commandLine.addOptions(Arrays.asList(options));
+    commandLine = parser.parse(commandLine, "-d", "-e", "-f");
+    assertThat((boolean) commandLine.getOptionValue("d")).isTrue();
+    assertThat((boolean) commandLine.getOptionValue("e")).isTrue();
+    assertThat((boolean) commandLine.getOptionValue("f")).isTrue();
+
+    commandLine = parser.parse(commandLine, "-de");
+    assertThat((boolean) commandLine.getOptionValue("d")).isTrue();
+    assertThat((boolean) commandLine.getOptionValue("e")).isTrue();
+    assertThat((boolean) commandLine.getOptionValue("f")).isFalse();
+
+    commandLine = parser.parse(commandLine, "-def");
+    assertThat((boolean) commandLine.getOptionValue("d")).isTrue();
+    assertThat((boolean) commandLine.getOptionValue("e")).isTrue();
+    assertThat((boolean) commandLine.getOptionValue("f")).isTrue();
+  }
 }

@@ -149,10 +149,14 @@ public class OptionModel<T> {
         return defaultValue;
       }
       if (maybeFlag()) {
-        if (setInCommandLine) {
-          return create("true");
-        } else {
-          return create("false");
+        try {
+          if (setInCommandLine) {
+            return create("true");
+          } else {
+            return create("false");
+          }
+        } catch (InvalidValueException e) {
+          throw new IllegalArgumentException(e);
         }
       }
     }
@@ -176,11 +180,15 @@ public class OptionModel<T> {
   }
 
 
-  protected T create(String value) {
-    if (converter != null) {
-      return Converters.create(value, converter);
-    } else {
-      return Converters.create(type, value);
+  protected T create(String value) throws InvalidValueException {
+    try {
+      if (converter != null) {
+        return Converters.create(value, converter);
+      } else {
+        return Converters.create(type, value);
+      }
+    } catch (Exception e) {
+      throw new InvalidValueException(this, value, e);
     }
   }
 
@@ -248,7 +256,11 @@ public class OptionModel<T> {
         option.converter = Converters.newInstance(converter);
       }
       if (defaultValueAsString != null) {
-        option.defaultValue = option.create(defaultValueAsString);
+        try {
+          option.defaultValue = option.create(defaultValueAsString);
+        } catch (InvalidValueException e) {
+          throw new IllegalArgumentException(e);
+        }
       }
 
       return option;

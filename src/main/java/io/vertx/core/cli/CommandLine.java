@@ -1,6 +1,7 @@
 package io.vertx.core.cli;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The command line model.
@@ -148,5 +149,12 @@ public class CommandLine {
     getOptions().stream().forEach(OptionModel::clear);
     getArguments().stream().forEach(ArgumentModel::clear);
     getAllArguments().clear();
+  }
+
+  public CommandLine removeOption(String name) {
+    options = getOptions().stream()
+        .filter(o -> ! name.equalsIgnoreCase(o.getShortName()) && ! name.equalsIgnoreCase(o.getLongName()))
+        .collect(Collectors.toList());
+    return this;
   }
 }
