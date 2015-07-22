@@ -63,7 +63,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private Handler<Future<?>> headersEndHandler;
+  private Handler<Future<Void>> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private boolean chunked;
   private boolean closed;
@@ -354,7 +354,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse headersEndHandler(Handler<Future<?>> handler) {
+  public HttpServerResponse headersEndHandler(Handler<Future<Void>> handler) {
     synchronized (conn) {
       this.headersEndHandler = handler;
       return this;
