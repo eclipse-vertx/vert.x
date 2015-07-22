@@ -1,6 +1,8 @@
 package io.vertx.core.cli;
 
 
+import io.vertx.core.spi.Command;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;

@@ -18,6 +18,7 @@ public class HiddenCommand extends DefaultCommand {
   }
 
   @Option(longName = "count", shortName = "c")
+  @Hidden
   public void setCount(int count) {
     this.count = count;
   }

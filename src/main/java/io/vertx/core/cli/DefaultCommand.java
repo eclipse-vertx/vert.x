@@ -1,6 +1,8 @@
 package io.vertx.core.cli;
 
 
+import io.vertx.core.spi.Command;
+
 import java.io.File;
 import java.util.List;
 
@@ -16,12 +18,14 @@ public abstract class DefaultCommand implements Command {
 
   @Option(longName = "cwd", name = "dir")
   @Description("Specifies the current working directory for this command, default set to the Java current directory")
+  @Hidden
   public void setCwd(File cwd) {
     this.cwd = cwd;
   }
 
   @Option(longName = "systemProperty", shortName = "D", name = "key>=<value")
   @Description("Set a system property")
+  @Hidden
   public void setSystemProps(List<String> props) {
     this.props = props;
   }

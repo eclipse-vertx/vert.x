@@ -18,19 +18,19 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Option {
 
-  public static final String NO_SHORT_NAME = "\0";
+  String NO_NAME = "\0";
 
   /**
    * The name of the option (without the {@code --} prefix).
    * Defaults to a name based on the setter name
    */
-  String longName();
+  String longName() default NO_NAME;
 
   /**
    * The short option name (without the {@code -} prefix).
    * If not given the option has no short name.
    */
-  String shortName() default NO_SHORT_NAME;
+  String shortName() default NO_NAME;
 
   /**
    * The name of this argument (used in doc)

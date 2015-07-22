@@ -30,13 +30,32 @@ public class OptionModel<T> {
   private Converter<T> converter;
 
   public OptionModel(String shortName, String longName, String description, Class<T> type) {
-    this.shortName = shortName;
-    this.longName = longName;
-    this.description = description;
+
+    if (isValid(shortName)) {
+      this.shortName = shortName;
+    } else {
+      this.shortName = null;
+    }
+    if (isValid(longName)) {
+      this.longName = longName;
+    } else {
+      this.longName = null;
+    }
+
+    if (this.longName == null && this.shortName == null) {
+      throw new IllegalArgumentException("An option must have at least a valid long name or short name");
+    }
+
     if (type == null) {
       throw new IllegalStateException("Option's type must be defined");
     }
     this.type = type;
+
+    this.description = description;
+  }
+
+  private boolean isValid(String name) {
+    return name != null && !name.equals(Option.NO_NAME) && name.length() > 0;
   }
 
   public static <T> Builder<T> builder() {
@@ -49,6 +68,10 @@ public class OptionModel<T> {
 
   public String getDescription() {
     return description;
+  }
+
+  public boolean isHidden() {
+    return hidden;
   }
 
   public boolean acceptMultipleValues() {
@@ -227,6 +250,10 @@ public class OptionModel<T> {
     }
   }
 
+  public boolean hasBeenSet() {
+    return setInCommandLine;
+  }
+
   public static class Builder<T> {
 
     private String description;
@@ -270,9 +297,7 @@ public class OptionModel<T> {
       if (s == null || s.isEmpty()) {
         throw new IllegalArgumentException("Short name must not be null or empty");
       }
-      if (!s.equalsIgnoreCase(Option.NO_SHORT_NAME)) {
-        this.shortName = s;
-      }
+      shortName = s;
       return this;
     }
 

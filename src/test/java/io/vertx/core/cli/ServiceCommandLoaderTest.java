@@ -1,5 +1,6 @@
 package io.vertx.core.cli;
 
+import io.vertx.core.spi.Command;
 import org.junit.Test;
 
 import java.util.Collection;

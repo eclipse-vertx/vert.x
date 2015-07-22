@@ -3,6 +3,7 @@ package io.vertx.core.cli;
 
 import io.vertx.core.cli.commands.HelloCommand;
 import io.vertx.core.cli.converters.*;
+import io.vertx.core.spi.Command;
 import org.junit.Test;
 
 import java.util.*;

@@ -1,5 +1,7 @@
 package io.vertx.core.cli;
 
+import io.vertx.core.spi.Command;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

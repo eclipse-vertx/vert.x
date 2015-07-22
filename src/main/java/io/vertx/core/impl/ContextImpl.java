@@ -19,6 +19,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
+import io.vertx.core.cli.VertxCommandLineInterface;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -240,7 +241,8 @@ public abstract class ContextImpl implements Context {
 
   @Override
   public List<String> processArgs() {
-    return Starter.PROCESS_ARGS;
+    final List<String> processArgument = VertxCommandLineInterface.getProcessArguments();
+    return processArgument != null ? processArgument : Starter.PROCESS_ARGS;
   }
 
   public EventLoop eventLoop() {

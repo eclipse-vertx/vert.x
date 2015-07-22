@@ -1,5 +1,7 @@
 package io.vertx.core.cli;
 
+import io.vertx.core.spi.Command;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -11,7 +13,7 @@ public class UsageMessageFormatter {
   /**
    * default number of characters per line
    */
-  public static final int DEFAULT_WIDTH = 74;
+  public static final int DEFAULT_WIDTH = 80;
 
   /**
    * default padding to the left of each line
@@ -214,6 +216,10 @@ public class UsageMessageFormatter {
    * @param required whether the Option is required or not
    */
   private void appendOption(StringBuilder buff, OptionModel option, boolean required) {
+    if (option.isHidden()) {
+      return;
+    }
+
     if (!required) {
       buff.append("[");
     }
@@ -390,9 +396,12 @@ public class UsageMessageFormatter {
     }
 
     for (OptionModel option : options) {
+      if (option.isHidden()) {
+        continue;
+      }
       StringBuilder optBuf = new StringBuilder();
 
-      if (option.getShortName() == null || option.getShortName().equals(Option.NO_SHORT_NAME)) {
+      if (option.getShortName() == null) {
         optBuf.append(lpad).append("   ").append(getLongOptionPrefix()).append(option.getLongName());
       } else {
         optBuf.append(lpad).append(getOptionPrefix()).append(option.getShortName());
@@ -422,6 +431,9 @@ public class UsageMessageFormatter {
     // Use an iterator to detect the last item.
     for (Iterator<OptionModel> it = options.iterator(); it.hasNext(); ) {
       OptionModel option = it.next();
+      if (option.isHidden()) {
+        continue;
+      }
       StringBuilder optBuf = new StringBuilder(prefixList.get(x++).toString());
 
       if (optBuf.length() < max) {

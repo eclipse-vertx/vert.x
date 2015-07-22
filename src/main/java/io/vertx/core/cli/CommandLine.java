@@ -157,4 +157,9 @@ public class CommandLine {
         .collect(Collectors.toList());
     return this;
   }
+
+  public boolean hasBeenSet(String name) {
+    OptionModel option = getOption(name);
+    return option != null && option.hasBeenSet();
+  }
 }

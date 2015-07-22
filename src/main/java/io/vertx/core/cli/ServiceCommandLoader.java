@@ -1,5 +1,7 @@
 package io.vertx.core.cli;
 
+import io.vertx.core.spi.Command;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

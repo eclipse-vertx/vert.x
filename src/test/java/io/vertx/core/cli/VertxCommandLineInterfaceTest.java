@@ -48,10 +48,8 @@ public class VertxCommandLineInterfaceTest {
     assertThat(baos.toString())
         .contains("A command saying hello.") // Summary
         .contains("A simple command to wish you a good day.") // Description
-        .contains("--cwd <dir>") // Inherited option
         .contains("-n,--name <name>") // Option
-        .contains("your name") // Option description
-        .contains("-D,--systemProperty <key>=<value>"); // Inherited option with short and long names
+        .contains("your name"); // Option description
   }
 
   @Test
@@ -64,9 +62,7 @@ public class VertxCommandLineInterfaceTest {
 
     assertThat(baos.toString())
         .contains("A command saying goodbye.") // Summary
-        .contains("--cwd <dir>") // Inherited option
-        .contains("-n <value>") // Option
-        .contains("-D,--systemProperty <key>=<value>"); // Inherited option with short and long names
+        .contains("-n <value>"); // Option
   }
 
   @Test
@@ -127,14 +123,26 @@ public class VertxCommandLineInterfaceTest {
     itf.execute("complex", "-h");
 
     assertThat(baos.toString())
-        .contains("-o1 <opt> [-o2]")
+        .contains("-o1 <opt>", " [-o2] ")
         .contains("arg1 [arg2]")
         .contains("A command with options and arguments.") // Summary
         .contains("This is a complex command.") // Description
-        .contains("--cwd <dir>") // Inherited option
         .contains("-o1,--option1 <opt>") // Option
-        .contains("-o2,--option2") // Option
-        .contains("-D,--systemProperty <key>=<value>"); // Inherited option with short and long names
+        .contains("-o2,--option2"); // Option
+  }
+
+  @Test
+  public void testHiddenCommandUsage() {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(baos);
+    System.setOut(stream);
+
+    itf.execute("hidden", "-h");
+
+    assertThat(baos.toString())
+        .contains("-n <value>")
+        .doesNotContain("-c ")
+        .doesNotContain("count");
   }
 
   @Test
