@@ -7,26 +7,33 @@ import io.vertx.core.logging.LoggerFactory;
 public class VertxIsolatedDeployer {
 
   private static final Logger log = LoggerFactory.getLogger(RunCommand.class);
-  private Object main;
 
-  public void deploy(String verticle, Vertx vertx, DeploymentOptions options, String message, Object main) {
-    this.main = main;
+  private String deploymentId;
+  private Vertx vertx;
 
-    vertx.deployVerticle(verticle, options, createLoggingHandler(message, res -> {
+  public void deploy(String verticle, Vertx vertx, DeploymentOptions options,
+                     Handler<AsyncResult<String>> completionHandler) {
+    this.vertx = vertx;
+    String message = (options.isWorker()) ? "deploying worker verticle" : "deploying verticle";
+    vertx.deployVerticle(verticle, options, createHandler(message, completionHandler));
+  }
+
+  public void undeploy(Handler<AsyncResult<Void>> completionHandler) {
+    vertx.undeploy(deploymentId, res -> {
       if (res.failed()) {
-        // Failed to deploy
-        handleDeployFailed(res.cause(), vertx, verticle, options);
+        log.error("Failed in undeploying " + deploymentId, res.cause());
+      } else {
+        log.info("Succeeded in undeploying " + deploymentId);
       }
-    }));
+      deploymentId = null;
+      completionHandler.handle(res);
+    });
   }
 
-  private void handleDeployFailed(Throwable cause, Vertx vertx, String mainVerticle, DeploymentOptions deploymentOptions) {
-    if (main instanceof VertxLifeycleHooks) {
-      ((VertxLifeycleHooks) main).handleDeployFailed(vertx, mainVerticle, deploymentOptions, cause);
-    }
-  }
 
-  private <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
+  private AsyncResultHandler<String> createHandler(final String message,
+                                                   final Handler<AsyncResult<String>>
+      completionHandler) {
     return res -> {
       if (res.failed()) {
         Throwable cause = res.cause();
@@ -40,6 +47,7 @@ public class VertxIsolatedDeployer {
           log.error("Failed in " + message, cause);
         }
       } else {
+        deploymentId = res.result();
         log.info("Succeeded in " + message);
       }
       if (completionHandler != null) {
