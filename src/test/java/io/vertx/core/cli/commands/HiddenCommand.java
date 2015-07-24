@@ -38,6 +38,6 @@ public class HiddenCommand extends DefaultCommand {
    */
   @Override
   public void run() throws CommandLineException {
-    System.out.println("Do something hidden...");
+    out.println("Do something hidden...");
   }
 }

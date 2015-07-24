@@ -30,11 +30,11 @@ public class DefaultCommandTest {
   @Test
   public void testSystemProperties() throws CommandLineException {
     CommandLine line = new CommandLine();
+    ExecutionContext context = new ExecutionContext(line, new VertxCommandLineInterface());
     CommandManager.define(command, line);
-    CommandLineParser parser = new CommandLineParser();
 
-    command.initialize(null);
-    parser.parse(line, "--name=vert.x", "-Dfoo=bar", "--systemProp=x=y");
+    command.initialize(context);
+    line.parse("--name=vert.x", "-Dfoo=bar", "--systemProp=x=y");
     CommandManager.inject(command, line);
     command.setup();
     assertThat(System.getProperty("foo")).isEqualToIgnoringCase("bar");

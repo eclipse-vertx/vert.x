@@ -38,6 +38,26 @@ public class VertxCommandLineInterfaceTest {
   }
 
   @Test
+  public void testUsageOnDifferentStream() {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(baos);
+    itf = new VertxCommandLineInterface() {
+      /**
+       * @return the printer used to write the messages. Defaults to {@link System#out}.
+       */
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+
+    itf.execute("--help");
+
+    assertThat(baos.toString()).contains("hello").contains("bye")
+        .doesNotContain("hidden").contains("A command saying hello");
+  }
+
+  @Test
   public void testCommandUsageForHello() {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(baos);
@@ -190,6 +210,83 @@ public class VertxCommandLineInterfaceTest {
 
     baos.reset();
     itf = new VertxCommandLineInterface();
+    itf.execute("complex", "-option1=vertx");
+    assertThat(baos.toString())
+        .doesNotContain("Option 1 : vertx")
+        .contains("Usage")
+        .contains("The argument 'arg1' is required");
+  }
+
+  @Test
+  public void testUsingDifferentPrinter() {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(baos);
+    itf = new VertxCommandLineInterface() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+
+    itf.execute("complex", "-option1=vertx", "-o2", "this is arg 1", "25");
+
+    assertThat(baos.toString())
+        .contains("Option 1 : vertx")
+        .contains("Option 2 : true")
+        .contains("Arg 1 : this is arg 1")
+        .contains("Arg 2 : 25");
+
+    baos.reset();
+    itf = new VertxCommandLineInterface() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+
+    itf.execute("complex", "-option1=vertx", "this is arg 1");
+    assertThat(baos.toString())
+        .contains("Option 1 : vertx")
+        .contains("Option 2 : false")
+        .contains("Arg 1 : this is arg 1")
+        .contains("Arg 2 : 0");
+
+    baos.reset();
+    itf = new VertxCommandLineInterface() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+    itf.execute("complex", "-option1=vertx", "this is arg 1", "24", "xxx", "yyy");
+    assertThat(baos.toString())
+        .contains("Option 1 : vertx")
+        .contains("Option 2 : false")
+        .contains("Arg 1 : this is arg 1")
+        .contains("Arg 2 : 24")
+        .contains("xxx", "yyy");
+
+    baos.reset();
+    itf = new VertxCommandLineInterface() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+    itf.execute("complex", "this is arg 1", "24");
+    assertThat(baos.toString())
+        .doesNotContain("Option 1 : vertx")
+        .doesNotContain("Arg 1 : this is arg 1")
+        .contains("Usage")
+        .contains("The option", "is required");
+
+    baos.reset();
+    itf = new VertxCommandLineInterface() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
     itf.execute("complex", "-option1=vertx");
     assertThat(baos.toString())
         .doesNotContain("Option 1 : vertx")

@@ -49,12 +49,12 @@ public class ComplexCommand extends DefaultCommand {
 
   @Override
   public void run() throws CommandLineException {
-    System.out.println("Option 1 : " + option1);
-    System.out.println("Option 2 : " + option2);
-    System.out.println("Arg 1 : " + arg1);
-    System.out.println("Arg 2 : " + arg2);
+    out.println("Option 1 : " + option1);
+    out.println("Option 2 : " + option2);
+    out.println("Arg 1 : " + arg1);
+    out.println("Arg 2 : " + arg2);
     if (executionContext.getCommandLine().getAllArguments().size() > 2) {
-      System.out.println("All args: " + executionContext.getCommandLine().getAllArguments());
+      out.println("All args: " + executionContext.getCommandLine().getAllArguments());
     }
   }
 }

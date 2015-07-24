@@ -2,6 +2,7 @@ package io.vertx.core.cli;
 
 import io.vertx.core.spi.Command;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 
 /**
@@ -16,19 +17,41 @@ public class ExecutionContext extends HashMap<String, Object> {
     this.cli = cli;
   }
 
+  /**
+   * @return the command line object.
+   */
   public CommandLine getCommandLine() {
     return commandLine;
   }
 
+  /**
+   * Reports an error.
+   *
+   * @param command   the erroneous command
+   * @param exception the exception
+   */
   public void reportError(Command command, Exception exception) {
     cli.printSpecificException(command, commandLine, exception);
   }
 
+  /**
+   * Executes another command.
+   *
+   * @param command the command name
+   * @param args    the arguments
+   */
   public void execute(String command, String... args) {
     cli.execute(command, args);
   }
 
   public Object main() {
     return get("Main");
+  }
+
+  /**
+   * @return the {@link PrintStream} on which command can write.
+   */
+  public PrintStream getPrintStream() {
+    return cli.getPrintStream();
   }
 }

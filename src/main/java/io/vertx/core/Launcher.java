@@ -39,6 +39,4 @@ public class Launcher extends VertxCommandLineInterface implements VertxLifeycle
     // Default behaviour is to close Vert.x if the deploy failed
     vertx.close();
   }
-
-
 }

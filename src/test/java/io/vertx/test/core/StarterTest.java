@@ -16,10 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Starter;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
@@ -47,6 +44,8 @@ public class StarterTest extends VertxTestBase {
     TestVerticle.instanceCount.set(0);
     TestVerticle.processArgs = null;
     TestVerticle.conf = null;
+
+    Launcher.resetProcessArguments();
   }
 
   @Override

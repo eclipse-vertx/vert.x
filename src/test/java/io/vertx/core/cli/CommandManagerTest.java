@@ -185,26 +185,28 @@ public class CommandManagerTest {
   public void testInjectionOfString() throws CommandLineException {
     HelloCommand command = new HelloCommand();
     CommandLine commandLine = new CommandLine();
+
+    VertxCommandLineInterface itf = new VertxCommandLineInterface();
+
     CommandManager.define(command, commandLine);
-
-    assertThat(commandLine.getOptions()).hasSize(3);
-
-    CommandLineParser parser = new CommandLineParser();
-    parser.parse(commandLine, "--name", "vert.x");
+    command.initialize(new ExecutionContext(commandLine, itf));
+    commandLine.parse("--name", "vert.x");
     CommandManager.inject(command, commandLine);
+
     command.run();
     assertThat(command.name).isEqualToIgnoringCase("vert.x");
   }
 
   @Test
   public void testSingleValueInjection() throws CommandLineException {
-    CommandLineParser parser = new CommandLineParser();
-
     CommandWithSingleValue command = new CommandWithSingleValue();
     CommandLine commandLine = new CommandLine();
-    CommandManager.define(command, commandLine);
 
-    parser.parse(commandLine, "--boolean", "--short=1", "--byte=1", "--int=1", "--long=1",
+    VertxCommandLineInterface itf = new VertxCommandLineInterface();
+    CommandManager.define(command, commandLine);
+    command.initialize(new ExecutionContext(commandLine, itf));
+
+    commandLine.parse("--boolean", "--short=1", "--byte=1", "--int=1", "--long=1",
         "--double=1.1", "--float=1.1", "--char=c", "--string=hello");
     CommandManager.inject(command, commandLine);
 
@@ -218,7 +220,7 @@ public class CommandManagerTest {
     assertThat(command.aChar).isEqualTo('c');
     assertThat(command.aString).isEqualTo("hello");
 
-    parser.parse(commandLine, "--boolean2", "--short2=1", "--byte2=1", "--int2=1", "--long2=1",
+    commandLine.parse("--boolean2", "--short2=1", "--byte2=1", "--int2=1", "--long2=1",
         "--double2=1.1", "--float2=1.1", "--char2=c", "--string=hello");
     CommandManager.inject(command, commandLine);
 
@@ -232,23 +234,23 @@ public class CommandManagerTest {
     assertThat(command.anotherChar).isEqualTo('c');
     assertThat(command.aString).isEqualTo("hello");
 
-    parser.parse(commandLine, "--state=NEW");
+    commandLine.parse("--state=NEW");
     CommandManager.inject(command, commandLine);
     assertThat(command.aState).isEqualTo(Thread.State.NEW);
 
-    parser.parse(commandLine, "--person=vert.x");
+    commandLine.parse("--person=vert.x");
     CommandManager.inject(command, commandLine);
     assertThat(command.aPerson.name).isEqualTo("vert.x");
 
-    parser.parse(commandLine, "--person2=vert.x");
+    commandLine.parse("--person2=vert.x");
     CommandManager.inject(command, commandLine);
     assertThat(command.anotherPerson.name).isEqualTo("vert.x");
 
-    parser.parse(commandLine, "--person3=vert.x");
+    commandLine.parse("--person3=vert.x");
     CommandManager.inject(command, commandLine);
     assertThat(command.aThirdPerson.name).isEqualTo("vert.x");
 
-    parser.parse(commandLine, "--person4=bob,morane");
+    commandLine.parse("--person4=bob,morane");
     CommandManager.inject(command, commandLine);
     assertThat(command.aFourthPerson.first).isEqualTo("bob");
     assertThat(command.aFourthPerson.last).isEqualTo("morane");

@@ -4,6 +4,7 @@ import io.vertx.core.cli.commands.RunCommand;
 import io.vertx.core.spi.Command;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
 import java.util.jar.Attributes;
@@ -116,23 +117,23 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
     StringBuilder builder = new StringBuilder();
 
     String header = getNewLine()
-        + CommandManager.getSummary(command) + getNewLine()
-        + CommandManager.getDescription(command) + getNewLine()
+        + command.summary() + getNewLine()
+        + command.description() + getNewLine()
         + getNewLine();
 
     computeCommandUsage(builder, getCommandLinePrefix() + " " + command.name(), header, line, "", true);
-    System.out.println(builder.toString());
+    getPrintStream().println(builder.toString());
   }
 
   protected void printGenericExecutionError(Command cmd, CommandLine line, CommandLineException e) {
-    System.out.println("Error while executing command " + cmd.name() + ": " + e.getMessage() + getNewLine());
+    getPrintStream().println("Error while executing command " + cmd.name() + ": " + e.getMessage() + getNewLine());
     if (e.getCause() != null) {
-      e.getCause().printStackTrace(System.out);
+      e.getCause().printStackTrace(getPrintStream());
     }
   }
 
   protected void printSpecificException(Command cmd, CommandLine line, Exception e) {
-    System.out.println(e.getMessage() + getNewLine());
+    getPrintStream().println(e.getMessage() + getNewLine());
     printCommandUsage(cmd, line);
   }
 
@@ -140,7 +141,7 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
     StringBuilder builder = new StringBuilder();
     buildWrapped(builder, 0, "The command '" + command + "' is not a valid command." + getNewLine()
         + "See '" + getCommandLinePrefix() + " --help'");
-    System.out.println(builder.toString());
+    getPrintStream().println(builder.toString());
   }
 
   protected void printGlobalUsage() {
@@ -157,7 +158,7 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
 
     buildWrapped(builder, 0, "Run '" + getCommandLinePrefix() + " COMMAND --help' for more information on a command.");
 
-    System.out.println(builder.toString());
+    getPrintStream().println(builder.toString());
   }
 
   protected String getCommandLinePrefix() {
@@ -235,7 +236,30 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
   }
 
   public String getDefaultCommand() {
+    try {
+      Enumeration<URL> resources = RunCommand.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+      while (resources.hasMoreElements()) {
+        Manifest manifest = new Manifest(resources.nextElement().openStream());
+        Attributes attributes = manifest.getMainAttributes();
+        String mainClass = attributes.getValue("Main-Class");
+        if (main.getClass().getName().equals(mainClass)) {
+          String command = attributes.getValue("Main-Command");
+          if (command != null) {
+            return command;
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException(e.getMessage());
+    }
     return "run";
+  }
+
+  /**
+   * @return the printer used to write the messages. Defaults to {@link System#out}.
+   */
+  public PrintStream getPrintStream() {
+    return System.out;
   }
 
   public String getMainVerticle() {
@@ -256,5 +280,12 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
       throw new IllegalStateException(e.getMessage());
     }
     return null;
+  }
+
+  /**
+   * For testing purpose only - reset the process arguments
+   */
+  public static void resetProcessArguments() {
+    PROCESS_ARGS = null;
   }
 }

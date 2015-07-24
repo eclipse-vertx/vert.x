@@ -19,19 +19,9 @@ public class CommandManager {
     HANDLERS.put(Argument.class, new ArgumentHandler());
   }
 
-
   public static Command define(Command command, CommandLine commandLine) {
-    final Method[] methods = command.getClass().getMethods();
-    for (Method method : methods) {
-      if (method.getName().startsWith("set") && method.getParameterTypes().length == 1) {
-        for (Annotation annotation : method.getDeclaredAnnotations()) {
-          final Handler handler = getHandler(annotation.annotationType());
-          if (handler != null) {
-            handler.define(annotation, command, method, commandLine);
-          }
-        }
-      }
-    }
+    commandLine.addOptions(command.options());
+    commandLine.addArguments(command.arguments());
     return command;
   }
 
@@ -52,43 +42,8 @@ public class CommandManager {
     return command;
   }
 
-  public static boolean isHidden(Command command) {
-    return command.getClass().getAnnotation(Hidden.class) != null;
-  }
-
-  public static String getSummary(Command command) {
-    final Summary summary = command.getClass().getAnnotation(Summary.class);
-    if (summary != null) {
-      return summary.value();
-    }
-    return "no summary";
-  }
-
   private static <A extends Annotation> Handler<A> getHandler(Class<A> type) {
     return (Handler<A>) HANDLERS.get(type);
-  }
-
-  private static Class extractContainedType(Parameter parameter) {
-    Class<?> type = parameter.getType();
-    if (type.isArray()) {
-      return type.getComponentType();
-    }
-
-    if (parameter.getParameterizedType() != null) {
-      return (Class) ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
-    }
-
-    if (parameter.getType().getGenericSuperclass() instanceof ParameterizedType) {
-      return (Class) ((ParameterizedType) parameter.getType().getGenericSuperclass()).getActualTypeArguments()[0];
-    }
-
-    return null;
-  }
-
-  private static boolean isMultiple(Method setter) {
-    final Class<?> type = setter.getParameterTypes()[0];
-    return type.isArray() || List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)
-        || Collection.class.isAssignableFrom(type);
   }
 
   private static <T> Object createMultiValueContainer(Method setter, List<T> values) {
@@ -112,19 +67,10 @@ public class CommandManager {
     return null;
   }
 
-  public static String getDescription(Command command) {
-    final Description description = command.getClass().getAnnotation(Description.class);
-    if (description != null) {
-      return description.value();
-    }
-    return "";
-  }
-
   private interface Handler<A extends Annotation> {
 
     void inject(A annotation, Command command, Method method, CommandLine commandLine) throws CommandLineException;
 
-    void define(A annotation, Command command, Method method, CommandLine commandLine);
   }
 
   private static class OptionHandler implements Handler<Option> {
@@ -137,7 +83,7 @@ public class CommandManager {
       }
 
       try {
-        if (isMultiple(method)) {
+        if (ReflectionUtils.isMultiple(method)) {
           Object toBeInjected = createMultiValueContainer(method, commandLine.getOptionValues(name));
           if (toBeInjected != null) {
             method.invoke(command, toBeInjected);
@@ -151,52 +97,6 @@ public class CommandManager {
       } catch (Exception e) {
         throw new CommandLineException("Cannot inject value for option '" + name + "' (" + commandLine.getOptionValues(name) + ")", e);
       }
-    }
-
-    @Override
-    public void define(Option annotation, Command command, Method method, CommandLine commandLine) {
-      final OptionModel.Builder<Object> builder = OptionModel.builder()
-          .longName(annotation.longName())
-          .shortName(annotation.shortName())
-          .argName(annotation.name())
-          .isRequired(annotation.required())
-          .acceptValue(annotation.acceptValue());
-
-      // Get type.
-      if (isMultiple(method)) {
-        builder.acceptMultipleValues();
-        builder.type(extractContainedType(method.getParameters()[0]));
-      } else {
-        builder.type((Class) method.getParameterTypes()[0]);
-      }
-
-      // Companion annotations
-      Description description = method.getAnnotation(Description.class);
-      if (description != null) {
-        builder.description(description.value());
-      }
-
-      ParsedAsList parsedAsList = method.getAnnotation(ParsedAsList.class);
-      if (parsedAsList != null) {
-        builder.listSeparator(parsedAsList.separator());
-      }
-
-      Hidden hidden = method.getAnnotation(Hidden.class);
-      if (hidden != null) {
-        builder.hidden();
-      }
-
-      ConvertedBy convertedBy = method.getAnnotation(ConvertedBy.class);
-      if (convertedBy != null) {
-        builder.convertedBy((Class) convertedBy.value());
-      }
-
-      DefaultValue defaultValue = method.getAnnotation(DefaultValue.class);
-      if (defaultValue != null) {
-        builder.defaultValue(defaultValue.value());
-      }
-
-      commandLine.addOption(builder.build());
     }
   }
 
@@ -213,39 +113,6 @@ public class CommandManager {
       } catch (Exception e) {
         throw new CommandLineException("Cannot inject value for argument #" + argument.index(), e);
       }
-    }
-
-    @Override
-    public void define(Argument annotation, Command command, Method method, CommandLine commandLine) {
-      final ArgumentModel.Builder<Object> builder = ArgumentModel.builder()
-          .index(annotation.index())
-          .argName(annotation.name())
-          .required(annotation.required());
-
-      builder.type((Class) method.getParameterTypes()[0]);
-
-      // Companion annotations
-      Description description = method.getAnnotation(Description.class);
-      if (description != null) {
-        builder.description(description.value());
-      }
-
-      Hidden hidden = method.getAnnotation(Hidden.class);
-      if (hidden != null) {
-        builder.hidden();
-      }
-
-      ConvertedBy convertedBy = method.getAnnotation(ConvertedBy.class);
-      if (convertedBy != null) {
-        builder.convertedBy((Class) convertedBy.value());
-      }
-
-      DefaultValue defaultValue = method.getAnnotation(DefaultValue.class);
-      if (defaultValue != null) {
-        builder.defaultValue(defaultValue.value());
-      }
-
-      commandLine.addArgument(builder.build());
     }
   }
 

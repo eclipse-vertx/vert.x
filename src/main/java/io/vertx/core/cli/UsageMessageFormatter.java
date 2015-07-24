@@ -334,7 +334,7 @@ public class UsageMessageFormatter {
     List<StringBuilder> prefixList = new ArrayList<>();
 
     for (Command command : commands) {
-      if (!CommandManager.isHidden(command)) {
+      if (! command.hidden()) {
         StringBuilder buf = new StringBuilder();
         buf.append(lpad).append("   ").append(command.name());
         prefixList.add(buf);
@@ -347,7 +347,7 @@ public class UsageMessageFormatter {
     // Use an iterator to detect the last item.
     for (Iterator<Command> it = commands.iterator(); it.hasNext(); ) {
       Command command = it.next();
-      if (CommandManager.isHidden(command)) {
+      if (command.hidden()) {
         continue;
       }
 
@@ -360,7 +360,7 @@ public class UsageMessageFormatter {
       buf.append(dpad);
 
       int nextLineTabStop = max + descPad;
-      buf.append(CommandManager.getSummary(command));
+      buf.append(command.summary());
       renderWrappedText(sb, width, nextLineTabStop, buf.toString());
 
       if (it.hasNext()) {

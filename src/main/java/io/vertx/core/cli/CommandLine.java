@@ -153,7 +153,7 @@ public class CommandLine {
 
   public CommandLine removeOption(String name) {
     options = getOptions().stream()
-        .filter(o -> ! name.equalsIgnoreCase(o.getShortName()) && ! name.equalsIgnoreCase(o.getLongName()))
+        .filter(o -> !name.equalsIgnoreCase(o.getShortName()) && !name.equalsIgnoreCase(o.getLongName()))
         .collect(Collectors.toList());
     return this;
   }
@@ -161,5 +161,9 @@ public class CommandLine {
   public boolean hasBeenSet(String name) {
     OptionModel option = getOption(name);
     return option != null && option.hasBeenSet();
+  }
+
+  public void addArguments(List<ArgumentModel> args) {
+    arguments.addAll(args);
   }
 }

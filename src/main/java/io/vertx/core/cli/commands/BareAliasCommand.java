@@ -18,5 +18,4 @@ public class BareAliasCommand extends BareCommand {
     return "-ha";
   }
 
-
 }

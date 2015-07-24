@@ -29,6 +29,6 @@ public class HelloCommand extends DefaultCommand {
    */
   @Override
   public void run() throws CommandLineException {
-    System.out.println("Hello " + name);
+    out.println("Hello " + name);
   }
 }

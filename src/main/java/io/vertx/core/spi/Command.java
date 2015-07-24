@@ -2,6 +2,8 @@ package io.vertx.core.spi;
 
 import io.vertx.core.cli.*;
 
+import java.util.List;
+
 /**
  * A plug-in to the Vert.x command or {@link io.vertx.core.Starter} class.
  * <p/>
@@ -31,6 +33,31 @@ public interface Command {
    * @return the command name such as 'run'.
    */
   String name();
+
+  /**
+   * @return the summary (one sentence) of the command.
+   */
+  String summary();
+
+  /**
+   * @return the description of the command.
+   */
+  String description();
+
+  /**
+   * @return whether or not the command is considered as low level and should not be listed in usage messages.
+   */
+  boolean hidden();
+
+  /**
+   * @return the set of options handled by the command.
+   */
+  List<OptionModel> options();
+
+  /**
+   * @return the set of arguments handled by the command.
+   */
+  List<ArgumentModel> arguments();
 
   /**
    * Initializes the command.
