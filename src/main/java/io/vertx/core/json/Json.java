@@ -87,6 +87,8 @@ public class Json {
       // OK
     } else if (val instanceof String) {
       // OK
+    } else if (val instanceof Character) {
+      // OK
     } else if (val instanceof CharSequence) {
       val = val.toString();
     } else if (val instanceof JsonObject) {

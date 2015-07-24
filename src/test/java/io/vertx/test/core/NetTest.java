@@ -556,12 +556,13 @@ public class NetTest extends VertxTestBase {
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
-    int trafficClass = TestUtils.randomByte() + 127;
+    int trafficClass = TestUtils.randomByte() + 128;
+    System.out.println("trafficClass = " + trafficClass);
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
-    int idleTimeout = TestUtils.randomInt();
+    int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
     JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
