@@ -98,13 +98,8 @@ public class DatagramSocketOptions extends NetworkOptions {
    * @param json  the JSON
    */
   public DatagramSocketOptions(JsonObject json) {
-    super(json);
-    this.broadcast = json.getBoolean("broadcast", DEFAULT_BROADCAST);
-    this.loopbackModeDisabled = json.getBoolean("loopbackModeDisabled", DEFAULT_LOOPBACK_MODE_DISABLED);
-    this.multicastTimeToLive = json.getInteger("multicastTimeToLive", DEFAULT_MULTICAST_TIME_TO_LIVE);
-    this.multicastNetworkInterface = json.getString("multicastNetworkInterface", DEFAULT_MULTICAST_NETWORK_INTERFACE);
-    this.ipV6 = json.getBoolean("ipV6", DEFAULT_IPV6);
-    setReuseAddress(json.getBoolean("reuseAddress", DEFAULT_REUSE_ADDRESS));
+    this();
+    DatagramSocketOptionsConverter.fromJson(json, this);
   }
 
   @Override
