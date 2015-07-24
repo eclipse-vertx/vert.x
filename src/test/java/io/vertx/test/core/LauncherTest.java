@@ -16,7 +16,11 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.*;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Launcher;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.cli.commands.HelloCommand;
 import io.vertx.core.cli.commands.RunCommand;
 import io.vertx.core.cli.commands.VersionCommand;
 import io.vertx.core.json.JsonObject;
@@ -29,10 +33,12 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -59,6 +65,8 @@ public class LauncherTest extends VertxTestBase {
       expectedVersion = in.readLine();
       in.close();
     }
+
+    Launcher.resetProcessArguments();
   }
 
   @Override
@@ -114,6 +122,57 @@ public class LauncherTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     launcher.assertHooksInvoked();
+  }
+
+  @Test
+  public void testRunVerticleWithMainVerticleInManifestNoArgs() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    Launcher launcher = new Launcher();
+    String[] args = new String[0];
+    launcher.dispatch(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+  }
+
+  @Test
+  public void testRunVerticleWithMainVerticleInManifestWithArgs() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    Launcher launcher = new Launcher();
+    String[] args = new String[]{"-cluster", "-worker"};
+    launcher.dispatch(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+  }
+
+  @Test
+  public void testRunVerticleWithMainVerticleInManifestWithCustomCommand() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher-hello.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher-hello.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    Launcher launcher = new Launcher();
+    HelloCommand.called = false;
+    String[] args = new String[] {"--name=vert.x"};
+    launcher.dispatch(args);
+    waitUntil(() -> HelloCommand.called);
   }
 
 
@@ -276,7 +335,7 @@ public class LauncherTest extends VertxTestBase {
   public void testWhenPassingTheMainObject() throws Exception {
     MyLauncher launcher = new MyLauncher();
     int instances = 10;
-    launcher.dispatch(launcher, new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(),
+    launcher.dispatch(launcher, new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(),
         "-instances", "10"});
     waitUntil(() -> TestVerticle.instanceCount.get() == instances);
   }
@@ -284,7 +343,7 @@ public class LauncherTest extends VertxTestBase {
   @Test
   public void testBare() throws Exception {
     MyLauncher launcher = new MyLauncher();
-    launcher.dispatch(new String[] {"run", "-ha"});
+    launcher.dispatch(new String[]{"run", "-ha"});
     waitUntil(() -> launcher.afterStartingVertxInvoked);
   }
 

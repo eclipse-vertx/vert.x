@@ -6,6 +6,8 @@ import io.vertx.core.cli.*;
 @Description("A simple command to wish you a good day. Pass your name with `--name`")
 public class HelloCommand extends DefaultCommand {
 
+  public static boolean called = false;
+
   public String name;
 
 
@@ -29,6 +31,7 @@ public class HelloCommand extends DefaultCommand {
    */
   @Override
   public void run() throws CommandLineException {
+    called = true;
     out.println("Hello " + name);
   }
 }
