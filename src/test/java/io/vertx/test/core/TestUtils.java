@@ -152,7 +152,7 @@ public class TestUtils {
    * @return a random short
    */
   public static short randomShort() {
-    return (short)(random.nextInt(16) - Short.MAX_VALUE);
+    return (short)(random.nextInt(1 << 15));
   }
 
   /**

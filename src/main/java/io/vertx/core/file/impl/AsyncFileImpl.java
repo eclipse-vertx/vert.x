@@ -89,7 +89,7 @@ public class AsyncFileImpl implements AsyncFile {
     if (options.isCreate()) opts.add(StandardOpenOption.CREATE);
     if (options.isCreateNew()) opts.add(StandardOpenOption.CREATE_NEW);
     if (options.isSync()) opts.add(StandardOpenOption.SYNC);
-    if (options.isDSync()) opts.add(StandardOpenOption.DSYNC);
+    if (options.isDsync()) opts.add(StandardOpenOption.DSYNC);
     if (options.isDeleteOnClose()) opts.add(StandardOpenOption.DELETE_ON_CLOSE);
     if (options.isSparse()) opts.add(StandardOpenOption.SPARSE);
     if (options.isTruncateExisting()) opts.add(StandardOpenOption.TRUNCATE_EXISTING);

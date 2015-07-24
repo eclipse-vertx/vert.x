@@ -101,12 +101,7 @@ public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
    */
   public PemKeyCertOptions(JsonObject json) {
     super();
-    keyPath = json.getString("keyPath");
-    byte[] keyValue = json.getBinary("keyValue");
-    this.keyValue = keyValue != null ? Buffer.buffer(keyValue) : null;
-    certPath = json.getString("certPath");
-    byte[] certValue = json.getBinary("certValue");
-    this.certValue = certValue != null ? Buffer.buffer(certValue) : null;
+    PemKeyCertOptionsHelper.fromJson(json, this);
   }
 
   /**

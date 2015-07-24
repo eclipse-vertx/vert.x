@@ -20,15 +20,15 @@ Set whether the file should be created if it does not already exist.+++
 |+++
 Set whether the file should be created and fail if it does exist already.+++
 
-|[[dSync]]`dSync`
-|`Boolean`
-|+++
-Set whether every write to the file's content  ill be written synchronously to the underlying hardware.+++
-
 |[[deleteOnClose]]`deleteOnClose`
 |`Boolean`
 |+++
 Set whether the file should be deleted when it's closed, or the JVM is shutdown.+++
+
+|[[dsync]]`dsync`
+|`Boolean`
+|+++
+Set whether every write to the file's content  ill be written synchronously to the underlying hardware.+++
 
 |[[perms]]`perms`
 |`String`
