@@ -32,9 +32,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +45,8 @@ import java.util.Set;
 public class LauncherTest extends VertxTestBase {
 
   private String expectedVersion;
+  private ByteArrayOutputStream out;
+  private PrintStream stream;
 
   @Override
   public void setUp() throws Exception {
@@ -67,12 +67,18 @@ public class LauncherTest extends VertxTestBase {
     }
 
     Launcher.resetProcessArguments();
+
+    out = new ByteArrayOutputStream();
+    stream = new PrintStream(out);
   }
 
   @Override
   public void tearDown() throws Exception {
     clearProperties();
     super.tearDown();
+
+    out.close();
+    stream.close();
   }
 
 
@@ -83,6 +89,45 @@ public class LauncherTest extends VertxTestBase {
     launcher.dispatch(args);
 
     assertEquals(launcher.getVersion(), expectedVersion);
+  }
+
+  @Test
+  public void testRunVerticleWithoutArgs() throws Exception {
+    MyLauncher launcher = new MyLauncher();
+    String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName()};
+    launcher.dispatch(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    launcher.assertHooksInvoked();
+  }
+
+  @Test
+  public void testRunWithoutArgs() throws Exception {
+    MyLauncher launcher = new MyLauncher() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+    String[] args = new String[]{"run"};
+    launcher.dispatch(args);
+    assertTrue(out.toString().contains("The argument 'main-verticle' is required"));
+  }
+
+  @Test
+  public void testNoArgsAndNoMainVerticle() throws Exception {
+    MyLauncher launcher = new MyLauncher() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+    String[] args = new String[]{};
+    launcher.dispatch(args);
+    assertTrue(out.toString().contains("Usage:"));
+    assertTrue(out.toString().contains("bare"));
+    assertTrue(out.toString().contains("run"));
+    assertTrue(out.toString().contains("hello"));
   }
 
   @Test
@@ -152,9 +197,9 @@ public class LauncherTest extends VertxTestBase {
     Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
     Launcher launcher = new Launcher();
-    String[] args = new String[]{"-cluster", "-worker"};
+    String[] args = new String[]{"-cluster", "-worker", "-instances=10"};
     launcher.dispatch(args);
-    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 10);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
   }
 
@@ -170,7 +215,7 @@ public class LauncherTest extends VertxTestBase {
 
     Launcher launcher = new Launcher();
     HelloCommand.called = false;
-    String[] args = new String[] {"--name=vert.x"};
+    String[] args = new String[]{"--name=vert.x"};
     launcher.dispatch(args);
     waitUntil(() -> HelloCommand.called);
   }
@@ -192,6 +237,75 @@ public class LauncherTest extends VertxTestBase {
     launcher.dispatch(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+  }
+
+  @Test
+  public void testFatJarWithHelp() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    Launcher launcher = new Launcher() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+
+    String[] args = new String[]{"--help"};
+    launcher.dispatch(args);
+    assertTrue(out.toString().contains("Usage"));
+    assertTrue(out.toString().contains("run"));
+    assertTrue(out.toString().contains("version"));
+    assertTrue(out.toString().contains("bare"));
+  }
+
+  @Test
+  public void testFatJarWithCommandHelp() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    Launcher launcher = new Launcher() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+    String[] args = new String[]{"hello", "--help"};
+    launcher.dispatch(args);
+    assertTrue(out.toString().contains("Usage"));
+    assertTrue(out.toString().contains("hello"));
+    assertTrue(out.toString().contains("A simple command to wish you a good day.")); // Description text.
+  }
+
+  @Test
+  public void testFatJarWithMissingCommandHelp() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    Launcher launcher = new Launcher() {
+      @Override
+      public PrintStream getPrintStream() {
+        return stream;
+      }
+    };
+    String[] args = new String[]{"not-a-command", "--help"};
+    launcher.dispatch(args);
+    assertTrue(out.toString().contains("The command 'not-a-command' is not a valid command."));
   }
 
   @Test
@@ -343,7 +457,14 @@ public class LauncherTest extends VertxTestBase {
   @Test
   public void testBare() throws Exception {
     MyLauncher launcher = new MyLauncher();
-    launcher.dispatch(new String[]{"run", "-ha"});
+    launcher.dispatch(new String[]{"bare"});
+    waitUntil(() -> launcher.afterStartingVertxInvoked);
+  }
+
+  @Test
+  public void testBareAlias() throws Exception {
+    MyLauncher launcher = new MyLauncher();
+    launcher.dispatch(new String[]{"-ha"});
     waitUntil(() -> launcher.afterStartingVertxInvoked);
   }
 

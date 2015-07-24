@@ -62,6 +62,7 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
       execute("version");
       return;
     }
+
     if (command == null || isAskingForHelp(command)) {
       printGlobalUsage();
       return;
@@ -211,8 +212,39 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
    */
   public void dispatch(Object main, String[] args) {
     this.main = main == null ? this : main;
-
     PROCESS_ARGS = Collections.unmodifiableList(Arrays.asList(args));
+
+    // Several cases need to be detected here.
+    // The first argument may be "--help" => must display help message
+    // The first argument may be "--version" => must execute the version command.
+    // The first argument may be a command and the second "--help" => display command usage
+    // The first argument may be a command => command execution
+    // If the first argument is not a command, try to see if there is a given main verticle  and execute the default
+    // command with the arguments (prepended with the main verticle).
+    // Finally, we have two fallbacks
+    // - if no args (and so no main verticle) - display usage
+    // - if args has been set, display command usage.
+
+
+    if (args.length == 1  && isAskingForHelp(args[0])) {
+      printGlobalUsage();
+      return;
+    }
+
+    if (args.length == 1  && isAskingForVersion(args[0])) {
+      execute("version");
+      return;
+    }
+
+    if (args.length >= 1  && getCommand(args[0]) != null) {
+      execute(args[0], Arrays.copyOfRange(args, 1, args.length));
+      return;
+    }
+
+    if (args.length == 2 && isAskingForHelp(args[1])) {
+      execute(args[0], "--help");
+      return;
+    }
 
     // We check whether or not we have a main verticle specified via the getMainVerticle method.
     // By default this method retrieve the value from the 'Main-Verticle' Manifest header. However it can be overridden.
@@ -220,18 +252,18 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
     final String verticle = getMainVerticle();
     if (verticle != null) {
       // We have a main verticle, append it to the arg list and execute the default command (run)
-      String[] newwArgs = new String[args.length + 1];
-      newwArgs[0] = verticle;
-      System.arraycopy(args, 0, newwArgs, 1, args.length);
-      execute(getDefaultCommand(), newwArgs);
+      String[] newArgs = new String[args.length + 1];
+      newArgs[0] = verticle;
+      System.arraycopy(args, 0, newArgs, 1, args.length);
+      execute(getDefaultCommand(), newArgs);
       return;
     }
 
+    // Fall backs
     if (args.length == 0) {
-      execute(null);
+      printGlobalUsage();
     } else {
-      // The first argument is the command name.
-      execute(args[0], Arrays.copyOfRange(args, 1, args.length));
+      printCommandNotFound(args[0]);
     }
   }
 

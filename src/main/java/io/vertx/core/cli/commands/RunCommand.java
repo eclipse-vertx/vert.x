@@ -80,7 +80,7 @@ public class RunCommand extends BareCommand {
     this.config = configuration;
   }
 
-  @Argument(index = 0, name = "main-verticle", required = false)
+  @Argument(index = 0, name = "main-verticle", required = true)
   public void setMainVerticle(String verticle) {
     this.mainVerticle = verticle;
   }
