@@ -7,7 +7,9 @@ import java.io.File;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Default implementation of {@link Command} using annotation to define itself. It is highly recommended to extend
@@ -19,6 +21,7 @@ public abstract class DefaultCommand implements Command {
   private List<String> props;
   protected ExecutionContext executionContext;
   protected PrintStream out;
+  private Map<String, String> sysProps = new HashMap<>();
 
   public File getCwd() {
     return cwd != null ? cwd : new File(".");
@@ -237,6 +240,7 @@ public abstract class DefaultCommand implements Command {
           String key = prop.substring(0, p);
           String val = prop.substring(p + 1);
           System.setProperty(key, val);
+          sysProps.put(key, val);
         }
       }
     }
@@ -252,6 +256,10 @@ public abstract class DefaultCommand implements Command {
         }
       }
     }
+  }
+
+  protected Map<String, String> getSystemProperties() {
+    return sysProps;
   }
 
 }

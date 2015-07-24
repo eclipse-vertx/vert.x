@@ -163,22 +163,15 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
   }
 
   protected String getCommandLinePrefix() {
-    // Let's try to do an educated guess.
-
-    // Check whether or not the "sun.java.command" system property is defined
-    final String property = System.getProperty("sun.java.command");
-    if (property != null) {
-      final String[] segments = property.split(" ");
-      if (segments.length >= 1) {
-        // Fat Jar ?
-        if (segments[0].endsWith(".jar")) {
-          return "java -jar " + segments[0];
-        } else {
-          // Starter or another launcher passed as command line
-          return "java " + segments[0];
-        }
-      }
+    String jar = ReflectionUtils.getJar();
+    if (jar != null) {
+      return "java -jar " + jar;
     }
+    String command = ReflectionUtils.getFirstSegmentOfCommand();
+    if (command != null) {
+      return "java " + command;
+    }
+
     return "vertx";
   }
 
@@ -226,12 +219,12 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
     // - if args has been set, display command usage.
 
 
-    if (args.length == 1  && isAskingForHelp(args[0])) {
+    if (args.length >= 1  && isAskingForHelp(args[0])) {
       printGlobalUsage();
       return;
     }
 
-    if (args.length == 1  && isAskingForVersion(args[0])) {
+    if (args.length >= 1  && isAskingForVersion(args[0])) {
       execute("version");
       return;
     }
@@ -241,7 +234,7 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
       return;
     }
 
-    if (args.length == 2 && isAskingForHelp(args[1])) {
+    if (args.length >= 2 && isAskingForHelp(args[1])) {
       execute(args[0], "--help");
       return;
     }
