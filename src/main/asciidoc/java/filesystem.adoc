@@ -200,7 +200,7 @@ close or when the JVM is shutdown with `link:../../apidocs/io/vertx/core/file/Op
 ==== Flushing data to underlying storage.
 
 In the `OpenOptions`, you can enable/disable the automatic synchronisation of the content on every write using
-`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setDSync-boolean-[setDSync]`. In that case, you can manually flush any writes from the OS
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setDsync-boolean-[setDsync]`. In that case, you can manually flush any writes from the OS
 cache by calling the `link:../../apidocs/io/vertx/core/file/AsyncFile.html#flush--[flush]` method.
 
 This method can also be called with an handler which will be called when the flush is complete.

@@ -279,11 +279,11 @@ public class HttpTest extends HttpTestBase {
     assertEquals(randString, options.getHost());
 
     assertNull(options.getWebsocketSubProtocols());
-    assertEquals(options, options.setWebsocketSubProtocol("foo"));
+    assertEquals(options, options.setWebsocketSubProtocols("foo"));
     assertEquals("foo", options.getWebsocketSubProtocols());
 
     HttpServerOptions optionsCopy = new HttpServerOptions(options);
-    assertEquals(options, optionsCopy.setWebsocketSubProtocol(new String(options.getWebsocketSubProtocols())));
+    assertEquals(options, optionsCopy.setWebsocketSubProtocols(new String(options.getWebsocketSubProtocols())));
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -489,12 +489,16 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tryUseCompression, options.isTryUseCompression());
 
     // Test other keystore/truststore types
+    json.remove("keyStoreOptions");
+    json.remove("trustStoreOptions");
     json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
       .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpClientOptions(json);
     assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
+    json.remove("pfxKeyCertOptions");
+    json.remove("pfxTrustOptions");
     json.put("pemKeyCertOptions", new JsonObject())
       .put("pemTrustOptions", new JsonObject());
     options = new HttpClientOptions(json);
@@ -552,7 +556,7 @@ public class HttpTest extends HttpTestBase {
     options.setAcceptBacklog(acceptBacklog);
     options.setCompressionSupported(compressionSupported);
     options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
-    options.setWebsocketSubProtocol(wsSubProtocol);
+    options.setWebsocketSubProtocols(wsSubProtocol);
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
@@ -691,12 +695,16 @@ public class HttpTest extends HttpTestBase {
     assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
 
     // Test other keystore/truststore types
+    json.remove("keyStoreOptions");
+    json.remove("trustStoreOptions");
     json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
       .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpServerOptions(json);
     assertTrue(options.getTrustOptions() instanceof PfxOptions);
     assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
+    json.remove("pfxKeyCertOptions");
+    json.remove("pfxTrustOptions");
     json.put("pemKeyCertOptions", new JsonObject())
       .put("pemTrustOptions", new JsonObject());
     options = new HttpServerOptions(json);

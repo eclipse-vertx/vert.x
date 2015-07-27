@@ -59,10 +59,8 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions() {
     super();
+    init();
     setPort(DEFAULT_PORT); // We override the default for port
-    compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
-    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
   }
 
   /**
@@ -85,12 +83,15 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions(JsonObject json) {
     super(json);
-    this.compressionSupported = json.getBoolean("compressionSupported", DEFAULT_COMPRESSION_SUPPORTED);
-    this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAX_WEBSOCKET_FRAME_SIZE);
-    this.websocketSubProtocols = json.getString("websocketSubProtocols", null);
-    this.handle100ContinueAutomatically = json.getBoolean("handle100ContinueAutomatically",
-      DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY);
+    init();
     setPort(json.getInteger("port", DEFAULT_PORT));
+    HttpServerOptionsConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
+    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
   }
 
   @Override
@@ -260,7 +261,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @param subProtocols  comma separated list of subprotocols
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setWebsocketSubProtocol(String subProtocols) {
+  public HttpServerOptions setWebsocketSubProtocols(String subProtocols) {
     websocketSubProtocols = subProtocols;
     return this;
   }

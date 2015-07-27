@@ -136,7 +136,7 @@ Set the trust options in jks format, aka Java trustore+++
 |+++
 Set whether Netty pooled buffers are enabled+++
 
-|[[websocketSubProtocol]]`websocketSubProtocol`
+|[[websocketSubProtocols]]`websocketSubProtocols`
 |`String`
 |+++
 Set the websocket subprotocols supported by the server.+++
