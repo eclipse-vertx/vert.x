@@ -15,11 +15,11 @@
  */
 package io.vertx.core;
 
-import io.vertx.core.cli.VertxCommandLineInterface;
-import io.vertx.core.cli.VertxLifeycleHooks;
+import io.vertx.core.impl.cli.VertxCommandLineInterface;
+import io.vertx.core.spi.cli.VertxLifecycleHooks;
 
 
-public class Launcher extends VertxCommandLineInterface implements VertxLifeycleHooks {
+public class Launcher extends VertxCommandLineInterface implements VertxLifecycleHooks {
 
   public static void main(String[] args) {
     new Launcher().dispatch(args);

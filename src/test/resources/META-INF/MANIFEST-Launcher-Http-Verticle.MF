@@ -1,2 +1,2 @@
 Main-Class: io.vertx.core.Launcher
-Main-Verticle: io.vertx.core.cli.commands.HttpTestVerticle
+Main-Verticle: io.vertx.core.impl.cli.commands.HttpTestVerticle
