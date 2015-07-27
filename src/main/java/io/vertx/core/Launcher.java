@@ -16,7 +16,7 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.cli.VertxCommandLineInterface;
-import io.vertx.core.spi.cli.VertxLifecycleHooks;
+import io.vertx.core.impl.cli.VertxLifecycleHooks;
 
 
 public class Launcher extends VertxCommandLineInterface implements VertxLifecycleHooks {

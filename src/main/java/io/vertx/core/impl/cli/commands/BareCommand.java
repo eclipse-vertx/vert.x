@@ -19,6 +19,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.cli.VertxLifecycleHooks;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.metrics.MetricsOptions;
