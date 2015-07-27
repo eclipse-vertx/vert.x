@@ -1,8 +1,9 @@
 package io.vertx.core.cli.commands;
 
-import io.vertx.core.cli.Description;
-import io.vertx.core.cli.Hidden;
-import io.vertx.core.cli.Summary;
+import io.vertx.core.cli.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Summary("Creates a bare instance of vert.x.")
 @Description("This command launches a vert.x instance but do not deploy any verticles. It will " +
@@ -18,4 +19,23 @@ public class BareAliasCommand extends BareCommand {
     return "-ha";
   }
 
+  /**
+   * Executes the command.
+   *
+   * @throws CommandLineException If anything went wrong.
+   */
+  @Override
+  public void run() throws CommandLineException {
+    if (executionContext.getInterface().getMainVerticle() != null) {
+      // Do not execute 'bare' we need to deploy the main verticle with -ha
+      System.out.println(VertxCommandLineInterface.getProcessArguments());
+      List<String> args = new ArrayList<>();
+      args.add("run");
+      args.add(executionContext.getInterface().getMainVerticle());
+      args.addAll(VertxCommandLineInterface.getProcessArguments());
+      executionContext.getInterface().dispatch(args.toArray(new String[args.size()]));
+    } else {
+      super.run();
+    }
+  }
 }

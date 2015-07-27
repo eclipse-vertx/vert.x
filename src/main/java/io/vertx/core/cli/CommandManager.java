@@ -6,8 +6,6 @@ import io.vertx.core.spi.Command;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
 public class CommandManager {

@@ -105,7 +105,7 @@ public class BareCommand extends DefaultCommand {
     MetricsOptions metricsOptions = getMetricsOptions();
     options = new VertxOptions().setMetricsOptions(metricsOptions);
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
-
+    Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
       if (clusterHost == null) {
@@ -151,14 +151,14 @@ public class BareCommand extends DefaultCommand {
         result.get().cause().printStackTrace();
         return null;
       }
-      vertx = result.get().result();
+      instance = result.get().result();
     } else {
       beforeStartingVertx(options);
-      vertx = Vertx.vertx(options);
+      instance = Vertx.vertx(options);
     }
     addShutdownHook();
     afterStartingVertx();
-    return vertx;
+    return instance;
   }
 
 
