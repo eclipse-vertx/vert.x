@@ -256,7 +256,12 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
     if (args.length == 0) {
       printGlobalUsage();
     } else {
-      printCommandNotFound(args[0]);
+      // compatibility support
+      if (args[0].equalsIgnoreCase("-ha")) {
+        execute("bare", Arrays.copyOfRange(args, 1, args.length));
+      } else {
+        printCommandNotFound(args[0]);
+      }
     }
   }
 
@@ -294,7 +299,7 @@ public class VertxCommandLineInterface extends UsageMessageFormatter {
         Manifest manifest = new Manifest(resources.nextElement().openStream());
         Attributes attributes = manifest.getMainAttributes();
         String mainClass = attributes.getValue("Main-Class");
-        if (main.getClass().getName().equals(mainClass)) {
+        if (main != null  && main.getClass().getName().equals(mainClass)) {
           String theMainVerticle = attributes.getValue("Main-Verticle");
           if (theMainVerticle != null) {
             return theMainVerticle;

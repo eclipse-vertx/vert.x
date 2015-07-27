@@ -93,6 +93,78 @@ public class RunCommandTest extends CommandTestBase {
     assertThat(getContent().getBoolean("clustered")).isTrue();
   }
 
+  @Test
+  public void testThatHADeploysVerticleWhenCombinedWithCluster() throws IOException {
+    setManifest("MANIFEST-Launcher-Http-Verticle.MF");
+    cli.dispatch(new Launcher(), new String[] {"-ha", "-cluster"});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    assertThat(getContent().getBoolean("clustered")).isTrue();
+  }
+
+  @Test
+  public void testThatHADeploysVerticle() throws IOException {
+    setManifest("MANIFEST-Launcher-Http-Verticle.MF");
+    cli.dispatch(new Launcher(), new String[] {"-ha", "-cluster"});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    assertThat(getContent().getBoolean("clustered")).isTrue();
+  }
+
+  @Test
+  public void testWithCOnfProvidedInline() throws IOException {
+    setManifest("MANIFEST-Launcher-Http-Verticle.MF");
+    cli.dispatch(new Launcher(), new String[] {"--conf={\"name\":\"vertx\"}"});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    assertThat(getContent().getJsonObject("conf").getString("name")).isEqualToIgnoringCase("vertx");
+  }
+
+  @Test
+  public void testWithCOnfProvidedAsFile() throws IOException {
+    setManifest("MANIFEST-Launcher-Http-Verticle.MF");
+    cli.dispatch(new Launcher(), new String[] {"--conf", "target/test-classes/conf.json"});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    assertThat(getContent().getJsonObject("conf").getString("name")).isEqualToIgnoringCase("vertx");
+  }
+
+  @Test
+  public void testMetricsEnabledFromCommandLine() throws IOException {
+    setManifest("MANIFEST-Launcher-Http-Verticle.MF");
+    cli.dispatch(new Launcher(), new String[] {"-Dvertx.metrics.options.enabled=true"});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    // Check that the metrics are enabled
+    // We cannot use the response from the verticle as it uses the DymmyVertxMetrics (no metrics provider)
+    assertThat(((RunCommand)cli.getCommand("run")).options.getMetricsOptions().isEnabled()).isTrue();
+  }
+
   private int getHttpCode() throws IOException {
     return ((HttpURLConnection) new URL("http://localhost:8080")
         .openConnection()).getResponseCode();
