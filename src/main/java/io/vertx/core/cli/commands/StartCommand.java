@@ -18,6 +18,7 @@ public class StartCommand extends DefaultCommand {
 
   public static String osName = System.getProperty("os.name").toLowerCase();
   private String id;
+  private String launcher;
 
 
   @Option(longName = "vertx.id", shortName = "id", required = false, acceptValue = true)
@@ -26,7 +27,11 @@ public class StartCommand extends DefaultCommand {
     this.id = id;
   }
 
-  //TODO launcher option
+  @Option(longName = "launcher-class")
+  @Hidden
+  public void setLauncherClass(String clazz) {
+    this.launcher = clazz;
+  }
 
   @Override
   public String name() {
@@ -42,19 +47,26 @@ public class StartCommand extends DefaultCommand {
   public void run() throws CommandLineException {
     out.println("Starting vert.x application...");
     List<String> cmd = new ArrayList<>();
-    cmd.add(getJava().getAbsolutePath());
+    ProcessBuilder builder = new ProcessBuilder();
+    addJavaCommand(cmd);
 
-    if (isLaunchedAsFatJar()) {
-      cmd.add("-jar");
-      cmd.add(ReflectionUtils.getJar());
+    // Add the classpath to env.
+    builder.environment().put("CLASSPATH", System.getProperty("java.class.path"));
+
+    if (launcher != null) {
+      ExecUtils.addArgument(cmd, launcher);
+    } else if (isLaunchedAsFatJar()) {
+      ExecUtils.addArgument(cmd, "-jar");
+      ExecUtils.addArgument(cmd, ReflectionUtils.getJar());
     } else {
-      cmd.add(ReflectionUtils.getFirstSegmentOfCommand());
+      ExecUtils.addArgument(cmd, ReflectionUtils.getFirstSegmentOfCommand());
     }
 
-    cmd.addAll(getArguments());
+    getArguments().stream().forEach(arg -> ExecUtils.addArgument(cmd, arg));
 
     try {
-      new ProcessBuilder(cmd).start();
+      builder.command(cmd);
+      builder.start();
       out.println(id);
     } catch (IOException e) {
       out.println("Cannot create vert.x application process");
@@ -63,10 +75,21 @@ public class StartCommand extends DefaultCommand {
 
   }
 
+  private void addJavaCommand(List<String> cmd) {
+    if (ExecUtils.isWindows()) {
+      ExecUtils.addArgument(cmd, "cmd.exe");
+      ExecUtils.addArgument(cmd, "/C");
+      ExecUtils.addArgument(cmd, "start");
+      ExecUtils.addArgument(cmd, "vertx.id - " + id);
+      ExecUtils.addArgument(cmd, "/B");
+    }
+    ExecUtils.addArgument(cmd, getJava().getAbsolutePath());
+  }
+
   private File getJava() {
     File java;
     File home = new File(System.getProperty("java.home"));
-    if (isWindows()) {
+    if (ExecUtils.isWindows()) {
       java = new File(home, "bin/java.exe");
     } else {
       java = new File(home, "bin/java");
@@ -101,10 +124,5 @@ public class StartCommand extends DefaultCommand {
       id = UUID.randomUUID().toString();
     }
     return id;
-  }
-
-
-  static public boolean isWindows() {
-    return osName.contains("windows");
   }
 }

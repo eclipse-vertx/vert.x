@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 @Description("List all vert.x application launched with the `start` command")
 public class ListCommand extends DefaultCommand {
 
-  public static String osName = System.getProperty("os.name").toLowerCase();
 
   private final static Pattern PS = Pattern.compile("-Dvertx.id=(.*)\\s*");
 
@@ -37,10 +36,10 @@ public class ListCommand extends DefaultCommand {
   @Override
   public void run() throws CommandLineException {
     out.println("Listing vert.x applications...");
+    List<String> cmd = new ArrayList<>();
 
-    if (!isWindows()) {
+    if (!ExecUtils.isWindows()) {
       try {
-        List<String> cmd = new ArrayList<>();
         cmd.add("sh");
         cmd.add("-c");
         cmd.add("ps ax | grep \"vertx.id=\"");
@@ -57,16 +56,35 @@ public class ListCommand extends DefaultCommand {
         }
         process.waitFor();
       } catch (Exception e) {
-        e.printStackTrace();
+        e.printStackTrace(out);
       }
 
     } else {
-      throw new UnsupportedOperationException("Windows not supported yet");
+      try {
+
+        // Use wmic.
+        cmd.add("WMIC");
+        cmd.add("PROCESS");
+        cmd.add("WHERE");
+        cmd.add("CommandLine like '%java.exe%'");
+        cmd.add("GET");
+        cmd.add("CommandLine");
+        cmd.add("/VALUE");
+
+        final Process process = new ProcessBuilder(cmd).start();
+        BufferedReader reader =
+            new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+          final Matcher matcher = PS.matcher(line);
+          if (matcher.find()) {
+            out.println(matcher.group(1));
+          }
+        }
+        process.waitFor();
+      } catch (Exception e) {
+        e.printStackTrace(out);
+      }
     }
-  }
-
-
-  static public boolean isWindows() {
-    return osName.contains("windows");
   }
 }

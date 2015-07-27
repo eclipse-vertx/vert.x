@@ -1,6 +1,9 @@
 package io.vertx.core.cli.commands;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.cli.*;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -23,8 +26,6 @@ public class RunCommand extends BareCommand {
 
   private static final String PATH_SEP = System.getProperty("path.separator");
 
-  protected Vertx vertx;
-  protected VertxOptions options;
   protected DeploymentOptions deploymentOptions;
 
   private List<String> classpath;
@@ -129,10 +130,9 @@ public class RunCommand extends BareCommand {
    */
   @Override
   public void run() throws CommandLineException {
-    vertx = startVertx();
+    super.run();
     if (vertx == null) {
-      // Throwable should have been logged at this point
-      return;
+      return; // Already logged.
     }
 
     JsonObject conf = getConfiguration();

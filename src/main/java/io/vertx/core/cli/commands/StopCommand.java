@@ -3,7 +3,6 @@ package io.vertx.core.cli.commands;
 import io.vertx.core.cli.*;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +15,6 @@ import java.util.regex.Pattern;
 @Summary("Stop a vert.x application")
 @Description("This command stops a vert.x application started with the `start` command. The command requires the application id as argument. Use the `list` command to get the list of application")
 public class StopCommand extends DefaultCommand {
-
-  public static String osName = System.getProperty("os.name").toLowerCase();
 
   private String id;
 
@@ -42,17 +39,20 @@ public class StopCommand extends DefaultCommand {
   @Override
   public void run() throws CommandLineException {
     if (id == null) {
-      out.println("Application Id not specified");
+      out.println("Application id not specified... Retrieving vert.x applications");
       executionContext.execute("list");
       return;
     }
 
     out.println("Stopping vert.x application '" + id + "'");
-    if (isWindows()) {
-      throw new UnsupportedOperationException("Windows not supported yet");
+    if (ExecUtils.isWindows()) {
+      terminateWindowsApplication();
+    } else {
+      terminateLinuxApplication();
     }
+  }
 
-
+  private void terminateLinuxApplication() {
     String pid = pid();
     if (pid == null) {
       out.println("Cannot find process for application id " + id);
@@ -69,7 +69,26 @@ public class StopCommand extends DefaultCommand {
       out.println("Failed to stop application '" + id + "'");
       e.printStackTrace(out);
     }
+  }
 
+  private void terminateWindowsApplication() {
+    List<String> cmd = new ArrayList<>();
+    // Use wmic.
+    cmd.add("WMIC");
+    cmd.add("PROCESS");
+    cmd.add("WHERE");
+    cmd.add("CommandLine like '%vertx.id=" + id + "%'");
+    cmd.add("CALL");
+    cmd.add("TERMINATE");
+
+    try {
+      final Process process = new ProcessBuilder(cmd).start();
+      out.println("Application '" + id + "' stopped");
+      process.waitFor();
+    } catch (Exception e) {
+      out.println("Failed to stop application '" + id + "'");
+      e.printStackTrace(out);
+    }
 
   }
 
@@ -92,12 +111,8 @@ public class StopCommand extends DefaultCommand {
       }
       process.waitFor();
     } catch (Exception e) {
-      e.printStackTrace();
+      e.printStackTrace(out);
     }
     return null;
-  }
-
-  static public boolean isWindows() {
-    return osName.contains("windows");
   }
 }
