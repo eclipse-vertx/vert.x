@@ -2,7 +2,11 @@
   "name": "java",
   "generators": [ {
     "kind": "dataObject",
-    "fileName": "'asciidoc/cheatsheet/' + type.raw.simpleName + '.adoc'",
+    "fileName": "model.concrete ? 'asciidoc/cheatsheet/' + type.raw.simpleName + '.adoc' : null",
     "templateFileName": "vertx-java/template/cheatsheet.templ"
+  },{
+    "kind": "dataObject",
+    "fileName": "fqn + 'Helper.java'",
+    "templateFileName": "vertx-java/template/dataObjectHelper.templ"
   } ]
 }

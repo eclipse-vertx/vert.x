@@ -93,15 +93,8 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
    * @param json  the JSON
    */
   public PemTrustOptions(JsonObject json) {
-    super();
-    this.certPaths = new ArrayList<>();
-    this.certValues = new ArrayList<>();
-    for (Object certPath : json.getJsonArray("certPaths", new JsonArray())) {
-      certPaths.add((String) certPath);
-    }
-    for (Object certValue : json.getJsonArray("certValues", new JsonArray())) {
-      certValues.add(Buffer.buffer(Base64.getDecoder().decode((String) certValue)));
-    }
+    this();
+    PemTrustOptionsHelper.fromJson(json, this);
   }
 
   /**

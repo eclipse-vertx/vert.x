@@ -125,7 +125,7 @@
  * ==== Flushing data to underlying storage.
  *
  * In the `OpenOptions`, you can enable/disable the automatic synchronisation of the content on every write using
- * {@link io.vertx.core.file.OpenOptions#setDSync(boolean)}. In that case, you can manually flush any writes from the OS
+ * {@link io.vertx.core.file.OpenOptions#setDsync(boolean)}. In that case, you can manually flush any writes from the OS
  * cache by calling the {@link io.vertx.core.file.AsyncFile#flush()} method.
  *
  * This method can also be called with an handler which will be called when the flush is complete.
