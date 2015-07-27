@@ -64,6 +64,14 @@ public class StartStopListCommandsTest extends CommandTestBase {
       }
       return false;
     });
+
+    waitUntil(() -> {
+      output.reset();
+      cli.dispatch(new String[]{"list"});
+      return ! output.toString().contains(id);
+    });
+
+    assertThat(output.toString()).hasLineCount(1);
   }
 
   @Test
@@ -108,6 +116,14 @@ public class StartStopListCommandsTest extends CommandTestBase {
       }
       return false;
     });
+
+    waitUntil(() -> {
+      output.reset();
+      cli.dispatch(new String[]{"list"});
+      return ! output.toString().contains(id);
+    });
+
+    assertThat(output.toString()).hasLineCount(1);
   }
 
   @Test
@@ -150,6 +166,14 @@ public class StartStopListCommandsTest extends CommandTestBase {
       }
       return false;
     });
+
+    waitUntil(() -> {
+      output.reset();
+      cli.dispatch(new String[]{"list"});
+      return ! output.toString().contains(id);
+    });
+
+    assertThat(output.toString()).hasLineCount(1);
   }
 
   @Test
@@ -192,6 +216,14 @@ public class StartStopListCommandsTest extends CommandTestBase {
       }
       return false;
     });
+
+    waitUntil(() -> {
+      output.reset();
+      cli.dispatch(new String[]{"list"});
+      return ! output.toString().contains(id);
+    });
+
+    assertThat(output.toString()).hasLineCount(1);
   }
 
   private int getHttpCode() throws IOException {
