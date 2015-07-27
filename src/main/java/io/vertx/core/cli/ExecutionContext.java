@@ -24,6 +24,11 @@ public class ExecutionContext extends HashMap<String, Object> {
     return commandLine;
   }
 
+  public VertxCommandLineInterface getInterface() {
+    return cli;
+  }
+
+
   /**
    * Reports an error.
    *
