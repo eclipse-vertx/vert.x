@@ -25,7 +25,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class NetClientOptions extends ClientOptionsBase {
 
   /**

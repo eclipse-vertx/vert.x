@@ -66,7 +66,7 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
 
   private String keyPath;

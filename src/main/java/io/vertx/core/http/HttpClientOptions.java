@@ -31,7 +31,7 @@ import io.vertx.core.net.TCPSSLOptions;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class HttpClientOptions extends ClientOptionsBase {
 
   /**

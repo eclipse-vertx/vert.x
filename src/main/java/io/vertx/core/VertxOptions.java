@@ -28,7 +28,7 @@ import java.util.Objects;
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class VertxOptions {
 
   /**

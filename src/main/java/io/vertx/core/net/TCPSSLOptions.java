@@ -32,7 +32,7 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**

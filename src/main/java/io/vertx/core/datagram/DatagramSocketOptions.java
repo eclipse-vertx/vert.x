@@ -26,7 +26,7 @@ import io.vertx.core.net.NetworkOptions;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class DatagramSocketOptions extends NetworkOptions {
 
   /**

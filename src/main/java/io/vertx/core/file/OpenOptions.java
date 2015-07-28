@@ -24,7 +24,7 @@ import io.vertx.core.json.JsonObject;
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class OpenOptions {
 
   public static final String DEFAULT_PERMS = null;

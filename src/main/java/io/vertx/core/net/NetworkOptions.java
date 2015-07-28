@@ -25,7 +25,7 @@ import io.vertx.core.net.impl.SocketDefaults;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public abstract class NetworkOptions {
 
   /**

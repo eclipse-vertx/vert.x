@@ -22,7 +22,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject(inheritConverter = false)
+@DataObject(inheritConverter = false, generateConverter = true)
 public class ChildNotInheritingDataObject extends ParentDataObject {
 
   private String childProperty;

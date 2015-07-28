@@ -61,7 +61,7 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class PemTrustOptions implements TrustOptions, Cloneable {
 
   private ArrayList<String> certPaths;
