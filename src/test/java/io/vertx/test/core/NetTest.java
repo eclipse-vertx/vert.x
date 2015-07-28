@@ -408,8 +408,8 @@ public class NetTest extends VertxTestBase {
         .put("connectTimeout", connectTimeout)
         .put("trustAll", trustAll)
         .put("crlPaths", new JsonArray().add(crlPath))
-        .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
-        .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+        .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
+        .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
         .put("reconnectAttempts", reconnectAttempts)
         .put("reconnectInterval", reconnectInterval);
 
