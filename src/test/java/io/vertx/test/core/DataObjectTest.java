@@ -185,6 +185,17 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(Collections.singletonList(jsonObject), obj.getAddedJsonObjects());
     assertEquals(Collections.singletonList(jsonArray), obj.getAddedJsonArrays());
     assertEquals(Collections.singletonList(httpMethod), obj.getAddedHttpMethods());
+
+    // Sometimes json can use java collections so test it runs fine in this case
+    json = new JsonObject();
+    json.put("aggregatedDataObject", new JsonObject().put("value", aggregatedDataObject.getValue()).getMap());
+    json.put("aggregatedDataObjects", new JsonArray().add(new JsonObject().put("value", aggregatedDataObject.getValue()).getMap()));
+    json.put("addedAggregatedDataObjects", new JsonArray().add(new JsonObject().put("value", aggregatedDataObject.getValue()).getMap()));
+    obj = new TestDataObject();
+    TestDataObjectConverter.fromJson(json, obj);
+    assertEquals(aggregatedDataObject, obj.getAggregatedDataObject());
+    assertEquals(Collections.singletonList(aggregatedDataObject), obj.getAggregatedDataObjects());
+    assertEquals(Collections.singletonList(aggregatedDataObject), obj.getAddedAggregatedDataObjects());
   }
 
   @Test

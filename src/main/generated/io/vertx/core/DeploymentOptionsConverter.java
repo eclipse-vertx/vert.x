@@ -10,11 +10,12 @@ public class DeploymentOptionsConverter {
       obj.setConfig(((JsonObject)json.getValue("config")).copy());
     }
     if (json.getValue("extraClasspath") instanceof JsonArray) {
-      obj.setExtraClasspath(
-          ((java.util.List<?>)json.getJsonArray("extraClasspath").getList()).
-              stream().
-              map(item -> (String)item).
-              collect(java.util.stream.Collectors.toList()));
+      java.util.List<java.lang.String> list = new java.util.ArrayList<>();
+      for (Object item : json.getJsonArray("extraClasspath")) {
+        if (item instanceof String)
+          list.add((String)item);
+      };
+      obj.setExtraClasspath(list);
     }
     if (json.getValue("ha") instanceof Boolean) {
       obj.setHa((Boolean)json.getValue("ha"));
@@ -23,11 +24,12 @@ public class DeploymentOptionsConverter {
       obj.setInstances(((Number)json.getValue("instances")).intValue());
     }
     if (json.getValue("isolatedClasses") instanceof JsonArray) {
-      obj.setIsolatedClasses(
-          ((java.util.List<?>)json.getJsonArray("isolatedClasses").getList()).
-              stream().
-              map(item -> (String)item).
-              collect(java.util.stream.Collectors.toList()));
+      java.util.List<java.lang.String> list = new java.util.ArrayList<>();
+      for (Object item : json.getJsonArray("isolatedClasses")) {
+        if (item instanceof String)
+          list.add((String)item);
+      };
+      obj.setIsolatedClasses(list);
     }
     if (json.getValue("isolationGroup") instanceof String) {
       obj.setIsolationGroup((String)json.getValue("isolationGroup"));
