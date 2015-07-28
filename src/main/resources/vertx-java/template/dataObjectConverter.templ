@@ -2,16 +2,16 @@
 	@if{property.array}
 	@{indent}if (json.getValue("@{property.name}") instanceof JsonArray) {\n
 		@if{property.adder}
-			@{indent}  for (Object item : json.getJsonArray("@{property.name}")) {\n
+			@{indent}  json.getJsonArray("@{property.name}").forEach(item -> {\n
 			@{indent}    if (item instanceof @{cast})\n
 			@{indent}      obj.@{property.writerMethod}(@{before}item@{after});\n
-			@{indent}  };\n
+			@{indent}  });\n
 		@else{}
 			@{indent}  java.util.List<@{propType.name}> list = new java.util.ArrayList<>();\n
-			@{indent}  for (Object item : json.getJsonArray("@{property.name}")) {\n
+			@{indent}  json.getJsonArray("@{property.name}").forEach( item -> {\n
 			@{indent}    if (item instanceof @{cast})\n
 			@{indent}      list.add(@{before}item@{after});\n
-			@{indent}  };\n
+			@{indent}  });\n
 			@{indent}  obj.@{property.writerMethod}(list);\n
 		@end{}
 	@{indent}}\n

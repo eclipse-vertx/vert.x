@@ -11,10 +11,10 @@ public class DeploymentOptionsConverter {
     }
     if (json.getValue("extraClasspath") instanceof JsonArray) {
       java.util.List<java.lang.String> list = new java.util.ArrayList<>();
-      for (Object item : json.getJsonArray("extraClasspath")) {
+      json.getJsonArray("extraClasspath").forEach( item -> {
         if (item instanceof String)
           list.add((String)item);
-      };
+      });
       obj.setExtraClasspath(list);
     }
     if (json.getValue("ha") instanceof Boolean) {
@@ -25,10 +25,10 @@ public class DeploymentOptionsConverter {
     }
     if (json.getValue("isolatedClasses") instanceof JsonArray) {
       java.util.List<java.lang.String> list = new java.util.ArrayList<>();
-      for (Object item : json.getJsonArray("isolatedClasses")) {
+      json.getJsonArray("isolatedClasses").forEach( item -> {
         if (item instanceof String)
           list.add((String)item);
-      };
+      });
       obj.setIsolatedClasses(list);
     }
     if (json.getValue("isolationGroup") instanceof String) {

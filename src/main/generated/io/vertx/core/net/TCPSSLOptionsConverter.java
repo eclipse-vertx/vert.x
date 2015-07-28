@@ -7,22 +7,22 @@ public class TCPSSLOptionsConverter {
 
   public static void fromJson(JsonObject json, TCPSSLOptions obj) {
     if (json.getValue("crlPaths") instanceof JsonArray) {
-      for (Object item : json.getJsonArray("crlPaths")) {
+      json.getJsonArray("crlPaths").forEach(item -> {
         if (item instanceof String)
           obj.addCrlPath((String)item);
-      };
+      });
     }
     if (json.getValue("crlValues") instanceof JsonArray) {
-      for (Object item : json.getJsonArray("crlValues")) {
+      json.getJsonArray("crlValues").forEach(item -> {
         if (item instanceof String)
           obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
-      };
+      });
     }
     if (json.getValue("enabledCipherSuites") instanceof JsonArray) {
-      for (Object item : json.getJsonArray("enabledCipherSuites")) {
+      json.getJsonArray("enabledCipherSuites").forEach(item -> {
         if (item instanceof String)
           obj.addEnabledCipherSuite((String)item);
-      };
+      });
     }
     if (json.getValue("idleTimeout") instanceof Number) {
       obj.setIdleTimeout(((Number)json.getValue("idleTimeout")).intValue());

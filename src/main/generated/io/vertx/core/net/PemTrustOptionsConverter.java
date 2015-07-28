@@ -7,16 +7,16 @@ public class PemTrustOptionsConverter {
 
   public static void fromJson(JsonObject json, PemTrustOptions obj) {
     if (json.getValue("certPaths") instanceof JsonArray) {
-      for (Object item : json.getJsonArray("certPaths")) {
+      json.getJsonArray("certPaths").forEach(item -> {
         if (item instanceof String)
           obj.addCertPath((String)item);
-      };
+      });
     }
     if (json.getValue("certValues") instanceof JsonArray) {
-      for (Object item : json.getJsonArray("certValues")) {
+      json.getJsonArray("certValues").forEach(item -> {
         if (item instanceof String)
           obj.addCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
-      };
+      });
     }
   }
 
