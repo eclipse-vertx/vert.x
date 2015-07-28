@@ -16,10 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Starter;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
@@ -29,8 +26,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -47,6 +47,15 @@ public class StarterTest extends VertxTestBase {
     TestVerticle.instanceCount.set(0);
     TestVerticle.processArgs = null;
     TestVerticle.conf = null;
+
+    Launcher.resetProcessArguments();
+
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Starter.MF");
+    if (! manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Starter.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
   }
 
   @Override
