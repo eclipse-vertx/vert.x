@@ -6,7 +6,7 @@
     "templateFileName": "vertx-java/template/cheatsheet.templ"
   },{
     "kind": "dataObject",
-    "fileName": "model.class ? fqn + 'Converter.java' : null",
+    "fileName": "(model.isClass() && model.getGenerateConverter()) ? (fqn + 'Converter.java') : null",
     "templateFileName": "vertx-java/template/dataObjectConverter.templ"
   } ]
 }

@@ -21,6 +21,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.codegen.AggregatedDataObject;
+import io.vertx.test.codegen.NoConverterDataObject;
 import io.vertx.test.codegen.TestDataObject;
 import io.vertx.test.codegen.TestDataObjectConverter;
 import org.junit.Test;
@@ -423,5 +424,15 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(new JsonArray(), json.getJsonArray("addedJsonObjects"));
     assertEquals(new JsonArray(), json.getJsonArray("addedJsonArrays"));
     assertEquals(new JsonArray(), json.getJsonArray("addedHttpMethods"));
+  }
+
+  @Test
+  public void testNoConverters() {
+    try {
+      NoConverterDataObject.class.getClassLoader().loadClass(NoConverterDataObject.class.getName() + "Converter");
+      fail("Was not expecting a converter to be generated");
+    } catch (ClassNotFoundException ignore) {
+      // Ok
+    }
   }
 }
