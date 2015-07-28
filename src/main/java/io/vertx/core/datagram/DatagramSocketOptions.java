@@ -70,12 +70,8 @@ public class DatagramSocketOptions extends NetworkOptions {
    */
   public DatagramSocketOptions() {
     super();
+    init();
     setReuseAddress(DEFAULT_REUSE_ADDRESS); // default is different for DatagramSocket
-    broadcast = DEFAULT_BROADCAST;
-    loopbackModeDisabled = DEFAULT_LOOPBACK_MODE_DISABLED;
-    multicastTimeToLive = DEFAULT_MULTICAST_TIME_TO_LIVE;
-    multicastNetworkInterface = DEFAULT_MULTICAST_NETWORK_INTERFACE;
-    ipV6 = DEFAULT_IPV6;
   }
 
   /**
@@ -98,8 +94,17 @@ public class DatagramSocketOptions extends NetworkOptions {
    * @param json  the JSON
    */
   public DatagramSocketOptions(JsonObject json) {
-    this();
+    super(json);
+    init();
     DatagramSocketOptionsConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    broadcast = DEFAULT_BROADCAST;
+    loopbackModeDisabled = DEFAULT_LOOPBACK_MODE_DISABLED;
+    multicastTimeToLive = DEFAULT_MULTICAST_TIME_TO_LIVE;
+    multicastNetworkInterface = DEFAULT_MULTICAST_NETWORK_INTERFACE;
+    ipV6 = DEFAULT_IPV6;
   }
 
   @Override
