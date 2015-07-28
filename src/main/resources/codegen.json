@@ -3,7 +3,7 @@
   "generators": [ {
     "kind": "dataObject",
     "fileName": "model.concrete ? 'asciidoc/cheatsheet/' + type.raw.simpleName + '.adoc' : null",
-    "templateFileName": "vertx-java/template/cheatsheet.templ"
+    "templateFileName": "vertx-java/template/dataObjectCheatsheet.templ"
   },{
     "kind": "dataObject",
     "fileName": "(model.isClass() && model.getGenerateConverter()) ? (fqn + 'Converter.java') : null",
