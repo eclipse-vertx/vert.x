@@ -42,4 +42,9 @@
 |`Array of String`
 |+++
 Add a certificate path+++
+
+|[[certValues]]`certValues`
+|`Array of Buffer`
+|+++
+Add a certificate value+++
 |===

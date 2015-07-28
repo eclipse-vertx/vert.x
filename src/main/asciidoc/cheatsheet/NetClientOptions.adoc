@@ -11,7 +11,7 @@
 ^|Name | Type ^| Description
 
 |[[connectTimeout]]`connectTimeout`
-|`Number`
+|`Number (int)`
 |+++
 Set the connect timeout+++
 
@@ -20,13 +20,18 @@ Set the connect timeout+++
 |+++
 Add a CRL path+++
 
+|[[crlValues]]`crlValues`
+|`Array of Buffer`
+|+++
+Add a CRL value+++
+
 |[[enabledCipherSuites]]`enabledCipherSuites`
 |`Array of String`
 |+++
 Add an enabled cipher suite+++
 
 |[[idleTimeout]]`idleTimeout`
-|`Number`
+|`Number (int)`
 |+++
 Set the idle timeout, in seconds. zero means don't timeout.
  This determines if a connection will timeout and be closed if no data is received within the timeout.+++
@@ -57,17 +62,17 @@ Set the key/cert options in pfx format.+++
 Set the trust options in pfx format+++
 
 |[[receiveBufferSize]]`receiveBufferSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the TCP receive buffer size+++
 
 |[[reconnectAttempts]]`reconnectAttempts`
-|`Number`
+|`Number (int)`
 |+++
 Set the value of reconnect attempts+++
 
 |[[reconnectInterval]]`reconnectInterval`
-|`Number`
+|`Number (long)`
 |+++
 Set the reconnect interval+++
 
@@ -77,12 +82,12 @@ Set the reconnect interval+++
 Set the value of reuse address+++
 
 |[[sendBufferSize]]`sendBufferSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the TCP send buffer size+++
 
 |[[soLinger]]`soLinger`
-|`Number`
+|`Number (int)`
 |+++
 Set whether SO_linger keep alive is enabled+++
 
@@ -102,7 +107,7 @@ Set whether TCP keep alive is enabled+++
 Set whether TCP no delay is enabled+++
 
 |[[trafficClass]]`trafficClass`
-|`Number`
+|`Number (int)`
 |+++
 Set the value of traffic class+++
 

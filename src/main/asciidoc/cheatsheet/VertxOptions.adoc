@@ -11,7 +11,7 @@
 ^|Name | Type ^| Description
 
 |[[blockedThreadCheckInterval]]`blockedThreadCheckInterval`
-|`Number`
+|`Number (long)`
 |+++
 Sets the value of blocked thread check period, in ms.+++
 
@@ -21,17 +21,17 @@ Sets the value of blocked thread check period, in ms.+++
 Set the hostname to be used for clustering.+++
 
 |[[clusterPingInterval]]`clusterPingInterval`
-|`Number`
+|`Number (long)`
 |+++
 Set the value of cluster ping interval, in ms.+++
 
 |[[clusterPingReplyInterval]]`clusterPingReplyInterval`
-|`Number`
+|`Number (long)`
 |+++
 Set the value of cluster ping reply interval, in ms.+++
 
 |[[clusterPort]]`clusterPort`
-|`Number`
+|`Number (int)`
 |+++
 Set the port to be used for clustering.+++
 
@@ -41,7 +41,7 @@ Set the port to be used for clustering.+++
 Set whether or not the Vert.x instance will be clustered.+++
 
 |[[eventLoopPoolSize]]`eventLoopPoolSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the number of event loop threads to be used by the Vert.x instance.+++
 
@@ -56,17 +56,17 @@ Set whether HA will be enabled on the Vert.x instance.+++
 Set the HA group to be used when HA is enabled.+++
 
 |[[internalBlockingPoolSize]]`internalBlockingPoolSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the value of internal blocking pool size+++
 
 |[[maxEventLoopExecuteTime]]`maxEventLoopExecuteTime`
-|`Number`
+|`Number (long)`
 |+++
 Sets the value of max event loop execute time, in ns.+++
 
 |[[maxWorkerExecuteTime]]`maxWorkerExecuteTime`
-|`Number`
+|`Number (long)`
 |+++
 Sets the value of max worker execute time, in ns.+++
 
@@ -76,17 +76,17 @@ Sets the value of max worker execute time, in ns.+++
 Set the metrics options+++
 
 |[[quorumSize]]`quorumSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the quorum size to be used when HA is enabled.+++
 
 |[[warningExceptionTime]]`warningExceptionTime`
-|`Number`
+|`Number (long)`
 |+++
 Set the threshold value above this, the blocked warning contains a stack trace.+++
 
 |[[workerPoolSize]]`workerPoolSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the maximum number of worker threads to be used by the Vert.x instance.+++
 |===

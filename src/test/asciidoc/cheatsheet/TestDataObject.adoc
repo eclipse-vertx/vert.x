@@ -19,17 +19,56 @@
 |[[addedBoxedBooleanValues]]`addedBoxedBooleanValues`
 |`Array of Boolean`
 |-
+|[[addedBoxedByteValues]]`addedBoxedByteValues`
+|`Array of Number (Byte)`
+|-
+|[[addedBoxedCharValues]]`addedBoxedCharValues`
+|`Array of Char`
+|-
+|[[addedBoxedDoubleValues]]`addedBoxedDoubleValues`
+|`Array of Number (Double)`
+|-
+|[[addedBoxedFloatValues]]`addedBoxedFloatValues`
+|`Array of Number (Float)`
+|-
 |[[addedBoxedIntValues]]`addedBoxedIntValues`
-|`Array of Number`
+|`Array of Number (Integer)`
 |-
 |[[addedBoxedLongValues]]`addedBoxedLongValues`
-|`Array of Number`
+|`Array of Number (Long)`
+|-
+|[[addedBoxedShortValues]]`addedBoxedShortValues`
+|`Array of Number (Short)`
+|-
+|[[addedBuffers]]`addedBuffers`
+|`Array of Buffer`
+|-
+|[[addedByteValues]]`addedByteValues`
+|`Array of Number (byte)`
+|-
+|[[addedDoubleValues]]`addedDoubleValues`
+|`Array of Number (double)`
+|-
+|[[addedFloatValues]]`addedFloatValues`
+|`Array of Number (float)`
+|-
+|[[addedHttpMethods]]`addedHttpMethods`
+|`Array of Enum`
 |-
 |[[addedIntValues]]`addedIntValues`
-|`Array of Number`
+|`Array of Number (int)`
+|-
+|[[addedJsonArrays]]`addedJsonArrays`
+|`Array of Json array`
+|-
+|[[addedJsonObjects]]`addedJsonObjects`
+|`Array of Json object`
 |-
 |[[addedLongValues]]`addedLongValues`
-|`Array of Number`
+|`Array of Number (long)`
+|-
+|[[addedShortValues]]`addedShortValues`
+|`Array of Number (short)`
 |-
 |[[addedStringValues]]`addedStringValues`
 |`Array of String`
@@ -49,23 +88,89 @@
 |[[boxedBooleanValues]]`boxedBooleanValues`
 |`Array of Boolean`
 |-
+|[[boxedByteValue]]`boxedByteValue`
+|`Number (Byte)`
+|-
+|[[boxedByteValues]]`boxedByteValues`
+|`Array of Number (Byte)`
+|-
+|[[boxedCharValue]]`boxedCharValue`
+|`Char`
+|-
+|[[boxedCharValues]]`boxedCharValues`
+|`Array of Char`
+|-
+|[[boxedDoubleValue]]`boxedDoubleValue`
+|`Number (Double)`
+|-
+|[[boxedDoubleValues]]`boxedDoubleValues`
+|`Array of Number (Double)`
+|-
+|[[boxedFloatValue]]`boxedFloatValue`
+|`Number (Float)`
+|-
+|[[boxedFloatValues]]`boxedFloatValues`
+|`Array of Number (Float)`
+|-
 |[[boxedIntValue]]`boxedIntValue`
-|`Number`
+|`Number (Integer)`
 |-
 |[[boxedIntValues]]`boxedIntValues`
-|`Array of Number`
+|`Array of Number (Integer)`
 |-
 |[[boxedLongValue]]`boxedLongValue`
-|`Number`
+|`Number (Long)`
 |-
 |[[boxedLongValues]]`boxedLongValues`
-|`Array of Number`
+|`Array of Number (Long)`
+|-
+|[[boxedShortValue]]`boxedShortValue`
+|`Number (Short)`
+|-
+|[[boxedShortValues]]`boxedShortValues`
+|`Array of Number (Short)`
+|-
+|[[buffer]]`buffer`
+|`Buffer`
+|-
+|[[buffers]]`buffers`
+|`Array of Buffer`
+|-
+|[[byteValue]]`byteValue`
+|`Number (byte)`
+|-
+|[[doubleValue]]`doubleValue`
+|`Number (double)`
+|-
+|[[floatValue]]`floatValue`
+|`Number (float)`
+|-
+|[[httpMethod]]`httpMethod`
+|`Enum`
+|-
+|[[httpMethods]]`httpMethods`
+|`Array of Enum`
 |-
 |[[intValue]]`intValue`
-|`Number`
+|`Number (int)`
+|-
+|[[jsonArray]]`jsonArray`
+|`Json array`
+|-
+|[[jsonArrays]]`jsonArrays`
+|`Array of Json array`
+|-
+|[[jsonObject]]`jsonObject`
+|`Json object`
+|-
+|[[jsonObjects]]`jsonObjects`
+|`Array of Json object`
 |-
 |[[longValue]]`longValue`
-|`Number`
+|`Number (long)`
+|-
+|[[shortValue]]`shortValue`
+|`Number (short)`
 |-
 |[[stringValue]]`stringValue`
 |`String`

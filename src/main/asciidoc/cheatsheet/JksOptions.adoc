@@ -37,4 +37,9 @@ Set the password for the key store+++
 |`String`
 |+++
 Set the path to the key store+++
+
+|[[value]]`value`
+|`Buffer`
+|+++
+Set the key store as a buffer+++
 |===
