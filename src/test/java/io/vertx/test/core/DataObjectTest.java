@@ -21,6 +21,10 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.codegen.AggregatedDataObject;
+import io.vertx.test.codegen.ChildInheritingDataObject;
+import io.vertx.test.codegen.ChildInheritingDataObjectConverter;
+import io.vertx.test.codegen.ChildNotInheritingDataObject;
+import io.vertx.test.codegen.ChildNotInheritingDataObjectConverter;
 import io.vertx.test.codegen.NoConverterDataObject;
 import io.vertx.test.codegen.TestDataObject;
 import io.vertx.test.codegen.TestDataObjectConverter;
@@ -434,5 +438,34 @@ public class DataObjectTest extends VertxTestBase {
     } catch (ClassNotFoundException ignore) {
       // Ok
     }
+  }
+
+  @Test
+  public void testInherit() {
+    ChildInheritingDataObject obj = new ChildInheritingDataObject();
+    JsonObject expectedJson = new JsonObject();
+    expectedJson.put("childProperty", "childProperty_value");
+    expectedJson.put("parentProperty", "parentProperty_value");
+    ChildInheritingDataObjectConverter.fromJson(expectedJson, obj);
+    assertEquals("childProperty_value", obj.getChildProperty());
+    assertEquals("parentProperty_value", obj.getParentProperty());
+    JsonObject json = new JsonObject();
+    ChildInheritingDataObjectConverter.toJson(obj, json);
+    assertEquals(expectedJson, json);
+  }
+
+  @Test
+  public void testNotInherit() {
+    ChildNotInheritingDataObject obj = new ChildNotInheritingDataObject();
+    JsonObject expectedJson = new JsonObject();
+    expectedJson.put("childProperty", "childProperty_value");
+    expectedJson.put("parentProperty", "parentProperty_value");
+    ChildNotInheritingDataObjectConverter.fromJson(expectedJson, obj);
+    assertEquals("childProperty_value", obj.getChildProperty());
+    assertEquals(null, obj.getParentProperty());
+    JsonObject json = new JsonObject();
+    ChildNotInheritingDataObjectConverter.toJson(obj, json);
+    expectedJson.remove("parentProperty");
+    assertEquals(expectedJson, json);
   }
 }

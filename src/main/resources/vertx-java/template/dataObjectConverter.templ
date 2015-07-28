@@ -30,7 +30,7 @@ public class @{type.simpleName}Converter {\n
 \n
   public static void fromJson(JsonObject json, @{type.simpleName} obj) {\n
 		@foreach{property:properties}
-			@if{property.declared}
+			@if{property.declared || inheritConverter}
 				@code{propType=property.type}
 				@code{propKind=propType.kind}
 				@if{propKind == CLASS_API}
@@ -91,7 +91,7 @@ public class @{type.simpleName}Converter {\n
 \n
   public static void toJson(@{type.simpleName} obj, JsonObject json) {\n
 		@foreach{property:properties}
-			@if{property.declared && property.readerMethod != null && property.jsonifiable}
+			@if{(property.declared || inheritConverter) && property.readerMethod != null && property.jsonifiable}
 				@code{propType=property.type}
 				@code{propKind=propType.kind}
 				@if{propKind == CLASS_API}
