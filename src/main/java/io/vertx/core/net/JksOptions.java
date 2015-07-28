@@ -77,7 +77,10 @@ public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
    */
   public JksOptions(JsonObject json) {
     super();
-    JksOptionsHelper.fromJson(json, this);
+    this.password = json.getString("password");
+    this.path = json.getString("path");
+    byte[] value = json.getBinary("value");
+    this.value = value != null ? Buffer.buffer(value) : null;
   }
 
   /**

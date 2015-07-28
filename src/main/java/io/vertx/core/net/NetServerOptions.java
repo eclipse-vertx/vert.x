@@ -60,7 +60,10 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public NetServerOptions() {
     super();
-    init();
+    this.port = DEFAULT_PORT;
+    this.host = DEFAULT_HOST;
+    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
+    this.clientAuthRequired = DEFAULT_CLIENT_AUTH_REQUIRED;
   }
 
   /**
@@ -83,15 +86,10 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public NetServerOptions(JsonObject json) {
     super(json);
-    init();
-    NetServerOptionsHelper.fromJson(json, this);
-  }
-
-  private void init() {
-    this.port = DEFAULT_PORT;
-    this.host = DEFAULT_HOST;
-    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
-    this.clientAuthRequired = DEFAULT_CLIENT_AUTH_REQUIRED;
+    this.port = json.getInteger("port", DEFAULT_PORT);
+    this.host = json.getString("host", DEFAULT_HOST);
+    this.acceptBacklog = json.getInteger("acceptBacklog", DEFAULT_ACCEPT_BACKLOG);
+    this.clientAuthRequired = json.getBoolean("clientAuthRequired", DEFAULT_CLIENT_AUTH_REQUIRED);
   }
 
   @Override

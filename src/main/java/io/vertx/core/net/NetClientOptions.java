@@ -46,7 +46,8 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public NetClientOptions() {
     super();
-    init();
+    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
+    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
   }
 
   /**
@@ -67,13 +68,8 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public NetClientOptions(JsonObject json) {
     super(json);
-    init();
-    NetClientOptionsHelper.fromJson(json, this);
-  }
-
-  private void init() {
-    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
-    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
+    this.reconnectAttempts = json.getInteger("reconnectAttempts", DEFAULT_RECONNECT_ATTEMPTS);
+    this.reconnectInterval = json.getLong("reconnectInterval", DEFAULT_RECONNECT_INTERVAL);
   }
 
   @Override

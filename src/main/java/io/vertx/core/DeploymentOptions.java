@@ -82,8 +82,7 @@ public class DeploymentOptions {
    * @param json  the JSON
    */
   public DeploymentOptions(JsonObject json) {
-    this();
-    DeploymentOptionsHelper.fromJson(json, this);
+    fromJson(json);
   }
 
   /**

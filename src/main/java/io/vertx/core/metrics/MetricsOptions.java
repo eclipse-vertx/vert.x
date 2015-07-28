@@ -58,8 +58,7 @@ public class MetricsOptions {
    * @param json the JsonObject to create it from
    */
   public MetricsOptions(JsonObject json) {
-    this();
-    MetricsOptionsHelper.fromJson(json, this);
+    this.enabled = json.getBoolean("enabled", DEFAULT_METRICS_ENABLED);
     this.json = json.copy();
   }
 

@@ -16,7 +16,6 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SocketDefaults;
@@ -25,7 +24,6 @@ import io.vertx.core.net.impl.SocketDefaults;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
 public abstract class NetworkOptions {
 
   /**
@@ -81,8 +79,10 @@ public abstract class NetworkOptions {
    * @param json  the JSON
    */
   public NetworkOptions(JsonObject json) {
-    this();
-    NetworkOptionsHelper.fromJson(json, this);
+    this.sendBufferSize = json.getInteger("sendBufferSize", DEFAULT_SEND_BUFFER_SIZE);
+    this.receiveBufferSize = json.getInteger("receiveBufferSize", DEFAULT_RECEIVE_BUFFER_SIZE);
+    this.reuseAddress = json.getBoolean("reuseAddress", DEFAULT_REUSE_ADDRESS);
+    this.trafficClass = json.getInteger("trafficClass", DEFAULT_TRAFFIC_CLASS);
   }
 
   /**

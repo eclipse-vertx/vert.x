@@ -77,7 +77,10 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
    */
   public PfxOptions(JsonObject json) {
     super();
-    PfxOptionsHelper.fromJson(json, this);
+    this.password = json.getString("password");
+    this.path = json.getString("path");
+    byte[] value = json.getBinary("value");
+    this.value = value != null ? Buffer.buffer(value) : null;
   }
 
   /**

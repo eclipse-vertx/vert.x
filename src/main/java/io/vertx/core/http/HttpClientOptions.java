@@ -88,7 +88,14 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions() {
     super();
-    init();
+    verifyHost = DEFAULT_VERIFY_HOST;
+    maxPoolSize = DEFAULT_MAX_POOL_SIZE;
+    keepAlive = DEFAULT_KEEP_ALIVE;
+    pipelining = DEFAULT_PIPELINING;
+    tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
+    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    defaultHost = DEFAULT_DEFAULT_HOST;
+    defaultPort = DEFAULT_DEFAULT_PORT;
   }
 
   /**
@@ -115,19 +122,14 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions(JsonObject json) {
     super(json);
-    init();
-    HttpClientOptionsHelper.fromJson(json, this);
-  }
-
-  private void init() {
-    verifyHost = DEFAULT_VERIFY_HOST;
-    maxPoolSize = DEFAULT_MAX_POOL_SIZE;
-    keepAlive = DEFAULT_KEEP_ALIVE;
-    pipelining = DEFAULT_PIPELINING;
-    tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
-    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    defaultHost = DEFAULT_DEFAULT_HOST;
-    defaultPort = DEFAULT_DEFAULT_PORT;
+    this.verifyHost = json.getBoolean("verifyHost", DEFAULT_VERIFY_HOST);
+    this.maxPoolSize = json.getInteger("maxPoolSize", DEFAULT_MAX_POOL_SIZE);
+    this.keepAlive = json.getBoolean("keepAlive", DEFAULT_KEEP_ALIVE);
+    this.pipelining = json.getBoolean("pipelining", DEFAULT_PIPELINING);
+    this.tryUseCompression = json.getBoolean("tryUseCompression", DEFAULT_TRY_USE_COMPRESSION);
+    this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAX_WEBSOCKET_FRAME_SIZE);
+    this.defaultHost = json.getString("defaultHost", DEFAULT_DEFAULT_HOST);
+    this.defaultPort = json.getInteger("defaultPort", DEFAULT_DEFAULT_PORT);
   }
 
   @Override
