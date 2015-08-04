@@ -78,8 +78,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   	this.conn = conn;
     this.version = request.getProtocolVersion();
     this.response = new DefaultHttpResponse(version, HttpResponseStatus.OK, false);
-    this.keepAlive = version == HttpVersion.HTTP_1_1 ||
-        (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
+    this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
+      || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
   }
 
   @Override
@@ -347,6 +347,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public boolean closed() {
+    synchronized (conn) {
+      return closed;
+    }
+  }
+
+  @Override
   public boolean headWritten() {
     synchronized (conn) {
       return headWritten;
@@ -404,6 +411,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
     if (!keepAlive) {
       closeConnAfterWrite();
+      closed = true;
     }
     written = true;
     conn.responseComplete();
@@ -532,10 +540,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private void prepareHeaders(Runnable after) {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
       response.headers().set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
+    } else if (version == HttpVersion.HTTP_1_1 && !keepAlive) {
+      response.headers().set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
     }
     if (chunked) {
       response.headers().set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-    } else if (version != HttpVersion.HTTP_1_0 && !contentLengthSet()) {
+    } else if (keepAlive && !contentLengthSet()) {
       response.headers().set(HttpHeaders.CONTENT_LENGTH, "0");
     }
 

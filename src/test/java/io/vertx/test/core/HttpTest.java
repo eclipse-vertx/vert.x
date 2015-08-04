@@ -181,6 +181,11 @@ public class HttpTest extends HttpTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
+    assertEquals(HttpVersion.HTTP_1_1, options.getProtocolVersion());
+    assertEquals(options, options.setProtocolVersion(HttpVersion.HTTP_1_0));
+    assertEquals(HttpVersion.HTTP_1_0, options.getProtocolVersion());
+    assertIllegalArgumentException(() -> options.setProtocolVersion(null));
+
     testComplete();
   }
 
@@ -330,6 +335,7 @@ public class HttpTest extends HttpTestBase {
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
+    HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -353,6 +359,7 @@ public class HttpTest extends HttpTestBase {
     options.setKeepAlive(keepAlive);
     options.setPipelining(pipelining);
     options.setTryUseCompression(tryUseCompression);
+    options.setProtocolVersion(protocolVersion);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -381,6 +388,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(keepAlive, copy.isKeepAlive());
     assertEquals(pipelining, copy.isPipelining());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
+    assertEquals(protocolVersion, copy.getProtocolVersion());
   }
 
   @Test
@@ -401,6 +409,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.getSoLinger(), json.getSoLinger());
     assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
+    assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
   }
 
   @Test
@@ -435,6 +444,7 @@ public class HttpTest extends HttpTestBase {
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
+    HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -457,7 +467,8 @@ public class HttpTest extends HttpTestBase {
       .put("maxPoolSize", maxPoolSize)
       .put("keepAlive", keepAlive)
       .put("pipelining", pipelining)
-      .put("tryUseCompression", tryUseCompression);
+      .put("tryUseCompression", tryUseCompression)
+      .put("protocolVersion", protocolVersion.name());
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -487,6 +498,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(keepAlive, options.isKeepAlive());
     assertEquals(pipelining, options.isPipelining());
     assertEquals(tryUseCompression, options.isTryUseCompression());
+    assertEquals(protocolVersion, options.getProtocolVersion());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -504,6 +516,10 @@ public class HttpTest extends HttpTestBase {
     options = new HttpClientOptions(json);
     assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
+
+    // Test invalid protocolVersion
+    json.put("protocolVersion", "invalidProtocolVersion");
+    assertIllegalArgumentException(() -> new HttpClientOptions(json));
   }
 
   @Test
@@ -3363,7 +3379,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttpVersion() {
+  public void testDefaultHttpVersion() {
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
@@ -3371,6 +3387,108 @@ public class HttpTest extends HttpTestBase {
 
     server.listen(onSuccess(s -> {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> resp.endHandler(v -> testComplete())).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttp11PersistentConnectionNotClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      assertNull(req.getHeader("Connection"));
+      req.response().end();
+      assertFalse(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setKeepAlive(true));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertNull(resp.getHeader("Connection"));
+          assertEquals(resp.getHeader("Content-Length"), "0");
+          testComplete();
+        });
+      });
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttp11NonPersistentConnectionClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      assertEquals(req.getHeader("Connection"), "close");
+      req.response().end();
+      assertTrue(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setKeepAlive(false));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertEquals(resp.getHeader("Connection"), "close");
+          testComplete();
+        });
+      });
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttp10KeepAliveConnectionNotClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_0, req.version());
+      assertEquals(req.getHeader("Connection"), "keep-alive");
+      req.response().end();
+      assertFalse(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0).setKeepAlive(true));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertEquals(resp.getHeader("Connection"), "keep-alive");
+          assertEquals(resp.getHeader("Content-Length"), "0");
+          testComplete();
+        });
+      });
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttp10NonKeepAliveConnectionClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_0, req.version());
+      assertNull(req.getHeader("Connection"));
+      req.response().end();
+      assertTrue(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0).setKeepAlive(false));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertNull(resp.getHeader("Connection"));
+          testComplete();
+        });
+      });
+      req.end();
     }));
 
     await();

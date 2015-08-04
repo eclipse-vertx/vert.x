@@ -91,6 +91,11 @@ Set the trust options in pfx format+++
 |+++
 Set whether pipe-lining is enabled on the client+++
 
+|[[protocolVersion]]`protocolVersion`
+|`Enum`
+|+++
+Set the protocol version.+++
+
 |[[receiveBufferSize]]`receiveBufferSize`
 |`Number (int)`
 |+++
