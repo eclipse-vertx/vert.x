@@ -183,19 +183,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket sendFile(String filename) {
-    return sendFile(filename, null);
+  public NetSocket sendFile(String filename, long offset, long length) {
+    return sendFile(filename, offset, length, null);
   }
 
   @Override
-  public NetSocket sendFile(String filename, final Handler<AsyncResult<Void>> resultHandler) {
+  public NetSocket sendFile(String filename, long offset, long length, final Handler<AsyncResult<Void>> resultHandler) {
     File f = vertx.resolveFile(filename);
     if (f.isDirectory()) {
       throw new IllegalArgumentException("filename must point to a file and not to a directory");
     }
     try {
       RandomAccessFile raf = new RandomAccessFile(f, "r");
-      ChannelFuture future = super.sendFile(raf, f.length());
+      ChannelFuture future = super.sendFile(raf, Math.min(offset, f.length()), Math.min(length, f.length() - offset));
       if (resultHandler != null) {
         future.addListener(fut -> {
           final AsyncResult<Void> res;
