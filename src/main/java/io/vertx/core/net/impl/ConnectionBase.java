@@ -197,15 +197,15 @@ public abstract class ConnectionBase {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
-  protected ChannelFuture sendFile(RandomAccessFile raf, long fileLength) throws IOException {
+  protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
     // Write the content.
     ChannelFuture writeFuture;
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
-      writeFuture = writeToChannel(new ChunkedFile(raf, 0, fileLength, 8192));
+      writeFuture = writeToChannel(new ChunkedFile(raf, offset, length, 8192));
     } else {
       // No encryption - use zero-copy.
-      FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+      FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
       writeFuture = writeToChannel(region);
     }
     if (writeFuture != null) {

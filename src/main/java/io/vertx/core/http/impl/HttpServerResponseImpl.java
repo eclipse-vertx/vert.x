@@ -63,7 +63,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private Handler<Future<?>> headersEndHandler;
+  private Handler<Future<Void>> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private boolean chunked;
   private boolean closed;
@@ -328,14 +328,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl sendFile(String filename) {
-    doSendFile(filename, null);
+  public HttpServerResponseImpl sendFile(String filename, long offset, long length) {
+    doSendFile(filename, offset, length, null);
     return this;
   }
 
   @Override
-  public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
-    doSendFile(filename, resultHandler);
+  public HttpServerResponse sendFile(String filename, long start, long end, Handler<AsyncResult<Void>> resultHandler) {
+    doSendFile(filename, start, end, resultHandler);
     return this;
   }
 
@@ -354,7 +354,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse headersEndHandler(Handler<Future<?>> handler) {
+  public HttpServerResponse headersEndHandler(Handler<Future<Void>> handler) {
     synchronized (conn) {
       this.headersEndHandler = handler;
       return this;
@@ -412,7 +412,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private void doSendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+  private void doSendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
     synchronized (conn) {
       if (headWritten) {
         throw new IllegalStateException("Head already written");
@@ -421,7 +421,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       File file = vertx.resolveFile(filename);
       long fileLength = file.length();
       if (!contentLengthSet()) {
-        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileLength));
+        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(Math.min(length, fileLength - offset)));
       }
       if (!contentTypeSet()) {
         int li = filename.lastIndexOf('.');
@@ -439,7 +439,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         try {
           raf = new RandomAccessFile(file, "r");
           conn.queueForWrite(response);
-          conn.sendFile(raf, fileLength);
+          conn.sendFile(raf, Math.min(offset, fileLength), Math.min(length, fileLength - offset));
         } catch (IOException e) {
           if (resultHandler != null) {
             ContextImpl ctx = vertx.getOrCreateContext();

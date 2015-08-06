@@ -262,7 +262,40 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse sendFile(String filename);
+  default HttpServerResponse sendFile(String filename) {
+    return sendFile(filename, 0);
+  }
+
+  /**
+   * Ask the OS to stream a file as specified by {@code filename} directly
+   * from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system.
+   * This is a very efficient way to serve files.<p>
+   * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   *
+   * @param filename  path to the file to serve
+   * @param offset offset to start serving from
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpServerResponse sendFile(String filename, long offset) {
+    return sendFile(filename, offset, Long.MAX_VALUE);
+  }
+
+  /**
+   * Ask the OS to stream a file as specified by {@code filename} directly
+   * from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system.
+   * This is a very efficient way to serve files.<p>
+   * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   *
+   * @param filename  path to the file to serve
+   * @param offset offset to start serving from
+   * @param length length to serve to
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse sendFile(String filename, long offset, long length);
 
   /**
    * Like {@link #sendFile(String)} but providing a handler which will be notified once the file has been completely
@@ -273,7 +306,36 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
+  default HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+    return sendFile(filename, 0, resultHandler);
+  }
+
+  /**
+   * Like {@link #sendFile(String, long)} but providing a handler which will be notified once the file has been completely
+   * written to the wire.
+   *
+   * @param filename path to the file to serve
+   * @param offset the offset to serve from
+   * @param resultHandler  handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpServerResponse sendFile(String filename, long offset, Handler<AsyncResult<Void>> resultHandler) {
+    return sendFile(filename, offset, Long.MAX_VALUE, resultHandler);
+  }
+
+  /**
+   * Like {@link #sendFile(String, long, long)} but providing a handler which will be notified once the file has been
+   * completely written to the wire.
+   *
+   * @param filename path to the file to serve
+   * @param offset the offset to serve from
+   * @param length the length to serve to
+   * @param resultHandler  handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Close the underlying TCP connection corresponding to the request.
@@ -300,7 +362,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse headersEndHandler(Handler<Future<?>> handler);
+  HttpServerResponse headersEndHandler(Handler<Future<Void>> handler);
 
   /**
    * Provide a handler that will be called just before the last part of the body is written to the wire
