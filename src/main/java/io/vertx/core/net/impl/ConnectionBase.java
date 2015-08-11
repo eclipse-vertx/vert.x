@@ -210,6 +210,8 @@ public abstract class ConnectionBase {
     }
     if (writeFuture != null) {
       writeFuture.addListener(fut -> raf.close());
+    } else {
+      raf.close();
     }
     return writeFuture;
   }
