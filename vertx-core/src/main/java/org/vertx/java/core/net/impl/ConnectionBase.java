@@ -196,11 +196,15 @@ public abstract class ConnectionBase {
             new DefaultFileRegion(raf.getChannel(), 0, fileLength);
         writeFuture = write(region);
       }
-      writeFuture.addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) throws Exception {
-          raf.close();
-        }
-      });
+      if (writeFuture != null) {
+        writeFuture.addListener(new ChannelFutureListener() {
+          public void operationComplete(ChannelFuture future) throws Exception {
+            raf.close();
+          }
+        });
+      } else {
+        raf.close();
+      }
       return writeFuture;
     } catch (IOException e) {
       handleException(e);
