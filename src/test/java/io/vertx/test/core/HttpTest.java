@@ -4208,6 +4208,52 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  /*
+  Fix for https://bugs.eclipse.org/bugs/show_bug.cgi?id=475017
+  Also see https://groups.google.com/forum/?fromgroups#!topic/vertx/N_wSoQlvMMs
+   */
+  @Test
+  public void testPauseResumeClientResponse() {
+    byte[] data = new byte[64 * 1024 * 1024];
+    new Random().nextBytes(data);
+    Buffer buffer = Buffer.buffer(data);
+    Buffer readBuffer = Buffer.buffer(64 * 1024 * 1024);
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.requestHandler(request -> {
+      request.response().setChunked(true);
+      for (int i = 0; i < buffer.length() / 8192; i++) {
+        request.response().write(buffer.slice(i * 8192, (i + 1) * 8192));
+      }
+      request.response().end();
+    });
+    httpServer.listen(10000);
+    HttpClient httpClient = vertx.createHttpClient();
+    HttpClientRequest clientRequest = httpClient.get(10000, "localhost", "/");
+    clientRequest.handler(resp -> {
+      resp.handler(b -> {
+        readBuffer.appendBuffer(b);
+        for (int i = 0; i < 64; i++) {
+          vertx.setTimer(1, n -> {
+            try {
+              Thread.sleep(0);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          });
+        }
+        ;
+        resp.endHandler(v -> {
+          byte[] expectedData = buffer.getBytes();
+          byte[] actualData = readBuffer.getBytes();
+          assertTrue(Arrays.equals(expectedData, actualData));
+          testComplete();
+        });
+      });
+    });
+    clientRequest.end();
+    await();
+  }
+
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
       req.response().setChunked(true);
