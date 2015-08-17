@@ -126,22 +126,23 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public synchronized NetSocket pause() {
-    paused = true;
-    doPause();
+    if (!paused) {
+      paused = true;
+      doPause();
+    }
     return this;
   }
 
   @Override
   public synchronized NetSocket resume() {
-    if (!paused) {
-      return this;
+    if (paused) {
+      paused = false;
+      if (pendingData != null) {
+        // Send empty buffer to trigger sending of pending data
+        context.runOnContext(v -> handleDataReceived(Buffer.buffer()));
+      }
+      doResume();
     }
-    paused = false;
-    if (pendingData != null) {
-      // Send empty buffer to trigger sending of pending data
-      context.runOnContext(v -> handleDataReceived(Buffer.buffer()));
-    }
-    doResume();
     return this;
   }
 
