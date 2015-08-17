@@ -419,9 +419,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       checkWritten();
       File file = vertx.resolveFile(filename);
-      long fileLength = file.length();
+      long contentLength = Math.min(length, file.length() - offset);
       if (!contentLengthSet()) {
-        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(Math.min(length, fileLength - offset)));
+        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
       }
       if (!contentTypeSet()) {
         int li = filename.lastIndexOf('.');
@@ -439,7 +439,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         try {
           raf = new RandomAccessFile(file, "r");
           conn.queueForWrite(response);
-          conn.sendFile(raf, Math.min(offset, fileLength), Math.min(length, fileLength - offset));
+          conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
         } catch (IOException e) {
           if (resultHandler != null) {
             ContextImpl ctx = vertx.getOrCreateContext();
