@@ -388,11 +388,7 @@ public class DeploymentManager {
 
     Deployment parent = parentContext.getDeployment();
     DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
-
-    if (parent != null) {
-      parent.addChild(deployment);
-      deployment.child = true;
-    }
+    
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
@@ -407,6 +403,10 @@ public class DeploymentManager {
           verticle.start(startFuture);
           startFuture.setHandler(ar -> {
             if (ar.succeeded()) {
+              if (parent != null) {
+                parent.addChild(deployment);
+                deployment.child = true;
+              }
               vertx.metricsSPI().verticleDeployed(verticle);
               deployments.put(deploymentID, deployment);
               if (deployCount.incrementAndGet() == verticles.length) {
