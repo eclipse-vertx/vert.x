@@ -51,7 +51,7 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private final Handler<Message<Buffer>> writeHandler;
-  private Queue<Buffer> pendingData;
+  private Buffer pendingData;
   private boolean paused = false;
   private final TCPSSLHelper helper;
   private boolean client;
@@ -105,32 +105,28 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
 
   @Override
   public NetSocket pause() {
-    paused = true;
-    doPause();
+    if (!paused) {
+      paused = true;
+      doPause();
+    }
     return this;
   }
 
   @Override
   public NetSocket resume() {
-    if (!paused) {
-      return this;
-    }
-    paused = false;
-    if (pendingData != null) {
-      for (;;) {
-        final Buffer buf = pendingData.poll();
-        if (buf == null) {
-          break;
-        }
-        vertx.runOnContext(new VoidHandler() {
+    if (paused) {
+      paused = false;
+      if (pendingData != null) {
+        // Send empty buffer to trigger sending of pending data
+        context.runOnContext(new VoidHandler() {
           @Override
           protected void handle() {
-            handleDataReceived(buf);
+            handleDataReceived(new Buffer());
           }
         });
       }
+      doResume();
     }
-    doResume();
     return this;
   }
 
@@ -256,10 +252,14 @@ public class DefaultNetSocket extends ConnectionBase implements NetSocket {
   void handleDataReceived(Buffer data) {
     if (paused) {
       if (pendingData == null) {
-        pendingData = new ArrayDeque<>();
+        pendingData = data.copy();
+      } else {
+        pendingData.appendBuffer(data);
       }
-      pendingData.add(data);
       return;
+    }
+    if (pendingData != null) {
+      data = pendingData.appendBuffer(data);
     }
     if (dataHandler != null) {
       setContext();

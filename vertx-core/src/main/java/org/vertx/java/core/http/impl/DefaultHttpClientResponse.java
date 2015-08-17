@@ -50,7 +50,7 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   private final HttpResponse response;
   private LastHttpContent trailer;
   private boolean paused;
-  private Queue<Buffer> pausedChunks;
+  private Buffer pausedChunk;
   private boolean hasPausedEnd;
   private LastHttpContent pausedTrailer;
   private NetSocket netSocket;
@@ -127,16 +127,20 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse pause() {
-    paused = true;
-    conn.doPause();
+    if (!paused) {
+      paused = true;
+      conn.doPause();
+    }
     return this;
   }
 
   @Override
   public HttpClientResponse resume() {
-    paused = false;
-    doResume();
-    conn.doResume();
+    if (paused) {
+      paused = false;
+      doResume();
+      conn.doResume();
+    }
     return this;
   }
 
@@ -153,21 +157,19 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
   }
 
   private void doResume() {
-    if (pausedChunks != null) {
-      Buffer chunk;
-      while ((chunk = pausedChunks.poll()) != null) {
-        final Buffer theChunk = chunk;
-        vertx.runOnContext(new VoidHandler() {
+    if (hasPausedEnd) {
+      if (pausedChunk != null) {
+        final Buffer theChunk = pausedChunk;
+        conn.getContext().runOnContext(new VoidHandler() {
           @Override
           protected void handle() {
             handleChunk(theChunk);
           }
         });
+        pausedChunk = null;
       }
-    }
-    if (hasPausedEnd) {
       final LastHttpContent theTrailer = pausedTrailer;
-      vertx.runOnContext(new VoidHandler() {
+      conn.getContext().runOnContext(new VoidHandler() {
         @Override
         protected void handle() {
           handleEnd(theTrailer);
@@ -180,12 +182,17 @@ public class DefaultHttpClientResponse implements HttpClientResponse  {
 
   void handleChunk(Buffer data) {
     if (paused) {
-      if (pausedChunks == null) {
-        pausedChunks = new ArrayDeque<>();
+      if (pausedChunk == null) {
+        pausedChunk = data.copy();
+      } else {
+        pausedChunk.appendBuffer(data);
       }
-      pausedChunks.add(data);
     } else {
       request.dataReceived();
+      if (pausedChunk != null) {
+        data = pausedChunk.appendBuffer(data);
+        pausedChunk = null;
+      }
       if (dataHandler != null) {
         dataHandler.handle(data);
       }
