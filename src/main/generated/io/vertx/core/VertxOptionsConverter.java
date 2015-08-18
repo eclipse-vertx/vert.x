@@ -21,6 +21,12 @@ public class VertxOptionsConverter {
     if (json.getValue("clusterPort") instanceof Number) {
       obj.setClusterPort(((Number)json.getValue("clusterPort")).intValue());
     }
+    if (json.getValue("clusterPublicHost") instanceof String) {
+      obj.setClusterPublicHost((String)json.getValue("clusterPublicHost"));
+    }
+    if (json.getValue("clusterPublicPort") instanceof Number) {
+      obj.setClusterPublicPort(((Number)json.getValue("clusterPublicPort")).intValue());
+    }
     if (json.getValue("clustered") instanceof Boolean) {
       obj.setClustered((Boolean)json.getValue("clustered"));
     }
@@ -64,6 +70,10 @@ public class VertxOptionsConverter {
     json.put("clusterPingInterval", obj.getClusterPingInterval());
     json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
     json.put("clusterPort", obj.getClusterPort());
+    if (obj.getClusterPublicHost() != null) {
+      json.put("clusterPublicHost", obj.getClusterPublicHost());
+    }
+    json.put("clusterPublicPort", obj.getClusterPublicPort());
     json.put("clustered", obj.isClustered());
     json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
     json.put("haEnabled", obj.isHAEnabled());

@@ -35,6 +35,20 @@ Set the value of cluster ping reply interval, in ms.+++
 |+++
 Set the port to be used for clustering.+++
 
+|[[clusterPublicHost]]`clusterPublicHost`
+|`String`
+|+++
+Set the public facing hostname to be used for clustering.
+ Sometimes, e.g. when running on certain clouds, the local address the server listens on for clustering is not the same
+ address that other nodes connect to it at, as the OS / cloud infrastructure does some kind of proxying.
+ If this is the case you can specify a public hostname which is different from the hostname the server listens at.
+ The default value is null which means use the same as the cluster hostname.+++
+
+|[[clusterPublicPort]]`clusterPublicPort`
+|`Number (int)`
+|+++
+See link for an explanation.+++
+
 |[[clustered]]`clustered`
 |`Boolean`
 |+++

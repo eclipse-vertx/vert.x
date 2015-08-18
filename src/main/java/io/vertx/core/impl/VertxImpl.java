@@ -143,13 +143,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             EventBusImpl.EventBusNetServer ebServer = new EventBusImpl.EventBusNetServer(server);
             server.listen(asyncResult -> {
               if (asyncResult.succeeded()) {
-                // Obtain system configured public host/port
-                int publicPort = Integer.getInteger("vertx.cluster.public.port", -1);
-                String publicHost = System.getProperty("vertx.cluster.public.host", null);
-
-                // If using a wilcard port (0) then we ask the server for the actual port:
-                int serverPort = publicPort == -1 ? server.actualPort() : publicPort;
-                String serverHost = publicHost == null ? options.getClusterHost() : publicHost;
+                int serverPort = getClusterPublicPort(options, server.actualPort());
+                String serverHost = getClusterPublicHost(options);
                 ServerID serverID = new ServerID(serverPort, serverHost);
                 // Provide a memory barrier as we are setting from a different thread
                 synchronized (VertxImpl.this) {
@@ -338,6 +333,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public DnsClient createDnsClient(int port, String host) {
     return new DnsClientImpl(this, port, host);
+  }
+
+  private int getClusterPublicPort(VertxOptions options, int actualPort) {
+    // We retain the old system property for backwards compat
+    int publicPort = Integer.getInteger("vertx.cluster.public.port", options.getClusterPublicPort());
+    if (publicPort == -1) {
+      // Get the actual port, wildcard port of zero might have been specified
+      publicPort = actualPort;
+    }
+    return publicPort;
+  }
+
+  private String getClusterPublicHost(VertxOptions options) {
+    // We retain the old system property for backwards compat
+    String publicHost = System.getProperty("vertx.cluster.public.host", options.getClusterPublicHost());
+    if (publicHost == null) {
+      publicHost = options.getClusterHost();
+    }
+    return publicHost;
   }
 
   private VertxMetrics initialiseMetrics(VertxOptions options) {
