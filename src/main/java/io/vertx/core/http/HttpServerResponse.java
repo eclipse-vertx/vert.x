@@ -286,6 +286,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   boolean ended();
 
   /**
+   * @return has the underlying TCP connection corresponding to the request already been closed?
+   */
+  boolean closed();
+
+  /**
    * @return have the headers for the response already been written?
    */
   boolean headWritten();

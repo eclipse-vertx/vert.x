@@ -74,6 +74,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_DEFAULT_PORT = 80;
 
+  /**
+   * The default protocol version = HTTP/1.1
+   */
+  public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -82,6 +87,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxWebsocketFrameSize;
   private String defaultHost;
   private int defaultPort;
+  private HttpVersion protocolVersion;
 
   /**
    * Default constructor
@@ -106,6 +112,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
+    this.protocolVersion = other.protocolVersion;
   }
 
   /**
@@ -128,6 +135,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
+    protocolVersion = DEFAULT_PROTOCOL_VERSION;
   }
 
   @Override
@@ -411,6 +419,29 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * Get the protocol version.
+   *
+   * @return the protocol version
+   */
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
+  }
+
+  /**
+   * Set the protocol version.
+   *
+   * @param protocolVersion the protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
+    if (protocolVersion == null) {
+      throw new IllegalArgumentException("protocolVersion must not be null");
+    }
+    this.protocolVersion = protocolVersion;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -427,6 +458,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (tryUseCompression != that.tryUseCompression) return false;
     if (verifyHost != that.verifyHost) return false;
     if (!defaultHost.equals(that.defaultHost)) return false;
+    if (protocolVersion != that.protocolVersion) return false;
 
     return true;
   }
@@ -442,6 +474,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + defaultHost.hashCode();
     result = 31 * result + defaultPort;
+    result = 31 * result + protocolVersion.hashCode();
     return result;
   }
 }

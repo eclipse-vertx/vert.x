@@ -24,6 +24,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("pipelining") instanceof Boolean) {
       obj.setPipelining((Boolean)json.getValue("pipelining"));
     }
+    if (json.getValue("protocolVersion") instanceof String) {
+      obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("protocolVersion")));
+    }
     if (json.getValue("tryUseCompression") instanceof Boolean) {
       obj.setTryUseCompression((Boolean)json.getValue("tryUseCompression"));
     }
@@ -41,6 +44,9 @@ public class HttpClientOptionsConverter {
     json.put("maxPoolSize", obj.getMaxPoolSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("pipelining", obj.isPipelining());
+    if (obj.getProtocolVersion() != null) {
+      json.put("protocolVersion", obj.getProtocolVersion().name());
+    }
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
   }

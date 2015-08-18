@@ -880,7 +880,9 @@
  * For pooling to work, keep alive must be true using {@link io.vertx.core.http.HttpClientOptions#setKeepAlive(boolean)}
  * on the options used when configuring the client. The default value is true.
  *
- * When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP request sent.
+ * When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP/1.0 request sent.
+ * When keep alive is disabled. Vert.x will add a `Connection: Close` header to each HTTP/1.1 request sent to signal
+ * that the connection will be closed after completion of the response.
  *
  * The maximum number of connections to pool *for each server* is configured using {@link io.vertx.core.http.HttpClientOptions#setMaxPoolSize(int)}
  *
