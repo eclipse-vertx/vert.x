@@ -369,8 +369,8 @@ class ServerConnection extends ConnectionBase {
     return super.supportsFileRegion() && channel.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
-  protected ChannelFuture sendFile(RandomAccessFile file, long fileLength) throws IOException {
-    return super.sendFile(file, fileLength);
+  protected ChannelFuture sendFile(RandomAccessFile file, long offset, long length) throws IOException {
+    return super.sendFile(file, offset, length);
   }
 
   private void processMessage(Object msg) {

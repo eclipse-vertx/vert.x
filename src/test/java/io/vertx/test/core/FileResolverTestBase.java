@@ -230,6 +230,36 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testSendOpenRangeFileFromClasspath() {
+    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+      res.response().sendFile(webRoot + "/somefile.html", 6);
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        resp.bodyHandler(buff -> {
+          assertTrue(buff.toString().startsWith("<body>blah</body></html>"));
+          testComplete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testSendRangeFileFromClasspath() {
+    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+      res.response().sendFile(webRoot + "/somefile.html", 6, 6);
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals("<body>", buff.toString());
+          testComplete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
   private String readFile(File file) {
     return vertx.fileSystem().readFileBlocking(file.getAbsolutePath()).toString();
   }
