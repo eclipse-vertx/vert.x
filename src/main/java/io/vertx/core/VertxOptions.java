@@ -102,11 +102,6 @@ public class VertxOptions {
   public static final boolean DEFAULT_HA_ENABLED = false;
 
   /**
-   * The default value of metrics enabled false
-   */
-  public static final boolean DEFAULT_METRICS_ENABLED = false;
-
-  /**
    * The default value of warning exception time 5000000000 ns (5 seconds)
    * If a thread is blocked longer than this threshold, the warning log
    * contains a stack trace
