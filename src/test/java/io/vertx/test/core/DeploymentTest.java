@@ -1158,6 +1158,35 @@ public class DeploymentTest extends VertxTestBase {
     vertx.undeploy(deployment.deploymentID());
   }
 
+  @Test
+  public void testFailedVerticleStopNotCalled() {
+    Verticle verticleChild = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        startFuture.fail("wibble");
+      }
+      @Override
+      public void stop() {
+        fail("stop should not be called");
+      }
+
+    };
+    Verticle verticleParent = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        vertx.deployVerticle(verticleChild, onFailure(v -> {
+          startFuture.complete();
+        }));
+      }
+    };
+    vertx.deployVerticle(verticleParent, onSuccess(depID -> {
+      vertx.undeploy(depID, onSuccess(v -> {
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
   // TODO
 
   // Multi-threaded workers
