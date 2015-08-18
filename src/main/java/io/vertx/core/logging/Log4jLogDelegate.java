@@ -16,7 +16,7 @@
 
 package io.vertx.core.logging;
 
-import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LogFormatter.LogTuple;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.apache.log4j.Level;
 
@@ -24,8 +24,10 @@ import org.apache.log4j.Level;
  * A {@link io.vertx.core.spi.logging.LogDelegate} which delegates to Apache Log4j
  *
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
+ * @author Patrick Sauts
  */
 public class Log4jLogDelegate implements LogDelegate {
+
   private static final String FQCN = Logger.class.getCanonicalName();
 
   private final org.apache.log4j.Logger logger;
@@ -46,52 +48,34 @@ public class Log4jLogDelegate implements LogDelegate {
     return logger.isTraceEnabled();
   }
 
+  @Override
   public void fatal(final Object message) {
     log(Level.FATAL, message);
   }
 
-  public void fatal(final Object message, final Throwable t) {
-    log(Level.FATAL, message, t);
-  }
-
+  @Override
   public void error(final Object message) {
     log(Level.ERROR, message);
   }
 
-  public void error(final Object message, final Throwable t) {
-    log(Level.ERROR, message, t);
-  }
-
+  @Override
   public void warn(final Object message) {
     log(Level.WARN, message);
   }
 
-  public void warn(final Object message, final Throwable t) {
-    log(Level.WARN, message, t);
-  }
-
+  @Override
   public void info(final Object message) {
     log(Level.INFO, message);
   }
 
-  public void info(final Object message, final Throwable t) {
-    log(Level.INFO, message, t);
-  }
-
+  @Override
   public void debug(final Object message) {
     log(Level.DEBUG, message);
   }
 
-  public void debug(final Object message, final Throwable t) {
-    log(Level.DEBUG, message, t);
-  }
-
+  @Override
   public void trace(final Object message) {
     log(Level.TRACE, message);
-  }
-
-  public void trace(final Object message, final Throwable t) {
-    log(Level.TRACE, message, t);
   }
 
   private void log(Level level, Object message) {
@@ -100,5 +84,147 @@ public class Log4jLogDelegate implements LogDelegate {
 
   private void log(Level level, Object message, Throwable t) {
     logger.log(FQCN, level, message, t);
+  }
+
+  @Override
+  public void fatal(String format, Object arg) {
+    if (logger.isEnabledFor(Level.FATAL)) {
+      logger.fatal(LogFormatter.format(format, arg).getMessage());
+    }
+    if (logger.isEnabledFor(Level.FATAL)) {
+      logger.fatal(LogFormatter.format(format, arg).getMessage());
+    }
+
+  }
+
+  @Override
+  public void fatal(String format, Object arg1, Object arg2) {
+    if (logger.isEnabledFor(Level.FATAL)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.FATAL, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void fatal(String format, Object... arguments) {
+    if (logger.isEnabledFor(Level.FATAL)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.FATAL, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void error(String format, Object arg) {
+    if (logger.isEnabledFor(Level.ERROR)) {
+      logger.error(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void error(String format, Object arg1, Object arg2) {
+    if (logger.isEnabledFor(Level.ERROR)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.ERROR, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void error(String format, Object... arguments) {
+    if (logger.isEnabledFor(Level.ERROR)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.ERROR, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void warn(String format, Object arg) {
+    if (logger.isEnabledFor(Level.WARN)) {
+      logger.warn(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void warn(String format, Object arg1, Object arg2) {
+    if (logger.isEnabledFor(Level.WARN)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.WARN, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void warn(String format, Object... arguments) {
+    if (logger.isEnabledFor(Level.WARN)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.WARN, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void info(String format, Object arg) {
+    if (logger.isEnabledFor(Level.INFO)) {
+      logger.info(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void info(String format, Object arg1, Object arg2) {
+    if (logger.isEnabledFor(Level.INFO)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.INFO, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void info(String format, Object... arguments) {
+    if (logger.isEnabledFor(Level.INFO)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.INFO, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void debug(String format, Object arg) {
+    if (logger.isEnabledFor(Level.DEBUG)) {
+      logger.debug(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void debug(String format, Object arg1, Object arg2) {
+    if (logger.isEnabledFor(Level.DEBUG)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.DEBUG, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void debug(String format, Object... arguments) {
+    if (logger.isEnabledFor(Level.DEBUG)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.DEBUG, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void trace(String format, Object arg) {
+    if (logger.isEnabledFor(Level.TRACE)) {
+      logger.trace(LogFormatter.format(format, arg).getMessage());
+    }
+  }
+
+  @Override
+  public void trace(String format, Object arg1, Object arg2) {
+    if (logger.isEnabledFor(Level.TRACE)) {
+      LogTuple tuple = LogFormatter.format(format, arg1, arg2);
+      log(Level.TRACE, tuple.getMessage(), tuple.getThrowable());
+    }
+  }
+
+  @Override
+  public void trace(String format, Object... arguments) {
+    if (logger.isEnabledFor(Level.TRACE)) {
+      LogTuple tuple = LogFormatter.format(format, arguments);
+      log(Level.TRACE, tuple.getMessage(), tuple.getThrowable());
+    }
   }
 }

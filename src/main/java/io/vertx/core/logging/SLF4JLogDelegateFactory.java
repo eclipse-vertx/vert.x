@@ -22,11 +22,9 @@ import io.vertx.core.spi.logging.LogDelegateFactory;
 /*
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SLF4JLogDelegateFactory implements LogDelegateFactory
-{
-   public LogDelegate createDelegate(final String clazz)
-   {
-      return new SLF4JLogDelegate(clazz);
-   }
+public class SLF4JLogDelegateFactory implements LogDelegateFactory {
+  public LogDelegate createDelegate(final String clazz) {
+    return new SLF4JLogDelegate(clazz);
+  }
 
 }

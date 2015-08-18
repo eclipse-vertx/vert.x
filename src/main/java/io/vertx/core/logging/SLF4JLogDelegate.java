@@ -26,6 +26,7 @@ import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author Patrick Sauts
  */
 public class SLF4JLogDelegate implements LogDelegate {
   private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
@@ -127,5 +128,95 @@ public class SLF4JLogDelegate implements LogDelegate {
           throw new IllegalArgumentException("Unknown log level " + level);
       }
     }
+  }
+
+  @Override
+  public void fatal(String format, Object arg) {
+    logger.error(format, arg);
+  }
+
+  @Override
+  public void fatal(String format, Object arg1, Object arg2) {
+    logger.error(format, arg1, arg2);
+  }
+
+  @Override
+  public void fatal(String format, Object... arguments) {
+    logger.error(format, arguments);
+  }
+
+  @Override
+  public void error(String format, Object arg) {
+    logger.error(format, arg);
+  }
+
+  @Override
+  public void error(String format, Object arg1, Object arg2) {
+    logger.error(format, arg1, arg2);
+  }
+
+  @Override
+  public void error(String format, Object... arguments) {
+    logger.error(format, arguments);
+  }
+
+  @Override
+  public void warn(String format, Object arg) {
+    logger.warn(format, arg);
+  }
+
+  @Override
+  public void warn(String format, Object arg1, Object arg2) {
+    logger.warn(format, arg1, arg2);
+  }
+
+  @Override
+  public void warn(String format, Object... arguments) {
+    logger.warn(format, arguments);
+  }
+
+  @Override
+  public void info(String format, Object arg) {
+    logger.info(format, arg);
+  }
+
+  @Override
+  public void info(String format, Object arg1, Object arg2) {
+    logger.info(format, arg1, arg2);
+  }
+
+  @Override
+  public void info(String format, Object... arguments) {
+    logger.info(format, arguments);
+  }
+
+  @Override
+  public void debug(String format, Object arg) {
+    logger.debug(format, arg);
+  }
+
+  @Override
+  public void debug(String format, Object arg1, Object arg2) {
+    logger.debug(format, arg1, arg2);
+  }
+
+  @Override
+  public void debug(String format, Object... arguments) {
+    logger.debug(format, arguments);
+  }
+
+  @Override
+  public void trace(String format, Object arg) {
+    logger.trace(format, arg);
+  }
+
+  @Override
+  public void trace(String format, Object arg1, Object arg2) {
+    logger.trace(format, arg1, arg2);
+  }
+
+  @Override
+  public void trace(String format, Object... arguments) {
+    logger.trace(format, arguments);
   }
 }
