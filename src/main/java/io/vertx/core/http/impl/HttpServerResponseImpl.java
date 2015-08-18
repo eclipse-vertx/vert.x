@@ -443,12 +443,18 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       prepareHeaders(() -> {
 
-        RandomAccessFile raf;
+        RandomAccessFile raf = null;
         try {
           raf = new RandomAccessFile(file, "r");
           conn.queueForWrite(response);
           conn.sendFile(raf, fileLength);
         } catch (IOException e) {
+          try {
+            if (raf != null) {
+              raf.close();
+            }
+          } catch (IOException ignore) {
+          }
           if (resultHandler != null) {
             ContextImpl ctx = vertx.getOrCreateContext();
             ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));

@@ -181,8 +181,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     if (f.isDirectory()) {
       throw new IllegalArgumentException("filename must point to a file and not to a directory");
     }
+    RandomAccessFile raf = null;
     try {
-      RandomAccessFile raf = new RandomAccessFile(f, "r");
+      raf = new RandomAccessFile(f, "r");
       ChannelFuture future = super.sendFile(raf, f.length());
       if (resultHandler != null) {
         future.addListener(fut -> {
@@ -196,6 +197,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
         });
       }
     } catch (IOException e) {
+      try {
+        if (raf != null) {
+          raf.close();
+        }
+      } catch (IOException ignore) {
+      }
       if (resultHandler != null) {
         vertx.runOnContext(v -> resultHandler.handle(Future.failedFuture(e)));
       } else {
