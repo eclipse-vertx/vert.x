@@ -180,7 +180,7 @@ public abstract class ConnectionBase {
   }
 
   protected ChannelFuture sendFile(File file) {
-    final RandomAccessFile raf;
+    RandomAccessFile raf = null;
     try {
       raf = new RandomAccessFile(file, "r");
       long fileLength = file.length();
@@ -197,9 +197,10 @@ public abstract class ConnectionBase {
         writeFuture = write(region);
       }
       if (writeFuture != null) {
+        final RandomAccessFile rraf = raf;
         writeFuture.addListener(new ChannelFutureListener() {
           public void operationComplete(ChannelFuture future) throws Exception {
-            raf.close();
+            rraf.close();
           }
         });
       } else {
@@ -207,6 +208,12 @@ public abstract class ConnectionBase {
       }
       return writeFuture;
     } catch (IOException e) {
+      if (raf != null) {
+        try {
+          raf.close();
+        } catch (IOException ignore) {
+        }
+      }
       handleException(e);
       return null;
     }
