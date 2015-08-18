@@ -135,7 +135,7 @@ public class VertxOptions {
   private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
-  private MetricsOptions metrics;
+  private MetricsOptions metrics = new MetricsOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXECPTION_TIME;
 
   /**

@@ -241,13 +241,11 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = starter.getVertxOptions();
-
-    System.out.println(new VertxOptions());
-    System.out.println("=====================");
-    System.out.println(opts);
-
-    assertEquals(new VertxOptions(), opts);
-
+    VertxOptions def = new VertxOptions();
+    if (opts.getMetricsOptions().isEnabled()) {
+      def.getMetricsOptions().setEnabled(true);
+    }
+    assertEquals(def, opts);
   }
 
   @Test
@@ -262,7 +260,11 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = starter.getVertxOptions();
-    assertEquals(new VertxOptions(), opts);
+    VertxOptions def = new VertxOptions();
+    if (opts.getMetricsOptions().isEnabled()) {
+      def.getMetricsOptions().setEnabled(true);
+    }
+    assertEquals(def, opts);
   }
 
   @Test

@@ -188,7 +188,7 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (NullPointerException e) {
       // OK
     }
-    assertNull(options.getMetricsOptions());
+    assertNotNull(options.getMetricsOptions());
 
     try {
       options.setWarningExceptionTime(-1);
@@ -305,7 +305,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
     assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
-    assertNull(options.getMetricsOptions());
+    assertNotNull(options.getMetricsOptions());
     assertEquals(5000000000l, options.getWarningExceptionTime());
     int clusterPort = TestUtils.randomPortInt();
     int clusterPublicPort = TestUtils.randomPortInt();
