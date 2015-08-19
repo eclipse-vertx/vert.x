@@ -235,6 +235,39 @@ public class HTTPExamples {
     }).listen(8080);
   }
 
+  public void example26b(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      long offset = 0;
+      try {
+        offset = Long.parseLong(request.getParam("start"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      long end = Long.MAX_VALUE;
+      try {
+        end = Long.parseLong(request.getParam("end"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      request.response().sendFile("web/mybigfile.txt", offset, end);
+    }).listen(8080);
+  }
+
+  public void example26c(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      long offset = 0;
+      try {
+        offset = Long.parseLong(request.getParam("start"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      request.response().sendFile("web/mybigfile.txt", offset);
+    }).listen(8080);
+  }
+
   public void example27(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       HttpServerResponse response = request.response();

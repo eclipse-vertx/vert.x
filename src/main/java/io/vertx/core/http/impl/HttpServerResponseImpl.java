@@ -328,14 +328,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl sendFile(String filename) {
-    doSendFile(filename, null);
+  public HttpServerResponseImpl sendFile(String filename, long offset, long length) {
+    doSendFile(filename, offset, length, null);
     return this;
   }
 
   @Override
-  public HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
-    doSendFile(filename, resultHandler);
+  public HttpServerResponse sendFile(String filename, long start, long end, Handler<AsyncResult<Void>> resultHandler) {
+    doSendFile(filename, start, end, resultHandler);
     return this;
   }
 
@@ -420,16 +420,16 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private void doSendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+  private void doSendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
     synchronized (conn) {
       if (headWritten) {
         throw new IllegalStateException("Head already written");
       }
       checkWritten();
       File file = vertx.resolveFile(filename);
-      long fileLength = file.length();
+      long contentLength = Math.min(length, file.length() - offset);
       if (!contentLengthSet()) {
-        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileLength));
+        putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
       }
       if (!contentTypeSet()) {
         int li = filename.lastIndexOf('.');
@@ -447,7 +447,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         try {
           raf = new RandomAccessFile(file, "r");
           conn.queueForWrite(response);
-          conn.sendFile(raf, fileLength);
+          conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
         } catch (IOException e) {
           try {
             if (raf != null) {
