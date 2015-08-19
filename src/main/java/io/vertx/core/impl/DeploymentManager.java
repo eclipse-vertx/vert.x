@@ -386,13 +386,9 @@ public class DeploymentManager {
     }
     JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
 
-    DeploymentImpl deployment = new DeploymentImpl(deploymentID, identifier, options);
-
     Deployment parent = parentContext.getDeployment();
-    if (parent != null) {
-      parent.addChild(deployment);
-      deployment.child = true;
-    }
+    DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
+    
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
@@ -407,6 +403,10 @@ public class DeploymentManager {
           verticle.start(startFuture);
           startFuture.setHandler(ar -> {
             if (ar.succeeded()) {
+              if (parent != null) {
+                parent.addChild(deployment);
+                deployment.child = true;
+              }
               vertx.metricsSPI().verticleDeployed(verticle);
               deployments.put(deploymentID, deployment);
               if (deployCount.incrementAndGet() == verticles.length) {
@@ -435,6 +435,7 @@ public class DeploymentManager {
 
   private class DeploymentImpl implements Deployment {
 
+    private final Deployment parent;
     private final String deploymentID;
     private final String verticleIdentifier;
     private List<VerticleHolder> verticles = new ArrayList<>();
@@ -443,7 +444,8 @@ public class DeploymentManager {
     private boolean undeployed;
     private volatile boolean child;
 
-    private DeploymentImpl(String deploymentID, String verticleIdentifier, DeploymentOptions options) {
+    private DeploymentImpl(Deployment parent, String deploymentID, String verticleIdentifier, DeploymentOptions options) {
+      this.parent = parent;
       this.deploymentID = deploymentID;
       this.verticleIdentifier = verticleIdentifier;
       this.options = options;
@@ -507,6 +509,11 @@ public class DeploymentManager {
               verticleHolder.verticle.stop(stopFuture);
             } catch (Throwable t) {
               stopFuture.fail(t);
+            } finally {
+              // Remove the deployment from any parents
+              if (parent != null) {
+                parent.removeChild(this);
+              }
             }
           });
         }
@@ -524,8 +531,13 @@ public class DeploymentManager {
     }
 
     @Override
-    public synchronized void addChild(Deployment deployment) {
+    public void addChild(Deployment deployment) {
       children.add(deployment);
+    }
+
+    @Override
+    public void removeChild(Deployment deployment) {
+      children.remove(deployment);
     }
 
     @Override

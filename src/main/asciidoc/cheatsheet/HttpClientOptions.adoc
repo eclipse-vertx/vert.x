@@ -11,7 +11,7 @@
 ^|Name | Type ^| Description
 
 |[[connectTimeout]]`connectTimeout`
-|`Number`
+|`Number (int)`
 |+++
 Set the connect timeout+++
 
@@ -20,13 +20,18 @@ Set the connect timeout+++
 |+++
 Add a CRL path+++
 
+|[[crlValues]]`crlValues`
+|`Array of Buffer`
+|+++
+Add a CRL value+++
+
 |[[defaultHost]]`defaultHost`
 |`String`
 |+++
 Set the default host name to be used by this client in requests if none is provided when making the request.+++
 
 |[[defaultPort]]`defaultPort`
-|`Number`
+|`Number (int)`
 |+++
 Set the default port to be used by this client in requests if none is provided when making the request.+++
 
@@ -36,7 +41,7 @@ Set the default port to be used by this client in requests if none is provided w
 Add an enabled cipher suite+++
 
 |[[idleTimeout]]`idleTimeout`
-|`Number`
+|`Number (int)`
 |+++
 Set the idle timeout, in seconds. zero means don't timeout.
  This determines if a connection will timeout and be closed if no data is received within the timeout.+++
@@ -52,12 +57,12 @@ Set whether keep alive is enabled on the client+++
 Set the key/cert options in jks format, aka Java keystore.+++
 
 |[[maxPoolSize]]`maxPoolSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the maximum pool size for connections+++
 
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the max websocket frame size+++
 
@@ -86,8 +91,13 @@ Set the trust options in pfx format+++
 |+++
 Set whether pipe-lining is enabled on the client+++
 
+|[[protocolVersion]]`protocolVersion`
+|`Enum`
+|+++
+Set the protocol version.+++
+
 |[[receiveBufferSize]]`receiveBufferSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the TCP receive buffer size+++
 
@@ -97,12 +107,12 @@ Set the TCP receive buffer size+++
 Set the value of reuse address+++
 
 |[[sendBufferSize]]`sendBufferSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the TCP send buffer size+++
 
 |[[soLinger]]`soLinger`
-|`Number`
+|`Number (int)`
 |+++
 Set whether SO_linger keep alive is enabled+++
 
@@ -122,7 +132,7 @@ Set whether TCP keep alive is enabled+++
 Set whether TCP no delay is enabled+++
 
 |[[trafficClass]]`trafficClass`
-|`Number`
+|`Number (int)`
 |+++
 Set the value of traffic class+++
 

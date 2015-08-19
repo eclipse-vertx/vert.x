@@ -1,0 +1,120 @@
+@declare{'genPropFromJson'}
+	@if{property.array}
+	@{indent}if (json.getValue("@{property.name}") instanceof JsonArray) {\n
+		@if{property.adder}
+			@{indent}  json.getJsonArray("@{property.name}").forEach(item -> {\n
+			@{indent}    if (item instanceof @{cast})\n
+			@{indent}      obj.@{property.writerMethod}(@{before}item@{after});\n
+			@{indent}  });\n
+		@else{}
+			@{indent}  java.util.List<@{propType.name}> list = new java.util.ArrayList<>();\n
+			@{indent}  json.getJsonArray("@{property.name}").forEach( item -> {\n
+			@{indent}    if (item instanceof @{cast})\n
+			@{indent}      list.add(@{before}item@{after});\n
+			@{indent}  });\n
+			@{indent}  obj.@{property.writerMethod}(list);\n
+		@end{}
+	@{indent}}\n
+	@else{}
+	@{indent}if (json.getValue("@{property.name}") instanceof @{cast}) {\n
+		@{indent}  obj.@{property.writerMethod}(@{before}json.getValue("@{property.name}")@{after});\n
+	@{indent}}\n
+	@end{}
+@end{}
+
+package @{type.packageName};\n
+\n
+import io.vertx.core.json.JsonObject;\n
+import io.vertx.core.json.JsonArray;\n
+\n
+public class @{type.simpleName}Converter {\n
+\n
+  public static void fromJson(JsonObject json, @{type.simpleName} obj) {\n
+		@foreach{property:properties}
+			@if{property.declared || inheritConverter}
+				@code{propType=property.type}
+				@code{propKind=propType.kind}
+				@if{propKind == CLASS_API}
+					@if{propType.name == 'io.vertx.core.buffer.Buffer'}
+						@includeNamed{'genPropFromJson';cast='String';before='io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)';after='))';indent='    '}
+					@end{}
+				@else{propKind == CLASS_JSON_OBJECT}
+					@includeNamed{'genPropFromJson';cast='JsonObject';before='((JsonObject)';after=').copy()';indent='    '}
+				@else{propKind == CLASS_JSON_ARRAY}
+					@includeNamed{'genPropFromJson';cast='JsonArray';before='((JsonArray)';after=').copy()';indent='    '}
+				@else{propKind.basic}
+					@if{propKind == CLASS_STRING}
+						@includeNamed{'genPropFromJson';cast='String';before='(String)';after='';indent='    '}
+					@else{}
+						@if{propType.simpleName == 'boolean' || propType.simpleName == 'Boolean'}
+							@includeNamed{'genPropFromJson';cast='Boolean';before='(Boolean)';after='';indent='    '}
+						@else{propType.simpleName == 'byte' || propType.simpleName == 'Byte'}
+							@includeNamed{'genPropFromJson';cast='Number';before='((Number)';after=').byteValue()';indent='    '}
+						@else{propType.simpleName == 'short' || propType.simpleName == 'Short'}
+							@includeNamed{'genPropFromJson';cast='Number';before='((Number)';after=').shortValue()';indent='    '}
+						@else{propType.simpleName == 'int' || propType.simpleName == 'Integer'}
+							@includeNamed{'genPropFromJson';cast='Number';before='((Number)';after=').intValue()';indent='    '}
+						@else{propType.simpleName == 'long' || propType.simpleName == 'Long'}
+							@includeNamed{'genPropFromJson';cast='Number';before='((Number)';after=').longValue()';indent='    '}
+						@else{propType.simpleName == 'float' || propType.simpleName == 'Float'}
+							@includeNamed{'genPropFromJson';cast='Number';before='((Number)';after=').floatValue()';indent='    '}
+						@else{propType.simpleName == 'double' || propType.simpleName == 'Double'}
+							@includeNamed{'genPropFromJson';cast='Number';before='((Number)';after=').doubleValue()';indent='    '}
+						@else{propType.simpleName == 'char' || propType.simpleName == 'Character'}
+							@includeNamed{'genPropFromJson';cast='String';before='((String)';after=').charAt(0)';indent='    '}
+						@end{}
+					@end{}
+				@else{propKind == CLASS_DATA_OBJECT}
+					@includeNamed{'genPropFromJson';cast='JsonObject';before='new ' + propType.name + '((JsonObject)';after=')';indent='    '}
+				@else{propKind == CLASS_ENUM}
+					@includeNamed{'genPropFromJson';cast='String';before='' + propType.name + '.valueOf((String)';after=')';indent='    '}
+				@end{}
+			@end{}
+		@end{}
+  }\n
+
+@declare{'genPropToJson'}
+	@if{property.array}
+		@{indent}if (obj.@{property.readerMethod}() != null) {\n
+		@{indent}  json.put("@{property.name}", new JsonArray(\n
+		@{indent}      obj.@{property.readerMethod}().\n
+		@{indent}          stream().\n
+		@{indent}          map(item -> @{before}item@{after}).\n
+		@{indent}          collect(java.util.stream.Collectors.toList())));\n
+		@{indent}}\n
+	@else{}
+		@if{property.type.kind != CLASS_PRIMITIVE}@{indent}if (obj.@{property.readerMethod}() != null) {\n  @end{}
+		@{indent}json.put("@{property.name}", @{before}obj.@{property.readerMethod}()@{after});\n
+		@if{property.type.kind != CLASS_PRIMITIVE}@{indent}}\n@end{}
+	@end{}
+@end{}
+
+\n
+  public static void toJson(@{type.simpleName} obj, JsonObject json) {\n
+		@foreach{property:properties}
+			@if{(property.declared || inheritConverter) && property.readerMethod != null && property.jsonifiable}
+				@code{propType=property.type}
+				@code{propKind=propType.kind}
+				@if{propKind == CLASS_API}
+					@if{propType.name == 'io.vertx.core.buffer.Buffer'}
+						@includeNamed{'genPropToJson';before='';after='.getBytes()';indent='    '}
+					@end{}
+				@else{propKind == CLASS_ENUM}
+					@includeNamed{'genPropToJson';before='';after='.name()';indent='    '}
+				@else{propKind == CLASS_JSON_OBJECT || propKind == CLASS_JSON_ARRAY}
+					@includeNamed{'genPropToJson';before='';after='';indent='    '}
+				@else{propKind.basic}
+					@if{propKind == CLASS_STRING || propKind == CLASS_JSON_OBJECT || propKind == CLASS_JSON_ARRAY}
+						@includeNamed{'genPropToJson';before='';after='';indent='    '}
+					@else{propType.simpleName == 'char' || propType.simpleName == 'Character'}
+						@includeNamed{'genPropToJson';before='Character.toString(';after=')';indent='    '}
+					@else{}
+						@includeNamed{'genPropToJson';before='';after='';indent='    '}
+					@end{}
+				@else{propKind == CLASS_DATA_OBJECT}
+					@includeNamed{'genPropToJson';before='';after='.toJson()';indent='    '}
+				@end{}
+			@end{}
+		@end{}
+  }\n
+}

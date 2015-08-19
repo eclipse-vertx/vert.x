@@ -37,4 +37,9 @@ Set the password+++
 |`String`
 |+++
 Set the path+++
+
+|[[value]]`value`
+|`Buffer`
+|+++
+Set the store as a buffer+++
 |===

@@ -793,6 +793,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
             ctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
             break;
+          case PONG:
+            // Just ignore it
+            break;
           case CLOSE:
             if (!closeFrameSent) {
               // Echo back close frame and close the connection once it was written.

@@ -25,12 +25,29 @@
       if (typeName == 'java.lang.Boolean' || typeName == 'boolean') {
         return "Boolean";
       }
-      if (typeName == 'java.lang.Integer' || typeName == 'int' ||
-          typeName == 'java.lang.Long' || typeName == 'long') {
-        return "Number";
+      if (typeName == 'java.lang.Character' || typeName == 'chat') {
+        return "Char";
       }
+      if (typeName == 'java.lang.Byte' || typeName == 'byte' ||
+          typeName == 'java.lang.Short' || typeName == 'short' ||
+          typeName == 'java.lang.Integer' || typeName == 'int' ||
+          typeName == 'java.lang.Long' || typeName == 'long' ||
+          typeName == 'java.lang.Float' || typeName == 'float' ||
+          typeName == 'java.lang.Double' || typeName == 'double') {
+        return 'Number (' + type.simpleName + ')';
+      }
+    } else if (kind == CLASS_JSON_OBJECT) {
+      return 'Json object';
+    } else if (kind == CLASS_JSON_ARRAY) {
+      return 'Json array';
     } else if (kind == CLASS_DATA_OBJECT) {
       return 'link:' + type.raw.simpleName + '.html[' + type.raw.simpleName + ']';
+    } else if (kind == CLASS_ENUM) {
+      return 'Enum';
+    } else if (kind == CLASS_API) {
+      if (type.name == 'io.vertx.core.buffer.Buffer') {
+        return "Buffer"
+      }
     }
     System.out.println("unhandled type " + type);
     return null;

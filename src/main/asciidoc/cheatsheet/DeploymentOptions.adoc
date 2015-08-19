@@ -11,6 +11,11 @@
 |===
 ^|Name | Type ^| Description
 
+|[[config]]`config`
+|`Json object`
+|+++
+Set the JSON configuration that will be passed to the verticle(s) when it's deployed+++
+
 |[[extraClasspath]]`extraClasspath`
 |`Array of String`
 |+++
@@ -24,7 +29,7 @@ Set any extra classpath to be used when deploying the verticle.
 Set whether the verticle(s) will be deployed as HA.+++
 
 |[[instances]]`instances`
-|`Number`
+|`Number (int)`
 |+++
 Set the number of instances that should be deployed.+++
 

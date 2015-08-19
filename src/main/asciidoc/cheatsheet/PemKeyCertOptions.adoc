@@ -55,8 +55,18 @@
 |+++
 Set the path to the certificate+++
 
+|[[certValue]]`certValue`
+|`Buffer`
+|+++
+Set the certificate as a buffer+++
+
 |[[keyPath]]`keyPath`
 |`String`
 |+++
 Set the path to the key file+++
+
+|[[keyValue]]`keyValue`
+|`Buffer`
+|+++
+Set the key a a buffer+++
 |===

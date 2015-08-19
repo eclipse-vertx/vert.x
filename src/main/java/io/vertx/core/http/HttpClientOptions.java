@@ -31,7 +31,7 @@ import io.vertx.core.net.TCPSSLOptions;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class HttpClientOptions extends ClientOptionsBase {
 
   /**
@@ -74,6 +74,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_DEFAULT_PORT = 80;
 
+  /**
+   * The default protocol version = HTTP/1.1
+   */
+  public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -82,20 +87,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxWebsocketFrameSize;
   private String defaultHost;
   private int defaultPort;
+  private HttpVersion protocolVersion;
 
   /**
    * Default constructor
    */
   public HttpClientOptions() {
     super();
-    verifyHost = DEFAULT_VERIFY_HOST;
-    maxPoolSize = DEFAULT_MAX_POOL_SIZE;
-    keepAlive = DEFAULT_KEEP_ALIVE;
-    pipelining = DEFAULT_PIPELINING;
-    tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
-    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    defaultHost = DEFAULT_DEFAULT_HOST;
-    defaultPort = DEFAULT_DEFAULT_PORT;
+    init();
   }
 
   /**
@@ -113,6 +112,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxWebsocketFrameSize = other.maxWebsocketFrameSize;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
+    this.protocolVersion = other.protocolVersion;
   }
 
   /**
@@ -122,14 +122,20 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions(JsonObject json) {
     super(json);
-    this.verifyHost = json.getBoolean("verifyHost", DEFAULT_VERIFY_HOST);
-    this.maxPoolSize = json.getInteger("maxPoolSize", DEFAULT_MAX_POOL_SIZE);
-    this.keepAlive = json.getBoolean("keepAlive", DEFAULT_KEEP_ALIVE);
-    this.pipelining = json.getBoolean("pipelining", DEFAULT_PIPELINING);
-    this.tryUseCompression = json.getBoolean("tryUseCompression", DEFAULT_TRY_USE_COMPRESSION);
-    this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAX_WEBSOCKET_FRAME_SIZE);
-    this.defaultHost = json.getString("defaultHost", DEFAULT_DEFAULT_HOST);
-    this.defaultPort = json.getInteger("defaultPort", DEFAULT_DEFAULT_PORT);
+    init();
+    HttpClientOptionsConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    verifyHost = DEFAULT_VERIFY_HOST;
+    maxPoolSize = DEFAULT_MAX_POOL_SIZE;
+    keepAlive = DEFAULT_KEEP_ALIVE;
+    pipelining = DEFAULT_PIPELINING;
+    tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
+    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    defaultHost = DEFAULT_DEFAULT_HOST;
+    defaultPort = DEFAULT_DEFAULT_PORT;
+    protocolVersion = DEFAULT_PROTOCOL_VERSION;
   }
 
   @Override
@@ -413,6 +419,29 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * Get the protocol version.
+   *
+   * @return the protocol version
+   */
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
+  }
+
+  /**
+   * Set the protocol version.
+   *
+   * @param protocolVersion the protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
+    if (protocolVersion == null) {
+      throw new IllegalArgumentException("protocolVersion must not be null");
+    }
+    this.protocolVersion = protocolVersion;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -429,6 +458,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (tryUseCompression != that.tryUseCompression) return false;
     if (verifyHost != that.verifyHost) return false;
     if (!defaultHost.equals(that.defaultHost)) return false;
+    if (protocolVersion != that.protocolVersion) return false;
 
     return true;
   }
@@ -444,6 +474,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + defaultHost.hashCode();
     result = 31 * result + defaultPort;
+    result = 31 * result + protocolVersion.hashCode();
     return result;
   }
 }

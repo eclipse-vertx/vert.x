@@ -25,7 +25,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class NetServerOptions extends TCPSSLOptions {
 
   // Server specific HTTP stuff
@@ -60,10 +60,7 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public NetServerOptions() {
     super();
-    this.port = DEFAULT_PORT;
-    this.host = DEFAULT_HOST;
-    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
-    this.clientAuthRequired = DEFAULT_CLIENT_AUTH_REQUIRED;
+    init();
   }
 
   /**
@@ -86,10 +83,15 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public NetServerOptions(JsonObject json) {
     super(json);
-    this.port = json.getInteger("port", DEFAULT_PORT);
-    this.host = json.getString("host", DEFAULT_HOST);
-    this.acceptBacklog = json.getInteger("acceptBacklog", DEFAULT_ACCEPT_BACKLOG);
-    this.clientAuthRequired = json.getBoolean("clientAuthRequired", DEFAULT_CLIENT_AUTH_REQUIRED);
+    init();
+    NetServerOptionsConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    this.port = DEFAULT_PORT;
+    this.host = DEFAULT_HOST;
+    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
+    this.clientAuthRequired = DEFAULT_CLIENT_AUTH_REQUIRED;
   }
 
   @Override

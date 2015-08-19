@@ -31,12 +31,12 @@ Set if loopback mode is disabled+++
 Set the multicast network interface address+++
 
 |[[multicastTimeToLive]]`multicastTimeToLive`
-|`Number`
+|`Number (int)`
 |+++
 Set the multicast ttl value+++
 
 |[[receiveBufferSize]]`receiveBufferSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the TCP receive buffer size+++
 
@@ -46,12 +46,12 @@ Set the TCP receive buffer size+++
 Set the value of reuse address+++
 
 |[[sendBufferSize]]`sendBufferSize`
-|`Number`
+|`Number (int)`
 |+++
 Set the TCP send buffer size+++
 
 |[[trafficClass]]`trafficClass`
-|`Number`
+|`Number (int)`
 |+++
 Set the value of traffic class+++
 |===

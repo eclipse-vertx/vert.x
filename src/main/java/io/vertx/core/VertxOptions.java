@@ -28,7 +28,7 @@ import java.util.Objects;
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class VertxOptions {
 
   /**
@@ -102,11 +102,6 @@ public class VertxOptions {
   public static final boolean DEFAULT_HA_ENABLED = false;
 
   /**
-   * The default value of metrics enabled false
-   */
-  public static final boolean DEFAULT_METRICS_ENABLED = false;
-
-  /**
    * The default value of warning exception time 5000000000 ns (5 seconds)
    * If a thread is blocked longer than this threshold, the warning log
    * contains a stack trace
@@ -169,23 +164,8 @@ public class VertxOptions {
    * @param json the JsonObject to create it from
    */
   public VertxOptions(JsonObject json) {
-    this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENT_LOOP_POOL_SIZE);
-    this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKER_POOL_SIZE);
-    this.clustered = json.getBoolean("clustered", DEFAULT_CLUSTERED);
-    this.clusterHost = json.getString("clusterHost", DEFAULT_CLUSTER_HOST);
-    this.clusterPort = json.getInteger("clusterPort", DEFAULT_CLUSTER_PORT);
-    this.clusterPingInterval = json.getLong("clusterPingInterval", DEFAULT_CLUSTER_PING_INTERVAL);
-    this.clusterPingReplyInterval = json.getLong("clusterPingReplyInterval", DEFAULT_CLUSTER_PING_REPLY_INTERVAL);
-    this.internalBlockingPoolSize = json.getInteger("internalBlockingPoolSize", DEFAULT_INTERNAL_BLOCKING_POOL_SIZE);
-    this.blockedThreadCheckInterval = json.getLong("blockedThreadCheckInterval", DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL);
-    this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME);
-    this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAX_WORKER_EXECUTE_TIME);
-    this.haEnabled = json.getBoolean("haEnabled", false);
-    this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUM_SIZE);
-    this.haGroup = json.getString("haGroup", DEFAULT_HA_GROUP);
-    JsonObject metricsJson = json.getJsonObject("metricsOptions");
-    this.metrics = metricsJson != null ? new MetricsOptions(metricsJson) : null;
-    this.warningExceptionTime = json.getLong("warningExceptionTime", DEFAULT_WARNING_EXECPTION_TIME);
+    this();
+    VertxOptionsConverter.fromJson(json, this);
   }
 
   /**

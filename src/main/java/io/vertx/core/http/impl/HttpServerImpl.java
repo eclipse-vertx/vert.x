@@ -491,6 +491,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
               ch.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, wsFrame.getBinaryData()));
               break;
+            case PONG:
+              // Just ignore it
+              break;
             case CLOSE:
               if (!closeFrameSent) {
                 // Echo back close frame and close the connection once it was written.

@@ -16,8 +16,8 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SocketDefaults;
 
@@ -32,6 +32,7 @@ import java.util.Set;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@DataObject(generateConverter = true)
 public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
@@ -81,14 +82,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions() {
     super();
-    tcpNoDelay = DEFAULT_TCP_NO_DELAY;
-    tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
-    soLinger = DEFAULT_SO_LINGER;
-    usePooledBuffers = DEFAULT_USE_POOLED_BUFFERS;
-    idleTimeout = DEFAULT_IDLE_TIMEOUT;
-    ssl = DEFAULT_SSL;
-    crlPaths = new ArrayList<>();
-    crlValues = new ArrayList<>();
+    init();
   }
 
   /**
@@ -118,45 +112,19 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions(JsonObject json) {
     super(json);
-    this.tcpNoDelay = json.getBoolean("tcpNoDelay", DEFAULT_TCP_NO_DELAY);
-    this.tcpKeepAlive = json.getBoolean("tcpKeepAlive", DEFAULT_TCP_KEEP_ALIVE);
-    this.soLinger = json.getInteger("soLinger", DEFAULT_SO_LINGER);
-    this.usePooledBuffers = json.getBoolean("usePooledBuffers", false);
-    this.idleTimeout = json.getInteger("idleTimeout", 0);
-    this.ssl = json.getBoolean("ssl", false);
-    JsonObject keyCertJson = json.getJsonObject("keyStoreOptions");
-    if (keyCertJson != null) {
-      keyCertOptions = new JksOptions(keyCertJson);
-    }
-    keyCertJson = json.getJsonObject("pfxKeyCertOptions");
-    if (keyCertJson != null) {
-      keyCertOptions = new PfxOptions(keyCertJson);
-    }
-    keyCertJson = json.getJsonObject("pemKeyCertOptions");
-    if (keyCertJson != null) {
-      keyCertOptions = new PemKeyCertOptions(keyCertJson);
-    }
-    JsonObject trustOptions = json.getJsonObject("trustStoreOptions");
-    if (trustOptions != null) {
-      this.trustOptions = new JksOptions(trustOptions);
-    }
-    trustOptions = json.getJsonObject("pfxTrustOptions");
-    if (trustOptions != null) {
-      this.trustOptions = new PfxOptions(trustOptions);
-    }
-    trustOptions = json.getJsonObject("pemTrustOptions");
-    if (trustOptions != null) {
-      this.trustOptions = new PemTrustOptions(trustOptions);
-    }
-    JsonArray arr = json.getJsonArray("enabledCipherSuites");
-    this.enabledCipherSuites = arr == null ? new HashSet<>() : new HashSet<>(arr.getList());
-    arr = json.getJsonArray("crlPaths");
-    this.crlPaths = arr == null ? new ArrayList<>() : new ArrayList<>(arr.getList());
-    this.crlValues = new ArrayList<>();
-    arr = json.getJsonArray("crlValues");
-    if (arr != null) {
-      ((List<byte[]>) arr.getList()).stream().map(Buffer::buffer).forEach(crlValues::add);
-    }
+    init();
+    TCPSSLOptionsConverter.fromJson(json ,this);
+  }
+
+  private void init() {
+    tcpNoDelay = DEFAULT_TCP_NO_DELAY;
+    tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
+    soLinger = DEFAULT_SO_LINGER;
+    usePooledBuffers = DEFAULT_USE_POOLED_BUFFERS;
+    idleTimeout = DEFAULT_IDLE_TIMEOUT;
+    ssl = DEFAULT_SSL;
+    crlPaths = new ArrayList<>();
+    crlValues = new ArrayList<>();
   }
 
   /**

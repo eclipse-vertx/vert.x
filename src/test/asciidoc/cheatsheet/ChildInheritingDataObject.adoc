@@ -1,0 +1,18 @@
+== ChildInheritingDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[childProperty]]`childProperty`
+|`String`
+|-
+|[[parentProperty]]`parentProperty`
+|`String`
+|-|===

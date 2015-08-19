@@ -19,7 +19,7 @@
 Set the codec name.+++
 
 |[[sendTimeout]]`sendTimeout`
-|`Number`
+|`Number (long)`
 |+++
 Set the send timeout.+++
 |===
