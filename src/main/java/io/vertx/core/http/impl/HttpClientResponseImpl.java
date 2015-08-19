@@ -103,7 +103,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public String getHeader(CharSequence headerName) {
-    return headers().get(headerName.toString());
+    return headers().get(headerName);
   }
 
   @Override
