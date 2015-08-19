@@ -843,9 +843,12 @@ public class HttpTest extends HttpTestBase {
     TestUtils.assertNullPointerException(() -> client.requestAbs((HttpMethod) null, "http://someuri", resp -> {
     }));
     TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", "/somepath", null));
-    TestUtils.assertNullPointerException(() -> client.request((HttpMethod)null, 8080, "localhost", "/somepath", resp -> {}));
-    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, null, "/somepath", resp -> {}));
-    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", null, resp -> {}));
+    TestUtils.assertNullPointerException(() -> client.request((HttpMethod) null, 8080, "localhost", "/somepath", resp -> {
+    }));
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, null, "/somepath", resp -> {
+    }));
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", null, resp -> {
+    }));
   }
 
   @Test
@@ -1658,7 +1661,7 @@ public class HttpTest extends HttpTestBase {
     }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp ->
-        resp.exceptionHandler(t -> testComplete())).exceptionHandler(error -> fail()).end();
+              resp.exceptionHandler(t -> testComplete())).exceptionHandler(error -> fail()).end();
     }));
     await();
   }
@@ -3094,7 +3097,8 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testListenNoHandlers() throws Exception {
-    assertIllegalStateException(() -> server.listen(ar -> {}));
+    assertIllegalStateException(() -> server.listen(ar -> {
+    }));
   }
 
   @Test
@@ -3972,10 +3976,12 @@ public class HttpTest extends HttpTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
-      req.handler(resp -> {});
+      req.handler(resp -> {
+      });
       req.endHandler(done -> {
         try {
-          req.handler(arg -> {});
+          req.handler(arg -> {
+          });
           fail();
         } catch (Exception ignore) {
         }
@@ -4101,7 +4107,7 @@ public class HttpTest extends HttpTestBase {
         assertTrue(Vertx.currentContext().isWorkerContext());
         assertTrue(Context.isOnWorkerThread());
         HttpServer server1 = vertx.createHttpServer(new HttpServerOptions()
-          .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+                .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
         server1.requestHandler(req -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
@@ -4180,6 +4186,37 @@ public class HttpTest extends HttpTestBase {
 
     await();
   }
+
+  @Test
+  public void testSendOpenRangeFileFromClasspath() {
+    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+      res.response().sendFile("webroot/somefile.html", 6);
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        resp.bodyHandler(buff -> {
+          assertTrue(buff.toString().startsWith("<body>blah</body></html>"));
+          testComplete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testSendRangeFileFromClasspath() {
+    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+      res.response().sendFile("webroot/somefile.html", 6, 6);
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals("<body>", buff.toString());
+          testComplete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
 
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
