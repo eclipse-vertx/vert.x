@@ -252,11 +252,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   void end();
 
   /**
-   * Ask the OS to stream a file as specified by {@code filename} directly
-   * from disk to the outgoing connection, bypassing userspace altogether
-   * (where supported by the underlying operating system.
-   * This is a very efficient way to serve files.<p>
-   * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   * Same as {@link #sendFile(String, long)} using offset @code{0} which means starting from the beginning of the file.
    *
    * @param filename  path to the file to serve
    * @return a reference to this, so the API can be used fluently
@@ -267,11 +263,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
-   * Ask the OS to stream a file as specified by {@code filename} directly
-   * from disk to the outgoing connection, bypassing userspace altogether
-   * (where supported by the underlying operating system.
-   * This is a very efficient way to serve files.<p>
-   * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   * Same as {@link #sendFile(String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * file.
    *
    * @param filename  path to the file to serve
    * @param offset offset to start serving from
