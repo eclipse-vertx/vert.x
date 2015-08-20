@@ -250,7 +250,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest requestAbs(HttpMethod method, String absoluteURI) {
     URL url = parseUrl(absoluteURI);
-    return doRequest(method, url.getHost(), url.getPort(), url.getFile(), null);
+    int port = url.getPort();
+    if (port == -1) {
+      String protocol = url.getProtocol();
+      char chend = protocol.charAt(protocol.length() - 1);
+      if (chend == 'p') {
+        port = 80;
+      } else if (chend == 's'){
+        port = 443;
+      }
+    }
+    return doRequest(method, url.getHost(), port, url.getFile(), null);
   }
 
   @Override

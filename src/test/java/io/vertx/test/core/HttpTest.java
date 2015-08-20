@@ -3510,6 +3510,12 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void requestAbsNoPort() {
+    client.requestAbs(HttpMethod.GET, "http://www.google.com", res -> testComplete()).end();
+    await();
+  }
+
+  @Test
   public void testFormUploadLargerFileStreamToDisk() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(20000), true);
   }
