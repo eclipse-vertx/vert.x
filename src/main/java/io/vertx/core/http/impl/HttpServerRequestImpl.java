@@ -169,6 +169,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
+  public String getHeader(CharSequence headerName) {
+    return headers().get(headerName);
+  }
+
+  @Override
   public MultiMap params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());

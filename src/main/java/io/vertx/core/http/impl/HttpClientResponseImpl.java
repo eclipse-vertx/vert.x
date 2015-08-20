@@ -99,6 +99,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
+  public String getHeader(CharSequence headerName) {
+    return headers().get(headerName);
+  }
+
+  @Override
   public synchronized MultiMap trailers() {
     if (trailers == null) {
       trailers = new HeadersAdaptor(new DefaultHttpHeaders());
