@@ -1264,6 +1264,33 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testRequestHeadersWithCharSequence() {
+    HashMap<CharSequence, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.TEXT_HTML, "text/html");
+    headers.put(HttpHeaders.USER_AGENT, "User-Agent");
+    headers.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
+
+    server.requestHandler(req -> {
+      assertEquals(headers.size() + 1, req.headers().size());
+
+      headers.forEach((k, v) -> assertEquals(v, req.headers().get(k)));
+      headers.forEach((k, v) -> assertEquals(v, req.getHeader(k)));
+
+      req.response().end();
+    });
+
+    server.listen(onSuccess(server -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete());
+
+      headers.forEach((k, v) -> req.headers().add(k, v));
+
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
   public void testRequestHeadersPutAll() {
     testRequestHeaders(false);
   }
@@ -1331,6 +1358,32 @@ public class HttpTest extends HttpTestBase {
           assertEquals(entry.getValue(), resp.headers().get(entry.getKey()));
           assertEquals(entry.getValue(), resp.getHeader(entry.getKey()));
         }
+        testComplete();
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseHeadersWithCharSequence() {
+    HashMap<CharSequence, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.TEXT_HTML, "text/html");
+    headers.put(HttpHeaders.USER_AGENT, "User-Agent");
+    headers.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
+
+    server.requestHandler(req -> {
+      headers.forEach((k, v) -> req.response().headers().add(k, v));
+      req.response().end();
+    });
+
+    server.listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(headers.size() + 1, resp.headers().size());
+
+        headers.forEach((k,v) -> assertEquals(v, resp.headers().get(k)));
+        headers.forEach((k,v) -> assertEquals(v, resp.getHeader(k)));
+
         testComplete();
       }).end();
     }));
