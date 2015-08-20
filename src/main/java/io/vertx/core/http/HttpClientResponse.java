@@ -16,12 +16,13 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 
@@ -79,6 +80,15 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    * @return the header value
    */
   String getHeader(String headerName);
+
+  /**
+   * Return the first header value with the specified name
+   *
+   * @param headerName  the header name
+   * @return the header value
+   */
+  @GenIgnore
+  String getHeader(CharSequence headerName);
 
   /**
    * Return the first trailer value with the specified name
