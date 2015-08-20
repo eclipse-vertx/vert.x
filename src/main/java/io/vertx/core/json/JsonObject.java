@@ -21,14 +21,20 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * A representation of a <a href="http://json.org/">JSON</a> object in Java.
  * <p>
  * Unlike some other languages Java does not have a native understanding of JSON. To enable JSON to be used easily
  * in Vert.x code we use this class to encapsulate the notion of a JSON object.
+ *
+ * The implementation adheres to the <a href="http://rfc-editor.org/rfc/rfc7493.txt">RFC-7493</a> to support Temporal
+ * data types as well as binary data.
  * <p>
  * Please see the documentation for more information.
  *
@@ -199,8 +205,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Get the binary value with the specified key.
    * <p>
-   * JSON itself has no notion of a binary, so this method assumes there is a String value with the key and
-   * it contains a Base64 encoded binary, which it decodes if found and returns.
+   * JSON itself has no notion of a binary, this extension complies to the RFC-7493, so this method assumes there is a
+   * String value with the key and it contains a Base64 encoded binary, which it decodes if found and returns.
    * <p>
    * This method should be used in conjunction with {@link #put(String, byte[])}
    *
@@ -213,6 +219,25 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     Objects.requireNonNull(key);
     String encoded = (String) map.get(key);
     return encoded == null ? null : Base64.getDecoder().decode(encoded);
+  }
+
+  /**
+   * Get the instant value with the specified key.
+   * <p>
+   * JSON itself has no notion of a date, this extension complies to the RFC-7493, so this method assumes there is a
+   * String value with the key and it contains a ISODATE encoded date, which it decodes if found and returns.
+   * <p>
+   * This method should be used in conjunction with {@link #put(String, java.time.Instant)}
+   *
+   * @param key  the key to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException if the value is not a String
+   * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
+   */
+  public Instant getInstant(String key) {
+    Objects.requireNonNull(key);
+    String encoded = (String) map.get(key);
+    return encoded == null ? null : Instant.from(ISO_INSTANT.parse(encoded));
   }
 
   /**
@@ -384,6 +409,20 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     Objects.requireNonNull(key);
     Object val = map.get(key);
     return val != null || map.containsKey(key) ? (val == null ? null : Base64.getDecoder().decode((String)val)) : def;
+  }
+
+  /**
+   * Like {@link #getInstant(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key  the key to lookup
+   * @param def  the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public Instant getInstant(String key, Instant def) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    return val != null || map.containsKey(key) ?
+        (val == null ? null : Instant.from(ISO_INSTANT.parse((String) val))) : def;
   }
 
   /**
@@ -567,7 +606,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Put a byte[] into the JSON object with the specified key.
    * <p>
-   * JSON has no notion of binary, so the binary will first be Base64 encoded before being put as a String.
+   * JSON extension RFC7493, binary will first be Base64 encoded before being put as a String.
    *
    * @param key  the key
    * @param value  the value
@@ -576,6 +615,21 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public JsonObject put(String key, byte[] value) {
     Objects.requireNonNull(key);
     map.put(key, value == null ? null : Base64.getEncoder().encodeToString(value));
+    return this;
+  }
+
+  /**
+   * Put a Instant into the JSON object with the specified key.
+   * <p>
+   * JSON extension RFC7493, instant will first be encoded to ISODATE String.
+   *
+   * @param key  the key
+   * @param value  the value
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonObject put(String key, Instant value) {
+    Objects.requireNonNull(key);
+    map.put(key, value == null ? null : ISO_INSTANT.format(value));
     return this;
   }
 

@@ -13,6 +13,14 @@ A JSON object is basically just a map which has string keys and values can be of
 
 JSON objects also support null values.
 
+The simplicity behind JSON is one of its biggest strengths however in many occasions developers will want some extra
+data types than the ones provided by the spec, namely binary and temporal data. For this reason there is
+`link:http://rfc-editor.org/rfc/rfc7493.txt[RFC-7493]`. The RFC defined I-JSON as a interop data type which extends
+the base spec with knowledge about temporal and binary data.
+
+Even though RFC-7493 only defined encoding of this extra types to String, Vert.x JSON types do handle the conversion
+from String back to the native types.
+
 ==== Creating JSON objects
 
 Empty JSON objects can be created with the default constructor.
