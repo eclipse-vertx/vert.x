@@ -23,10 +23,6 @@ import io.vertx.core.json.JsonArray;
  * Converter for {@link io.vertx.core.net.PfxOptions}.
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PfxOptions} original class using Vert.x codegen.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- * @author <a href="http://tfox.org">Tim Fox</a>
- * 
  */
 public class PfxOptionsConverter {
 

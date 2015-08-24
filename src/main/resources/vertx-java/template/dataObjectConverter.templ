@@ -26,17 +26,10 @@
 
 @code{
 
-  def computeConverterClassJavadoc(doc, type) {
+  def computeConverterClassJavadoc(type) {
     var builder = new StringBuilder();
     builder.append(" *").append(" Converter for {@link ").append(type).append("}.");
     builder.append("\n *\n * NOTE: This class has been automatically generated from the {@link " + type + "} original class using Vert.x codegen.");
-    builder.append("\n *");
-    if (doc != null) {
-      for (blockTag : doc.getBlockTags()) {
-        builder.append("\n * ").append(blockTag.toString().replace("\n", "\n * "));
-      }
-    }
-
     return builder.append("\n").toString();
   }
 }
@@ -63,7 +56,7 @@ import io.vertx.core.json.JsonObject;\n
 import io.vertx.core.json.JsonArray;\n
 \n
 /**\n
-@{computeConverterClassJavadoc(doc, type.name)}
+@{computeConverterClassJavadoc(type.name)}
  */\n
 public class @{type.simpleName}Converter {\n
 \n

@@ -23,9 +23,6 @@ import io.vertx.core.json.JsonArray;
  * Converter for {@link io.vertx.core.VertxOptions}.
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.VertxOptions} original class using Vert.x codegen.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
- * 
  */
 public class VertxOptionsConverter {
 

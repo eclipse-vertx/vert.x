@@ -523,6 +523,46 @@ WARNING: If you're going to write web servers directly using Vert.x be careful t
 path to access files outside the directory from which you want to serve them. It may be safer instead to use
 Vert.x Web.
 
+When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
+
+[source,java]
+----
+vertx.createHttpServer().requestHandler(request -> {
+  long offset = 0;
+  try {
+    offset = Long.parseLong(request.getParam("start"));
+  } catch (NumberFormatException e) {
+    // error handling...
+  }
+
+  long end = Long.MAX_VALUE;
+  try {
+    end = Long.parseLong(request.getParam("end"));
+  } catch (NumberFormatException e) {
+    // error handling...
+  }
+
+  request.response().sendFile("web/mybigfile.txt", offset, end);
+}).listen(8080);
+----
+
+You are not required to supply the length if you want to send a file starting from an offset until the end, in this
+case you can just do:
+
+[source,java]
+----
+vertx.createHttpServer().requestHandler(request -> {
+  long offset = 0;
+  try {
+    offset = Long.parseLong(request.getParam("start"));
+  } catch (NumberFormatException e) {
+    // error handling...
+  }
+
+  request.response().sendFile("web/mybigfile.txt", offset);
+}).listen(8080);
+----
+
 ==== Pumping responses
 
 The server response is a `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instance so you can pump to it from any

@@ -23,9 +23,6 @@ import io.vertx.core.json.JsonArray;
  * Converter for {@link io.vertx.core.metrics.MetricsOptions}.
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.metrics.MetricsOptions} original class using Vert.x codegen.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- * 
  */
 public class MetricsOptionsConverter {
 

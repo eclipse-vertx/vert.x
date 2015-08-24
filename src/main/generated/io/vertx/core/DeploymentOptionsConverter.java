@@ -23,9 +23,6 @@ import io.vertx.core.json.JsonArray;
  * Converter for {@link io.vertx.core.DeploymentOptions}.
  *
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.DeploymentOptions} original class using Vert.x codegen.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
- * 
  */
 public class DeploymentOptionsConverter {
 
