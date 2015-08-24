@@ -93,7 +93,7 @@ public class JULLogDelegate implements LogDelegate {
 
     @Override
     public void info(Object message, Object... params) {
-        log(Level.INFO, message, null, params);
+      log(Level.INFO, message, null, params);
     }
 
     public void info(final Object message, final Throwable t) {
@@ -161,7 +161,7 @@ public class JULLogDelegate implements LogDelegate {
     logger.log(record);
   }
 
-    private void log(Level level, Object message, Throwable t) {
-        log(level, message, t, null);
-    }
+  private void log(Level level, Object message, Throwable t) {
+    log(level, message, t, null);
+  }
 }
