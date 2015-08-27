@@ -140,7 +140,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   @Override
-  public <T> EventBus send(String address, Object message, DeliveryOptions options) {
+  public EventBus send(String address, Object message, DeliveryOptions options) {
     return send(address, message, options, null);
   }
 

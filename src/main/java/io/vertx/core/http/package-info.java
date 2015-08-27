@@ -464,6 +464,21 @@
  * path to access files outside the directory from which you want to serve them. It may be safer instead to use
  * Vert.x Web.
  *
+ * When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example26b}
+ * ----
+ *
+ * You are not required to supply the length if you want to send a file starting from an offset until the end, in this
+ * case you can just do:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example26c}
+ * ----
+ *
  * ==== Pumping responses
  *
  * The server response is a {@link io.vertx.core.streams.WriteStream} instance so you can pump to it from any
