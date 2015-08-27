@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -4553,4 +4554,27 @@ public class HttpTest extends HttpTestBase {
     out.close();
     return file;
   }
+
+
+  @Test
+  public void testDumpManyRequestsOnQueue() throws Exception {
+    int sendRequests = 10000;
+    AtomicInteger receivedRequests = new AtomicInteger();
+    vertx.createHttpServer().requestHandler(r-> {
+      r.response().end();
+      if (receivedRequests.incrementAndGet() == sendRequests) {
+        testComplete();
+      }
+    }).listen(8080, onSuccess(s -> {
+      HttpClientOptions ops = new HttpClientOptions()
+        .setDefaultPort(8080)
+        .setPipelining(true)
+        .setKeepAlive(true);
+      HttpClient client = vertx.createHttpClient(ops);
+      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {}));
+    }));
+    await();
+  }
+
+
 }

@@ -101,7 +101,7 @@ public abstract class ConnectionManager {
         // Maybe the connection can be reused
         Waiter waiter = waiters.poll();
         if (waiter != null) {
-          conn.getContext().executeFromIO(() -> waiter.handler.handle(conn));
+          conn.getContext().runOnContext(v -> waiter.handler.handle(conn));
         }
       }
     }
