@@ -1186,6 +1186,27 @@ public class DeploymentTest extends VertxTestBase {
     }));
     await();
   }
+  
+  @Test
+  public void testUndeployWhenUndeployIsInProgress() throws Exception {
+    int numIts = 10;
+    CountDownLatch latch = new CountDownLatch(numIts);
+    for (int i = 0; i < numIts; i++) {
+      Verticle parent = new AbstractVerticle() {
+        @Override
+        public void start() throws Exception {
+          vertx.deployVerticle(new AbstractVerticle() {
+          }, id -> vertx.undeploy(id.result()));
+        }
+      };
+      vertx.deployVerticle(parent, id -> {
+        vertx.undeploy(id.result(), res -> {
+          latch.countDown();
+        });
+      });
+    }
+    awaitLatch(latch);
+  }
 
   // TODO
 

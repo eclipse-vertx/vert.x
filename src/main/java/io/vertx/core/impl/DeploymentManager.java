@@ -28,6 +28,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -438,7 +439,7 @@ public class DeploymentManager {
     private final Deployment parent;
     private final String deploymentID;
     private final String verticleIdentifier;
-    private List<VerticleHolder> verticles = new ArrayList<>();
+    private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private final DeploymentOptions options;
     private boolean undeployed;
@@ -458,18 +459,20 @@ public class DeploymentManager {
     @Override
     public void undeploy(Handler<AsyncResult<Void>> completionHandler) {
       ContextImpl currentContext = vertx.getOrCreateContext();
-      if (!undeployed) {
-        doUndeploy(currentContext, completionHandler);
-      } else {
-        reportFailure(new IllegalStateException("Already undeployed"), currentContext, completionHandler);
-      }
+      doUndeploy(currentContext, completionHandler);
     }
 
-    public void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
+    public synchronized void doUndeploy(ContextImpl undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
+      if (undeployed) {
+        reportFailure(new IllegalStateException("Already undeployed"), undeployingContext, completionHandler);
+        return;
+      }
       if (!children.isEmpty()) {
         final int size = children.size();
         AtomicInteger childCount = new AtomicInteger();
+        boolean undeployedSome = false;
         for (Deployment childDeployment: new HashSet<>(children)) {
+          undeployedSome = true;
           childDeployment.doUndeploy(undeployingContext, ar -> {
             children.remove(childDeployment);
             if (ar.failed()) {
@@ -480,9 +483,14 @@ public class DeploymentManager {
             }
           });
         }
+        if (!undeployedSome) {
+          // It's possible that children became empty before iterating
+          doUndeploy(undeployingContext, completionHandler);
+        }
       } else {
         undeployed = true;
         AtomicInteger undeployCount = new AtomicInteger();
+        int numToUndeploy = verticles.size();
         for (VerticleHolder verticleHolder: verticles) {
           ContextImpl context = verticleHolder.context;
           context.runOnContext(v -> {
@@ -497,7 +505,7 @@ public class DeploymentManager {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
                 }
-                if (ar.succeeded() && undeployCount.incrementAndGet() == verticles.size()) {
+                if (ar.succeeded() && undeployCount.incrementAndGet() == numToUndeploy) {
                   reportSuccess(null, undeployingContext, completionHandler);
                 } else if (ar.failed() && !failureReported.get()) {
                   failureReported.set(true);
