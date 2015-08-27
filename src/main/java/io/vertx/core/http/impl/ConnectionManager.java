@@ -152,7 +152,9 @@ public abstract class ConnectionManager {
     private void createNewConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
       connCount++;
       connect(address.host, address.port, conn -> {
-        allConnections.add(conn);
+        synchronized (ConnectionManager.this) {
+          allConnections.add(conn);
+        }
         handler.handle(conn);
       }, connectionExceptionHandler, context, this);
     }
