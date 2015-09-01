@@ -114,6 +114,15 @@ public class StarterTest extends VertxTestBase {
   }
 
   @Test
+  public void testRunVerticleWithMainVerticleInManifestWithHA() throws Exception {
+    MyStarter starter = new MyStarter();
+    String[] args = new String[] {"-ha"};
+    starter.run(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+  }
+
+  @Test
   public void testRunVerticleWithMainVerticleInManifestWithArgs() throws Exception {
     MyStarter starter = new MyStarter();
     String[] args = new String[] {"-cluster", "-worker"};
