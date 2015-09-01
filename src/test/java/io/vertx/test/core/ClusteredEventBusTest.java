@@ -379,7 +379,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       }).completionHandler(onSuccess(v2 -> {
         regLatch.countDown();
       }));
-      regLatch.countDown();
     }));
     awaitLatch(regLatch);
 
