@@ -16,23 +16,17 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.FileRegion;
+import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -62,6 +56,8 @@ public abstract class ConnectionBase {
   protected Handler<Void> closeHandler;
   private boolean read;
   private boolean needsFlush;
+  private Thread ctxThread;
+  private boolean needsAsyncFlush;
 
   protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
     this.vertx = vertx;
@@ -73,19 +69,31 @@ public abstract class ConnectionBase {
   protected synchronized final void startRead() {
     checkContext();
     read = true;
+    if (ctxThread == null) {
+      ctxThread = Thread.currentThread();
+    }
   }
 
   protected synchronized final void endReadAndFlush() {
     read = false;
     if (needsFlush) {
       needsFlush = false;
-      // flush now
-      channel.flush();
+      if (needsAsyncFlush) {
+        // If the connection has been written to from outside the event loop thread e.g. from a worker thread
+        // Then Netty might end up executing the flush *before* the write as Netty checks for event loop and if not
+        // it executes using the executor.
+        // To avoid this ordering issue we must runOnContext in this situation
+        context.runOnContext(v -> channel.flush());
+      } else {
+        // flush now
+        channel.flush();
+      }
     }
   }
 
   public synchronized ChannelFuture queueForWrite(final Object obj) {
     needsFlush = true;
+    needsAsyncFlush = Thread.currentThread() != ctxThread;
     return channel.write(obj);
   }
 
