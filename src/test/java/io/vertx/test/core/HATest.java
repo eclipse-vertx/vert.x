@@ -43,7 +43,7 @@ public class HATest extends VertxTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    closeVertices(vertx1, vertx2, vertx3);
+    closeVertices(vertx1, vertx2, vertx3, vertx4);
     super.tearDown();
   }
 
