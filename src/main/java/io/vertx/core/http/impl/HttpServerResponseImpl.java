@@ -121,8 +121,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
     synchronized (conn) {
-      this.statusMessage = statusMessage;
-      this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), statusMessage));
+      this.statusMessage = statusMessage != null ? (statusMessage.replace("\r", "\\r").replace("\n", "\\n")) : null;
+      this.response.setStatus(new HttpResponseStatus(response.getStatus().code(), this.statusMessage));
       return this;
     }
   }
