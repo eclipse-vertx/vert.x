@@ -108,18 +108,21 @@ public abstract class ConnectionManager {
 
     // Called when the response has ended
     public synchronized void responseEnded(ClientConnection conn) {
-      if (pipelining) {
-        // if no outstanding responses on connection and nothing waiting then close it
-        if (conn.getOutstandingRequestCount() == 0 && waiters.isEmpty()) {
+      if (pipelining || keepAlive) {
+        Waiter waiter = waiters.poll();
+        if (waiter != null) {
+          executeWaiter(conn, waiter);
+        } else if (!pipelining || conn.getOutstandingRequestCount() == 0) {
           conn.close();
         }
-      } else if (keepAlive) {
-        // Maybe the connection can be reused
-        checkReuseConnection(conn);
       } else {
         // Close it now
         conn.close();
       }
+    }
+
+    private void executeWaiter(ClientConnection conn, Waiter waiter) {
+      conn.getContext().executeFromIO(() -> waiter.handler.handle(conn));
     }
 
     void closeAllConnections() {
@@ -135,17 +138,6 @@ public abstract class ConnectionManager {
         } catch (Throwable t) {
           log.error("Failed to close connection", t);
         }
-      }
-    }
-
-    private void checkReuseConnection(ClientConnection conn) {
-      Waiter waiter = waiters.poll();
-      if (waiter != null) {
-        conn.getContext().executeFromIO(() -> waiter.handler.handle(conn));
-      } else {
-        // Close it - we don't keep connections hanging around - even keep alive ones if there are
-        // no pending requests
-        conn.close();
       }
     }
 
