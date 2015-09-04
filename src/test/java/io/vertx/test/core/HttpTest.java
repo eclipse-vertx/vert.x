@@ -4583,7 +4583,7 @@ public class HttpTest extends HttpTestBase {
     server.requestHandler(req -> req.response().setStatusMessage("Hello\nWorld!").end());
 
     server.listen(onSuccess(server -> client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, res -> {
-      assertEquals("Hello\nWorld", res.statusMessage());
+      assertEquals("Hello\nWorld!", res.statusMessage());
       testComplete();
     }).end()));
 
