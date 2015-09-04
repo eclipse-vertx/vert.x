@@ -69,7 +69,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   HttpClientResponseImpl(Vertx vertx, HttpClientRequestImpl request, ClientConnection conn, HttpResponse response) {
     this.vertx = vertx;
     this.statusCode = response.getStatus().code();
-    this.statusMessage = response.getStatus().reasonPhrase();
+    this.statusMessage = response.getStatus().reasonPhrase().replaceAll("\\\\r", "\r").replaceAll("\\\\n", "\n");
     this.request = request;
     this.conn = conn;
     this.response = response;
