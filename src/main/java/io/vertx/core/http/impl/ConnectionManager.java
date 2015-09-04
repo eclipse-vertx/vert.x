@@ -79,6 +79,7 @@ public abstract class ConnectionManager {
     private final TargetAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private final Set<ClientConnection> allConnections = new HashSet<>();
+    private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
     private int connCount;
 
     ConnQueue(TargetAddress address) {
@@ -86,7 +87,10 @@ public abstract class ConnectionManager {
     }
 
     public synchronized void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
-      if (connCount == maxSockets) {
+      ClientConnection conn = availableConnections.poll();
+      if (conn != null && !conn.isClosed()) {
+        context.runOnContext(v -> handler.handle(conn));
+      } else if (connCount == maxSockets) {
         // Wait in queue
         waiters.add(new Waiter(handler, connectionExceptionHandler, context));
       } else {
@@ -101,21 +105,21 @@ public abstract class ConnectionManager {
         // Maybe the connection can be reused
         Waiter waiter = waiters.poll();
         if (waiter != null) {
-          conn.getContext().runOnContext(v -> waiter.handler.handle(conn));
+          waiter.context.runOnContext(v -> waiter.handler.handle(conn));
         }
       }
     }
 
     // Called when the response has ended
     public synchronized void responseEnded(ClientConnection conn) {
-      if (pipelining) {
-        // if no outstanding responses on connection and nothing waiting then close it
-        if (conn.getOutstandingRequestCount() == 0 && waiters.isEmpty()) {
-          conn.close();
+      if (pipelining || keepAlive) {
+        Waiter waiter = waiters.poll();
+        if (waiter != null) {
+          waiter.context.runOnContext(v -> waiter.handler.handle(conn));
+        } else if (!pipelining || conn.getOutstandingRequestCount() == 0) {
+          // Return to set of available
+          availableConnections.add(conn);
         }
-      } else if (keepAlive) {
-        // Maybe the connection can be reused
-        checkReuseConnection(conn);
       } else {
         // Close it now
         conn.close();
@@ -138,17 +142,6 @@ public abstract class ConnectionManager {
       }
     }
 
-    private void checkReuseConnection(ClientConnection conn) {
-      Waiter waiter = waiters.poll();
-      if (waiter != null) {
-        conn.getContext().executeFromIO(() -> waiter.handler.handle(conn));
-      } else {
-        // Close it - we don't keep connections hanging around - even keep alive ones if there are
-        // no pending requests
-        conn.close();
-      }
-    }
-
     private void createNewConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
       connCount++;
       connect(address.host, address.port, conn -> {
@@ -165,6 +158,7 @@ public abstract class ConnectionManager {
       connCount--;
       if (conn != null) {
         allConnections.remove(conn);
+        availableConnections.remove(conn);
       }
       Waiter waiter = waiters.poll();
       if (waiter != null) {

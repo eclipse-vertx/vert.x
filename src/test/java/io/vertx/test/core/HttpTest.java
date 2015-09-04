@@ -4469,6 +4469,38 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testMultipleRecursiveCallsAndPipelining() throws Exception {
+    int sendRequests = 100;
+    AtomicInteger receivedRequests = new AtomicInteger();
+    vertx.createHttpServer()
+      .requestHandler(x -> {
+        x.response().end("hello");
+      })
+      .listen(8080, r -> {
+        if (r.succeeded()) {
+          HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+              .setKeepAlive(true)
+              .setPipelining(true)
+              .setDefaultPort(8080)
+          );
+          IntStream.range(0, 5).forEach(i -> recursiveCall(client, receivedRequests, sendRequests));
+        }
+      });
+    await();
+  }
+
+  private void recursiveCall(HttpClient client, AtomicInteger receivedRequests, int sendRequests){
+    client.getNow("/", r -> {
+      int numRequests = receivedRequests.incrementAndGet();
+      if (numRequests == sendRequests) {
+        testComplete();
+      } else if (numRequests < sendRequests) {
+        recursiveCall(client, receivedRequests, sendRequests);
+      }
+    });
+  }
+
 
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
