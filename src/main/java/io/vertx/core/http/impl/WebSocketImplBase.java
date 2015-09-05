@@ -66,7 +66,7 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
   }
   public String binaryHandlerID() {
-	  return binaryHandlerID(false);
+    return binaryHandlerID(false);
   }
   
   public synchronized String binaryHandlerID(boolean cluster) {
@@ -79,7 +79,7 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   }
   
   public String textHandlerID() {
-	    return textHandlerID(false);
+    return textHandlerID(false);
   }
 
   public synchronized String textHandlerID(boolean cluster) {
