@@ -1267,4 +1267,52 @@ public class WebsocketTest extends VertxTestBase {
     });
     await();
   }
+  
+  @Test
+  public void testBinaryHandlerID() {
+    String path = "/some/path";
+    Buffer expected = Buffer.buffer(TestUtils.randomByteArray(100));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      final String binaryHandlerID = ws.binaryHandlerID();
+        vertx.runOnContext(e->{
+          vertx.eventBus().send(binaryHandlerID,expected);
+        });
+      });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+        ws.frameHandler(frame->{
+          assertTrue(frame.isBinary());
+          assertArrayEquals(expected.getBytes(), frame.binaryData().getBytes());
+          testComplete();
+          ws.close();
+        });
+      });
+    });
+    await();
+  }
+  @Test
+  public void testTextHandlerID() {
+    String path = "/some/path";
+    String expected = TestUtils.randomUnicodeString(100);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      final String textHandlerID = ws.textHandlerID();
+        vertx.runOnContext(e->{
+          vertx.eventBus().send(textHandlerID,expected);
+        });
+      });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, ws -> {
+        ws.frameHandler(frame->{
+          assertTrue(frame.isText());
+          assertEquals(expected, frame.textData());
+          testComplete();
+          ws.close();
+        });
+      });
+    });
+    await();
+  }
+
 }
