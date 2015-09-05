@@ -61,7 +61,7 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class PemTrustOptions implements TrustOptions, Cloneable {
 
   private ArrayList<String> certPaths;
@@ -93,15 +93,8 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
    * @param json  the JSON
    */
   public PemTrustOptions(JsonObject json) {
-    super();
-    this.certPaths = new ArrayList<>();
-    this.certValues = new ArrayList<>();
-    for (Object certPath : json.getJsonArray("certPaths", new JsonArray())) {
-      certPaths.add((String) certPath);
-    }
-    for (Object certValue : json.getJsonArray("certValues", new JsonArray())) {
-      certValues.add(Buffer.buffer(Base64.getDecoder().decode((String) certValue)));
-    }
+    this();
+    PemTrustOptionsConverter.fromJson(json, this);
   }
 
   /**

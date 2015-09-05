@@ -69,15 +69,12 @@ class ServerConnection extends ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ServerConnection.class);
 
   private static final int CHANNEL_PAUSE_QUEUE_SIZE = 5;
-  public static final String HANDLE_100_CONTINUE_PROP_NAME = "vertx.handle100Continue";
-  private static final boolean HANDLE_100_CONTINUE = Boolean.getBoolean(HANDLE_100_CONTINUE_PROP_NAME);
 
   private final Queue<Object> pending = new ArrayDeque<>(8);
   private final String serverOrigin;
   private final HttpServerImpl server;
   private WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
-
   private Object requestMetric;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
@@ -189,6 +186,7 @@ class ServerConnection extends ConnectionBase {
     ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       null, server.options().getMaxWebsocketFrameSize());
+    ws.setMetric(metrics.upgrade(requestMetric, ws));
     try {
       handshaker.handshake(channel, nettyReq);
     } catch (WebSocketHandshakeException e) {
@@ -320,6 +318,10 @@ class ServerConnection extends ConnectionBase {
     }
   }
 
+  void write100Continue() {
+    channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+  }
+
   synchronized private void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
       ws.handleFrame(frame);
@@ -328,8 +330,8 @@ class ServerConnection extends ConnectionBase {
 
   synchronized protected void handleClosed() {
     if (ws != null) {
-      metrics.disconnected(ws.metric);
-      ws.metric = null;
+      metrics.disconnected(ws.getMetric());
+      ws.setMetric(null);
     }
     super.handleClosed();
     if (ws != null) {
@@ -367,8 +369,8 @@ class ServerConnection extends ConnectionBase {
     return super.supportsFileRegion() && channel.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
-  protected ChannelFuture sendFile(RandomAccessFile file, long fileLength) throws IOException {
-    return super.sendFile(file, fileLength);
+  protected ChannelFuture sendFile(RandomAccessFile file, long offset, long length) throws IOException {
+    return super.sendFile(file, offset, length);
   }
 
   private void processMessage(Object msg) {
@@ -380,12 +382,11 @@ class ServerConnection extends ConnectionBase {
         channel.pipeline().fireExceptionCaught(result.cause());
         return;
       }
-      if (HANDLE_100_CONTINUE) {
+      if (server.options().isHandle100ContinueAutomatically()) {
         if (HttpHeaders.is100ContinueExpected(request)) {
-          channel.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+          write100Continue();
         }
       }
-
       HttpServerResponseImpl resp = new HttpServerResponseImpl(vertx, this, request);
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request, resp);
       handleRequest(req, resp);

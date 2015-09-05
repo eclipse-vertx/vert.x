@@ -826,7 +826,7 @@ public class WebsocketTest extends VertxTestBase {
     String path = "/some/path";
     String subProtocol = "myprotocol";
     Buffer buff = Buffer.buffer("AAA");
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocol(subProtocol)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols(subProtocol)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
       ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
@@ -850,7 +850,7 @@ public class WebsocketTest extends VertxTestBase {
   private void testInvalidSubProtocol(WebsocketVersion version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
     });
     server.listen(onSuccess(ar -> {
       client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol).

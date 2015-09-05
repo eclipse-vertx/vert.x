@@ -1,7 +1,7 @@
-== TrustOptions
+== NoConverterDataObject
 
 ++++
- Certification authority configuration options.
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 ++++
 '''
 

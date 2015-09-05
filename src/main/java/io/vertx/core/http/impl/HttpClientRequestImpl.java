@@ -88,7 +88,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.host = host;
     this.port = port;
     this.client = client;
-    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, toNettyHttpMethod(method), relativeURI, false);
+    this.request = new DefaultHttpRequest(toNettyHttpVersion(client.getOptions().getProtocolVersion()), toNettyHttpMethod(method), relativeURI, false);
     this.chunked = false;
     this.method = method;
     this.vertx = vertx;
@@ -130,7 +130,10 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     if (written > 0) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
-    this.chunked = chunked;
+    // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
+    if (client.getOptions().getProtocolVersion() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      this.chunked = chunked;
+    }
     return this;
   }
 
@@ -395,6 +398,11 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           }
 
           @Override
+          public String getHeader(CharSequence headerName) {
+            return resp.getHeader(headerName);
+          }
+
+          @Override
           public String getTrailer(String trailerName) {
             return resp.getTrailer(trailerName);
           }
@@ -605,6 +613,11 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
       request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
     }
+    if (!client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      request.headers().set(CONNECTION, CLOSE);
+    } else if (client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      request.headers().set(CONNECTION, KEEP_ALIVE);
+    }
   }
 
   private void write(ByteBuf buff, boolean end) {
@@ -707,4 +720,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
+  private HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
+    switch (version) {
+      case HTTP_1_0: {
+        return HttpVersion.HTTP_1_0;
+      }
+      case HTTP_1_1: {
+        return HttpVersion.HTTP_1_1;
+      }
+      default:
+        throw new IllegalArgumentException("Unsupported HTTP version: " + version);
+    }
+  }
 }

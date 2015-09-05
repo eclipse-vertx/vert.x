@@ -66,7 +66,7 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
 
   private String keyPath;
@@ -101,12 +101,7 @@ public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
    */
   public PemKeyCertOptions(JsonObject json) {
     super();
-    keyPath = json.getString("keyPath");
-    byte[] keyValue = json.getBinary("keyValue");
-    this.keyValue = keyValue != null ? Buffer.buffer(keyValue) : null;
-    certPath = json.getString("certPath");
-    byte[] certValue = json.getBinary("certValue");
-    this.certValue = certValue != null ? Buffer.buffer(certValue) : null;
+    PemKeyCertOptionsConverter.fromJson(json, this);
   }
 
   /**

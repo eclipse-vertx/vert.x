@@ -140,7 +140,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   @Override
-  public <T> EventBus send(String address, Object message, DeliveryOptions options) {
+  public EventBus send(String address, Object message, DeliveryOptions options) {
     return send(address, message, options, null);
   }
 
@@ -1091,26 +1091,38 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
 
     @Override
-    public synchronized void handle(Message<T> event) {
-      if (paused) {
-        if (pending.size() < maxBufferedMessages) {
-          pending.add(event);
-        } else {
-          if (discardHandler != null) {
-            discardHandler.handle(event);
+    public void handle(Message<T> message) {
+      Handler<Message<T>> theHandler = null;
+      synchronized (this) {
+        if (paused) {
+          if (pending.size() < maxBufferedMessages) {
+            pending.add(message);
+          } else {
+            if (discardHandler != null) {
+              discardHandler.handle(message);
+            }
           }
+        } else {
+          checkNextTick();
+          MessageImpl abc = (MessageImpl) message;
+          metrics.beginHandleMessage(metric, abc.getSocket() == null);
+          theHandler = handler;
         }
-      } else {
-        checkNextTick();
-        MessageImpl abc = (MessageImpl) event;
-        metrics.beginHandleMessage(metric, abc.getSocket() == null);
-        try {
-          handler.handle(event);
-          metrics.endHandleMessage(metric, null);
-        } catch (Exception e) {
-          metrics.endHandleMessage(metric, e);
-          throw e;
-        }
+      }
+      // Handle the message outside the sync block
+      // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
+      if (theHandler != null) {
+        handleMessage(theHandler, message);
+      }
+    }
+
+    private void handleMessage(Handler<Message<T>> theHandler, Message<T> message) {
+      try {
+        theHandler.handle(message);
+        metrics.endHandleMessage(metric, null);
+      } catch (Exception e) {
+        metrics.endHandleMessage(metric, e);
+        throw e;
       }
     }
 

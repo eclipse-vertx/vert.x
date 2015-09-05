@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class DeploymentOptions {
 
   public static final boolean DEFAULT_WORKER = false;
@@ -82,7 +82,8 @@ public class DeploymentOptions {
    * @param json  the JSON
    */
   public DeploymentOptions(JsonObject json) {
-    fromJson(json);
+    this();
+    DeploymentOptionsConverter.fromJson(json, this);
   }
 
   /**

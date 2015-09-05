@@ -50,13 +50,23 @@
 |===
 ^|Name | Type ^| Description
 
+|[[certPath]]`certPath`
+|`String`
+|+++
+Set the path to the certificate+++
+
+|[[certValue]]`certValue`
+|`Buffer`
+|+++
+Set the certificate as a buffer+++
+
 |[[keyPath]]`keyPath`
 |`String`
 |+++
 Set the path to the key file+++
 
-|[[certPath]]`certPath`
-|`String`
+|[[keyValue]]`keyValue`
+|`Buffer`
 |+++
-Set the path to the certificate+++
+Set the key a a buffer+++
 |===

@@ -39,6 +39,14 @@ public class HATest extends VertxTestBase {
     return new FakeClusterManager();
   }
 
+  protected Vertx vertx1, vertx2, vertx3, vertx4 = null;
+
+  @Override
+  protected void tearDown() throws Exception {
+    closeVertices(vertx1, vertx2, vertx3, vertx4);
+    super.tearDown();
+  }
+
   @Test
   public void testSimpleFailover() throws Exception {
     startNodes(2, new VertxOptions().setHAEnabled(true));
@@ -60,7 +68,7 @@ public class HATest extends VertxTestBase {
 
   @Test
   public void testQuorum() throws Exception {
-    Vertx vertx1 = startVertx(2);
+    vertx1 = startVertx(2);
     DeploymentOptions options = new DeploymentOptions().setHa(true);
     JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
@@ -71,17 +79,16 @@ public class HATest extends VertxTestBase {
     });
     // Shouldn't deploy until a quorum is obtained
     waitUntil(() -> vertx1.deploymentIDs().isEmpty());
-    Vertx vertx2 = startVertx(2);
+    vertx2 = startVertx(2);
     // Now should be deployed
     await();
-    closeVertices(vertx1, vertx2);
   }
 
   @Test
   public void testQuorumLost() throws Exception {
-    Vertx vertx1 = startVertx(3);
-    Vertx vertx2 = startVertx(3);
-    Vertx vertx3 = startVertx(3);
+    vertx1 = startVertx(3);
+    vertx2 = startVertx(3);
+    vertx3 = startVertx(3);
     DeploymentOptions options = new DeploymentOptions().setHa(true);
     JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
@@ -104,17 +111,16 @@ public class HATest extends VertxTestBase {
     awaitLatch(latch);
     waitUntil(() -> vertx1.deploymentIDs().isEmpty() && vertx2.deploymentIDs().isEmpty());
     // Now re-instate the quorum
-    Vertx vertx4 = startVertx(3);
+    vertx4 = startVertx(3);
     waitUntil(() -> vertx1.deploymentIDs().size() == 1 && vertx2.deploymentIDs().size() == 1);
 
-    closeVertices(vertx1, vertx2, vertx4);
   }
 
   @Test
   public void testCleanCloseNoFailover() throws Exception {
 
-    Vertx vertx1 = startVertx();
-    Vertx vertx2 = startVertx();
+    vertx1 = startVertx();
+    vertx2 = startVertx();
     DeploymentOptions options = new DeploymentOptions().setHa(true);
     JsonObject config = new JsonObject().put("foo", "bar");
     options.setConfig(config);
@@ -134,14 +140,13 @@ public class HATest extends VertxTestBase {
       });
     });
     await();
-    closeVertices(vertx1);
   }
 
   @Test
   public void testFailureInFailover() throws Exception {
-    Vertx vertx1 = startVertx();
-    Vertx vertx2 = startVertx();
-    Vertx vertx3 = startVertx();
+    vertx1 = startVertx();
+    vertx2 = startVertx();
+    vertx3 = startVertx();
     CountDownLatch latch1 = new CountDownLatch(1);
     vertx1.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
       assertTrue(ar.succeeded());
@@ -176,15 +181,14 @@ public class HATest extends VertxTestBase {
     ((VertxInternal)vertx3).simulateKill();
     awaitLatch(latch3);
     waitUntil(() -> vertx2.deploymentIDs().size() == 1);
-    closeVertices(vertx1, vertx2, vertx3);
   }
 
   @Test
   public void testHaGroups() throws Exception {
-    Vertx vertx1 = startVertx("group1", 1);
-    Vertx vertx2 = startVertx("group1", 1);
-    Vertx vertx3 = startVertx("group2", 1);
-    Vertx vertx4 = startVertx("group2", 1);
+    vertx1 = startVertx("group1", 1);
+    vertx2 = startVertx("group1", 1);
+    vertx3 = startVertx("group2", 1);
+    vertx4 = startVertx("group2", 1);
     CountDownLatch latch1 = new CountDownLatch(2);
     vertx1.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
       assertTrue(ar.succeeded());
@@ -222,15 +226,13 @@ public class HATest extends VertxTestBase {
     ((VertxInternal)vertx1).simulateKill();
     awaitLatch(latch3);
     assertTrue(vertx2.deploymentIDs().size() == 1);
-    closeVertices(vertx1, vertx2, vertx3, vertx4);
-
   }
 
   @Test
   public void testNoFailoverToNonHANode() throws Exception {
-    Vertx vertx1 = startVertx();
+    vertx1 = startVertx();
     // Create a non HA node
-    Vertx vertx2 = startVertx(null, 0, false);
+    vertx2 = startVertx(null, 0, false);
 
     CountDownLatch latch1 = new CountDownLatch(1);
     vertx1.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
@@ -254,13 +256,12 @@ public class HATest extends VertxTestBase {
       });
     });
     await();
-    closeVertices(vertx2);
   }
 
   @Test
   public void testNonHADeployments() throws Exception {
-    Vertx vertx1 = startVertx();
-    Vertx vertx2 = startVertx();
+    vertx1 = startVertx();
+    vertx2 = startVertx();
     // Deploy an HA and a non HA deployment
     CountDownLatch latch1 = new CountDownLatch(2);
     vertx2.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
@@ -285,14 +286,13 @@ public class HATest extends VertxTestBase {
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
     assertTrue(((VertxInternal) vertx1).getDeployment(depID).verticleIdentifier().equals("java:" + HAVerticle1.class.getName()));
-    closeVertices(vertx1, vertx2);
   }
 
   @Test
   public void testCloseRemovesFromCluster() throws Exception {
-    Vertx vertx1 = startVertx();
-    Vertx vertx2 = startVertx();
-    Vertx vertx3 = startVertx();
+    vertx1 = startVertx();
+    vertx2 = startVertx();
+    vertx3 = startVertx();
     CountDownLatch latch1 = new CountDownLatch(1);
     vertx3.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
       assertTrue(ar.succeeded());
@@ -315,14 +315,13 @@ public class HATest extends VertxTestBase {
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
     assertTrue(((VertxInternal) vertx1).getDeployment(depID).verticleIdentifier().equals("java:" + HAVerticle1.class.getName()));
-    closeVertices(vertx1, vertx3);
   }
 
   @Test
   public void testQuorumWithHaGroups() throws Exception {
 
-    Vertx vertx1 = startVertx("group1", 2);
-    Vertx vertx2 = startVertx("group2", 2);
+    vertx1 = startVertx("group1", 2);
+    vertx2 = startVertx("group2", 2);
 
     vertx1.deployVerticle("java:" + HAVerticle1.class.getName(), new DeploymentOptions().setHa(true), ar -> {
       assertTrue(ar.succeeded());
@@ -334,7 +333,7 @@ public class HATest extends VertxTestBase {
     //Should not be deployed yet
     assertTrue(vertx1.deploymentIDs().isEmpty());
 
-    Vertx vertx3 = startVertx("group1", 2);
+    vertx3 = startVertx("group1", 2);
     // Now should deploy
     waitUntil(() -> vertx1.deploymentIDs().size() == 1);
 
@@ -348,7 +347,7 @@ public class HATest extends VertxTestBase {
     //Should not be deployed yet
     assertTrue(vertx2.deploymentIDs().isEmpty());
 
-    Vertx vertx4 = startVertx("group2", 2);
+    vertx4 = startVertx("group2", 2);
     // Now should deploy
     waitUntil(() -> vertx2.deploymentIDs().size() == 1);
 
@@ -371,7 +370,6 @@ public class HATest extends VertxTestBase {
     awaitLatch(latch2);
 
     waitUntil(() -> vertx1.deploymentIDs().isEmpty());
-    closeVertices(vertx1, vertx2);
   }
 
   protected Vertx startVertx() throws Exception {
@@ -430,9 +428,13 @@ public class HATest extends VertxTestBase {
   protected void closeVertices(Vertx... vertices) throws Exception {
     CountDownLatch latch = new CountDownLatch(vertices.length);
     for (int i = 0; i < vertices.length; i++) {
-      vertices[i].close(onSuccess(res -> {
+      if (vertices[i] != null) {
+        vertices[i].close(onSuccess(res -> {
+          latch.countDown();
+        }));
+      } else {
         latch.countDown();
-      }));
+      }
     }
     latch.await(2, TimeUnit.MINUTES);
   }

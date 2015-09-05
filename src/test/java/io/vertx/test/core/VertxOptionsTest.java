@@ -81,10 +81,29 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
+    assertEquals(-1, options.getClusterPublicPort());
+    assertEquals(options, options.setClusterPublicPort(1234));
+    assertEquals(1234, options.getClusterPublicPort());
+    try {
+      options.setClusterPublicPort(-1);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
+    try {
+      options.setClusterPublicPort(65536);
+      fail("Should throw exception");
+    } catch (IllegalArgumentException e) {
+      // OK
+    }
     assertEquals("localhost", options.getClusterHost());
     String randString = TestUtils.randomUnicodeString(100);
     assertEquals(options, options.setClusterHost(randString));
     assertEquals(randString, options.getClusterHost());
+    assertEquals(null, options.getClusterPublicHost());
+    randString = TestUtils.randomUnicodeString(100);
+    assertEquals(options, options.setClusterPublicHost(randString));
+    assertEquals(randString, options.getClusterPublicHost());
     assertEquals(20000, options.getClusterPingInterval());
     long randomLong = TestUtils.randomPositiveLong();
     assertEquals(options, options.setClusterPingInterval(randomLong));
@@ -169,7 +188,7 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (NullPointerException e) {
       // OK
     }
-    assertNull(options.getMetricsOptions());
+    assertNotNull(options.getMetricsOptions());
 
     try {
       options.setWarningExceptionTime(-1);
@@ -186,16 +205,17 @@ public class VertxOptionsTest extends VertxTestBase {
     VertxOptions options = new VertxOptions();
 
     int clusterPort = TestUtils.randomPortInt();
+    int clusterPublicPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
     int internalBlockingPoolSize = TestUtils.randomPositiveInt();
     int workerPoolSize = TestUtils.randomPositiveInt();
     int blockedThreadCheckInterval = TestUtils.randomPositiveInt();
     String clusterHost = TestUtils.randomAlphaString(100);
+    String clusterPublicHost = TestUtils.randomAlphaString(100);
     long clusterPingInterval = TestUtils.randomPositiveLong();
     long clusterPingReplyInterval = TestUtils.randomPositiveLong();
     int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
     int maxWorkerExecuteTime = TestUtils.randomPositiveInt();
-    int proxyOperationTimeout = TestUtils.randomPositiveInt();
     Random rand = new Random();
     boolean haEnabled = rand.nextBoolean();
     boolean metricsEnabled = rand.nextBoolean();
@@ -203,11 +223,13 @@ public class VertxOptionsTest extends VertxTestBase {
     String haGroup = TestUtils.randomAlphaString(100);
     long warningExceptionTime = TestUtils.randomPositiveLong();
     options.setClusterPort(clusterPort);
+    options.setClusterPublicPort(clusterPublicPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
     options.setInternalBlockingPoolSize(internalBlockingPoolSize);
     options.setWorkerPoolSize(workerPoolSize);
     options.setBlockedThreadCheckInterval(blockedThreadCheckInterval);
     options.setClusterHost(clusterHost);
+    options.setClusterPublicHost(clusterPublicHost);
     options.setClusterPingInterval(clusterPingInterval);
     options.setClusterPingReplyInterval(clusterPingReplyInterval);
     options.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
@@ -221,6 +243,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setWarningExceptionTime(warningExceptionTime);
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getClusterPort());
+    assertEquals(clusterPublicPort, options.getClusterPublicPort());
     assertEquals(clusterPingInterval, options.getClusterPingInterval());
     assertEquals(clusterPingReplyInterval, options.getClusterPingReplyInterval());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
@@ -228,6 +251,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(workerPoolSize, options.getWorkerPoolSize());
     assertEquals(blockedThreadCheckInterval, options.getBlockedThreadCheckInterval());
     assertEquals(clusterHost, options.getClusterHost());
+    assertEquals(clusterPublicHost, options.getClusterPublicHost());
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(haEnabled, options.isHAEnabled());
@@ -247,6 +271,8 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
     assertEquals(def.isClustered(), json.isClustered());
     assertEquals(def.getClusterHost(), json.getClusterHost());
+    assertEquals(def.getClusterPublicHost(), json.getClusterPublicHost());
+    assertEquals(def.getClusterPublicPort(), json.getClusterPublicPort());
     assertEquals(def.getClusterPingInterval(), json.getClusterPingInterval());
     assertEquals(def.getClusterPingReplyInterval(), json.getClusterPingReplyInterval());
     assertEquals(def.getBlockedThreadCheckInterval(), json.getBlockedThreadCheckInterval());
@@ -264,6 +290,7 @@ public class VertxOptionsTest extends VertxTestBase {
     VertxOptions options = new VertxOptions(new JsonObject());
 
     assertEquals(0, options.getClusterPort());
+    assertEquals(-1, options.getClusterPublicPort());
     assertEquals(20000, options.getClusterPingInterval());
     assertEquals(20000, options.getClusterPingReplyInterval());
     assertEquals(2 * Runtime.getRuntime().availableProcessors(), options.getEventLoopPoolSize());
@@ -271,20 +298,23 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(20, options.getWorkerPoolSize());
     assertEquals(1000, options.getBlockedThreadCheckInterval());
     assertEquals("localhost", options.getClusterHost());
+    assertNull(options.getClusterPublicHost());
     assertEquals(null, options.getClusterManager());
     assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime());
     assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime());
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
     assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
-    assertNull(options.getMetricsOptions());
+    assertNotNull(options.getMetricsOptions());
     assertEquals(5000000000l, options.getWarningExceptionTime());
     int clusterPort = TestUtils.randomPortInt();
+    int clusterPublicPort = TestUtils.randomPortInt();
     int eventLoopPoolSize = TestUtils.randomPositiveInt();
     int internalBlockingPoolSize = TestUtils.randomPositiveInt();
     int workerPoolSize = TestUtils.randomPositiveInt();
     int blockedThreadCheckInterval = TestUtils.randomPositiveInt();
     String clusterHost = TestUtils.randomAlphaString(100);
+    String clusterPublicHost = TestUtils.randomAlphaString(100);
     long clusterPingInterval = TestUtils.randomPositiveLong();
     long clusterPingReplyInterval = TestUtils.randomPositiveLong();
     int maxEventLoopExecuteTime = TestUtils.randomPositiveInt();
@@ -300,11 +330,13 @@ public class VertxOptionsTest extends VertxTestBase {
     String jmxDomain = TestUtils.randomAlphaString(100);
     options = new VertxOptions(new JsonObject().
         put("clusterPort", clusterPort).
+        put("clusterPublicPort", clusterPublicPort).
         put("eventLoopPoolSize", eventLoopPoolSize).
         put("internalBlockingPoolSize", internalBlockingPoolSize).
         put("workerPoolSize", workerPoolSize).
         put("blockedThreadCheckInterval", blockedThreadCheckInterval).
         put("clusterHost", clusterHost).
+        put("clusterPublicHost", clusterPublicHost).
         put("clusterPingInterval", clusterPingInterval).
         put("clusterPingReplyInterval", clusterPingReplyInterval).
         put("maxEventLoopExecuteTime", maxEventLoopExecuteTime).
@@ -320,6 +352,8 @@ public class VertxOptionsTest extends VertxTestBase {
             put("jmxDomain", jmxDomain))
     );
     assertEquals(clusterPort, options.getClusterPort());
+    assertEquals(clusterPublicPort, options.getClusterPublicPort());
+    assertEquals(clusterPublicHost, options.getClusterPublicHost());
     assertEquals(clusterPingInterval, options.getClusterPingInterval());
     assertEquals(clusterPingReplyInterval, options.getClusterPingReplyInterval());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());

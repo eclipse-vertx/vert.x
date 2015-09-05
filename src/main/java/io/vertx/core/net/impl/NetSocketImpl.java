@@ -26,7 +26,6 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -34,9 +33,9 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -44,8 +43,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
-import java.util.ArrayDeque;
-import java.util.Queue;
 import java.util.UUID;
 
 /**
@@ -70,7 +67,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private Queue<Buffer> pendingData;
+  private Buffer pendingData;
   private boolean paused = false;
   private ChannelFuture writeFuture;
 
@@ -129,32 +126,23 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
 
   @Override
   public synchronized NetSocket pause() {
-    paused = true;
-    doPause();
+    if (!paused) {
+      paused = true;
+      doPause();
+    }
     return this;
   }
 
   @Override
   public synchronized NetSocket resume() {
-    if (!paused) {
-      return this;
-    }
-    paused = false;
-    if (pendingData != null) {
-      for (;;) {
-        final Buffer buf = pendingData.poll();
-        if (buf == null) {
-          break;
-        }
-        context.runOnContext(new VoidHandler() {
-          @Override
-          protected void handle() {
-            handleDataReceived(buf);
-          }
-        });
+    if (paused) {
+      paused = false;
+      if (pendingData != null) {
+        // Send empty buffer to trigger sending of pending data
+        context.runOnContext(v -> handleDataReceived(Buffer.buffer()));
       }
+      doResume();
     }
-    doResume();
     return this;
   }
 
@@ -183,19 +171,20 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
-  public NetSocket sendFile(String filename) {
-    return sendFile(filename, null);
+  public NetSocket sendFile(String filename, long offset, long length) {
+    return sendFile(filename, offset, length, null);
   }
 
   @Override
-  public NetSocket sendFile(String filename, final Handler<AsyncResult<Void>> resultHandler) {
+  public NetSocket sendFile(String filename, long offset, long length, final Handler<AsyncResult<Void>> resultHandler) {
     File f = vertx.resolveFile(filename);
     if (f.isDirectory()) {
       throw new IllegalArgumentException("filename must point to a file and not to a directory");
     }
+    RandomAccessFile raf = null;
     try {
-      RandomAccessFile raf = new RandomAccessFile(f, "r");
-      ChannelFuture future = super.sendFile(raf, f.length());
+      raf = new RandomAccessFile(f, "r");
+      ChannelFuture future = super.sendFile(raf, Math.min(offset, f.length()), Math.min(length, f.length() - offset));
       if (resultHandler != null) {
         future.addListener(fut -> {
           final AsyncResult<Void> res;
@@ -208,6 +197,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
         });
       }
     } catch (IOException e) {
+      try {
+        if (raf != null) {
+          raf.close();
+        }
+      } catch (IOException ignore) {
+      }
       if (resultHandler != null) {
         vertx.runOnContext(v -> resultHandler.handle(Future.failedFuture(e)));
       } else {
@@ -299,10 +294,14 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     checkContext();
     if (paused) {
       if (pendingData == null) {
-        pendingData = new ArrayDeque<>();
+        pendingData = data.copy();
+      } else {
+        pendingData.appendBuffer(data);
       }
-      pendingData.add(data);
       return;
+    }
+    if (pendingData != null) {
+      data = pendingData.appendBuffer(data);
     }
     reportBytesRead(data.length());
     if (dataHandler != null) {

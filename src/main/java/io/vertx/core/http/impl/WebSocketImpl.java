@@ -41,35 +41,37 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize);
   }
 
-  synchronized void setMetric(Object metric) {
-    this.metric = metric;
+  @Override
+  public WebSocket handler(Handler<Buffer> handler) {
+    synchronized (conn) {
+      if (handler != null) {
+        checkClosed();
+      }
+      this.dataHandler = handler;
+      return this;
+    }
   }
 
   @Override
-  public synchronized WebSocket handler(Handler<Buffer> handler) {
-    if (handler != null) {
-      checkClosed();
+  public WebSocket endHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      if (handler != null) {
+        checkClosed();
+      }
+      this.endHandler = handler;
+      return this;
     }
-    this.dataHandler = handler;
-    return this;
   }
 
   @Override
-  public synchronized WebSocket endHandler(Handler<Void> handler) {
-    if (handler != null) {
-      checkClosed();
+  public WebSocket exceptionHandler(Handler<Throwable> handler) {
+    synchronized (conn) {
+      if (handler != null) {
+        checkClosed();
+      }
+      this.exceptionHandler = handler;
+      return this;
     }
-    this.endHandler = handler;
-    return this;
-  }
-
-  @Override
-  public synchronized WebSocket exceptionHandler(Handler<Throwable> handler) {
-    if (handler != null) {
-      checkClosed();
-    }
-    this.exceptionHandler = handler;
-    return this;
   }
 
   @Override
@@ -95,38 +97,48 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   }
 
   @Override
-  public synchronized WebSocket closeHandler(Handler<Void> handler) {
-    checkClosed();
-    this.closeHandler = handler;
-    return this;
+  public WebSocket closeHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.closeHandler = handler;
+      return this;
+    }
   }
 
   @Override
-  public synchronized WebSocket frameHandler(Handler<WebSocketFrame> handler) {
-    checkClosed();
-    this.frameHandler = handler;
-    return this;
+  public WebSocket frameHandler(Handler<WebSocketFrame> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.frameHandler = handler;
+      return this;
+    }
   }
 
   @Override
-  public synchronized WebSocket pause() {
-    checkClosed();
-    conn.doPause();
-    return this;
+  public WebSocket pause() {
+    synchronized (conn) {
+      checkClosed();
+      conn.doPause();
+      return this;
+    }
   }
 
   @Override
-  public synchronized WebSocket resume() {
-    checkClosed();
-    conn.doResume();
-    return this;
+  public WebSocket resume() {
+    synchronized (conn) {
+      checkClosed();
+      conn.doResume();
+      return this;
+    }
   }
 
   @Override
-  public synchronized WebSocket setWriteQueueMaxSize(int maxSize) {
-    checkClosed();
-    conn.doSetWriteQueueMaxSize(maxSize);
-    return this;
+  public WebSocket setWriteQueueMaxSize(int maxSize) {
+    synchronized (conn) {
+      checkClosed();
+      conn.doSetWriteQueueMaxSize(maxSize);
+      return this;
+    }
   }
 
   @Override
@@ -136,15 +148,25 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
   }
 
   @Override
-  public synchronized WebSocket drainHandler(Handler<Void> handler) {
-    checkClosed();
-    this.drainHandler = handler;
-    return this;
+  public WebSocket drainHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkClosed();
+      this.drainHandler = handler;
+      return this;
+    }
   }
 
   @Override
-  synchronized void handleClosed() {
-    ((ClientConnection) conn).metrics().disconnected(metric);
-    super.handleClosed();
+  void handleClosed() {
+    synchronized (conn) {
+      ((ClientConnection) conn).metrics().disconnected(metric);
+      super.handleClosed();
+    }
+  }
+
+  void setMetric(Object metric) {
+    synchronized (conn) {
+      this.metric = metric;
+    }
   }
 }

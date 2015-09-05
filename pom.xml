@@ -24,7 +24,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>5</version>
+    <version>8</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
@@ -60,6 +60,7 @@
     <junit.version>4.11</junit.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
+    <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>3.1.0-SNAPSHOT</stack.version>
 
   </properties>
@@ -168,6 +169,18 @@
                   <arg>-Adocgen.output=${asciidoc.dir}/java</arg>
                   <arg>-AoutputDirectory=${project.basedir}/src/main</arg>
                 </compilerArgs>
+                <generatedSourcesDirectory>${generated.dir}</generatedSourcesDirectory>
+              </configuration>
+            </execution>
+            <execution>
+              <id>default-testCompile</id>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+                <compilerArgs>
+                  <arg>-AoutputDirectory=${project.basedir}/src/test</arg>
+                </compilerArgs>
               </configuration>
             </execution>
           </executions>
@@ -205,6 +218,11 @@
             <relativeBaseDir>true</relativeBaseDir>
             <backend>html</backend>
             <doctype>book</doctype>
+            <attributes>
+              <maven-groupId>${project.groupId}</maven-groupId>
+              <maven-artifactId>${project.artifactId}</maven-artifactId>
+              <maven-version>${project.version}</maven-version>
+            </attributes>
           </configuration>
           <executions>
             <execution>
@@ -230,6 +248,7 @@
                 <filesets>
                   <fileset>
                     <directory>${asciidoc.dir}</directory>
+                    <directory>${generated.dir}</directory>
                   </fileset>
                 </filesets>
               </configuration>

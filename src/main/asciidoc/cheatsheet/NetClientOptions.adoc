@@ -10,114 +10,119 @@
 |===
 ^|Name | Type ^| Description
 
-|[[sendBufferSize]]`sendBufferSize`
-|`Number`
+|[[connectTimeout]]`connectTimeout`
+|`Number (int)`
 |+++
-Set the TCP send buffer size+++
-
-|[[receiveBufferSize]]`receiveBufferSize`
-|`Number`
-|+++
-Set the TCP receive buffer size+++
-
-|[[reuseAddress]]`reuseAddress`
-|`Boolean`
-|+++
-Set the value of reuse address+++
-
-|[[trafficClass]]`trafficClass`
-|`Number`
-|+++
-Set the value of traffic class+++
-
-|[[tcpNoDelay]]`tcpNoDelay`
-|`Boolean`
-|+++
-Set whether TCP no delay is enabled+++
-
-|[[tcpKeepAlive]]`tcpKeepAlive`
-|`Boolean`
-|+++
-Set whether TCP keep alive is enabled+++
-
-|[[soLinger]]`soLinger`
-|`Number`
-|+++
-Set whether SO_linger keep alive is enabled+++
-
-|[[usePooledBuffers]]`usePooledBuffers`
-|`Boolean`
-|+++
-Set whether Netty pooled buffers are enabled+++
-
-|[[idleTimeout]]`idleTimeout`
-|`Number`
-|+++
-Set the idle timeout, in seconds. zero means don't timeout.
- This determines if a connection will timeout and be closed if no data is received within the timeout.+++
-
-|[[ssl]]`ssl`
-|`Boolean`
-|+++
-Set whether SSL/TLS is enabled+++
-
-|[[keyStoreOptions]]`keyStoreOptions`
-|`link:JksOptions.html[JksOptions]`
-|+++
-Set the key/cert options in jks format, aka Java keystore.+++
-
-|[[pfxKeyCertOptions]]`pfxKeyCertOptions`
-|`link:PfxOptions.html[PfxOptions]`
-|+++
-Set the key/cert options in pfx format.+++
-
-|[[pemKeyCertOptions]]`pemKeyCertOptions`
-|`link:PemKeyCertOptions.html[PemKeyCertOptions]`
-|+++
-Set the key/cert store options in pem format.+++
-
-|[[trustStoreOptions]]`trustStoreOptions`
-|`link:JksOptions.html[JksOptions]`
-|+++
-Set the trust options in jks format, aka Java trustore+++
-
-|[[pemTrustOptions]]`pemTrustOptions`
-|`link:PemTrustOptions.html[PemTrustOptions]`
-|+++
-Set the trust options in pem format+++
-
-|[[pfxTrustOptions]]`pfxTrustOptions`
-|`link:PfxOptions.html[PfxOptions]`
-|+++
-Set the trust options in pfx format+++
-
-|[[enabledCipherSuites]]`enabledCipherSuites`
-|`Array of String`
-|+++
-Add an enabled cipher suite+++
+Set the connect timeout+++
 
 |[[crlPaths]]`crlPaths`
 |`Array of String`
 |+++
 Add a CRL path+++
 
+|[[crlValues]]`crlValues`
+|`Array of Buffer`
+|+++
+Add a CRL value+++
+
+|[[enabledCipherSuites]]`enabledCipherSuites`
+|`Array of String`
+|+++
+Add an enabled cipher suite+++
+
+|[[idleTimeout]]`idleTimeout`
+|`Number (int)`
+|+++
+Set the idle timeout, in seconds. zero means don't timeout.
+ This determines if a connection will timeout and be closed if no data is received within the timeout.+++
+
+|[[keyStoreOptions]]`keyStoreOptions`
+|`link:JksOptions.html[JksOptions]`
+|+++
+Set the key/cert options in jks format, aka Java keystore.+++
+
+|[[pemKeyCertOptions]]`pemKeyCertOptions`
+|`link:PemKeyCertOptions.html[PemKeyCertOptions]`
+|+++
+Set the key/cert store options in pem format.+++
+
+|[[pemTrustOptions]]`pemTrustOptions`
+|`link:PemTrustOptions.html[PemTrustOptions]`
+|+++
+Set the trust options in pem format+++
+
+|[[pfxKeyCertOptions]]`pfxKeyCertOptions`
+|`link:PfxOptions.html[PfxOptions]`
+|+++
+Set the key/cert options in pfx format.+++
+
+|[[pfxTrustOptions]]`pfxTrustOptions`
+|`link:PfxOptions.html[PfxOptions]`
+|+++
+Set the trust options in pfx format+++
+
+|[[receiveBufferSize]]`receiveBufferSize`
+|`Number (int)`
+|+++
+Set the TCP receive buffer size+++
+
+|[[reconnectAttempts]]`reconnectAttempts`
+|`Number (int)`
+|+++
+Set the value of reconnect attempts+++
+
+|[[reconnectInterval]]`reconnectInterval`
+|`Number (long)`
+|+++
+Set the reconnect interval+++
+
+|[[reuseAddress]]`reuseAddress`
+|`Boolean`
+|+++
+Set the value of reuse address+++
+
+|[[sendBufferSize]]`sendBufferSize`
+|`Number (int)`
+|+++
+Set the TCP send buffer size+++
+
+|[[soLinger]]`soLinger`
+|`Number (int)`
+|+++
+Set whether SO_linger keep alive is enabled+++
+
+|[[ssl]]`ssl`
+|`Boolean`
+|+++
+Set whether SSL/TLS is enabled+++
+
+|[[tcpKeepAlive]]`tcpKeepAlive`
+|`Boolean`
+|+++
+Set whether TCP keep alive is enabled+++
+
+|[[tcpNoDelay]]`tcpNoDelay`
+|`Boolean`
+|+++
+Set whether TCP no delay is enabled+++
+
+|[[trafficClass]]`trafficClass`
+|`Number (int)`
+|+++
+Set the value of traffic class+++
+
 |[[trustAll]]`trustAll`
 |`Boolean`
 |+++
 Set whether all server certificates should be trusted+++
 
-|[[connectTimeout]]`connectTimeout`
-|`Number`
+|[[trustStoreOptions]]`trustStoreOptions`
+|`link:JksOptions.html[JksOptions]`
 |+++
-Set the connect timeout+++
+Set the trust options in jks format, aka Java trustore+++
 
-|[[reconnectAttempts]]`reconnectAttempts`
-|`Number`
+|[[usePooledBuffers]]`usePooledBuffers`
+|`Boolean`
 |+++
-Set the value of reconnect attempts+++
-
-|[[reconnectInterval]]`reconnectInterval`
-|`Number`
-|+++
-Set the reconnect interval+++
+Set whether Netty pooled buffers are enabled+++
 |===

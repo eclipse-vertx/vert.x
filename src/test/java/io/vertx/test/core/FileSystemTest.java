@@ -1462,9 +1462,9 @@ public class FileSystemTest extends VertxTestBase {
     assertTrue(opts.isWrite());
     assertEquals(opts, opts.setWrite(false));
     assertFalse(opts.isWrite());
-    assertFalse(opts.isDSync());
-    assertEquals(opts, opts.setDSync(true));
-    assertTrue(opts.isDSync());
+    assertFalse(opts.isDsync());
+    assertEquals(opts, opts.setDsync(true));
+    assertTrue(opts.isDsync());
     assertFalse(opts.isSync());
     assertEquals(opts, opts.setSync(true));
     assertTrue(opts.isSync());
@@ -1492,7 +1492,7 @@ public class FileSystemTest extends VertxTestBase {
     assertEquals(def.isTruncateExisting(), json.isTruncateExisting());
     assertEquals(def.isSparse(), json.isSparse());
     assertEquals(def.isSync(), json.isSync());
-    assertEquals(def.isDSync(), json.isDSync());
+    assertEquals(def.isDsync(), json.isDsync());
   }
 
   @Test

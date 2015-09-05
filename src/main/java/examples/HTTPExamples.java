@@ -235,6 +235,39 @@ public class HTTPExamples {
     }).listen(8080);
   }
 
+  public void example26b(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      long offset = 0;
+      try {
+        offset = Long.parseLong(request.getParam("start"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      long end = Long.MAX_VALUE;
+      try {
+        end = Long.parseLong(request.getParam("end"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      request.response().sendFile("web/mybigfile.txt", offset, end);
+    }).listen(8080);
+  }
+
+  public void example26c(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      long offset = 0;
+      try {
+        offset = Long.parseLong(request.getParam("start"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      request.response().sendFile("web/mybigfile.txt", offset);
+    }).listen(8080);
+  }
+
   public void example27(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       HttpServerResponse response = request.response();
@@ -520,6 +553,26 @@ public class HTTPExamples {
       request.write("Some data");
       request.write("Some more data");
       request.end();
+    });
+  }
+
+  public void example50_1(HttpServer httpServer) {
+
+    httpServer.requestHandler(request -> {
+      if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
+        // Now decide if you want to accept the request
+
+        boolean accept = true;
+        if (accept) {
+          request.response().writeContinue();
+          request.bodyHandler(body -> {
+            // Do something with body
+          });
+        } else {
+          // Reject with a failure code
+          request.response().setStatusCode(405).end();
+        }
+      }
     });
   }
 

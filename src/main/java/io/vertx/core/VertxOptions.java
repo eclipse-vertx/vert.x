@@ -28,7 +28,7 @@ import java.util.Objects;
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class VertxOptions {
 
   /**
@@ -60,6 +60,16 @@ public class VertxOptions {
    * The default port to use when clustering = 0 (meaning assign a random port)
    */
   public static final int DEFAULT_CLUSTER_PORT = 0;
+
+  /**
+   * The default cluster public host to use = null which means use the same as the cluster host
+   */
+  public static final String DEFAULT_CLUSTER_PUBLIC_HOST = null;
+
+  /**
+   * The default cluster public port to use = -1 which means use the same as the cluster port
+   */
+  public static final int DEFAULT_CLUSTER_PUBLIC_PORT = -1;
 
   /**
    * The default value of cluster ping interval = 20000 ms.
@@ -102,11 +112,6 @@ public class VertxOptions {
   public static final boolean DEFAULT_HA_ENABLED = false;
 
   /**
-   * The default value of metrics enabled false
-   */
-  public static final boolean DEFAULT_METRICS_ENABLED = false;
-
-  /**
    * The default value of warning exception time 5000000000 ns (5 seconds)
    * If a thread is blocked longer than this threshold, the warning log
    * contains a stack trace
@@ -119,6 +124,8 @@ public class VertxOptions {
   private boolean clustered = DEFAULT_CLUSTERED;
   private String clusterHost = DEFAULT_CLUSTER_HOST;
   private int clusterPort = DEFAULT_CLUSTER_PORT;
+  private String clusterPublicHost = DEFAULT_CLUSTER_PUBLIC_HOST;
+  private int clusterPublicPort = DEFAULT_CLUSTER_PUBLIC_PORT;
   private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
   private long clusterPingReplyInterval = DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
   private long blockedThreadCheckInterval = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL;
@@ -128,8 +135,7 @@ public class VertxOptions {
   private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
-  private MetricsOptions metrics;
-
+  private MetricsOptions metrics = new MetricsOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXECPTION_TIME;
 
   /**
@@ -149,6 +155,8 @@ public class VertxOptions {
     this.clustered = other.isClustered();
     this.clusterHost = other.getClusterHost();
     this.clusterPort = other.getClusterPort();
+    this.clusterPublicHost = other.getClusterPublicHost();
+    this.clusterPublicPort = other.getClusterPublicPort();
     this.clusterPingInterval = other.getClusterPingInterval();
     this.clusterPingReplyInterval = other.getClusterPingReplyInterval();
     this.blockedThreadCheckInterval = other.getBlockedThreadCheckInterval();
@@ -169,23 +177,8 @@ public class VertxOptions {
    * @param json the JsonObject to create it from
    */
   public VertxOptions(JsonObject json) {
-    this.eventLoopPoolSize = json.getInteger("eventLoopPoolSize", DEFAULT_EVENT_LOOP_POOL_SIZE);
-    this.workerPoolSize = json.getInteger("workerPoolSize", DEFAULT_WORKER_POOL_SIZE);
-    this.clustered = json.getBoolean("clustered", DEFAULT_CLUSTERED);
-    this.clusterHost = json.getString("clusterHost", DEFAULT_CLUSTER_HOST);
-    this.clusterPort = json.getInteger("clusterPort", DEFAULT_CLUSTER_PORT);
-    this.clusterPingInterval = json.getLong("clusterPingInterval", DEFAULT_CLUSTER_PING_INTERVAL);
-    this.clusterPingReplyInterval = json.getLong("clusterPingReplyInterval", DEFAULT_CLUSTER_PING_REPLY_INTERVAL);
-    this.internalBlockingPoolSize = json.getInteger("internalBlockingPoolSize", DEFAULT_INTERNAL_BLOCKING_POOL_SIZE);
-    this.blockedThreadCheckInterval = json.getLong("blockedThreadCheckInterval", DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL);
-    this.maxEventLoopExecuteTime = json.getLong("maxEventLoopExecuteTime", DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME);
-    this.maxWorkerExecuteTime = json.getLong("maxWorkerExecuteTime", DEFAULT_MAX_WORKER_EXECUTE_TIME);
-    this.haEnabled = json.getBoolean("haEnabled", false);
-    this.quorumSize = json.getInteger("quorumSize", DEFAULT_QUORUM_SIZE);
-    this.haGroup = json.getString("haGroup", DEFAULT_HA_GROUP);
-    JsonObject metricsJson = json.getJsonObject("metricsOptions");
-    this.metrics = metricsJson != null ? new MetricsOptions(metricsJson) : null;
-    this.warningExceptionTime = json.getLong("warningExceptionTime", DEFAULT_WARNING_EXECPTION_TIME);
+    this();
+    VertxOptionsConverter.fromJson(json, this);
   }
 
   /**
@@ -275,6 +268,29 @@ public class VertxOptions {
   }
 
   /**
+   * Get the public facing hostname to be used when clustering.
+   * @return  the public facing hostname
+   */
+  public String getClusterPublicHost() {
+    return clusterPublicHost;
+  }
+
+  /**
+   * Set the public facing hostname to be used for clustering.
+   * Sometimes, e.g. when running on certain clouds, the local address the server listens on for clustering is not the same
+   * address that other nodes connect to it at, as the OS / cloud infrastructure does some kind of proxying.
+   * If this is the case you can specify a public hostname which is different from the hostname the server listens at.
+   * The default value is null which means use the same as the cluster hostname.
+   *
+   * @param clusterPublicHost  the public host name to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setClusterPublicHost(String clusterPublicHost) {
+    this.clusterPublicHost = clusterPublicHost;
+    return this;
+  }
+
+  /**
    * Get the port to be used for clustering
    *
    * @return the port
@@ -294,6 +310,28 @@ public class VertxOptions {
       throw new IllegalArgumentException("clusterPort p must be in range 0 <= p <= 65535");
     }
     this.clusterPort = clusterPort;
+    return this;
+  }
+
+  /**
+   * Get the public facing port to be used when clustering.
+   * @return  the public facing port
+   */
+  public int getClusterPublicPort() {
+    return clusterPublicPort;
+  }
+
+  /**
+   * See {@link #setClusterPublicHost(String)} for an explanation.
+   *
+   * @param clusterPublicPort  the public port to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setClusterPublicPort(int clusterPublicPort) {
+    if (clusterPublicPort < 0 || clusterPublicPort > 65535) {
+      throw new IllegalArgumentException("clusterPublicPort p must be in range 0 <= p <= 65535");
+    }
+    this.clusterPublicPort = clusterPublicPort;
     return this;
   }
 
@@ -594,23 +632,28 @@ public class VertxOptions {
 
     VertxOptions that = (VertxOptions) o;
 
-    if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
-    if (clusterPort != that.clusterPort) return false;
-    if (clustered != that.clustered) return false;
     if (eventLoopPoolSize != that.eventLoopPoolSize) return false;
-    if (haEnabled != that.haEnabled) return false;
+    if (workerPoolSize != that.workerPoolSize) return false;
     if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
+    if (clustered != that.clustered) return false;
+    if (clusterPort != that.clusterPort) return false;
+    if (clusterPublicPort != that.clusterPublicPort) return false;
+    if (clusterPingInterval != that.clusterPingInterval) return false;
+    if (clusterPingReplyInterval != that.clusterPingReplyInterval) return false;
+    if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
     if (maxEventLoopExecuteTime != that.maxEventLoopExecuteTime) return false;
     if (maxWorkerExecuteTime != that.maxWorkerExecuteTime) return false;
+    if (haEnabled != that.haEnabled) return false;
     if (quorumSize != that.quorumSize) return false;
-    if (workerPoolSize != that.workerPoolSize) return false;
+    if (warningExceptionTime != that.warningExceptionTime) return false;
     if (clusterHost != null ? !clusterHost.equals(that.clusterHost) : that.clusterHost != null) return false;
+    if (clusterPublicHost != null ? !clusterPublicHost.equals(that.clusterPublicHost) : that.clusterPublicHost != null)
+      return false;
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
-    if (warningExceptionTime != that.warningExceptionTime) return false;
+    return !(metrics != null ? !metrics.equals(that.metrics) : that.metrics != null);
 
-    return true;
   }
 
   @Override
@@ -621,6 +664,10 @@ public class VertxOptions {
     result = 31 * result + (clustered ? 1 : 0);
     result = 31 * result + (clusterHost != null ? clusterHost.hashCode() : 0);
     result = 31 * result + clusterPort;
+    result = 31 * result + (clusterPublicHost != null ? clusterPublicHost.hashCode() : 0);
+    result = 31 * result + clusterPublicPort;
+    result = 31 * result + (int) (clusterPingInterval ^ (clusterPingInterval >>> 32));
+    result = 31 * result + (int) (clusterPingReplyInterval ^ (clusterPingReplyInterval >>> 32));
     result = 31 * result + (int) (blockedThreadCheckInterval ^ (blockedThreadCheckInterval >>> 32));
     result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
@@ -628,7 +675,33 @@ public class VertxOptions {
     result = 31 * result + (haEnabled ? 1 : 0);
     result = 31 * result + quorumSize;
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
+    result = 31 * result + (metrics != null ? metrics.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return "VertxOptions{" +
+      "eventLoopPoolSize=" + eventLoopPoolSize +
+      ", workerPoolSize=" + workerPoolSize +
+      ", internalBlockingPoolSize=" + internalBlockingPoolSize +
+      ", clustered=" + clustered +
+      ", clusterHost='" + clusterHost + '\'' +
+      ", clusterPort=" + clusterPort +
+      ", clusterPublicHost='" + clusterPublicHost + '\'' +
+      ", clusterPublicPort=" + clusterPublicPort +
+      ", clusterPingInterval=" + clusterPingInterval +
+      ", clusterPingReplyInterval=" + clusterPingReplyInterval +
+      ", blockedThreadCheckInterval=" + blockedThreadCheckInterval +
+      ", maxEventLoopExecuteTime=" + maxEventLoopExecuteTime +
+      ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
+      ", clusterManager=" + clusterManager +
+      ", haEnabled=" + haEnabled +
+      ", quorumSize=" + quorumSize +
+      ", haGroup='" + haGroup + '\'' +
+      ", metrics=" + metrics +
+      ", warningExceptionTime=" + warningExceptionTime +
+      '}';
   }
 }

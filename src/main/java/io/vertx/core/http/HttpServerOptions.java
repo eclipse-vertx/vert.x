@@ -19,19 +19,14 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.*;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class HttpServerOptions extends NetServerOptions {
 
   /**
@@ -49,18 +44,23 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final int DEFAULT_MAX_WEBSOCKET_FRAME_SIZE = 65536;
 
+  /**
+   * Default value of whether 100-Continue should be handled automatically
+   */
+  public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
+  private boolean handle100ContinueAutomatically;
 
   /**
    * Default constructor
    */
   public HttpServerOptions() {
     super();
+    init();
     setPort(DEFAULT_PORT); // We override the default for port
-    compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
-    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
   }
 
   /**
@@ -73,6 +73,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.compressionSupported = other.isCompressionSupported();
     this.maxWebsocketFrameSize = other.getMaxWebsocketFrameSize();
     this.websocketSubProtocols = other.getWebsocketSubProtocols();
+    this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
   }
 
   /**
@@ -82,10 +83,15 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions(JsonObject json) {
     super(json);
-    this.compressionSupported = json.getBoolean("compressionSupported", DEFAULT_COMPRESSION_SUPPORTED);
-    this.maxWebsocketFrameSize = json.getInteger("maxWebsocketFrameSize", DEFAULT_MAX_WEBSOCKET_FRAME_SIZE);
-    this.websocketSubProtocols = json.getString("websocketSubProtocols", null);
+    init();
     setPort(json.getInteger("port", DEFAULT_PORT));
+    HttpServerOptionsConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
+    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
   }
 
   @Override
@@ -255,7 +261,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @param subProtocols  comma separated list of subprotocols
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setWebsocketSubProtocol(String subProtocols) {
+  public HttpServerOptions setWebsocketSubProtocols(String subProtocols) {
     websocketSubProtocols = subProtocols;
     return this;
   }
@@ -273,19 +279,36 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * @return whether 100 Continue should be handled automatically
+   */
+  public boolean isHandle100ContinueAutomatically() {
+    return handle100ContinueAutomatically;
+  }
+
+  /**
+   * Set whether 100 Continue should be handled automatically
+   * @param handle100ContinueAutomatically true if it should be handled automatically
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHandle100ContinueAutomatically(boolean handle100ContinueAutomatically) {
+    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof HttpServerOptions)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
 
     HttpServerOptions that = (HttpServerOptions) o;
 
     if (compressionSupported != that.compressionSupported) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
-    if (websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null) return false;
+    if (handle100ContinueAutomatically != that.handle100ContinueAutomatically) return false;
+    return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
 
-    return true;
   }
 
   @Override
@@ -294,6 +317,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (compressionSupported ? 1 : 0);
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + (websocketSubProtocols != null ? websocketSubProtocols.hashCode() : 0);
+    result = 31 * result + (handle100ContinueAutomatically ? 1 : 0);
     return result;
   }
 }

@@ -108,6 +108,15 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String getHeader(String headerName);
 
   /**
+   * Return the first header value with the specified name
+   *
+   * @param headerName  the header name
+   * @return the header value
+   */
+  @GenIgnore
+  String getHeader(CharSequence headerName);
+
+  /**
    * @return the query parameters in the request
    */
   @CacheReturn

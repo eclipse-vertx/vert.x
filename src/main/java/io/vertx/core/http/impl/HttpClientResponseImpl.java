@@ -22,16 +22,13 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.net.NetSocket;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -56,7 +53,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<Throwable> exceptionHandler;
   private LastHttpContent trailer;
   private boolean paused;
-  private Queue<Buffer> pausedChunks;
+  private Buffer pausedChunk;
   private boolean hasPausedEnd;
   private LastHttpContent pausedTrailer;
   private NetSocket netSocket;
@@ -98,6 +95,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public String getHeader(String headerName) {
+    return headers().get(headerName);
+  }
+
+  @Override
+  public String getHeader(CharSequence headerName) {
     return headers().get(headerName);
   }
 
@@ -146,16 +148,20 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public synchronized HttpClientResponse pause() {
-    paused = true;
-    conn.doPause();
+    if (!paused) {
+      paused = true;
+      conn.doPause();
+    }
     return this;
   }
 
   @Override
   public synchronized HttpClientResponse resume() {
-    paused = false;
-    doResume();
-    conn.doResume();
+    if (paused) {
+      paused = false;
+      doResume();
+      conn.doResume();
+    }
     return this;
   }
 
@@ -163,49 +169,38 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   public HttpClientResponse bodyHandler(final Handler<Buffer> bodyHandler) {
     BodyHandler handler = new BodyHandler();
     handler(handler);
-    endHandler(new VoidHandler() {
-      public void handle() {
-        handler.notifyHandler(bodyHandler);
-      }
-    });
+    endHandler(v -> handler.notifyHandler(bodyHandler));
     return this;
   }
 
   private void doResume() {
-    if (pausedChunks != null) {
-      Buffer chunk;
-      while ((chunk = pausedChunks.poll()) != null) {
-        final Buffer theChunk = chunk;
-        vertx.runOnContext(new VoidHandler() {
-          @Override
-          protected void handle() {
-            handleChunk(theChunk);
-          }
-        });
-      }
-    }
     if (hasPausedEnd) {
+      if (pausedChunk != null) {
+        final Buffer theChunk = pausedChunk;
+        conn.getContext().runOnContext(v -> handleChunk(theChunk));
+        pausedChunk = null;
+      }
       final LastHttpContent theTrailer = pausedTrailer;
-      vertx.runOnContext(new VoidHandler() {
-        @Override
-        protected void handle() {
-          handleEnd(theTrailer);
-        }
-      });
+      conn.getContext().runOnContext(v -> handleEnd(theTrailer));
       hasPausedEnd = false;
       pausedTrailer = null;
     }
   }
 
   synchronized void handleChunk(Buffer data) {
-    bytesRead += data.length();
     if (paused) {
-      if (pausedChunks == null) {
-        pausedChunks = new ArrayDeque<>();
+      if (pausedChunk == null) {
+        pausedChunk = data.copy();
+      } else {
+        pausedChunk.appendBuffer(data);
       }
-      pausedChunks.add(data);
     } else {
       request.dataReceived();
+      if (pausedChunk != null) {
+        data = pausedChunk.appendBuffer(data);
+        pausedChunk = null;
+      }
+      bytesRead += data.length();
       if (dataHandler != null) {
         dataHandler.handle(data);
       }

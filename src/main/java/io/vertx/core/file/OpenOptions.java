@@ -24,7 +24,7 @@ import io.vertx.core.json.JsonObject;
  * 
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class OpenOptions {
 
   public static final String DEFAULT_PERMS = null;
@@ -80,16 +80,8 @@ public class OpenOptions {
    * @param json  the JSON
    */
   public OpenOptions(JsonObject json) {
-    this.perms = json.getString("perms", DEFAULT_PERMS);
-    this.read = json.getBoolean("read", DEFAULT_READ);
-    this.write = json.getBoolean("write", DEFAULT_WRITE);
-    this.create = json.getBoolean("create", DEFAULT_CREATE);
-    this.createNew = json.getBoolean("createNew", DEFAULT_CREATENEW);
-    this.dsync = json.getBoolean("dsync", DEFAULT_DSYNC);
-    this.sync = json.getBoolean("sync", DEFAULT_SYNC);
-    this.deleteOnClose = json.getBoolean("deleteOnClose", DEFAULT_DELETEONCLOSE);
-    this.truncateExisting = json.getBoolean("truncateExisting", DEFAULT_TRUNCATEEXISTING);
-    this.sparse = json.getBoolean("sparse", DEFAULT_SPARSE);
+    this();
+    OpenOptionsConverter.fromJson(json, this);
   }
 
   /**
@@ -275,7 +267,7 @@ public class OpenOptions {
    *
    * @return true if sync
    */
-  public boolean isDSync() {
+  public boolean isDsync() {
     return dsync;
   }
 
@@ -284,7 +276,7 @@ public class OpenOptions {
    * @param dsync  true if sync
    * @return a reference to this, so the API can be used fluently
    */
-  public OpenOptions setDSync(boolean dsync) {
+  public OpenOptions setDsync(boolean dsync) {
     this.dsync = dsync;
     return this;
   }

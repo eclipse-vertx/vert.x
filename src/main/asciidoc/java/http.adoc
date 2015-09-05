@@ -523,6 +523,46 @@ WARNING: If you're going to write web servers directly using Vert.x be careful t
 path to access files outside the directory from which you want to serve them. It may be safer instead to use
 Vert.x Web.
 
+When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
+
+[source,java]
+----
+vertx.createHttpServer().requestHandler(request -> {
+  long offset = 0;
+  try {
+    offset = Long.parseLong(request.getParam("start"));
+  } catch (NumberFormatException e) {
+    // error handling...
+  }
+
+  long end = Long.MAX_VALUE;
+  try {
+    end = Long.parseLong(request.getParam("end"));
+  } catch (NumberFormatException e) {
+    // error handling...
+  }
+
+  request.response().sendFile("web/mybigfile.txt", offset, end);
+}).listen(8080);
+----
+
+You are not required to supply the length if you want to send a file starting from an offset until the end, in this
+case you can just do:
+
+[source,java]
+----
+vertx.createHttpServer().requestHandler(request -> {
+  long offset = 0;
+  try {
+    offset = Long.parseLong(request.getParam("start"));
+  } catch (NumberFormatException e) {
+    // error handling...
+  }
+
+  request.response().sendFile("web/mybigfile.txt", offset);
+}).listen(8080);
+----
+
 ==== Pumping responses
 
 The server response is a `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]` instance so you can pump to it from any
@@ -1047,6 +1087,17 @@ request.continueHandler(v -> {
 });
 ----
 
+On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
+when it receives an `Expect: 100-Continue` header.
+This is done by setting the option `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setHandle100ContinueAutomatically-boolean-[setHandle100ContinueAutomatically]`.
+
+If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
+`false` (the default), then you can inspect the headers and call `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeContinue--[writeContinue]`
+if you wish the client to continue sending the body or you can reject the request by sending back a failure status code
+if you don't want it to send the body. For example:
+
+
+
 === Enabling compression on the client
 
 The http client comes with support for HTTP Compression out of the box.
@@ -1085,7 +1136,9 @@ The http client supports pooling of connections, allowing you to reuse connectio
 For pooling to work, keep alive must be true using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setKeepAlive-boolean-[setKeepAlive]`
 on the options used when configuring the client. The default value is true.
 
-When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP request sent.
+When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP/1.0 request sent.
+When keep alive is disabled. Vert.x will add a `Connection: Close` header to each HTTP/1.1 request sent to signal
+that the connection will be closed after completion of the response.
 
 The maximum number of connections to pool *for each server* is configured using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setMaxPoolSize-int-[setMaxPoolSize]`
 

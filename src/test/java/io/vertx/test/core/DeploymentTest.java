@@ -885,6 +885,44 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testChildUndeployedDirectly() throws Exception {
+    Verticle parent = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+
+        Verticle child = new AbstractVerticle() {
+          @Override
+          public void start(Future<Void> startFuture) throws Exception {
+            startFuture.complete();
+
+            // Undeploy it directly
+            vertx.runOnContext(v -> vertx.undeploy(context.deploymentID()));
+          }
+        };
+
+        vertx.deployVerticle(child, onSuccess(depID -> {
+          startFuture.complete();
+        }));
+
+      }
+
+      @Override
+      public void stop(Future<Void> stopFuture) throws Exception {
+        super.stop(stopFuture);
+      }
+    };
+
+    vertx.deployVerticle(parent, onSuccess(depID -> {
+      vertx.setTimer(10, tid -> vertx.undeploy(depID, onSuccess(v -> {
+        testComplete();
+      })));
+    }));
+
+
+    await();
+  }
+
+  @Test
   public void testCloseHooksCalled() throws Exception {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = completionHandler -> {
@@ -1118,6 +1156,56 @@ public class DeploymentTest extends VertxTestBase {
     await();
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
     vertx.undeploy(deployment.deploymentID());
+  }
+
+  @Test
+  public void testFailedVerticleStopNotCalled() {
+    Verticle verticleChild = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        startFuture.fail("wibble");
+      }
+      @Override
+      public void stop() {
+        fail("stop should not be called");
+      }
+
+    };
+    Verticle verticleParent = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        vertx.deployVerticle(verticleChild, onFailure(v -> {
+          startFuture.complete();
+        }));
+      }
+    };
+    vertx.deployVerticle(verticleParent, onSuccess(depID -> {
+      vertx.undeploy(depID, onSuccess(v -> {
+        testComplete();
+      }));
+    }));
+    await();
+  }
+  
+  @Test
+  public void testUndeployWhenUndeployIsInProgress() throws Exception {
+    int numIts = 10;
+    CountDownLatch latch = new CountDownLatch(numIts);
+    for (int i = 0; i < numIts; i++) {
+      Verticle parent = new AbstractVerticle() {
+        @Override
+        public void start() throws Exception {
+          vertx.deployVerticle(new AbstractVerticle() {
+          }, id -> vertx.undeploy(id.result()));
+        }
+      };
+      vertx.deployVerticle(parent, id -> {
+        vertx.undeploy(id.result(), res -> {
+          latch.countDown();
+        });
+      });
+    }
+    awaitLatch(latch);
   }
 
   // TODO

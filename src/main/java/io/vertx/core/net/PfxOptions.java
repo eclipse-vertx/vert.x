@@ -44,7 +44,7 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
 
   private String password;
@@ -77,10 +77,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions, Cloneable {
    */
   public PfxOptions(JsonObject json) {
     super();
-    this.password = json.getString("password");
-    this.path = json.getString("path");
-    byte[] value = json.getBinary("value");
-    this.value = value != null ? Buffer.buffer(value) : null;
+    PfxOptionsConverter.fromJson(json, this);
   }
 
   /**

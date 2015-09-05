@@ -50,6 +50,8 @@
  *
  * From now on we'll just use the word *core* to refer to Vert.x core.
  *
+ * include::override/dependencies.adoc[]
+ *
  * Let's discuss the different concepts and features in core.
  *
  * == In the beginning there was Vert.x
@@ -872,20 +874,27 @@
  *
  * Depending on your cluster configuration, you may have to append the `cluster-host` and `cluster-port` parameters.
  *
- * === Executing verticles packaged as a fat jar
+ * === Executing a Vert.x application packaged as a fat jar
  *
  * A _fat jar_ is an executable jar embedding its dependencies. This means you don't have to have Vert.x pre-installed
- * on the machine on which you execute the jar. A verticle packaged as a _fat jar_ can just be launched using:
+ * on the machine on which you execute the jar. Like any executable Java jar it can be executed with.
  *
  * [source]
  * ----
- * java -jar my-verticle-fat.jar
+ * java -jar my-application-fat.jar
  * ----
  *
- * The _fat jar_ must have a _manifest_ with:
+ * There is nothing really Vert.x specific about this, you could do this with any Java application
+ *
+ * You can either create your own main class and specify that in the manifest, but it's recommended that you write your
+ * code as verticles and use the Vert.x `Starter` class as your main class. This is the same main class used when running
+ * Vert.x at the command line and therefore allows you to specify command line arguments, such as `-instances` in order
+ * to scale your application more easily.
+ *
+ * To deploy your verticle in a _fatjar_ like this you must have a _manifest_ with:
  *
  * * `Main-Class` set to `io.vertx.core.Starter`
- * * `Main-Verticle` specifying the main verticle (fully qualified name)
+ * * `Main-Verticle` specifying the main verticle (fully qualified class name or script file name)
  *
  * You can also provide the usual command line arguments that you would pass to `vertx run`:
  * [source]
@@ -894,7 +903,8 @@
  * java -jar my-verticle-fat.jar -cluster -conf myconf.json -cp path/to/dir/conf/cluster_xml
  * ----
  *
- * NOTE: _fat jar_ can be built using Gradle build or the Maven plugin. Check the vertx examples for instructions.
+ * NOTE: Please consult the Maven/Gradle simplest and Maven/Gradle verticle examples in the examples repository for
+ * examples of building applications as fatjars.
  *
  * === Displaying version of Vert.x
  * To display the vert.x version, just launch:

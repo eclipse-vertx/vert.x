@@ -464,6 +464,21 @@
  * path to access files outside the directory from which you want to serve them. It may be safer instead to use
  * Vert.x Web.
  *
+ * When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example26b}
+ * ----
+ *
+ * You are not required to supply the length if you want to send a file starting from an offset until the end, in this
+ * case you can just do:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example26c}
+ * ----
+ *
  * ==== Pumping responses
  *
  * The server response is a {@link io.vertx.core.streams.WriteStream} instance so you can pump to it from any
@@ -831,6 +846,17 @@
  * {@link examples.HTTPExamples#example50}
  * ----
  *
+ * On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
+ * when it receives an `Expect: 100-Continue` header.
+ * This is done by setting the option {@link io.vertx.core.http.HttpServerOptions#setHandle100ContinueAutomatically(boolean)}.
+ *
+ * If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
+ * `false` (the default), then you can inspect the headers and call {@link io.vertx.core.http.HttpServerResponse#writeContinue()}
+ * if you wish the client to continue sending the body or you can reject the request by sending back a failure status code
+ * if you don't want it to send the body. For example:
+ *
+ *
+ *
  * === Enabling compression on the client
  *
  * The http client comes with support for HTTP Compression out of the box.
@@ -869,7 +895,9 @@
  * For pooling to work, keep alive must be true using {@link io.vertx.core.http.HttpClientOptions#setKeepAlive(boolean)}
  * on the options used when configuring the client. The default value is true.
  *
- * When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP request sent.
+ * When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP/1.0 request sent.
+ * When keep alive is disabled. Vert.x will add a `Connection: Close` header to each HTTP/1.1 request sent to signal
+ * that the connection will be closed after completion of the response.
  *
  * The maximum number of connections to pool *for each server* is configured using {@link io.vertx.core.http.HttpClientOptions#setMaxPoolSize(int)}
  *
