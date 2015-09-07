@@ -17,6 +17,15 @@
 			@{indent}  obj.@{property.writerMethod}(list);\n
 		@end{}
 	@{indent}}\n
+	@else{property.map}
+	@{indent}if (json.getValue("@{property.name}") instanceof JsonObject) {\n
+		@{indent}  java.util.Map<String, @{propType.name}> map = new java.util.LinkedHashMap<>();\n
+		@{indent}  json.getJsonObject("@{property.name}").forEach(entry -> {\n
+		@{indent}    if (entry.getValue() instanceof @{cast})\n
+		@{indent}      map.put(entry.getKey(), @{before}entry.getValue()@{after});\n
+		@{indent}  });\n
+		@{indent}  obj.@{property.writerMethod}(map);\n
+	@{indent}}\n
 	@else{}
 	@{indent}if (json.getValue("@{property.name}") instanceof @{cast}) {\n
 		@{indent}  obj.@{property.writerMethod}(@{before}json.getValue("@{property.name}")@{after});\n
@@ -99,6 +108,8 @@ public class @{type.simpleName}Converter {\n
 					@includeNamed{'genPropFromJson';cast='JsonObject';before='new ' + propType.name + '((JsonObject)';after=')';indent='    '}
 				@else{propKind == CLASS_ENUM}
 					@includeNamed{'genPropFromJson';cast='String';before='' + propType.name + '.valueOf((String)';after=')';indent='    '}
+				@else{propKind == CLASS_OBJECT}
+					@includeNamed{'genPropFromJson';cast='Object';before='';after='';indent='    '}
 				@end{}
 			@end{}
 		@end{}
@@ -112,6 +123,12 @@ public class @{type.simpleName}Converter {\n
 		@{indent}          stream().\n
 		@{indent}          map(item -> @{before}item@{after}).\n
 		@{indent}          collect(java.util.stream.Collectors.toList())));\n
+		@{indent}}\n
+	@else{property.map}
+		@{indent}if (obj.@{property.readerMethod}() != null) {\n
+		@{indent}  JsonObject map = new JsonObject();\n
+		@{indent}  obj.@{property.readerMethod}().forEach((key,value) -> map.put(key, @{before}value@{after}));\n
+		@{indent}  json.put("@{property.name}", map);\n
 		@{indent}}\n
 	@else{}
 		@if{property.type.kind != CLASS_PRIMITIVE}@{indent}if (obj.@{property.readerMethod}() != null) {\n  @end{}
@@ -144,6 +161,8 @@ public class @{type.simpleName}Converter {\n
 					@end{}
 				@else{propKind == CLASS_DATA_OBJECT}
 					@includeNamed{'genPropToJson';before='';after='.toJson()';indent='    '}
+				@else{propKind == CLASS_OBJECT}
+					@includeNamed{'genPropToJson';before='';after='';indent='    '}
 				@end{}
 			@end{}
 		@end{}

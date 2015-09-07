@@ -24,6 +24,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -68,6 +69,7 @@ public class TestDataObject {
   private List<JsonObject> jsonObjects;
   private List<JsonArray> jsonArrays;
   private List<HttpMethod> httpMethods;
+  private List<Object> objects;
 
   private List<String> addedStringValues = new ArrayList<>();
   private List<Boolean> addedBooleanValues = new ArrayList<>();
@@ -91,6 +93,23 @@ public class TestDataObject {
   private List<JsonObject> addedJsonObjects = new ArrayList<>();
   private List<JsonArray> addedJsonArrays = new ArrayList<>();
   private List<HttpMethod> addedHttpMethods = new ArrayList<>();
+  private List<Object> addedObjects = new ArrayList<>();
+
+  private Map<String, String> stringValueMap;
+  private Map<String, Boolean> boxedBooleanValueMap;
+  private Map<String, Byte> boxedByteValueMap;
+  private Map<String, Short> boxedShortValueMap;
+  private Map<String, Integer> boxedIntValueMap;
+  private Map<String, Long> boxedLongValueMap;
+  private Map<String, Float> boxedFloatValueMap;
+  private Map<String, Double> boxedDoubleValueMap;
+  private Map<String, Character> boxedCharValueMap;
+  private Map<String, AggregatedDataObject> aggregatedDataObjectMap;
+  private Map<String, Buffer> bufferMap;
+  private Map<String, JsonObject> jsonObjectMap;
+  private Map<String, JsonArray> jsonArrayMap;
+  private Map<String, HttpMethod> httpMethodMap;
+  private Map<String, Object> objectMap;
 
   public TestDataObject() {
   }
@@ -425,6 +444,15 @@ public class TestDataObject {
     return this;
   }
 
+  public List<Object> getObjects() {
+    return objects;
+  }
+
+  public TestDataObject setObjects(List<Object> objects) {
+    this.objects = objects;
+    return this;
+  }
+
   public List<String> getAddedStringValues() {
     return addedStringValues;
   }
@@ -620,6 +648,150 @@ public class TestDataObject {
 
   public TestDataObject addAddedHttpMethod(HttpMethod addedHttpMethod) {
     this.addedHttpMethods.add(addedHttpMethod);
+    return this;
+  }
+
+  public List<Object> getAddedObjects() {
+    return addedObjects;
+  }
+
+  public TestDataObject addAddedObject(Object addedObject) {
+    this.addedObjects.add(addedObject);
+    return this;
+  }
+
+  public Map<String, String> getStringValueMap() {
+    return stringValueMap;
+  }
+
+  public TestDataObject setStringValueMap(Map<String, String> stringValueMap) {
+    this.stringValueMap = stringValueMap;
+    return this;
+  }
+
+  public Map<String, Boolean> getBoxedBooleanValueMap() {
+    return boxedBooleanValueMap;
+  }
+
+  public TestDataObject setBoxedBooleanValueMap(Map<String, Boolean> boxedBooleanValueMap) {
+    this.boxedBooleanValueMap = boxedBooleanValueMap;
+    return this;
+  }
+
+  public Map<String, Byte> getBoxedByteValueMap() {
+    return boxedByteValueMap;
+  }
+
+  public TestDataObject setBoxedByteValueMap(Map<String, Byte> boxedByteValueMap) {
+    this.boxedByteValueMap = boxedByteValueMap;
+    return this;
+  }
+
+  public Map<String, Short> getBoxedShortValueMap() {
+    return boxedShortValueMap;
+  }
+
+  public TestDataObject setBoxedShortValueMap(Map<String, Short> boxedShortValueMap) {
+    this.boxedShortValueMap = boxedShortValueMap;
+    return this;
+  }
+
+  public Map<String, Integer> getBoxedIntValueMap() {
+    return boxedIntValueMap;
+  }
+
+  public TestDataObject setBoxedIntValueMap(Map<String, Integer> boxedIntValueMap) {
+    this.boxedIntValueMap = boxedIntValueMap;
+    return this;
+  }
+
+  public Map<String, Long> getBoxedLongValueMap() {
+    return boxedLongValueMap;
+  }
+
+  public TestDataObject setBoxedLongValueMap(Map<String, Long> boxedLongValueMap) {
+    this.boxedLongValueMap = boxedLongValueMap;
+    return this;
+  }
+
+  public Map<String, Float> getBoxedFloatValueMap() {
+    return boxedFloatValueMap;
+  }
+
+  public TestDataObject setBoxedFloatValueMap(Map<String, Float> boxedFloatValueMap) {
+    this.boxedFloatValueMap = boxedFloatValueMap;
+    return this;
+  }
+
+  public Map<String, Double> getBoxedDoubleValueMap() {
+    return boxedDoubleValueMap;
+  }
+
+  public TestDataObject setBoxedDoubleValueMap(Map<String, Double> boxedDoubleValueMap) {
+    this.boxedDoubleValueMap = boxedDoubleValueMap;
+    return this;
+  }
+
+  public Map<String, Character> getBoxedCharValueMap() {
+    return boxedCharValueMap;
+  }
+
+  public TestDataObject setBoxedCharValueMap(Map<String, Character> boxedCharValueMap) {
+    this.boxedCharValueMap = boxedCharValueMap;
+    return this;
+  }
+
+  public Map<String, AggregatedDataObject> getAggregatedDataObjectMap() {
+    return aggregatedDataObjectMap;
+  }
+
+  public TestDataObject setAggregatedDataObjectMap(Map<String, AggregatedDataObject> aggregatedDataObjectMap) {
+    this.aggregatedDataObjectMap = aggregatedDataObjectMap;
+    return this;
+  }
+
+  public Map<String, Buffer> getBufferMap() {
+    return bufferMap;
+  }
+
+  public TestDataObject setBufferMap(Map<String, Buffer> bufferMap) {
+    this.bufferMap = bufferMap;
+    return this;
+  }
+
+  public Map<String, JsonObject> getJsonObjectMap() {
+    return jsonObjectMap;
+  }
+
+  public TestDataObject setJsonObjectMap(Map<String, JsonObject> jsonObjectMap) {
+    this.jsonObjectMap = jsonObjectMap;
+    return this;
+  }
+
+  public Map<String, JsonArray> getJsonArrayMap() {
+    return jsonArrayMap;
+  }
+
+  public TestDataObject setJsonArrayMap(Map<String, JsonArray> jsonArrayMap) {
+    this.jsonArrayMap = jsonArrayMap;
+    return this;
+  }
+
+  public Map<String, HttpMethod> getHttpMethodMap() {
+    return httpMethodMap;
+  }
+
+  public TestDataObject setHttpMethodMap(Map<String, HttpMethod> httpMethodMap) {
+    this.httpMethodMap = httpMethodMap;
+    return this;
+  }
+
+  public Map<String, Object> getObjectMap() {
+    return objectMap;
+  }
+
+  public TestDataObject setObjectMap(Map<String, Object> objectMap) {
+    this.objectMap = objectMap;
     return this;
   }
 }
