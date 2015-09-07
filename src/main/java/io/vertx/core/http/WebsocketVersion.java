@@ -16,11 +16,14 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * Represents the WebSocket version
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public enum WebsocketVersion {
   V00, V07, V08, V13
 }

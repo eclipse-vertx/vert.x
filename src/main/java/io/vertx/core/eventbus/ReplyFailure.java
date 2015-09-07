@@ -16,11 +16,14 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * Represents the type of reply failure
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public enum ReplyFailure {
 
   /**

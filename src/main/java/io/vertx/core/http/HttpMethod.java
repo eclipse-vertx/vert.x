@@ -16,11 +16,14 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * Represents an HTTP method
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@VertxGen
 public enum HttpMethod {
   OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH
 }
