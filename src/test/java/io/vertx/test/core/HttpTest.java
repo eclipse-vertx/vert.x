@@ -589,7 +589,7 @@ public class HttpTest extends HttpTestBase {
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
     assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions) copy.getTrustOptions()).getPassword());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -1383,7 +1383,7 @@ public class HttpTest extends HttpTestBase {
         assertEquals(headers.size() + 1, resp.headers().size());
 
         headers.forEach((k,v) -> assertEquals(v, resp.headers().get(k)));
-        headers.forEach((k, v) -> assertEquals(v, resp.getHeader(k)));
+        headers.forEach((k,v) -> assertEquals(v, resp.getHeader(k)));
 
         testComplete();
       }).end();
@@ -1725,7 +1725,7 @@ public class HttpTest extends HttpTestBase {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       for (int i = 0; i < numReqs; i++) {
         client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-            exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
+          exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
       }
     }));
     awaitLatch(latch);
@@ -3142,8 +3142,7 @@ public class HttpTest extends HttpTestBase {
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
-    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {
-    });
+    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {});
     try {
       req.end();
       fail("Was expecting a failure");
@@ -4313,7 +4312,7 @@ public class HttpTest extends HttpTestBase {
         assertTrue(Vertx.currentContext().isWorkerContext());
         assertTrue(Context.isOnWorkerThread());
         HttpServer server1 = vertx.createHttpServer(new HttpServerOptions()
-            .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+                .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
         server1.requestHandler(req -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
@@ -4600,25 +4599,14 @@ public class HttpTest extends HttpTestBase {
       }
     }).listen(8080, onSuccess(s -> {
       HttpClientOptions ops = new HttpClientOptions()
-          .setDefaultPort(8080)
-          .setPipelining(true)
-          .setKeepAlive(true);
+        .setDefaultPort(8080)
+        .setPipelining(true)
+        .setKeepAlive(true);
       HttpClient client = vertx.createHttpClient(ops);
-      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {
-      }));
+      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {}));
     }));
     await();
   }
 
-  @Test
-  public void testStatusMessageSpecialChars() throws Exception {
-    server.requestHandler(req -> req.response().setStatusMessage("Hello\nWorld!").end());
 
-    server.listen(onSuccess(server -> client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, res -> {
-      assertEquals("Hello\nWorld", res.statusMessage());
-      testComplete();
-    }).end()));
-
-    await();
-  }
 }
