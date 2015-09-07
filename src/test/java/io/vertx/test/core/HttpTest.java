@@ -589,7 +589,7 @@ public class HttpTest extends HttpTestBase {
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
     assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
+    assertEquals(tsPassword, ((JksOptions) copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -1383,7 +1383,7 @@ public class HttpTest extends HttpTestBase {
         assertEquals(headers.size() + 1, resp.headers().size());
 
         headers.forEach((k,v) -> assertEquals(v, resp.headers().get(k)));
-        headers.forEach((k,v) -> assertEquals(v, resp.getHeader(k)));
+        headers.forEach((k, v) -> assertEquals(v, resp.getHeader(k)));
 
         testComplete();
       }).end();
@@ -1725,7 +1725,7 @@ public class HttpTest extends HttpTestBase {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       for (int i = 0; i < numReqs; i++) {
         client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-          exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
+            exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
       }
     }));
     awaitLatch(latch);
@@ -3029,7 +3029,9 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testPKCS12InvalidPassword() {
-    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded", null);
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword("wrongpassword"), Arrays.asList(
+        "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded",
+        "keystore password was incorrect"), null);
   }
 
   @Test
@@ -3106,7 +3108,15 @@ public class HttpTest extends HttpTestBase {
     setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
-    testStore(serverOptions, expectedPrefix, expectedSuffix);
+    testStore(serverOptions, Collections.singletonList(expectedPrefix), expectedSuffix);
+  }
+
+  private void testInvalidKeyStore(KeyCertOptions options, List<String> expectedPossiblePrefixes, String expectedSuffix) {
+    HttpServerOptions serverOptions = new HttpServerOptions();
+    setOptions(serverOptions, options);
+    serverOptions.setSsl(true);
+    serverOptions.setPort(4043);
+    testStore(serverOptions, expectedPossiblePrefixes, expectedSuffix);
   }
 
   private void testInvalidTrustStore(TrustOptions options, String expectedPrefix, String expectedSuffix) {
@@ -3114,10 +3124,10 @@ public class HttpTest extends HttpTestBase {
     setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
-    testStore(serverOptions, expectedPrefix, expectedSuffix);
+    testStore(serverOptions, Collections.singletonList(expectedPrefix), expectedSuffix);
   }
 
-  private void testStore(HttpServerOptions serverOptions, String expectedPrefix, String expectedSuffix) {
+  private void testStore(HttpServerOptions serverOptions, List<String> expectedPossiblePrefixes, String expectedSuffix) {
     HttpServer server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
     });
@@ -3126,10 +3136,22 @@ public class HttpTest extends HttpTestBase {
       fail("Was expecting a failure");
     } catch (VertxException e) {
       assertNotNull(e.getCause());
-      if(expectedSuffix == null)
-        assertEquals(expectedPrefix, e.getCause().getMessage());
-      else {
-        assertTrue(e.getCause().getMessage().startsWith(expectedPrefix));
+      if(expectedSuffix == null) {
+        boolean ok = expectedPossiblePrefixes.isEmpty();
+        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+          ok |= expectedPossiblePrefix.equals(e.getCause().getMessage());
+        }
+        if (!ok) {
+          fail("Was expecting <" + e.getCause().getMessage() + ">  to be equals to one of " + expectedPossiblePrefixes);
+        }
+      } else {
+        boolean ok = expectedPossiblePrefixes.isEmpty();
+        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+          ok |= e.getCause().getMessage().startsWith(expectedPossiblePrefix);
+        }
+        if (!ok) {
+          fail("Was expecting e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
+        }
         assertTrue(e.getCause().getMessage().endsWith(expectedSuffix));
       }
     }
