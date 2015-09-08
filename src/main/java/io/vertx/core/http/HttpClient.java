@@ -16,6 +16,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -210,6 +211,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -220,6 +222,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient getNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -229,6 +232,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient getNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -380,6 +384,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient headNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -390,6 +395,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient headNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -399,6 +405,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient headNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -480,6 +487,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient optionsNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -490,6 +498,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient optionsNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -499,6 +508,7 @@ public interface HttpClient extends Measured {
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient optionsNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -649,6 +659,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect);
 
   /**
@@ -658,6 +669,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect);
 
   /**
@@ -669,6 +681,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
   /**
@@ -679,6 +692,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
   /**
@@ -692,6 +706,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
 
@@ -705,6 +720,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
 
@@ -720,6 +736,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
 
@@ -734,6 +751,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
 
@@ -743,6 +761,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect);
 
   /**
@@ -752,6 +771,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
   /**
@@ -763,6 +783,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
 
@@ -776,6 +797,7 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
 
