@@ -33,6 +33,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -427,6 +428,17 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       checkWritten();
       File file = vertx.resolveFile(filename);
+
+      if (!file.exists()) {
+        if (resultHandler != null) {
+          ContextImpl ctx = vertx.getOrCreateContext();
+          ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
+        } else {
+          log.error("File not found: " + filename);
+        }
+        return;
+      }
+
       long contentLength = Math.min(length, file.length() - offset);
       if (!contentLengthSet()) {
         putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));

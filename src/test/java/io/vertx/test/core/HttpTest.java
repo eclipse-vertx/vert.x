@@ -2295,6 +2295,29 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSendNonExistingFile() throws Exception {
+    server.requestHandler(req -> {
+      req.response().sendFile("/not/existing/path", event -> {
+        if (event.failed()) {
+          req.response().end("failed");
+        }
+      });
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals("failed", buff.toString());
+          testComplete();
+        });
+      }).end();
+    }));
+
+    await();
+  }
+
+
+  @Test
   public void testSendFileOverrideHeaders() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     File file = setupFile("test-send-file.html", content);
