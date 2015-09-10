@@ -30,7 +30,9 @@ import org.junit.Test;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
+import java.security.KeyStore;
 import java.util.Collections;
+import java.util.Enumeration;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
@@ -357,6 +359,9 @@ public class KeyStoreTest extends VertxTestBase {
 
   private void testKeyStore(KeyCertOptions options) throws Exception {
     KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, options);
+    KeyStore keyStore = helper.loadStore((VertxInternal) vertx);
+    Enumeration<String> aliases = keyStore.aliases();
+    assertTrue(aliases.hasMoreElements());
     KeyManager[] keyManagers = helper.getKeyMgrs((VertxInternal) vertx);
     assertTrue(keyManagers.length > 0);
   }

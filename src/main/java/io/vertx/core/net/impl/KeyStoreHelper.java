@@ -115,7 +115,7 @@ public abstract class KeyStoreHelper {
     }
   }
 
-  private String password;
+  protected final String password;
 
   public KeyStoreHelper(String password) {
     this.password = password;
@@ -123,19 +123,25 @@ public abstract class KeyStoreHelper {
 
   public KeyManager[] getKeyMgrs(VertxInternal vertx) throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    KeyStore ks = loadStore(vertx, password);
+    KeyStore ks = loadStore(vertx);
     fact.init(ks, password != null ? password.toCharArray(): null);
     return fact.getKeyManagers();
   }
 
   public TrustManager[] getTrustMgrs(VertxInternal vertx) throws Exception {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    KeyStore ts = loadStore(vertx, password);
+    KeyStore ts = loadStore(vertx);
     fact.init(ts);
     return fact.getTrustManagers();
   }
 
-  protected abstract KeyStore loadStore(VertxInternal vertx, String password) throws Exception ;
+  /**
+   * Load the keystore.
+   *
+   * @param vertx the vertx instance
+   * @return the key store
+   */
+  public abstract KeyStore loadStore(VertxInternal vertx) throws Exception;
 
   static class JKSOrPKCS12 extends KeyStoreHelper {
 
@@ -148,12 +154,12 @@ public abstract class KeyStoreHelper {
       this.value = value;
     }
 
-    protected KeyStore loadStore(VertxInternal vertx, String ksPassword) throws Exception {
+    public KeyStore loadStore(VertxInternal vertx) throws Exception {
       KeyStore ks = KeyStore.getInstance(type);
       InputStream in = null;
       try {
         in = new ByteArrayInputStream(value.get().getBytes());
-        ks.load(in, ksPassword != null ? ksPassword.toCharArray(): null);
+        ks.load(in, password != null ? password.toCharArray(): null);
       } finally {
         if (in != null) {
           try {
@@ -178,7 +184,7 @@ public abstract class KeyStoreHelper {
     }
 
     @Override
-    protected KeyStore loadStore(VertxInternal vertx, String password) throws Exception {
+    public KeyStore loadStore(VertxInternal vertx) throws Exception {
       KeyStore keyStore = KeyStore.getInstance("jks");
       keyStore.load(null, null);
       PrivateKey key = loadPrivateKey(this.keyValue.get());
@@ -198,7 +204,7 @@ public abstract class KeyStoreHelper {
     }
 
     @Override
-    protected KeyStore loadStore(VertxInternal vertx, String password) throws Exception {
+    public KeyStore loadStore(VertxInternal vertx) throws Exception {
       KeyStore keyStore = KeyStore.getInstance("jks");
       keyStore.load(null, null);
       int count = 0;
