@@ -904,11 +904,10 @@
  * When making a request with pooling enabled, Vert.x will create a new connection if there are less than the maximum number of
  * connections already created for that server, otherwise it will add the request to a queue.
  *
- * When a response returns, if there are pending requests for the server, then the connection will be reused, otherwise
- * it will be closed.
+ * Keep alive connections will not be closed by the client automatically. To close them you can close the client instance.
  *
- * This gives the benefits of keep alive when the client is loaded but means we don't keep connections hanging around
- * unnecessarily when there would be no benefits anyway.
+ * Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
+ * connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
  *
  * === Pipe-lining
  *
@@ -922,10 +921,7 @@
  *
  * When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
  *
- * When pipe-line responses return at the client, the connection will be automatically closed when all in-flight
- * responses have returned and there are no outstanding pending requests to write.
- *
- * === Server sharing
+  * === Server sharing
  *
  * When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
  * round-robin strategy.
