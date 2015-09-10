@@ -1161,7 +1161,7 @@
  *
  */
 @Document(fileName = "index.adoc")
-@io.vertx.codegen.annotations.GenModule(name = "vertx")
+@io.vertx.codegen.annotations.ModuleGen(name = "vertx", groupPackage = "io.vertx")
 package io.vertx.core;
 
 import io.vertx.docgen.Document;

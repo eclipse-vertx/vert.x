@@ -76,6 +76,9 @@
 |[[aggregatedDataObject]]`aggregatedDataObject`
 |`link:AggregatedDataObject.html[AggregatedDataObject]`
 |-
+|[[aggregatedDataObjectMap]]`aggregatedDataObjectMap`
+|`link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
 |[[aggregatedDataObjects]]`aggregatedDataObjects`
 |`Array of link:AggregatedDataObject.html[AggregatedDataObject]`
 |-
@@ -85,10 +88,16 @@
 |[[boxedBooleanValue]]`boxedBooleanValue`
 |`Boolean`
 |-
+|[[boxedBooleanValueMap]]`boxedBooleanValueMap`
+|`Boolean`
+|-
 |[[boxedBooleanValues]]`boxedBooleanValues`
 |`Array of Boolean`
 |-
 |[[boxedByteValue]]`boxedByteValue`
+|`Number (Byte)`
+|-
+|[[boxedByteValueMap]]`boxedByteValueMap`
 |`Number (Byte)`
 |-
 |[[boxedByteValues]]`boxedByteValues`
@@ -97,10 +106,16 @@
 |[[boxedCharValue]]`boxedCharValue`
 |`Char`
 |-
+|[[boxedCharValueMap]]`boxedCharValueMap`
+|`Char`
+|-
 |[[boxedCharValues]]`boxedCharValues`
 |`Array of Char`
 |-
 |[[boxedDoubleValue]]`boxedDoubleValue`
+|`Number (Double)`
+|-
+|[[boxedDoubleValueMap]]`boxedDoubleValueMap`
 |`Number (Double)`
 |-
 |[[boxedDoubleValues]]`boxedDoubleValues`
@@ -109,10 +124,16 @@
 |[[boxedFloatValue]]`boxedFloatValue`
 |`Number (Float)`
 |-
+|[[boxedFloatValueMap]]`boxedFloatValueMap`
+|`Number (Float)`
+|-
 |[[boxedFloatValues]]`boxedFloatValues`
 |`Array of Number (Float)`
 |-
 |[[boxedIntValue]]`boxedIntValue`
+|`Number (Integer)`
+|-
+|[[boxedIntValueMap]]`boxedIntValueMap`
 |`Number (Integer)`
 |-
 |[[boxedIntValues]]`boxedIntValues`
@@ -121,16 +142,25 @@
 |[[boxedLongValue]]`boxedLongValue`
 |`Number (Long)`
 |-
+|[[boxedLongValueMap]]`boxedLongValueMap`
+|`Number (Long)`
+|-
 |[[boxedLongValues]]`boxedLongValues`
 |`Array of Number (Long)`
 |-
 |[[boxedShortValue]]`boxedShortValue`
 |`Number (Short)`
 |-
+|[[boxedShortValueMap]]`boxedShortValueMap`
+|`Number (Short)`
+|-
 |[[boxedShortValues]]`boxedShortValues`
 |`Array of Number (Short)`
 |-
 |[[buffer]]`buffer`
+|`Buffer`
+|-
+|[[bufferMap]]`bufferMap`
 |`Buffer`
 |-
 |[[buffers]]`buffers`
@@ -148,6 +178,9 @@
 |[[httpMethod]]`httpMethod`
 |`Enum`
 |-
+|[[httpMethodMap]]`httpMethodMap`
+|`Enum`
+|-
 |[[httpMethods]]`httpMethods`
 |`Array of Enum`
 |-
@@ -157,10 +190,16 @@
 |[[jsonArray]]`jsonArray`
 |`Json array`
 |-
+|[[jsonArrayMap]]`jsonArrayMap`
+|`Json array`
+|-
 |[[jsonArrays]]`jsonArrays`
 |`Array of Json array`
 |-
 |[[jsonObject]]`jsonObject`
+|`Json object`
+|-
+|[[jsonObjectMap]]`jsonObjectMap`
 |`Json object`
 |-
 |[[jsonObjects]]`jsonObjects`
@@ -173,6 +212,9 @@
 |`Number (short)`
 |-
 |[[stringValue]]`stringValue`
+|`String`
+|-
+|[[stringValueMap]]`stringValueMap`
 |`String`
 |-
 |[[stringValues]]`stringValues`

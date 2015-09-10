@@ -17,7 +17,7 @@
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@GenModule(name = "vertx")
+@ModuleGen(name = "vertx", groupPackage = "io.vertx.test")
 package io.vertx.test.codegen;
 
-import io.vertx.codegen.annotations.GenModule;
+import io.vertx.codegen.annotations.ModuleGen;

@@ -30,17 +30,28 @@ import io.vertx.test.codegen.TestDataObject;
 import io.vertx.test.codegen.TestDataObjectConverter;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class DataObjectTest extends VertxTestBase {
 
+  private static JsonObject toJson(Map<String, Object> map) {
+    JsonObject json = new JsonObject();
+    map.forEach(json::put);
+    return json;
+  }
+
   @Test
   public void testJsonToDataObject() {
 
+    String key = TestUtils.randomAlphaString(10);
     String stringValue = TestUtils.randomAlphaString(20);
     boolean booleanValue = TestUtils.randomBoolean();
     byte byteValue = TestUtils.randomByte();
@@ -63,6 +74,14 @@ public class DataObjectTest extends VertxTestBase {
     JsonObject jsonObject = new JsonObject().put("wibble", TestUtils.randomAlphaString(20));
     JsonArray jsonArray = new JsonArray().add(TestUtils.randomAlphaString(20));
     HttpMethod httpMethod = HttpMethod.values()[TestUtils.randomPositiveInt() % HttpMethod.values().length];
+    Map<String, Object> map = new HashMap<>();
+    map.put(TestUtils.randomAlphaString(10), TestUtils.randomAlphaString(20));
+    map.put(TestUtils.randomAlphaString(10), TestUtils.randomBoolean());
+    map.put(TestUtils.randomAlphaString(10), TestUtils.randomInt());
+    List<Object> list = new ArrayList<>();
+    list.add(TestUtils.randomAlphaString(20));
+    list.add(TestUtils.randomBoolean());
+    list.add(TestUtils.randomInt());
 
     JsonObject json = new JsonObject();
     json.put("stringValue", stringValue);
@@ -101,6 +120,7 @@ public class DataObjectTest extends VertxTestBase {
     json.put("jsonObjects", new JsonArray().add(jsonObject));
     json.put("jsonArrays", new JsonArray().add(jsonArray));
     json.put("httpMethods", new JsonArray().add(httpMethod.toString()));
+    json.put("objects", new JsonArray().add(list.get(0)).add(list.get(1)).add(list.get(2)));
     json.put("addedStringValues", new JsonArray().add(stringValue));
     json.put("addedBooleanValues", new JsonArray().add(boxedBooleanValue));
     json.put("addedByteValues", new JsonArray().add(boxedByteValue));
@@ -123,6 +143,22 @@ public class DataObjectTest extends VertxTestBase {
     json.put("addedJsonObjects", new JsonArray().add(jsonObject));
     json.put("addedJsonArrays", new JsonArray().add(jsonArray));
     json.put("addedHttpMethods", new JsonArray().add(httpMethod.toString()));
+    json.put("addedObjects", new JsonArray().add(list.get(0)).add(list.get(1)).add(list.get(2)));
+    json.put("stringValueMap", new JsonObject().put(key, stringValue));
+    json.put("boxedBooleanValueMap", new JsonObject().put(key, boxedBooleanValue));
+    json.put("boxedByteValueMap", new JsonObject().put(key, boxedByteValue));
+    json.put("boxedShortValueMap", new JsonObject().put(key, boxedShortValue));
+    json.put("boxedIntValueMap", new JsonObject().put(key, boxedIntValue));
+    json.put("boxedLongValueMap", new JsonObject().put(key, boxedLongValue));
+    json.put("boxedFloatValueMap", new JsonObject().put(key, boxedFloatValue));
+    json.put("boxedDoubleValueMap", new JsonObject().put(key, boxedDoubleValue));
+    json.put("boxedCharValueMap", new JsonObject().put(key, Character.toString(boxedCharValue)));
+    json.put("aggregatedDataObjectMap", new JsonObject().put(key, new JsonObject().put("value", aggregatedDataObject.getValue())));
+    json.put("bufferMap", new JsonObject().put(key, Base64.getEncoder().encodeToString(buffer.getBytes())));
+    json.put("jsonObjectMap", new JsonObject().put(key, jsonObject));
+    json.put("jsonArrayMap", new JsonObject().put(key, jsonArray));
+    json.put("httpMethodMap", new JsonObject().put(key, httpMethod.toString()));
+    json.put("objectMap", toJson(map));
 
     TestDataObject obj = new TestDataObject();
     TestDataObjectConverter.fromJson(json, obj);
@@ -163,6 +199,7 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(Collections.singletonList(jsonObject), obj.getJsonObjects());
     assertEquals(Collections.singletonList(jsonArray), obj.getJsonArrays());
     assertEquals(Collections.singletonList(httpMethod), obj.getHttpMethods());
+    assertEquals(list, obj.getObjects());
     assertEquals(Collections.singletonList(stringValue), obj.getAddedStringValues());
     assertEquals(Collections.singletonList(boxedBooleanValue), obj.getAddedBooleanValues());
     assertEquals(Collections.singletonList(boxedByteValue), obj.getAddedByteValues());
@@ -185,6 +222,22 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(Collections.singletonList(jsonObject), obj.getAddedJsonObjects());
     assertEquals(Collections.singletonList(jsonArray), obj.getAddedJsonArrays());
     assertEquals(Collections.singletonList(httpMethod), obj.getAddedHttpMethods());
+    assertEquals(list, obj.getAddedObjects());
+    assertEquals(Collections.singletonMap(key, stringValue), obj.getStringValueMap());
+    assertEquals(Collections.singletonMap(key, boxedBooleanValue), obj.getBoxedBooleanValueMap());
+    assertEquals(Collections.singletonMap(key, boxedByteValue), obj.getBoxedByteValueMap());
+    assertEquals(Collections.singletonMap(key, boxedShortValue), obj.getBoxedShortValueMap());
+    assertEquals(Collections.singletonMap(key, boxedIntValue), obj.getBoxedIntValueMap());
+    assertEquals(Collections.singletonMap(key, boxedLongValue), obj.getBoxedLongValueMap());
+    assertEquals(Collections.singletonMap(key, boxedFloatValue), obj.getBoxedFloatValueMap());
+    assertEquals(Collections.singletonMap(key, boxedDoubleValue), obj.getBoxedDoubleValueMap());
+    assertEquals(Collections.singletonMap(key, boxedCharValue), obj.getBoxedCharValueMap());
+    assertEquals(Collections.singletonMap(key, aggregatedDataObject), obj.getAggregatedDataObjectMap());
+    assertEquals(Collections.singletonMap(key, buffer), obj.getBufferMap());
+    assertEquals(Collections.singletonMap(key, jsonObject), obj.getJsonObjectMap());
+    assertEquals(Collections.singletonMap(key, jsonArray), obj.getJsonArrayMap());
+    assertEquals(Collections.singletonMap(key, httpMethod), obj.getHttpMethodMap());
+    assertEquals(map, obj.getObjectMap());
 
     // Sometimes json can use java collections so test it runs fine in this case
     json = new JsonObject();
@@ -241,6 +294,7 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(null, obj.getJsonObjects());
     assertEquals(null, obj.getJsonArrays());
     assertEquals(null, obj.getHttpMethods());
+    assertEquals(null, obj.getObjects());
     assertEquals(Collections.emptyList(), obj.getAddedStringValues());
     assertEquals(Collections.emptyList(), obj.getAddedBooleanValues());
     assertEquals(Collections.emptyList(), obj.getAddedByteValues());
@@ -263,10 +317,27 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(Collections.emptyList(), obj.getAddedJsonObjects());
     assertEquals(Collections.emptyList(), obj.getAddedJsonArrays());
     assertEquals(Collections.emptyList(), obj.getAddedHttpMethods());
+    assertEquals(Collections.emptyList(), obj.getAddedObjects());
+    assertEquals(null, obj.getStringValueMap());
+    assertEquals(null, obj.getBoxedBooleanValueMap());
+    assertEquals(null, obj.getBoxedByteValueMap());
+    assertEquals(null, obj.getBoxedShortValueMap());
+    assertEquals(null, obj.getBoxedIntValueMap());
+    assertEquals(null, obj.getBoxedLongValueMap());
+    assertEquals(null, obj.getBoxedFloatValueMap());
+    assertEquals(null, obj.getBoxedDoubleValueMap());
+    assertEquals(null, obj.getBoxedCharValueMap());
+    assertEquals(null, obj.getAggregatedDataObjectMap());
+    assertEquals(null, obj.getBufferMap());
+    assertEquals(null, obj.getJsonObjectMap());
+    assertEquals(null, obj.getJsonArrayMap());
+    assertEquals(null, obj.getHttpMethodMap());
+    assertEquals(null, obj.getObjectMap());
   }
 
   @Test
   public void testDataObjectToJson() {
+    String key = TestUtils.randomAlphaString(10);
     String stringValue = TestUtils.randomAlphaString(20);
     boolean booleanValue = TestUtils.randomBoolean();
     byte byteValue = TestUtils.randomByte();
@@ -289,6 +360,14 @@ public class DataObjectTest extends VertxTestBase {
     JsonObject jsonObject = new JsonObject().put("wibble", TestUtils.randomAlphaString(20));
     JsonArray jsonArray = new JsonArray().add(TestUtils.randomAlphaString(20));
     HttpMethod httpMethod = HttpMethod.values()[TestUtils.randomPositiveInt() % HttpMethod.values().length];
+    Map<String, Object> map = new HashMap<>();
+    map.put(TestUtils.randomAlphaString(10), TestUtils.randomAlphaString(20));
+    map.put(TestUtils.randomAlphaString(10), TestUtils.randomBoolean());
+    map.put(TestUtils.randomAlphaString(10), TestUtils.randomInt());
+    List<Object> list = new ArrayList<>();
+    list.add(TestUtils.randomAlphaString(20));
+    list.add(TestUtils.randomBoolean());
+    list.add(TestUtils.randomInt());
 
     TestDataObject obj = new TestDataObject();
     obj.setStringValue(stringValue);
@@ -327,6 +406,23 @@ public class DataObjectTest extends VertxTestBase {
     obj.setJsonObjects(Collections.singletonList(jsonObject));
     obj.setJsonArrays(Collections.singletonList(jsonArray));
     obj.setHttpMethods(Collections.singletonList(httpMethod));
+    obj.setObjects(list);
+    obj.setStringValueMap(Collections.singletonMap(key, stringValue));
+    obj.setBoxedBooleanValueMap(Collections.singletonMap(key, boxedBooleanValue));
+    obj.setBoxedByteValueMap(Collections.singletonMap(key, boxedByteValue));
+    obj.setBoxedShortValueMap(Collections.singletonMap(key, boxedShortValue));
+    obj.setBoxedIntValueMap(Collections.singletonMap(key, boxedIntValue));
+    obj.setBoxedLongValueMap(Collections.singletonMap(key, boxedLongValue));
+    obj.setBoxedFloatValueMap(Collections.singletonMap(key, boxedFloatValue));
+    obj.setBoxedDoubleValueMap(Collections.singletonMap(key, boxedDoubleValue));
+    obj.setBoxedCharValueMap(Collections.singletonMap(key, boxedCharValue));
+    obj.setAggregatedDataObjectMap(Collections.singletonMap(key, aggregatedDataObject));
+    obj.setBufferMap(Collections.singletonMap(key, buffer));
+    obj.setJsonObjectMap(Collections.singletonMap(key, jsonObject));
+    obj.setJsonArrayMap(Collections.singletonMap(key, jsonArray));
+    obj.setHttpMethodMap(Collections.singletonMap(key, httpMethod));
+    obj.setObjectMap(map);
+
 
     JsonObject json = new JsonObject();
     TestDataObjectConverter.toJson(obj, json);
@@ -347,7 +443,7 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(boxedIntValue, json.getInteger("boxedIntValue"));
     assertEquals(boxedLongValue, json.getLong("boxedLongValue"));
     assertEquals(boxedFloatValue, json.getFloat("boxedFloatValue"), 0.001);
-    assertEquals(boxedDoubleValue, (double)json.getFloat("boxedDoubleValue"), 0.001);
+    assertEquals(boxedDoubleValue, (double) json.getFloat("boxedDoubleValue"), 0.001);
     assertEquals(Character.toString(boxedCharValue), json.getString("boxedCharValue"));
     assertEquals(aggregatedDataObject.toJson(), json.getJsonObject("aggregatedDataObject"));
     assertEquals(buffer, Buffer.buffer(json.getBinary("buffer")));
@@ -370,6 +466,24 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(new JsonArray().add(jsonObject), json.getJsonArray("jsonObjects"));
     assertEquals(new JsonArray().add(jsonArray), json.getJsonArray("jsonArrays"));
     assertEquals(new JsonArray().add(httpMethod.name()), json.getJsonArray("httpMethods"));
+    assertEquals(new JsonArray().add(list.get(0)).add(list.get(1)).add(list.get(2)), json.getJsonArray("objects"));
+    assertEquals(new JsonObject().put(key, stringValue), json.getJsonObject("stringValueMap"));
+    assertEquals(new JsonObject().put(key, boxedBooleanValue), json.getJsonObject("boxedBooleanValueMap"));
+    assertEquals(new JsonObject().put(key, boxedByteValue), json.getJsonObject("boxedByteValueMap"));
+    assertEquals(new JsonObject().put(key, boxedShortValue), json.getJsonObject("boxedShortValueMap"));
+    assertEquals(new JsonObject().put(key, boxedIntValue), json.getJsonObject("boxedIntValueMap"));
+    assertEquals(new JsonObject().put(key, boxedLongValue), json.getJsonObject("boxedLongValueMap"));
+    assertEquals(1, json.getJsonObject("boxedFloatValueMap").size());
+    assertEquals(boxedFloatValue, json.getJsonObject("boxedFloatValueMap").getFloat(key), 0.001);
+    assertEquals(1, json.getJsonObject("boxedDoubleValueMap").size());
+    assertEquals(boxedDoubleValue, json.getJsonObject("boxedDoubleValueMap").getDouble(key), 0.001);
+    assertEquals(new JsonObject().put(key, Character.toString(boxedCharValue)), json.getJsonObject("boxedCharValueMap"));
+    assertEquals(new JsonObject().put(key, aggregatedDataObject.toJson()), json.getJsonObject("aggregatedDataObjectMap"));
+    assertEquals(new JsonObject().put(key, Base64.getEncoder().encodeToString(buffer.getBytes())), json.getJsonObject("bufferMap"));
+    assertEquals(new JsonObject().put(key, jsonObject), json.getJsonObject("jsonObjectMap"));
+    assertEquals(new JsonObject().put(key, jsonArray), json.getJsonObject("jsonArrayMap"));
+    assertEquals(new JsonObject().put(key, httpMethod.name()), json.getJsonObject("httpMethodMap"));
+    assertEquals(toJson(map), json.getJsonObject("objectMap"));
   }
 
   @Test
@@ -386,9 +500,9 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(0, (int)json.getInteger("byteValue"));
     assertEquals(0, (int)json.getInteger("shortValue"));
     assertEquals(0, (int)json.getInteger("intValue"));
-    assertEquals(0L, (long)json.getLong("longValue"));
-    assertEquals(0f, (float)json.getFloat("floatValue"), 0);
-    assertEquals(0d, (double)json.getFloat("doubleValue"), 0);
+    assertEquals(0L, (long) json.getLong("longValue"));
+    assertEquals(0f, (float) json.getFloat("floatValue"), 0);
+    assertEquals(0d, (double) json.getFloat("doubleValue"), 0);
     assertEquals(Character.toString((char)0), json.getString("charValue"));
     assertEquals(null, json.getBoolean("boxedBooleanValue"));
     assertEquals(null, json.getInteger("boxedByteValue"));
@@ -417,6 +531,7 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(null, json.getJsonArray("jsonObjects"));
     assertEquals(null, json.getJsonArray("jsonArrays"));
     assertEquals(null, json.getJsonArray("httpMethods"));
+    assertEquals(null, json.getJsonArray("objects"));
     assertEquals(new JsonArray(), json.getJsonArray("addedStringValues"));
     assertEquals(new JsonArray(), json.getJsonArray("addedBooleanValues"));
     assertEquals(new JsonArray(), json.getJsonArray("addedByteValues"));
@@ -439,6 +554,22 @@ public class DataObjectTest extends VertxTestBase {
     assertEquals(new JsonArray(), json.getJsonArray("addedJsonObjects"));
     assertEquals(new JsonArray(), json.getJsonArray("addedJsonArrays"));
     assertEquals(new JsonArray(), json.getJsonArray("addedHttpMethods"));
+    assertEquals(new JsonArray(), json.getJsonArray("addedObjects"));
+    assertEquals(null, json.getJsonArray("stringValueMap"));
+    assertEquals(null, json.getJsonArray("boxedBooleanValueMap"));
+    assertEquals(null, json.getJsonArray("boxedByteValueMap"));
+    assertEquals(null, json.getJsonArray("boxedShortValueMap"));
+    assertEquals(null, json.getJsonArray("boxedIntValueMap"));
+    assertEquals(null, json.getJsonArray("boxedLongValueMap"));
+    assertEquals(null, json.getJsonArray("boxedFloatValueMap"));
+    assertEquals(null, json.getJsonArray("boxedDoubleValueMap"));
+    assertEquals(null, json.getJsonArray("boxedCharValueMap"));
+    assertEquals(null, json.getJsonArray("aggregatedDataObjectMap"));
+    assertEquals(null, json.getJsonArray("bufferMap"));
+    assertEquals(null, json.getJsonArray("jsonObjectMap"));
+    assertEquals(null, json.getJsonArray("jsonArrayMap"));
+    assertEquals(null, json.getJsonArray("httpMethodMap"));
+    assertEquals(null, json.getJsonArray("objectMap"));
   }
 
   @Test
