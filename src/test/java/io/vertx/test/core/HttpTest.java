@@ -1739,7 +1739,7 @@ public class HttpTest extends HttpTestBase {
     }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp ->
-              resp.exceptionHandler(t -> testComplete())).exceptionHandler(error -> fail()).end();
+          resp.exceptionHandler(t -> testComplete())).exceptionHandler(error -> fail()).end();
     }));
     await();
   }
@@ -2297,7 +2297,9 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testSendNonExistingFile() throws Exception {
     server.requestHandler(req -> {
+      final Context ctx = vertx.getOrCreateContext();
       req.response().sendFile("/not/existing/path", event -> {
+        assertEquals(ctx, vertx.getOrCreateContext());
         if (event.failed()) {
           req.response().end("failed");
         }
