@@ -218,13 +218,13 @@ public class DefaultParserTest {
 
     cli.addOptions(Arrays.asList(options));
     CommandLine evaluated = cli.parse( Arrays.asList("org.acme.Foo", "-f=no"));
-    assertThat(evaluated.getAllArguments()).contains("org.acme.Foo");
+    assertThat(evaluated.allArguments()).contains("org.acme.Foo");
 
     evaluated = cli.parse( Arrays.asList("-f=no", "org.acme.Foo"));
-    assertThat(evaluated.getAllArguments()).contains("org.acme.Foo");
+    assertThat(evaluated.allArguments()).contains("org.acme.Foo");
 
     evaluated = cli.parse( Arrays.asList("-f=no", "org.acme.Foo", "bar"));
-    assertThat(evaluated.getAllArguments()).contains("org.acme.Foo", "bar");
+    assertThat(evaluated.allArguments()).contains("org.acme.Foo", "bar");
   }
 
   @Test
@@ -236,7 +236,7 @@ public class DefaultParserTest {
 
     cli.addOptions(Arrays.asList(options));
     CommandLine evaluated = cli.parse( Arrays.asList("-flag=true", "-unknown=x"));
-    assertThat(evaluated.getAllArguments()).contains("-unknown=x");
+    assertThat(evaluated.allArguments()).contains("-unknown=x");
   }
 
   @Test(expected = MissingOptionException.class)
@@ -353,7 +353,7 @@ public class DefaultParserTest {
     evaluated = cli.parse( Arrays.asList("org.acme.FooVerticle",
         "-instances=4",
         "-cp", "." + File.pathSeparator + "my.jar"));
-    assertThat(evaluated.getAllArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
+    assertThat(evaluated.allArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue("verticle")).isEqualTo("org.acme.FooVerticle");
 
     int instances = evaluated.getOptionValue("instances");
@@ -364,19 +364,19 @@ public class DefaultParserTest {
 
     // Cluster environment
     evaluated = cli.parse( Arrays.asList("org.acme.FooVerticle", "-cluster"));
-    assertThat(evaluated.getAllArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
+    assertThat(evaluated.allArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue("verticle")).isEqualTo("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("org.acme.FooVerticle");
     assertThat((boolean) evaluated.getOptionValue("cluster")).isTrue();
 
     evaluated = cli.parse( Arrays.asList("org.acme.FooVerticle", "--cluster"));
-    assertThat(evaluated.getAllArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
+    assertThat(evaluated.allArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue("verticle")).isEqualTo("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("org.acme.FooVerticle");
     assertThat((boolean) evaluated.getOptionValue("cluster")).isTrue();
 
     evaluated = cli.parse( Arrays.asList("org.acme.FooVerticle", "-cluster", "-cluster-host", "127.0.0.1"));
-    assertThat(evaluated.getAllArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
+    assertThat(evaluated.allArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue("verticle")).isEqualTo("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("org.acme.FooVerticle");
     assertThat((boolean) evaluated.getOptionValue("cluster")).isTrue();
@@ -384,7 +384,7 @@ public class DefaultParserTest {
         .isEqualTo("127.0.0.1");
 
     evaluated = cli.parse( Arrays.asList("org.acme.FooVerticle", "-cluster", "--cluster-host", "127.0.0.1"));
-    assertThat(evaluated.getAllArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
+    assertThat(evaluated.allArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue("verticle")).isEqualTo("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("org.acme.FooVerticle");
     assertThat((boolean) evaluated.getOptionValue("cluster")).isTrue();
@@ -392,7 +392,7 @@ public class DefaultParserTest {
         .isEqualTo("127.0.0.1");
 
     evaluated = cli.parse( Arrays.asList("org.acme.FooVerticle", "-cluster", "-cluster-host=127.0.0.1"));
-    assertThat(evaluated.getAllArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
+    assertThat(evaluated.allArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue("verticle")).isEqualTo("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("org.acme.FooVerticle");
     assertThat((boolean) evaluated.getOptionValue("cluster")).isTrue();
@@ -401,7 +401,7 @@ public class DefaultParserTest {
 
     evaluated = cli.parse( Arrays.asList("org.acme.FooVerticle", "-cluster", "-cluster-host", "127.0.0.1",
         "-cluster-port", "1234"));
-    assertThat(evaluated.getAllArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
+    assertThat(evaluated.allArguments()).hasSize(1).containsExactly("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue("verticle")).isEqualTo("org.acme.FooVerticle");
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("org.acme.FooVerticle");
     assertThat((boolean) evaluated.getOptionValue("cluster")).isTrue();

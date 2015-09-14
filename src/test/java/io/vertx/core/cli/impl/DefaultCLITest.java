@@ -40,7 +40,7 @@ public class DefaultCLITest {
         .addOption(new Option().setShortName("f").setFlag(true))
         .addOption(new Option().setShortName("x"));
     final CommandLine evaluated = cli.parse(Arrays.asList("-f", "-x", "foo"));
-    assertThat(evaluated.getFlagValue("f")).isTrue();
+    assertThat(evaluated.isFlagEnabled("f")).isTrue();
     assertThat((String) evaluated.getOptionValue("x")).isEqualToIgnoringCase("foo");
   }
 
@@ -50,7 +50,7 @@ public class DefaultCLITest {
         .addOption(new Option().setShortName("f").setFlag(true))
         .addOption(new Option().setShortName("x"));
     final CommandLine evaluated = cli.parse(Arrays.asList("-x", "foo"));
-    assertThat(evaluated.getFlagValue("f")).isFalse();
+    assertThat(evaluated.isFlagEnabled("f")).isFalse();
     assertThat((String) evaluated.getOptionValue("x")).isEqualToIgnoringCase("foo");
   }
 
