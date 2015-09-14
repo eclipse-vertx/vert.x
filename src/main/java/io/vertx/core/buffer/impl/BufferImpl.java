@@ -119,6 +119,28 @@ public class BufferImpl implements Buffer {
     return arr;
   }
 
+  @Override
+  public Buffer getBytes(byte[] dst) {
+   return getBytes(dst, 0);
+  }
+
+  @Override
+  public Buffer getBytes(byte[] dst, int dstIndex) {
+    return getBytes(0, buffer.writerIndex(), dst, dstIndex);
+  }
+
+  @Override
+  public Buffer getBytes(int start, int end, byte[] dst) {
+    return getBytes(start, end, dst, 0);
+  }
+
+  @Override
+  public Buffer getBytes(int start, int end, byte[] dst, int dstIndex) {
+    Arguments.require(end >= start, "end must be greater or equal than start");
+    buffer.getBytes(start, dst, dstIndex, end - start);
+    return this;
+  }
+
   public Buffer getBuffer(int start, int end) {
     return new BufferImpl(getBytes(start, end));
   }
