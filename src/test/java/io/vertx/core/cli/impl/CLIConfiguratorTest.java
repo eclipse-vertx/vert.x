@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -17,7 +17,9 @@ package io.vertx.core.cli.impl;
 
 
 import io.vertx.core.cli.*;
+import io.vertx.core.cli.Option;
 import io.vertx.core.cli.annotations.*;
+import io.vertx.core.cli.annotations.Argument;
 import io.vertx.core.cli.converters.*;
 import org.junit.Test;
 
@@ -63,7 +65,7 @@ public class CLIConfiguratorTest {
   @Test
   public void testOptionsWithDefaultValue() {
     Object object = new Object() {
-      @Option(longName = "option", shortName = "o")
+      @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
       @DefaultValue("bar")
       public void setFoo(String foo) {
       }
@@ -80,7 +82,7 @@ public class CLIConfiguratorTest {
   @Test
   public void testOptionsWithDescription() {
     Object command = new Object() {
-      @Option(longName = "option", shortName = "o")
+      @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
       @Description("This option is awesome")
       public void setFoo(String foo) {
       }
@@ -96,7 +98,7 @@ public class CLIConfiguratorTest {
   @Test
   public void testOptionsParsedAsList() {
     Object object = new Object() {
-      @Option(longName = "option", shortName = "o")
+      @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
       @ParsedAsList(separator = ":")
       public void setFoo(List<String> foo) {
 
@@ -116,27 +118,27 @@ public class CLIConfiguratorTest {
   public void testTypeExtraction() {
     Object object = new Object() {
 
-      @Option(longName = "list", shortName = "l")
+      @io.vertx.core.cli.annotations.Option(longName = "list", shortName = "l")
       public void setFoo(List<String> list) {
       }
 
-      @Option(longName = "set", shortName = "s")
+      @io.vertx.core.cli.annotations.Option(longName = "set", shortName = "s")
       public void setFoo(Set<Character> set) {
       }
 
-      @Option(longName = "collection", shortName = "c")
+      @io.vertx.core.cli.annotations.Option(longName = "collection", shortName = "c")
       public void setFoo(Collection<Integer> collection) {
       }
 
-      @Option(longName = "tree", shortName = "t")
+      @io.vertx.core.cli.annotations.Option(longName = "tree", shortName = "t")
       public void setFoo(TreeSet<String> list) {
       }
 
-      @Option(longName = "al", shortName = "al")
+      @io.vertx.core.cli.annotations.Option(longName = "al", shortName = "al")
       public void setFoo(ArrayList<String> list) {
       }
 
-      @Option(longName = "array", shortName = "a")
+      @io.vertx.core.cli.annotations.Option(longName = "array", shortName = "a")
       public void setFoo(int[] list) {
       }
     };
@@ -173,7 +175,7 @@ public class CLIConfiguratorTest {
   public void testInjectionOfString() throws CLIException {
     HelloClI command = new HelloClI();
     CLI cli = CLIConfigurator.define(HelloClI.class);
-    CommandLine evaluatedCLI = CommandLineParser.create().parse(cli, Arrays.asList("--name", "vert.x"));
+    CommandLine evaluatedCLI = cli.parse(Arrays.asList("--name", "vert.x"));
     CLIConfigurator.inject(evaluatedCLI, command);
 
     assertThat(command.run()).isEqualToIgnoringCase("Hello vert.x");
@@ -181,7 +183,7 @@ public class CLIConfiguratorTest {
   }
 
   private CommandLine parse(CLI cli, String... args) throws CLIException {
-    return CommandLineParser.create().parse(cli, Arrays.asList(args));
+    return cli.parse(Arrays.asList(args));
   }
 
   @Test
@@ -378,11 +380,11 @@ public class CLIConfiguratorTest {
     assertThat(y.get()).isEqualTo(25);
   }
 
-  private OptionModel find(List<OptionModel> options, String name) {
-    final List<OptionModel> match = options.stream().filter(c -> c.getLongName().equalsIgnoreCase(name))
+  private Option find(List<Option> options, String name) {
+    final List<Option> match = options.stream().filter(c -> c.getLongName().equalsIgnoreCase(name))
         .collect(Collectors.toList());
     if (match.isEmpty()) {
-      fail("Cannot find option '" + name + "' in " + options.stream().map(OptionModel::getLongName)
+      fail("Cannot find option '" + name + "' in " + options.stream().map(Option::getLongName)
           .collect(Collectors.toList()));
     }
     return match.get(0);
@@ -423,113 +425,113 @@ public class CLIConfiguratorTest {
     Person3 aThirdPerson;
     Person4 aFourthPerson;
 
-    @Option(longName = "boolean", shortName = "Z", flag = true)
+    @io.vertx.core.cli.annotations.Option(longName = "boolean", shortName = "Z", flag = true)
     public void setaBoolean(boolean aBoolean) {
       this.aBoolean = aBoolean;
     }
 
-    @Option(longName = "byte", shortName = "B")
+    @io.vertx.core.cli.annotations.Option(longName = "byte", shortName = "B")
     public void setaByte(byte aByte) {
       this.aByte = aByte;
     }
 
-    @Option(longName = "char", shortName = "C")
+    @io.vertx.core.cli.annotations.Option(longName = "char", shortName = "C")
     public void setaChar(char aChar) {
       this.aChar = aChar;
     }
 
-    @Option(longName = "double", shortName = "D")
+    @io.vertx.core.cli.annotations.Option(longName = "double", shortName = "D")
     public void setaDouble(double aDouble) {
       this.aDouble = aDouble;
     }
 
-    @Option(longName = "float", shortName = "F")
+    @io.vertx.core.cli.annotations.Option(longName = "float", shortName = "F")
     public void setaFloat(float aFloat) {
       this.aFloat = aFloat;
     }
 
-    @Option(longName = "long", shortName = "J")
+    @io.vertx.core.cli.annotations.Option(longName = "long", shortName = "J")
     public void setaLong(long aLong) {
       this.aLong = aLong;
     }
 
-    @Option(longName = "int", shortName = "I")
+    @io.vertx.core.cli.annotations.Option(longName = "int", shortName = "I")
     public void setAnInt(int anInt) {
       this.anInt = anInt;
     }
 
-    @Option(longName = "boolean2", shortName = "AZ", flag = true)
+    @io.vertx.core.cli.annotations.Option(longName = "boolean2", shortName = "AZ", flag = true)
     public void setAnotherBoolean(Boolean anotherBoolean) {
       this.anotherBoolean = anotherBoolean;
     }
 
-    @Option(longName = "byte2", shortName = "AB")
+    @io.vertx.core.cli.annotations.Option(longName = "byte2", shortName = "AB")
     public void setAnotherByte(Byte anotherByte) {
       this.anotherByte = anotherByte;
     }
 
-    @Option(longName = "char2", shortName = "AC")
+    @io.vertx.core.cli.annotations.Option(longName = "char2", shortName = "AC")
     public void setAnotherChar(Character anotherChar) {
       this.anotherChar = anotherChar;
     }
 
-    @Option(longName = "double2", shortName = "AD")
+    @io.vertx.core.cli.annotations.Option(longName = "double2", shortName = "AD")
     public void setAnotherDouble(Double anotherDouble) {
       this.anotherDouble = anotherDouble;
     }
 
-    @Option(longName = "float2", shortName = "AF")
+    @io.vertx.core.cli.annotations.Option(longName = "float2", shortName = "AF")
     public void setAnotherFloat(Float anotherFloat) {
       this.anotherFloat = anotherFloat;
     }
 
-    @Option(longName = "int2", shortName = "AI")
+    @io.vertx.core.cli.annotations.Option(longName = "int2", shortName = "AI")
     public void setAnotherInt(Integer anotherInt) {
       this.anotherInt = anotherInt;
     }
 
-    @Option(longName = "long2", shortName = "AJ")
+    @io.vertx.core.cli.annotations.Option(longName = "long2", shortName = "AJ")
     public void setAnotherLong(Long anotherLong) {
       this.anotherLong = anotherLong;
     }
 
-    @Option(longName = "person2", shortName = "p2")
+    @io.vertx.core.cli.annotations.Option(longName = "person2", shortName = "p2")
     public void setAnotherPerson(Person2 anotherPerson) {
       this.anotherPerson = anotherPerson;
     }
 
-    @Option(longName = "short2", shortName = "AS")
+    @io.vertx.core.cli.annotations.Option(longName = "short2", shortName = "AS")
     public void setAnotherShort(Short anotherShort) {
       this.anotherShort = anotherShort;
     }
 
-    @Option(longName = "person", shortName = "p")
+    @io.vertx.core.cli.annotations.Option(longName = "person", shortName = "p")
     public void setaPerson(Person aPerson) {
       this.aPerson = aPerson;
     }
 
-    @Option(longName = "person4", shortName = "p4")
+    @io.vertx.core.cli.annotations.Option(longName = "person4", shortName = "p4")
     @ConvertedBy(Person4Converter.class)
     public void setAFourthPerson(Person4 aPerson) {
       this.aFourthPerson = aPerson;
     }
 
-    @Option(longName = "short", shortName = "s")
+    @io.vertx.core.cli.annotations.Option(longName = "short", shortName = "s")
     public void setaShort(short aShort) {
       this.aShort = aShort;
     }
 
-    @Option(longName = "state", shortName = "st")
+    @io.vertx.core.cli.annotations.Option(longName = "state", shortName = "st")
     public void setaState(Thread.State aState) {
       this.aState = aState;
     }
 
-    @Option(longName = "string", shortName = "str")
+    @io.vertx.core.cli.annotations.Option(longName = "string", shortName = "str")
     public void setaString(String aString) {
       this.aString = aString;
     }
 
-    @Option(longName = "person3", shortName = "p3")
+    @io.vertx.core.cli.annotations.Option(longName = "person3", shortName = "p3")
     public void setaThirdPerson(Person3 aThirdPerson) {
       this.aThirdPerson = aThirdPerson;
     }
@@ -551,48 +553,48 @@ public class CLIConfiguratorTest {
 
     List<Person> persons4;
 
-    @Option(longName = "doubles", shortName = "ds")
+    @io.vertx.core.cli.annotations.Option(longName = "doubles", shortName = "ds")
     public void setDoubles(double[] doubles) {
       this.doubles = doubles;
     }
 
-    @Option(longName = "ints", shortName = "is")
+    @io.vertx.core.cli.annotations.Option(longName = "ints", shortName = "is")
     public void setInts(Collection<Integer> ints) {
       this.ints = ints;
     }
 
-    @Option(longName = "persons2", shortName = "ps2")
+    @io.vertx.core.cli.annotations.Option(longName = "persons2", shortName = "ps2")
     public void setPersons2(List<Person> persons2) {
       this.persons2 = persons2;
     }
 
-    @Option(longName = "persons3", shortName = "ps3")
+    @io.vertx.core.cli.annotations.Option(longName = "persons3", shortName = "ps3")
     public void setPersons3(List<Person> persons3) {
       this.persons3 = persons3;
     }
 
-    @Option(longName = "persons4", shortName = "ps4")
+    @io.vertx.core.cli.annotations.Option(longName = "persons4", shortName = "ps4")
     @ParsedAsList(separator = ":")
     public void setPersons4(List<Person> persons4) {
       this.persons4 = persons4;
     }
 
-    @Option(longName = "persons", shortName = "ps")
+    @io.vertx.core.cli.annotations.Option(longName = "persons", shortName = "ps")
     public void setPersons(List<Person> persons) {
       this.persons = persons;
     }
 
-    @Option(longName = "shorts", shortName = "ss")
+    @io.vertx.core.cli.annotations.Option(longName = "shorts", shortName = "ss")
     public void setShorts(List<Short> shorts) {
       this.shorts = shorts;
     }
 
-    @Option(longName = "states", shortName = "sts")
+    @io.vertx.core.cli.annotations.Option(longName = "states", shortName = "sts")
     public void setStates(Set<Thread.State> states) {
       this.states = states;
     }
 
-    @Option(longName = "strings", shortName = "str")
+    @io.vertx.core.cli.annotations.Option(longName = "strings", shortName = "str")
     public void setStrings(Set<String> strings) {
       this.strings = strings;
     }

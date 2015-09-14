@@ -1,9 +1,9 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
- *  All rights reserved.  program and the accompanying materials
+ *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
- *  and Apache License v2.0 which accompanies  distribution.
+ *  and Apache License v2.0 which accompanies this distribution.
  *
  *       The Eclipse Public License is available at
  *       http://www.eclipse.org/legal/epl-v10.html
@@ -11,7 +11,7 @@
  *       The Apache License v2.0 is available at
  *       http://www.opensource.org/licenses/apache2.0.php
  *
- *  You may elect to redistribute  code under either of these licenses.
+ *  You may elect to redistribute this code under either of these licenses.
  */
 package io.vertx.core.cli.impl;
 
@@ -31,8 +31,6 @@ import static org.assertj.core.api.Assertions.fail;
  * Test based on the commons-cli parser tests.
  */
 public class IntensiveDefaultParserTest {
-
-  private CommandLineParser parser = CommandLineParser.create();
 
   private DefaultCLI cli;
 
@@ -63,7 +61,7 @@ public class IntensiveDefaultParserTest {
         "-a",
         "-b", "toast",
         "foo", "bar"};
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("toast");
@@ -77,7 +75,7 @@ public class IntensiveDefaultParserTest {
         "--bfile", "toast",
         "foo", "bar"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("toast");
@@ -92,7 +90,7 @@ public class IntensiveDefaultParserTest {
         "foobar",
         "-b", "toast"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getBooleanOption(evaluated, "c")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("toast");
     assertThat(evaluated.getAllArguments()).contains("foobar").hasSize(1);
@@ -101,7 +99,7 @@ public class IntensiveDefaultParserTest {
   @Test
   public void testUnrecognizedOption() throws Exception {
     String[] args = new String[]{"-a", "-d", "-b", "toast", "foo", "bar"};
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(evaluated.getAllArguments()).contains("-d", "foo", "bar").hasSize(3);
   }
 
@@ -110,7 +108,7 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"-b"};
 
     try {
-      CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+      CommandLine evaluated = cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (MissingValueException e) {
       assertThat(e.getOption().getShortName()).isEqualToIgnoringCase("b");
@@ -124,7 +122,7 @@ public class IntensiveDefaultParserTest {
         "--",
         "-b", "toast"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(getBooleanOption(evaluated, "c")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isNull();
@@ -138,7 +136,7 @@ public class IntensiveDefaultParserTest {
     cli.addOption(new TypedOption<String>().setType(String.class).setShortName("m").setSingleValued(false));
 
     try {
-      parser.parse(cli, Arrays.asList("-n", "--", "-m"));
+      cli.parse(Arrays.asList("-n", "--", "-m"));
       fail("Exception expected");
     } catch (MissingValueException e) {
       assertThat(e.getOption().getShortName()).isEqualTo("n");
@@ -152,7 +150,7 @@ public class IntensiveDefaultParserTest {
         "-a",
         "-"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("-");
@@ -164,7 +162,7 @@ public class IntensiveDefaultParserTest {
   public void testNegativeArgument() throws Exception {
     String[] args = new String[]{"-b", "-1"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "b")).isEqualTo("-1");
   }
 
@@ -173,11 +171,11 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"-b", "-1"};
     cli.addOption(new TypedOption<Boolean>().setType(Boolean.class).setSingleValued(false).setShortName("1"));
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "b")).isEqualTo("-1");
     assertThat(getBooleanOption(evaluated, "1")).isFalse();
 
-    evaluated = parser.parse(cli, Collections.singletonList("-1"));
+    evaluated = cli.parse(Collections.singletonList("-1"));
     assertThat(getBooleanOption(evaluated, "1")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isNull();
   }
@@ -186,7 +184,7 @@ public class IntensiveDefaultParserTest {
   public void testArgumentStartingWithHyphen() throws Exception {
     String[] args = new String[]{"-b", "-foo"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "b")).isEqualTo("-foo");
   }
 
@@ -196,7 +194,7 @@ public class IntensiveDefaultParserTest {
     cli.addOption(new TypedOption<String>().setType(String.class).setSingleValued(true)
         .setLongName("foo").setShortName("f"));
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "foo")).isEqualTo("bar");
   }
 
@@ -205,7 +203,7 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"-fbar"};
     cli.addOption(new TypedOption<String>().setType(String.class).setSingleValued(true)
         .setLongName("foo").setShortName("f"));
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "foo")).isEqualTo("bar");
   }
 
@@ -214,7 +212,7 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"--foo=bar"};
     cli.addOption(new TypedOption<String>().setType(String.class).setSingleValued(true)
         .setLongName("foo").setShortName("f"));
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "foo")).isEqualTo("bar");
   }
 
@@ -223,7 +221,7 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"-foo=bar"};
     cli.addOption(new TypedOption<String>().setType(String.class).setSingleValued(true)
         .setLongName("foo").setShortName("f"));
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "foo")).isEqualTo("bar");
   }
 
@@ -232,7 +230,7 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"-foobar"};
     cli.addOption(new TypedOption<String>().setType(String.class).setSingleValued(true)
         .setLongName("foo").setShortName("f"));
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getStringOption(evaluated, "foo")).isEqualTo("bar");
   }
 
@@ -248,7 +246,7 @@ public class IntensiveDefaultParserTest {
 
     cli.removeOption("b").addOption(f).addOption(b);
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat((boolean) evaluated.getOptionValue("bar")).isTrue();
     assertThat((String) evaluated.getOptionValue("foo")).isEqualTo("bar");
   }
@@ -261,7 +259,7 @@ public class IntensiveDefaultParserTest {
         .setType(String.class).setLongName("foo").setShortName("f").setSingleValued(true);
     cli.addOption(f);
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     // foo isn't expected to be recognized with a double dash
     assertThat((String) evaluated.getOptionValue("foo")).isNull();
@@ -278,7 +276,7 @@ public class IntensiveDefaultParserTest {
     cli.addOption(f);
 
     try {
-      CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+      CommandLine evaluated = cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (InvalidValueException e) {
       assertThat(e.getOption().getShortName()).isEqualToIgnoringCase("f");
@@ -295,7 +293,7 @@ public class IntensiveDefaultParserTest {
         ;
     cli.addOption(f);
     try {
-      CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+      CommandLine evaluated = cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (InvalidValueException e) {
       assertThat(e.getOption().getShortName()).isEqualToIgnoringCase("f");
@@ -313,7 +311,7 @@ public class IntensiveDefaultParserTest {
 
     cli.addOption(f);
     try {
-      CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+      CommandLine evaluated = cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (InvalidValueException e) {
       assertThat(e.getOption().getShortName()).isEqualToIgnoringCase("f");
@@ -330,7 +328,7 @@ public class IntensiveDefaultParserTest {
         .setMultiValued(true);
     cli.addOption(f);
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     List<String> values = evaluated.getOptionValues("J");
     assertThat(values).hasSize(4).containsExactly("source=1.5", "target", "1.5", "foo");
@@ -346,7 +344,7 @@ public class IntensiveDefaultParserTest {
         .setSingleValued(false);
     cli.addOption(v).addOption(h);
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getBooleanOption(evaluated, "version")).isTrue();
   }
 
@@ -360,7 +358,7 @@ public class IntensiveDefaultParserTest {
         .setSingleValued(false);
     cli.addOption(v).addOption(h);
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getBooleanOption(evaluated, "version")).isTrue();
   }
 
@@ -375,7 +373,7 @@ public class IntensiveDefaultParserTest {
         .setSingleValued(false);
 
     cli.addOption(v).addOption(h);
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat((int) evaluated.getOptionValue("verbose")).isEqualTo(1);
   }
 
@@ -391,7 +389,7 @@ public class IntensiveDefaultParserTest {
         .setSingleValued(false);
 
     cli.addOption(v).addOption(h);
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat((int) evaluated.getOptionValue("verbose")).isEqualTo(1);
   }
 
@@ -408,7 +406,7 @@ public class IntensiveDefaultParserTest {
 
     cli.addOption(v1).addOption(v2);
     try {
-      parser.parse(cli, Arrays.asList(args));
+      cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (AmbiguousOptionException e) {
       assertThat(e.getToken()).isEqualTo("--ver");
@@ -428,7 +426,7 @@ public class IntensiveDefaultParserTest {
 
     cli.addOption(v1).addOption(v2);
     try {
-      parser.parse(cli, Arrays.asList(args));
+      cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (AmbiguousOptionException e) {
       assertThat(e.getToken()).isEqualTo("-ver");
@@ -448,7 +446,7 @@ public class IntensiveDefaultParserTest {
 
     cli.addOption(v1).addOption(v2);
     try {
-      parser.parse(cli, Arrays.asList(args));
+      cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (AmbiguousOptionException e) {
       assertThat(e.getToken()).isEqualTo("--ver");
@@ -468,7 +466,7 @@ public class IntensiveDefaultParserTest {
 
     cli.addOption(v1).addOption(v2);
     try {
-      parser.parse(cli, Arrays.asList(args));
+      cli.parse(Arrays.asList(args));
       fail("Exception expected");
     } catch (AmbiguousOptionException e) {
       assertThat(e.getToken()).isEqualTo("-ver");
@@ -487,7 +485,7 @@ public class IntensiveDefaultParserTest {
         .setType(Integer.class);
 
     cli.addOption(v1).addOption(v2);
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat((Object) evaluated.getOptionValue("v")).isNull();
     assertThat((boolean) evaluated.getOptionValue("version")).isTrue();
   }
@@ -501,7 +499,7 @@ public class IntensiveDefaultParserTest {
         .setDescription("set the value of [b]").setType(String.class).setRequired(true);
     cli.removeOption("b").addOption(b);
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(getBooleanOption(evaluated, "a")).isFalse();
     assertThat((String) evaluated.getOptionValue("b")).isEqualTo("file");
@@ -516,7 +514,7 @@ public class IntensiveDefaultParserTest {
         .setDescription("set the value of [b]").setType(String.class).setRequired(true);
     cli.removeOption("b").addOption(b);
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("file");
@@ -534,7 +532,7 @@ public class IntensiveDefaultParserTest {
 
 
     try {
-      parser.parse(cli, Arrays.asList(args));
+      cli.parse(Arrays.asList(args));
       fail("exception expected");
     } catch (MissingOptionException e) {
       assertThat(e.getExpected()).hasSize(1);
@@ -552,7 +550,7 @@ public class IntensiveDefaultParserTest {
     cli.removeOption("b").addOption(b).removeOption("c").addOption(c);
 
     try {
-      CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+      CommandLine evaluated = cli.parse(Arrays.asList(args));
       fail("exception expected");
     } catch (MissingOptionException e) {
       assertThat(e.getExpected()).hasSize(2);
@@ -563,7 +561,7 @@ public class IntensiveDefaultParserTest {
   public void testBursting() throws Exception {
     String[] args = new String[]{"-acbtoast", "foo", "bar"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getBooleanOption(evaluated, "c")).isTrue();
@@ -575,7 +573,7 @@ public class IntensiveDefaultParserTest {
   public void testUnrecognizedOptionWithBursting() throws Exception {
     String[] args = new String[]{"-adbtoast", "foo", "bar"};
 
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(evaluated.getAllArguments()).contains("-adbtoast", "foo", "bar").hasSize(3);
   }
 
@@ -584,7 +582,7 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"-acb"};
 
     try {
-      CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+      CommandLine evaluated = cli.parse(Arrays.asList(args));
       fail("exception expected");
     } catch (MissingValueException e) {
       assertThat(e.getOption().getShortName()).isEqualTo("b");
@@ -601,7 +599,7 @@ public class IntensiveDefaultParserTest {
         .setMultiValued(true).setType(Integer.class);
 
     cli.addOption(e).addOption(f);
-    CommandLine evaluated = parser.parse(cli, Arrays.asList(args));
+    CommandLine evaluated = cli.parse(Arrays.asList(args));
 
     assertThat(evaluated.getOptionValues("e")).contains("one", "two").hasSize(2);
     assertThat(evaluated.getOptionValues("f")).contains(1).hasSize(1);

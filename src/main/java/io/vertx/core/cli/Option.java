@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -30,7 +30,7 @@ import java.util.Objects;
  * @author Clement Escoffier <clement@apache.org>
  */
 @DataObject(generateConverter = true)
-public class OptionModel {
+public class Option {
 
   /**
    * Default name in the usage message.
@@ -95,17 +95,17 @@ public class OptionModel {
   protected boolean flag;
 
   /**
-   * Creates a new empty instance of {@link OptionModel}.
+   * Creates a new empty instance of {@link Option}.
    */
-  public OptionModel() {
+  public Option() {
   }
 
   /**
-   * Creates a new instance of {@link OptionModel} by copying the state of another {@link OptionModel}.
+   * Creates a new instance of {@link Option} by copying the state of another {@link Option}.
    *
    * @param other the other option
    */
-  public OptionModel(OptionModel other) {
+  public Option(Option other) {
     this();
     this.longName = other.longName;
     this.shortName = other.shortName;
@@ -120,39 +120,38 @@ public class OptionModel {
   }
 
   /**
-   * Creates a new instance of {@link OptionModel} from the given {@link JsonObject}
+   * Creates a new instance of {@link Option} from the given {@link JsonObject}
    *
    * @param json the json object representing the option
    * @see #toJson()
    */
-  public OptionModel(JsonObject json) {
+  public Option(JsonObject json) {
     this();
-    OptionModelConverter.fromJson(json, this);
+    OptionConverter.fromJson(json, this);
   }
 
   /**
-   * Gets the json representation of this {@link OptionModel}.
+   * Gets the json representation of this {@link Option}.
    *
    * @return the json representation
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
-    OptionModelConverter.toJson(this, json);
+    OptionConverter.toJson(this, json);
     return json;
   }
 
   /**
    * Checks whether or not the option is valid. This implementation check that it has a short name or a long name.
-   * This method is intended to be extended by sub-class. {@link CommandLineParser} should check that the set of
+   * This method is intended to be extended by sub-class. Parser should check that the set of
    * option of a {@link CLI} is valid before starting the parsing.
-   *
-   * @return whether or not the configuration of this option is valid.
+   * <p/>
+   * If the configuration is not valid, this method throws a {@link IllegalArgumentException}.
    */
-  public boolean isValid() {
+  public void ensureValidity() {
     if ((shortName == null || shortName.equals(NO_NAME)) && (longName == null || longName.equals(NO_NAME))) {
       throw new IllegalArgumentException("An option needs at least a long name or a short name");
     }
-    return true;
   }
 
   /**
@@ -165,7 +164,7 @@ public class OptionModel {
   /**
    * @return the option name. It returns the long name if set, the short name otherwise. It cannot return {@code
    * null} for valid option
-   * @see #isValid()
+   * @see #ensureValidity()
    */
   public String getName() {
     if (longName != null && !longName.equals(NO_NAME)) {
@@ -186,14 +185,15 @@ public class OptionModel {
    * Sets whether or not this option can receive several values.
    *
    * @param multiValued whether or not this option is multi-valued.
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setMultiValued(boolean multiValued) {
+  public Option setMultiValued(boolean multiValued) {
     this.multiValued = multiValued;
     if (this.multiValued) {
       // If we accept more than one, we also accept 1.
       this.singleValued = true;
     }
+    // Else we cannot say what is the desired value of singleValued, it needs to be explicitly set.
     return this;
   }
 
@@ -208,9 +208,9 @@ public class OptionModel {
    * Sets whether or not this option can receive a value.
    *
    * @param singleValued whether or not this option is single-valued.
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setSingleValued(boolean singleValued) {
+  public Option setSingleValued(boolean singleValued) {
     this.singleValued = singleValued;
     return this;
   }
@@ -226,9 +226,9 @@ public class OptionModel {
    * Sets te arg name for this option.
    *
    * @param argName the arg name, must not be {@link null}
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setArgName(String argName) {
+  public Option setArgName(String argName) {
     Objects.requireNonNull(argName);
     this.argName = argName;
     return this;
@@ -245,9 +245,9 @@ public class OptionModel {
    * Sets te description of this option.
    *
    * @param description the description
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setDescription(String description) {
+  public Option setDescription(String description) {
     this.description = description;
     return this;
   }
@@ -263,9 +263,9 @@ public class OptionModel {
    * Sets whether or not this option should be hidden
    *
    * @param hidden {@code true} to make this option hidden, {@link false} otherwise
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setHidden(boolean hidden) {
+  public Option setHidden(boolean hidden) {
     this.hidden = hidden;
     return this;
   }
@@ -281,9 +281,9 @@ public class OptionModel {
    * Sets the long name of this option.
    *
    * @param longName the long name
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setLongName(String longName) {
+  public Option setLongName(String longName) {
     this.longName = longName;
     return this;
   }
@@ -299,9 +299,9 @@ public class OptionModel {
    * Sets whether or not this option is mandatory.
    *
    * @param required {@code true} to make this option mandatory, {@link false} otherwise
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setRequired(boolean required) {
+  public Option setRequired(boolean required) {
     this.required = required;
     return this;
   }
@@ -317,9 +317,9 @@ public class OptionModel {
    * Sets the short name of this option.
    *
    * @param shortName the short name
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setShortName(String shortName) {
+  public Option setShortName(String shortName) {
     this.shortName = shortName;
     return this;
   }
@@ -335,9 +335,9 @@ public class OptionModel {
    * Sets the default value of this option
    *
    * @param defaultValue the default value
-   * @return the current {@link OptionModel} instance
+   * @return the current {@link Option} instance
    */
-  public OptionModel setDefaultValue(String defaultValue) {
+  public Option setDefaultValue(String defaultValue) {
     this.defaultValue = defaultValue;
     if (this.defaultValue != null) {
       setRequired(false);
@@ -353,16 +353,16 @@ public class OptionModel {
   }
 
   /**
-   * Configures the current {@link OptionModel} to be a flag. It will be evaluated to {@code true} if it's found in
+   * Configures the current {@link Option} to be a flag. It will be evaluated to {@code true} if it's found in
    * the command line. If you need a flag that may receive a value, use, in this order:
    * <code><pre>
    *   option.setFlag(true).setSingleValued(true)
    * </pre></code>
    *
    * @param flag whether or not the option is a flag.
-   * @return the current {@link OptionModel}
+   * @return the current {@link Option}
    */
-  public OptionModel setFlag(boolean flag) {
+  public Option setFlag(boolean flag) {
     this.flag = flag;
     setSingleValued(false);
     return this;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -80,7 +80,7 @@ public class CLIConfigurator {
   }
 
   @SuppressWarnings("unchecked")
-  private static OptionModel createOption(Method method) {
+  private static io.vertx.core.cli.Option createOption(Method method) {
     TypedOption opt = new TypedOption();
 
     // Option
@@ -132,13 +132,13 @@ public class CLIConfigurator {
       opt.setDefaultValue(defaultValue.value());
     }
 
-    opt.isValid();
+    opt.ensureValidity();
 
     return opt;
   }
 
   @SuppressWarnings("unchecked")
-  private static ArgumentModel createArgument(Method method) {
+  private static io.vertx.core.cli.Argument createArgument(Method method) {
     TypedArgument arg = new TypedArgument();
 
     // Argument
@@ -174,7 +174,7 @@ public class CLIConfigurator {
   }
 
   private static Object getOptionValue(Method method, String name, CommandLine commandLine) {
-    final OptionModel option = commandLine.cli().getOption(name);
+    final io.vertx.core.cli.Option option = commandLine.cli().getOption(name);
     if (option == null) {
       return null;
     }
@@ -186,7 +186,7 @@ public class CLIConfigurator {
   }
 
   private static Object getArgumentValue(Method method, int index, CommandLine commandLine) {
-    final ArgumentModel argument = commandLine.cli().getArgument(index);
+    final io.vertx.core.cli.Argument argument = commandLine.cli().getArgument(index);
     if (argument == null) {
       return null;
     }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -30,13 +30,13 @@ import java.util.stream.Collectors;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
-public class DefaultParser implements CommandLineParser {
+public class DefaultParser {
 
   protected String token;
-  protected OptionModel current;
-  protected List<OptionModel> expectedOpts;
+  protected Option current;
+  protected List<Option> expectedOpts;
 
-  private CommandLine commandLine;
+  private DefaultCommandLine commandLine;
   private boolean skipParsing;
   private CLI cli;
 
@@ -79,14 +79,14 @@ public class DefaultParser implements CommandLineParser {
 
   public CommandLine parse(CLI cli, List<String> cla)
       throws CLIException {
-    commandLine = CommandLine.create(cli);
+    commandLine = (DefaultCommandLine) CommandLine.create(cli);
     current = null;
     skipParsing = false;
     this.cli = cli;
 
     // Check argument and option validity
-    cli.getOptions().stream().forEach(OptionModel::isValid);
-    cli.getArguments().stream().forEach(ArgumentModel::isValid);
+    cli.getOptions().stream().forEach(Option::ensureValidity);
+    cli.getArguments().stream().forEach(Argument::ensureValidity);
 
     // Extract the list of required options.
     // Every time an option get a value, it is removed from the list.
@@ -112,15 +112,15 @@ public class DefaultParser implements CommandLineParser {
 
   protected void validate() throws CLIException {
     // Add value to the specified arguments
-    Iterator<ArgumentModel> iterator = cli.getArguments().iterator();
+    Iterator<Argument> iterator = cli.getArguments().iterator();
     // No more defined arguments, just ignore them.
     commandLine.getAllArguments().stream().filter(value -> iterator.hasNext()).forEach(value -> {
-      ArgumentModel model = iterator.next();
+      Argument model = iterator.next();
       commandLine.setRawValue(model, value);
     });
 
     List<Integer> usedIndexes = new ArrayList<>();
-    for (ArgumentModel arg : cli.getArguments()) {
+    for (Argument arg : cli.getArguments()) {
       if (arg.isRequired() && !commandLine.isArgumentAssigned(arg)) {
         throw new MissingValueException(arg);
       }
@@ -131,8 +131,8 @@ public class DefaultParser implements CommandLineParser {
     }
   }
 
-  private List<OptionModel> getRequiredOptions() {
-    return cli.getOptions().stream().filter(OptionModel::isRequired).collect(Collectors.toList());
+  private List<Option> getRequiredOptions() {
+    return cli.getOptions().stream().filter(Option::isRequired).collect(Collectors.toList());
   }
 
   private void checkRequiredOptions() throws MissingOptionException {
@@ -276,13 +276,13 @@ public class DefaultParser implements CommandLineParser {
    * @param token the command line token to handle
    */
   private void handleLongOptionWithoutEqual(String token) throws CLIException {
-    List<OptionModel> matchingOpts = getMatchingOptions(token);
+    List<Option> matchingOpts = getMatchingOptions(token);
     if (matchingOpts.isEmpty()) {
       handleArgument(token);
     } else if (matchingOpts.size() > 1) {
       throw new AmbiguousOptionException(token, matchingOpts);
     } else {
-      final OptionModel option = matchingOpts.get(0);
+      final Option option = matchingOpts.get(0);
       handleOption(option);
     }
   }
@@ -304,13 +304,13 @@ public class DefaultParser implements CommandLineParser {
 
     String opt = token.substring(0, pos);
 
-    List<OptionModel> matchingOpts = getMatchingOptions(opt);
+    List<Option> matchingOpts = getMatchingOptions(opt);
     if (matchingOpts.isEmpty()) {
       handleArgument(token);
     } else if (matchingOpts.size() > 1) {
       throw new AmbiguousOptionException(opt, matchingOpts);
     } else {
-      OptionModel option = matchingOpts.get(0);
+      Option option = matchingOpts.get(0);
       if (commandLine.acceptMoreValues(option)) {
         handleOption(option);
         commandLine.addRawValue(option, value);
@@ -369,7 +369,7 @@ public class DefaultParser implements CommandLineParser {
         } else if (isAValidShortOption(t)) {
           // -SV1 (-Dflag)
           String strip = t.substring(0, 1);
-          OptionModel option = getOption(strip);
+          Option option = getOption(strip);
           handleOption(option);
           commandLine.addRawValue(current, t.substring(1));
           current = null;
@@ -384,7 +384,7 @@ public class DefaultParser implements CommandLineParser {
       String value = t.substring(pos + 1);
       if (opt.length() == 1) {
         // -S=V
-        OptionModel option = getOption(opt);
+        Option option = getOption(opt);
         if (option != null) {
           if (commandLine.acceptMoreValues(option)) {
             handleOption(option);
@@ -430,7 +430,7 @@ public class DefaultParser implements CommandLineParser {
   }
 
   private boolean hasOptionWithLongName(String name) {
-    for (OptionModel option : cli.getOptions()) {
+    for (Option option : cli.getOptions()) {
       if (name.equalsIgnoreCase(option.getLongName())) {
         return true;
       }
@@ -439,7 +439,7 @@ public class DefaultParser implements CommandLineParser {
   }
 
   private boolean hasOptionWithShortName(String name) {
-    for (OptionModel option : cli.getOptions()) {
+    for (Option option : cli.getOptions()) {
       if (name.equalsIgnoreCase(option.getShortName())) {
         return true;
       }
@@ -447,7 +447,7 @@ public class DefaultParser implements CommandLineParser {
     return false;
   }
 
-  private void handleOption(OptionModel option) throws CLIException {
+  private void handleOption(Option option) throws CLIException {
     // check the previous option before handling the next one
     checkRequiredValues();
     updateRequiredOptions(option);
@@ -465,22 +465,22 @@ public class DefaultParser implements CommandLineParser {
    *
    * @param option the option
    */
-  private void updateRequiredOptions(OptionModel option) {
+  private void updateRequiredOptions(Option option) {
     if (option.isRequired()) {
       expectedOpts.remove(option);
     }
   }
 
   /**
-   * Retrieve the {@link OptionModel} matching the long or short name specified.
+   * Retrieve the {@link Option} matching the long or short name specified.
    * The leading hyphens in the name are ignored (up to 2).
    *
-   * @param opt short or long name of the {@link OptionModel}
+   * @param opt short or long name of the {@link Option}
    * @return the option represented by opt
    */
-  public OptionModel getOption(String opt) {
+  public Option getOption(String opt) {
     opt = stripLeadingHyphens(opt);
-    for (OptionModel option : cli.getOptions()) {
+    for (Option option : cli.getOptions()) {
       if (opt.equalsIgnoreCase(option.getShortName()) || opt.equalsIgnoreCase(option.getLongName())) {
         return option;
       }
@@ -490,7 +490,7 @@ public class DefaultParser implements CommandLineParser {
 
   private boolean isAValidShortOption(String token) {
     String opt = token.substring(0, 1);
-    OptionModel option = getOption(opt);
+    Option option = getOption(opt);
     return option != null && commandLine.acceptMoreValues(option);
   }
 
@@ -500,22 +500,22 @@ public class DefaultParser implements CommandLineParser {
    * @param opt the partial name of the option
    * @return the options matching the partial name specified, or an empty list if none matches
    */
-  public List<OptionModel> getMatchingOptions(String opt) {
+  public List<Option> getMatchingOptions(String opt) {
     opt = stripLeadingHyphens(opt);
 
-    List<OptionModel> matching = new ArrayList<>();
+    List<Option> matching = new ArrayList<>();
 
 
-    final List<OptionModel> options = cli.getOptions();
+    final List<Option> options = cli.getOptions();
 
     // Exact match first
-    for (OptionModel option : options) {
+    for (Option option : options) {
       if (opt.equalsIgnoreCase(option.getLongName())) {
         return Collections.singletonList(option);
       }
     }
 
-    for (OptionModel option : options) {
+    for (Option option : options) {
       if (option.getLongName() != null && option.getLongName().startsWith(opt)) {
         matching.add(option);
       }

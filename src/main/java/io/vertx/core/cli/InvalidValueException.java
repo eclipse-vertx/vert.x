@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -21,8 +21,8 @@ package io.vertx.core.cli;
  * @author Clement Escoffier <clement@apache.org>
  */
 public class InvalidValueException extends CLIException {
-  private final OptionModel option;
-  private final ArgumentModel argument;
+  private final Option option;
+  private final Argument argument;
   private final String value;
 
   /**
@@ -32,7 +32,7 @@ public class InvalidValueException extends CLIException {
    * @param option the option
    * @param value  the value
    */
-  public InvalidValueException(OptionModel option, String value) {
+  public InvalidValueException(Option option, String value) {
     this(option, value, null);
   }
 
@@ -45,7 +45,7 @@ public class InvalidValueException extends CLIException {
    * @param value    the value
    * @param cause    the cause
    */
-  public InvalidValueException(ArgumentModel argument, String value, Exception cause) {
+  public InvalidValueException(Argument argument, String value, Exception cause) {
     super("The value '" + value + "' is not accepted by the argument '"
         + (argument.getArgName() != null ? argument.getArgName() : argument.getIndex()) + "'", cause);
     this.option = null;
@@ -61,7 +61,7 @@ public class InvalidValueException extends CLIException {
    * @param value  the value
    * @param cause  the cause
    */
-  public InvalidValueException(OptionModel option, String value, Exception cause) {
+  public InvalidValueException(Option option, String value, Exception cause) {
     super("The value '" + value + "' is not accepted by '" + option.getName() + "'", cause);
     this.argument = null;
     this.value = value;
@@ -71,7 +71,7 @@ public class InvalidValueException extends CLIException {
   /**
    * @return the option, may be {@link null} if the exception is about an argument.
    */
-  public OptionModel getOption() {
+  public Option getOption() {
     return option;
   }
 
@@ -85,7 +85,7 @@ public class InvalidValueException extends CLIException {
   /**
    * @return the argument, may be {@link null} if the exception is about an option.
    */
-  public ArgumentModel getArgument() {
+  public Argument getArgument() {
     return argument;
   }
 }

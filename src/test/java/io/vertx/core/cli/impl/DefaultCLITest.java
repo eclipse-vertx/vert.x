@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -16,7 +16,10 @@
 
 package io.vertx.core.cli.impl;
 
-import io.vertx.core.cli.*;
+import io.vertx.core.cli.Argument;
+import io.vertx.core.cli.CLI;
+import io.vertx.core.cli.CommandLine;
+import io.vertx.core.cli.Option;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -34,9 +37,9 @@ public class DefaultCLITest {
   @Test
   public void testFlag() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setShortName("f").setFlag(true))
-        .addOption(new OptionModel().setShortName("x"));
-    final CommandLine evaluated = CommandLineParser.create().parse(cli, Arrays.asList("-f", "-x", "foo"));
+        .addOption(new Option().setShortName("f").setFlag(true))
+        .addOption(new Option().setShortName("x"));
+    final CommandLine evaluated = cli.parse(Arrays.asList("-f", "-x", "foo"));
     assertThat(evaluated.getFlagValue("f")).isTrue();
     assertThat((String) evaluated.getOptionValue("x")).isEqualToIgnoringCase("foo");
   }
@@ -44,9 +47,9 @@ public class DefaultCLITest {
   @Test
   public void testMissingFlag() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setShortName("f").setFlag(true))
-        .addOption(new OptionModel().setShortName("x"));
-    final CommandLine evaluated = CommandLineParser.create().parse(cli, Arrays.asList("-x", "foo"));
+        .addOption(new Option().setShortName("f").setFlag(true))
+        .addOption(new Option().setShortName("x"));
+    final CommandLine evaluated = cli.parse(Arrays.asList("-x", "foo"));
     assertThat(evaluated.getFlagValue("f")).isFalse();
     assertThat((String) evaluated.getOptionValue("x")).isEqualToIgnoringCase("foo");
   }
@@ -54,7 +57,7 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingOnlyFlagShortOption() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setShortName("f").setDescription("turn on/off").setFlag(true));
+        .addOption(new Option().setShortName("f").setDescription("turn on/off").setFlag(true));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
@@ -66,7 +69,7 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingOnlyFlagLongOption() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setLongName("flag").setDescription("turn on/off").setFlag(true));
+        .addOption(new Option().setLongName("flag").setDescription("turn on/off").setFlag(true));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
@@ -79,7 +82,7 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingShortAndLongFlagOption() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setLongName("flag").setShortName("f").setDescription("turn on/off").setFlag(true));
+        .addOption(new Option().setLongName("flag").setShortName("f").setDescription("turn on/off").setFlag(true));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
@@ -92,7 +95,7 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingShortAndLongOption() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setLongName("file").setShortName("f").setDescription("a file"));
+        .addOption(new Option().setLongName("file").setShortName("f").setDescription("a file"));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
@@ -105,7 +108,7 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingOnlyShortOption() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setShortName("f").setDescription("a file"));
+        .addOption(new Option().setShortName("f").setDescription("a file"));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
@@ -118,7 +121,7 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingOnlyLongOption() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setLongName("file").setDescription("a file"));
+        .addOption(new Option().setLongName("file").setDescription("a file"));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
@@ -131,8 +134,8 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingRequiredOptionAndArgument() {
     final CLI cli = CLI.create("test")
-        .addOption(new OptionModel().setLongName("file").setShortName("f").setDescription("a file").setRequired(true))
-        .addArgument(new ArgumentModel().setArgName("foo").setRequired(true));
+        .addOption(new Option().setLongName("file").setShortName("f").setDescription("a file").setRequired(true))
+        .addArgument(new Argument().setArgName("foo").setRequired(true));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
@@ -145,7 +148,7 @@ public class DefaultCLITest {
   @Test
   public void testUsageComputationWhenUsingNotRequiredArgument() {
     final CLI cli = CLI.create("test")
-        .addArgument(new ArgumentModel().setArgName("foo").setRequired(false));
+        .addArgument(new Argument().setArgName("foo").setRequired(false));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);

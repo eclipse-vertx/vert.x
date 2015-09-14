@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -26,10 +26,10 @@ import java.util.Objects;
  * first index is 0 (because we are in the computer world).
  *
  * @author Clement Escoffier <clement@apache.org>
- * @see OptionModel
+ * @see Option
  */
 @DataObject(generateConverter = true)
-public class ArgumentModel {
+public class Argument {
 
   /**
    * The default argument name displayed in the usage.
@@ -67,18 +67,18 @@ public class ArgumentModel {
   protected String defaultValue;
 
   /**
-   * Creates a new empty instance of {@link ArgumentModel}.
+   * Creates a new empty instance of {@link Argument}.
    */
-  public ArgumentModel() {
+  public Argument() {
 
   }
 
   /**
-   * Creates a new instance of {@link ArgumentModel} by copying {@code other}.
+   * Creates a new instance of {@link Argument} by copying {@code other}.
    *
    * @param other the argument to copy
    */
-  public ArgumentModel(ArgumentModel other) {
+  public Argument(Argument other) {
     this();
     index = other.index;
     argName = other.argName;
@@ -89,25 +89,25 @@ public class ArgumentModel {
   }
 
   /**
-   * Creates a new instance of {@link ArgumentModel} from the given JSON object.
+   * Creates a new instance of {@link Argument} from the given JSON object.
    *
    * @param json the json object
    * @see #toJson()
    */
-  public ArgumentModel(JsonObject json) {
+  public Argument(JsonObject json) {
     this();
-    ArgumentModelConverter.fromJson(json, this);
+    ArgumentConverter.fromJson(json, this);
   }
 
   /**
-   * Exports this {@link ArgumentModel} to its corresponding JSON representation.
+   * Exports this {@link Argument} to its corresponding JSON representation.
    *
-   * @return the json object representing this {@link ArgumentModel}
-   * @see #ArgumentModel(JsonObject)
+   * @return the json object representing this {@link Argument}
+   * @see #Argument(JsonObject)
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
-    ArgumentModelConverter.toJson(this, json);
+    ArgumentConverter.toJson(this, json);
     return json;
   }
 
@@ -119,12 +119,12 @@ public class ArgumentModel {
   }
 
   /**
-   * Sets the argument name of this {@link ArgumentModel}.
+   * Sets the argument name of this {@link Argument}.
    *
    * @param argName the argument name, must not be {@link null}
-   * @return the current {@link ArgumentModel} instance
+   * @return the current {@link Argument} instance
    */
-  public ArgumentModel setArgName(String argName) {
+  public Argument setArgName(String argName) {
     Objects.requireNonNull(argName);
     this.argName = argName;
     return this;
@@ -138,31 +138,31 @@ public class ArgumentModel {
   }
 
   /**
-   * Sets the description of the {@link ArgumentModel}.
+   * Sets the description of the {@link Argument}.
    *
    * @param description the description
-   * @return the current {@link ArgumentModel} instance
+   * @return the current {@link Argument} instance
    */
-  public ArgumentModel setDescription(String description) {
+  public Argument setDescription(String description) {
     Objects.requireNonNull(description);
     this.description = description;
     return this;
   }
 
   /**
-   * @return whether or not the current {@link ArgumentModel} is hidden.
+   * @return whether or not the current {@link Argument} is hidden.
    */
   public boolean isHidden() {
     return hidden;
   }
 
   /**
-   * Sets whether or not the current {@link ArgumentModel} is hidden.
+   * Sets whether or not the current {@link Argument} is hidden.
    *
-   * @param hidden enables or disables the visibility of this {@link ArgumentModel}
-   * @return the current {@link ArgumentModel} instance
+   * @param hidden enables or disables the visibility of this {@link Argument}
+   * @return the current {@link Argument} instance
    */
-  public ArgumentModel setHidden(boolean hidden) {
+  public Argument setHidden(boolean hidden) {
     this.hidden = hidden;
     return this;
   }
@@ -178,9 +178,9 @@ public class ArgumentModel {
    * Sets the argument index.
    *
    * @param index the index, must not be negative
-   * @return the current {@link ArgumentModel} instance
+   * @return the current {@link Argument} instance
    */
-  public ArgumentModel setIndex(int index) {
+  public Argument setIndex(int index) {
     if (index < 0) {
       throw new IllegalArgumentException("Argument index cannot be negative");
     }
@@ -189,19 +189,19 @@ public class ArgumentModel {
   }
 
   /**
-   * @return whether or not the current {@link ArgumentModel} is required.
+   * @return whether or not the current {@link Argument} is required.
    */
   public boolean isRequired() {
     return required;
   }
 
   /**
-   * Sets whether or not the current {@link ArgumentModel} is required.
+   * Sets whether or not the current {@link Argument} is required.
    *
    * @param required {@code true} to make this argument mandatory, {@link false} otherwise
-   * @return the current {@link ArgumentModel} instance
+   * @return the current {@link Argument} instance
    */
-  public ArgumentModel setRequired(boolean required) {
+  public Argument setRequired(boolean required) {
     this.required = required;
     return this;
   }
@@ -214,25 +214,25 @@ public class ArgumentModel {
   }
 
   /**
-   * Sets the default value of this {@link ArgumentModel}.
+   * Sets the default value of this {@link Argument}.
    *
    * @param defaultValue the default value
-   * @return the current {@link ArgumentModel} instance
+   * @return the current {@link Argument} instance
    */
-  public ArgumentModel setDefaultValue(String defaultValue) {
+  public Argument setDefaultValue(String defaultValue) {
     this.defaultValue = defaultValue;
     return this;
   }
 
   /**
    * Checks that the argument configuration is valid. This method is mainly made for children classes adding
-   * constraint to the configuration. The {@link CommandLineParser} verifies that arguments are valid before starting
+   * constraint to the configuration. The parser verifies that arguments are valid before starting
    * the parsing.
-   *
-   * @return {@code true}
+   * <p/>
+   * If the configuration is not valid, this method throws a {@link IllegalArgumentException}.
    */
-  public boolean isValid() {
-    return true;
+  public void ensureValidity() {
+
   }
 
 }

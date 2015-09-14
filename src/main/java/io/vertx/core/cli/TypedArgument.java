@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -19,12 +19,12 @@ package io.vertx.core.cli;
 import io.vertx.core.cli.converters.Converter;
 
 /**
- * An implementation of {@link ArgumentModel} for java specifying the type of object received by the argument. This
+ * An implementation of {@link Argument} for java specifying the type of object received by the argument. This
  * allows converting the given <em>raw</em> value into the specified type.
  *
  * @author Clement Escoffier <clement@apache.org>
  */
-public class TypedArgument<T> extends ArgumentModel {
+public class TypedArgument<T> extends Argument {
 
   /**
    * The type of the argument.
@@ -91,16 +91,16 @@ public class TypedArgument<T> extends ArgumentModel {
   }
 
   /**
-   * @return whether or not the argument configuraiton is valid. In addition of the check made by the parent class it
+   * Checks whether or not the argument configuration is valid. In addition of the check made by the parent class it
    * ensures that the type is set.
+   * If the configuration is not valid, this method throws a {@link IllegalArgumentException}.
    */
   @Override
-  public boolean isValid() {
-    super.isValid();
+  public void ensureValidity() {
+    super.ensureValidity();
     if (type == null) {
       throw new IllegalArgumentException("Type must not be null");
     }
-    return true;
   }
 
   @Override
