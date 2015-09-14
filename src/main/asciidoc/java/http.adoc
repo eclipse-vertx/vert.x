@@ -1145,11 +1145,10 @@ The maximum number of connections to pool *for each server* is configured using 
 When making a request with pooling enabled, Vert.x will create a new connection if there are less than the maximum number of
 connections already created for that server, otherwise it will add the request to a queue.
 
-When a response returns, if there are pending requests for the server, then the connection will be reused, otherwise
-it will be closed.
+Keep alive connections will not be closed by the client automatically. To close them you can close the client instance.
 
-This gives the benefits of keep alive when the client is loaded but means we don't keep connections hanging around
-unnecessarily when there would be no benefits anyway.
+Alternatively you can set idle timeout using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setIdleTimeout-int-[setIdleTimeout]` - any
+connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
 
 === Pipe-lining
 
@@ -1162,9 +1161,6 @@ To enable pipe-lining, it must be enabled using `link:../../apidocs/io/vertx/cor
 By default pipe-lining is disabled.
 
 When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
-
-When pipe-line responses return at the client, the connection will be automatically closed when all in-flight
-responses have returned and there are no outstanding pending requests to write.
 
 === Server sharing
 
