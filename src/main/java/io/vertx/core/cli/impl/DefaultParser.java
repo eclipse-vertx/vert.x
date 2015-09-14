@@ -114,7 +114,7 @@ public class DefaultParser {
     // Add value to the specified arguments
     Iterator<Argument> iterator = cli.getArguments().iterator();
     // No more defined arguments, just ignore them.
-    commandLine.getAllArguments().stream().filter(value -> iterator.hasNext()).forEach(value -> {
+    commandLine.allArguments().stream().filter(value -> iterator.hasNext()).forEach(value -> {
       Argument model = iterator.next();
       commandLine.setRawValue(model, value);
     });

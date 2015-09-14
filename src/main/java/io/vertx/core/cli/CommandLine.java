@@ -16,7 +16,6 @@
 
 package io.vertx.core.cli;
 
-import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.cli.impl.DefaultCommandLine;
@@ -24,8 +23,8 @@ import io.vertx.core.cli.impl.DefaultCommandLine;
 import java.util.List;
 
 /**
- * The {@link CommandLineParser} transforms a CLI (a model) into an {@link CommandLine}. This {@link CommandLine}
- * has stored the argument and option values. Only  instance of {@link CommandLineParser} should create
+ * The parser transforms a CLI (a model) into an {@link CommandLine}. This {@link CommandLine}
+ * has stored the argument and option values. Only  instance of parser should create
  * objects of this type.
  *
  * @author Clement Escoffier <clement@apache.org>
@@ -52,7 +51,7 @@ public interface CommandLine {
   /**
    * @return the ordered list of arguments. Arguments are command line arguments not matching an option.
    */
-  List<String> getAllArguments();
+  List<String> allArguments();
 
   /**
    * Gets the value of an option with the matching name (can be the long name, short name or arg name).
@@ -100,7 +99,7 @@ public interface CommandLine {
    * @param name the option name
    * @return {@code true} if the flag has been set in the command line, {@code false} otherwise.
    */
-  boolean getFlagValue(String name);
+  boolean isFlagEnabled(String name);
 
   /**
    * Checks whether or not the given option has been assigned in the command line.
@@ -117,16 +116,6 @@ public interface CommandLine {
    * @return the list of values, empty if none
    */
   List<String> getRawValues(Option option);
-
-  /**
-   * Adds a raw value to the given option.
-   *
-   * @param option the option
-   * @param value  the raw value
-   * @return the current {@link CommandLine} instance
-   */
-  @Fluent
-  CommandLine addRawValue(Option option, String value);
 
   /**
    * Gets the raw value of the given option. Raw values are the values as given in the user command line.
@@ -151,16 +140,6 @@ public interface CommandLine {
    * @return the value, {@link null} if none.
    */
   String getRawValueForArgument(Argument arg);
-
-  /**
-   * Sets the raw value of the given argument.
-   *
-   * @param arg      the argument
-   * @param rawValue the value
-   * @return the current {@link CommandLine} instance
-   */
-  @Fluent
-  CommandLine setRawValue(Argument arg, String rawValue);
 
   /**
    * Checks whether or not the given argument has been assigned in the command line.

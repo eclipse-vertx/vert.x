@@ -66,7 +66,7 @@ public class IntensiveDefaultParserTest {
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("toast");
     assertThat(getBooleanOption(evaluated, "c")).isFalse();
-    assertThat(evaluated.getAllArguments()).contains("foo", "bar").hasSize(2);
+    assertThat(evaluated.allArguments()).contains("foo", "bar").hasSize(2);
   }
 
   @Test
@@ -81,7 +81,7 @@ public class IntensiveDefaultParserTest {
     assertThat(getStringOption(evaluated, "b")).isEqualTo("toast");
     assertThat(getStringOption(evaluated, "bfile")).isEqualTo("toast");
     assertThat(getBooleanOption(evaluated, "c")).isFalse();
-    assertThat(evaluated.getAllArguments()).contains("foo", "bar").hasSize(2);
+    assertThat(evaluated.allArguments()).contains("foo", "bar").hasSize(2);
   }
 
   @Test
@@ -93,14 +93,14 @@ public class IntensiveDefaultParserTest {
     CommandLine evaluated = cli.parse(Arrays.asList(args));
     assertThat(getBooleanOption(evaluated, "c")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("toast");
-    assertThat(evaluated.getAllArguments()).contains("foobar").hasSize(1);
+    assertThat(evaluated.allArguments()).contains("foobar").hasSize(1);
   }
 
   @Test
   public void testUnrecognizedOption() throws Exception {
     String[] args = new String[]{"-a", "-d", "-b", "toast", "foo", "bar"};
     CommandLine evaluated = cli.parse(Arrays.asList(args));
-    assertThat(evaluated.getAllArguments()).contains("-d", "foo", "bar").hasSize(3);
+    assertThat(evaluated.allArguments()).contains("-d", "foo", "bar").hasSize(3);
   }
 
   @Test
@@ -126,7 +126,7 @@ public class IntensiveDefaultParserTest {
 
     assertThat(getBooleanOption(evaluated, "c")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isNull();
-    assertThat(evaluated.getAllArguments()).hasSize(2).contains("-b", "toast");
+    assertThat(evaluated.allArguments()).hasSize(2).contains("-b", "toast");
   }
 
   @Test
@@ -155,7 +155,7 @@ public class IntensiveDefaultParserTest {
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("-");
     assertThat(getBooleanOption(evaluated, "c")).isTrue();
-    assertThat(evaluated.getAllArguments()).contains("-").hasSize(1);
+    assertThat(evaluated.allArguments()).contains("-").hasSize(1);
   }
 
   @Test
@@ -503,7 +503,7 @@ public class IntensiveDefaultParserTest {
 
     assertThat(getBooleanOption(evaluated, "a")).isFalse();
     assertThat((String) evaluated.getOptionValue("b")).isEqualTo("file");
-    assertThat(evaluated.getAllArguments()).isEmpty();
+    assertThat(evaluated.allArguments()).isEmpty();
   }
 
   @Test
@@ -518,7 +518,7 @@ public class IntensiveDefaultParserTest {
 
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("file");
-    assertThat(evaluated.getAllArguments()).isEmpty();
+    assertThat(evaluated.allArguments()).isEmpty();
   }
 
   @Test
@@ -566,7 +566,7 @@ public class IntensiveDefaultParserTest {
     assertThat(getBooleanOption(evaluated, "a")).isTrue();
     assertThat(getBooleanOption(evaluated, "c")).isTrue();
     assertThat(getStringOption(evaluated, "b")).isEqualTo("toast");
-    assertThat(evaluated.getAllArguments()).hasSize(2).contains("foo", "bar");
+    assertThat(evaluated.allArguments()).hasSize(2).contains("foo", "bar");
   }
 
   @Test
@@ -574,7 +574,7 @@ public class IntensiveDefaultParserTest {
     String[] args = new String[]{"-adbtoast", "foo", "bar"};
 
     CommandLine evaluated = cli.parse(Arrays.asList(args));
-    assertThat(evaluated.getAllArguments()).contains("-adbtoast", "foo", "bar").hasSize(3);
+    assertThat(evaluated.allArguments()).contains("-adbtoast", "foo", "bar").hasSize(3);
   }
 
   @Test

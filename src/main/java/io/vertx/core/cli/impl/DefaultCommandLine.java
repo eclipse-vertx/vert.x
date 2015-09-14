@@ -53,7 +53,7 @@ public class DefaultCommandLine implements CommandLine {
    * neither known options or defined arguments.
    */
   @Override
-  public List<String> getAllArguments() {
+  public List<String> allArguments() {
     return allArgs;
   }
 
@@ -83,7 +83,7 @@ public class DefaultCommandLine implements CommandLine {
   }
 
   @Override
-  public boolean getFlagValue(String name) {
+  public boolean isFlagEnabled(String name) {
     Option option = cli.getOption(name);
     if (option == null) {
       throw new IllegalArgumentException("Cannot find the option '" + name + "'");
@@ -152,7 +152,6 @@ public class DefaultCommandLine implements CommandLine {
     return Collections.emptyList();
   }
 
-  @Override
   public DefaultCommandLine addRawValue(Option option, String value) {
     if (!acceptMoreValues(option) && !option.isFlag()) {
       throw new CLIException("The option " + option.getName() + " does not accept value or has " +
@@ -189,7 +188,6 @@ public class DefaultCommandLine implements CommandLine {
     return v.toString();
   }
 
-  @Override
   public DefaultCommandLine setRawValue(Argument arg, String rawValue) {
     argumentValues.put(arg, rawValue);
     return this;
