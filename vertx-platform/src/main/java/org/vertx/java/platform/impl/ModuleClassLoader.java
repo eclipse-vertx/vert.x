@@ -114,7 +114,7 @@ public class ModuleClassLoader extends URLClassLoader {
     return c;
   }
 
-  private Class<?> loadFromModule(String name) throws ClassNotFoundException {
+  private synchronized Class<?> loadFromModule(String name) throws ClassNotFoundException {
     Class<?> c = null;
     Set<ModuleClassLoader> toWalk = getModulesToWalk();
     for (ModuleClassLoader cl: toWalk) {
@@ -158,7 +158,7 @@ public class ModuleClassLoader extends URLClassLoader {
 
   private Set<ModuleClassLoader> getModuleGraph() {
     if (modGraph == null) {
-      modGraph = new LinkedHashSet<>();
+      modGraph = new ConcurrentHashSet<ModuleClassLoader>();
       modGraph.add(this);
       computeModules(modGraph);
     }
