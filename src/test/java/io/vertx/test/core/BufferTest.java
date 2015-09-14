@@ -408,6 +408,50 @@ public class BufferTest {
     assertTrue(TestUtils.byteArraysEqual(sub, b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2)));
   }
 
+  @Test
+  public void testGetBytesWithByteArray() throws Exception {
+    byte[] bytes = TestUtils.randomByteArray(100);
+    Buffer b = Buffer.buffer(bytes);
+
+    byte[] sub = new byte[bytes.length / 2];
+    System.arraycopy(bytes, bytes.length / 4, sub, 0, bytes.length / 2);
+
+    byte[] result = new byte[bytes.length / 2];
+    b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2, result);
+
+    assertTrue(TestUtils.byteArraysEqual(sub, result));
+  }
+
+  @Test(expected = IndexOutOfBoundsException.class)
+  public void testGetBytesWithTooSmallByteArray() throws Exception {
+    byte[] bytes = TestUtils.randomByteArray(100);
+    Buffer b = Buffer.buffer(bytes);
+    byte[] result = new byte[bytes.length / 4];
+    b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2, result);
+  }
+
+  @Test
+  public void testGetBytesWithByteArrayFull() throws Exception {
+    byte[] bytes = TestUtils.randomByteArray(100);
+    Buffer b = Buffer.buffer(bytes);
+
+    byte[] sub = new byte[bytes.length];
+    System.arraycopy(bytes, bytes.length / 4, sub, 12, bytes.length / 2);
+
+    byte[] result = new byte[bytes.length];
+    b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2, result, 12);
+
+    assertTrue(TestUtils.byteArraysEqual(sub, result));
+  }
+
+  @Test(expected = IndexOutOfBoundsException.class)
+  public void testGetBytesWithBadOffset() throws Exception {
+    byte[] bytes = TestUtils.randomByteArray(100);
+    Buffer b = Buffer.buffer(bytes);
+    byte[] result = new byte[bytes.length / 2];
+    b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2, result, -1);
+  }
+
   private final int numSets = 100;
 
   @Test
