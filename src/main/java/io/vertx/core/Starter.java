@@ -168,7 +168,14 @@ public class Starter {
   /**
    * Hook for sub classes of {@link Starter} before the verticle is deployed.
    */
-  protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
+  protected void beforeDeployingVerticle(String verticle, DeploymentOptions deploymentOptions) {
+    
+  }
+
+  /**
+   * Hook for sub classes of {@link Starter} after the verticle is deployed.
+   */
+  protected void afterDeployingVerticle(String verticle, AsyncResult<String> result) {
     
   }
 
@@ -327,8 +334,9 @@ public class Starter {
 
     deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
 
-    beforeDeployingVerticle(deploymentOptions);
+    beforeDeployingVerticle(main, deploymentOptions);
     vertx.deployVerticle(main, deploymentOptions, createLoggingHandler(message, res -> {
+      afterDeployingVerticle(main, res);
       if (res.failed()) {
         // Failed to deploy
         handleDeployFailed();
@@ -478,7 +486,7 @@ public class Starter {
         Manifest manifest = new Manifest(resources.nextElement().openStream());
         Attributes attributes = manifest.getMainAttributes();
         String mainClass = attributes.getValue("Main-Class");
-        if (Starter.class.getName().equals(mainClass)) {
+        if (this.getClass().getName().equals(mainClass)) {
           String theMainVerticle = attributes.getValue("Main-Verticle");
           if (theMainVerticle != null) {
             return theMainVerticle;
