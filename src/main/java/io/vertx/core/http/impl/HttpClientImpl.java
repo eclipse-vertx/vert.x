@@ -48,6 +48,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -674,8 +675,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
             if (fut2.isSuccess()) {
               connected(context, port, host, ch, connectHandler, connectErrorHandler, listener);
             } else {
-              connectionFailed(context, ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
-                               listener);
+              SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
+              Optional.ofNullable(fut2.cause()).ifPresent(sslException::initCause);
+              connectionFailed(context, ch, connectErrorHandler, sslException,
+                  listener);
             }
           });
         } else {
