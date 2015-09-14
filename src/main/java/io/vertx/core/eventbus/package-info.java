@@ -179,6 +179,10 @@
  *
  * include::override/eventbus_headers.adoc[]
  *
+ * ==== Message ordering
+ *
+ * Vert.x will deliver messages to any particular handler in the same order they were sent from any particular sender.
+ *
  * ==== The Message object
  *
  * The object you receive in a message handler is a {@link io.vertx.core.eventbus.Message}.

@@ -199,6 +199,10 @@ eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
 
 include::override/eventbus_headers.adoc[]
 
+==== Message ordering
+
+Vert.x will deliver messages to any particular handler in the same order they were sent from any particular sender.
+
 ==== The Message object
 
 The object you receive in a message handler is a `link:../../apidocs/io/vertx/core/eventbus/Message.html[Message]`.
