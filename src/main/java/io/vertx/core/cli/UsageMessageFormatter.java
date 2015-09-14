@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -81,9 +81,10 @@ public class UsageMessageFormatter {
   /**
    * Comparator used to sort the options when they output in help text
    * <p/>
-   * Defaults to case-insensitive alphabetical sorting by option key
+   * Defaults to case-insensitive alphabetical sorting by option key.
    */
-  private Comparator<OptionModel> optionComparator = new OptionComparator();
+  private Comparator<Option> optionComparator =
+      (opt1, opt2) -> opt1.getName().compareToIgnoreCase(opt2.getName());
 
   public void setWidth(int width) {
     this.width = width;
@@ -175,7 +176,7 @@ public class UsageMessageFormatter {
    *
    * @return the {@link Comparator} currently in use to sort the options
    */
-  public Comparator<OptionModel> getOptionComparator() {
+  public Comparator<Option> getOptionComparator() {
     return optionComparator;
   }
 
@@ -185,7 +186,7 @@ public class UsageMessageFormatter {
    *
    * @param comparator the {@link Comparator} to use for sorting the options
    */
-  public void setOptionComparator(Comparator<OptionModel> comparator) {
+  public void setOptionComparator(Comparator<Option> comparator) {
     this.optionComparator = comparator;
   }
 
@@ -196,7 +197,7 @@ public class UsageMessageFormatter {
    * @param option   the Option to append
    * @param required whether the Option is required or not
    */
-  private void appendOption(StringBuilder buff, OptionModel option, boolean required) {
+  private void appendOption(StringBuilder buff, Option option, boolean required) {
     if (option.isHidden()) {
       return;
     }
@@ -230,7 +231,7 @@ public class UsageMessageFormatter {
    * @param argument the argument to add
    * @param required whether the Option is required or not
    */
-  private void appendArgument(StringBuilder buff, ArgumentModel argument, boolean required) {
+  private void appendArgument(StringBuilder buff, Argument argument, boolean required) {
     if (!required) {
       buff.append("[");
     }
@@ -298,13 +299,13 @@ public class UsageMessageFormatter {
     }
 
     // iterate over the options
-    for (OptionModel option : cli.getOptions()) {
+    for (Option option : cli.getOptions()) {
       appendOption(buff, option, option.isRequired());
       buff.append(" ");
     }
 
     // iterate over the arguments
-    for (ArgumentModel arg : cli.getArguments()) {
+    for (Argument arg : cli.getArguments()) {
       appendArgument(buff, arg, arg.isRequired());
       buff.append(" ");
     }
@@ -319,7 +320,7 @@ public class UsageMessageFormatter {
    * @param buffer  The buffer to write the help to
    * @param options The command line Options
    */
-  public void computeOptions(StringBuilder buffer, List<OptionModel> options) {
+  public void computeOptions(StringBuilder buffer, List<Option> options) {
     renderOptions(buffer, options);
     buffer.append(newLine);
   }
@@ -393,7 +394,7 @@ public class UsageMessageFormatter {
 
   }
 
-  private boolean isNullOrEmpty(String s) {
+  private static boolean isNullOrEmpty(String s) {
     return s == null || s.trim().length() == 0;
   }
 
@@ -405,7 +406,7 @@ public class UsageMessageFormatter {
    * @param options The command line Options
    * @return the StringBuilder with the rendered Options contents.
    */
-  protected StringBuilder renderOptions(StringBuilder sb, List<OptionModel> options) {
+  protected StringBuilder renderOptions(StringBuilder sb, List<Option> options) {
     final String lpad = createPadding(leftPad);
     final String dpad = createPadding(descPad);
 
@@ -420,7 +421,7 @@ public class UsageMessageFormatter {
       Collections.sort(options, getOptionComparator());
     }
 
-    for (OptionModel option : options) {
+    for (Option option : options) {
       if (option.isHidden()) {
         continue;
       }
@@ -454,8 +455,8 @@ public class UsageMessageFormatter {
     int x = 0;
 
     // Use an iterator to detect the last item.
-    for (Iterator<OptionModel> it = options.iterator(); it.hasNext(); ) {
-      OptionModel option = it.next();
+    for (Iterator<Option> it = options.iterator(); it.hasNext(); ) {
+      Option option = it.next();
       if (option.isHidden()) {
         continue;
       }
@@ -574,7 +575,7 @@ public class UsageMessageFormatter {
    * @return position on which the text must be wrapped or -1 if the wrap
    * position is at the end of the text
    */
-  protected int findWrapPos(String text, int width, int startPos) {
+  public static int findWrapPos(String text, int width, int startPos) {
     // the line ends before the max wrap pos or a new line char found
     int pos = text.indexOf('\n', startPos);
     if (pos != -1 && pos <= width) {
@@ -615,7 +616,7 @@ public class UsageMessageFormatter {
    * @param len The length of the String of padding to create.
    * @return The String of padding
    */
-  protected String createPadding(int len) {
+  public static String createPadding(int len) {
     char[] padding = new char[len];
     Arrays.fill(padding, ' ');
 
@@ -628,7 +629,7 @@ public class UsageMessageFormatter {
    * @param s The String to remove the trailing padding from.
    * @return The String of without the trailing padding
    */
-  protected String rtrim(String s) {
+  public static String rtrim(String s) {
     if (s == null || s.length() == 0) {
       return s;
     }
@@ -640,27 +641,5 @@ public class UsageMessageFormatter {
     }
 
     return s.substring(0, pos);
-  }
-
-  /**
-   * This class implements the <code>Comparator</code> interface
-   * for comparing Options.
-   */
-  private static class OptionComparator implements Comparator<OptionModel> {
-
-    /**
-     * Compares its two arguments for order. Returns a negative
-     * integer, zero, or a positive integer as the first argument
-     * is less than, equal to, or greater than the second.
-     *
-     * @param opt1 The first Option to be compared.
-     * @param opt2 The second Option to be compared.
-     * @return a negative integer, zero, or a positive integer as
-     * the first argument is less than, equal to, or greater than the
-     * second.
-     */
-    public int compare(OptionModel opt1, OptionModel opt2) {
-      return opt1.getName().compareToIgnoreCase(opt2.getName());
-    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -33,7 +33,6 @@ public class TypedArgumentTest {
 
   private CLI cli;
   private CommandLine evaluated;
-  private CommandLineParser parser = CommandLineParser.create();
 
   @Before
   public void setUp() {
@@ -44,7 +43,7 @@ public class TypedArgumentTest {
   public void testThatArgumentWithTheSameIndexAreDetected() throws CLIException {
     cli.addArgument(new TypedArgument<String>().setIndex(0).setType(String.class));
     cli.addArgument(new TypedArgument<String>().setIndex(0).setType(String.class));
-    evaluated = parser.parse(cli, Arrays.asList("a", "b"));
+    evaluated = cli.parse(Arrays.asList("a", "b"));
   }
 
   @Test
@@ -55,20 +54,20 @@ public class TypedArgumentTest {
         .setRequired(true));
 
     try {
-      evaluated = parser.parse(cli, Collections.emptyList());
+      evaluated = cli.parse(Collections.emptyList());
       fail("Missing Value Exception expected");
     } catch (MissingValueException e) {
       // OK
     }
 
     try {
-      evaluated = parser.parse(cli, Collections.singletonList("a"));
+      evaluated = cli.parse(Collections.singletonList("a"));
       fail("Missing Value Exception expected");
     } catch (MissingValueException e) {
       // OK
     }
 
-    evaluated = parser.parse(cli, Arrays.asList("a", "b"));
+    evaluated = cli.parse(Arrays.asList("a", "b"));
   }
 
   @Test
@@ -79,17 +78,17 @@ public class TypedArgumentTest {
         .setRequired(false));
 
     try {
-      evaluated = parser.parse(cli, Collections.emptyList());
+      evaluated = cli.parse(Collections.emptyList());
       fail("Missing Value Exception expected");
     } catch (MissingValueException e) {
       // OK
     }
 
-    evaluated = parser.parse(cli, Collections.singletonList("a"));
+    evaluated = cli.parse(Collections.singletonList("a"));
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("a");
     assertThat((String) evaluated.getArgumentValue(1)).isNull();
 
-    evaluated = parser.parse(cli, Arrays.asList("a", "b"));
+    evaluated = cli.parse(Arrays.asList("a", "b"));
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("a");
     assertThat((String) evaluated.getArgumentValue(1)).isEqualTo("b");
   }
@@ -101,12 +100,12 @@ public class TypedArgumentTest {
     cli.addArgument(new TypedArgument<String>().setIndex(2).setArgName("3").setType(String.class));
 
     assertThat(cli.getArguments()).hasSize(3);
-    Iterator<ArgumentModel> iterator = cli.getArguments().iterator();
+    Iterator<Argument> iterator = cli.getArguments().iterator();
     assertThat(iterator.next().getArgName()).isEqualTo("2");
     assertThat(iterator.next().getArgName()).isEqualTo("1");
     assertThat(iterator.next().getArgName()).isEqualTo("3");
 
-    evaluated = parser.parse(cli, Arrays.asList("a", "b", "c"));
+    evaluated = cli.parse(Arrays.asList("a", "b", "c"));
 
     assertThat((String) evaluated.getArgumentValue("2")).isEqualTo("a");
     assertThat((String) evaluated.getArgumentValue("1")).isEqualTo("b");
@@ -118,9 +117,9 @@ public class TypedArgumentTest {
     cli.addArgument(new TypedArgument<String>().setIndex(0).setArgName("1").setType(String.class)
         .setDefaultValue("hello").setRequired(false));
 
-    evaluated = parser.parse(cli, Collections.singletonList("a"));
+    evaluated = cli.parse(Collections.singletonList("a"));
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("a");
-    evaluated = parser.parse(cli, Collections.emptyList());
+    evaluated = cli.parse(Collections.emptyList());
     assertThat((String) evaluated.getArgumentValue(0)).isEqualTo("hello");
   }
 
@@ -130,8 +129,8 @@ public class TypedArgumentTest {
         .setIndex(0).setArgName("1").setType(Integer.class));
 
     try {
-      evaluated = parser.parse(cli, Collections.singletonList("a"));
-      String v = evaluated.getArgumentValue(0);
+      evaluated = cli.parse(Collections.singletonList("a"));
+      evaluated.getArgumentValue(0);
       fail("Exception expected");
     } catch (CLIException e) {
       assertThat(e).isInstanceOf(InvalidValueException.class);
@@ -166,13 +165,13 @@ public class TypedArgumentTest {
         .setRequired(false);
     cli.addArgument(arg);
 
-    evaluated = parser.parse(cli, Collections.singletonList("Bob,Morane"));
+    evaluated = cli.parse(Collections.singletonList("Bob,Morane"));
     Person4 person = evaluated.getArgumentValue("person");
     assertThat(person.first).isEqualTo("Bob");
     assertThat(person.last).isEqualTo("Morane");
 
 
-    evaluated = parser.parse(cli, Collections.emptyList());
+    evaluated = cli.parse(Collections.emptyList());
     person = evaluated.getArgumentValue("person");
     assertThat(person.first).isEqualTo("Bill");
     assertThat(person.last).isEqualTo("Ballantine");

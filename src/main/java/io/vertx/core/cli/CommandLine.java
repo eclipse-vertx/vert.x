@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -45,15 +45,6 @@ public interface CommandLine {
   }
 
   /**
-   * Sets the various command line arguments. Method called by {@link CommandLineParser}.
-   *
-   * @param args the arguments
-   * @return the current {@link CommandLine}
-   */
-  @Fluent
-  CommandLine setAllArguments(List<String> args);
-
-  /**
    * @return the model of this command line object.
    */
   CLI cli();
@@ -62,15 +53,6 @@ public interface CommandLine {
    * @return the ordered list of arguments. Arguments are command line arguments not matching an option.
    */
   List<String> getAllArguments();
-
-  /**
-   * Adds a value to the argument list. Method called by {@link CommandLineParser}.
-   *
-   * @param argument the argument to add
-   * @return the current {@link CommandLine}
-   */
-  @Fluent
-  CommandLine addArgumentValue(String argument);
 
   /**
    * Gets the value of an option with the matching name (can be the long name, short name or arg name).
@@ -105,7 +87,7 @@ public interface CommandLine {
    * @param name the name
    * @param <T>  the expected component type
    * @return the values, {@code null} if not set
-   * @see #getRawValues(OptionModel)
+   * @see #getRawValues(Option)
    */
   @GenIgnore
   <T> List<T> getOptionValues(String name);
@@ -126,7 +108,7 @@ public interface CommandLine {
    * @param option the option
    * @return {@code true} if the option has received a value, {@link false} otherwise.
    */
-  boolean isOptionAssigned(OptionModel option);
+  boolean isOptionAssigned(Option option);
 
   /**
    * Gets the raw values of the given option. Raw values are simple "String", not converted to the option type.
@@ -134,7 +116,7 @@ public interface CommandLine {
    * @param option the option
    * @return the list of values, empty if none
    */
-  List<String> getRawValues(OptionModel option);
+  List<String> getRawValues(Option option);
 
   /**
    * Adds a raw value to the given option.
@@ -144,7 +126,7 @@ public interface CommandLine {
    * @return the current {@link CommandLine} instance
    */
   @Fluent
-  CommandLine addRawValue(OptionModel option, String value);
+  CommandLine addRawValue(Option option, String value);
 
   /**
    * Gets the raw value of the given option. Raw values are the values as given in the user command line.
@@ -152,7 +134,7 @@ public interface CommandLine {
    * @param option the option
    * @return the value, {@link null} if none.
    */
-  String getRawValueForOption(OptionModel option);
+  String getRawValueForOption(Option option);
 
   /**
    * Checks whether or not the given option accept more values.
@@ -160,7 +142,7 @@ public interface CommandLine {
    * @param option the option
    * @return {@link true} if the option accepts more values, {@link false} otherwise.
    */
-  boolean acceptMoreValues(OptionModel option);
+  boolean acceptMoreValues(Option option);
 
   /**
    * Gets the raw value of the given argument. Raw values are the values as given in the user command line.
@@ -168,7 +150,7 @@ public interface CommandLine {
    * @param arg the argument
    * @return the value, {@link null} if none.
    */
-  String getRawValueForArgument(ArgumentModel arg);
+  String getRawValueForArgument(Argument arg);
 
   /**
    * Sets the raw value of the given argument.
@@ -178,7 +160,7 @@ public interface CommandLine {
    * @return the current {@link CommandLine} instance
    */
   @Fluent
-  CommandLine setRawValue(ArgumentModel arg, String rawValue);
+  CommandLine setRawValue(Argument arg, String rawValue);
 
   /**
    * Checks whether or not the given argument has been assigned in the command line.
@@ -186,16 +168,7 @@ public interface CommandLine {
    * @param arg the argument
    * @return {@code true} if the argument has received a value, {@link false} otherwise.
    */
-  boolean isArgumentAssigned(ArgumentModel arg);
-
-  /**
-   * Marks the option has been set in the user command line. This method is called by {@link CommandLineParser}.
-   *
-   * @param option the option
-   * @return the current {@link CommandLine} instance
-   */
-  @Fluent
-  CommandLine setSeenInCommandLine(OptionModel option);
+  boolean isArgumentAssigned(Argument arg);
 
   /**
    * check whether or not the given option has been seen in the user command line.
@@ -203,6 +176,6 @@ public interface CommandLine {
    * @param option the option
    * @return {@code true} if the user command line has used the option
    */
-  boolean isSeenInCommandLine(OptionModel option);
+  boolean isSeenInCommandLine(Option option);
 
 }

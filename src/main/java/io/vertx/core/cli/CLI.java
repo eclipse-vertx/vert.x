@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -31,18 +31,17 @@ import java.util.List;
  * A command line interface has a name, and defines a set of options and arguments. Options are key-value pair such
  * as {@code -foo=bar} or {@code -flag}. The supported formats depend on the used parser. Arguments are unlike
  * options raw values. Options are defined using
- * {@link OptionModel}, while argument are defined using {@link ArgumentModel}.
+ * {@link Option}, while argument are defined using {@link Argument}.
  * <p/>
  * Command line interfaces also define a summary and a description. These attributes are used in the usage generation
  * . To disable the help generation, set the {@code hidden} attribute to {@code true}.
  * <p/>
  * Command Line Interface object does not contains "value", it's a model. It must be evaluated by a
- * {@link CommandLineParser} that returns a {@link CommandLine} object containing the argument and option values.
+ * parser that returns a {@link CommandLine} object containing the argument and option values.
  *
  * @author Clement Escoffier <clement@apache.org>
- * @see ArgumentModel
- * @see OptionModel
- * @see CommandLineParser
+ * @see Argument
+ * @see Option
  */
 @VertxGen
 public interface CLI {
@@ -68,6 +67,14 @@ public interface CLI {
   static CLI create(Class<?> clazz) {
     return CLIConfigurator.define(clazz);
   }
+
+  /**
+   * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
+   *
+   * @param arguments the arguments
+   * @return the creates command line
+   */
+  CommandLine parse(List<String> arguments);
 
   /**
    * @return the CLI name.
@@ -127,7 +134,7 @@ public interface CLI {
    *
    * @return the list of options, empty if none.
    */
-  List<OptionModel> getOptions();
+  List<Option> getOptions();
 
   /**
    * Adds an option.
@@ -136,7 +143,7 @@ public interface CLI {
    * @return the current {@link CLI} instance
    */
   @Fluent
-  CLI addOption(OptionModel option);
+  CLI addOption(Option option);
 
   /**
    * Adds a set of options. Unlike {@link #setOptions(List)}}, this method does not remove the existing options.
@@ -146,7 +153,7 @@ public interface CLI {
    * @return the current {@link CLI} instance
    */
   @Fluent
-  CLI addOptions(List<OptionModel> options);
+  CLI addOptions(List<Option> options);
 
   /**
    * Sets the list of arguments.
@@ -155,14 +162,14 @@ public interface CLI {
    * @return the current {@link CLI} instance
    */
   @Fluent
-  CLI setOptions(List<OptionModel> options);
+  CLI setOptions(List<Option> options);
 
   /**
    * Gets the list of defined arguments.
    *
    * @return the list of argument, empty if none.
    */
-  List<ArgumentModel> getArguments();
+  List<Argument> getArguments();
 
   /**
    * Adds an argument.
@@ -171,7 +178,7 @@ public interface CLI {
    * @return the current {@link CLI} instance
    */
   @Fluent
-  CLI addArgument(ArgumentModel arg);
+  CLI addArgument(Argument arg);
 
   /**
    * Adds a set of arguments. Unlike {@link #setArguments(List)}, this method does not remove the existing arguments.
@@ -181,7 +188,7 @@ public interface CLI {
    * @return the current {@link CLI} instance
    */
   @Fluent
-  CLI addArguments(List<ArgumentModel> args);
+  CLI addArguments(List<Argument> args);
 
   /**
    * Sets the list of arguments.
@@ -190,31 +197,31 @@ public interface CLI {
    * @return the current {@link CLI} instance
    */
   @Fluent
-  CLI setArguments(List<ArgumentModel> args);
+  CLI setArguments(List<Argument> args);
 
   /**
-   * Gets an {@link OptionModel} based on its name (short name, long name or argument name).
+   * Gets an {@link Option} based on its name (short name, long name or argument name).
    *
    * @param name the name, must not be {@link null}
-   * @return the {@link OptionModel}, {@link null} if not found
+   * @return the {@link Option}, {@link null} if not found
    */
-  OptionModel getOption(String name);
+  Option getOption(String name);
 
   /**
-   * Gets an {@link ArgumentModel} based on its name (argument name).
+   * Gets an {@link Argument} based on its name (argument name).
    *
    * @param name the name of the argument, must not be {@link null}
-   * @return the {@link ArgumentModel}, {@link null} if not found.
+   * @return the {@link Argument}, {@link null} if not found.
    */
-  ArgumentModel getArgument(String name);
+  Argument getArgument(String name);
 
   /**
-   * Gets an {@link ArgumentModel} based on its index.
+   * Gets an {@link Argument} based on its index.
    *
    * @param index the index, must be positive or zero.
-   * @return the {@link ArgumentModel}, {@link null} if not found.
+   * @return the {@link Argument}, {@link null} if not found.
    */
-  ArgumentModel getArgument(int index);
+  Argument getArgument(int index);
 
   /**
    * Removes an option identified by its name. This method does nothing if the option cannot be found.

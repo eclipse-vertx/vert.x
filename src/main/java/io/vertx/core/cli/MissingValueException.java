@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -22,15 +22,15 @@ package io.vertx.core.cli;
  * @author Clement Escoffier <clement@apache.org>
  */
 public class MissingValueException extends CLIException {
-  private final OptionModel option;
-  private final ArgumentModel argument;
+  private final Option option;
+  private final Argument argument;
 
   /**
    * Creates a new instance of {@link MissingValueException} when an option requiring a value does not receive a value.
    *
    * @param option the option
    */
-  public MissingValueException(OptionModel option) {
+  public MissingValueException(Option option) {
     super("The option '" + option.getName() + "' requires a value");
     this.argument = null;
     this.option = option;
@@ -42,7 +42,7 @@ public class MissingValueException extends CLIException {
    *
    * @param argument the argument
    */
-  public MissingValueException(ArgumentModel argument) {
+  public MissingValueException(Argument argument) {
     super("The argument '"
         + (argument.getArgName() != null ? argument.getArgName() : argument.getIndex())
         + "' is required");
@@ -53,14 +53,14 @@ public class MissingValueException extends CLIException {
   /**
    * @return the option, may be {@link null} if the exception is about an argument.
    */
-  public OptionModel getOption() {
+  public Option getOption() {
     return option;
   }
 
   /**
    * @return the argument, may be {@link null} if the exception is about an option.
    */
-  public ArgumentModel getArgument() {
+  public Argument getArgument() {
     return argument;
   }
 }

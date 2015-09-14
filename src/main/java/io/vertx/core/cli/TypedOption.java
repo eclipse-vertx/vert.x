@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -21,12 +21,12 @@ import io.vertx.core.cli.converters.Converter;
 import java.util.Objects;
 
 /**
- * An implementation of {@link OptionModel} for java specifying the type of
+ * An implementation of {@link Option} for java specifying the type of
  * object received by the option. This allows converting the given <em>raw</em> value into the specified type.
  *
  * @author Clement Escoffier <clement@apache.org>
  */
-public class TypedOption<T> extends OptionModel {
+public class TypedOption<T> extends Option {
 
   /**
    * The type of the option.
@@ -167,12 +167,11 @@ public class TypedOption<T> extends OptionModel {
   }
 
   @Override
-  public boolean isValid() {
-    super.isValid();
+  public void ensureValidity() {
+    super.ensureValidity();
     if (type == null) {
       throw new IllegalArgumentException("Type must not be null");
     }
-    return true;
   }
 
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -30,7 +30,7 @@ public class AmbiguousOptionExceptionTest {
   @Test
   public void testCreation() {
     AmbiguousOptionException exception = new AmbiguousOptionException("foo",
-        Arrays.asList(new OptionModel().setLongName("foobar"), new OptionModel().setLongName("foobaz")));
+        Arrays.asList(new Option().setLongName("foobar"), new Option().setLongName("foobaz")));
     assertThat(exception.getOptions()).hasSize(2);
     assertThat(exception.getToken()).isEqualTo("foo");
     assertThat(exception.getMessage())

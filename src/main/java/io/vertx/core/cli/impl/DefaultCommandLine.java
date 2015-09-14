@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -32,9 +32,9 @@ public class DefaultCommandLine implements CommandLine {
 
   protected final CLI cli;
   protected List<String> allArgs = new ArrayList<>();
-  protected Map<OptionModel, List<String>> optionValues = new HashMap<>();
-  protected List<OptionModel> optionsSeenInCommandLine = new ArrayList<>();
-  protected Map<ArgumentModel, Object> argumentValues = new HashMap<>();
+  protected Map<Option, List<String>> optionValues = new HashMap<>();
+  protected List<Option> optionsSeenInCommandLine = new ArrayList<>();
+  protected Map<Argument, Object> argumentValues = new HashMap<>();
 
   public DefaultCommandLine(CLI cli) {
     this.cli = cli;
@@ -48,12 +48,6 @@ public class DefaultCommandLine implements CommandLine {
     return cli;
   }
 
-  @Override
-  public CommandLine setAllArguments(List<String> args) {
-    this.allArgs = args;
-    return this;
-  }
-
   /**
    * @return the ordered list of not recognized arguments. Unrecognized arguments are command line arguments matching
    * neither known options or defined arguments.
@@ -63,7 +57,12 @@ public class DefaultCommandLine implements CommandLine {
     return allArgs;
   }
 
-  @Override
+  /**
+   * Adds an argument value.
+   *
+   * @param argument the argument
+   * @return the current instance of {@link DefaultCommandLine}.
+   */
   public CommandLine addArgumentValue(String argument) {
     allArgs.add(argument);
     return this;
@@ -72,7 +71,7 @@ public class DefaultCommandLine implements CommandLine {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T getOptionValue(String name) {
-    OptionModel option = cli.getOption(name);
+    Option option = cli.getOption(name);
     if (option == null) {
       return null;
     }
@@ -85,7 +84,7 @@ public class DefaultCommandLine implements CommandLine {
 
   @Override
   public boolean getFlagValue(String name) {
-    OptionModel option = cli.getOption(name);
+    Option option = cli.getOption(name);
     if (option == null) {
       throw new IllegalArgumentException("Cannot find the option '" + name + "'");
     }
@@ -99,7 +98,7 @@ public class DefaultCommandLine implements CommandLine {
   @Override
   @SuppressWarnings("unchecked")
   public <T> List<T> getOptionValues(String name) {
-    OptionModel option = cli.getOption(name);
+    Option option = cli.getOption(name);
     if (option == null) {
       return null;
     }
@@ -118,7 +117,7 @@ public class DefaultCommandLine implements CommandLine {
 
   @Override
   public <T> T getArgumentValue(String name) {
-    ArgumentModel arg = cli.getArgument(name);
+    Argument arg = cli.getArgument(name);
     if (arg == null) {
       return null;
     }
@@ -128,7 +127,7 @@ public class DefaultCommandLine implements CommandLine {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T getArgumentValue(int index) {
-    ArgumentModel arg = cli.getArgument(index);
+    Argument arg = cli.getArgument(index);
     if (arg == null) {
       return null;
     }
@@ -140,12 +139,12 @@ public class DefaultCommandLine implements CommandLine {
   }
 
   @Override
-  public boolean isOptionAssigned(OptionModel option) {
+  public boolean isOptionAssigned(Option option) {
     return !getRawValues(option).isEmpty();
   }
 
   @Override
-  public List<String> getRawValues(OptionModel option) {
+  public List<String> getRawValues(Option option) {
     List<?> list = optionValues.get(option);
     if (list != null) {
       return list.stream().map(Object::toString).collect(Collectors.toList());
@@ -154,7 +153,7 @@ public class DefaultCommandLine implements CommandLine {
   }
 
   @Override
-  public DefaultCommandLine addRawValue(OptionModel option, String value) {
+  public DefaultCommandLine addRawValue(Option option, String value) {
     if (!acceptMoreValues(option) && !option.isFlag()) {
       throw new CLIException("The option " + option.getName() + " does not accept value or has " +
           "already been set");
@@ -169,7 +168,7 @@ public class DefaultCommandLine implements CommandLine {
   }
 
   @Override
-  public String getRawValueForOption(OptionModel option) {
+  public String getRawValueForOption(Option option) {
     if (isOptionAssigned(option)) {
       return getRawValues(option).get(0);
     }
@@ -177,12 +176,12 @@ public class DefaultCommandLine implements CommandLine {
   }
 
   @Override
-  public boolean acceptMoreValues(OptionModel option) {
+  public boolean acceptMoreValues(Option option) {
     return option.isMultiValued() || option.isSingleValued() && !isOptionAssigned(option);
   }
 
   @Override
-  public String getRawValueForArgument(ArgumentModel arg) {
+  public String getRawValueForArgument(Argument arg) {
     Object v = argumentValues.get(arg);
     if (v == null) {
       return arg.getDefaultValue();
@@ -191,24 +190,29 @@ public class DefaultCommandLine implements CommandLine {
   }
 
   @Override
-  public DefaultCommandLine setRawValue(ArgumentModel arg, String rawValue) {
+  public DefaultCommandLine setRawValue(Argument arg, String rawValue) {
     argumentValues.put(arg, rawValue);
     return this;
   }
 
   @Override
-  public boolean isArgumentAssigned(ArgumentModel arg) {
+  public boolean isArgumentAssigned(Argument arg) {
     return argumentValues.get(arg) != null;
   }
 
-  @Override
-  public DefaultCommandLine setSeenInCommandLine(OptionModel option) {
+  /**
+   * Marks the option as seen.
+   *
+   * @param option the option
+   * @return the current instance of {@link DefaultCommandLine}.
+   */
+  public DefaultCommandLine setSeenInCommandLine(Option option) {
     optionsSeenInCommandLine.add(option);
     return this;
   }
 
   @Override
-  public boolean isSeenInCommandLine(OptionModel option) {
+  public boolean isSeenInCommandLine(Option option) {
     return optionsSeenInCommandLine.contains(option);
   }
 

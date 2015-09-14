@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -16,10 +16,7 @@
 
 package io.vertx.core.cli.impl;
 
-import io.vertx.core.cli.ArgumentModel;
-import io.vertx.core.cli.CLI;
-import io.vertx.core.cli.OptionModel;
-import io.vertx.core.cli.UsageMessageFormatter;
+import io.vertx.core.cli.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,13 +33,24 @@ public class DefaultCLI implements CLI {
   protected String summary;
   protected boolean hidden;
 
-  protected List<OptionModel> options = new ArrayList<>();
-  private Set<ArgumentModel> arguments = new TreeSet<>((o1, o2) -> {
+  protected List<Option> options = new ArrayList<>();
+  private Set<Argument> arguments = new TreeSet<>((o1, o2) -> {
     if (o1.getIndex() == o2.getIndex()) {
       return 1;
     }
     return Integer.valueOf(o1.getIndex()).compareTo(o2.getIndex());
   });
+
+  /**
+   * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
+   *
+   * @param arguments the arguments
+   * @return the creates command line
+   */
+  @Override
+  public CommandLine parse(List<String> arguments) {
+    return new DefaultParser().parse(this, arguments);
+  }
 
   @Override
   public String getName() {
@@ -95,77 +103,77 @@ public class DefaultCLI implements CLI {
   }
 
   @Override
-  public List<OptionModel> getOptions() {
+  public List<Option> getOptions() {
     return options;
   }
 
   @Override
-  public CLI addOption(OptionModel option) {
+  public CLI addOption(Option option) {
     Objects.requireNonNull(option);
     options.add(option);
     return this;
   }
 
   @Override
-  public CLI addOptions(List<OptionModel> options) {
+  public CLI addOptions(List<Option> options) {
     Objects.requireNonNull(options);
     options.forEach(this::addOption);
     return this;
   }
 
   @Override
-  public CLI setOptions(List<OptionModel> options) {
+  public CLI setOptions(List<Option> options) {
     Objects.requireNonNull(options);
     this.options = new ArrayList<>();
     return addOptions(options);
   }
 
   @Override
-  public List<ArgumentModel> getArguments() {
+  public List<Argument> getArguments() {
     return new ArrayList<>(this.arguments);
   }
 
   @Override
-  public CLI addArgument(ArgumentModel arg) {
+  public CLI addArgument(Argument arg) {
     Objects.requireNonNull(arg);
     arguments.add(arg);
     return this;
   }
 
   @Override
-  public CLI addArguments(List<ArgumentModel> args) {
+  public CLI addArguments(List<Argument> args) {
     Objects.requireNonNull(args);
     args.forEach(this::addArgument);
     return this;
   }
 
   @Override
-  public CLI setArguments(List<ArgumentModel> args) {
+  public CLI setArguments(List<Argument> args) {
     Objects.requireNonNull(args);
     arguments = new TreeSet<>();
     return addArguments(args);
   }
 
   @Override
-  public OptionModel getOption(String name) {
+  public Option getOption(String name) {
     Objects.requireNonNull(name);
     // The option by name look up is a three steps lookup:
     // first check by long name
     // then by short name
     // finally by arg name
-    for (OptionModel option : options) {
+    for (Option option : options) {
       if (name.equalsIgnoreCase(option.getLongName())) {
         return option;
       }
     }
 
-    for (OptionModel option : options) {
+    for (Option option : options) {
       if (name.equalsIgnoreCase(option.getShortName())) {
         return option;
       }
     }
 
-    for (OptionModel option : options) {
+    for (Option option : options) {
       if (name.equalsIgnoreCase(option.getArgName())) {
         return option;
       }
@@ -175,9 +183,9 @@ public class DefaultCLI implements CLI {
   }
 
   @Override
-  public ArgumentModel getArgument(String name) {
+  public Argument getArgument(String name) {
     Objects.requireNonNull(name);
-    for (ArgumentModel arg : arguments) {
+    for (Argument arg : arguments) {
       if (name.equalsIgnoreCase(arg.getArgName())) {
         return arg;
       }
@@ -186,11 +194,11 @@ public class DefaultCLI implements CLI {
   }
 
   @Override
-  public ArgumentModel getArgument(int index) {
+  public Argument getArgument(int index) {
     if (index < 0) {
       throw new IllegalArgumentException("Given index cannot be negative");
     }
-    for (ArgumentModel arg : arguments) {
+    for (Argument arg : arguments) {
       if (index == arg.getIndex()) {
         return arg;
       }
@@ -208,7 +216,7 @@ public class DefaultCLI implements CLI {
 
   @Override
   public CLI removeArgument(int index) {
-    for (ArgumentModel arg : new TreeSet<>(arguments)) {
+    for (Argument arg : new TreeSet<>(arguments)) {
       if (arg.getIndex() == index) {
         arguments.remove(arg);
         return this;

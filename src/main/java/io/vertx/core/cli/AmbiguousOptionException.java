@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011-2013 The original author or authors
+ *  Copyright (c) 2011-2015 The original author or authors
  *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  */
 public class AmbiguousOptionException extends CLIException {
 
-  private final List<OptionModel> options;
+  private final List<Option> options;
   private final String token;
 
 
@@ -36,9 +36,9 @@ public class AmbiguousOptionException extends CLIException {
    * @param token        the ambiguous token
    * @param matchingOpts the list of potential matches
    */
-  public AmbiguousOptionException(String token, List<OptionModel> matchingOpts) {
+  public AmbiguousOptionException(String token, List<Option> matchingOpts) {
     super("Ambiguous argument in command line: '" + token + "' matches "
-        + matchingOpts.stream().map(OptionModel::getName).collect(Collectors.toList()));
+        + matchingOpts.stream().map(Option::getName).collect(Collectors.toList()));
     this.token = token;
     this.options = matchingOpts;
   }
@@ -46,7 +46,7 @@ public class AmbiguousOptionException extends CLIException {
   /**
    * @return the list of potential matches.
    */
-  public List<OptionModel> getOptions() {
+  public List<Option> getOptions() {
     return options;
   }
 

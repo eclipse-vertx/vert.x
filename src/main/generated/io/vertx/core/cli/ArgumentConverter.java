@@ -20,13 +20,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 
 /**
- * Converter for {@link io.vertx.core.cli.OptionModel}.
+ * Converter for {@link io.vertx.core.cli.Argument}.
  *
- * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.OptionModel} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.Argument} original class using Vert.x codegen.
  */
-public class OptionModelConverter {
+public class ArgumentConverter {
 
-  public static void fromJson(JsonObject json, OptionModel obj) {
+  public static void fromJson(JsonObject json, Argument obj) {
     if (json.getValue("argName") instanceof String) {
       obj.setArgName((String)json.getValue("argName"));
     }
@@ -36,30 +36,18 @@ public class OptionModelConverter {
     if (json.getValue("description") instanceof String) {
       obj.setDescription((String)json.getValue("description"));
     }
-    if (json.getValue("flag") instanceof Boolean) {
-      obj.setFlag((Boolean)json.getValue("flag"));
-    }
     if (json.getValue("hidden") instanceof Boolean) {
       obj.setHidden((Boolean)json.getValue("hidden"));
     }
-    if (json.getValue("longName") instanceof String) {
-      obj.setLongName((String)json.getValue("longName"));
-    }
-    if (json.getValue("multiValued") instanceof Boolean) {
-      obj.setMultiValued((Boolean)json.getValue("multiValued"));
+    if (json.getValue("index") instanceof Number) {
+      obj.setIndex(((Number)json.getValue("index")).intValue());
     }
     if (json.getValue("required") instanceof Boolean) {
       obj.setRequired((Boolean)json.getValue("required"));
     }
-    if (json.getValue("shortName") instanceof String) {
-      obj.setShortName((String)json.getValue("shortName"));
-    }
-    if (json.getValue("singleValued") instanceof Boolean) {
-      obj.setSingleValued((Boolean)json.getValue("singleValued"));
-    }
   }
 
-  public static void toJson(OptionModel obj, JsonObject json) {
+  public static void toJson(Argument obj, JsonObject json) {
     if (obj.getArgName() != null) {
       json.put("argName", obj.getArgName());
     }
@@ -69,16 +57,8 @@ public class OptionModelConverter {
     if (obj.getDescription() != null) {
       json.put("description", obj.getDescription());
     }
-    json.put("flag", obj.isFlag());
     json.put("hidden", obj.isHidden());
-    if (obj.getLongName() != null) {
-      json.put("longName", obj.getLongName());
-    }
-    json.put("multiValued", obj.isMultiValued());
+    json.put("index", obj.getIndex());
     json.put("required", obj.isRequired());
-    if (obj.getShortName() != null) {
-      json.put("shortName", obj.getShortName());
-    }
-    json.put("singleValued", obj.isSingleValued());
   }
 }
