@@ -18,7 +18,6 @@ package io.vertx.core.impl.launcher.commands;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
-import io.vertx.core.cli.OptionModel;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
 import io.vertx.core.json.DecodeException;
@@ -124,8 +123,8 @@ public class RunCommand extends BareCommand {
     super.setUp(context);
 
     // If cluster-host and / or port is set, cluster need to have been explicitly set
-    OptionModel clusterHostOption = executionContext.cli().getOption("cluster-host");
-    OptionModel clusterPortOption = executionContext.cli().getOption("cluster-port");
+    io.vertx.core.cli.Option clusterHostOption = executionContext.cli().getOption("cluster-host");
+    io.vertx.core.cli.Option clusterPortOption = executionContext.cli().getOption("cluster-port");
     CommandLine commandLine = executionContext.commandLine();
     if ((!isClustered()) &&
         (commandLine.isOptionAssigned(clusterHostOption)
@@ -134,8 +133,8 @@ public class RunCommand extends BareCommand {
     }
 
     // If quorum and / or ha-group, ha need to have been explicitly set
-    OptionModel haGroupOption = executionContext.cli().getOption("hagroup");
-    OptionModel quorumOption = executionContext.cli().getOption("quorum");
+    io.vertx.core.cli.Option haGroupOption = executionContext.cli().getOption("hagroup");
+    io.vertx.core.cli.Option quorumOption = executionContext.cli().getOption("quorum");
     if (!ha &&
         (commandLine.isOptionAssigned(haGroupOption) || commandLine.isOptionAssigned(quorumOption))) {
       throw new CLIException("The option -hagroup and -quorum requires -ha to be enabled");

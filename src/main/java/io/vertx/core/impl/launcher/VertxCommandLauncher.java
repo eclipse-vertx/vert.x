@@ -193,7 +193,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
       }
 
       // Step 1 - parsing and injection
-      CommandLine evaluated = CommandLineParser.create().parse(cli, Arrays.asList(cla));
+      CommandLine evaluated = cli.parse(Arrays.asList(cla));
       Command cmd = getNewCommandInstance(command, evaluated);
       ExecutionContext context = new ExecutionContext(cmd, this, evaluated);
       if (main != null) {

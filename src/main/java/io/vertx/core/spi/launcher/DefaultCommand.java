@@ -17,7 +17,6 @@ package io.vertx.core.spi.launcher;
 
 
 import io.vertx.core.cli.CLIException;
-import io.vertx.core.cli.OptionModel;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.cli.annotations.Hidden;
 import io.vertx.core.cli.annotations.Option;
@@ -30,7 +29,7 @@ import java.util.List;
  * Default implementation of {@link Command} using annotation to define itself. It is highly recommended
  * to extend this class when implementing a command.
  * <p/>
- * It defines two hidden {@link OptionModel} to create system properties ({@code -Dkey=value}) and a way to
+ * It defines two hidden {@link Option}s to create system properties ({@code -Dkey=value}) and a way to
  * configure the current working directory.
  */
 public abstract class DefaultCommand implements Command {

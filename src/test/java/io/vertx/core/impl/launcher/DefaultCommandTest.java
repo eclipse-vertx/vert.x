@@ -17,7 +17,6 @@ package io.vertx.core.impl.launcher;
 
 import io.vertx.core.cli.CLI;
 import io.vertx.core.cli.CLIException;
-import io.vertx.core.cli.CommandLineParser;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.CLIConfigurator;
 import io.vertx.core.impl.launcher.commands.HelloCommand;
@@ -32,10 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultCommandTest {
 
   HelloCommand command = new HelloCommand();
-  CommandLineParser parser = CommandLineParser.create();
   
   private CommandLine parse(CLI cli, String... args) throws CLIException {
-    return parser.parse(cli, Arrays.asList(args));
+    return cli.parse(Arrays.asList(args));
   }
 
   @Test
