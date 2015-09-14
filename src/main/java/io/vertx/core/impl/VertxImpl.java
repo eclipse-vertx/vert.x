@@ -114,6 +114,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   VertxImpl(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    // Sanity check
+    if (Vertx.currentContext() != null) {
+      log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
+    }
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getMaxEventLoopExecuteTime(),
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false);
