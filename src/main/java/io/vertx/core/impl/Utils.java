@@ -24,13 +24,14 @@ package io.vertx.core.impl;
  */
 public class Utils {
 
-  public static String LINE_SEPARATOR = System.getProperty("line.separator");
+  public static final String LINE_SEPARATOR;
 
   private static final boolean isWindows;
 
   static {
     String os = System.getProperty("os.name").toLowerCase();
     isWindows = os.contains("win");
+    LINE_SEPARATOR = System.getProperty("line.separator");
   }
 
   /**
