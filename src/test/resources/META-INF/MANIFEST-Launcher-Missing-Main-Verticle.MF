@@ -1,0 +1,2 @@
+Main-Class: io.vertx.core.Launcher
+Main-Verticle: org.acme.MissingVerticle
