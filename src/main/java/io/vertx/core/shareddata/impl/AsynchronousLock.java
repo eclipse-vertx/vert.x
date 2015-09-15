@@ -27,15 +27,12 @@ import java.util.Queue;
  */
 public class AsynchronousLock implements Lock {
 
-  private Vertx vertx;
-  private Queue<LockWaiter> waiters = new LinkedList<>();
+  private final Vertx vertx;
+  private final Queue<LockWaiter> waiters = new LinkedList<>();
   private boolean owned;
 
   public AsynchronousLock(Vertx vertx) {
     this.vertx = vertx;
-  }
-
-  public AsynchronousLock() {
   }
 
   public void acquire(long timeout, Handler<AsyncResult<Lock>> resultHandler) {
@@ -58,14 +55,14 @@ public class AsynchronousLock implements Lock {
       if (!owned) {
         // We now have the lock
         owned = true;
-        lockAquired(context, resultHandler);
+        lockAcquired(context, resultHandler);
       } else {
         waiters.add(new LockWaiter(this, context, timeout, resultHandler));
       }
     }
   }
 
-  private void lockAquired(Context context, Handler<AsyncResult<Lock>> resultHandler) {
+  private void lockAcquired(Context context, Handler<AsyncResult<Lock>> resultHandler) {
     context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(this)));
   }
 
@@ -80,7 +77,7 @@ public class AsynchronousLock implements Lock {
     }
   }
 
-  private class LockWaiter {
+  private static class LockWaiter {
     final AsynchronousLock lock;
     final Context context;
     final Handler<AsyncResult<Lock>> resultHandler;
@@ -107,7 +104,7 @@ public class AsynchronousLock implements Lock {
 
     void acquire(AsynchronousLock lock) {
       acquired = true;
-      lock.lockAquired(context, resultHandler);
+      lock.lockAcquired(context, resultHandler);
     }
 
   }
