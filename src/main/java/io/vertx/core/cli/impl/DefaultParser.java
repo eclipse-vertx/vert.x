@@ -79,6 +79,11 @@ public class DefaultParser {
 
   public CommandLine parse(CLI cli, List<String> cla)
       throws CLIException {
+    return parse(cli, cla, true);
+  }
+
+  public CommandLine parse(CLI cli, List<String> cla, boolean validate)
+      throws CLIException {
     commandLine = (DefaultCommandLine) CommandLine.create(cli);
     current = null;
     skipParsing = false;
@@ -98,14 +103,17 @@ public class DefaultParser {
       }
     }
 
-    // check the values of the last option
-    checkRequiredValues();
 
-    // check that all required options has a value
-    checkRequiredOptions();
+    if (validate) {
+      // check the values of the last option
+      checkRequiredValues();
 
-    // Call global validation.
-    validate();
+      // check that all required options has a value
+      checkRequiredOptions();
+
+      // Call global validation.
+      validate();
+    }
 
     return commandLine;
   }

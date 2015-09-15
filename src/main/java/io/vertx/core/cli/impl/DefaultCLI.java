@@ -52,6 +52,18 @@ public class DefaultCLI implements CLI {
     return new DefaultParser().parse(this, arguments);
   }
 
+  /**
+   * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
+   *
+   * @param arguments the arguments
+   * @param validate  enable / disable parsing validation
+   * @return the creates command line
+   */
+  @Override
+  public CommandLine parse(List<String> arguments, boolean validate) {
+    return new DefaultParser().parse(this, arguments, validate);
+  }
+
   @Override
   public String getName() {
     return name;
