@@ -18,3 +18,8 @@
 io.vertx.core.impl.launcher.commands.RunCommandFactory
 io.vertx.core.impl.launcher.commands.VersionCommandFactory
 io.vertx.core.impl.launcher.commands.BareCommandFactory
+
+# Background application control
+io.vertx.core.impl.launcher.commands.ListCommandFactory
+io.vertx.core.impl.launcher.commands.StartCommandFactory
+io.vertx.core.impl.launcher.commands.StopCommandFactory
