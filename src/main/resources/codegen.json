@@ -1,9 +1,10 @@
 {
   "name": "java",
-  "generators": [ {
+  "generators": [{
     "kind": "dataObject",
-    "fileName": "model.concrete ? 'asciidoc/cheatsheet/' + type.raw.simpleName + '.adoc' : null",
-    "templateFileName": "vertx-java/template/dataObjectCheatsheet.templ"
+    "incremental": true,
+    "fileName": "'asciidoc/DataObjects.adoc'",
+    "templateFileName": "vertx-java/template/dataObjectCheatsheetIndex.templ"
   },{
     "kind": "dataObject",
     "fileName": "(model.isClass() && model.getGenerateConverter()) ? (fqn + 'Converter.java') : null",

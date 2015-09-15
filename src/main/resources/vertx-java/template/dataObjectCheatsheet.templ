@@ -41,7 +41,7 @@
     } else if (kind == CLASS_JSON_ARRAY) {
       return 'Json array';
     } else if (kind == CLASS_DATA_OBJECT) {
-      return 'link:' + type.raw.simpleName + '.html[' + type.raw.simpleName + ']';
+      return 'link:DataObjects.html#' + type.raw.simpleName + '[' + type.raw.simpleName + ']';
     } else if (kind == CLASS_ENUM) {
       return 'Enum';
     } else if (kind == CLASS_API) {
@@ -54,6 +54,7 @@
   }
 }
 
+[[@{type.simpleName}]]\n
 == @{type.simpleName}\n
 \n
 @if{doc != null}
