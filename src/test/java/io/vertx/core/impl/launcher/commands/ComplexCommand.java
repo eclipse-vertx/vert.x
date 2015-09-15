@@ -69,8 +69,8 @@ public class ComplexCommand extends DefaultCommand {
     out.println("Option 2 : " + option2);
     out.println("Arg 1 : " + arg1);
     out.println("Arg 2 : " + arg2);
-    if (executionContext.commandLine().getAllArguments().size() > 2) {
-      out.println("All args: " + executionContext.commandLine().getAllArguments());
+    if (executionContext.commandLine().allArguments().size() > 2) {
+      out.println("All args: " + executionContext.commandLine().allArguments());
     }
   }
 }
