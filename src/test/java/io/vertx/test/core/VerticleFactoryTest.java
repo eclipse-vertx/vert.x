@@ -16,13 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -406,6 +400,55 @@ public class VerticleFactoryTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testNotBlockingCreate() {
+    TestVerticle verticle1 = new TestVerticle();
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    vertx.registerVerticleFactory(fact1);
+    String name1 = "aa:myverticle1";
+    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(name1, fact1.identifier);
+      assertFalse(fact1.blockingCreate);
+      assertFalse(fact1.createWorkerThread);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testBlockingCreate() {
+    TestVerticle verticle1 = new TestVerticle();
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    fact1.blockingCreate = true;
+    vertx.registerVerticleFactory(fact1);
+    String name1 = "aa:myverticle1";
+    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
+      assertTrue(ar.succeeded());
+      assertEquals(name1, fact1.identifier);
+      assertTrue(fact1.blockingCreate);
+      assertTrue(fact1.createWorkerThread);
+      assertTrue(fact1.createContext.isEventLoopContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testBlockingCreateFailureInCreate() {
+    TestVerticle verticle1 = new TestVerticle();
+    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
+    fact1.blockingCreate = true;
+    fact1.failInCreate = true;
+    vertx.registerVerticleFactory(fact1);
+    String name1 = "aa:myverticle1";
+    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
+      assertFalse(ar.succeeded());
+      testComplete();
+    });
+    await();
+  }
+
   class TestVerticleFactory implements VerticleFactory {
 
     String prefix;
@@ -419,6 +462,9 @@ public class VerticleFactoryTest extends VertxTestBase {
     int order;
     boolean failInCreate;
     boolean failInResolve;
+    Context createContext;
+    boolean createWorkerThread;
+    boolean blockingCreate;
 
     TestVerticleFactory(String prefix) {
       this.prefix = prefix;
@@ -501,12 +547,19 @@ public class VerticleFactoryTest extends VertxTestBase {
         throw new ClassNotFoundException("whatever");
       }
       this.identifier = verticleName;
+      this.createContext = Vertx.currentContext();
+      this.createWorkerThread = Context.isOnWorkerThread();
       return verticle;
     }
 
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public boolean blockingCreate() {
+      return blockingCreate;
     }
   }
 
