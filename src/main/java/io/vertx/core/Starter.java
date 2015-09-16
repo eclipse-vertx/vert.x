@@ -51,7 +51,9 @@ import java.util.jar.Manifest;
  * {@code java -jar myapp.jar}
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @deprecated Use {@link Launcher} instead
  */
+@Deprecated
 public class Starter {
 
   public static final String VERTX_OPTIONS_PROP_PREFIX = "vertx.options.";
