@@ -19,10 +19,8 @@ package io.vertx.core.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -32,13 +30,13 @@ public class EventLoopContext extends ContextImpl {
 
   private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
 
-  public EventLoopContext(VertxInternal vertx, Executor bgExec, String deploymentID, JsonObject config,
+  public EventLoopContext(VertxInternal vertx, Executor internalBlockingExec, Executor workerExec, String deploymentID, JsonObject config,
                           ClassLoader tccl) {
-    super(vertx, bgExec, deploymentID, config, tccl);
+    super(vertx, internalBlockingExec, workerExec, deploymentID, config, tccl);
   }
 
   public void executeAsync(Handler<Void> task) {
-    getEventLoop().execute(wrapTask(null, task, true));
+    eventLoop().execute(wrapTask(null, task, true));
   }
 
   @Override
@@ -47,7 +45,7 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  public boolean isMultiThreaded() {
+  public boolean isMultiThreadedWorkerContext() {
     return false;
   }
 
@@ -60,16 +58,5 @@ public class EventLoopContext extends ContextImpl {
       throw new IllegalStateException("Event delivered on unexpected thread " + current + " expected: " + contextThread);
     }
   }
-
-  private Map<String, Object> contextData;
-
-  @Override
-  public Map<String, Object> contextData() {
-    if (contextData == null) {
-      contextData = new HashMap<>();
-    }
-    return contextData;
-  }
-
-
+  
 }

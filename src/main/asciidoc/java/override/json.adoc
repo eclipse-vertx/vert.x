@@ -1,0 +1,97 @@
+== JSON
+:toc: left
+
+Unlike some other languages, Java does not have first class support for http://json.org/[JSON] so we provide
+two classes to make handling JSON in your Vert.x applications a bit easier.
+
+=== JSON objects
+
+The `link:../../apidocs/io/vertx/core/json/JsonObject.html[JsonObject]` class represents JSON objects.
+
+A JSON object is basically just a map which has string keys and values can be of one of the JSON supported types
+(string, number, boolean).
+
+JSON objects also support null values.
+
+==== Creating JSON objects
+
+Empty JSON objects can be created with the default constructor.
+
+You can create a JSON object from a string JSON representation as follows:
+
+[source,java]
+----
+String jsonString = "{\"foo\":\"bar\"}";
+JsonObject object = new JsonObject(jsonString);
+----
+
+==== Putting entries into a JSON object
+
+Use the `link:../../apidocs/io/vertx/core/json/JsonObject.html#put-java.lang.String-java.lang.Enum-[put]` methods to put values into the JSON object.
+
+The method invocations can be chained because of the fluent API:
+
+[source,java]
+----
+JsonObject object = new JsonObject();
+object.put("foo", "bar").put("num", 123).put("mybool", true);
+----
+
+==== Getting values from a JSON object
+
+You get values from a JSON object using the `getXXX` methods, for example:
+
+[source,java]
+----
+String val = jsonObject.getString("some-key");
+int intVal = jsonObject.getInteger("some-other-key");
+----
+
+==== Encoding the JSON object to a String
+
+You use `link:../../apidocs/io/vertx/core/json/JsonObject.html#encode--[encode]` to encode the object to a String form.
+
+=== JSON arrays
+
+The `link:../../apidocs/io/vertx/core/json/JsonArray.html[JsonArray]` class represents JSON arrays.
+
+A JSON array is a sequence of values (string, number, boolean).
+
+JSON arrays can also contain null values.
+
+==== Creating JSON arrays
+
+Empty JSON arrays can be created with the default constructor.
+
+You can create a JSON array from a string JSON representation as follows:
+
+[source,java]
+----
+String jsonString = "[\"foo\",\"bar\"]";
+JsonArray array = new JsonArray(jsonString);
+----
+
+==== Adding entries into a JSON array
+
+You add entries to a JSON array using the `link:../../apidocs/io/vertx/core/json/JsonArray.html#add-java.lang.Enum-[add]` methods.
+
+[source,java]
+----
+JsonArray array = new JsonArray();
+array.add("foo").add(123).add(false);
+----
+
+==== Getting values from a JSON array
+
+You get values from a JSON array using the `getXXX` methods, for example:
+
+[source,java]
+----
+String val = array.getString(0);
+Integer intVal = array.getInteger(1);
+Boolean boolVal = array.getBoolean(2);
+----
+
+==== Encoding the JSON array to a String
+
+You use `link:../../apidocs/io/vertx/core/json/JsonArray.html#encode--[encode]` to encode the array to a String form.

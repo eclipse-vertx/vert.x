@@ -17,20 +17,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Future;
@@ -38,26 +26,21 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketStream;
-import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.HttpClientMetrics;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
@@ -65,8 +48,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -74,7 +57,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientImpl implements HttpClient {
+public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
 
@@ -91,15 +74,15 @@ public class HttpClientImpl implements HttpClient {
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
     this.options = new HttpClientOptions(options);
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
+    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();
       completionHandler.handle(Future.succeededFuture());
     };
     if (creatingContext != null) {
-      if (creatingContext.isWorker()) {
-        throw new IllegalStateException("Cannot use HttpClient in a worker verticle");
+      if (creatingContext.isMultiThreadedWorkerContext()) {
+        throw new IllegalStateException("Cannot use HttpClient in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(closeHook);
     }
@@ -268,7 +251,17 @@ public class HttpClientImpl implements HttpClient {
   @Override
   public HttpClientRequest requestAbs(HttpMethod method, String absoluteURI) {
     URL url = parseUrl(absoluteURI);
-    return doRequest(method, url.getHost(), url.getPort(), url.getPath(), null);
+    int port = url.getPort();
+    if (port == -1) {
+      String protocol = url.getProtocol();
+      char chend = protocol.charAt(protocol.length() - 1);
+      if (chend == 'p') {
+        port = 80;
+      } else if (chend == 's'){
+        port = 443;
+      }
+    }
+    return doRequest(method, url.getHost(), port, url.getFile(), null);
   }
 
   @Override
@@ -587,16 +580,13 @@ public class HttpClientImpl implements HttpClient {
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics.baseName();
+  public boolean isMetricsEnabled() {
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   HttpClientOptions getOptions() {
@@ -649,8 +639,8 @@ public class HttpClientImpl implements HttpClient {
   private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler,
                                Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
     Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.getEventLoop());
-    bootstrap.channel(NioSocketChannel.class);
+    bootstrap.group(context.eventLoop());
+    bootstrap.channelFactory(new VertxNioSocketChannelFactory());
     sslHelper.validate(vertx);
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
@@ -667,7 +657,7 @@ public class HttpClientImpl implements HttpClient {
         if (options.getIdleTimeout() > 0) {
           pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
         }
-        pipeline.addLast("handler", new ClientHandler(context));
+        pipeline.addLast("handler", new ClientHandler(vertx, context));
       }
     });
     applyConnectionOptions(bootstrap);
@@ -685,8 +675,10 @@ public class HttpClientImpl implements HttpClient {
             if (fut2.isSuccess()) {
               connected(context, port, host, ch, connectHandler, connectErrorHandler, listener);
             } else {
-              connectionFailed(context, ch, connectErrorHandler, new SSLHandshakeException("Failed to create SSL connection"),
-                               listener);
+              SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
+              Optional.ofNullable(fut2.cause()).ifPresent(sslException::initCause);
+              connectionFailed(context, ch, connectErrorHandler, sslException,
+                  listener);
             }
           });
         } else {
@@ -728,7 +720,7 @@ public class HttpClientImpl implements HttpClient {
   private void connected(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
                          Handler<Throwable> exceptionHandler,
                          ConnectionLifeCycleListener listener) {
-    context.executeSync(() -> createConn(context, port, host, ch, connectHandler, exceptionHandler, listener));
+    context.executeFromIO(() -> createConn(context, port, host, ch, connectHandler, exceptionHandler, listener));
   }
 
   private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<ClientConnection> connectHandler,
@@ -753,7 +745,7 @@ public class HttpClientImpl implements HttpClient {
     Handler<Throwable> exHandler =
       connectionExceptionHandler == null ? log::error : connectionExceptionHandler;
 
-    context.executeSync(() -> {
+    context.executeFromIO(() -> {
       listener.connectionClosed(null);
       try {
         ch.close();
@@ -771,8 +763,8 @@ public class HttpClientImpl implements HttpClient {
     private boolean closeFrameSent;
     private ContextImpl context;
 
-    public ClientHandler(ContextImpl context) {
-      super(vertx, HttpClientImpl.this.connectionMap);
+    public ClientHandler(VertxInternal vertx, ContextImpl context) {
+      super(HttpClientImpl.this.connectionMap);
       this.context = context;
     }
 
@@ -813,6 +805,9 @@ public class HttpClientImpl implements HttpClient {
           case PING:
             // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
             ctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
+            break;
+          case PONG:
+            // Just ignore it
             break;
           case CLOSE:
             if (!closeFrameSent) {
@@ -916,4 +911,5 @@ public class HttpClientImpl implements HttpClient {
     close();
     super.finalize();
   }
+
 }

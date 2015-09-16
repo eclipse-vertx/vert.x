@@ -1,0 +1,314 @@
+= Cheatsheets
+
+[[ChildInheritingDataObject]]
+== ChildInheritingDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[childProperty]]`childProperty`
+|`String`
+|-
+|[[parentProperty]]`parentProperty`
+|`String`
+|-|===
+
+[[NoConverterDataObject]]
+== NoConverterDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|===
+
+[[ParentDataObject]]
+== ParentDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[parentProperty]]`parentProperty`
+|`String`
+|-|===
+
+[[TestDataObject]]
+== TestDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[addedAggregatedDataObjects]]`addedAggregatedDataObjects`
+|`Array of link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
+|[[addedBooleanValues]]`addedBooleanValues`
+|`Array of Boolean`
+|-
+|[[addedBoxedBooleanValues]]`addedBoxedBooleanValues`
+|`Array of Boolean`
+|-
+|[[addedBoxedByteValues]]`addedBoxedByteValues`
+|`Array of Number (Byte)`
+|-
+|[[addedBoxedCharValues]]`addedBoxedCharValues`
+|`Array of Char`
+|-
+|[[addedBoxedDoubleValues]]`addedBoxedDoubleValues`
+|`Array of Number (Double)`
+|-
+|[[addedBoxedFloatValues]]`addedBoxedFloatValues`
+|`Array of Number (Float)`
+|-
+|[[addedBoxedIntValues]]`addedBoxedIntValues`
+|`Array of Number (Integer)`
+|-
+|[[addedBoxedLongValues]]`addedBoxedLongValues`
+|`Array of Number (Long)`
+|-
+|[[addedBoxedShortValues]]`addedBoxedShortValues`
+|`Array of Number (Short)`
+|-
+|[[addedBuffers]]`addedBuffers`
+|`Array of Buffer`
+|-
+|[[addedByteValues]]`addedByteValues`
+|`Array of Number (byte)`
+|-
+|[[addedDoubleValues]]`addedDoubleValues`
+|`Array of Number (double)`
+|-
+|[[addedFloatValues]]`addedFloatValues`
+|`Array of Number (float)`
+|-
+|[[addedHttpMethods]]`addedHttpMethods`
+|`Array of Enum`
+|-
+|[[addedIntValues]]`addedIntValues`
+|`Array of Number (int)`
+|-
+|[[addedJsonArrays]]`addedJsonArrays`
+|`Array of Json array`
+|-
+|[[addedJsonObjects]]`addedJsonObjects`
+|`Array of Json object`
+|-
+|[[addedLongValues]]`addedLongValues`
+|`Array of Number (long)`
+|-
+|[[addedShortValues]]`addedShortValues`
+|`Array of Number (short)`
+|-
+|[[addedStringValues]]`addedStringValues`
+|`Array of String`
+|-
+|[[aggregatedDataObject]]`aggregatedDataObject`
+|`link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
+|[[aggregatedDataObjectMap]]`aggregatedDataObjectMap`
+|`link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
+|[[aggregatedDataObjects]]`aggregatedDataObjects`
+|`Array of link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
+|[[booleanValue]]`booleanValue`
+|`Boolean`
+|-
+|[[boxedBooleanValue]]`boxedBooleanValue`
+|`Boolean`
+|-
+|[[boxedBooleanValueMap]]`boxedBooleanValueMap`
+|`Boolean`
+|-
+|[[boxedBooleanValues]]`boxedBooleanValues`
+|`Array of Boolean`
+|-
+|[[boxedByteValue]]`boxedByteValue`
+|`Number (Byte)`
+|-
+|[[boxedByteValueMap]]`boxedByteValueMap`
+|`Number (Byte)`
+|-
+|[[boxedByteValues]]`boxedByteValues`
+|`Array of Number (Byte)`
+|-
+|[[boxedCharValue]]`boxedCharValue`
+|`Char`
+|-
+|[[boxedCharValueMap]]`boxedCharValueMap`
+|`Char`
+|-
+|[[boxedCharValues]]`boxedCharValues`
+|`Array of Char`
+|-
+|[[boxedDoubleValue]]`boxedDoubleValue`
+|`Number (Double)`
+|-
+|[[boxedDoubleValueMap]]`boxedDoubleValueMap`
+|`Number (Double)`
+|-
+|[[boxedDoubleValues]]`boxedDoubleValues`
+|`Array of Number (Double)`
+|-
+|[[boxedFloatValue]]`boxedFloatValue`
+|`Number (Float)`
+|-
+|[[boxedFloatValueMap]]`boxedFloatValueMap`
+|`Number (Float)`
+|-
+|[[boxedFloatValues]]`boxedFloatValues`
+|`Array of Number (Float)`
+|-
+|[[boxedIntValue]]`boxedIntValue`
+|`Number (Integer)`
+|-
+|[[boxedIntValueMap]]`boxedIntValueMap`
+|`Number (Integer)`
+|-
+|[[boxedIntValues]]`boxedIntValues`
+|`Array of Number (Integer)`
+|-
+|[[boxedLongValue]]`boxedLongValue`
+|`Number (Long)`
+|-
+|[[boxedLongValueMap]]`boxedLongValueMap`
+|`Number (Long)`
+|-
+|[[boxedLongValues]]`boxedLongValues`
+|`Array of Number (Long)`
+|-
+|[[boxedShortValue]]`boxedShortValue`
+|`Number (Short)`
+|-
+|[[boxedShortValueMap]]`boxedShortValueMap`
+|`Number (Short)`
+|-
+|[[boxedShortValues]]`boxedShortValues`
+|`Array of Number (Short)`
+|-
+|[[buffer]]`buffer`
+|`Buffer`
+|-
+|[[bufferMap]]`bufferMap`
+|`Buffer`
+|-
+|[[buffers]]`buffers`
+|`Array of Buffer`
+|-
+|[[byteValue]]`byteValue`
+|`Number (byte)`
+|-
+|[[doubleValue]]`doubleValue`
+|`Number (double)`
+|-
+|[[floatValue]]`floatValue`
+|`Number (float)`
+|-
+|[[httpMethod]]`httpMethod`
+|`Enum`
+|-
+|[[httpMethodMap]]`httpMethodMap`
+|`Enum`
+|-
+|[[httpMethods]]`httpMethods`
+|`Array of Enum`
+|-
+|[[intValue]]`intValue`
+|`Number (int)`
+|-
+|[[jsonArray]]`jsonArray`
+|`Json array`
+|-
+|[[jsonArrayMap]]`jsonArrayMap`
+|`Json array`
+|-
+|[[jsonArrays]]`jsonArrays`
+|`Array of Json array`
+|-
+|[[jsonObject]]`jsonObject`
+|`Json object`
+|-
+|[[jsonObjectMap]]`jsonObjectMap`
+|`Json object`
+|-
+|[[jsonObjects]]`jsonObjects`
+|`Array of Json object`
+|-
+|[[longValue]]`longValue`
+|`Number (long)`
+|-
+|[[shortValue]]`shortValue`
+|`Number (short)`
+|-
+|[[stringValue]]`stringValue`
+|`String`
+|-
+|[[stringValueMap]]`stringValueMap`
+|`String`
+|-
+|[[stringValues]]`stringValues`
+|`Array of String`
+|-|===
+
+[[AggregatedDataObject]]
+== AggregatedDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[value]]`value`
+|`String`
+|-|===
+
+[[ChildNotInheritingDataObject]]
+== ChildNotInheritingDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[childProperty]]`childProperty`
+|`String`
+|-
+|[[parentProperty]]`parentProperty`
+|`String`
+|-|===
+

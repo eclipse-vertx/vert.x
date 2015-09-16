@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -24,18 +25,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.*;
 
 /**
@@ -488,6 +483,43 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testGetInstant() {
+    Instant now = Instant.now();
+    jsonObject.put("foo", now);
+    assertEquals(now, jsonObject.getInstant("foo"));
+
+    // Can also get as string:
+    String val = jsonObject.getString("foo");
+    assertNotNull(val);
+    Instant retrieved = Instant.from(ISO_INSTANT.parse(val));
+    assertEquals(now, retrieved);
+
+    jsonObject.put("foo", 123);
+    try {
+      jsonObject.getInstant("foo");
+      fail();
+    } catch (ClassCastException e) {
+      // Ok
+    }
+
+    jsonObject.putNull("foo");
+    assertNull(jsonObject.getInstant("foo"));
+    assertNull(jsonObject.getInstant("absent"));
+    try {
+      jsonObject.getInstant(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getInstant(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
   public void testGetBinaryDefault() {
     byte[] bytes = TestUtils.randomByteArray(100);
     byte[] defBytes = TestUtils.randomByteArray(100);
@@ -510,6 +542,35 @@ public class JsonObjectTest {
     assertNull(jsonObject.getBinary("absent", null));
     try {
       jsonObject.getBinary(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testGetInstantDefault() {
+    Instant now = Instant.now();
+    Instant later = now.plus(1, ChronoUnit.DAYS);
+    jsonObject.put("foo", now);
+    assertEquals(now, jsonObject.getInstant("foo", later));
+    assertEquals(now, jsonObject.getInstant("foo", null));
+
+    jsonObject.put("foo", 123);
+    try {
+      jsonObject.getInstant("foo", later);
+      fail();
+    } catch (ClassCastException e) {
+      // Ok
+    }
+
+    jsonObject.putNull("foo");
+    assertNull(jsonObject.getInstant("foo", later));
+    assertEquals(later, jsonObject.getInstant("absent", later));
+    assertNull(jsonObject.getInstant("foo", null));
+    assertNull(jsonObject.getInstant("absent", null));
+    try {
+      jsonObject.getInstant(null, null);
       fail();
     } catch (NullPointerException e) {
       // OK
@@ -978,6 +1039,31 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testPutInstant() {
+    Instant bin1 = Instant.now();
+    Instant bin2 = bin1.plus(1, ChronoUnit.DAYS);
+    Instant bin3 = bin1.plus(1, ChronoUnit.MINUTES);
+
+    assertSame(jsonObject, jsonObject.put("foo", bin1));
+    assertEquals(bin1, jsonObject.getInstant("foo"));
+    jsonObject.put("quux", bin2);
+    assertEquals(bin2, jsonObject.getInstant("quux"));
+    assertEquals(bin1, jsonObject.getInstant("foo"));
+    jsonObject.put("foo", bin3);
+    assertEquals(bin3, jsonObject.getInstant("foo"));
+
+    jsonObject.put("foo", (Instant) null);
+    assertTrue(jsonObject.containsKey("foo"));
+
+    try {
+      jsonObject.put(null, bin1);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
   public void testPutNull() {
     assertSame(jsonObject, jsonObject.putNull("foo"));
     assertTrue(jsonObject.containsKey("foo"));
@@ -998,9 +1084,11 @@ public class JsonObjectTest {
     jsonObject.put("long", (Object)(Long.valueOf(123l)));
     jsonObject.put("float", (Object)(Float.valueOf(1.23f)));
     jsonObject.put("double", (Object)(Double.valueOf(1.23d)));
-    jsonObject.put("boolean", (Object)true);
+    jsonObject.put("boolean", (Object) true);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonObject.put("binary", (Object)(bytes));
+    Instant now = Instant.now();
+    jsonObject.put("instant", now);
     JsonObject obj = new JsonObject().put("foo", "blah");
     JsonArray arr = new JsonArray().add("quux");
     jsonObject.put("obj", (Object)obj);
@@ -1011,6 +1099,7 @@ public class JsonObjectTest {
     assertEquals(Float.valueOf(1.23f), jsonObject.getFloat("float"));
     assertEquals(Double.valueOf(1.23d), jsonObject.getDouble("double"));
     assertTrue(TestUtils.byteArraysEqual(bytes, jsonObject.getBinary("binary")));
+    assertEquals(now, jsonObject.getInstant("instant"));
     assertEquals(obj, jsonObject.getJsonObject("obj"));
     assertEquals(arr, jsonObject.getJsonArray("arr"));
     try {
@@ -1068,12 +1157,14 @@ public class JsonObjectTest {
     jsonObject.put("myboolean", true);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonObject.put("mybinary", bytes);
+    Instant now = Instant.now();
+    jsonObject.put("myinstant", now);
     jsonObject.putNull("mynull");
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
     String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     String json = jsonObject.encode();
     assertEquals(expected, json);
   }
@@ -1082,8 +1173,10 @@ public class JsonObjectTest {
   public void testDecode() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(10);
     String strBytes = Base64.getEncoder().encodeToString(bytes);
+    Instant now = Instant.now();
+    String strInstant = ISO_INSTANT.format(now);
     String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     JsonObject obj = new JsonObject(json);
     assertEquals(json, obj.encode());
     assertEquals("foo", obj.getString("mystr"));
@@ -1093,6 +1186,7 @@ public class JsonObjectTest {
     assertEquals(Double.valueOf(2.34d), obj.getDouble("mydouble"));
     assertTrue(obj.getBoolean("myboolean"));
     assertTrue(TestUtils.byteArraysEqual(bytes, obj.getBinary("mybinary")));
+    assertEquals(now, obj.getInstant("myinstant"));
     assertTrue(obj.containsKey("mynull"));
     JsonObject nestedObj = obj.getJsonObject("myobj");
     assertEquals("bar", nestedObj.getString("foo"));
@@ -1117,21 +1211,25 @@ public class JsonObjectTest {
     jsonObject.put("myboolean", true);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonObject.put("mybinary", bytes);
+    Instant now = Instant.now();
+    jsonObject.put("myinstant", now);
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "{\n" +
-      "  \"mystr\" : \"foo\",\n" +
-      "  \"myint\" : 123,\n" +
-      "  \"mylong\" : 1234,\n" +
-      "  \"myfloat\" : 1.23,\n" +
-      "  \"mydouble\" : 2.34,\n" +
-      "  \"myboolean\" : true,\n" +
-      "  \"mybinary\" : \"" + strBytes + "\",\n" +
-      "  \"myobj\" : {\n" +
-      "    \"foo\" : \"bar\"\n" +
-      "  },\n" +
-      "  \"myarr\" : [ \"foo\", 123 ]\n" +
+    String strInstant = ISO_INSTANT.format(now);
+    String expected = "{" + Utils.LINE_SEPARATOR +
+      "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
+      "  \"myint\" : 123," + Utils.LINE_SEPARATOR +
+      "  \"mylong\" : 1234," + Utils.LINE_SEPARATOR +
+      "  \"myfloat\" : 1.23," + Utils.LINE_SEPARATOR +
+      "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
+      "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
+      "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
+      "  \"myinstant\" : \"" + strInstant + "\"," + Utils.LINE_SEPARATOR +
+      "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
+      "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
+      "  }," + Utils.LINE_SEPARATOR +
+      "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
       "}";
     String json = jsonObject.encodePrettily();
     assertEquals(expected, json);
@@ -1224,6 +1322,25 @@ public class JsonObjectTest {
     iter.remove();
     assertFalse(obj.containsKey("wibble"));
     assertEquals(2, jsonObject.size());
+  }
+
+  @Test
+  public void testIteratorDoesntChangeObject() {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("nestedMap", new HashMap<>());
+    map.put("nestedList", new ArrayList<>());
+    JsonObject obj = new JsonObject(map);
+    Iterator<Map.Entry<String, Object>> iter = obj.iterator();
+    Map.Entry<String, Object> entry1 = iter.next();
+    assertEquals("nestedMap", entry1.getKey());
+    Object val1 = entry1.getValue();
+    assertTrue(val1 instanceof JsonObject);
+    Map.Entry<String, Object> entry2 = iter.next();
+    assertEquals("nestedList", entry2.getKey());
+    Object val2 = entry2.getValue();
+    assertTrue(val2 instanceof JsonArray);
+    assertTrue(map.get("nestedMap") instanceof HashMap);
+    assertTrue(map.get("nestedList") instanceof ArrayList);
   }
 
   @Test
@@ -1408,9 +1525,10 @@ public class JsonObjectTest {
   @Test
   public void testClusterSerializable() {
     jsonObject.put("foo", "bar").put("blah", 123);
-    Buffer buff = jsonObject.writeToBuffer();
+    Buffer buff = Buffer.buffer();
+    jsonObject.writeToBuffer(buff);
     JsonObject deserialized = new JsonObject();
-    deserialized.readFromBuffer(buff);
+    deserialized.readFromBuffer(0, buff);
     assertEquals(jsonObject, deserialized);
   }
 
@@ -1486,6 +1604,23 @@ public class JsonObjectTest {
     assertNotEquals(array, new JsonArray(Collections.singletonList(new JsonObject().put("def", 4))));
   }
 
+  @Test
+  public void testJsonObjectEquality2() {
+    JsonObject obj1 = new JsonObject().put("arr", new JsonArray().add("x"));
+    List < Object > list = new ArrayList<>();
+    list.add("x");
+    Map<String, Object> map = new HashMap<>();
+    map.put("arr", list);
+    JsonObject obj2 = new JsonObject(map);
+    Iterator<Map.Entry<String, Object>> iter = obj2.iterator();
+    // There was a bug where iteration of entries caused the underlying object to change resulting in a
+    // subsequent equals changing
+    while (iter.hasNext()) {
+      Map.Entry<String, Object> entry = iter.next();
+    }
+    assertEquals(obj2, obj1);
+  }
+
   private JsonObject createJsonObject() {
     JsonObject obj = new JsonObject();
     obj.put("mystr", "bar");
@@ -1495,6 +1630,7 @@ public class JsonObjectTest {
     obj.put("mydouble", Double.MAX_VALUE);
     obj.put("myboolean", true);
     obj.put("mybinary", TestUtils.randomByteArray(100));
+    obj.put("myinstant", Instant.now());
     return obj;
   }
 

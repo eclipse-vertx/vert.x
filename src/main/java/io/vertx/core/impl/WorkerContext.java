@@ -19,8 +19,6 @@ package io.vertx.core.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -28,12 +26,9 @@ import java.util.concurrent.Executor;
  */
 public class WorkerContext extends ContextImpl {
 
-  protected final Executor workerExec;
-
   public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID,
                        JsonObject config, ClassLoader tccl) {
-    super(vertx, orderedInternalPoolExec, deploymentID, config, tccl);
-    this.workerExec = workerExec;
+    super(vertx, orderedInternalPoolExec, workerExec, deploymentID, config, tccl);
   }
 
   @Override
@@ -47,7 +42,7 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  public boolean isMultiThreaded() {
+  public boolean isMultiThreadedWorkerContext() {
     return false;
   }
 
@@ -56,15 +51,11 @@ public class WorkerContext extends ContextImpl {
     // NOOP
   }
 
-  private Map<String, Object> contextData;
-
+  // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
+  // so we need to execute it on the worker thread
   @Override
-  public Map<String, Object> contextData() {
-    if (contextData == null) {
-      contextData = new ConcurrentHashMap<>();
-    }
-    return contextData;
+  public void executeFromIO(ContextTask task) {
+    workerExec.execute(wrapTask(task, null, true));
   }
-
 
 }

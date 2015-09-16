@@ -18,6 +18,9 @@ package io.vertx.test.core;
 
 
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
@@ -30,6 +33,7 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketStream;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.WebSocketStream;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetSocket;
@@ -37,17 +41,20 @@ import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -194,125 +201,125 @@ public class WebsocketTest extends VertxTestBase {
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, true, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPKCS12() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.PKCS12, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.PKCS12, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPEM() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.PEM, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.PEM, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts via a CA (not trust all)
   public void testTLSClientTrustServerCertPEM_CA() throws Exception {
-    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPKCS12ServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PKCS12, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PKCS12, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPEMServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PEM, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PEM, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, false, false, false);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, false, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.JKS, false, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequiredPKCS12() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PKCS12, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.PKCS12, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequiredPEM() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PEM, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.PEM, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertPKCS12Required() throws Exception {
-    testTLS(KS.PKCS12, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.PKCS12, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertPEMRequired() throws Exception {
-    testTLS(KS.PEM, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.PEM, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert signed by CA and it is required
   public void testTLSClientCertPEM_CARequired() throws Exception {
-    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, false, false, false, true);
+    testTLS(KeyCert.PEM_CA, Trust.JKS, KeyCert.JKS, Trust.PEM_CA, true, false, false, false, true);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, false);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.NONE, true, false, false, false, false);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.NONE, true, false, false, false, false);
   }
 
   @Test
   // Server specifies cert that the client does not trust via a revoked certificate of the CA
   public void testTLSClientRevokedServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, true, false);
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, true, false);
   }
 
   @Test
   //Client specifies cert that the server does not trust via a revoked certificate of the CA
   public void testTLSRevokedClientCertServer() throws Exception {
-    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, true, false, false, false);
+    testTLS(KeyCert.PEM_CA, Trust.JKS, KeyCert.JKS, Trust.PEM_CA, true, true, false, false, false);
   }
 
   @Test
   // Test with cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true, ENABLED_CIPHER_SUITES);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, true, false, true, ENABLED_CIPHER_SUITES);
   }
 
-  private void testTLS(KS clientCert, TS clientTrust,
-                       KS serverCert, TS serverTrust,
+  private void testTLS(KeyCert clientCert, Trust clientTrust,
+                       KeyCert serverCert, Trust serverTrust,
                        boolean requireClientAuth, boolean serverUsesCrl, boolean clientTrustAll,
                        boolean clientUsesCrl, boolean shouldPass,
                        String... enabledCipherSuites) throws Exception {
@@ -324,16 +331,16 @@ public class WebsocketTest extends VertxTestBase {
     if (clientUsesCrl) {
       options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
     }
-    options.setTrustStoreOptions(getClientTrustOptions(clientTrust));
-    options.setKeyStoreOptions(getClientCertOptions(clientCert));
+    setOptions(options, getClientTrustOptions(clientTrust));
+    setOptions(options, getClientCertOptions(clientCert));
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
-    serverOptions.setTrustStoreOptions(getServerTrustOptions(serverTrust));
-    serverOptions.setKeyStoreOptions(getServerCertOptions(serverCert));
+    setOptions(serverOptions, getServerTrustOptions(serverTrust));
+    setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
       serverOptions.setClientAuthRequired(true);
     }
@@ -540,10 +547,10 @@ public class WebsocketTest extends VertxTestBase {
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
     sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-      "Upgrade: WebSocket\r\n" +
-      "Connection: Upgrade\r\n" +
-      "Sec-WebSocket-Accept: " + encoded + "\r\n" +
-      "\r\n");
+        "Upgrade: WebSocket\r\n" +
+        "Connection: Upgrade\r\n" +
+        "Sec-WebSocket-Accept: " + encoded + "\r\n" +
+        "\r\n");
     return sock;
   }
 
@@ -690,6 +697,63 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testWriteFinalTextFrame() throws Exception {
+    testWriteFinalFrame(false);
+  }
+
+  @Test
+  public void testWriteFinalBinaryFrame() throws Exception {
+    testWriteFinalFrame(true);
+  }
+
+  private void testWriteFinalFrame(boolean binary) throws Exception {
+
+    String text = TestUtils.randomUnicodeString(100);
+    Buffer data = TestUtils.randomBuffer(100);
+
+    Consumer<WebSocketFrame> frameConsumer = frame -> {
+      if (binary) {
+        assertTrue(frame.isBinary());
+        assertFalse(frame.isText());
+        assertEquals(data, frame.binaryData());
+      } else {
+        assertFalse(frame.isBinary());
+        assertTrue(frame.isText());
+        assertEquals(text, frame.textData());
+      }
+      assertTrue(frame.isFinal());
+    };
+
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws ->
+      ws.frameHandler(frame -> {
+        frameConsumer.accept(frame);
+        if (binary) {
+          ws.writeFinalBinaryFrame(frame.binaryData());
+        } else {
+          ws.writeFinalTextFrame(frame.textData());
+        }
+      })
+    );
+
+    server.listen(onSuccess(s ->
+      client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+        ws.frameHandler(frame -> {
+          frameConsumer.accept(frame);
+          testComplete();
+        });
+
+        if (binary) {
+          ws.writeFinalBinaryFrame(data);
+        } else {
+          ws.writeFinalTextFrame(text);
+        }
+      })
+    ));
+
+    await();
+  }
+
   private void testContinuationWriteFromConnectHandler(WebsocketVersion version) throws Exception {
     String path = "/some/path";
     String firstFrame = "AAA";
@@ -762,7 +826,7 @@ public class WebsocketTest extends VertxTestBase {
     String path = "/some/path";
     String subProtocol = "myprotocol";
     Buffer buff = Buffer.buffer("AAA");
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocol(subProtocol)).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols(subProtocol)).websocketHandler(ws -> {
       assertEquals(path, ws.path());
       ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
     });
@@ -786,7 +850,7 @@ public class WebsocketTest extends VertxTestBase {
   private void testInvalidSubProtocol(WebsocketVersion version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocol("invalid")).websocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setWebsocketSubProtocols("invalid")).websocketHandler(ws -> {
     });
     server.listen(onSuccess(ar -> {
       client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, subProtocol).
@@ -867,7 +931,7 @@ public class WebsocketTest extends VertxTestBase {
     String path = "/some/path";
     byte[] expected = TestUtils.randomByteArray(size);
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      ws.writeMessage(Buffer.buffer(expected));
+      ws.writeBinaryMessage(Buffer.buffer(expected));
       ws.close();
     });
     server.listen(ar -> {
@@ -894,7 +958,7 @@ public class WebsocketTest extends VertxTestBase {
     ReadStream<ServerWebSocket> stream = server.websocketStream();
     stream.handler(ws -> {
       assertFalse(paused.get());
-      ws.writeMessage(Buffer.buffer("whatever"));
+      ws.writeBinaryMessage(Buffer.buffer("whatever"));
       ws.close();
     });
     server.listen(listenAR -> {
@@ -927,7 +991,8 @@ public class WebsocketTest extends VertxTestBase {
     ReadStream<ServerWebSocket> stream = server.websocketStream();
     AtomicBoolean closed = new AtomicBoolean();
     stream.endHandler(v -> closed.set(true));
-    stream.handler(ws -> {});
+    stream.handler(ws -> {
+    });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       assertFalse(closed.get());
@@ -1043,31 +1108,54 @@ public class WebsocketTest extends VertxTestBase {
 
   @Test
   public void testUpgrade() {
+    testUpgrade(false);
+  }
+
+  @Test
+  public void testUpgradeDelayed() {
+    testUpgrade(true);
+  }
+
+  private void testUpgrade(boolean delayed) {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     server.requestHandler(request -> {
-      ServerWebSocket ws = request.upgrade();
-      ws.write(Buffer.buffer("helloworld"));
-      ws.close();
+      Runnable runner = () -> {
+        ServerWebSocket ws = request.upgrade();
+        ws.handler(buff -> {
+          ws.write(Buffer.buffer("helloworld"));
+          ws.close();
+        });
+      };
+      if (delayed) {
+        // This tests the case where the last http content comes of the request (its not full) comes in
+        // before the upgrade has happened and before HttpServerImpl.expectWebsockets is true
+        vertx.runOnContext(v -> {
+          runner.run();
+        });
+      } else {
+        runner.run();
+      }
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null).
         handler(ws -> {
-          System.out.println("Connected");
           Buffer buff = Buffer.buffer();
           ws.handler(b -> {
-            System.out.println("Got data");
             buff.appendBuffer(b);
           });
           ws.endHandler(v -> {
             assertEquals("helloworld", buff.toString());
             testComplete();
           });
+          ws.write(Buffer.buffer("foo"));
         });
     });
     await();
   }
+
+
 
   @Test
   public void testUpgradeInvalidRequest() {
@@ -1085,6 +1173,97 @@ public class WebsocketTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
       }).end();
+    });
+    await();
+  }
+
+  @Test
+  public void testRaceConditionWithWebsocketClientEventLoop() {
+    testRaceConditionWithWebsocketClient(vertx.getOrCreateContext());
+  }
+
+  @Test
+  public void testRaceConditionWithWebsocketClientWorker() throws Exception {
+    CompletableFuture<Context> fut = new CompletableFuture<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        fut.complete(context);
+      }
+    }, new DeploymentOptions().setWorker(true), ar -> {
+      if (ar.failed()) {
+        fut.completeExceptionally(ar.cause());
+      }
+    });
+    testRaceConditionWithWebsocketClient(fut.get());
+  }
+
+  private void testRaceConditionWithWebsocketClient(Context context) {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    // Handcrafted websocket handshake for sending a frame immediatly after the handshake
+    server.requestHandler(req -> {
+      byte[] accept;
+      try {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
+        digest.update(inputBytes);
+        byte[] hashedBytes = digest.digest();
+        accept = Base64.getEncoder().encode(hashedBytes);
+      } catch (NoSuchAlgorithmException e) {
+        fail(e.getMessage());
+        return;
+      }
+      NetSocket so = req.netSocket();
+      Buffer data = Buffer.buffer();
+      data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
+      data.appendString("Upgrade: websocket\r\n");
+      data.appendString("Connection: Upgrade\r\n");
+      data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
+      data.appendString("\r\n");
+      data.appendBytes(new byte[]{
+          (byte) 0x82,
+          0x05,
+          0x68,
+          0x65,
+          0x6c,
+          0x6c,
+          0x6f,
+      });
+      so.write(data);
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      context.runOnContext(v -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.handler(buf -> {
+            assertEquals("hello", buf.toString());
+            testComplete();
+          });
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testRaceConditionWithWebsocketClientWorker2() throws Exception {
+    int size = getOptions().getWorkerPoolSize() - 4;
+    List<Context> workers = createWorkers(size + 1);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.websocketHandler(ws -> {
+      ws.write(Buffer.buffer("hello"));
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      workers.get(0).runOnContext(v -> {
+        WebSocketStream webSocketStream = client.websocketStream(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/");
+        webSocketStream.handler(ws -> {
+          ws.handler(buf -> {
+            assertEquals("hello", buf.toString());
+            testComplete();
+          });
+        });
+      });
     });
     await();
   }

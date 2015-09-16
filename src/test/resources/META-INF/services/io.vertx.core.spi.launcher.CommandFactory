@@ -1,0 +1,5 @@
+# The list of command.
+io.vertx.core.impl.launcher.commands.HelloCommandFactory
+io.vertx.core.impl.launcher.commands.GoodByeCommandFactory
+io.vertx.core.impl.launcher.commands.HiddenCommandFactory
+io.vertx.core.impl.launcher.commands.ComplexCommandFactory

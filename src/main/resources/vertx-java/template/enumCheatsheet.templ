@@ -1,0 +1,38 @@
+@comment{'A template for Java enums that creates cheatsheets doc'}
+
+@includeNamed{'common-lib.templ'}
+
+@code{
+
+  /**
+   * Render a tag link to an its plain value, this function is used as parameter of the
+   * renderDocToHtml function when it needs to render tag links.
+   */
+  def renderTagLinkToHtml(tag) {
+    return tag.name;
+  }
+}
+
+[[@{type.simpleName}]]\n
+== @{type.simpleName}\n
+\n
+@if{doc != null}
+++++\n
+@{renderDocToHtml('', doc, renderTagLinkToHtml)}
+++++\n
+'''\n
+@end{}
+\n
+[cols=">25%,75%"]\n
+[frame="topbot"]\n
+|===\n
+^|Name | Description\n
+@foreach{value:values}
+	|[[@{value.identifier}]]`@{value.identifier}`
+	|@if{value.doc != null}\n
+	+++\n
+	@{renderDocToHtml('', value.doc, renderTagLinkToHtml).trim()}\n
+	+++\n
+	@else{}-\n@end{}
+@end{}
+|===\n

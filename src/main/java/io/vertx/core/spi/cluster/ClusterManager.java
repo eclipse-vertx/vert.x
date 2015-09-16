@@ -19,6 +19,7 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
@@ -39,15 +40,14 @@ import java.util.Map;
  * 3. For any particular join or leave event that is handled in any NodeListener, anywhere in the cluster, the List
  * of nodes returned by getNodes must be identical.
  * 4. All of the methods in the implementation must return immediately, i.e. they must not block while the operation
- * is being executed. If the underlying implementation does block, that can be wrapped in an
- * {@link Action} instance and executed using the method
- * {@link VertxSPI#executeBlocking(Action, io.vertx.core.Handler)}
+ * is being executed. If the underlying implementation does block, then {@link io.vertx.core.Vertx#executeBlocking}
+ * should be used to run the operation on a worker.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface ClusterManager {
 
-  void setVertx(VertxSPI vertx);
+  void setVertx(Vertx vertx);
 
   /**
    * Return an async multi-map for the given name
@@ -96,5 +96,10 @@ public interface ClusterManager {
    */
   void leave(Handler<AsyncResult<Void>> resultHandler);
 
+  /**
+   * Is the cluster manager active?
+   *
+   * @return  true if active, false otherwise
+   */
   boolean isActive();
 }

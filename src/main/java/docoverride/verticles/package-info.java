@@ -105,7 +105,7 @@
  * INFO: You don't need to manually undeploy child verticles started by a verticle, in the verticle's stop method. Vert.x
  * will automatically undeploy any child verticles when the parent is undeployed.
  */
-@Document(fileName = "verticles.adoc")
+@Document(fileName = "override/verticles.adoc")
 package docoverride.verticles;
 
 import io.vertx.docgen.Document;

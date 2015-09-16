@@ -75,22 +75,30 @@ public class ComplexHATest extends VertxTestBase {
     } catch (Throwable t) {
       // Need to explicitly catch throwables in repeats or they will be swallowed
       t.printStackTrace();
+      // Don't forget to fail!
+      fail(t.getMessage());
     }
   }
 
   protected void deployRandomVerticles(Runnable runner) {
     int toDeploy = 0;
     AtomicInteger deployCount = new AtomicInteger();
-    for (int pos: aliveNodes) {
+    List<Integer> numbersToDeploy = new ArrayList<>();
+    for (int i = 0; i < aliveNodes.size(); i++) {
       int numToDeploy = random.nextInt(maxVerticlesPerNode + 1);
+      numbersToDeploy.add(numToDeploy);
+      toDeploy += numToDeploy;
+    }
+    int index = 0;
+    for (int pos: aliveNodes) {
       Vertx v = vertices[pos];
-      int ii = pos;
+      int numToDeploy = numbersToDeploy.get(index);
+      index++;
       for (int j = 0; j < numToDeploy; j++) {
         JsonObject config = new JsonObject();
         config.put("foo", TestUtils.randomAlphaString(100));
         DeploymentOptions options = new DeploymentOptions().setHa(true).setConfig(config);
         String verticleName = "java:io.vertx.test.core.HAVerticle" + (random.nextInt(3) + 1);
-        toDeploy++;
         v.deployVerticle(verticleName, options, ar -> {
           assertTrue(ar.succeeded());
           deployCount.incrementAndGet();
@@ -171,9 +179,9 @@ public class ComplexHATest extends VertxTestBase {
     takeDeploymentSnapshots();
     VertxInternal v = (VertxInternal)vertices[pos];
     killedNode = pos;
-    v.executeBlocking(() -> {
+    v.executeBlocking(fut -> {
       v.simulateKill();
-      return null;
+      fut.complete();
     }, ar -> {
       assertTrue(ar.succeeded());
     });
@@ -186,7 +194,7 @@ public class ComplexHATest extends VertxTestBase {
     for (int i = 0; i < nodes; i++) {
       aliveNodes.add(i);
       int pos = i;
-      ((VertxInternal)vertices[i]).failoverCompleteHandler(succeeded -> {
+      ((VertxInternal)vertices[i]).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
         failedOverOnto(pos);
       });
     }

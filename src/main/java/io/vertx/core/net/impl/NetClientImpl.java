@@ -33,10 +33,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.NetMetrics;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -45,7 +46,6 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetClientImpl implements NetClient {
+public class NetClientImpl implements NetClient, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
 
@@ -63,23 +63,31 @@ public class NetClientImpl implements NetClient {
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final Closeable closeHook;
   private final ContextImpl creatingContext;
-  private final NetMetrics metrics;
-  private boolean closed;
+  private final TCPMetrics metrics;
+  private volatile boolean closed;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
+    this(vertx, options, true);
+  }
+
+  public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
     this.vertx = vertx;
     this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
+    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.closeHook = completionHandler -> {
       NetClientImpl.this.close();
       completionHandler.handle(Future.succeededFuture());
     };
-    creatingContext = vertx.getContext();
-    if (creatingContext != null) {
-      if (creatingContext.isWorker()) {
-        throw new IllegalStateException("Cannot use NetClient in a worker verticle");
+    if (useCreatingContext) {
+      creatingContext = vertx.getContext();
+      if (creatingContext != null) {
+        if (creatingContext.isMultiThreadedWorkerContext()) {
+          throw new IllegalStateException("Cannot use NetClient in a multi-threaded worker verticle");
+        }
+        creatingContext.addCloseHook(closeHook);
       }
-      creatingContext.addCloseHook(closeHook);
+    } else {
+      creatingContext = null;
     }
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
@@ -91,7 +99,7 @@ public class NetClientImpl implements NetClient {
   }
 
   @Override
-  public synchronized void close() {
+  public void close() {
     if (!closed) {
       for (NetSocket sock : socketMap.values()) {
         sock.close();
@@ -105,16 +113,13 @@ public class NetClientImpl implements NetClient {
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics.baseName();
+  public boolean isMetricsEnabled() {
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   private void checkClosed() {
@@ -148,7 +153,7 @@ public class NetClientImpl implements NetClient {
     ContextImpl context = vertx.getOrCreateContext();
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.getEventLoop());
+    bootstrap.group(context.eventLoop());
     bootstrap.channel(NioSocketChannel.class);
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
@@ -165,7 +170,7 @@ public class NetClientImpl implements NetClient {
         if (options.getIdleTimeout() > 0) {
           pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
         }
-        pipeline.addLast("handler", new VertxNetHandler(vertx, socketMap));
+        pipeline.addLast("handler", new VertxNetHandler(socketMap));
       }
     });
 
@@ -194,13 +199,13 @@ public class NetClientImpl implements NetClient {
         }
       } else {
         if (remainingAttempts > 0 || remainingAttempts == -1) {
-          context.executeSync(() -> {
+          context.executeFromIO(() -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
-            vertx.setTimer(options.getReconnectInterval(), tid -> {
+            vertx.setTimer(options.getReconnectInterval(), tid ->
               connect(port, host, connectHandler, remainingAttempts == -1 ? remainingAttempts : remainingAttempts
-                - 1);
-            });
+                - 1)
+            );
           });
         } else {
           failed(context, ch, channelFuture.cause(), connectHandler);
@@ -210,18 +215,19 @@ public class NetClientImpl implements NetClient {
   }
 
   private void connected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
-    context.executeSync(() -> doConnected(context, ch, connectHandler));
-  }
-
-  private void doConnected(ContextImpl context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler) {
-    NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics);
+    // Need to set context before constructor is called as writehandler registration needs this
+    ContextImpl.setContext(context);
+    NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics, null);
     socketMap.put(ch, sock);
-    connectHandler.handle(Future.succeededFuture(sock));
+    context.executeFromIO(() -> {
+      sock.setMetric(metrics.connected(sock.remoteAddress()));
+      connectHandler.handle(Future.succeededFuture(sock));
+    });
   }
 
   private void failed(ContextImpl context, Channel ch, Throwable t, Handler<AsyncResult<NetSocket>> connectHandler) {
     ch.close();
-    context.executeSync(() -> doFailed(connectHandler, t));
+    context.executeFromIO(() -> doFailed(connectHandler, t));
   }
 
   private static void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable t) {

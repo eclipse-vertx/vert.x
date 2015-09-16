@@ -16,6 +16,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.CacheReturn;
@@ -24,6 +25,9 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
 
 /**
  * Represents a socket-like interface to a TCP connection on either the
@@ -104,7 +108,34 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetSocket sendFile(String filename);
+  default NetSocket sendFile(String filename) {
+    return sendFile(filename, 0, Long.MAX_VALUE);
+  }
+
+  /**
+   * Tell the operating system to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
+   * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
+   *
+   * @param filename  file name of the file to send
+   * @param offset offset
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default NetSocket sendFile(String filename, long offset) {
+    return sendFile(filename, offset, Long.MAX_VALUE);
+  }
+
+  /**
+   * Tell the operating system to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
+   * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
+   *
+   * @param filename  file name of the file to send
+   * @param offset offset
+   * @param length length
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetSocket sendFile(String filename, long offset, long length);
 
   /**
    * Same as {@link #sendFile(String)} but also takes a handler that will be called when the send has completed or
@@ -115,7 +146,36 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetSocket sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
+  default NetSocket sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+    return sendFile(filename, 0, Long.MAX_VALUE, resultHandler);
+  }
+
+  /**
+   * Same as {@link #sendFile(String, long)} but also takes a handler that will be called when the send has completed or
+   * a failure has occurred
+   *
+   * @param filename  file name of the file to send
+   * @param offset offset
+   * @param resultHandler  handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default NetSocket sendFile(String filename, long offset, Handler<AsyncResult<Void>> resultHandler) {
+    return sendFile(filename, offset, Long.MAX_VALUE, resultHandler);
+  }
+
+  /**
+   * Same as {@link #sendFile(String, long, long)} but also takes a handler that will be called when the send has completed or
+   * a failure has occurred
+   *
+   * @param filename  file name of the file to send
+   * @param offset offset
+   * @param length length
+   * @param resultHandler  handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * @return the remote address for this socket
@@ -156,5 +216,13 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS.
    */
   boolean isSsl();
+
+  /**
+   * @return an array of the peer certificates. Returns null if connection is
+   *         not SSL.
+   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   */
+  @GenIgnore
+  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 }
 

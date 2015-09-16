@@ -16,14 +16,16 @@
 
 package io.vertx.core.impl;
 
+import io.netty.util.concurrent.FastThreadLocalThread;
+
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class VertxThread extends Thread {
+final class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
-  private ContextImpl context;
   private long execStart;
+  private ContextImpl context;
 
   public VertxThread(Runnable target, String name, boolean worker) {
     super(target, name);
@@ -38,11 +40,11 @@ final class VertxThread extends Thread {
     this.context = context;
   }
 
-  public void executeStart() {
+  public final void executeStart() {
     execStart = System.nanoTime();
   }
 
-  public void executeEnd() {
+  public final void executeEnd() {
     execStart = 0;
   }
 

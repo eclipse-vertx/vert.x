@@ -16,19 +16,21 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.JKSOptions;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.PKCS12Options;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
@@ -36,10 +38,11 @@ import org.junit.Rule;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -81,14 +84,12 @@ public class VertxTestBase extends AsyncTestBase {
     if (vertices != null) {
       CountDownLatch latch = new CountDownLatch(vertices.length);
       for (Vertx vertx: vertices) {
-        if (vertx != null) {
-          vertx.close(ar -> {
-            if (ar.failed()) {
-              log.error("Failed to shutdown vert.x", ar.cause());
-            }
-            latch.countDown();
-          });
-        }
+        vertx.close(ar -> {
+          if (ar.failed()) {
+            log.error("Failed to shutdown vert.x", ar.cause());
+          }
+          latch.countDown();
+        });
       }
       assertTrue(latch.await(180, TimeUnit.SECONDS));
     }
@@ -101,7 +102,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void startNodes(int numNodes) {
-    startNodes(numNodes, new VertxOptions());
+    startNodes(numNodes, getOptions());
   }
 
   protected void startNodes(int numNodes, VertxOptions options) {
@@ -140,104 +141,97 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected <T> Handler<AsyncResult<T>> onSuccess(Consumer<T> consumer) {
-    return result -> {
-      if (result.failed()) {
-        result.cause().printStackTrace();
-        fail(result.cause().getMessage());
-      } else {
-        consumer.accept(result.result());
-      }
-    };
-  }
-
-  protected <T> Handler<AsyncResult<T>> onFailure(Consumer<Throwable> consumer) {
-    return result -> {
-      assertFalse(result.succeeded());
-      consumer.accept(result.cause());
-    };
-  }
-
-  protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
-  }
-
-  protected void waitUntil(BooleanSupplier supplier) {
-    waitUntil(supplier, 10000);
-  }
-
-  protected void waitUntil(BooleanSupplier supplier, long timeout) {
-    long start = System.currentTimeMillis();
-    while (true) {
-      if (supplier.getAsBoolean()) {
-        break;
-      }
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException ignore) {
-      }
-      long now = System.currentTimeMillis();
-      if (now - start > timeout) {
-        throw new IllegalStateException("Timed out");
-      }
+  protected void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
+    if (options instanceof JksOptions) {
+      sslOptions.setKeyStoreOptions((JksOptions) options);
+    } else if (options instanceof PfxOptions) {
+      sslOptions.setPfxKeyCertOptions((PfxOptions) options);
+    } else {
+      sslOptions.setPemKeyCertOptions((PemKeyCertOptions) options);
     }
   }
 
-  protected TrustStoreOptions getClientTrustOptions(TS trust) {
+  protected void setOptions(TCPSSLOptions sslOptions, TrustOptions options) {
+    if (options instanceof JksOptions) {
+      sslOptions.setTrustStoreOptions((JksOptions) options);
+    } else if (options instanceof PfxOptions) {
+      sslOptions.setPfxTrustOptions((PfxOptions) options);
+    } else {
+      sslOptions.setPemTrustOptions((PemTrustOptions) options);
+    }
+  }
+
+  protected TrustOptions getClientTrustOptions(Trust trust) {
     switch (trust) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble");
+      case JKS_CA:
+        return new JksOptions().setPath(findFileOnClasspath("tls/client-truststore-ca.jks")).setPassword("wibble");
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/client-truststore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/client-truststore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        return new PfxOptions().setPath(findFileOnClasspath("tls/client-truststore-ca.p12")).setPassword("wibble");
       case PEM:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/server-cert.pem"));
+        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/server-cert.pem"));
       case PEM_CA:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
+        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
       default:
         return null;
     }
   }
 
-  protected KeyStoreOptions getClientCertOptions(KS cert) {
+  protected KeyCertOptions getClientCertOptions(KeyCert cert) {
     switch (cert) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble");
+      case JKS_CA:
+        throw new UnsupportedOperationException();
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/client-keystore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/client-keystore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        throw new UnsupportedOperationException();
       case PEM:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert.pem"));
       case PEM_CA:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert-ca.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert-ca.pem"));
       default:
         return null;
     }
   }
 
-  protected TrustStoreOptions getServerTrustOptions(TS trust) {
+  protected TrustOptions getServerTrustOptions(Trust trust) {
     switch (trust) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble");
+      case JKS_CA:
+        throw new UnsupportedOperationException();
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/server-truststore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/server-truststore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        throw new UnsupportedOperationException();
       case PEM:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/client-cert.pem"));
+        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/client-cert.pem"));
       case PEM_CA:
-        return new CaOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
+        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
       default:
         return null;
     }
   }
 
-  protected KeyStoreOptions getServerCertOptions(KS cert) {
+  protected KeyCertOptions getServerCertOptions(KeyCert cert) {
     switch (cert) {
       case JKS:
-        return new JKSOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
+        return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
+      case JKS_CA:
+        return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore-ca.jks")).setPassword("wibble");
       case PKCS12:
-        return new PKCS12Options().setPath(findFileOnClasspath("tls/server-keystore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath(findFileOnClasspath("tls/server-keystore.p12")).setPassword("wibble");
+      case PKCS12_CA:
+        return new PfxOptions().setPath(findFileOnClasspath("tls/server-keystore-ca.p12")).setPassword("wibble");
       case PEM:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert.pem"));
       case PEM_CA:
-        return new KeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert-ca.pem"));
+        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert-ca.pem"));
       default:
         return null;
     }
@@ -318,4 +312,39 @@ public class VertxTestBase extends AsyncTestBase {
       "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5"
     };
 
+  /**
+   * Create a worker verticle for the current Vert.x and return its context.
+   *
+   * @return the context
+   * @throws Exception anything preventing the creation of the worker
+   */
+  protected Context createWorker() throws Exception {
+    CompletableFuture<Context> fut = new CompletableFuture<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        fut.complete(context);
+      }
+    }, new DeploymentOptions().setWorker(true), ar -> {
+      if (ar.failed()) {
+        fut.completeExceptionally(ar.cause());
+      }
+    });
+    return fut.get();
+  }
+
+  /**
+   * Create worker verticles for the current Vert.x and returns the list of their contexts.
+   *
+   * @param num the number of verticles to create
+   * @return the contexts
+   * @throws Exception anything preventing the creation of the workers
+   */
+  protected List<Context> createWorkers(int num) throws Exception {
+    List<Context> contexts = new ArrayList<>();
+    for (int i = 0;i < num;i++) {
+      contexts.add(createWorker());
+    }
+    return contexts;
+  }
 }

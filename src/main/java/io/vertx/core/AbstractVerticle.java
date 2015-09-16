@@ -40,6 +40,7 @@ import java.util.List;
  */
 public abstract class AbstractVerticle implements Verticle {
 
+
   /**
    * Reference to the Vert.x instance that deployed this verticle
    */

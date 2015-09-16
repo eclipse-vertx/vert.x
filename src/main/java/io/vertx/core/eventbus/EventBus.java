@@ -73,7 +73,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  <T> EventBus send(String address, Object message, DeliveryOptions options);
+  EventBus send(String address, Object message, DeliveryOptions options);
 
   /**
    * Like {@link #send(String, Object, DeliveryOptions)} but specifying a {@code replyHandler} that will be called if the recipient

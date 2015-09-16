@@ -33,31 +33,26 @@
  *
  * Create a new empty buffer:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example1}
  * ----
  *
  * Create a buffer from a String. The String will be encoded in the buffer using UTF-8.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example2}
  * ----
  *
  * Create a buffer from a String: The String will be encoded using the specified encoding, e.g:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example3}
  * ----
  *
- * Create a buffer from a byte[]
- *
- * [source,java]
- * ----
- * {@link examples.BufferExamples#example4}
- * ----
+ * include::override/buffer_from_bytes.adoc[]
  *
  * Create a buffer with an initial size hint. If you know your buffer will have a certain amount of data written to it
  * you can create the buffer and specify this size. This makes the buffer initially allocate that much memory and is
@@ -65,7 +60,7 @@
  *
  * Note that buffers created this way *are empty*. It does not create a buffer filled with zeros up to the specified size.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example5}
  * ----
@@ -83,7 +78,7 @@
  *
  * The return value of the {@code appendXXX} methods is the buffer itself, so these can be chained:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example6}
  * ----
@@ -96,7 +91,7 @@
  *
  * The buffer will always expand as necessary to accommodate the data.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example7}
  * ----
@@ -106,10 +101,25 @@
  * Data is read from a buffer using the {@code getXXX} methods. Get methods exist for various datatypes.
  * The first argument to these methods is an index in the buffer from where to get the data.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.BufferExamples#example8}
  * ----
+ *
+ * === Working with unsigned numbers
+ *
+ * Unsigned numbers can be read from or appended/set to a buffer with the {@code getUnsignedXXX},
+ * {@code appendUnsignedXXX} and {@code setUnsignedXXX} methods. This is useful when implementing a codec for a
+ * network protocol optimized to minimize bandwidth consumption.
+ *
+ * In the following example, value 200 is set at specified position with just one byte:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.BufferExamples#example9}
+ * ----
+ *
+ * The console shows '200'.
  *
  * === Buffer length
  *

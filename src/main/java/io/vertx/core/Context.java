@@ -17,6 +17,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -59,6 +60,39 @@ import java.util.List;
 public interface Context {
 
   /**
+   * Is the current thread a worker thread?
+   * <p>
+   * NOTE! This is not always the same as calling {@link Context#isWorkerContext}. If you are running blocking code
+   * from an event loop context, then this will return true but {@link Context#isWorkerContext} will return false.
+   *
+   * @return true if current thread is a worker thread, false otherwise
+   */
+  static boolean isOnWorkerThread() {
+    return ContextImpl.isOnWorkerThread();
+  }
+
+  /**
+   * Is the current thread an event thread?
+   * <p>
+   * NOTE! This is not always the same as calling {@link Context#isEventLoopContext}. If you are running blocking code
+   * from an event loop context, then this will return false but {@link Context#isEventLoopContext} will return true.
+   *
+   * @return true if current thread is a worker thread, false otherwise
+   */
+  static boolean isOnEventLoopThread() {
+    return ContextImpl.isOnEventLoopThread();
+  }
+
+  /**
+   * Is the current thread a Vert.x thread? That's either a worker thread or an event loop thread
+   *
+   * @return true if current thread is a Vert.x thread, false otherwise
+   */
+  static boolean isOnVertxThread() {
+    return ContextImpl.isOnVertxThread();
+  }
+
+  /**
    * Run the specified action asynchronously on the same context, some time after the current execution has completed.
    *
    * @param action  the action to run
@@ -82,25 +116,37 @@ public interface Context {
 
   /**
    * The process args
-   *
-   * @return
    */
   List<String> processArgs();
 
   /**
-   * @return true if this is an event loop context, false otherwise
+   * Is the current context an event loop context?
+   * <p>
+   * NOTE! when running blocking code using {@link io.vertx.core.Vertx#executeBlocking(Handler, Handler)} from a
+   * standard (not worker) verticle, the context will still an event loop context and this {@link this#isEventLoopContext()}
+   * will return true.
+   *
+   * @return true if  false otherwise
    */
   boolean isEventLoopContext();
 
   /**
-   * @return true if this is an worker context, false otherwise
+   * Is the current context a worker context?
+   * <p>
+   * NOTE! when running blocking code using {@link io.vertx.core.Vertx#executeBlocking(Handler, Handler)} from a
+   * standard (not worker) verticle, the context will still an event loop context and this {@link this#isWorkerContext()}
+   * will return false.
+   *
+   * @return true if the current context is a worker context, false otherwise
    */
-  boolean isWorker();
+  boolean isWorkerContext();
 
   /**
-   * @return true if this is a multi-threaded worker context, false otherwise
+   * Is the current context a multi-threaded worker context?
+   *
+   * @return true if the current context is a multi-threaded worker context, false otherwise
    */
-  boolean isMultiThreaded();
+  boolean isMultiThreadedWorkerContext();
 
   /**
    * Get some data from the context.
@@ -128,5 +174,16 @@ public interface Context {
    * @return true if removed successfully, false otherwise
    */
   boolean remove(String key);
+
+  /**
+   * @return The Vertx instance that created the context
+   */
+  Vertx owner();
+
+  /**
+   * @return  the number of instances of the verticle that were deployed in the deployment (if any) related
+   * to this context
+   */
+  int getInstanceCount();
 
 }

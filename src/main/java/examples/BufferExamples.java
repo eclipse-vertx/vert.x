@@ -16,12 +16,7 @@
 
 package examples;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -39,11 +34,6 @@ public class BufferExamples {
 
   public void example3() {
     Buffer buff = Buffer.buffer("some string", "UTF-16");
-  }
-
-  public void example4() {
-    byte[] bytes = new byte[] {1, 3, 5};
-    Buffer buff = Buffer.buffer(bytes);
   }
 
   public void example5() {
@@ -72,6 +62,11 @@ public class BufferExamples {
     }
   }
 
-
+  public void example9() {
+    Buffer buff = Buffer.buffer(128);
+    int pos = 15;
+    buff.setUnsignedByte(pos, (short) 200);
+    System.out.println(buff.getUnsignedByte(pos));
+  }
 
 }

@@ -16,28 +16,13 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
-import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
-import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebsocketVersion;
@@ -45,12 +30,12 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.HttpClientMetrics;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxNetHandler;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.net.URI;
 import java.util.ArrayDeque;
@@ -79,8 +64,9 @@ class ClientConnection extends ConnectionBase {
   private final ConnectionLifeCycleListener listener;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private final HttpClientMetrics metrics;
   private final Handler<Throwable> exceptionHandler;
+  private final Object metric;
+  private final HttpClientMetrics metrics;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -101,8 +87,18 @@ class ClientConnection extends ConnectionBase {
       this.hostHeader = host + ':' + port;
     }
     this.listener = listener;
-    this.metrics = metrics;
     this.exceptionHandler = exceptionHandler;
+    this.metrics = metrics;
+    this.metric = metrics.connected(remoteAddress());
+  }
+
+  @Override
+  protected Object metric() {
+    return metric;
+  }
+
+  protected HttpClientMetrics metrics() {
+    return metrics;
   }
 
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
@@ -161,64 +157,62 @@ class ClientConnection extends ConnectionBase {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       super.channelInactive(ctx);
-      context.executeSync(() -> {
-        // if still handshaking this means we not got any response back from the server and so need to notify the client
-        // about it as otherwise the client would never been notified.
-        if (handshaking) {
-          handleException(new WebSocketHandshakeException("Connection closed while handshake in process"));
-        }
-      });
+      // if still handshaking this means we not got any response back from the server and so need to notify the client
+      // about it as otherwise the client would never been notified.
+      if (handshaking) {
+        handleException(new WebSocketHandshakeException("Connection closed while handshake in process"));
+      }
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      context.executeSync(() -> {
-        synchronized (ClientConnection.this) {
-          if (handshaker != null && handshaking) {
-            if (msg instanceof HttpResponse) {
-              HttpResponse resp = (HttpResponse) msg;
-              if (resp.getStatus().code() != 101) {
-                handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
-                return;
-              }
-              response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
-              response.headers().add(resp.headers());
-            }
+      if (handshaker != null && handshaking) {
+        if (msg instanceof HttpResponse) {
+          HttpResponse resp = (HttpResponse) msg;
+          if (resp.getStatus().code() != 101) {
+            handleException(new WebSocketHandshakeException("Websocket connection attempt returned HTTP status code " + resp.getStatus().code()));
+            return;
+          }
+          response = new DefaultFullHttpResponse(resp.getProtocolVersion(), resp.getStatus());
+          response.headers().add(resp.headers());
+        }
 
-            if (msg instanceof HttpContent) {
-              if (response != null) {
-                response.content().writeBytes(((HttpContent) msg).content());
-                if (msg instanceof LastHttpContent) {
-                  response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
-                  try {
-                    handshakeComplete(ctx, response);
-                    channel.pipeline().remove(HandshakeInboundHandler.this);
-                    for (; ; ) {
-                      Object m = buffered.poll();
-                      if (m == null) {
-                        break;
-                      }
-                      ctx.fireChannelRead(m);
-                    }
-                  } catch (WebSocketHandshakeException e) {
-                    close();
-                    handleException(e);
+        if (msg instanceof HttpContent) {
+          if (response != null) {
+            response.content().writeBytes(((HttpContent) msg).content());
+            if (msg instanceof LastHttpContent) {
+              response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
+              try {
+                handshakeComplete(ctx, response);
+                channel.pipeline().remove(HandshakeInboundHandler.this);
+                for (; ; ) {
+                  Object m = buffered.poll();
+                  if (m == null) {
+                    break;
                   }
+                  ctx.fireChannelRead(m);
                 }
+              } catch (WebSocketHandshakeException e) {
+                close();
+                handleException(e);
               }
             }
-          } else {
-            buffered.add(msg);
           }
         }
-      });
+      } else {
+        buffered.add(msg);
+      }
     }
 
     private void handleException(WebSocketHandshakeException e) {
       handshaking = false;
       buffered.clear();
       if (exceptionHandler != null) {
-        exceptionHandler.handle(e);
+        context.executeFromIO(() -> {
+          exceptionHandler.handle(e);
+        });
+      } else {
+        log.error("Error in websocket handshake", e);
       }
     }
 
@@ -229,10 +223,17 @@ class ClientConnection extends ConnectionBase {
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      ws = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation, client.getOptions().getMaxWebsocketFrameSize());
+      // Need to set context before constructor is called as writehandler registration needs this
+      ContextImpl.setContext(context);
+      WebSocketImpl webSocket = new WebSocketImpl(vertx, ClientConnection.this, supportsContinuation,
+                                                  client.getOptions().getMaxWebsocketFrameSize());
+      ws = webSocket;
       handshaker.finishHandshake(channel, response);
-      log.debug("WebSocket handshake complete");
-      wsConnect.handle(ws);
+      context.executeFromIO(() -> {
+        log.debug("WebSocket handshake complete");
+        webSocket.setMetric(metrics().connected(metric(), webSocket));
+        wsConnect.handle(webSocket);
+      });
     }
   }
 
@@ -286,6 +287,7 @@ class ClientConnection extends ConnectionBase {
     if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
       listener.responseEnded(this);
     }
+    currentResponse = null;
   }
 
   synchronized void handleWsFrame(WebSocketFrameInternal frame) {
@@ -298,6 +300,16 @@ class ClientConnection extends ConnectionBase {
     super.handleClosed();
     if (ws != null) {
       ws.handleClosed();
+    }
+    // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
+    Exception e = new VertxException("Connection was closed");
+    for (HttpClientRequestImpl req: requests) {
+      req.handleException(e);
+    }
+    if (currentRequest != null) {
+      currentRequest.handleException(e);
+    } else if (currentResponse != null) {
+      currentResponse.handleException(e);
     }
   }
 
@@ -321,7 +333,6 @@ class ClientConnection extends ConnectionBase {
     }
     this.currentRequest = req;
     this.requests.add(req);
-    client.httpClientMetrics().requestBegin(req);
   }
 
   synchronized void endRequest() {
@@ -330,10 +341,6 @@ class ClientConnection extends ConnectionBase {
     }
     currentRequest = null;
     listener.requestEnded(this);
-  }
-
-  public HttpClientMetrics metrics() {
-    return metrics;
   }
 
   public String hostHeader() {
@@ -354,7 +361,7 @@ class ClientConnection extends ConnectionBase {
 
   NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
-    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics);
+    NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics, metric);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
     connectionMap.put(channel, socket);
 
@@ -368,7 +375,7 @@ class ClientConnection extends ConnectionBase {
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler", new VertxNetHandler(client.getVertx(), connectionMap) {
+    pipeline.replace("handler", "handler", new VertxNetHandler(connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping

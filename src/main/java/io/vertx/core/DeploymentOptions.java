@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class DeploymentOptions {
 
   public static final boolean DEFAULT_WORKER = false;
@@ -38,9 +38,6 @@ public class DeploymentOptions {
   public static final String DEFAULT_ISOLATION_GROUP = null;
   public static final boolean DEFAULT_HA = false;
   public static final int DEFAULT_INSTANCES = 1;
-  public static final boolean DEFAULT_REDEPLOY = false;
-  public static final long DEFAULT_REDEPLOY_SCAN_PERIOD = 250;
-  public static final long DEFAULT_REDEPLOY_GRACE_PERIOD = 1000;
 
   private JsonObject config;
   private boolean worker;
@@ -49,9 +46,7 @@ public class DeploymentOptions {
   private boolean ha;
   private List<String> extraClasspath;
   private int instances;
-  private boolean redeploy;
-  private long redeployScanPeriod;
-  private long redeployGracePeriod;
+  private List<String> isolatedClasses;
 
   /**
    * Default constructor
@@ -63,9 +58,6 @@ public class DeploymentOptions {
     this.isolationGroup = DEFAULT_ISOLATION_GROUP;
     this.ha = DEFAULT_HA;
     this.instances = DEFAULT_INSTANCES;
-    this.redeploy = DEFAULT_REDEPLOY;
-    this.redeployScanPeriod = DEFAULT_REDEPLOY_SCAN_PERIOD;
-    this.redeployGracePeriod = DEFAULT_REDEPLOY_GRACE_PERIOD;
   }
 
   /**
@@ -81,9 +73,7 @@ public class DeploymentOptions {
     this.ha = other.isHa();
     this.extraClasspath = other.getExtraClasspath() == null ? null : new ArrayList<>(other.getExtraClasspath());
     this.instances = other.instances;
-    this.redeploy = other.redeploy;
-    this.redeployScanPeriod = other.redeployScanPeriod;
-    this.redeployGracePeriod = other.redeployGracePeriod;
+    this.isolatedClasses = other.getIsolatedClasses() == null ? null : new ArrayList<>(other.getIsolatedClasses());
   }
 
   /**
@@ -92,7 +82,8 @@ public class DeploymentOptions {
    * @param json  the JSON
    */
   public DeploymentOptions(JsonObject json) {
-    fromJson(json);
+    this();
+    DeploymentOptionsConverter.fromJson(json, this);
   }
 
   /**
@@ -111,9 +102,10 @@ public class DeploymentOptions {
       this.extraClasspath = arr.getList();
     }
     this.instances = json.getInteger("instances", DEFAULT_INSTANCES);
-    this.redeploy = json.getBoolean("redeploy", DEFAULT_REDEPLOY);
-    this.redeployScanPeriod = json.getLong("redeployScanPeriod", DEFAULT_REDEPLOY_SCAN_PERIOD);
-    this.redeployGracePeriod = json.getLong("redeployGracePeriod", DEFAULT_REDEPLOY_GRACE_PERIOD);
+    JsonArray arrIsolated = json.getJsonArray("isolatedClasses", null);
+    if (arrIsolated != null) {
+      this.isolatedClasses = arrIsolated.getList();
+    }
   }
 
   /**
@@ -199,34 +191,6 @@ public class DeploymentOptions {
   }
 
   /**
-   * Convert this to JSON
-   *
-   * @return  the JSON
-   */
-  public JsonObject toJson() {
-    JsonObject json = new JsonObject();
-    if (worker) json.put("worker", true);
-    if (multiThreaded) json.put("multiThreaded", true);
-    if (isolationGroup != null) json.put("isolationGroup", isolationGroup);
-    if (ha) json.put("ha", true);
-    if (config != null) json.put("config", config);
-    if (extraClasspath != null) json.put("extraClasspath", new JsonArray(extraClasspath));
-    if (instances != DEFAULT_INSTANCES) {
-      json.put("instances", instances);
-    }
-    if (redeploy != DEFAULT_REDEPLOY) {
-      json.put("redeploy", redeploy);
-    }
-    if (redeployScanPeriod != DEFAULT_REDEPLOY_SCAN_PERIOD) {
-      json.put("redeployScanPeriod", redeployScanPeriod);
-    }
-    if (redeployGracePeriod != DEFAULT_REDEPLOY_GRACE_PERIOD) {
-      json.put("redeployGracePeriod", redeployGracePeriod);
-    }
-    return json;
-  }
-
-  /**
    * Will the verticle(s) be deployed as HA (highly available) ?
    *
    * @return true if HA, false otherwise
@@ -289,37 +253,45 @@ public class DeploymentOptions {
     return this;
   }
 
-  public boolean isRedeploy() {
-    return redeploy;
+  /**
+   * Get the list of isolated class names, the names can be a Java class fully qualified name such as
+   * 'com.mycompany.myproject.engine.MyClass' or a wildcard matching such as `com.mycompany.myproject.*`.
+   *
+   * @return the list of isolated classes
+   */
+  public List<String> getIsolatedClasses() {
+    return isolatedClasses;
   }
 
-  public DeploymentOptions setRedeploy(boolean redeploy) {
-    this.redeploy = redeploy;
+  /**
+   * Set the isolated class names.
+   *
+   * @param isolatedClasses the list of isolated class names
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setIsolatedClasses(List<String> isolatedClasses) {
+    this.isolatedClasses = isolatedClasses;
     return this;
   }
 
-  public long getRedeployScanPeriod() {
-    return redeployScanPeriod;
-  }
-
-  public DeploymentOptions setRedeployScanPeriod(long redeployScanPeriod) {
-    if (redeployScanPeriod < 1) {
-      throw new IllegalArgumentException("redeployScanPeriod must be > 0");
+  /**
+   * Convert this to JSON
+   *
+   * @return  the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    if (worker) json.put("worker", true);
+    if (multiThreaded) json.put("multiThreaded", true);
+    if (isolationGroup != null) json.put("isolationGroup", isolationGroup);
+    if (ha) json.put("ha", true);
+    if (config != null) json.put("config", config);
+    if (extraClasspath != null) json.put("extraClasspath", new JsonArray(extraClasspath));
+    if (instances != DEFAULT_INSTANCES) {
+      json.put("instances", instances);
     }
-    this.redeployScanPeriod = redeployScanPeriod;
-    return this;
-  }
-
-  public long getRedeployGracePeriod() {
-    return redeployGracePeriod;
-  }
-
-  public DeploymentOptions setRedeployGracePeriod(long redeployGracePeriod) {
-    if (redeployGracePeriod < 1) {
-      throw new IllegalArgumentException("redeployGracePeriod must be > 0");
-    }
-    this.redeployGracePeriod = redeployGracePeriod;
-    return this;
+    if (isolatedClasses != null) json.put("isolatedClasses", new JsonArray(isolatedClasses));
+    return json;
   }
 
   @Override
@@ -329,20 +301,17 @@ public class DeploymentOptions {
 
     DeploymentOptions that = (DeploymentOptions) o;
 
-    if (ha != that.ha) return false;
-    if (multiThreaded != that.multiThreaded) return false;
     if (worker != that.worker) return false;
+    if (multiThreaded != that.multiThreaded) return false;
+    if (ha != that.ha) return false;
+    if (instances != that.instances) return false;
     if (config != null ? !config.equals(that.config) : that.config != null) return false;
-    if (extraClasspath != null ? !extraClasspath.equals(that.extraClasspath) : that.extraClasspath != null)
-      return false;
     if (isolationGroup != null ? !isolationGroup.equals(that.isolationGroup) : that.isolationGroup != null)
       return false;
-    if (instances != that.instances) return false;
-    if (redeploy != that.redeploy) return false;
-    if (redeployScanPeriod != that.redeployScanPeriod) return false;
-    if (redeployGracePeriod != that.redeployGracePeriod) return false;
+    if (extraClasspath != null ? !extraClasspath.equals(that.extraClasspath) : that.extraClasspath != null)
+      return false;
+    return !(isolatedClasses != null ? !isolatedClasses.equals(that.isolatedClasses) : that.isolatedClasses != null);
 
-    return true;
   }
 
   @Override
@@ -354,9 +323,7 @@ public class DeploymentOptions {
     result = 31 * result + (ha ? 1 : 0);
     result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);
     result = 31 * result + instances;
-    result = 31 * result + (redeploy ? 1 : 0);
-    result = 31 * result + (int) (redeployScanPeriod ^ (redeployScanPeriod >>> 32));
-    result = 31 * result + (int) (redeployGracePeriod ^ (redeployGracePeriod >>> 32));
+    result = 31 * result + (isolatedClasses != null ? isolatedClasses.hashCode() : 0);
     return result;
   }
 }

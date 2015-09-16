@@ -17,9 +17,9 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.Json;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Iterator;
@@ -28,11 +28,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+
 /**
  * A representation of a <a href="http://json.org/">JSON</a> array in Java.
  * <p>
  * Unlike some other languages Java does not have a native understanding of JSON. To enable JSON to be used easily
  * in Vert.x code we use this class to encapsulate the notion of a JSON array.
+ *
+ * The implementation adheres to the <a href="http://rfc-editor.org/rfc/rfc7493.txt">RFC-7493</a> to support Temporal
+ * data types as well as binary data.
  * <p>
  * Please see the documentation for more information.
  *
@@ -214,6 +219,27 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Get the Instant at position {@code pos} in the array.
+   * <p>
+   * JSON itself has no notion of a temporal types, so this method assumes there is a String value and
+   * it contains a ISOString encoded date, which it decodes if found and returns.
+   * <p>
+   * This method should be used in conjunction with {@link #add(Instant)}
+   *
+   * @param pos  the position in the array
+   * @return  the Instant, or null if a null value present
+   * @throws java.lang.ClassCastException if the value cannot be converted to String
+   */
+  public Instant getInstant(int pos) {
+    String val = (String)list.get(pos);
+    if (val == null) {
+      return null;
+    } else {
+      return Instant.from(ISO_INSTANT.parse(val));
+    }
+  }
+
+  /**
    * Get the Object value at position {@code pos} in the array.
    *
    * @param pos  the position in the array
@@ -387,6 +413,20 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Add a Instant value to the JSON array.
+   * <p>
+   * JSON has no notion of Temporal data so the Instant will be ISOString encoded, and the String added.
+   *
+   * @param value  the value
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonArray add(Instant value) {
+    Objects.requireNonNull(value);
+    list.add(ISO_INSTANT.format(value));
+    return this;
+  }
+
+  /**
    * Add an Object to the JSON array.
    *
    * @param value  the value
@@ -396,6 +436,18 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     Objects.requireNonNull(value);
     value = Json.checkAndCopy(value, false);
     list.add(value);
+    return this;
+  }
+
+  /**
+   * Appends all of the elements in the specified array to the end of this JSON array.
+   *
+   * @param array the array
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonArray addAll(JsonArray array) {
+    Objects.requireNonNull(array);
+    list.addAll(array.list);
     return this;
   }
 
@@ -564,20 +616,20 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   @Override
-  public Buffer writeToBuffer() {
+  public void writeToBuffer(Buffer buffer) {
     String encoded = encode();
     byte[] bytes = encoded.getBytes();
-    Buffer buffer = Buffer.buffer(bytes.length + 4);
     buffer.appendInt(bytes.length);
     buffer.appendBytes(bytes);
-    return buffer;
   }
 
   @Override
-  public void readFromBuffer(Buffer buffer) {
-    int length = buffer.getInt(0);
-    String encoded = buffer.getString(4, 4 + length);
+  public int readFromBuffer(int pos, Buffer buffer) {
+    int length = buffer.getInt(pos);
+    int start = pos + 4;
+    String encoded = buffer.getString(start, start + length);
     fromJson(encoded);
+    return pos + length + 4;
   }
 
   private void fromJson(String json) {

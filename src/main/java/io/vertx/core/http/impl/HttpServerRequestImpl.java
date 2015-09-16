@@ -39,7 +39,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -58,8 +58,10 @@ import java.util.Map;
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
  * However it can be used safely from other threads.
  *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
+ * The internal state is protected by using the connection as a lock. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
+ *
+ * It's important we don't have different locks for connection and request/response to avoid deadlock conditions
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -90,8 +92,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private Handler<Void> endHandler;
   private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
-  private boolean isURLEncoded;
-  private HttpServerFileUploadImpl lastUpload;
+  private boolean ended;
 
 
   HttpServerRequestImpl(ServerConnection conn,
@@ -103,7 +104,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized io.vertx.core.http.HttpVersion version() {
+  public io.vertx.core.http.HttpVersion version() {
     if (version == null) {
       io.netty.handler.codec.http.HttpVersion nettyVersion = request.getProtocolVersion();
       if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
@@ -118,7 +119,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized io.vertx.core.http.HttpMethod method() {
+  public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
       method = io.vertx.core.http.HttpMethod.valueOf(request.getMethod().toString());
     }
@@ -126,7 +127,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized String uri() {
+  public String uri() {
     if (uri == null) {
       uri = request.getUri();
     }
@@ -134,7 +135,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized String path() {
+  public String path() {
     if (path == null) {
       path = UriParser.path(uri());
     }
@@ -142,7 +143,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized String query() {
+  public String query() {
     if (query == null) {
       query = UriParser.query(uri());
     }
@@ -155,7 +156,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized MultiMap headers() {
+  public MultiMap headers() {
     if (headers == null) {
       headers = new HeadersAdaptor(request.headers());
     }
@@ -163,7 +164,17 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized MultiMap params() {
+  public String getHeader(String headerName) {
+    return headers().get(headerName);
+  }
+
+  @Override
+  public String getHeader(CharSequence headerName) {
+    return headers().get(headerName);
+  }
+
+  @Override
+  public MultiMap params() {
     if (params == null) {
       QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
       Map<String, List<String>> prms = queryStringDecoder.parameters();
@@ -178,33 +189,50 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized HttpServerRequest handler(Handler<Buffer> dataHandler) {
-    this.dataHandler = dataHandler;
-    return this;
+  public String getParam(String paramName) {
+    return params().get(paramName);
   }
 
   @Override
-  public synchronized HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
-    this.exceptionHandler = handler;
-    return this;
+  public HttpServerRequest handler(Handler<Buffer> dataHandler) {
+    synchronized (conn) {
+      checkEnded();
+      this.dataHandler = dataHandler;
+      return this;
+    }
+  }
+
+  @Override
+  public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
+    synchronized (conn) {
+      this.exceptionHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public HttpServerRequest pause() {
-    conn.pause();
-    return this;
+    synchronized (conn) {
+      conn.pause();
+      return this;
+    }
   }
 
   @Override
   public HttpServerRequest resume() {
-    conn.resume();
-    return this;
+    synchronized (conn) {
+      conn.resume();
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpServerRequest endHandler(Handler<Void> handler) {
-    this.endHandler = handler;
-    return this;
+  public HttpServerRequest endHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkEnded();
+      this.endHandler = handler;
+      return this;
+    }
   }
 
   @Override
@@ -213,7 +241,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized String absoluteURI() {
+  public String absoluteURI() {
     if (absoluteURI == null) {
       try {
         URI uri = new URI(uri());
@@ -221,7 +249,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
           absoluteURI = uri.toString();
         } else {
-          absoluteURI = new URI(conn.getServerOrigin() + uri).toString();
+          String host = headers().get(HttpHeaders.Names.HOST);
+          if (host != null) {
+            absoluteURI = (conn.isSSL() ? "https://" : "http://") + host + uri;
+          } else {
+            // Fall back to the server origin
+            absoluteURI = conn.getServerOrigin() + uri;
+          }
         }
       } catch (URISyntaxException e) {
         log.error("Failed to create abs uri", e);
@@ -244,7 +278,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized NetSocket netSocket() {
+  public NetSocket netSocket() {
     if (netSocket == null) {
       netSocket = conn.createNetSocket();
     }
@@ -252,17 +286,22 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
-    this.uploadHandler = handler;
-    return this;
+  public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
+    synchronized (conn) {
+      checkEnded();
+      this.uploadHandler = handler;
+      return this;
+    }
   }
 
   @Override
-  public synchronized MultiMap formAttributes() {
-    if (decoder == null) {
-      throw new IllegalStateException("Call expectMultiPart(true) before request body is received to receive form attributes");
-    }
+  public MultiMap formAttributes() {
     return attributes();
+  }
+
+  @Override
+  public String getFormAttribute(String attributeName) {
+    return formAttributes().get(attributeName);
   }
 
   @Override
@@ -271,91 +310,111 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public synchronized HttpServerRequest setExpectMultipart(boolean expect) {
-    if (expect && decoder == null) {
-      String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
-      if (contentType != null) {
-        HttpMethod method = request.getMethod();
-        String lowerCaseContentType = contentType.toLowerCase();
-        isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
-        if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
-            (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH))) {
-          decoder = new HttpPostRequestDecoder(new DataFactory(), request);
-        }
-      }
-    } else {
-      decoder = null;
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized boolean isExpectMultipart() {
-    return decoder != null;
-  }
-
-  synchronized void handleData(Buffer data) {
-    if (decoder != null) {
-      try {
-        decoder.offer(new DefaultHttpContent(data.getByteBuf().duplicate()));
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
-        handleException(e);
-      }
-    }
-    if (dataHandler != null) {
-      dataHandler.handle(data);
-    }
-  }
-
-  synchronized void handleEnd() {
-    if (decoder != null) {
-      try {
-        decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-        while (decoder.hasNext()) {
-          InterfaceHttpData data = decoder.next();
-          if (data instanceof Attribute) {
-            Attribute attr = (Attribute) data;
-            try {
-              if (isURLEncoded) {
-                attributes().add(urlDecode(attr.getName()), urlDecode(attr.getValue()));
-              } else {
-                attributes().add(attr.getName(), attr.getValue());
-              }
-            } catch (Exception e) {
-              // Will never happen, anyway handle it somehow just in case
-              handleException(e);
+  public HttpServerRequest setExpectMultipart(boolean expect) {
+    synchronized (conn) {
+      checkEnded();
+      if (expect) {
+        if (decoder == null) {
+          String contentType = request.headers().get(HttpHeaders.Names.CONTENT_TYPE);
+          if (contentType != null) {
+            HttpMethod method = request.getMethod();
+            String lowerCaseContentType = contentType.toLowerCase();
+            boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED);
+            if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
+              (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
+                || method.equals(HttpMethod.DELETE))) {
+              decoder = new HttpPostRequestDecoder(new DataFactory(), request);
             }
           }
         }
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
-        handleException(e);
-      } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
-        // ignore this as it is expected
-      } finally {
-        decoder.destroy();
+      } else {
+        decoder = null;
+      }
+      return this;
+    }
+  }
+
+  @Override
+  public boolean isExpectMultipart() {
+    synchronized (conn) {
+      return decoder != null;
+    }
+  }
+
+  @Override
+  public SocketAddress localAddress() {
+    return conn.localAddress();
+  }
+
+  @Override
+  public boolean isEnded() {
+    synchronized (conn) {
+      return ended;
+    }
+  }
+
+  void handleData(Buffer data) {
+    synchronized (conn) {
+      if (decoder != null) {
+        try {
+          decoder.offer(new DefaultHttpContent(data.getByteBuf().duplicate()));
+        } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+          handleException(e);
+        }
+      }
+      if (dataHandler != null) {
+        dataHandler.handle(data);
       }
     }
-    // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
-    if (endHandler != null && lastUpload == null) {
-      endHandler.handle(null);
+  }
+
+  void handleEnd() {
+    synchronized (conn) {
+      ended = true;
+      if (decoder != null) {
+        try {
+          decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+          while (decoder.hasNext()) {
+            InterfaceHttpData data = decoder.next();
+            if (data instanceof Attribute) {
+              Attribute attr = (Attribute) data;
+              try {
+                attributes().add(attr.getName(), attr.getValue());
+              } catch (Exception e) {
+                // Will never happen, anyway handle it somehow just in case
+                handleException(e);
+              }
+            }
+          }
+        } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+          handleException(e);
+        } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
+          // ignore this as it is expected
+        } finally {
+          decoder.destroy();
+        }
+      }
+      // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
+      if (endHandler != null) {
+        endHandler.handle(null);
+      }
     }
   }
 
-  synchronized void uploadComplete(HttpServerFileUploadImpl upload) {
-    this.lastUpload = upload;
-  }
-
-  synchronized void callEndHandler(HttpServerFileUploadImpl upload) {
-    if (endHandler != null && upload == lastUpload) {
-      endHandler.handle(null);
+  void handleException(Throwable t) {
+    synchronized (conn) {
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(t);
+      }
     }
   }
 
-  synchronized void handleException(Throwable t) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(t);
+  private void checkEnded() {
+    if (ended) {
+      throw new IllegalStateException("Request has already been read");
     }
   }
+
 
   private MultiMap attributes() {
     // Create it lazily
@@ -561,10 +620,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  @Override
-  public SocketAddress localAddress() {
-    return conn.localAddress();
-  }
 
   private static String urlDecode(String str) {
     return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);

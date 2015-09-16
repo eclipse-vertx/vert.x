@@ -20,7 +20,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.MessageConsumer;
 
 /**
@@ -77,12 +76,6 @@ public class EventBusExamples {
     eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
   }
 
-  public void example7(EventBus eventBus) {
-    DeliveryOptions options = new DeliveryOptions();
-    options.addHeader("some-header", "some-value");
-    eventBus.send("news.uk.sport", "Yay! Someone kicked a ball");
-  }
-
   public void example8(EventBus eventBus) {
     MessageConsumer<String> consumer = eventBus.consumer("news.uk.sport");
     consumer.handler(message -> {
@@ -97,26 +90,6 @@ public class EventBusExamples {
         System.out.println("Received reply: " + ar.result().body());
       }
     });
-  }
-
-  public void example10(EventBus eventBus, MessageCodec myCodec) {
-
-    eventBus.registerCodec(myCodec);
-
-    DeliveryOptions options = new DeliveryOptions().setCodecName(myCodec.name());
-
-    eventBus.send("orders", new MyPOJO(), options);
-  }
-
-  public void example11(EventBus eventBus, MessageCodec myCodec) {
-
-    eventBus.registerDefaultCodec(MyPOJO.class, myCodec);
-
-    eventBus.send("orders", new MyPOJO());
-  }
-
-  class MyPOJO {
-
   }
 
   public void example12() {

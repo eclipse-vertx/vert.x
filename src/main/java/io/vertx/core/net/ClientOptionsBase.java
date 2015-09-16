@@ -16,6 +16,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -23,6 +24,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@DataObject(generateConverter = true)
 public abstract class ClientOptionsBase extends TCPSSLOptions {
 
   /**
@@ -43,8 +45,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ClientOptionsBase() {
     super();
-    this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
-    this.trustAll = DEFAULT_TRUST_ALL;
+    init();
   }
 
   /**
@@ -65,8 +66,13 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ClientOptionsBase(JsonObject json) {
     super(json);
-    this.connectTimeout = json.getInteger("connectTimeout", DEFAULT_CONNECT_TIMEOUT);
-    this.trustAll = json.getBoolean("trustAll", DEFAULT_TRUST_ALL);
+    init();
+    ClientOptionsBaseConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+    this.trustAll = DEFAULT_TRUST_ALL;
   }
 
   /**

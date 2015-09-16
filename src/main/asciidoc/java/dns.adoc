@@ -1,0 +1,297 @@
+== DNS client
+
+Often you will find yourself in situations where you need to obtain DNS informations in an asynchronous fashion.
+
+Unfortunally this is not possible with the API that is shipped with the Java Virtual Machine itself. Because of
+this Vert.x offers it's own API for DNS resolution which is fully asynchronous.
+
+To obtain a DnsClient instance you will create a new via the Vertx instance.
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+----
+
+Be aware that you can pass in a varargs of InetSocketAddress arguments to specifiy more then one DNS Server to try
+to query for DNS resolution. The DNS Servers will be queried in the same order as specified here. Where the next
+will be used once the first produce an error while be used.
+
+=== lookup
+
+Try to lookup the A (ipv4) or AAAA (ipv6) record for a given name. The first which is returned will be used,
+so it behaves the same way as you may be used from when using "nslookup" on your operation system.
+
+To lookup the A / AAAA record for "vertx.io" you would typically use it like:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.lookup("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    System.out.println(ar.result());
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== lookup4
+
+Try to lookup the A (ipv4) record for a given name. The first which is returned will be used, so it behaves
+the same way as you may be used from when using "nslookup" on your operation system.
+
+To lookup the A record for "vertx.io" you would typically use it like:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.lookup4("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    System.out.println(ar.result());
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== lookup6
+
+Try to lookup the AAAA (ipv6) record for a given name. The first which is returned will be used, so it behaves the
+same way as you may be used from when using "nslookup" on your operation system.
+
+To lookup the A record for "vertx.io" you would typically use it like:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.lookup6("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    System.out.println(ar.result());
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== resolveA
+
+Try to resolve all A (ipv4) records for a given name. This is quite similar to using "dig" on unix like operation
+systems.
+
+To lookup all the A records for "vertx.io" you would typically do:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolveA("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record : records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== resolveAAAA
+
+Try to resolve all AAAA (ipv6) records for a given name. This is quite similar to using "dig" on unix like
+operation systems.
+
+To lookup all the AAAAA records for "vertx.io" you would typically do:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolveAAAA("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record : records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== resolveCNAME
+
+Try to resolve all CNAME records for a given name. This is quite similar to using "dig" on unix like operation
+systems.
+
+To lookup all the CNAME records for "vertx.io" you would typically do:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolveCNAME("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record : records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== resolveMX
+
+Try to resolve all MX records for a given name. The MX records are used to define which Mail-Server accepts
+emails for a given domain.
+
+To lookup all the MX records for "vertx.io" you would typically do:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolveMX("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<MxRecord> records = ar.result();
+    for (MxRecord record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+Be aware that the List will contain the `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` sorted by the priority of them, which
+means MX records with smaller priority coming first in the List.
+
+The `link:../../apidocs/io/vertx/core/dns/MxRecord.html[MxRecord]` allows you to access the priority and the name of the MX record by offer methods for it like:
+
+[source,java]
+----
+record.priority();
+record.name();
+----
+
+=== resolveTXT
+
+Try to resolve all TXT records for a given name. TXT records are often used to define extra informations for a domain.
+
+To resolve all the TXT records for "vertx.io" you could use something along these lines:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolveTXT("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== resolveNS
+
+Try to resolve all NS records for a given name. The NS records specify which DNS Server hosts the DNS informations
+for a given domain.
+
+To resolve all the NS records for "vertx.io" you could use something along these lines:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolveNS("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<String> records = ar.result();
+    for (String record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== resolveSRV
+
+Try to resolve all SRV records for a given name. The SRV records are used to define extra informations like port and
+hostname of services. Some protocols need this extra informations.
+
+To lookup all the SRV records for "vertx.io" you would typically do:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolveSRV("vertx.io", ar -> {
+  if (ar.succeeded()) {
+    List<SrvRecord> records = ar.result();
+    for (SrvRecord record: records) {
+      System.out.println(record);
+    }
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+Be aware that the List will contain the SrvRecords sorted by the priority of them, which means SrvRecords
+with smaller priority coming first in the List.
+
+The `link:../../apidocs/io/vertx/core/dns/SrvRecord.html[SrvRecord]` allows you to access all informations contained in the SRV record itself:
+
+[source,java]
+----
+record.priority();
+record.name();
+record.weight();
+record.port();
+record.protocol();
+record.service();
+record.target();
+----
+
+Please refer to the API docs for the exact details.
+
+=== resolvePTR
+
+Try to resolve the PTR record for a given name. The PTR record maps an ipaddress to a name.
+
+To resolve the PTR record for the ipaddress 10.0.0.1 you would use the PTR notion of "1.0.0.10.in-addr.arpa"
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.resolvePTR("1.0.0.10.in-addr.arpa", ar -> {
+  if (ar.succeeded()) {
+    String record = ar.result();
+    System.out.println(record);
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+=== reverseLookup
+
+Try to do a reverse lookup for an ipaddress. This is basically the same as resolve a PTR record, but allows you to
+just pass in the ipaddress and not a valid PTR query string.
+
+To do a reverse lookup for the ipaddress 10.0.0.1 do something similar like this:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.reverseLookup("10.0.0.1", ar -> {
+  if (ar.succeeded()) {
+    String record = ar.result();
+    System.out.println(record);
+  } else {
+    System.out.println("Failed to resolve entry" + ar.cause());
+  }
+});
+----
+
+include::override/dns.adoc[]

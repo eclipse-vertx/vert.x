@@ -1,0 +1,18 @@
+{
+  "name": "java",
+  "generators": [{
+    "kind": "dataObject",
+    "incremental": true,
+    "fileName": "'asciidoc/dataobjects.adoc'",
+    "templateFileName": "vertx-java/template/dataObjectCheatsheetIndex.templ"
+  },{
+    "kind": "dataObject",
+    "fileName": "(model.isClass() && model.getGenerateConverter()) ? (fqn + 'Converter.java') : null",
+    "templateFileName": "vertx-java/template/dataObjectConverter.templ"
+  },{
+    "kind": "enum",
+    "incremental": true,
+    "fileName": "'asciidoc/enums.adoc'",
+    "templateFileName": "vertx-java/template/enumCheatsheetIndex.templ"
+  }]
+}

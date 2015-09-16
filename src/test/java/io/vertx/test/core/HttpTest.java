@@ -18,68 +18,29 @@ package io.vertx.test.core;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HeadersAdaptor;
-import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.JKSOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.NetworkOptions;
-import io.vertx.core.net.PKCS12Options;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -88,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -103,10 +65,12 @@ public class HttpTest extends HttpTestBase {
 
   private File testDir;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     testDir = testFolder.newFolder();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST)
+                                        .setHandle100ContinueAutomatically(true));
     client = vertx.createHttpClient(new HttpClientOptions());
   }
 
@@ -168,15 +132,15 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getKeyCertOptions());
+    JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getTrustOptions());
+    JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertFalse(options.isTrustAll());
     assertEquals(options, options.setTrustAll(true));
@@ -217,6 +181,11 @@ public class HttpTest extends HttpTestBase {
     assertNotNull(options.getEnabledCipherSuites());
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
+
+    assertEquals(HttpVersion.HTTP_1_1, options.getProtocolVersion());
+    assertEquals(options, options.setProtocolVersion(HttpVersion.HTTP_1_0));
+    assertEquals(HttpVersion.HTTP_1_0, options.getProtocolVersion());
+    assertIllegalArgumentException(() -> options.setProtocolVersion(null));
 
     testComplete();
   }
@@ -280,15 +249,15 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyStoreOptions());
-    JKSOptions keyStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getKeyCertOptions());
+    JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
-    assertEquals(keyStoreOptions, options.getKeyStoreOptions());
+    assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getTrustStoreOptions());
-    JKSOptions trustStoreOptions = new JKSOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
+    assertNull(options.getTrustOptions());
+    JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
-    assertEquals(trustStoreOptions, options.getTrustStoreOptions());
+    assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertEquals(1024, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
@@ -316,8 +285,11 @@ public class HttpTest extends HttpTestBase {
     assertEquals(randString, options.getHost());
 
     assertNull(options.getWebsocketSubProtocols());
-    assertEquals(options, options.setWebsocketSubProtocol("foo"));
+    assertEquals(options, options.setWebsocketSubProtocols("foo"));
     assertEquals("foo", options.getWebsocketSubProtocols());
+
+    HttpServerOptions optionsCopy = new HttpServerOptions(options);
+    assertEquals(options, optionsCopy.setWebsocketSubProtocols(new String(options.getWebsocketSubProtocols())));
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -325,6 +297,10 @@ public class HttpTest extends HttpTestBase {
     assertNotNull(options.getEnabledCipherSuites());
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
+
+    assertFalse(options.isHandle100ContinueAutomatically());
+    assertEquals(options, options.setHandle100ContinueAutomatically(true));
+    assertTrue(options.isHandle100ContinueAutomatically());
 
     testComplete();
   }
@@ -343,10 +319,10 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -360,6 +336,7 @@ public class HttpTest extends HttpTestBase {
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
+    HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -383,6 +360,7 @@ public class HttpTest extends HttpTestBase {
     options.setKeepAlive(keepAlive);
     options.setPipelining(pipelining);
     options.setTryUseCompression(tryUseCompression);
+    options.setProtocolVersion(protocolVersion);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -394,10 +372,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
     assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, copy.getConnectTimeout());
@@ -411,6 +389,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(keepAlive, copy.isKeepAlive());
     assertEquals(pipelining, copy.isPipelining());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
+    assertEquals(protocolVersion, copy.getProtocolVersion());
   }
 
   @Test
@@ -431,6 +410,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.getSoLinger(), json.getSoLinger());
     assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
+    assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
   }
 
   @Test
@@ -439,19 +419,19 @@ public class HttpTest extends HttpTestBase {
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
-    int trafficClass = TestUtils.randomByte() + 127;
+    int trafficClass = TestUtils.randomByte() + 128;
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -465,6 +445,7 @@ public class HttpTest extends HttpTestBase {
     boolean keepAlive = rand.nextBoolean();
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
+    HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -481,13 +462,14 @@ public class HttpTest extends HttpTestBase {
       .put("connectTimeout", connectTimeout)
       .put("trustAll", trustAll)
       .put("crlPaths", new JsonArray().add(crlPath))
-      .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
-      .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+      .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
+      .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
       .put("verifyHost", verifyHost)
       .put("maxPoolSize", maxPoolSize)
       .put("keepAlive", keepAlive)
       .put("pipelining", pipelining)
-      .put("tryUseCompression", tryUseCompression);
+      .put("tryUseCompression", tryUseCompression)
+      .put("protocolVersion", protocolVersion.name());
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -500,12 +482,12 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
-    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
-    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
-    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertNotSame(keyStoreOptions, options.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
+    assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getTrustOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getTrustOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(connectTimeout, options.getConnectTimeout());
@@ -517,24 +499,27 @@ public class HttpTest extends HttpTestBase {
     assertEquals(keepAlive, options.isKeepAlive());
     assertEquals(pipelining, options.isPipelining());
     assertEquals(tryUseCompression, options.isTryUseCompression());
+    assertEquals(protocolVersion, options.getProtocolVersion());
 
     // Test other keystore/truststore types
-    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
-      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
+    json.remove("keyStoreOptions");
+    json.remove("trustStoreOptions");
+    json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
+      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpClientOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
-    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getTrustOptions() instanceof PfxOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
-    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
-      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
+    json.remove("pfxKeyCertOptions");
+    json.remove("pfxTrustOptions");
+    json.put("pemKeyCertOptions", new JsonObject())
+      .put("pemTrustOptions", new JsonObject());
     options = new HttpClientOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
-    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
+    assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
 
-    // Invalid types
-    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new HttpClientOptions(json));
-    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
+    // Test invalid protocolVersion
+    json.put("protocolVersion", "invalidProtocolVersion");
     assertIllegalArgumentException(() -> new HttpClientOptions(json));
   }
 
@@ -552,10 +537,10 @@ public class HttpTest extends HttpTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String enabledCipher = TestUtils.randomAlphaString(100);
@@ -567,6 +552,7 @@ public class HttpTest extends HttpTestBase {
     boolean compressionSupported = rand.nextBoolean();
     int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
     String wsSubProtocol = TestUtils.randomAlphaString(10);
+    boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
     options.setReuseAddress(reuseAddress);
@@ -587,7 +573,8 @@ public class HttpTest extends HttpTestBase {
     options.setAcceptBacklog(acceptBacklog);
     options.setCompressionSupported(compressionSupported);
     options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
-    options.setWebsocketSubProtocol(wsSubProtocol);
+    options.setWebsocketSubProtocols(wsSubProtocol);
+    options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -599,10 +586,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, copy.isUsePooledBuffers());
     assertEquals(idleTimeout, copy.getIdleTimeout());
     assertEquals(ssl, copy.isSsl());
-    assertNotSame(keyStoreOptions, copy.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) copy.getKeyStoreOptions()).getPassword());
-    assertNotSame(trustStoreOptions, copy.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions)copy.getTrustStoreOptions()).getPassword());
+    assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
+    assertNotSame(trustStoreOptions, copy.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -613,8 +600,9 @@ public class HttpTest extends HttpTestBase {
     assertEquals(host, copy.getHost());
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
     assertEquals(compressionSupported, copy.isCompressionSupported());
-    assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
-    assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
+    assertEquals(maxWebsocketFrameSize, copy.getMaxWebsocketFrameSize());
+    assertEquals(wsSubProtocol, copy.getWebsocketSubProtocols());
+    assertEquals(is100ContinueHandledAutomatically, copy.isHandle100ContinueAutomatically());
   }
 
   @Test
@@ -635,6 +623,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.getSoLinger(), json.getSoLinger());
     assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
+    assertEquals(def.isHandle100ContinueAutomatically(), json.isHandle100ContinueAutomatically());
   }
 
   @Test
@@ -643,19 +632,19 @@ public class HttpTest extends HttpTestBase {
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
-    int trafficClass = TestUtils.randomByte() + 127;
+    int trafficClass = TestUtils.randomByte() + 128;
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    JKSOptions keyStoreOptions = new JKSOptions();
+    JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
     String ksPath = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPath(ksPath);
-    JKSOptions trustStoreOptions = new JKSOptions();
+    JksOptions trustStoreOptions = new JksOptions();
     String tsPassword = TestUtils.randomAlphaString(100);
     trustStoreOptions.setPassword(tsPassword);
     String tsPath = TestUtils.randomAlphaString(100);
@@ -668,6 +657,7 @@ public class HttpTest extends HttpTestBase {
     boolean compressionSupported = rand.nextBoolean();
     int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
     String wsSubProtocol = TestUtils.randomAlphaString(10);
+    boolean is100ContinueHandledAutomatically = rand.nextBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -682,14 +672,15 @@ public class HttpTest extends HttpTestBase {
       .put("ssl", ssl)
       .put("enabledCipherSuites", new JsonArray().add(enabledCipher))
       .put("crlPaths", new JsonArray().add(crlPath))
-      .put("keyStoreOptions", new JsonObject().put("type", "jks").put("password", ksPassword).put("path", ksPath))
-      .put("trustStoreOptions", new JsonObject().put("type", "jks").put("password", tsPassword).put("path", tsPath))
+      .put("keyStoreOptions", new JsonObject().put("password", ksPassword).put("path", ksPath))
+      .put("trustStoreOptions", new JsonObject().put("password", tsPassword).put("path", tsPath))
       .put("port", port)
       .put("host", host)
       .put("acceptBacklog", acceptBacklog)
       .put("compressionSupported", compressionSupported)
       .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
-      .put("websocketSubProtocols", wsSubProtocol);
+      .put("websocketSubProtocols", wsSubProtocol)
+      .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -702,12 +693,12 @@ public class HttpTest extends HttpTestBase {
     assertEquals(usePooledBuffers, options.isUsePooledBuffers());
     assertEquals(idleTimeout, options.getIdleTimeout());
     assertEquals(ssl, options.isSsl());
-    assertNotSame(keyStoreOptions, options.getKeyStoreOptions());
-    assertEquals(ksPassword, ((JKSOptions) options.getKeyStoreOptions()).getPassword());
-    assertEquals(ksPath, ((JKSOptions) options.getKeyStoreOptions()).getPath());
-    assertNotSame(trustStoreOptions, options.getTrustStoreOptions());
-    assertEquals(tsPassword, ((JKSOptions) options.getTrustStoreOptions()).getPassword());
-    assertEquals(tsPath, ((JKSOptions) options.getTrustStoreOptions()).getPath());
+    assertNotSame(keyStoreOptions, options.getKeyCertOptions());
+    assertEquals(ksPassword, ((JksOptions) options.getKeyCertOptions()).getPassword());
+    assertEquals(ksPath, ((JksOptions) options.getKeyCertOptions()).getPath());
+    assertNotSame(trustStoreOptions, options.getTrustOptions());
+    assertEquals(tsPassword, ((JksOptions) options.getTrustOptions()).getPassword());
+    assertEquals(tsPath, ((JksOptions) options.getTrustOptions()).getPath());
     assertEquals(1, options.getEnabledCipherSuites().size());
     assertTrue(options.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, options.getCrlPaths().size());
@@ -718,25 +709,24 @@ public class HttpTest extends HttpTestBase {
     assertEquals(compressionSupported, options.isCompressionSupported());
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
     assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
+    assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
 
     // Test other keystore/truststore types
-    json.put("keyStoreOptions", new JsonObject().put("type", "pkcs12").put("password", ksPassword))
-      .put("trustStoreOptions", new JsonObject().put("type", "pkcs12").put("password", tsPassword));
+    json.remove("keyStoreOptions");
+    json.remove("trustStoreOptions");
+    json.put("pfxKeyCertOptions", new JsonObject().put("password", ksPassword))
+      .put("pfxTrustOptions", new JsonObject().put("password", tsPassword));
     options = new HttpServerOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof PKCS12Options);
-    assertTrue(options.getKeyStoreOptions() instanceof PKCS12Options);
+    assertTrue(options.getTrustOptions() instanceof PfxOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PfxOptions);
 
-    json.put("keyStoreOptions", new JsonObject().put("type", "keyCert"))
-      .put("trustStoreOptions", new JsonObject().put("type", "ca"));
+    json.remove("pfxKeyCertOptions");
+    json.remove("pfxTrustOptions");
+    json.put("pemKeyCertOptions", new JsonObject())
+      .put("pemTrustOptions", new JsonObject());
     options = new HttpServerOptions(json);
-    assertTrue(options.getTrustStoreOptions() instanceof CaOptions);
-    assertTrue(options.getKeyStoreOptions() instanceof KeyCertOptions);
-
-    // Invalid types
-    json.put("keyStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new HttpServerOptions(json));
-    json.put("trustStoreOptions", new JsonObject().put("type", "foo"));
-    assertIllegalArgumentException(() -> new HttpServerOptions(json));
+    assertTrue(options.getTrustOptions() instanceof PemTrustOptions);
+    assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
   @Test
@@ -858,6 +848,7 @@ public class HttpTest extends HttpTestBase {
   public void testPutHeadersOnRequest() {
     server.requestHandler(req -> {
       assertEquals("bar", req.headers().get("foo"));
+      assertEquals("bar", req.getHeader("foo"));
       req.response().end();
     });
     server.listen(onSuccess(server -> {
@@ -877,9 +868,12 @@ public class HttpTest extends HttpTestBase {
     TestUtils.assertNullPointerException(() -> client.requestAbs((HttpMethod) null, "http://someuri", resp -> {
     }));
     TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", "/somepath", null));
-    TestUtils.assertNullPointerException(() -> client.request((HttpMethod)null, 8080, "localhost", "/somepath", resp -> {}));
-    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, null, "/somepath", resp -> {}));
-    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", null, resp -> {}));
+    TestUtils.assertNullPointerException(() -> client.request((HttpMethod) null, 8080, "localhost", "/somepath", resp -> {
+    }));
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, null, "/somepath", resp -> {
+    }));
+    TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, 8080, "localhost", null, resp -> {
+    }));
   }
 
   @Test
@@ -1016,10 +1010,13 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testSimpleRequest(String uri, HttpMethod method, HttpClientRequest request) {
-    String path = uri.indexOf('?') == -1 ? uri : uri.substring(0, uri.indexOf('?'));
+    int index = uri.indexOf('?');
+    String path = index == -1 ? uri : uri.substring(0, index);
+    String query = index == -1 ? null : uri.substring(index + 1);
     server.requestHandler(req -> {
       assertEquals(path, req.path());
       assertEquals(method, req.method());
+      assertEquals(query, req.query());
       req.response().end();
     });
 
@@ -1033,10 +1030,11 @@ public class HttpTest extends HttpTestBase {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
     server.requestHandler(req -> {
-      req.response().headersEndHandler(v -> {
+      req.response().headersEndHandler(fut -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
+        fut.complete();
       });
       req.response().bodyEndHandler(v -> {
         assertEquals(1, cnt.getAndIncrement());
@@ -1058,10 +1056,11 @@ public class HttpTest extends HttpTestBase {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
     server.requestHandler(req -> {
-      req.response().headersEndHandler(v -> {
+      req.response().headersEndHandler(fut -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
+        fut.complete();
       });
       req.response().bodyEndHandler(v -> {
         assertEquals(1, cnt.getAndIncrement());
@@ -1088,10 +1087,11 @@ public class HttpTest extends HttpTestBase {
     String content = "iqdioqwdqwiojqwijdwqd";
     File toSend = setupFile("somefile.txt", content);
     server.requestHandler(req -> {
-      req.response().headersEndHandler(v -> {
+      req.response().headersEndHandler(fut -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
+        fut.complete();
       });
       req.response().bodyEndHandler(v -> {
         assertEquals(1, cnt.getAndIncrement());
@@ -1145,6 +1145,60 @@ public class HttpTest extends HttpTestBase {
 
     server.listen(onSuccess(server -> {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, resp -> testComplete()).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testParamUmlauteDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("äüö");
+  } 
+  
+  @Test
+  public void testParamPlusDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("+");
+  } 
+
+  @Test
+  public void testParamPercentDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("%");
+  }
+
+  @Test
+  public void testParamSpaceDecoding() throws UnsupportedEncodingException {
+    testParamDecoding(" ");
+  }
+
+  @Test
+  public void testParamNormalDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("hello");
+  }
+
+  @Test
+  public void testParamAltogetherDecoding() throws UnsupportedEncodingException {
+    testParamDecoding("äüö+% hello");
+  }
+
+  private void testParamDecoding(String value) throws UnsupportedEncodingException {
+    
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.endHandler(v -> {
+        MultiMap formAttributes = req.formAttributes();
+        assertEquals(value, formAttributes.get("param"));
+      });
+      req.response().end();
+    });
+    String postData = "param=" + URLEncoder.encode(value,"UTF-8");
+    server.listen(onSuccess(server -> {
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+        .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
+        .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(postData.length()))
+        .handler(resp -> {
+          testComplete();
+        })
+    .write(postData).end();
     }));
 
     await();
@@ -1211,6 +1265,33 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testRequestHeadersWithCharSequence() {
+    HashMap<CharSequence, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.TEXT_HTML, "text/html");
+    headers.put(HttpHeaders.USER_AGENT, "User-Agent");
+    headers.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
+
+    server.requestHandler(req -> {
+      assertEquals(headers.size() + 1, req.headers().size());
+
+      headers.forEach((k, v) -> assertEquals(v, req.headers().get(k)));
+      headers.forEach((k, v) -> assertEquals(v, req.getHeader(k)));
+
+      req.response().end();
+    });
+
+    server.listen(onSuccess(server -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete());
+
+      headers.forEach((k, v) -> req.headers().add(k, v));
+
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
   public void testRequestHeadersPutAll() {
     testRequestHeaders(false);
   }
@@ -1227,6 +1308,7 @@ public class HttpTest extends HttpTestBase {
       assertEquals(headers.size() + 1, req.headers().size());
       for (Map.Entry<String, String> entry : headers) {
         assertEquals(entry.getValue(), req.headers().get(entry.getKey()));
+        assertEquals(entry.getValue(), req.getHeader(entry.getKey()));
       }
       req.response().end();
     });
@@ -1275,7 +1357,34 @@ public class HttpTest extends HttpTestBase {
         assertEquals(headers.size() + 1, resp.headers().size());
         for (Map.Entry<String, String> entry : headers) {
           assertEquals(entry.getValue(), resp.headers().get(entry.getKey()));
+          assertEquals(entry.getValue(), resp.getHeader(entry.getKey()));
         }
+        testComplete();
+      }).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testResponseHeadersWithCharSequence() {
+    HashMap<CharSequence, String> headers = new HashMap<>();
+    headers.put(HttpHeaders.TEXT_HTML, "text/html");
+    headers.put(HttpHeaders.USER_AGENT, "User-Agent");
+    headers.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
+
+    server.requestHandler(req -> {
+      headers.forEach((k, v) -> req.response().headers().add(k, v));
+      req.response().end();
+    });
+
+    server.listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(headers.size() + 1, resp.headers().size());
+
+        headers.forEach((k,v) -> assertEquals(v, resp.headers().get(k)));
+        headers.forEach((k,v) -> assertEquals(v, resp.getHeader(k)));
+
         testComplete();
       }).end();
     }));
@@ -1607,6 +1716,54 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientExceptionHandlerCalledWhenServerTerminatesConnection() throws Exception {
+    int numReqs = 10;
+    CountDownLatch latch = new CountDownLatch(numReqs);
+    server.requestHandler(request -> {
+      request.response().close();
+    }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+      // Exception handler should be called for any requests in the pipeline if connection is closed
+      for (int i = 0; i < numReqs; i++) {
+        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
+          exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
+      }
+    }));
+    awaitLatch(latch);
+  }
+
+  @Test
+  public void testClientExceptionHandlerCalledWhenServerTerminatesConnectionAfterPartialResponse() throws Exception {
+    server.requestHandler(request -> {
+      //Write partial response then close connection before completing it
+      request.response().setChunked(true).write("foo").close();
+    }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+      // Exception handler should be called for any requests in the pipeline if connection is closed
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp ->
+          resp.exceptionHandler(t -> testComplete())).exceptionHandler(error -> fail()).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testNoExceptionHandlerCalledWhenResponseReceivedOK() throws Exception {
+    server.requestHandler(request -> {
+      request.response().end();
+    }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          vertx.setTimer(100, tid -> testComplete());
+        });
+        resp.exceptionHandler(t -> {
+          fail("Should not be called");
+        });
+      }).exceptionHandler(t -> {
+        fail("Should not be called");
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
@@ -1691,6 +1848,7 @@ public class HttpTest extends HttpTestBase {
           assertEquals(trailers.size(), resp.trailers().size());
           for (Map.Entry<String, String> entry : trailers) {
             assertEquals(entry.getValue(), resp.trailers().get(entry.getKey()));
+            assertEquals(entry.getValue(), resp.getTrailer(entry.getKey()));
           }
           testComplete();
         });
@@ -2030,7 +2188,11 @@ public class HttpTest extends HttpTestBase {
 
   private void testKeepAlive(boolean keepAlive, int poolSize, int numServers, int expectedConnectedServers) throws Exception {
     client.close();
-    server.close();
+    CountDownLatch firstCloseLatch = new CountDownLatch(1);
+    server.close(onSuccess(v -> firstCloseLatch.countDown()));
+    // Make sure server is closed before continuing
+    awaitLatch(firstCloseLatch);
+
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(false).setMaxPoolSize(poolSize));
     int requests = 100;
 
@@ -2054,15 +2216,22 @@ public class HttpTest extends HttpTestBase {
     awaitLatch(startServerLatch);
 
     CountDownLatch reqLatch = new CountDownLatch(requests);
-    for (int count = 0; count < requests; count++) {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(200, resp.statusCode());
-        reqLatch.countDown();
-      }).end();
-    }
+
+    // We make sure we execute all the requests on the same context otherwise some responses can come beack when there
+    // are no waiters resulting in it being closed so a a new connection is made for the next request resulting in the
+    // number of total connections being > pool size (which is correct)
+    vertx.runOnContext(v -> {
+      for (int count = 0; count < requests; count++) {
+        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+          assertEquals(200, resp.statusCode());
+          reqLatch.countDown();
+        }).end();
+      }
+    });
 
     awaitLatch(reqLatch);
 
+    //client.dispConnCount();
     assertEquals(expectedConnectedServers, connectedServers.size());
 
     CountDownLatch serverCloseLatch = new CountDownLatch(numServers);
@@ -2124,6 +2293,31 @@ public class HttpTest extends HttpTestBase {
 
     testComplete();
   }
+
+  @Test
+  public void testSendNonExistingFile() throws Exception {
+    server.requestHandler(req -> {
+      final Context ctx = vertx.getOrCreateContext();
+      req.response().sendFile("/not/existing/path", event -> {
+        assertEquals(ctx, vertx.getOrCreateContext());
+        if (event.failed()) {
+          req.response().end("failed");
+        }
+      });
+    });
+
+    server.listen(onSuccess(s -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals("failed", buff.toString());
+          testComplete();
+        });
+      }).end();
+    }));
+
+    await();
+  }
+
 
   @Test
   public void testSendFileOverrideHeaders() throws Exception {
@@ -2211,7 +2405,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void test100ContinueDefault() throws Exception {
+  public void test100ContinueHandledAutomatically() throws Exception {
     Buffer toSend = TestUtils.randomBuffer(1000);
 
     server.requestHandler(req -> {
@@ -2238,10 +2432,15 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void test100ContinueHandled() throws Exception {
+  public void test100ContinueHandledManually() throws Exception {
+
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+
     Buffer toSend = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
-      req.response().headers().set("HTTP/1.1", "100 Continue");
+      assertEquals("100-continue", req.getHeader("expect"));
+      req.response().writeContinue();
       req.bodyHandler(data -> {
         assertEquals(toSend, data);
         req.response().end();
@@ -2257,6 +2456,35 @@ public class HttpTest extends HttpTestBase {
       req.continueHandler(v -> {
         req.write(toSend);
         req.end();
+      });
+      req.sendHead();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void test100ContinueRejectedManually() throws Exception {
+
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+
+    server.requestHandler(req -> {
+      req.response().setStatusCode(405).end();
+      req.bodyHandler(data -> {
+        fail("body should not be received");
+      });
+    });
+
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(405, resp.statusCode());
+        testComplete();
+      });
+      req.headers().set("Expect", "100-continue");
+      req.setChunked(true);
+      req.continueHandler(v -> {
+        fail("should not be called");
       });
       req.sendHead();
     }));
@@ -2561,137 +2789,185 @@ public class HttpTest extends HttpTestBase {
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, true, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPKCS12() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.PKCS12, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.PKCS12, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPEM() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.PEM, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.PEM, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts via a CA (not trust all)
-  public void testTLSClientTrustServerCertPEM_CA() throws Exception {
-    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, false, true);
+  public void testTLSClientTrustServerCertJKS_CAWithJKS_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.JKS_CA, KeyCert.JKS_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertJKS_CAWithPKCS12_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PKCS12_CA, KeyCert.JKS_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertJKS_CAWithPEM_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.JKS_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12_CAWithJKS_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.JKS_CA, KeyCert.PKCS12_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12_CAWithPKCS12_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PKCS12_CA, KeyCert.PKCS12_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPKCS12_CAWithPEM_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PKCS12_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEM_CAWithJKS_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.JKS_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEM_CAWithPKCS12_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PKCS12_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
+  }
+
+  @Test
+  // Server specifies cert that the client trusts via a CA (not trust all)
+  public void testTLSClientTrustServerCertPEM_CAWithPEM_CA() throws Exception {
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPKCS12ServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PKCS12, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PKCS12, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustPEMServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PEM, KS.JKS, TS.NONE, false, false, false, false, true);
+    testTLS(KeyCert.NONE, Trust.PEM, KeyCert.JKS, Trust.NONE, false, false, false, false, true);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, false, false, false);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServerPEM() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.PEM, TS.NONE, false, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.PEM, Trust.NONE, false, false, false, false, false);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, false, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.JKS, false, false, false, false, true);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequiredPEM() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.PEM, TS.JKS, false, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.PEM, Trust.JKS, false, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequiredPKCS12() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PKCS12, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.PKCS12, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertRequiredPEM() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.PEM, true, false, false, false, true);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.PEM, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertPKCS12Required() throws Exception {
-    testTLS(KS.PKCS12, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.PKCS12, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert and it is required
   public void testTLSClientCertPEMRequired() throws Exception {
-    testTLS(KS.PEM, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, true);
+    testTLS(KeyCert.PEM, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, true);
   }
 
   @Test
   //Client specifies cert by CA and it is required
   public void testTLSClientCertPEM_CARequired() throws Exception {
-    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, false, false, false, true);
+    testTLS(KeyCert.PEM_CA, Trust.JKS, KeyCert.JKS, Trust.PEM_CA, true, false, false, false, true);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(KS.NONE, TS.JKS, KS.JKS, TS.JKS, true, false, false, false, false);
+    testTLS(KeyCert.NONE, Trust.JKS, KeyCert.JKS, Trust.JKS, true, false, false, false, false);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(KS.JKS, TS.JKS, KS.JKS, TS.NONE, true, false, false, false, false);
+    testTLS(KeyCert.JKS, Trust.JKS, KeyCert.JKS, Trust.NONE, true, false, false, false, false);
   }
 
   @Test
   // Server specifies cert that the client does not trust via a revoked certificate of the CA
   public void testTLSClientRevokedServerCert() throws Exception {
-    testTLS(KS.NONE, TS.PEM_CA, KS.PEM_CA, TS.NONE, false, false, false, true, false);
+    testTLS(KeyCert.NONE, Trust.PEM_CA, KeyCert.PEM_CA, Trust.NONE, false, false, false, true, false);
   }
 
   @Test
   //Client specifies cert that the server does not trust via a revoked certificate of the CA
   public void testTLSRevokedClientCertServer() throws Exception {
-    testTLS(KS.PEM_CA, TS.JKS, KS.JKS, TS.PEM_CA, true, true, false, false, false);
+    testTLS(KeyCert.PEM_CA, Trust.JKS, KeyCert.JKS, Trust.PEM_CA, true, true, false, false, false);
   }
 
   @Test
   // Specify some cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(KS.NONE, TS.NONE, KS.JKS, TS.NONE, false, false, true, false, true, ENABLED_CIPHER_SUITES);
+    testTLS(KeyCert.NONE, Trust.NONE, KeyCert.JKS, Trust.NONE, false, false, true, false, true, ENABLED_CIPHER_SUITES);
   }
 
-  private void testTLS(KS clientCert, TS clientTrust,
-                       KS serverCert, TS serverTrust,
+  private void testTLS(KeyCert clientCert, Trust clientTrust,
+                       KeyCert serverCert, Trust serverTrust,
                        boolean requireClientAuth, boolean serverUsesCrl, boolean clientTrustAll,
                        boolean clientUsesCrl, boolean shouldPass,
                        String... enabledCipherSuites) throws Exception {
@@ -2705,16 +2981,16 @@ public class HttpTest extends HttpTestBase {
     if (clientUsesCrl) {
       options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
     }
-    options.setTrustStoreOptions(getClientTrustOptions(clientTrust));
-    options.setKeyStoreOptions(getClientCertOptions(clientCert));
+    setOptions(options, getClientTrustOptions(clientTrust));
+    setOptions(options, getClientCertOptions(clientCert));
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
     }
     client = vertx.createHttpClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(true);
-    serverOptions.setTrustStoreOptions(getServerTrustOptions(serverTrust));
-    serverOptions.setKeyStoreOptions(getServerCertOptions(serverCert));
+    setOptions(serverOptions, getServerTrustOptions(serverTrust));
+    setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
       serverOptions.setClientAuthRequired(true);
     }
@@ -2740,6 +3016,7 @@ public class HttpTest extends HttpTestBase {
       });
       req.exceptionHandler(t -> {
         if (shouldPass) {
+          t.printStackTrace();
           fail("Should not throw exception");
         } else {
           testComplete();
@@ -2752,52 +3029,54 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testJKSInvalidPath() {
-    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: /invalid.jks");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: ", "invalid.jks");
   }
 
   @Test
   public void testJKSMissingPassword() {
-    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPassword(null), "Password must not be null");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword(null), "Password must not be null", null);
   }
 
   @Test
   public void testJKSInvalidPassword() {
-    testInvalidKeyStore(((JKSOptions) getServerCertOptions(KS.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect");
+    testInvalidKeyStore(((JksOptions) getServerCertOptions(KeyCert.JKS)).setPassword("wrongpassword"), "Keystore was tampered with, or password was incorrect", null);
   }
 
   @Test
   public void testPKCS12InvalidPath() {
-    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: /invalid.p12");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: ", "invalid.p12");
   }
 
   @Test
   public void testPKCS12MissingPassword() {
-    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPassword(null), "Get Key failed: null");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword(null), "Get Key failed: null", null);
   }
 
   @Test
   public void testPKCS12InvalidPassword() {
-    testInvalidKeyStore(((PKCS12Options) getServerCertOptions(KS.PKCS12)).setPassword("wrongpassword"), "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded");
+    testInvalidKeyStore(((PfxOptions) getServerCertOptions(KeyCert.PKCS12)).setPassword("wrongpassword"), Arrays.asList(
+        "failed to decrypt safe contents entry: javax.crypto.BadPaddingException: Given final block not properly padded",
+        "keystore password was incorrect"), null);
   }
 
   @Test
   public void testKeyCertMissingKeyPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(null), "Missing private key");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(null), "Missing private key", null);
   }
 
   @Test
   public void testKeyCertInvalidKeyPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
   public void testKeyCertMissingCertPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath(null), "Missing X.509 certificate");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath(null), "Missing X.509 certificate", null);
   }
 
   @Test
   public void testKeyCertInvalidCertPath() {
-    testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
@@ -2818,13 +3097,13 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidKeyStore(((KeyCertOptions) getServerCertOptions(KS.PEM)).setKeyPath(file.toString()), expectedMessage);
+      testInvalidKeyStore(((PemKeyCertOptions) getServerCertOptions(KeyCert.PEM)).setKeyPath(file.toString()), expectedMessage, null);
     }
   }
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(new CaOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: /invalid.pem");
+    testInvalidTrustStore(new PemTrustOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
   }
 
   @Test
@@ -2845,27 +3124,35 @@ public class HttpTest extends HttpTestBase {
       Path file = testFolder.newFile("vertx" + UUID.randomUUID().toString() + ".pem").toPath();
       Files.write(file, Collections.singleton(contents[i]));
       String expectedMessage = messages[i];
-      testInvalidTrustStore(new CaOptions().addCertPath(file.toString()), expectedMessage);
+      testInvalidTrustStore(new PemTrustOptions().addCertPath(file.toString()), expectedMessage, null);
     }
   }
 
-  private void testInvalidKeyStore(KeyStoreOptions ksOptions, String expectedMessage) {
+  private void testInvalidKeyStore(KeyCertOptions options, String expectedPrefix, String expectedSuffix) {
     HttpServerOptions serverOptions = new HttpServerOptions();
-    serverOptions.setKeyStoreOptions(ksOptions);
+    setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
-    testStore(serverOptions, expectedMessage);
+    testStore(serverOptions, Collections.singletonList(expectedPrefix), expectedSuffix);
   }
 
-  private void testInvalidTrustStore(TrustStoreOptions tsOptions, String expectedMessage) {
+  private void testInvalidKeyStore(KeyCertOptions options, List<String> expectedPossiblePrefixes, String expectedSuffix) {
     HttpServerOptions serverOptions = new HttpServerOptions();
-    serverOptions.setTrustStoreOptions(tsOptions);
+    setOptions(serverOptions, options);
     serverOptions.setSsl(true);
     serverOptions.setPort(4043);
-    testStore(serverOptions, expectedMessage);
+    testStore(serverOptions, expectedPossiblePrefixes, expectedSuffix);
   }
 
-  private void testStore(HttpServerOptions serverOptions, String expectedMessage) {
+  private void testInvalidTrustStore(TrustOptions options, String expectedPrefix, String expectedSuffix) {
+    HttpServerOptions serverOptions = new HttpServerOptions();
+    setOptions(serverOptions, options);
+    serverOptions.setSsl(true);
+    serverOptions.setPort(4043);
+    testStore(serverOptions, Collections.singletonList(expectedPrefix), expectedSuffix);
+  }
+
+  private void testStore(HttpServerOptions serverOptions, List<String> expectedPossiblePrefixes, String expectedSuffix) {
     HttpServer server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
     });
@@ -2874,14 +3161,31 @@ public class HttpTest extends HttpTestBase {
       fail("Was expecting a failure");
     } catch (VertxException e) {
       assertNotNull(e.getCause());
-      assertEquals(expectedMessage, e.getCause().getMessage());
+      if(expectedSuffix == null) {
+        boolean ok = expectedPossiblePrefixes.isEmpty();
+        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+          ok |= expectedPossiblePrefix.equals(e.getCause().getMessage());
+        }
+        if (!ok) {
+          fail("Was expecting <" + e.getCause().getMessage() + ">  to be equals to one of " + expectedPossiblePrefixes);
+        }
+      } else {
+        boolean ok = expectedPossiblePrefixes.isEmpty();
+        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+          ok |= e.getCause().getMessage().startsWith(expectedPossiblePrefix);
+        }
+        if (!ok) {
+          fail("Was expecting e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
+        }
+        assertTrue(e.getCause().getMessage().endsWith(expectedSuffix));
+      }
     }
   }
 
   @Test
   public void testCrlInvalidPath() throws Exception {
     HttpClientOptions clientOptions = new HttpClientOptions();
-    clientOptions.setTrustStoreOptions(getClientTrustOptions(TS.PEM_CA));
+    setOptions(clientOptions, getClientTrustOptions(Trust.PEM_CA));
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
@@ -2891,7 +3195,7 @@ public class HttpTest extends HttpTestBase {
       fail("Was expecting a failure");
     } catch (VertxException e) {
       assertNotNull(e.getCause());
-      assertEquals("java.nio.file.NoSuchFileException: /invalid.pem", e.getCause().getMessage());
+      assertEquals(NoSuchFileException.class, e.getCause().getCause().getClass());
     }
   }
 
@@ -2937,7 +3241,8 @@ public class HttpTest extends HttpTestBase {
 
   @Test
   public void testListenNoHandlers() throws Exception {
-    assertIllegalStateException(() -> server.listen(ar -> {}));
+    assertIllegalStateException(() -> server.listen(ar -> {
+    }));
   }
 
   @Test
@@ -3117,12 +3422,12 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testListenInvalidPort() {
+  public void testListenInvalidPort() throws Exception {
+    /* Port 7 is free for use by any application in Windows, so this test fails. */
+    Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(7));
-    server.requestHandler(noOpHandler()).listen(onFailure(server -> {
-      testComplete();
-    }));
+    server.requestHandler(noOpHandler()).listen(onFailure(server -> testComplete()));
     await();
   }
 
@@ -3179,7 +3484,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttpVersion() {
+  public void testDefaultHttpVersion() {
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
@@ -3193,23 +3498,170 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testFormUploadFile() throws Exception {
+  public void testHttp11PersistentConnectionNotClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      assertNull(req.getHeader("Connection"));
+      req.response().end();
+      assertFalse(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setKeepAlive(true));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertNull(resp.getHeader("Connection"));
+          assertEquals(resp.getHeader("Content-Length"), "0");
+          testComplete();
+        });
+      });
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttp11NonPersistentConnectionClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      assertEquals(req.getHeader("Connection"), "close");
+      req.response().end();
+      assertTrue(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setKeepAlive(false));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertEquals(resp.getHeader("Connection"), "close");
+          testComplete();
+        });
+      });
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttp10KeepAliveConnectionNotClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_0, req.version());
+      assertEquals(req.getHeader("Connection"), "keep-alive");
+      req.response().end();
+      assertFalse(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0).setKeepAlive(true));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertEquals(resp.getHeader("Connection"), "keep-alive");
+          assertEquals(resp.getHeader("Content-Length"), "0");
+          testComplete();
+        });
+      });
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testHttp10NonKeepAliveConnectionClosed() throws Exception {
+    client.close();
+
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_0, req.version());
+      assertNull(req.getHeader("Connection"));
+      req.response().end();
+      assertTrue(req.response().closed());
+    });
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0).setKeepAlive(false));
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> {
+          assertNull(resp.getHeader("Connection"));
+          testComplete();
+        });
+      });
+      req.end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testFormUploadSmallFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(100), false);
+  }
+
+  @Test
+  public void testFormUploadLargerFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(20000), false);
+  }
+
+  @Test
+  public void testFormUploadSmallFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(100), true);
+  }
+
+  @Test
+  public void requestAbsNoPort() {
+    client.requestAbs(HttpMethod.GET, "http://www.google.com", res -> testComplete()).end();
+    await();
+  }
+
+  @Test
+  public void testFormUploadLargerFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(20000), true);
+  }
+
+  private void testFormUploadFile(String contentStr, boolean streamToDisk) throws Exception {
+
+    Buffer content = Buffer.buffer(contentStr);
+
     AtomicInteger attributeCount = new AtomicInteger();
-    String content = "Vert.x rocks!";
 
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
+        assertTrue(req.isExpectMultipart());
+
+        // Now try setting again, it shouldn't have an effect
+        req.setExpectMultipart(true);
+        assertTrue(req.isExpectMultipart());
+
         req.uploadHandler(upload -> {
-          upload.handler(buffer -> {
-            assertEquals(content, buffer.toString("UTF-8"));
-          });
+          Buffer tot = Buffer.buffer();
           assertEquals("file", upload.name());
           assertEquals("tmp-0.txt", upload.filename());
           assertEquals("image/gif", upload.contentType());
+          String uploadedFileName;
+          if (!streamToDisk) {
+            upload.handler(buffer -> tot.appendBuffer(buffer));
+            uploadedFileName = null;
+          } else {
+            uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
+            upload.streamToFileSystem(uploadedFileName);
+          }
           upload.endHandler(v -> {
+            if (streamToDisk) {
+              Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
+              assertEquals(content, uploaded);
+            } else {
+              assertEquals(content, tot);
+            }
             assertTrue(upload.isSizeAvailable());
             assertEquals(content.length(), upload.size());
           });
@@ -3240,7 +3692,7 @@ public class HttpTest extends HttpTestBase {
           "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
           "Content-Type: image/gif\r\n" +
           "\r\n" +
-          content + "\r\n" +
+          contentStr + "\r\n" +
           "--" + boundary + "--\r\n";
 
       buffer.appendString(body);
@@ -3267,7 +3719,9 @@ public class HttpTest extends HttpTestBase {
           MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
           assertEquals("vert x", attrs.get("framework"));
+          assertEquals("vert x", req.getFormAttribute("framework"));
           assertEquals("jvm", attrs.get("runson"));
+          assertEquals("jvm", req.getFormAttribute("runson"));
           req.response().end();
         });
       }
@@ -3774,10 +4228,12 @@ public class HttpTest extends HttpTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       HttpClientRequest req = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path);
-      req.handler(resp -> {});
+      req.handler(resp -> {
+      });
       req.endHandler(done -> {
         try {
-          req.handler(arg -> {});
+          req.handler(arg -> {
+          });
           fail();
         } catch (Exception ignore) {
         }
@@ -3800,6 +4256,297 @@ public class HttpTest extends HttpTestBase {
     });
     await();
   }
+
+  @Test
+  public void testRequestEnded() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      assertFalse(req.isEnded());
+      req.endHandler(v -> {
+        assertTrue(req.isEnded());
+        try  {
+          req.endHandler(v2 -> {});
+          fail("Shouldn't be able to set end handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try  {
+          req.setExpectMultipart(true);
+          fail("Shouldn't be able to set expect multipart");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try  {
+          req.bodyHandler(v2 -> {
+          });
+          fail("Shouldn't be able to set body handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try  {
+          req.handler(v2 -> {
+          });
+          fail("Shouldn't be able to set handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+
+        req.response().setStatusCode(200).end();
+      });
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testRequestEndedNoEndHandler() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      assertFalse(req.isEnded());
+      req.response().setStatusCode(200).end();
+      vertx.setTimer(500, v -> {
+        assertTrue(req.isEnded());
+        try {
+          req.endHandler(v2 -> {
+          });
+          fail("Shouldn't be able to set end handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          req.setExpectMultipart(true);
+          fail("Shouldn't be able to set expect multipart");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          req.bodyHandler(v2 -> {
+          });
+          fail("Shouldn't be able to set body handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          req.handler(v2 -> {
+          });
+          fail("Shouldn't be able to set handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      });
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        assertEquals(200, resp.statusCode());
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testInWorker() throws Exception {
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Vertx.currentContext().isWorkerContext());
+        assertTrue(Context.isOnWorkerThread());
+        HttpServer server1 = vertx.createHttpServer(new HttpServerOptions()
+                .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+        server1.requestHandler(req -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          Buffer buf = Buffer.buffer();
+          req.handler(buf::appendBuffer);
+          req.endHandler(v -> {
+            assertEquals("hello", buf.toString());
+            req.response().end("bye");
+          });
+        }).listen(onSuccess(s -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          HttpClient client = vertx.createHttpClient();
+          client.put(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+            assertEquals(200, resp.statusCode());
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            resp.handler(buf -> {
+              assertEquals("bye", buf.toString());
+              resp.endHandler(v -> {
+                testComplete();
+              });
+            });
+          }).setChunked(true).write(Buffer.buffer("hello")).end();
+        }));
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testInMultithreadedWorker() throws Exception {
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Vertx.currentContext().isWorkerContext());
+        assertTrue(Vertx.currentContext().isMultiThreadedWorkerContext());
+        assertTrue(Context.isOnWorkerThread());
+        try {
+          vertx.createHttpServer();
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try {
+          vertx.createHttpClient();
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        testComplete();
+      }
+    }, new DeploymentOptions().setWorker(true).setMultiThreaded(true));
+    await();
+  }
+
+  @Test
+  public void testAbsoluteURIServer() {
+    server.close();
+    // Listen on all addresses 
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("0.0.0.0"));
+    server.requestHandler(req -> {
+      String absURI = req.absoluteURI();
+      assertEquals("http://localhost:8080/path", absURI);
+      req.response().end();
+    });
+    server.listen(onSuccess(s -> {
+      String host = "localhost";
+      String path = "/path";
+      int port = 8080;
+      client.getNow(port, host, path, resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    }));
+
+    await();
+  }
+
+  /*
+  Fix for https://bugs.eclipse.org/bugs/show_bug.cgi?id=475017
+  Also see https://groups.google.com/forum/?fromgroups#!topic/vertx/N_wSoQlvMMs
+   */
+  @Test
+  public void testPauseResumeClientResponse() {
+    byte[] data = new byte[64 * 1024 * 1024];
+    new Random().nextBytes(data);
+    Buffer buffer = Buffer.buffer(data);
+    Buffer readBuffer = Buffer.buffer(64 * 1024 * 1024);
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.requestHandler(request -> {
+      request.response().setChunked(true);
+      for (int i = 0; i < buffer.length() / 8192; i++) {
+        request.response().write(buffer.slice(i * 8192, (i + 1) * 8192));
+      }
+      request.response().end();
+    });
+    httpServer.listen(10000);
+    HttpClient httpClient = vertx.createHttpClient();
+    HttpClientRequest clientRequest = httpClient.get(10000, "localhost", "/");
+    clientRequest.handler(resp -> {
+      resp.handler(b -> {
+        readBuffer.appendBuffer(b);
+        for (int i = 0; i < 64; i++) {
+          vertx.setTimer(1, n -> {
+            try {
+              Thread.sleep(0);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          });
+        }
+        ;
+        resp.endHandler(v -> {
+          byte[] expectedData = buffer.getBytes();
+          byte[] actualData = readBuffer.getBytes();
+          assertTrue(Arrays.equals(expectedData, actualData));
+          testComplete();
+        });
+      });
+    });
+    clientRequest.end();
+    await();
+  }
+
+  @Test
+  public void testSendOpenRangeFileFromClasspath() {
+    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+      res.response().sendFile("webroot/somefile.html", 6);
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        resp.bodyHandler(buff -> {
+          assertTrue(buff.toString().startsWith("<body>blah</body></html>"));
+          testComplete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testSendRangeFileFromClasspath() {
+    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+      res.response().sendFile("webroot/somefile.html", 6, 6);
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions()).request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals("<body>", buff.toString());
+          testComplete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testMultipleRecursiveCallsAndPipelining() throws Exception {
+    int sendRequests = 100;
+    AtomicInteger receivedRequests = new AtomicInteger();
+    vertx.createHttpServer()
+      .requestHandler(x -> {
+        x.response().end("hello");
+      })
+      .listen(8080, r -> {
+        if (r.succeeded()) {
+          HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+              .setKeepAlive(true)
+              .setPipelining(true)
+              .setDefaultPort(8080)
+          );
+          IntStream.range(0, 5).forEach(i -> recursiveCall(client, receivedRequests, sendRequests));
+        }
+      });
+    await();
+  }
+
+  private void recursiveCall(HttpClient client, AtomicInteger receivedRequests, int sendRequests){
+    client.getNow("/", r -> {
+      int numRequests = receivedRequests.incrementAndGet();
+      if (numRequests == sendRequests) {
+        testComplete();
+      } else if (numRequests < sendRequests) {
+        recursiveCall(client, receivedRequests, sendRequests);
+      }
+    });
+  }
+
 
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {
@@ -3886,4 +4633,27 @@ public class HttpTest extends HttpTestBase {
     out.close();
     return file;
   }
+
+
+  @Test
+  public void testDumpManyRequestsOnQueue() throws Exception {
+    int sendRequests = 10000;
+    AtomicInteger receivedRequests = new AtomicInteger();
+    vertx.createHttpServer().requestHandler(r-> {
+      r.response().end();
+      if (receivedRequests.incrementAndGet() == sendRequests) {
+        testComplete();
+      }
+    }).listen(8080, onSuccess(s -> {
+      HttpClientOptions ops = new HttpClientOptions()
+        .setDefaultPort(8080)
+        .setPipelining(true)
+        .setKeepAlive(true);
+      HttpClient client = vertx.createHttpClient(ops);
+      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {}));
+    }));
+    await();
+  }
+
+
 }

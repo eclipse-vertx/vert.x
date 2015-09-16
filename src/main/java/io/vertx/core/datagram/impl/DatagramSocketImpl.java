@@ -32,24 +32,24 @@ import io.vertx.core.datagram.PacketWritestream;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket {
+public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket, MetricsProvider {
 
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
 
@@ -57,13 +57,18 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     super(vertx, createChannel(options.isIpV6() ? io.vertx.core.datagram.impl.InternetProtocolFamily.IPv6 : io.vertx.core.datagram.impl.InternetProtocolFamily.IPv4,
           new DatagramSocketOptions(options)), vertx.getOrCreateContext(), vertx.metricsSPI().createMetrics(null, options));
     ContextImpl creatingContext = vertx.getContext();
-    if (creatingContext != null && creatingContext.isMultiThreaded()) {
+    if (creatingContext != null && creatingContext.isMultiThreadedWorkerContext()) {
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
     }
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
-    context.getEventLoop().register(channel);
-    channel.pipeline().addLast("handler", new DatagramServerHandler(this.vertx, this));
+    context.eventLoop().register(channel);
+    channel.pipeline().addLast("handler", new DatagramServerHandler(this));
     channel().config().setMaxMessagesPerRead(1);
+  }
+
+  @Override
+  protected Object metric() {
+    return null;
   }
 
   @Override
@@ -176,7 +181,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     ChannelFuture future = channel().bind(is);
     addListener(future, ar -> {
       if (ar.succeeded()) {
-        metrics.listening(localAddress());
+        ((DatagramSocketMetrics) metrics).listening(localAddress());
       }
       handler.handle(ar);
     });
@@ -208,7 +213,9 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     Objects.requireNonNull(host, "no null host accepted");
     ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
     addListener(future, handler);
-    if (metrics.isEnabled()) metrics.bytesWritten(new SocketAddressImpl(port, host), packet.length());
+    if (metrics.isEnabled()) {
+      metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
+    }
 
     return this;
   }
@@ -242,16 +249,13 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics.baseName();
+  public boolean isMetricsEnabled() {
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   protected DatagramChannel channel() {
@@ -302,7 +306,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
-    context.executeSync(() -> handler.handle(Future.failedFuture(cause)));
+    context.executeFromIO(() -> handler.handle(Future.failedFuture(cause)));
   }
 
   @Override
@@ -320,7 +324,9 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   }
 
   synchronized void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
-    metrics.bytesRead(packet.sender(), packet.data().length());
+    if (metrics.isEnabled()) {
+      metrics.bytesRead(null, packet.sender(), packet.data().length());
+    }
     if (packetHandler != null) {
       packetHandler.handle(packet);
     }

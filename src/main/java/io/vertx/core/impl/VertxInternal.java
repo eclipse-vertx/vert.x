@@ -18,13 +18,15 @@ package io.vertx.core.impl;
 
 
 import io.netty.channel.EventLoopGroup;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.metrics.spi.VertxMetrics;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.spi.cluster.VertxSPI;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
 import java.util.Map;
@@ -37,7 +39,7 @@ import java.util.concurrent.ExecutorService;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface VertxInternal extends VertxSPI {
+public interface VertxInternal extends Vertx {
 
   @Override
   ContextImpl getOrCreateContext();
@@ -70,11 +72,9 @@ public interface VertxInternal extends VertxSPI {
 
   void simulateKill();
 
-  void simulateEventBusUnresponsive();
-
   Deployment getDeployment(String deploymentID);
 
-  void failoverCompleteHandler(Handler<Boolean> failoverCompleteHandler);
+  void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
 
   boolean isKilled();
 
@@ -83,4 +83,9 @@ public interface VertxInternal extends VertxSPI {
   String getNodeID();
 
   File resolveFile(String fileName);
+
+  <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
+
+  ClusterManager getClusterManager();
+
 }

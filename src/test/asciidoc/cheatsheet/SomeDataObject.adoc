@@ -1,0 +1,75 @@
+== SomeDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+
+|[[addedAggregatedDataObjects]]`addedAggregatedDataObjects`
+|`Array of link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
+|[[addedBooleanValues]]`addedBooleanValues`
+|`Array of Boolean`
+|-
+|[[addedBoxedBooleanValues]]`addedBoxedBooleanValues`
+|`Array of Boolean`
+|-
+|[[addedBoxedIntValues]]`addedBoxedIntValues`
+|`Array of Number`
+|-
+|[[addedBoxedLongValues]]`addedBoxedLongValues`
+|`Array of Number`
+|-
+|[[addedIntValues]]`addedIntValues`
+|`Array of Number`
+|-
+|[[addedLongValues]]`addedLongValues`
+|`Array of Number`
+|-
+|[[addedStringValues]]`addedStringValues`
+|`Array of String`
+|-
+|[[aggregatedDataObject]]`aggregatedDataObject`
+|`link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
+|[[aggregatedDataObjects]]`aggregatedDataObjects`
+|`Array of link:AggregatedDataObject.html[AggregatedDataObject]`
+|-
+|[[booleanValue]]`booleanValue`
+|`Boolean`
+|-
+|[[boxedBooleanValue]]`boxedBooleanValue`
+|`Boolean`
+|-
+|[[boxedBooleanValues]]`boxedBooleanValues`
+|`Array of Boolean`
+|-
+|[[boxedIntValue]]`boxedIntValue`
+|`Number`
+|-
+|[[boxedIntValues]]`boxedIntValues`
+|`Array of Number`
+|-
+|[[boxedLongValue]]`boxedLongValue`
+|`Number`
+|-
+|[[boxedLongValues]]`boxedLongValues`
+|`Array of Number`
+|-
+|[[intValue]]`intValue`
+|`Number`
+|-
+|[[longValue]]`longValue`
+|`Number`
+|-
+|[[stringValue]]`stringValue`
+|`String`
+|-
+|[[stringValues]]`stringValues`
+|`Array of String`
+|-|===

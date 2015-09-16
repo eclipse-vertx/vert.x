@@ -112,8 +112,8 @@ public class DatagramTest extends VertxTestBase {
   @Test
   public void testSendReceiveLargePacket() {
     int packetSize = 10000;
-    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions().setReceiveBufferSize(packetSize));
-    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions().setReceiveBufferSize(packetSize));
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions().setSendBufferSize(packetSize));
+    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions().setReceiveBufferSize(packetSize + 16)); // OSX needs 16 more
     peer2.exceptionHandler(t -> fail(t.getMessage()));
     peer2.listen(1234, "127.0.0.1", ar -> {
       assertTrue(ar.succeeded());

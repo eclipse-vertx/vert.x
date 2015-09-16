@@ -120,11 +120,11 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       req.resume();
       paused = false;
       if (pauseBuff != null) {
-        receiveData(pauseBuff);
+        doReceiveData(pauseBuff);
         pauseBuff = null;
       }
-      if (complete && endHandler != null) {
-        endHandler.handle(null);
+      if (complete) {
+        handleComplete();
       }
     }
     return this;
@@ -148,10 +148,8 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     vertx.fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
-
         Pump p = Pump.pump(HttpServerFileUploadImpl.this, ar.result());
         p.start();
-
         resume();
       } else {
         notifyExceptionHandler(ar.cause());
@@ -166,9 +164,16 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void receiveData(Buffer data) {
-    if (lazyCalculateSize) {
-      size += data.length();
+    if (data.length() != 0) {
+      // Can sometimes receive zero length packets from Netty!
+      if (lazyCalculateSize) {
+        size += data.length();
+      }
+      doReceiveData(data);
     }
+  }
+
+  synchronized void doReceiveData(Buffer data) {
     if (!paused) {
       if (dataHandler != null) {
         dataHandler.handle(data);
@@ -182,21 +187,24 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   synchronized void complete() {
-    req.uploadComplete(this);
-    lazyCalculateSize = false;
     if (paused) {
       complete = true;
     } else {
-      if (file == null) {
+      handleComplete();
+    }
+  }
+
+  private void handleComplete() {
+    lazyCalculateSize = false;
+    if (file == null) {
+      notifyEndHandler();
+    } else {
+      file.close(ar -> {
+        if (ar.failed()) {
+          notifyExceptionHandler(ar.cause());
+        }
         notifyEndHandler();
-      } else {
-        file.close(ar -> {
-          if (ar.failed()) {
-            notifyExceptionHandler(ar.cause());
-          }
-          notifyEndHandler();
-        });
-      }
+      });
     }
   }
 
@@ -204,7 +212,6 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     if (endHandler != null) {
       endHandler.handle(null);
     }
-    req.callEndHandler(this);
   }
 
   private void notifyExceptionHandler(Throwable cause) {

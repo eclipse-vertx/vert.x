@@ -28,7 +28,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -39,10 +39,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -89,7 +89,7 @@ public class AsyncFileImpl implements AsyncFile {
     if (options.isCreate()) opts.add(StandardOpenOption.CREATE);
     if (options.isCreateNew()) opts.add(StandardOpenOption.CREATE_NEW);
     if (options.isSync()) opts.add(StandardOpenOption.SYNC);
-    if (options.isDSync()) opts.add(StandardOpenOption.DSYNC);
+    if (options.isDsync()) opts.add(StandardOpenOption.DSYNC);
     if (options.isDeleteOnClose()) opts.add(StandardOpenOption.DELETE_ON_CLOSE);
     if (options.isSparse()) opts.add(StandardOpenOption.SPARSE);
     if (options.isTruncateExisting()) opts.add(StandardOpenOption.TRUNCATE_EXISTING);
@@ -116,23 +116,6 @@ public class AsyncFileImpl implements AsyncFile {
     closeInternal(handler);
   }
 
-  @Override
-  public synchronized AsyncFile write(Buffer buffer, long position,  Handler<AsyncResult<Void>> handler) {
-    Objects.requireNonNull(buffer, "buffer");
-    Objects.requireNonNull(handler, "handler");
-    Arguments.require(position >= 0, "position must be >= 0");
-    check();
-    ByteBuf buf = buffer.getByteBuf();
-    if (buf.nioBufferCount() > 1) {
-      Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
-      doWrite(buffers, position, handler);
-    } else {
-      ByteBuffer bb = buf.nioBuffer();
-      doWrite(bb, position, bb.limit(),  handler);
-    }
-    return this;
-  }
-
 
   @Override
   public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
@@ -148,29 +131,47 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public synchronized AsyncFile write(Buffer buffer) {
+  public AsyncFile write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(handler, "handler");
+    return doWrite(buffer, position, handler);
+  }
+
+  private synchronized AsyncFile doWrite(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(buffer, "buffer");
+    Arguments.require(position >= 0, "position must be >= 0");
     check();
-    int length = buffer.length();
-    Handler<AsyncResult<Void>> handler = ar -> {
+    Handler<AsyncResult<Void>> wrapped = ar -> {
       if (ar.succeeded()) {
         checkContext();
         checkDrained();
         if (writesOutstanding == 0 && closedDeferred != null) {
           closedDeferred.run();
         }
+        if (handler != null) {
+          handler.handle(ar);
+        }
       } else {
-        handleException(ar.cause());
+        if (handler != null) {
+          handler.handle(ar);
+        } else {
+          handleException(ar.cause());
+        }
       }
     };
-
     ByteBuf buf = buffer.getByteBuf();
     if (buf.nioBufferCount() > 1) {
-      Iterator<ByteBuffer> buffers = Arrays.asList(buf.nioBuffers()).iterator();
-      doWrite(buffers, writePos, handler);
+      doWrite(buf.nioBuffers(), position, wrapped);
     } else {
       ByteBuffer bb = buf.nioBuffer();
-      doWrite(bb, writePos, bb.limit(), handler);
+      doWrite(bb, position, bb.limit(),  wrapped);
     }
+    return this;
+  }
+
+  @Override
+  public AsyncFile write(Buffer buffer) {
+    int length = buffer.length();
+    doWrite(buffer, writePos, null);
     writePos += length;
     return this;
   }
@@ -283,20 +284,24 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  private synchronized void doWrite(Iterator<ByteBuffer> buffers, long position, Handler<AsyncResult<Void>> handler) {
-    ByteBuffer b = buffers.next();
-    int limit = b.limit();
-    doWrite(b, position, limit, ar -> {
-      if (ar.failed()) {
-        handler.handle(ar);
-      } else {
-        if (buffers.hasNext()) {
-          doWrite(buffers, position + limit, handler);
+  private synchronized void doWrite(ByteBuffer[] buffers, long position, Handler<AsyncResult<Void>> handler) {
+    AtomicInteger cnt = new AtomicInteger();
+    AtomicBoolean sentFailure = new AtomicBoolean();
+    for (ByteBuffer b: buffers) {
+      int limit = b.limit();
+      doWrite(b, position, limit, ar -> {
+        if (ar.succeeded()) {
+          if (cnt.incrementAndGet() == buffers.length) {
+            handler.handle(ar);
+          }
         } else {
-          handler.handle(ar);
+          if (sentFailure.compareAndSet(false, true)) {
+            handler.handle(ar);
+          }
         }
-      }
-    });
+      });
+      position += limit;
+    }
   }
 
   private synchronized void doRead() {
@@ -351,6 +356,9 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {
+    if (toWrite == 0) {
+      throw new IllegalStateException("Cannot save zero bytes");
+    }
     writesOutstanding += toWrite;
     writeInternal(buff, position, handler);
   }

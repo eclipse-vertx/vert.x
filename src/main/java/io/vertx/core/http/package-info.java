@@ -23,7 +23,7 @@
  *
  * The simplest way to create an HTTP server, using all default options is as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example1}
  * ----
@@ -33,7 +33,7 @@
  * If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.http.HttpServerOptions}
  * instance when creating it:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example2}
  * ----
@@ -45,14 +45,14 @@
  *
  * To tell the server to listen at the host and port as specified in the options:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example3}
  * ----
  *
  * Or to specify the host and port in the call to listen, ignoring what is configured in the options:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example4}
  * ----
@@ -65,7 +65,7 @@
  * If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
  * For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example5}
  * ----
@@ -74,7 +74,7 @@
  *
  * To be notified when a request arrives you need to set a {@link io.vertx.core.http.HttpServer#requestHandler}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example6}
  * ----
@@ -98,7 +98,7 @@
  *
  * Here's a simple example of a server handling a request and replying with "hello world" to it.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example7_1}
  * ----
@@ -153,7 +153,7 @@
  *
  * It also has case-insensitive keys, that means you can do the following:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example8}
  * ----
@@ -205,7 +205,7 @@
  * To receive the body, you can use the {@link io.vertx.core.http.HttpServerRequest#handler}  on the request,
  * this will get called every time a chunk of the request body arrives. Here's an example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example9}
  * ----
@@ -216,7 +216,7 @@
  * In some cases (e.g. if the body is small) you will want to aggregate the entire body in memory, so you could do
  * the aggregation yourself as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example10}
  * ----
@@ -224,7 +224,7 @@
  * This is such a common case, that Vert.x provides a {@link io.vertx.core.http.HttpServerRequest#bodyHandler} to do this
  * for you. The body handler is called once when all the body has been received:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example11}
  * ----
@@ -252,7 +252,7 @@
  * with true, and then you should retrieve the actual attributes using {@link io.vertx.core.http.HttpServerRequest#formAttributes}
  * once the entire body has been read:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example12}
  * ----
@@ -269,7 +269,7 @@
  *
  * The object passed into the handler is a {@link io.vertx.core.http.HttpServerFileUpload} instance.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example13}
  * ----
@@ -277,7 +277,7 @@
  * File uploads can be large we don't provide the entire upload in a single buffer as that might result in memory
  * exhaustion, instead, the upload data is received in chunks:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example14}
  * ----
@@ -288,13 +288,13 @@
  *
  * If you just want to upload the file to disk somewhere you can use {@link io.vertx.core.http.HttpServerFileUpload#streamToFileSystem}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example15}
  * ----
  *
  * WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
- * to arbitrary places on your filesystem. See <<security_notes, security notes>> for more information.
+ * to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
  *
  * === Sending back responses
  *
@@ -321,14 +321,14 @@
  *
  * With a single buffer:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example16}
  * ----
  *
  * With a string. In this case the string will encoded using UTF-8 and the result written to the wire.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example17}
  * ----
@@ -336,7 +336,7 @@
  * With a string and an encoding. In this case the string will encoded using the specified encoding and the
  * result written to the wire.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example18}
  * ----
@@ -358,7 +358,7 @@
  *
  * With no arguments, the response is simply ended.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example19}
  * ----
@@ -366,7 +366,7 @@
  * It can also be called with a string or buffer in the same way `write` is called. In this case it's just the same as
  * calling write with a string or buffer followed by calling end with no arguments. For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example20}
  * ----
@@ -385,14 +385,14 @@
  * HTTP response headers can be added to the response by adding them directly to the
  * {@link io.vertx.core.http.HttpServerResponse#headers}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example21}
  * ----
  *
  * Or you can use {@link io.vertx.core.http.HttpServerResponse#putHeader}
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example22}
  * ----
@@ -408,7 +408,7 @@
  *
  * You put the HTTP response into chunked mode as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example23}
  * ----
@@ -421,14 +421,14 @@
  *
  * To add trailers to the response, add them directly to the {@link io.vertx.core.http.HttpServerResponse#trailers}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example24}
  * ----
  *
  * Or use {@link io.vertx.core.http.HttpServerResponse#putTrailer}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example25}
  * ----
@@ -449,7 +449,7 @@
  *
  * Here's a very simple web server that serves files from the file system using sendFile:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example26}
  * ----
@@ -462,7 +462,22 @@
  *
  * WARNING: If you're going to write web servers directly using Vert.x be careful that users cannot exploit the
  * path to access files outside the directory from which you want to serve them. It may be safer instead to use
- * Vert.x Apex.
+ * Vert.x Web.
+ *
+ * When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example26b}
+ * ----
+ *
+ * You are not required to supply the length if you want to send a file starting from an offset until the end, in this
+ * case you can just do:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example26c}
+ * ----
  *
  * ==== Pumping responses
  *
@@ -474,7 +489,7 @@
  * It uses a pump for the body, so it will work even if the HTTP request body is much larger than can fit in memory
  * at any one time:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example27}
  * ----
@@ -505,14 +520,14 @@
  *
  * You create an {@link io.vertx.core.http.HttpClient} instance with default options as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example28}
  * ----
  *
  * If you want to configure options for the client, you create it as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example29}
  * ----
@@ -525,7 +540,7 @@
  * Often you want to make many requests to the same host/port with an http client. To avoid you repeating the host/port
  * every time you make a request you can configure the client with a default host/port:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example30}
  * ----
@@ -533,7 +548,7 @@
  * Alternatively if you find yourself making lots of requests to different host/ports with the same client you can
  * simply specify the host/port when doing the request.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example31}
  * ----
@@ -546,12 +561,12 @@
  * HEAD requests.
  *
  * The simplest way to do this with the Vert.x http client is using the methods prefixed with `Now`. For example
- * {@link io.vertx.core.http.HttpClient#getNow)}.
+ * {@link io.vertx.core.http.HttpClient#getNow}.
  *
  * These methods create the http request and send it in a single method call and allow you to provide a handler that will be
  * called with the http response when it comes back.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example32}
  * ----
@@ -562,7 +577,7 @@
  * general purpose request methods such as {@link io.vertx.core.http.HttpClient#request} which allow you to specify
  * the HTTP method at run-time:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example33}
  * ----
@@ -579,15 +594,15 @@
  * which can be used to write to the request body or write headers.
  *
  * Here are some examples of writing a POST request with a body:
- *
- * [source,java]
+ *m
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example34}
  * ----
  *
  * Methods exist to write strings in UTF-8 encoding and in any specific encoding and to write buffers:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example35}
  * ----
@@ -595,7 +610,7 @@
  * If you are just writing a single string or buffer to the HTTP request you can write it and end the request in a
  * single call to the `end` function.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example36}
  * ----
@@ -603,7 +618,7 @@
  * When you're writing to a request, the first call to `write` will result in the request headers being written
  * out to the wire.
  *
- * The actual write is asychronous and might not occur until some time after the call has returned.
+ * The actual write is asynchronous and might not occur until some time after the call has returned.
  *
  * Non-chunked HTTP requests with a request body require a `Content-Length` header to be provided.
  *
@@ -620,7 +635,7 @@
  *
  * You can write headers to a request using the {@link io.vertx.core.http.HttpClientRequest#headers()} multi-map as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example37}
  * ----
@@ -630,7 +645,7 @@
  *
  * You can also write headers using {@link io.vertx.core.http.HttpClientRequest#putHeader}
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example38}
  * ----
@@ -647,7 +662,7 @@
  *
  * Requests can be ended in several ways. With no arguments the request is simply ended:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example39}
  * ----
@@ -655,7 +670,7 @@
  * Or a string or buffer can be provided in the call to `end`. This is like calling `write` with the string or buffer
  * before calling `end` with no arguments
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example40}
  * ----
@@ -672,7 +687,7 @@
  * In chunked mode each call to write will cause a new chunk to be written to the wire. In chunked mode there is
  * no need to set the `Content-Length` of the request up-front.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example41}
  * ----
@@ -686,17 +701,23 @@
  *
  * ==== Handling exceptions
  *
- * You can handle exceptions corresponding to a request by setting an exception handler on the {@link io.vertx.core.http.HttpClientRequest}
- * instance:
+ * You can handle exceptions corresponding to a request by setting an exception handler on the
+ * {@link io.vertx.core.http.HttpClientRequest} instance:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example42}
  * ----
  *
- * TODO - what about exceptions in the getNow methods where no exception handler can be provided??
+ * This does not handle non _2xx_ response that need to be handled in the
+ * {@link io.vertx.core.http.HttpClientResponse} code:
  *
- * Maybe need a catch all exception handler??
+ * [source, $lang]
+ * ----
+ * {@link examples.HTTPExamples#statusCodeHandling}
+ * ----
+ *
+ * IMPORTANT: `XXXNow` methods cannot receive an exception handler.
  *
  * ==== Specifying a handler on the client request
  *
@@ -704,7 +725,7 @@
  * not provide a handler when the request is created and set it later on the request object itself, using
  * {@link io.vertx.core.http.HttpClientRequest#handler(io.vertx.core.Handler)}, for example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example43}
  * ----
@@ -716,7 +737,7 @@
  *
  * For, example, you could pump a file on disk to a http request body as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example44}
  * ----
@@ -729,7 +750,7 @@
  * You can query the status code and the status message of the response with {@link io.vertx.core.http.HttpClientResponse#statusCode}
  * and {@link io.vertx.core.http.HttpClientResponse#statusMessage}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example45}
  * ----
@@ -745,7 +766,7 @@
  *
  * The object returned is a {@link io.vertx.core.MultiMap} as HTTP headers can contain multiple values for single keys.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example46}
  * ----
@@ -765,7 +786,7 @@
  * As parts of the response body arrive, the {@link io.vertx.core.http.HttpClientResponse#handler} is called with
  * a {@link io.vertx.core.buffer.Buffer} representing the piece of the body:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example47}
  * ----
@@ -773,7 +794,7 @@
  * If you know the response body is not very large and want to aggregate it all in memory before handling it, you can
  * either aggregate it yourself:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example48}
  * ----
@@ -781,7 +802,7 @@
  * Or you can use the convenience {@link io.vertx.core.http.HttpClientResponse#bodyHandler(io.vertx.core.Handler)} which
  * is called with the entire body when the response has been fully read:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example49}
  * ----
@@ -820,10 +841,21 @@
  *
  * Here's an example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example50}
  * ----
+ *
+ * On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
+ * when it receives an `Expect: 100-Continue` header.
+ * This is done by setting the option {@link io.vertx.core.http.HttpServerOptions#setHandle100ContinueAutomatically(boolean)}.
+ *
+ * If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
+ * `false` (the default), then you can inspect the headers and call {@link io.vertx.core.http.HttpServerResponse#writeContinue()}
+ * if you wish the client to continue sending the body or you can reject the request by sending back a failure status code
+ * if you don't want it to send the body. For example:
+ *
+ *
  *
  * === Enabling compression on the client
  *
@@ -863,18 +895,19 @@
  * For pooling to work, keep alive must be true using {@link io.vertx.core.http.HttpClientOptions#setKeepAlive(boolean)}
  * on the options used when configuring the client. The default value is true.
  *
- * When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP request sent.
+ * When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP/1.0 request sent.
+ * When keep alive is disabled. Vert.x will add a `Connection: Close` header to each HTTP/1.1 request sent to signal
+ * that the connection will be closed after completion of the response.
  *
  * The maximum number of connections to pool *for each server* is configured using {@link io.vertx.core.http.HttpClientOptions#setMaxPoolSize(int)}
  *
  * When making a request with pooling enabled, Vert.x will create a new connection if there are less than the maximum number of
  * connections already created for that server, otherwise it will add the request to a queue.
  *
- * When a response returns, if there are pending requests for the server, then the connection will be reused, otherwise
- * it will be closed.
+ * Keep alive connections will not be closed by the client automatically. To close them you can close the client instance.
  *
- * This gives the benefits of keep alive when the client is loaded but means we don't keep connections hanging around
- * unnecessarily when there would be no benefits anyway.
+ * Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
+ * connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
  *
  * === Pipe-lining
  *
@@ -888,19 +921,52 @@
  *
  * When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
  *
- * When pipe-line responses return at the client, the connection will be automatically closed when all in-flight
- * responses have returned and there are no outstanding pending requests to write.
+  * === Server sharing
  *
- * === Server sharing
+ * When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
+ * round-robin strategy.
  *
- * TODO
- * round robin requests etc
+ * Let's take a verticle creating a HTTP server such as:
+ *
+ * .io.vertx.examples.http.sharing.HttpServerVerticle
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#serversharing(io.vertx.core.Vertx)}
+ * ----
+ *
+ * This service is listening on the port 8080. So, when this verticle is instantiated multiple times as with:
+ * `vertx run io.vertx.examples.http.sharing.HttpServerVerticle -instances 2`, what's happening ? If both
+ * verticles would bind to the same port, you would receive a socket exception. Fortunately, vert.x is handling
+ * this case for you. When you deploy another server on the same host and port as an existing server it doesn't
+ * actually try and create a new server listening on the same host/port. It binds only once to the socket. When
+ * receiving a request it calls the server handlers following a round robin strategy.
+ *
+ * Let's now imagine a client such as:
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#serversharingclient(io.vertx.core.Vertx)}
+ * ----
+ *
+ * Vert.x delegates the requests to one of the server sequentially:
+ *
+ * [source]
+ * ----
+ * Hello from i.v.e.h.s.HttpServerVerticle@1
+ * Hello from i.v.e.h.s.HttpServerVerticle@2
+ * Hello from i.v.e.h.s.HttpServerVerticle@1
+ * Hello from i.v.e.h.s.HttpServerVerticle@2
+ * ...
+ * ----
+ *
+ * Consequently the servers can scale over available cores while each Vert.x verticle instance remains strictly
+ * single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your
+ * server on your multi-core machine.
  *
  * === Using HTTPS with Vert.x
  *
  * Vert.x http servers and clients can be configured to use HTTPS in exactly the same way as net servers.
  *
- * Please see <<netserver_ssl, configuring net servers to use SSL>> for more information.
+ * Please see <<ssl, configuring net servers to use SSL>> for more information.
  *
  * === WebSockets
  *
@@ -921,14 +987,14 @@
  * When a WebSocket connection is made to the server, the handler will be called, passing in an instance of
  * {@link io.vertx.core.http.ServerWebSocket}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example51}
  * ----
  *
  * You can choose to reject the WebSocket by calling {@link io.vertx.core.http.ServerWebSocket#reject()}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example52}
  * ----
@@ -938,7 +1004,7 @@
  * The second way of handling WebSockets is to handle the HTTP Upgrade request that was sent from the client, and
  * call {@link io.vertx.core.http.HttpServerRequest#upgrade()} on the server request.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example53}
  * ----
@@ -958,29 +1024,29 @@
  *
  * The handler will be called with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example54}
  * ----
  *
  * ==== Writing messages to WebSockets
  *
- * If you wish to write a single binary WebSocket message containing a single WebSocket frame to the WebSocket (a
- * common case) the simplest way to do this is to use {@link io.vertx.core.http.WebSocket#writeMessage(io.vertx.core.buffer.Buffer)}:
+ * If you wish to write a single binary WebSocket message to the WebSocket you can do this with
+ * {@link io.vertx.core.http.WebSocket#writeBinaryMessage(io.vertx.core.buffer.Buffer)}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example55}
  * ----
  *
- * If the websocket message is larger than the maximum websocket frame size as configured with
+ * If the WebSocket message is larger than the maximum websocket frame size as configured with
  * {@link io.vertx.core.http.HttpClientOptions#setMaxWebsocketFrameSize(int)}
  * then Vert.x will split it into multiple WebSocket frames before sending it on the wire.
  *
  * ==== Writing frames to WebSockets
  *
  * A WebSocket message can be composed of multiple frames. In this case the first frame is either a _binary_ or _text_ frame
- * followed by one or more _continuation_ frames.
+ * followed by zero or more _continuation_ frames.
  *
  * The last frame in the message is marked as _final_.
  *
@@ -992,9 +1058,20 @@
  *
  * Here's an example for binary frames:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example56}
+ * ----
+ *
+ * In many cases you just want to send a websocket message that consists of a single final frame, so we provide a couple
+ * of shortcut methods to do that with {@link io.vertx.core.http.WebSocket#writeFinalBinaryFrame(io.vertx.core.buffer.Buffer)}
+ * and {@link io.vertx.core.http.WebSocket#writeFinalTextFrame(String)}.
+ *
+ * Here's an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example56_1}
  * ----
  *
  * ==== Reading frames from WebSockets
@@ -1004,7 +1081,7 @@
  * The frame handler will be called with instances of {@link io.vertx.core.http.WebSocketFrame} when a frame arrives,
  * for example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.HTTPExamples#example57}
  * ----

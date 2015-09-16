@@ -25,10 +25,10 @@ import java.util.List;
  */
 public abstract class DnsMessage<H extends DnsHeader> {
 
-  private final List<DnsQuestion> questions = new ArrayList<DnsQuestion>();
-  private final List<DnsResource> answers = new ArrayList<DnsResource>();
-  private final List<DnsResource> authority = new ArrayList<DnsResource>();
-  private final List<DnsResource> additional = new ArrayList<DnsResource>();
+  private final List<DnsQuestion> questions = new ArrayList<>();
+  private final List<DnsResource> answers = new ArrayList<>();
+  private final List<DnsResource> authority = new ArrayList<>();
+  private final List<DnsResource> additional = new ArrayList<>();
 
   private H header;
 

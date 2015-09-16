@@ -1,0 +1,66 @@
+@comment{'A library of reusable functions'}
+
+@code{
+
+  /**
+   * Render a collection of comment tokens to html markup.
+   *
+   * params:
+   * margin : left margin
+   * tokens : a collection of io.vertx.codegen.doc.Token objects
+   * linkToHtml : a function that takes as input io.vertx.codegen.doc.Tag$Link and returns an html string
+   * lineSep : the line separator
+   *
+   * return: the renderer HTML
+   */
+  def renderTokensToHtml(margin, tokens, linkToHtml, lineSep) {
+    var need = true;
+    var html = new StringBuilder();
+    for (token : tokens) {
+      if (need) {
+        html.append(margin);
+        need = false;
+      }
+      if (token.lineBreak) {
+        html.append(lineSep);
+        need = true;
+      } else {
+        if (token.text) {
+          html.append(token.value);
+        } else {
+          var tag = token.tag;
+          if (tag instanceof io.vertx.codegen.doc.Tag$Link) {
+            var htmlLink = linkToHtml(tag);
+            if (htmlLink == null || htmlLink.trim().empty) {
+              htmlLink = tag.label;
+            }
+            if (htmlLink == null || htmlLink.trim().empty) {
+              htmlLink = tag.targetElement.simpleName;
+            }
+            html.append(htmlLink);
+          } else if (tag.name == "code") {
+            html.append("<code>").append(tag.value.trim()).append("</code>");
+          }
+        }
+      }
+    }
+    if (!need) {
+      html.append(lineSep);
+    }
+    return html.toString();
+  }
+
+  /**
+   * Render a doc comment to html markup.
+   *
+   * params:
+   * margin : left margin
+   * doc : io.vertx.codegen.doc.Doc object
+   * linkToHtml : a function that takes as input io.vertx.codegen.doc.Tag$Link and returns an html string
+   *
+   * return: the renderer HTML
+   */
+  def renderDocToHtml(margin, doc, linkToHtml) {
+    return renderTokensToHtml(margin, doc.tokens, linkToHtml, "\n");
+  }
+}

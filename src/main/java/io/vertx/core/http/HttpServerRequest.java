@@ -100,10 +100,36 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   MultiMap headers();
 
   /**
+   * Return the first header value with the specified name
+   *
+   * @param headerName  the header name
+   * @return the header value
+   */
+  String getHeader(String headerName);
+
+  /**
+   * Return the first header value with the specified name
+   *
+   * @param headerName  the header name
+   * @return the header value
+   */
+  @GenIgnore
+  String getHeader(CharSequence headerName);
+
+  /**
    * @return the query parameters in the request
    */
   @CacheReturn
   MultiMap params();
+
+  /**
+   * Return the first param value with the specified name
+   *
+   * @param paramName  the param name
+   * @return the param value
+   */
+  String getParam(String paramName);
+
 
   /**
    * @return the remote (client side) address of the request
@@ -146,7 +172,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * <p>
    * USE THIS WITH CAUTION!
    * <p>
-   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol
+   * Once you have called this method, you must handle writing to the connection yourself using the net socket,
+   * the server request instance will no longer be usable as normal.
+   * Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol.
    *
    * @return the net socket
    */
@@ -191,6 +219,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   MultiMap formAttributes();
 
   /**
+   * Return the first form attribute value with the specified name
+   *
+   * @param attributeName  the attribute name
+   * @return the attribute value
+   */
+  String getFormAttribute(String attributeName);
+
+  /**
    * Upgrade the connection to a WebSocket connection.
    * <p>
    * This is an alternative way of handling WebSockets and can only be used if no websocket handlers are set on the
@@ -199,5 +235,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return  the WebSocket
    */
   ServerWebSocket upgrade();
+
+  /**
+   * Has the request ended? I.e. has the entire request, including the body been read?
+   *
+   * @return true if ended
+   */
+  boolean isEnded();
 
 }

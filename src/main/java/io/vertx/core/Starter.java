@@ -20,24 +20,17 @@ import io.vertx.core.impl.Args;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.spi.VertxMetricsFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Properties;
-import java.util.Scanner;
+import java.net.*;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +38,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 /**
- * A {@code main()} class that can be used to deploy verticles.
+ * A {@code main()} class that can be used to create Vert.x instance and deploy a verticle, or run a bare Vert.x instance.
  * <p>
  * This class is used by the {@code vertx} command line utility to deploy verticles from the command line.
  * <p>
@@ -58,70 +51,150 @@ import java.util.jar.Manifest;
  * {@code java -jar myapp.jar}
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @deprecated Use {@link Launcher} instead
  */
+@Deprecated
 public class Starter {
 
   public static final String VERTX_OPTIONS_PROP_PREFIX = "vertx.options.";
   public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options.";
+  public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
 
+  private static final String PATH_SEP = System.getProperty("path.separator");
   private static final Logger log = LoggerFactory.getLogger(Starter.class);
   public static List<String> PROCESS_ARGS;
 
-  public static void main(String[] args) {
-    new Starter().run(args);
+  public static void main(String[] sargs) {
+    Args args = new Args(sargs);
+
+    String extraCP = args.map.get("-cp");
+    if (extraCP != null) {
+      // If an extra CP is specified (e.g. to provide cp to a jar or cluster.xml) we must create a new classloader
+      // and run the starter using that so it's visible to the rest of the code
+      String[] parts = extraCP.split(PATH_SEP);
+      URL[] urls = new URL[parts.length];
+      for (int p = 0; p < parts.length; p++) {
+        String part = parts[p];
+        File file = new File(part);
+        try {
+          URL url = file.toURI().toURL();
+          urls[p] = url;
+        } catch (MalformedURLException e) {
+          throw new IllegalStateException(e);
+        }
+      }
+      ClassLoader icl = new URLClassLoader(urls, Starter.class.getClassLoader());
+      ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
+      Thread.currentThread().setContextClassLoader(icl);
+      try {
+        Class<?> clazz = icl.loadClass(Starter.class.getName());
+        Object instance = clazz.newInstance();
+        Method run = clazz.getMethod("run", Args.class, String[].class);
+        run.invoke(instance, args, sargs);
+      } catch (Exception e) {
+        throw new IllegalStateException(e);
+      } finally {
+        Thread.currentThread().setContextClassLoader(oldTCCL);
+      }
+    } else {
+      // No extra CP, just invoke directly
+      new Starter().run(args, sargs);
+    }
   }
 
-  private final CountDownLatch stopLatch = new CountDownLatch(1);
+  public static void runCommandLine(String commandLine) {
+    new Starter().run(commandLine);
+  }
+
   protected Vertx vertx;
   protected VertxOptions options;
   protected DeploymentOptions deploymentOptions;
 
+  protected void run(String commandLine) {
+    String[] sargs = commandLine.split(" ");
+    Args args = new Args(sargs);
+    run(args, sargs);
+  }
 
-  public void run(String[] sargs) {
+  protected void run(String[] sargs) {
+    run(new Args(sargs), sargs);
+  }
+
+  // Note! Must be public so can be called by reflection
+  public void run(Args args, String[] sargs) {
 
     PROCESS_ARGS = Collections.unmodifiableList(Arrays.asList(sargs));
-
-    Args args = new Args(sargs);
-
-    if (sargs.length > 0) {
-      String first = sargs[0];
-      if (first.equals("-version")) {
-        log.info(getVersion());
-        return;
-      } else if (first.equals("run")) {
-        if (sargs.length < 2) {
-          displaySyntax();
-          return;
-        } else {
-          String main = sargs[1];
-          runVerticle(main, args);
-          return;
-        }
-      }
-    }
 
     String main = readMainVerticleFromManifest();
     if (main != null) {
       runVerticle(main, args);
     } else {
+      if (sargs.length > 0) {
+        String first = sargs[0];
+        if (first.equals("-version")) {
+          log.info(getVersion());
+          return;
+        } else if (first.equals("run")) {
+          if (sargs.length < 2) {
+            displaySyntax();
+            return;
+          } else {
+            main = sargs[1];
+            runVerticle(main, args);
+            return;
+          }
+        } else if (first.equals("-ha")) {
+          // Create a bare instance
+          runBare(args);
+          return;
+        }
+      }
       displaySyntax();
     }
   }
 
-  public void block() {
-    try {
-      stopLatch.await();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+  /**
+   * Hook for sub classes of {@link Starter} before the vertx instance is started.
+   */
+  protected void beforeStartingVertx(VertxOptions options) {
+    
+  }
+  
+  /**
+   * Hook for sub classes of {@link Starter} after the vertx instance is started.
+   */
+  protected void afterStartingVertx() {
+    
+  }
+  
+  /**
+   * Hook for sub classes of {@link Starter} before the verticle is deployed.
+   */
+  protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
+    
   }
 
-  public void unblock() {
-    stopLatch.countDown();
+  /**
+   * A deployment failure has been encountered. You can override this method to customize the behavior.
+   * By default it closes the `vertx` instance.
+   */
+  protected void handleDeployFailed() {
+    // Default behaviour is to close Vert.x if the deploy failed
+    vertx.close();
   }
+  
 
   private Vertx startVertx(boolean clustered, boolean ha, Args args) {
-    options = new VertxOptions();
+    MetricsOptions metricsOptions;
+    ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
+    if (factories.iterator().hasNext()) {
+      VertxMetricsFactory factory = factories.iterator().next();
+      metricsOptions = factory.newOptions();
+    } else {
+      metricsOptions = new MetricsOptions();
+    }
+    configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);
+    options = new VertxOptions().setMetricsOptions(metricsOptions);
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     if (clustered) {
       log.info("Starting clustering...");
@@ -147,11 +220,15 @@ public class Starter {
       if (ha) {
         String haGroup = args.map.get("-hagroup");
         int quorumSize = args.getInt("-quorum");
-        options.setHAEnabled(true).setHAGroup(haGroup);
+        options.setHAEnabled(true);
+        if (haGroup != null) {
+          options.setHAGroup(haGroup);
+        }
         if (quorumSize != -1) {
           options.setQuorumSize(quorumSize);
         }
       }
+      beforeStartingVertx(options);
       Vertx.clusteredVertx(options, ar -> {
         result.set(ar);
         latch.countDown();
@@ -172,9 +249,24 @@ public class Starter {
       }
       vertx = result.get().result();
     } else {
+      beforeStartingVertx(options);
       vertx = Vertx.vertx(options);
     }
+    addShutdownHook();
+    afterStartingVertx();
     return vertx;
+  }
+
+  private void runBare(Args args) {
+    // ha is necessarily true here,
+    // so clustered is
+    Vertx vertx = startVertx(true, true, args);
+    if (vertx == null) {
+      // Throwable should have been logged at this point
+      return;
+    }
+
+    // As we do not deploy a verticle, other options are irrelevant (instances, worker, conf)
   }
 
   private void runVerticle(String main, Args args) {
@@ -182,6 +274,10 @@ public class Starter {
     boolean clustered = args.map.get("-cluster") != null || ha;
 
     Vertx vertx = startVertx(clustered, ha, args);
+    if (vertx == null) {
+      // Throwable should have been logged at this point
+      return;
+    }
 
     String sinstances = args.map.get("-instances");
     int instances;
@@ -230,17 +326,17 @@ public class Starter {
     String message = (worker) ? "deploying worker verticle" : "deploying verticle";
     deploymentOptions = new DeploymentOptions();
     configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
-    vertx.deployVerticle(main, deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances), createLoggingHandler(message, res -> {
+
+    deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
+
+    beforeDeployingVerticle(deploymentOptions);
+    vertx.deployVerticle(main, deploymentOptions, createLoggingHandler(message, res -> {
       if (res.failed()) {
         // Failed to deploy
-        unblock();
+        handleDeployFailed();
       }
     }));
-
-    addShutdownHook(vertx);
-    block();
   }
-
 
   private <T> AsyncResultHandler<T> createLoggingHandler(final String message, final Handler<AsyncResult<T>> completionHandler) {
     return res -> {
@@ -316,10 +412,10 @@ public class Starter {
     return null;
   }
 
-  private void addShutdownHook(Vertx vertx) {
+  private void addShutdownHook() {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        final CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(1);
         vertx.close(ar -> {
           if (!ar.succeeded()) {
             log.error("Failure in stopping Vert.x", ar.cause());
@@ -383,7 +479,8 @@ public class Starter {
       while (resources.hasMoreElements()) {
         Manifest manifest = new Manifest(resources.nextElement().openStream());
         Attributes attributes = manifest.getMainAttributes();
-        if (Starter.class.getName().equals(attributes.getValue("Main-Class"))) {
+        String mainClass = attributes.getValue("Main-Class");
+        if (Starter.class.getName().equals(mainClass)) {
           String theMainVerticle = attributes.getValue("Main-Verticle");
           if (theMainVerticle != null) {
             return theMainVerticle;
@@ -398,16 +495,11 @@ public class Starter {
 
   private void displaySyntax() {
 
-    // TODO
-    // Update usage string for ha
-    // Also for vertx version
     String usage =
 
         "    vertx run <main> [-options]                                                \n" +
-        "        runs a verticle called <main> in its own instance of vert.x.           \n" +
-        "        <main> can be a JavaScript script, a Ruby script, A Groovy script,     \n" +
-        "        a Java class, a Java source file, or a Python Script.\n\n" +
-        "    valid options are:\n" +
+        "        runs a verticle called <main> in its own instance of vert.x.         \n\n" +
+        "    valid options are:                                                         \n" +
         "        -conf <config>         Specifies configuration that should be provided \n" +
         "                               to the verticle. <config> should reference      \n" +
         "                               either a text file containing a valid JSON      \n" +
@@ -417,22 +509,24 @@ public class Starter {
         "                               will be deployed. Defaults to 1                 \n" +
         "        -worker                if specified then the verticle is a worker      \n" +
         "                               verticle.                                       \n" +
+        "        -cp <classpath>        provide an extra classpath to be used for the   \n" +
+        "                               verticle deployment.                            \n" +
         "        -cluster               if specified then the vert.x instance will form \n" +
         "                               a cluster with any other vert.x instances on    \n" +
         "                               the network.                                    \n" +
         "        -cluster-port          port to use for cluster communication.          \n" +
-        "                               Default is 0 which means choose a spare          \n" +
+        "                               Default is 0 which means choose a spare         \n" +
         "                               random port.                                    \n" +
         "        -cluster-host          host to bind to for cluster communication.      \n" +
         "                               If this is not specified vert.x will attempt    \n" +
-        "                               to choose one from the available interfaces.  \n\n" +
+        "                               to choose one from the available interfaces.    \n" +
         "        -ha                    if specified the verticle will be deployed as a \n" +
         "                               high availability (HA) deployment.              \n" +
-        "                               This means it can fail over to any other nodes \n" +
+        "                               This means it can fail over to any other nodes  \n" +
         "                               in the cluster started with the same HA group   \n" +
         "        -quorum                used in conjunction with -ha this specifies the \n" +
         "                               minimum number of nodes in the cluster for any  \n" +
-        "                               HA deploymentIDs to be active. Defaults to 0      \n" +
+        "                               HA deploymentIDs to be active. Defaults to 0    \n" +
         "        -hagroup               used in conjunction with -ha this specifies the \n" +
         "                               HA group this node will join. There can be      \n" +
         "                               multiple HA groups in a cluster. Nodes will only\n" +

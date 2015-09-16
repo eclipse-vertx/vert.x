@@ -17,7 +17,7 @@
 package io.vertx.core.impl.verticle;
 
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -127,10 +127,14 @@ public class CompilingClassLoader extends ClassLoader {
 
   @Override
   protected Class<?> findClass(String name) throws ClassNotFoundException {
-    byte[] bytecode = fileManager.getCompiledClass(name);
+    byte[] bytecode = getClassBytes(name);
     if (bytecode == null) {
       throw new ClassNotFoundException(name);
     }
     return defineClass(name, bytecode, 0, bytecode.length);
+  }
+
+  public byte[] getClassBytes(String name) {
+    return fileManager.getCompiledClass(name);
   }
 }

@@ -99,7 +99,7 @@ public class PumpImpl<T> implements Pump {
   }
 
   /**
-   * Return the total number of bytes pumped by this pump.
+   * Return the total number of elements pumped by this pump.
    */
   @Override
   public synchronized int numberPumped() {

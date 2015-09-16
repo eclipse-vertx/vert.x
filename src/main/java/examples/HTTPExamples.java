@@ -16,13 +16,11 @@
 
 package examples;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
 /**
@@ -92,7 +90,6 @@ public class HTTPExamples {
   }
 
 
-
   public void example8(HttpServerRequest request) {
 
     MultiMap headers = request.headers();
@@ -106,9 +103,9 @@ public class HTTPExamples {
 
   public void example9(HttpServerRequest request) {
 
-   request.handler(buffer -> {
-     System.out.println("I have received a chunk of the body of length " + buffer.length());
-   });
+    request.handler(buffer -> {
+      System.out.println("I have received a chunk of the body of length " + buffer.length());
+    });
   }
 
   public void example10(HttpServerRequest request) {
@@ -149,7 +146,7 @@ public class HTTPExamples {
     server.requestHandler(request -> {
       request.setExpectMultipart(true);
       request.uploadHandler(upload -> {
-        System.out.println("Got a file upload " +  upload.name());
+        System.out.println("Got a file upload " + upload.name());
       });
     });
   }
@@ -238,6 +235,39 @@ public class HTTPExamples {
     }).listen(8080);
   }
 
+  public void example26b(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      long offset = 0;
+      try {
+        offset = Long.parseLong(request.getParam("start"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      long end = Long.MAX_VALUE;
+      try {
+        end = Long.parseLong(request.getParam("end"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      request.response().sendFile("web/mybigfile.txt", offset, end);
+    }).listen(8080);
+  }
+
+  public void example26c(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      long offset = 0;
+      try {
+        offset = Long.parseLong(request.getParam("start"));
+      } catch (NumberFormatException e) {
+        // error handling...
+      }
+
+      request.response().sendFile("web/mybigfile.txt", offset);
+    }).listen(8080);
+  }
+
   public void example27(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       HttpServerResponse response = request.response();
@@ -257,7 +287,7 @@ public class HTTPExamples {
 
   public void example29(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
-    HttpClient client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient(options);
   }
 
   public void example30(Vertx vertx) {
@@ -419,6 +449,20 @@ public class HTTPExamples {
     });
   }
 
+  public void  statusCodeHandling(HttpClient client) {
+    HttpClientRequest request = client.post("some-uri", response -> {
+      if (response.statusCode() == 200) {
+        System.out.println("Everything fine");
+        return;
+      }
+      if (response.statusCode() == 500) {
+        System.out.println("Unexpected behavior on the server side");
+        return;
+      }
+    });
+    request.end();
+  }
+
   public void example43(HttpClient client) {
 
     HttpClientRequest request = client.post("some-uri");
@@ -512,6 +556,26 @@ public class HTTPExamples {
     });
   }
 
+  public void example50_1(HttpServer httpServer) {
+
+    httpServer.requestHandler(request -> {
+      if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
+        // Now decide if you want to accept the request
+
+        boolean accept = true;
+        if (accept) {
+          request.response().writeContinue();
+          request.bodyHandler(body -> {
+            // Do something with body
+          });
+        } else {
+          // Reject with a failure code
+          request.response().setStatusCode(405).end();
+        }
+      }
+    });
+  }
+
   public void example51(HttpServer server) {
 
     server.websocketHandler(websocket -> {
@@ -555,7 +619,7 @@ public class HTTPExamples {
     // Write a simple message
     Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
 
-    websocket.writeMessage(buffer);
+    websocket.writeBinaryMessage(buffer);
   }
 
   public void example56(WebSocket websocket, Buffer buffer1, Buffer buffer2, Buffer buffer3) {
@@ -572,6 +636,21 @@ public class HTTPExamples {
 
   }
 
+  public void example56_1(WebSocket websocket) {
+
+    // Send a websocket messages consisting of a single final text frame:
+
+    websocket.writeFinalTextFrame("Geronimo!");
+
+    // Send a websocket messages consisting of a single final binary frame:
+
+    Buffer buff = Buffer.buffer().appendInt(12).appendString("foo");
+
+    websocket.writeFinalBinaryFrame(buff);
+
+
+  }
+
   public void example57(WebSocket websocket) {
 
     websocket.frameHandler(frame -> {
@@ -579,4 +658,21 @@ public class HTTPExamples {
     });
 
   }
+
+  public void serversharing(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      request.response().end("Hello from server " + this);
+    }).listen(8080);
+  }
+
+  public void serversharingclient(Vertx vertx) {
+    vertx.setPeriodic(100, (l) -> {
+      vertx.createHttpClient().getNow(8080, "localhost", "/", resp -> {
+        resp.bodyHandler(body -> {
+          System.out.println(body.toString("ISO-8859-1"));
+        });
+      });
+    });
+  }
+
 }

@@ -28,7 +28,7 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ServerID;
 
@@ -250,7 +250,7 @@ public class MessageImpl<U, V> implements Message<V> {
 
   private void decodeHeaders() {
     int length = wireBuffer.getInt(headersPos);
-    if (length != 0) {
+    if (length != 4) {
       headersPos += 4;
       int numHeaders = wireBuffer.getInt(headersPos);
       headersPos += 4;

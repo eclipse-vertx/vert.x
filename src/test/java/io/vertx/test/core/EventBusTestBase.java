@@ -17,6 +17,8 @@
 package io.vertx.test.core;
 
 import io.netty.util.CharsetUtil;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.MessageCodec;
@@ -24,6 +26,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 /**
@@ -322,8 +325,57 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
+  public void testSendWithDeliveryOptionsButNoHeaders() {
+    testSend("foo", "foo", null, new DeliveryOptions());
+  }
+
+  @Test
   public void testReplyWithHeaders() {
     testReply("foo", "foo", null, new DeliveryOptions().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
+  }
+
+  @Test
+  public void testSendFromWorker() throws Exception {
+    String expectedBody = TestUtils.randomAlphaString(20);
+    startNodes(2);
+    vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
+      assertEquals(expectedBody, msg.body());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      vertices[0].deployVerticle(new AbstractVerticle() {
+        @Override
+        public void start() throws Exception {
+          vertices[0].eventBus().send(ADDRESS1, expectedBody);
+        }
+      }, new DeploymentOptions().setWorker(true));
+    });
+    await();
+  }
+
+  @Test
+  public void testReplyFromWorker() throws Exception {
+    String expectedBody = TestUtils.randomAlphaString(20);
+    startNodes(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[0].deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
+          msg.reply(expectedBody);
+        }).completionHandler(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+      }
+    }, new DeploymentOptions().setWorker(true));
+    awaitLatch(latch);
+    vertices[0].eventBus().send(ADDRESS1, "whatever", reply -> {
+      assertTrue(reply.succeeded());
+      assertEquals(expectedBody, reply.result().body());
+      testComplete();
+    });
+    await();
   }
 
   protected <T> void testSend(T val) {

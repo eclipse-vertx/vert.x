@@ -16,23 +16,21 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 
-import java.io.*;
-import java.net.MalformedURLException;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -49,37 +47,59 @@ import java.util.zip.ZipInputStream;
  */
 public class FileResolver {
 
+  public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
+  public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
+  public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
+
+  private static final String DEFAULT_CACHE_DIR_BASE = ".vertx";
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
+  private static final boolean ENABLE_CACHING = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
+  private static final boolean ENABLE_CP_RESOLVING = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
+  private static final String CACHE_DIR_BASE = System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
 
   private final Vertx vertx;
-  private final boolean enableCaching = System.getProperty("vertx.disableFileCaching") == null;
-  private final boolean enableCPResolving = System.getProperty("vertx.disableFileCPResolving") == null;
+  private final File cwd;
   private File cacheDir;
+  private Thread shutdownHook;
 
   public FileResolver(Vertx vertx) {
     this.vertx = vertx;
+    String cwdOverride = System.getProperty("vertx.cwd");
+    if (cwdOverride != null) {
+      cwd = new File(cwdOverride).getAbsoluteFile();
+    } else {
+      cwd = null;
+    }
+    if (ENABLE_CP_RESOLVING) {
+      setupCacheDir();
+    }
   }
 
-  public void deleteCacheDir(Handler<AsyncResult<Void>> handler) {
-    if (cacheDir != null) {
-      vertx.fileSystem().deleteRecursive(cacheDir.getAbsolutePath(), true, handler);
-    } else {
-      handler.handle(Future.succeededFuture());
+  public void close(Handler<AsyncResult<Void>> handler) {
+    deleteCacheDir(handler);
+    if (shutdownHook != null) {
+      // May throw IllegalStateException if called from other shutdown hook so ignore that
+      try {
+        Runtime.getRuntime().removeShutdownHook(shutdownHook);
+      } catch (IllegalStateException ignore) {
+      }
     }
   }
 
   public File resolveFile(String fileName) {
     // First look for file with that name on disk
     File file = new File(fileName);
-    if (!enableCPResolving) {
+    if (cwd != null && !file.isAbsolute()) {
+      file = new File(cwd, fileName);
+    }
+    if (!ENABLE_CP_RESOLVING) {
       return file;
     }
     if (!file.exists()) {
-      setupCacheDir();
       // Look for it in local file cache
       File cacheFile = new File(cacheDir, fileName);
-      if (enableCaching && cacheFile.exists()) {
+      if (ENABLE_CACHING && cacheFile.exists()) {
         return cacheFile;
       }
       // Look for file on classpath
@@ -115,9 +135,12 @@ public class FileResolver {
     if (!isDirectory) {
       cacheFile.getParentFile().mkdirs();
       try {
-        Files.copy(resource.toPath(), cacheFile.toPath());
-      } catch (FileAlreadyExistsException e) {
-        // Ignore
+        if (ENABLE_CACHING) {
+          Files.copy(resource.toPath(), cacheFile.toPath());
+        } else {
+          Files.copy(resource.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+      } catch (FileAlreadyExistsException ignore) {
       } catch (IOException e) {
         throw new VertxException(e);
       }
@@ -152,7 +175,12 @@ public class FileResolver {
           } else {
             file.getParentFile().mkdirs();
             try (InputStream is = zip.getInputStream(entry)) {
-              Files.copy(is, file.toPath());
+              if (ENABLE_CACHING) {
+                Files.copy(is, file.toPath());
+              } else {
+                Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+              }
+            } catch (FileAlreadyExistsException ignore) {
             }
           }
         }
@@ -174,18 +202,24 @@ public class FileResolver {
   }
 
   private void setupCacheDir() {
-    if (cacheDir == null) {
-      String cacheDirName = ".vertx/file-cache-" + UUID.randomUUID().toString();
-      cacheDir = new File(cacheDirName);
-      if (cacheDir.exists()) {
-        vertx.fileSystem().deleteRecursiveBlocking(cacheDir.getAbsolutePath(), true);
-      } else {
-        if (!cacheDir.mkdirs()) {
-          throw new IllegalStateException("Failed to create cache dir");
-        }
-      }
+    String cacheDirName = CACHE_DIR_BASE + "/file-cache-" + UUID.randomUUID().toString();
+    cacheDir = new File(cacheDirName);
+    if (!cacheDir.mkdirs()) {
+      throw new IllegalStateException("Failed to create cache dir");
+    }
+    // Add shutdown hook to delete on exit
+    shutdownHook = new Thread(() -> deleteCacheDir(ar -> {}));
+    Runtime.getRuntime().addShutdownHook(shutdownHook);
+  }
+
+  private void deleteCacheDir(Handler<AsyncResult<Void>> handler) {
+    if (cacheDir != null && cacheDir.exists()) {
+      vertx.fileSystem().deleteRecursive(cacheDir.getAbsolutePath(), true, handler);
+    } else {
+      handler.handle(Future.succeededFuture());
     }
   }
+
 
 
 }

@@ -29,21 +29,19 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.metrics.spi.DatagramSocketMetrics;
-import io.vertx.core.metrics.spi.EventBusMetrics;
-import io.vertx.core.metrics.spi.HttpClientMetrics;
-import io.vertx.core.metrics.spi.HttpServerMetrics;
-import io.vertx.core.metrics.spi.NetMetrics;
-import io.vertx.core.metrics.spi.VertxMetrics;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
+import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -72,7 +70,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public HttpServerMetrics createMetrics(HttpServer server, HttpServerOptions options) {
+  public HttpServerMetrics createMetrics(HttpServer server, SocketAddress localAddress, HttpServerOptions options) {
     return new DummyHttpServerMetrics();
   }
 
@@ -82,13 +80,13 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public NetMetrics createMetrics(NetServer server, NetServerOptions options) {
-    return new DummyNetMetrics();
+  public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
+    return new DummyTCPMetrics();
   }
 
   @Override
-  public NetMetrics createMetrics(NetClient client, NetClientOptions options) {
-    return new DummyNetMetrics();
+  public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
+    return new DummyTCPMetrics();
   }
 
   @Override
@@ -101,41 +99,48 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public String baseName() {
-    return null;
-  }
-
-  @Override
   public boolean isEnabled() {
     return false;
   }
 
   @Override
-  public String metricBaseName() {
-    return null;
+  public boolean isMetricsEnabled() {
+    return false;
   }
 
-  @Override
-  public Map<String, JsonObject> metrics() {
-    return Collections.EMPTY_MAP;
-  }
-
-  class DummyEventBusMetrics implements EventBusMetrics {
+  protected class DummyEventBusMetrics implements EventBusMetrics<Void> {
 
     @Override
-    public void handlerRegistered(String address) {
+    public void messageWritten(String address, int numberOfBytes) {
     }
 
     @Override
-    public void handlerUnregistered(String address) {
+    public void messageRead(String address, int numberOfBytes) {
     }
 
     @Override
-    public void messageSent(String address, boolean publish) {
+    public Void handlerRegistered(String address, boolean replyHandler) {
+      return null;
     }
 
     @Override
-    public void messageReceived(String address) {
+    public void handlerUnregistered(Void handler) {
+    }
+
+    @Override
+    public void beginHandleMessage(Void handler, boolean local) {
+    }
+
+    @Override
+    public void endHandleMessage(Void handler, Throwable failure) {
+    }
+
+    @Override
+    public void messageSent(String address, boolean publish, boolean local, boolean remote) {
+    }
+
+    @Override
+    public void messageReceived(String address, boolean publish, boolean local, int handlers) {
     }
 
     @Override
@@ -143,11 +148,6 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public String baseName() {
-      return null;
-    }
-
-    @Override
     public boolean isEnabled() {
       return false;
     }
@@ -157,38 +157,41 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  class DummyHttpServerMetrics implements HttpServerMetrics {
+  protected class DummyHttpServerMetrics implements HttpServerMetrics<Void, Void, Void> {
 
     @Override
-    public void requestBegin(HttpServerRequest request, HttpServerResponse response) {
+    public Void requestBegin(Void socketMetric, HttpServerRequest request) {
+      return null;
     }
 
     @Override
-    public void responseEnd(HttpServerResponse response) {
+    public void responseEnd(Void requestMetric, HttpServerResponse response) {
     }
 
     @Override
-    public void listening(SocketAddress localAddress) {
+    public Void upgrade(Void requestMetric, ServerWebSocket serverWebSocket) {
+      return null;
     }
 
     @Override
-    public void connected(SocketAddress remoteAddress) {
+    public Void connected(SocketAddress remoteAddress) {
+      return null;
     }
 
     @Override
-    public void disconnected(SocketAddress remoteAddress) {
+    public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
     }
 
     @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
     }
 
     @Override
@@ -196,8 +199,96 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public String baseName() {
+    public boolean isEnabled() {
+      return false;
+    }
+
+    @Override
+    public Void connected(Void socketMetric, ServerWebSocket serverWebSocket) {
       return null;
+    }
+
+    @Override
+    public void disconnected(Void serverWebSocketMetric) {
+    }
+  }
+
+  protected class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void> {
+
+    @Override
+    public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
+      return null;
+    }
+
+    @Override
+    public void responseEnd(Void requestMetric, HttpClientResponse response) {
+    }
+
+    @Override
+    public Void connected(SocketAddress remoteAddress) {
+      return null;
+    }
+
+    @Override
+    public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+    }
+
+    @Override
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    }
+
+    @Override
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    }
+
+    @Override
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public boolean isEnabled() {
+      return false;
+    }
+
+    @Override
+    public Void connected(Void socketMetric, WebSocket webSocket) {
+      return null;
+    }
+
+    @Override
+    public void disconnected(Void webSocketMetric) {
+    }
+  }
+
+  protected class DummyTCPMetrics implements TCPMetrics<Void> {
+
+    @Override
+    public Void connected(SocketAddress remoteAddress) {
+      return null;
+    }
+
+    @Override
+    public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+    }
+
+    @Override
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    }
+
+    @Override
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    }
+
+    @Override
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
+    }
+
+    @Override
+    public void close() {
     }
 
     @Override
@@ -206,125 +297,26 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  class DummyHttpClientMetrics implements HttpClientMetrics {
-
-    @Override
-    public void requestBegin(HttpClientRequest request) {
-    }
-
-    @Override
-    public void responseEnd(HttpClientRequest request, HttpClientResponse response) {
-    }
+  protected class DummyDatagramMetrics implements DatagramSocketMetrics {
 
     @Override
     public void listening(SocketAddress localAddress) {
     }
 
     @Override
-    public void connected(SocketAddress remoteAddress) {
+    public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void disconnected(SocketAddress remoteAddress) {
+    public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     }
 
     @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
-    }
-
-    @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
-    }
-
-    @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
+    public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
     }
 
     @Override
     public void close() {
-    }
-
-    @Override
-    public String baseName() {
-      return null;
-    }
-
-    @Override
-    public boolean isEnabled() {
-      return false;
-    }
-  }
-
-  class DummyNetMetrics implements NetMetrics {
-
-    @Override
-    public void listening(SocketAddress localAddress) {
-    }
-
-    @Override
-    public void connected(SocketAddress remoteAddress) {
-    }
-
-    @Override
-    public void disconnected(SocketAddress remoteAddress) {
-    }
-
-    @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
-    }
-
-    @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
-    }
-
-    @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
-    public String baseName() {
-      return null;
-    }
-
-    @Override
-    public boolean isEnabled() {
-      return false;
-    }
-  }
-
-  class DummyDatagramMetrics implements DatagramSocketMetrics {
-
-    @Override
-    public void newSocket() {
-    }
-
-    @Override
-    public void listening(SocketAddress localAddress) {
-    }
-
-    @Override
-    public void bytesRead(SocketAddress remoteAddress, long numberOfBytes) {
-    }
-
-    @Override
-    public void bytesWritten(SocketAddress remoteAddress, long numberOfBytes) {
-    }
-
-    @Override
-    public void exceptionOccurred(SocketAddress remoteAddress, Throwable t) {
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
-    public String baseName() {
-      return null;
     }
 
     @Override

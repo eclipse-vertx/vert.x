@@ -34,12 +34,15 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
+
+import static io.vertx.core.http.HttpHeaders.*;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -78,13 +81,14 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private MultiMap headers;
   private boolean exceptionOccurred;
   private long lastDataReceived;
+  private Object metric;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         String relativeURI, VertxInternal vertx) {
     this.host = host;
     this.port = port;
     this.client = client;
-    this.request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, toNettyHttpMethod(method), relativeURI, false);
+    this.request = new DefaultHttpRequest(toNettyHttpVersion(client.getOptions().getProtocolVersion()), toNettyHttpMethod(method), relativeURI, false);
     this.chunked = false;
     this.method = method;
     this.vertx = vertx;
@@ -126,7 +130,10 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     if (written > 0) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
-    this.chunked = chunked;
+    // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
+    if (client.getOptions().getProtocolVersion() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      this.chunked = chunked;
+    }
     return this;
   }
 
@@ -205,11 +212,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public synchronized boolean writeQueueFull() {
     checkComplete();
-    if (conn != null) {
-      return conn.isNotWritable();
-    } else {
-      return false;
-    }
+    return conn != null && conn.isNotWritable();
   }
 
   @Override
@@ -274,7 +277,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     checkComplete();
     checkResponseHandler();
     if (!chunked && !contentLengthSet()) {
-      headers().set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(chunk.length()));
+      headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
     }
     write(chunk.getByteBuf(), true);
   }
@@ -387,6 +390,21 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           @Override
           public MultiMap headers() {
             return resp.headers();
+          }
+
+          @Override
+          public String getHeader(String headerName) {
+            return resp.getHeader(headerName);
+          }
+
+          @Override
+          public String getHeader(CharSequence headerName) {
+            return resp.getHeader(headerName);
+          }
+
+          @Override
+          public String getTrailer(String trailerName) {
+            return resp.getTrailer(trailerName);
           }
 
           @Override
@@ -511,6 +529,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private void connected(ClientConnection conn) {
     conn.setCurrentRequest(this);
     this.conn = conn;
+    this.metric = client.httpClientMetrics().requestBegin(conn.metric(), conn.localAddress(), conn.remoteAddress(), this);
 
     // If anything was written or the request ended before we got the connection, then
     // we need to write it now
@@ -527,7 +546,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(pending, true);
 
-        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
+        conn.reportBytesWritten(written);
 
         if (respHandler != null) {
           conn.endRequest();
@@ -540,7 +559,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
 
-        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
+        conn.reportBytesWritten(written);
 
         if (respHandler != null) {
           conn.endRequest();
@@ -553,12 +572,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  private boolean contentLengthSet() {
-    if (headers != null) {
-      return request.headers().contains(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
-    } else {
-      return false;
+  void reportResponseEnd(HttpClientResponseImpl resp) {
+    HttpClientMetrics metrics = client.httpClientMetrics();
+    if (metrics.isEnabled()) {
+      metrics.responseEnd(metric, resp);
     }
+  }
+
+
+  private boolean contentLengthSet() {
+    return headers != null && request.headers().contains(CONTENT_LENGTH);
   }
 
   private void writeHead() {
@@ -579,16 +602,21 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private void prepareHeaders() {
     HttpHeaders headers = request.headers();
-    headers.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
-    if (!headers.contains(io.vertx.core.http.HttpHeaders.HOST)) {
-      request.headers().set(io.vertx.core.http.HttpHeaders.HOST, conn.hostHeader());
+    headers.remove(TRANSFER_ENCODING);
+    if (!headers.contains(HOST)) {
+      request.headers().set(HOST, conn.hostHeader());
     }
     if (chunked) {
       HttpHeaders.setTransferEncodingChunked(request);
     }
-    if (client.getOptions().isTryUseCompression() && request.headers().get(io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING) == null) {
+    if (client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
-      request.headers().set(io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING, io.vertx.core.http.HttpHeaders.DEFLATE_GZIP);
+      request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
+    }
+    if (!client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      request.headers().set(CONNECTION, CLOSE);
+    } else if (client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      request.headers().set(CONNECTION, KEEP_ALIVE);
     }
   }
 
@@ -638,7 +666,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
         }
       }
       if (end) {
-        if (conn.metrics().isEnabled()) conn.metrics().bytesWritten(conn.remoteAddress(), written);
+        conn.reportBytesWritten(written);
 
         if (respHandler != null) {
           conn.endRequest();
@@ -692,4 +720,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
+  private HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
+    switch (version) {
+      case HTTP_1_0: {
+        return HttpVersion.HTTP_1_0;
+      }
+      case HTTP_1_1: {
+        return HttpVersion.HTTP_1_1;
+      }
+      default:
+        throw new IllegalArgumentException("Unsupported HTTP version: " + version);
+    }
+  }
 }

@@ -23,7 +23,7 @@
  *
  * The simplest way to create a TCP server, using all default options is as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example1}
  * ----
@@ -33,7 +33,7 @@
  * If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.net.NetServerOptions}
  * instance when creating it:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example2}
  * ----
@@ -45,14 +45,14 @@
  *
  * To tell the server to listen at the host and port as specified in the options:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example3}
  * ----
  *
  * Or to specify the host and port in the call to listen, ignoring what is configured in the options:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example4}
  * ----
@@ -66,7 +66,7 @@
  * If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
  * For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example5}
  * ----
@@ -77,7 +77,7 @@
  *
  * To find out the real port the server is listening on you can call {@link io.vertx.core.net.NetServer#actualPort()}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example5_1}
  * ----
@@ -86,7 +86,7 @@
  *
  * To be notified when a connection is made you need to set a {@link io.vertx.core.net.NetServer#connectHandler(io.vertx.core.Handler)}:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example6}
  * ----
@@ -104,7 +104,7 @@
  * This handler will be called with an instance of {@link io.vertx.core.buffer.Buffer} every time data is received on
  * the socket.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example7}
  * ----
@@ -113,7 +113,7 @@
  *
  * You write to a socket using one of {@link io.vertx.core.net.NetSocket#write}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example8}
  * ----
@@ -125,7 +125,7 @@
  * If you want to be notified when a socket is closed, you can set a {@link io.vertx.core.net.NetSocket#closeHandler(io.vertx.core.Handler)}
  * on it:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example9_1}
  * ----
@@ -157,7 +157,7 @@
  * Files can be written to the socket directly using {@link io.vertx.core.net.NetSocket#sendFile}. This can be a very
  * efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example10}
  * ----
@@ -187,7 +187,7 @@
  *
  * This handler will then be called when the close has fully completed.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example9}
  * ----
@@ -208,7 +208,7 @@
  *
  * You can instantiate more instances programmatically in your code:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example11}
  * ----
@@ -220,7 +220,7 @@
  *
  * or when programmatically deploying your verticle
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example12}
  * ----
@@ -245,7 +245,7 @@
  *
  * The simplest way to create a TCP client, using all default options is as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example13}
  * ----
@@ -255,7 +255,7 @@
  * If you don't want the default, a client can be configured by passing in a {@link io.vertx.core.net.NetClientOptions}
  * instance when creating it:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example14}
  * ----
@@ -266,7 +266,7 @@
  * specifying the port and host of the server and a handler that will be called with a result containing the
  * {@link io.vertx.core.net.NetSocket} when connection is successful or with a failure if connection failed.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example15}
  * ----
@@ -280,7 +280,7 @@
  * NOTE: Currently Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
  * only apply to creating initial connections.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example16}
  * ----
@@ -299,11 +299,11 @@
  *
  * ==== Enabling SSL/TLS on the server
  *
- * SSL/TLS is enabled with  {@link io.vertx.core.net.NetServerOptions#setSsl(boolean)}.
+ * SSL/TLS is enabled with  {@link io.vertx.core.net.NetServerOptions#setSsl(boolean) ssl}.
  *
  * By default it is disabled.
  *
- * === Specifying key/certificate for the server
+ * ==== Specifying key/certificate for the server
  *
  * SSL/TLS servers usually provide certificates to clients in order verify their identity to clients.
  *
@@ -314,26 +314,255 @@
  * Java key stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
  * utility which ships with the JDK.
  *
- * The password for the keystore should also be provided:
+ * The password for the key store should also be provided:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example17}
  * ----
  *
  * Alternatively you can read the key store yourself as a buffer and provide that directly:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.NetExamples#example18}
  * ----
  *
- * Another way of providing server private key and certificate is using `.PEM` files
+ * Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+ * extension can also be loaded in a similar fashion than JKS key stores:
  *
- * TODO all the other ways of configuring SSL/TLS
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example19}
+ * ----
  *
+ * Buffer configuration is also supported:
  *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example20}
+ * ----
  *
+ * Another way of providing server private key and certificate separately using `.pem` files.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example21}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example22}
+ * ----
+ *
+ * Keep in mind that pem configuration, the private key is not crypted.
+ *
+ * ==== Specifying trust for the server
+ *
+ * SSL/TLS servers can use a certificate authority in order to verify the identity of the clients.
+ *
+ * Certificate authorities can be configured for servers in several ways:
+ *
+ * Java trust stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+ * utility which ships with the JDK.
+ *
+ * The password for the trust store should also be provided:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example23}
+ * ----
+ *
+ * Alternatively you can read the trust store yourself as a buffer and provide that directly:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example24}
+ * ----
+ *
+ * Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+ * extension can also be loaded in a similar fashion than JKS trust stores:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example25}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example26}
+ * ----
+ *
+ * Another way of providing server certificate authority using a list `.pem` files.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example27}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example28}
+ * ----
+ *
+ * ==== Enabling SSL/TLS on the client
+ *
+ * Net Clients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
+ *
+ * To enable SSL on a NetClient the function setSSL(true) is called.
+ *
+ * ==== Client trust configuration
+ *
+ * If the {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustALl} is set to true on the client, then the client will
+ * trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't
+ * be sure who you are connecting to. Use this with caution. Default value is false.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example29}
+ * ----
+ *
+ * If {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is not set then a client trust store must be
+ * configured and should contain the certificates of the servers that the client trusts.
+ *
+ * Likewise server configuration, the client trust can be configured in several ways:
+ *
+ * The first method is by specifying the location of a Java trust-store which contains the certificate authority.
+ *
+ * It is just a standard Java key store, the same as the key stores on the server side. The client
+ * trust store location is set by using the function {@link io.vertx.core.net.JksOptions#setPath path} on the
+ * {@link io.vertx.core.net.JksOptions jks options}. If a server presents a certificate during connection which is not
+ * in the client trust store, the connection attempt will not succeed.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example30}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example31}
+ * ----
+ *
+ * Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+ * extension can also be loaded in a similar fashion than JKS trust stores:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example32}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example33}
+ * ----
+ *
+ * Another way of providing server certificate authority using a list `.pem` files.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example34}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example35}
+ * ----
+ *
+ * ==== Specifying key/certificate for the client
+ *
+ * If the server requires client authentication then the client must present its own certificate to the server when
+ * connecting. The client can be configured in several ways:
+ *
+ * The first method is by specifying the location of a Java key-store which contains the key and certificate.
+ * Again it's just a regular Java key store. The client keystore location is set by using the function
+ * {@link io.vertx.core.net.JksOptions#setPath(java.lang.String) path} on the
+ * {@link io.vertx.core.net.JksOptions jks options}.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example36}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example37}
+ * ----
+ *
+ * Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+ * extension can also be loaded in a similar fashion than JKS key stores:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example38}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example39}
+ * ----
+ *
+ * Another way of providing server private key and certificate separately using `.pem` files.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example40}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example41}
+ * ----
+ *
+ * Keep in mind that pem configuration, the private key is not crypted.
+ *
+ * ==== Revoking certificate authorities
+ *
+ * Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
+ * longer be trusted. The {@link io.vertx.core.net.NetClientOptions#addCrlPath(java.lang.String) crlPath} configures
+ * the crl list to use:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example42}
+ * ----
+ *
+ * Buffer configuration is also supported:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example43}
+ * ----
+ *
+ * ==== Configuring the Cipher suite
+ *
+ * By default, the TLS configuration will uses the Cipher suite of the JVM running Vert.x. This Cipher suite can be
+ * configured with a suite of enabled ciphers:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example44}
+ * ----
+ *
+ * Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
  *
  */
 @Document(fileName = "net.adoc")

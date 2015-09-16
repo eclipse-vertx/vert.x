@@ -28,11 +28,12 @@ import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.file.impl.AsyncFileImpl;
-import io.vertx.core.impl.Windows;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -442,7 +443,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void azzertPerms(String perms, String file1) {
-    if (!Windows.isWindows()) {
+    if (!Utils.isWindows()) {
       assertEquals(perms, getPerms(file1));
     }
   }
@@ -538,6 +539,8 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testChownToOwnGroup() throws Exception {
+    // Not supported in WindowsFileSystemProvider
+    Assume.assumeFalse(Utils.isWindows());
     String file1 = "some-file.dat";
     createFileWithJunk(file1, 100);
     String fullPath = testDir + pathSep + file1;
@@ -596,6 +599,8 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testPropsFollowLink() throws Exception {
+    // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
 
@@ -626,6 +631,8 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testPropsDontFollowLink() throws Exception {
+    // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
@@ -684,6 +691,8 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testSymLink() throws Exception {
+    // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
@@ -722,6 +731,8 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testReadSymLink() throws Exception {
+    // Symlinks require a modified security policy in Windows. -- See http://stackoverflow.com/questions/23217460/how-to-create-soft-symbolic-link-using-java-nio-files
+    Assume.assumeFalse(Utils.isWindows());
     String fileName = "some-file.txt";
     long fileSize = 1234;
     createFileWithJunk(fileName, fileSize);
@@ -1451,9 +1462,9 @@ public class FileSystemTest extends VertxTestBase {
     assertTrue(opts.isWrite());
     assertEquals(opts, opts.setWrite(false));
     assertFalse(opts.isWrite());
-    assertFalse(opts.isDSync());
-    assertEquals(opts, opts.setDSync(true));
-    assertTrue(opts.isDSync());
+    assertFalse(opts.isDsync());
+    assertEquals(opts, opts.setDsync(true));
+    assertTrue(opts.isDsync());
     assertFalse(opts.isSync());
     assertEquals(opts, opts.setSync(true));
     assertTrue(opts.isSync());
@@ -1481,7 +1492,7 @@ public class FileSystemTest extends VertxTestBase {
     assertEquals(def.isTruncateExisting(), json.isTruncateExisting());
     assertEquals(def.isSparse(), json.isSparse());
     assertEquals(def.isSync(), json.isSync());
-    assertEquals(def.isDSync(), json.isDSync());
+    assertEquals(def.isDsync(), json.isDsync());
   }
 
   @Test
@@ -1572,7 +1583,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void setPerms(Path path, String perms) {
-    if (Windows.isWindows() == false) {
+    if (Utils.isWindows() == false) {
       try {
         Files.setPosixFilePermissions( path, PosixFilePermissions.fromString(perms) );
       }

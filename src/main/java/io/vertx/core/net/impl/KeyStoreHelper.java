@@ -17,12 +17,12 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.CaOptions;
-import io.vertx.core.net.JKSOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.PKCS12Options;
-import io.vertx.core.net.TrustStoreOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TrustOptions;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -38,7 +38,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -49,32 +49,32 @@ public abstract class KeyStoreHelper {
   // Dummy password for encrypting pem based stores in memory
   private static final String DUMMY_PASSWORD = "dummy";
 
-  public static KeyStoreHelper create(VertxInternal vertx, KeyStoreOptions options) {
-    if (options instanceof JKSOptions) {
-      JKSOptions jks = (JKSOptions) options;
-      Callable<Buffer> value;
+  public static KeyStoreHelper create(VertxInternal vertx, KeyCertOptions options) {
+    if (options instanceof JksOptions) {
+      JksOptions jks = (JksOptions) options;
+      Supplier<Buffer> value;
       if (jks.getPath() != null) {
         value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(jks.getPath()).getAbsolutePath());
       } else if (jks.getValue() != null) {
-        value = () -> jks.getValue();
+        value = jks::getValue;
       } else {
         return null;
       }
       return new JKSOrPKCS12("JKS", jks.getPassword(), value);
-    } else if (options instanceof PKCS12Options) {
-      PKCS12Options pkcs12 = (PKCS12Options) options;
-      Callable<Buffer> value;
+    } else if (options instanceof PfxOptions) {
+      PfxOptions pkcs12 = (PfxOptions) options;
+      Supplier<Buffer> value;
       if (pkcs12.getPath() != null) {
         value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(pkcs12.getPath()).getAbsolutePath());
       } else if (pkcs12.getValue() != null) {
-        value = () -> pkcs12.getValue();
+        value = pkcs12::getValue;
       } else {
         return null;
       }
       return new JKSOrPKCS12("PKCS12", pkcs12.getPassword(), value);
-    } else if (options instanceof KeyCertOptions) {
-      KeyCertOptions keyCert = (KeyCertOptions) options;
-      Callable<Buffer> key = () -> {
+    } else if (options instanceof PemKeyCertOptions) {
+      PemKeyCertOptions keyCert = (PemKeyCertOptions) options;
+      Supplier<Buffer> key = () -> {
         if (keyCert.getKeyPath() != null) {
           return vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyCert.getKeyPath()).getAbsolutePath());
         } else if (keyCert.getKeyValue() != null) {
@@ -83,7 +83,7 @@ public abstract class KeyStoreHelper {
           throw new RuntimeException("Missing private key");
         }
       };
-      Callable<Buffer> cert = () -> {
+      Supplier<Buffer> cert = () -> {
         if (keyCert.getCertPath() != null) {
           return vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyCert.getCertPath()).getAbsolutePath());
         } else if (keyCert.getCertValue() != null) {
@@ -98,24 +98,24 @@ public abstract class KeyStoreHelper {
     }
   }
 
-  public static KeyStoreHelper create(VertxInternal vertx, TrustStoreOptions options) {
-    if (options instanceof KeyStoreOptions) {
-      return create(vertx, (KeyStoreOptions) options);
-    } else if (options instanceof CaOptions) {
-      CaOptions caOptions = (CaOptions) options;
-      Stream<Buffer> certValues = caOptions.
+  public static KeyStoreHelper create(VertxInternal vertx, TrustOptions options) {
+    if (options instanceof KeyCertOptions) {
+      return create(vertx, (KeyCertOptions) options);
+    } else if (options instanceof PemTrustOptions) {
+      PemTrustOptions trustOptions = (PemTrustOptions) options;
+      Stream<Buffer> certValues = trustOptions.
           getCertPaths().
           stream().
           map(path -> vertx.resolveFile(path).getAbsolutePath()).
           map(vertx.fileSystem()::readFileBlocking);
-      certValues = Stream.concat(certValues, caOptions.getCertValues().stream());
+      certValues = Stream.concat(certValues, trustOptions.getCertValues().stream());
       return new CA(certValues);
     } else {
       return null;
     }
   }
 
-  private String password;
+  protected final String password;
 
   public KeyStoreHelper(String password) {
     this.password = password;
@@ -123,37 +123,43 @@ public abstract class KeyStoreHelper {
 
   public KeyManager[] getKeyMgrs(VertxInternal vertx) throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    KeyStore ks = loadStore(vertx, password);
+    KeyStore ks = loadStore(vertx);
     fact.init(ks, password != null ? password.toCharArray(): null);
     return fact.getKeyManagers();
   }
 
   public TrustManager[] getTrustMgrs(VertxInternal vertx) throws Exception {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    KeyStore ts = loadStore(vertx, password);
+    KeyStore ts = loadStore(vertx);
     fact.init(ts);
     return fact.getTrustManagers();
   }
 
-  protected abstract KeyStore loadStore(VertxInternal vertx, String password) throws Exception ;
+  /**
+   * Load the keystore.
+   *
+   * @param vertx the vertx instance
+   * @return the key store
+   */
+  public abstract KeyStore loadStore(VertxInternal vertx) throws Exception;
 
   static class JKSOrPKCS12 extends KeyStoreHelper {
 
     private String type;
-    private Callable<Buffer> value;
+    private Supplier<Buffer> value;
 
-    JKSOrPKCS12(String type, String password, Callable<Buffer> value) {
+    JKSOrPKCS12(String type, String password, Supplier<Buffer> value) {
       super(password);
       this.type = type;
       this.value = value;
     }
 
-    protected KeyStore loadStore(VertxInternal vertx, String ksPassword) throws Exception {
+    public KeyStore loadStore(VertxInternal vertx) throws Exception {
       KeyStore ks = KeyStore.getInstance(type);
       InputStream in = null;
       try {
-        in = new ByteArrayInputStream(value.call().getBytes());
-        ks.load(in, ksPassword != null ? ksPassword.toCharArray(): null);
+        in = new ByteArrayInputStream(value.get().getBytes());
+        ks.load(in, password != null ? password.toCharArray(): null);
       } finally {
         if (in != null) {
           try {
@@ -168,21 +174,21 @@ public abstract class KeyStoreHelper {
 
   static class KeyCert extends KeyStoreHelper {
 
-    private Callable<Buffer> keyValue;
-    private Callable<Buffer> certValue;
+    private Supplier<Buffer> keyValue;
+    private Supplier<Buffer> certValue;
 
-    KeyCert(String password, Callable<Buffer> keyValue, Callable<Buffer> certValue) {
+    KeyCert(String password, Supplier<Buffer> keyValue, Supplier<Buffer> certValue) {
       super(password);
       this.keyValue = keyValue;
       this.certValue = certValue;
     }
 
     @Override
-    protected KeyStore loadStore(VertxInternal vertx, String password) throws Exception {
+    public KeyStore loadStore(VertxInternal vertx) throws Exception {
       KeyStore keyStore = KeyStore.getInstance("jks");
       keyStore.load(null, null);
-      PrivateKey key = loadPrivateKey(this.keyValue.call());
-      Certificate[] chain = loadCert(this.certValue.call());
+      PrivateKey key = loadPrivateKey(this.keyValue.get());
+      Certificate[] chain = loadCert(this.certValue.get());
       keyStore.setEntry("dummy-entry", new KeyStore.PrivateKeyEntry(key, chain), new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
       return keyStore;
     }
@@ -198,7 +204,7 @@ public abstract class KeyStoreHelper {
     }
 
     @Override
-    protected KeyStore loadStore(VertxInternal vertx, String password) throws Exception {
+    public KeyStore loadStore(VertxInternal vertx) throws Exception {
       KeyStore keyStore = KeyStore.getInstance("jks");
       keyStore.load(null, null);
       int count = 0;

@@ -78,4 +78,16 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testGettingContextContextUnderContextAnotherInstanceShouldReturnDifferentContext() throws Exception {
+    Vertx other = Vertx.vertx();
+    Context context = vertx.getOrCreateContext();
+    context.runOnContext(v -> {
+      Context otherContext = other.getOrCreateContext();
+      assertNotSame(otherContext, context);
+      testComplete();
+    });
+    await();
+  }
 }

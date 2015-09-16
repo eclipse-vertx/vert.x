@@ -30,17 +30,18 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
 public class RecordParserTest {
 
   @Test
   public void testIllegalArguments() throws Exception {
-    assertNullPointerException(() -> RecordParser.newDelimited((byte[]) null, handler -> {}));
+    assertNullPointerException(() -> RecordParser.newDelimited((Buffer) null, handler -> {}));
     assertNullPointerException(() -> RecordParser.newDelimited((String) null, handler -> {}));
 
     RecordParser parser = RecordParser.newDelimited("", handler -> {});
     assertNullPointerException(() -> parser.setOutput(null));
-    assertNullPointerException(() -> parser.delimitedMode((byte[]) null));
+    assertNullPointerException(() -> parser.delimitedMode((Buffer) null));
     assertNullPointerException(() -> parser.delimitedMode((String) null));
   }
 
@@ -49,9 +50,9 @@ public class RecordParserTest {
   Test parsing with delimiters
    */
   public void testDelimited() {
-    delimited(new byte[]{(byte) '\n'});
-    delimited(new byte[]{(byte) '\r', (byte) '\n'});
-    delimited(new byte[]{0, 3, 2, 5, 6, 4, 6});
+    delimited(Buffer.buffer().appendByte((byte)'\n'));
+    delimited(Buffer.buffer().appendByte((byte) '\r').appendByte((byte) '\n'));
+    delimited(Buffer.buffer(new byte[]{0, 3, 2, 5, 6, 4, 6}));
   }
 
   @Test
@@ -104,7 +105,7 @@ public class RecordParserTest {
           Object type = types.get(pos);
           if (type instanceof byte[]) {
             byte[] bytes = (byte[]) type;
-            parser.delimitedMode(bytes);
+            parser.delimitedMode(Buffer.buffer(bytes));
           } else {
             int length = (Integer) type;
             parser.fixedSizeMode(length);
@@ -155,19 +156,19 @@ public class RecordParserTest {
   We create some input dataHandler which contains <lines> lines of lengths in randm order between 0 and lines
   And then passes them into the RecordParser in chunk sizes from 0 to twice the total input buffer size
    */
-  private void delimited(byte[] delim) {
+  private void delimited(Buffer delim) {
     int lines = 50;
     Buffer[] expected = new Buffer[lines];
 
     //We create lines of length zero to <lines> and shuffle them
-    List<Buffer> lineList = generateLines(lines, true, delim[0]);
+    List<Buffer> lineList = generateLines(lines, true, delim.getByte(0));
 
     expected = lineList.toArray(expected);
     int totLength = lines * (lines - 1) / 2; // The sum of 0...(lines - 1)
-    Buffer inp = Buffer.buffer(totLength + lines * delim.length);
+    Buffer inp = Buffer.buffer(totLength + lines * delim.length());
     for (int i = 0; i < lines; i++) {
       inp.appendBuffer(expected[i]);
-      inp.appendBuffer(Buffer.buffer(delim));
+      inp.appendBuffer(delim);
     }
 
     //We then try every combination of chunk size up to twice the input string length
@@ -185,7 +186,7 @@ public class RecordParserTest {
     }
   }
 
-  private void doTestDelimited(final Buffer input, byte[] delim, Integer[] chunkSizes, final Buffer... expected) {
+  private void doTestDelimited(final Buffer input, Buffer delim, Integer[] chunkSizes, final Buffer... expected) {
     final Buffer[] results = new Buffer[expected.length];
     Handler<Buffer> out = new Handler<Buffer>() {
       int pos;
@@ -267,11 +268,11 @@ public class RecordParserTest {
    * test issue-209
    */
   public void testSpreadDelimiter() {
-    doTestDelimited(Buffer.buffer("start-a-b-c-dddabc"), "abc".getBytes(),
+    doTestDelimited(Buffer.buffer("start-a-b-c-dddabc"), Buffer.buffer("abc"),
       new Integer[] { 18 }, Buffer.buffer("start-a-b-c-ddd"));
-    doTestDelimited(Buffer.buffer("start-abc-dddabc"), "abc".getBytes(),
+    doTestDelimited(Buffer.buffer("start-abc-dddabc"), Buffer.buffer("abc"),
       new Integer[] { 18 }, Buffer.buffer("start-"), Buffer.buffer("-ddd"));
-    doTestDelimited(Buffer.buffer("start-ab-c-dddabc"), "abc".getBytes(),
+    doTestDelimited(Buffer.buffer("start-ab-c-dddabc"), Buffer.buffer("abc"),
       new Integer[] { 18 }, Buffer.buffer("start-ab-c-ddd"));
   }
 }

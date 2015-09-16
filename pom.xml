@@ -24,11 +24,11 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>2</version>
+    <version>8</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>3.1.0-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -53,16 +53,16 @@
 
   <properties>
 
-    <netty.version>4.0.24.Final</netty.version>
-    <jackson.version>2.4.3</jackson.version>
-    <metrics.version>3.0.2</metrics.version>
+    <netty.version>4.0.31.Final</netty.version>
+    <jackson.version>2.6.1</jackson.version>
     <log4j.version>1.2.17</log4j.version>
-    <slf4j.version>1.7.7</slf4j.version>
+    <slf4j.version>1.7.12</slf4j.version>
     <junit.version>4.11</junit.version>
-    <asciidoclet.version>1.5.1</asciidoclet.version>
+    <assertj.version>3.1.0</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
-    <stack.version>3.0.0-SNAPSHOT</stack.version>
+    <generated.dir>${project.basedir}/src/main/generated</generated.dir>
+    <stack.version>3.1.0-SNAPSHOT</stack.version>
 
   </properties>
 
@@ -79,9 +79,30 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- We depend on the specific Netty dependencies not netty-all to reduce the size of fatjars -->
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
+      <artifactId>netty-common</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-http</artifactId>
       <version>${netty.version}</version>
     </dependency>
     <dependency>
@@ -129,6 +150,12 @@
       <version>${apacheds-protocol-dns.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -146,7 +173,20 @@
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
                 </annotationProcessors>
                 <compilerArgs>
-                  <arg>-Adocgen.output=${asciidoc.dir}</arg>
+                  <arg>-Adocgen.output=${asciidoc.dir}/java</arg>
+                  <arg>-AoutputDirectory=${project.basedir}/src/main</arg>
+                </compilerArgs>
+                <generatedSourcesDirectory>${generated.dir}</generatedSourcesDirectory>
+              </configuration>
+            </execution>
+            <execution>
+              <id>default-testCompile</id>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+                <compilerArgs>
+                  <arg>-AoutputDirectory=${project.basedir}/src/test</arg>
                 </compilerArgs>
               </configuration>
             </execution>
@@ -158,17 +198,15 @@
           <version>${maven.surefire.plugin.version}</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-            <excludes>
-              <exclude>**/RedeploySourceVerticle.java</exclude>
-            </excludes>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
-              <additionalClasspathElement>src/test/resources/webroot2.jar</additionalClasspathElement>
+              <additionalClasspathElement>${basedir}/src/test/resources/webroot2.jar</additionalClasspathElement>
             </additionalClasspathElements>
             <systemPropertyVariables>
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertxVersion>${project.version}</vertxVersion>
+              <vertx.handle100Continue>true</vertx.handle100Continue>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <argLine>-Xmx1200M</argLine>
@@ -177,27 +215,21 @@
           </configuration>
         </plugin>
         <plugin>
-          <groupId>org.bsc.maven</groupId>
-          <artifactId>maven-processor-plugin</artifactId>
-          <version>2.2.4</version>
-          <configuration>
-            <processors>
-              <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
-            </processors>
-            <optionMap>
-              <docgen.output>${asciidoc.dir}</docgen.output>
-            </optionMap>
-          </configuration>
-        </plugin>
-        <plugin>
           <groupId>org.asciidoctor</groupId>
           <artifactId>asciidoctor-maven-plugin</artifactId>
-          <version>1.5.0</version>
+          <version>1.5.2</version>
           <configuration>
             <sourceDirectory>${asciidoc.dir}</sourceDirectory>
-            <outputDirectory>${project.build.directory}/docs</outputDirectory>
+            <outputDirectory>${project.build.directory}/docs/vertx-core</outputDirectory>
+            <preserveDirectories>true</preserveDirectories>
+            <relativeBaseDir>true</relativeBaseDir>
             <backend>html</backend>
             <doctype>book</doctype>
+            <attributes>
+              <maven-groupId>${project.groupId}</maven-groupId>
+              <maven-artifactId>${project.artifactId}</maven-artifactId>
+              <maven-version>${project.version}</maven-version>
+            </attributes>
           </configuration>
           <executions>
             <execution>
@@ -214,7 +246,6 @@
             <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
           </configuration>
         </plugin>
-
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <executions>
@@ -224,8 +255,23 @@
                 <filesets>
                   <fileset>
                     <directory>${asciidoc.dir}</directory>
+                    <directory>${generated.dir}</directory>
                   </fileset>
                 </filesets>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <configuration>
+                <excludes>
+                  <exclude>docoverride/**</exclude>
+                </excludes>
               </configuration>
             </execution>
           </executions>
@@ -239,7 +285,6 @@
       <plugin>
         <groupId>org.asciidoctor</groupId>
         <artifactId>asciidoctor-maven-plugin</artifactId>
-        <version>1.5.0</version>
         <executions>
           <execution>
             <goals>
@@ -264,7 +309,7 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
           <execution>
-            <id>assemble-html</id>
+            <id>assemble-docs</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
@@ -272,8 +317,59 @@
             <configuration>
               <attach>true</attach>
               <descriptors>
-                <descriptor>src/main/assembly/html.xml</descriptor>
+                <descriptor>src/main/assembly/docs.xml</descriptor>
               </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <configuration>
+              <archive>
+                <!-- Generate a jar INDEX.LIST -->
+                <index>true</index>
+                <!-- A manifest containing the OSGi metadata has been generated using the maven-bundle-plugin -->
+                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                <!-- Add the Maven coordinates in the manifest -->
+                <manifestEntries>
+                  <Maven-Group-Id>${project.groupId}</Maven-Group-Id>
+                  <Maven-Artifact-Id>${project.artifactId}</Maven-Artifact-Id>
+                  <Maven-Version>${project.version}</Maven-Version>
+                </manifestEntries>
+              </archive>
+              <!-- Remove examples and docoverride -->
+              <excludes>
+                <exclude>/docoverride/**</exclude>
+                <exclude>/examples/**</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.5.3</version>
+        <executions>
+          <execution>
+            <id>bundle-manifest</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>manifest</goal>
+            </goals>
+            <configuration>
+              <instructions>
+                <Export-Package>io.vertx.core*</Export-Package>
+                <Private-Package>!docoverride*, !examples*</Private-Package>
+                <Import-Package>org.slf4j*;resolution:=optional,
+                  org.apache.log4j;resolution:=optional,
+                  *
+                </Import-Package>
+              </instructions>
             </configuration>
           </execution>
         </executions>

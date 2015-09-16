@@ -1,0 +1,49 @@
+=== Error handling
+
+As you saw in previous sections the DnsClient allows you to pass in a Handler which will be notified with an
+AsyncResult once the query was complete.
+
+In case of an error it will be notified with a DnsException which will
+hole a `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html[DnsResponseCode]` that indicate why the resolution failed. This DnsResponseCode
+can be used to inspect the cause in more detail.
+
+Possible DnsResponseCodes are:
+
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOERROR[NOERROR]` No record was found for a given query
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#FORMERROR[FORMERROR]` Format error
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#SERVFAIL[SERVFAIL]` Server failure
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXDOMAIN[NXDOMAIN]` Name error
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTIMPL[NOTIMPL]` Not implemented by DNS Server
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#REFUSED[REFUSED]` DNS Server refused the query
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXDOMAIN[YXDOMAIN]` Domain name should not exist
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#YXRRSET[YXRRSET]` Resource record should not exist
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NXRRSET[NXRRSET]` RRSET does not exist
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#NOTZONE[NOTZONE]` Name not in zone
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADVERS[BADVERS]` Bad extension mechanism for version
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADSIG[BADSIG]` Bad signature
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADKEY[BADKEY]` Bad key
+- `link:../../apidocs/io/vertx/core/dns/DnsResponseCode.html#BADTIME[BADTIME]` Bad timestamp
+
+All of those errors are "generated" by the DNS Server itself.
+
+You can obtain the DnsResponseCode from the DnsException like:
+
+[source,java]
+----
+DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+client.lookup("nonexisting.vert.xio", ar -> {
+  if (ar.succeeded()) {
+    String record = ar.result();
+    System.out.println(record);
+  } else {
+    Throwable cause = ar.cause();
+    if (cause instanceof DnsException) {
+      DnsException exception = (DnsException) cause;
+      DnsResponseCode code = exception.code();
+      // ...
+    } else {
+      System.out.println("Failed to resolve entry" + ar.cause());
+    }
+  }
+});
+----

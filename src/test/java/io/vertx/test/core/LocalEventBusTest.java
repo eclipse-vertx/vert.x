@@ -65,21 +65,30 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private Vertx vertx;
   private EventBus eb;
+  private boolean running;
 
   public void setUp() throws Exception {
     super.setUp();
     vertx = Vertx.vertx();
     eb = vertx.eventBus();
+    running = true;
   }
 
   protected void tearDown() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    vertx.close(ar -> {
-      assertTrue(ar.succeeded());
-      latch.countDown();
-    });
-    assertTrue(latch.await(30, TimeUnit.SECONDS));
+    closeVertx();
     super.tearDown();
+  }
+
+  private void closeVertx() throws Exception {
+    if (running) {
+      CountDownLatch latch = new CountDownLatch(1);
+      vertx.close(ar -> {
+        assertTrue(ar.succeeded());
+        latch.countDown();
+      });
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
+      running = false;
+    }
   }
 
   @Test
@@ -1078,7 +1087,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testUnregisterationOfRegisteredConsumerCallsEndHandlerWithMessaqgeStream() {
+  public void testUnregisterationOfRegisteredConsumerCallsEndHandlerWithMessageStream() {
     MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
     testUnregisterationOfRegisteredConsumerCallsEndHandler(consumer, consumer);
   }
@@ -1091,21 +1100,14 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private void testUnregisterationOfRegisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     consumer.handler(msg -> {});
-    consumer.endHandler(v -> testComplete());
+    consumer.endHandler(v -> {
+      fail();
+    });
     consumer.unregister();
+    vertx.runOnContext(d -> {
+      testComplete();
+    });
     await();
-  }
-
-  @Test
-  public void testUnregistrationOfUnregisteredConsumerCallsEndHandlerWithMessageStream() {
-    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
-    testUnregistrationOfUnregisteredConsumerCallsEndHandler(consumer, consumer);
-  }
-
-  @Test
-  public void testUnregistrationOfUnregisteredConsumerCallsEndHandlerWithBodyStream() {
-    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
-    testUnregistrationOfUnregisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
   }
 
   @Test
@@ -1116,69 +1118,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     consumer.endHandler(null);
-    await();
-  }
-
-  private void testUnregistrationOfUnregisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
-    consumer.endHandler(v -> testComplete());
-    consumer.unregister();
-    await();
-  }
-
-  @Test
-  public void testCompletingUnregistrationOfRegisteredConsumerCallsEndHandlerWithMessageStream() {
-    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
-    testCompletingUnregistrationOfRegisteredConsumerCallsEndHandler(consumer, consumer);
-  }
-
-  @Test
-  public void testCompletingUnregistrationOfRegisteredConsumerCallsEndHandlerWithBodyStream() {
-    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
-    testCompletingUnregistrationOfRegisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
-  }
-
-  private void testCompletingUnregistrationOfRegisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
-    AtomicInteger count = new AtomicInteger(0);
-    consumer.handler(msg -> {});
-    consumer.endHandler(v -> {
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    consumer.unregister(ar -> {
-      assertTrue(ar.succeeded());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    await();
-  }
-
-  @Test
-  public void testCompletingUnregistrationUnregisteredConsumerCallsEndHandlerWithMessageStream() {
-    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
-    testCompletingUnregistrationUnregisteredConsumerCallsEndHandler(consumer, consumer);
-  }
-
-  @Test
-  public void testCompletingUnregistrationUnregisteredConsumerCallsEndHandlerWithBodyStream() {
-    MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
-    testCompletingUnregistrationUnregisteredConsumerCallsEndHandler(consumer, consumer.bodyStream());
-  }
-
-  private void testCompletingUnregistrationUnregisteredConsumerCallsEndHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
-    AtomicInteger count = new AtomicInteger(0);
-    readStream.endHandler(v -> {
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    consumer.unregister(ar -> {
-      assertTrue(ar.succeeded());
-      if (count.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
     await();
   }
 
@@ -1196,13 +1135,9 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private void testUnregistrationWhenSettingNullHandler(MessageConsumer<String> consumer, ReadStream<?> readStream) {
     readStream.handler(msg -> {});
-    readStream.endHandler(v -> {
-      assertFalse(consumer.isRegistered());
-      testComplete();
-    });
     assertTrue(consumer.isRegistered());
     readStream.handler(null);
-    await();
+    assertFalse(consumer.isRegistered());
   }
 
   @Test
@@ -1312,53 +1247,6 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testConsumerHandlesEndAsynchronously1() {
-    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
-    consumer.handler(msg -> {
-    });
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stack.set(true);
-    consumer.endHandler(v -> {
-      assertNull(stack.get());
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      testComplete();
-    });
-    consumer.unregister();
-    await();
-  }
-
-  @Test
-  public void testConsumerHandlesEndAsynchronously2() {
-    eb.consumer(ADDRESS1).handler(v -> {});
-    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
-    consumer.handler(msg -> {
-    });
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stack.set(true);
-    consumer.endHandler(v -> {
-      assertNull(stack.get());
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      testComplete();
-    });
-    consumer.unregister();
-    await();
-  }
-
-  @Test
-  public void testConsumerHandlesEndAsynchronously3() {
-    MessageConsumer<Object> consumer = eb.consumer(ADDRESS1);
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stack.set(true);
-    consumer.endHandler(v -> {
-      assertNull(stack.get());
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      testComplete();
-    });
-    consumer.unregister();
-    await();
-  }
-
-  @Test
   public void testUpdateDeliveryOptionsOnProducer() {
     MessageProducer<String> producer = eb.sender(ADDRESS1);
     MessageConsumer<String> consumer = eb.<String>consumer(ADDRESS1);
@@ -1381,6 +1269,27 @@ public class LocalEventBusTest extends EventBusTestBase {
           fail();
       }
     });
+    await();
+  }
+
+  @Test
+  public void testCloseCallsEndHandlerWithRegistrationContext() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
+    CountDownLatch registered = new CountDownLatch(1);
+    ctx.runOnContext(v1 -> {
+      MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
+      consumer.endHandler(v2 -> {
+        assertSame(Vertx.currentContext(), ctx);
+        testComplete();
+      });
+      consumer.handler(msg -> {});
+      consumer.completionHandler(ar -> {
+        assertTrue(ar.succeeded());
+        registered.countDown();
+      });
+    });
+    awaitLatch(registered);
+    closeVertx();
     await();
   }
 }

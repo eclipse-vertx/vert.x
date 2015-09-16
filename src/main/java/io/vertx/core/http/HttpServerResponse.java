@@ -16,14 +16,15 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -196,7 +197,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
    * @param chunk  the string to write
-   * @enc  the encoding to use
+   * @param enc  the encoding to use
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -210,6 +211,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   HttpServerResponse write(String chunk);
+
+  /**
+   * Used to write an interim 100 Continue response to signify that the client should send the rest of the request.
+   * Must only be used if the request contains an "Expect:100-Continue" header
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse writeContinue();
 
   /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding before ending the response.
@@ -243,6 +252,30 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   void end();
 
   /**
+   * Same as {@link #sendFile(String, long)} using offset @code{0} which means starting from the beginning of the file.
+   *
+   * @param filename  path to the file to serve
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpServerResponse sendFile(String filename) {
+    return sendFile(filename, 0);
+  }
+
+  /**
+   * Same as {@link #sendFile(String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * file.
+   *
+   * @param filename  path to the file to serve
+   * @param offset offset to start serving from
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpServerResponse sendFile(String filename, long offset) {
+    return sendFile(filename, offset, Long.MAX_VALUE);
+  }
+
+  /**
    * Ask the OS to stream a file as specified by {@code filename} directly
    * from disk to the outgoing connection, bypassing userspace altogether
    * (where supported by the underlying operating system.
@@ -250,10 +283,12 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * The actual serve is asynchronous and may not complete until some time after this method has returned.
    *
    * @param filename  path to the file to serve
+   * @param offset offset to start serving from
+   * @param length length to serve to
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse sendFile(String filename);
+  HttpServerResponse sendFile(String filename, long offset, long length);
 
   /**
    * Like {@link #sendFile(String)} but providing a handler which will be notified once the file has been completely
@@ -264,7 +299,36 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler);
+  default HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
+    return sendFile(filename, 0, resultHandler);
+  }
+
+  /**
+   * Like {@link #sendFile(String, long)} but providing a handler which will be notified once the file has been completely
+   * written to the wire.
+   *
+   * @param filename path to the file to serve
+   * @param offset the offset to serve from
+   * @param resultHandler  handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpServerResponse sendFile(String filename, long offset, Handler<AsyncResult<Void>> resultHandler) {
+    return sendFile(filename, offset, Long.MAX_VALUE, resultHandler);
+  }
+
+  /**
+   * Like {@link #sendFile(String, long, long)} but providing a handler which will be notified once the file has been
+   * completely written to the wire.
+   *
+   * @param filename path to the file to serve
+   * @param offset the offset to serve from
+   * @param length the length to serve to
+   * @param resultHandler  handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Close the underlying TCP connection corresponding to the request.
@@ -277,6 +341,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   boolean ended();
 
   /**
+   * @return has the underlying TCP connection corresponding to the request already been closed?
+   */
+  boolean closed();
+
+  /**
    * @return have the headers for the response already been written?
    */
   boolean headWritten();
@@ -284,12 +353,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Provide a handler that will be called just before the headers are written to the wire.<p>
    * This provides a hook allowing you to add any more headers or do any more operations before this occurs.
+   * The handler will be passed a future, when you've completed the work you want to do you should complete (or fail)
+   * the future. This can be done after the handler has returned.
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse headersEndHandler(Handler<Void> handler);
+  HttpServerResponse headersEndHandler(Handler<Future<Void>> handler);
 
   /**
    * Provide a handler that will be called just before the last part of the body is written to the wire

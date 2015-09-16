@@ -22,7 +22,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 
 import java.util.Map;
 
@@ -31,16 +30,28 @@ import java.util.Map;
  */
 public class VertxNetHandler extends VertxHandler<NetSocketImpl> {
 
-  public VertxNetHandler(VertxInternal vertx, Map<Channel, NetSocketImpl> connectionMap) {
-    super(vertx, connectionMap);
+  private final Map<Channel, NetSocketImpl> connectionMap;
+
+  public VertxNetHandler(Map<Channel, NetSocketImpl> connectionMap) {
+    this.connectionMap = connectionMap;
   }
+
+  @Override
+  protected NetSocketImpl getConnection(Channel channel) {
+    return connectionMap.get(channel);
+  }
+
+  @Override
+  protected NetSocketImpl removeConnection(Channel channel) {
+    return connectionMap.remove(channel);
+  }
+
 
   @Override
   protected void channelRead(NetSocketImpl sock, ContextImpl context, ChannelHandlerContext chctx, Object msg) throws Exception {
     if (sock != null) {
       ByteBuf buf = (ByteBuf) msg;
-      // We need to do this since it's possible the server is being used from a worker context
-      context.executeSync(() -> sock.handleDataReceived(Buffer.buffer(buf)));
+      context.executeFromIO(() -> sock.handleDataReceived(Buffer.buffer(buf)));
     } else {
       // just discard
     }

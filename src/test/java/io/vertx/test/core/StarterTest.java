@@ -20,17 +20,23 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Starter;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -44,6 +50,15 @@ public class StarterTest extends VertxTestBase {
     TestVerticle.instanceCount.set(0);
     TestVerticle.processArgs = null;
     TestVerticle.conf = null;
+
+    VertxCommandLauncher.resetProcessArguments();
+
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Starter.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Starter.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
   }
 
   @Override
@@ -54,8 +69,8 @@ public class StarterTest extends VertxTestBase {
 
   @Test
   public void testVersion() throws Exception {
-    String[] args = new String[] {"-version"};
-    Starter starter = new Starter();
+    String[] args = {"-version"};
+    MyStarter starter = new MyStarter();
     starter.run(args);
     // TODO some way of getting this from the version in pom.xml
     assertEquals(System.getProperty("vertxVersion"), starter.getVersion());
@@ -72,84 +87,70 @@ public class StarterTest extends VertxTestBase {
   }
 
   public void testRunVerticleMultiple(int instances) throws Exception {
-    Starter starter = new Starter();
-    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-instances", String.valueOf(instances)};
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    MyStarter starter = new MyStarter();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-instances", String.valueOf(instances)};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == instances);
-    assertTrue(t.isAlive()); // It's blocked
-    List<String> processArgs = TestVerticle.processArgs;
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
-    // Now unblock it
-    starter.unblock();
-    waitUntil(() -> !t.isAlive());
+    starter.assertHooksInvoked();
   }
 
   @Test
   public void testRunVerticleClustered() throws Exception {
-    Starter starter = new Starter();
-    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    MyStarter starter = new MyStarter();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertTrue(t.isAlive()); // It's blocked
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
-    // Now unblock it
-    starter.unblock();
-    waitUntil(() -> !t.isAlive());
+    starter.assertHooksInvoked();
   }
 
   @Test
-  public void testRunVerticleWithMainVerticleInManifestNoArgs() throws Exception {
-    Starter starter = new Starter();
-    String[] args = new String[0];
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+  public void testRunVerticleHA() throws Exception {
+    MyStarter starter = new MyStarter();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-ha"};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertTrue(t.isAlive()); // It's blocked
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
-    // Now unblock it
-    starter.unblock();
-    waitUntil(() -> !t.isAlive());
+    starter.assertHooksInvoked();
+  }
+
+
+  @Test
+  public void testRunVerticleWithMainVerticleInManifestNoArgs() throws Exception {
+    MyStarter starter = new MyStarter();
+    String[] args = {};
+    starter.run(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+  }
+
+  @Test
+  public void testRunVerticleWithMainVerticleInManifestWithHA() throws Exception {
+    MyStarter starter = new MyStarter();
+    String[] args = {"-ha"};
+    starter.run(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals(Arrays.asList(args), TestVerticle.processArgs);
   }
 
   @Test
   public void testRunVerticleWithMainVerticleInManifestWithArgs() throws Exception {
-    Starter starter = new Starter();
-    String[] args = new String[] {"-cluster", "-worker"};
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    MyStarter starter = new MyStarter();
+    String[] args = {"-cluster", "-worker"};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertTrue(t.isAlive()); // It's blocked
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
-    // Now unblock it
-    starter.unblock();
-    waitUntil(() -> !t.isAlive());
   }
 
   @Test
   public void testRunVerticleWithConfString() throws Exception {
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
-    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", conf.encode()};
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", conf.encode()};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertTrue(t.isAlive()); // It's blocked
     assertEquals(conf, TestVerticle.conf);
-    // Now unblock it
-    starter.unblock();
-    waitUntil(() -> !t.isAlive());
   }
 
   @Rule
@@ -160,20 +161,13 @@ public class StarterTest extends VertxTestBase {
   public void testRunVerticleWithConfFile() throws Exception {
     Path tempDir = testFolder.newFolder().toPath();
     Path tempFile = Files.createTempFile(tempDir, "conf", "json");
-    Starter starter = new Starter();
+    MyStarter starter = new MyStarter();
     JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
     Files.write(tempFile, conf.encode().getBytes());
-    String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertTrue(t.isAlive()); // It's blocked
     assertEquals(conf, TestVerticle.conf);
-    // Now unblock it
-    starter.unblock();
-    waitUntil(() -> !t.isAlive());
   }
 
   @Test
@@ -191,34 +185,26 @@ public class StarterTest extends VertxTestBase {
     // One for each type that we support
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "eventLoopPoolSize", "123");
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "maxEventLoopExecuteTime", "123767667");
-    System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "metricsEnabled", "true");
+    System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
     System.setProperty(Starter.VERTX_OPTIONS_PROP_PREFIX + "haGroup", "somegroup");
-
-    System.setProperty(Starter.DEPLOYMENT_OPTIONS_PROP_PREFIX + "redeployScanPeriod", "612536253");
 
     MyStarter starter = new MyStarter();
     String[] args;
     if (clustered) {
-      args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
+      args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     } else {
-      args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName()};
+      args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
     }
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = starter.getVertxOptions();
 
     assertEquals(123, opts.getEventLoopPoolSize(), 0);
     assertEquals(123767667l, opts.getMaxEventLoopExecuteTime());
-    assertEquals(true, opts.isMetricsEnabled());
+    assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
 
-    DeploymentOptions depOptions = starter.getDeploymentOptions();
-
-    assertEquals(612536253, depOptions.getRedeployScanPeriod());
   }
 
   private void clearProperties() {
@@ -231,8 +217,36 @@ public class StarterTest extends VertxTestBase {
         toClear.add(propName);
       }
     }
-    for (String propName: toClear) {
+    for (String propName : toClear) {
       System.clearProperty(propName);
+    }
+  }
+
+  @Test
+  public void testCustomMetricsOptions() throws Exception {
+    try {
+      ConfigurableMetricsFactory.delegate = new VertxMetricsFactory() {
+        @Override
+        public VertxMetrics metrics(Vertx vertx, VertxOptions options) {
+          return new DummyVertxMetrics();
+        }
+
+        @Override
+        public MetricsOptions newOptions() {
+          return new CustomMetricsOptions();
+        }
+      };
+      System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
+      System.setProperty(Starter.METRICS_OPTIONS_PROP_PREFIX + "customProperty", "customPropertyValue");
+      MyStarter starter = new MyStarter();
+      String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
+      starter.run(args);
+      waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+      VertxOptions opts = starter.getVertxOptions();
+      CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
+      assertEquals("customPropertyValue", custom.getCustomProperty());
+    } finally {
+      ConfigurableMetricsFactory.delegate = null;
     }
   }
 
@@ -244,16 +258,16 @@ public class StarterTest extends VertxTestBase {
     // Should be ignored
 
     MyStarter starter = new MyStarter();
-    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = starter.getVertxOptions();
-    assertEquals(new VertxOptions(), opts);
-
+    VertxOptions def = new VertxOptions();
+    if (opts.getMetricsOptions().isEnabled()) {
+      def.getMetricsOptions().setEnabled(true);
+    }
+    assertEquals(def, opts);
   }
 
   @Test
@@ -263,26 +277,73 @@ public class StarterTest extends VertxTestBase {
     // Should be ignored
 
     MyStarter starter = new MyStarter();
-    String[] args = new String[] {"run", "java:" + TestVerticle.class.getCanonicalName()};
-    Thread t = new Thread(() -> {
-      starter.run(args);
-    });
-    t.start();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
+    starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
 
     VertxOptions opts = starter.getVertxOptions();
-    assertEquals(new VertxOptions(), opts);
+    VertxOptions def = new VertxOptions();
+    if (opts.getMetricsOptions().isEnabled()) {
+      def.getMetricsOptions().setEnabled(true);
+    }
+    assertEquals(def, opts);
+  }
+
+  @Test
+  public void testRunWithCommandLine() throws Exception {
+    MyStarter starter = new MyStarter();
+    int instances = 10;
+    String cl = "run java:" + TestVerticle.class.getCanonicalName() + " -instances " + instances;
+    starter.run(cl);
+    waitUntil(() -> TestVerticle.instanceCount.get() == instances);
   }
 
   class MyStarter extends Starter {
+    boolean beforeStartingVertxInvoked = false;
+    boolean afterStartingVertxInvoked = false;
+    boolean beforeDeployingVerticle = false;
+
     public Vertx getVert() {
       return vertx;
     }
+
     public VertxOptions getVertxOptions() {
       return options;
     }
+
     public DeploymentOptions getDeploymentOptions() {
       return deploymentOptions;
+    }
+
+    @Override
+    public void run(String[] sargs) {
+      super.run(sargs);
+    }
+
+    @Override
+    public void run(String commandLine) {
+      super.run(commandLine);
+    }
+
+    @Override
+    public void beforeStartingVertx(VertxOptions options) {
+      beforeStartingVertxInvoked = true;
+    }
+
+    @Override
+    public void afterStartingVertx() {
+      afterStartingVertxInvoked = true;
+    }
+
+    @Override
+    protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
+      beforeDeployingVerticle = true;
+    }
+
+    public void assertHooksInvoked() {
+      assertTrue(beforeStartingVertxInvoked);
+      assertTrue(afterStartingVertxInvoked);
+      assertTrue(beforeDeployingVerticle);
     }
   }
 }

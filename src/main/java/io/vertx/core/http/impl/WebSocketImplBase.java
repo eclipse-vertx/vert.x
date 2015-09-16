@@ -44,7 +44,6 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   private final boolean supportsContinuation;
   private final String textHandlerID;
   private final String binaryHandlerID;
-  private final VertxInternal vertx;
   private final int maxWebSocketFrameSize;
   private final MessageConsumer binaryHandlerRegistration;
   private final MessageConsumer textHandlerRegistration;
@@ -61,7 +60,6 @@ public abstract class WebSocketImplBase implements WebSocketBase {
   protected WebSocketImplBase(VertxInternal vertx, ConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize) {
     this.supportsContinuation = supportsContinuation;
-    this.vertx = vertx;
     this.textHandlerID = UUID.randomUUID().toString();
     this.binaryHandlerID = UUID.randomUUID().toString();
     this.conn = conn;
@@ -80,15 +78,19 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     return textHandlerID;
   }
 
-  public synchronized boolean writeQueueFull() {
-    checkClosed();
-    return conn.isNotWritable();
+  public boolean writeQueueFull() {
+    synchronized (conn) {
+      checkClosed();
+      return conn.isNotWritable();
+    }
   }
 
-  public synchronized void close() {
-    checkClosed();
-    conn.close();
-    cleanupHandlers();
+  public void close() {
+    synchronized (conn) {
+      checkClosed();
+      conn.close();
+      cleanupHandlers();
+    }
   }
 
   @Override
@@ -142,12 +144,12 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     writeFrame(frame);
   }
 
-  protected synchronized void writeFrameInternal(WebSocketFrame frame) {
-    checkClosed();
-    if (conn.netMetrics().isEnabled()) {
-      conn.netMetrics().bytesWritten(remoteAddress(), frame.binaryData().length());
+  protected void writeFrameInternal(WebSocketFrame frame) {
+    synchronized (conn) {
+      checkClosed();
+      conn.reportBytesWritten(frame.binaryData().length());
+      conn.writeToChannel(frame);
     }
-    conn.writeToChannel(frame);
   }
 
   protected void checkClosed() {
@@ -156,17 +158,17 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     }
   }
 
-  synchronized void handleFrame(WebSocketFrameInternal frame) {
-    if (conn.netMetrics().isEnabled()) {
-      conn.netMetrics().bytesRead(remoteAddress(), frame.binaryData().length());
-    }
-    if (dataHandler != null) {
-      Buffer buff = Buffer.buffer(frame.getBinaryData());
-      dataHandler.handle(buff);
-    }
+  void handleFrame(WebSocketFrameInternal frame) {
+    synchronized (conn) {
+      conn.reportBytesRead(frame.binaryData().length());
+      if (dataHandler != null) {
+        Buffer buff = Buffer.buffer(frame.getBinaryData());
+        dataHandler.handle(buff);
+      }
 
-    if (frameHandler != null) {
-      frameHandler.handle(frame);
+      if (frameHandler != null) {
+        frameHandler.handle(frame);
+      }
     }
   }
 
@@ -178,19 +180,23 @@ public abstract class WebSocketImplBase implements WebSocketBase {
     }
   }
 
-  synchronized void handleException(Throwable t) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(t);
+  void handleException(Throwable t) {
+    synchronized (conn) {
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(t);
+      }
     }
   }
 
-  synchronized void handleClosed() {
-    cleanupHandlers();
-    if (endHandler != null) {
-      endHandler.handle(null);
-    }
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+  void handleClosed() {
+    synchronized (conn) {
+      cleanupHandlers();
+      if (endHandler != null) {
+        endHandler.handle(null);
+      }
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
   }
 

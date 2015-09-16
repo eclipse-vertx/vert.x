@@ -22,22 +22,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import io.netty.handler.codec.http.websocketx.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxHandler;
 
@@ -47,28 +38,46 @@ import java.util.Map;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public abstract class VertxHttpHandler<C extends ConnectionBase> extends VertxHandler<C> {
-  private final VertxInternal vertx;
-
-  protected VertxHttpHandler(VertxInternal vertx, Map<Channel, C> connectionMap) {
-    super(vertx, connectionMap);
-    this.vertx = vertx;
-  }
 
   private static ByteBuf safeBuffer(ByteBufHolder holder, ByteBufAllocator allocator) {
     return safeBuffer(holder.content(), allocator);
   }
 
+  protected Map<Channel, C> connectionMap;
+
+  protected VertxHttpHandler(Map<Channel, C> connectionMap) {
+    this.connectionMap = connectionMap;
+  }
+
+  @Override
+  protected C getConnection(Channel channel) {
+    @SuppressWarnings("unchecked")
+    VertxNioSocketChannel<C> vch = (VertxNioSocketChannel<C>)channel;
+    // As an optimisation we store the connection on the channel - this prevents a lookup every time
+    // an event from Netty arrives
+    if (vch.conn != null) {
+      return vch.conn;
+    } else {
+      C conn = connectionMap.get(channel);
+      if (conn != null) {
+        vch.conn = conn;
+      }
+      return conn;
+    }
+  }
+
+  @Override
+  protected C removeConnection(Channel channel) {
+    @SuppressWarnings("unchecked")
+    VertxNioSocketChannel<C> vch = (VertxNioSocketChannel<C>)channel;
+    vch.conn = null;
+    return connectionMap.remove(channel);
+  }
+
   @Override
   protected void channelRead(final C connection, final ContextImpl context, final ChannelHandlerContext chctx, final Object msg) throws Exception {
-    if (msg instanceof HttpObject) {
-      DecoderResult result = ((HttpObject) msg).getDecoderResult();
-      if (result.isFailure()) {
-        chctx.pipeline().fireExceptionCaught(result.cause());
-        return;
-      }
-    }
     if (connection != null) {
-      context.executeSync(() -> doMessageReceived(connection, chctx, msg));
+      context.executeFromIO(() -> doMessageReceived(connection, chctx, msg));
     } else {
       // We execute this directly as we don't have a context yet, the context will have to be set manually
       // inside doMessageReceived();

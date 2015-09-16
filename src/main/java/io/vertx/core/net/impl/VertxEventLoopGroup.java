@@ -16,17 +16,8 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.AbstractEventExecutorGroup;
-import io.netty.util.concurrent.DefaultPromise;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GlobalEventExecutor;
-import io.netty.util.concurrent.Promise;
+import io.netty.channel.*;
+import io.netty.util.concurrent.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -117,9 +108,14 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     if (gracefulShutdown.compareAndSet(false, true)) {
       final AtomicInteger counter = new AtomicInteger(workers.size());
       for (EventLoopHolder holder : workers) {
-        holder.worker.shutdownGracefully().addListener(future -> {
-          if (counter.decrementAndGet() == 0) {
-            terminationFuture.setSuccess(null);
+        // We don't use a lambda here just to keep IntelliJ happy as it (incorrectly) flags a syntax error
+        // here
+        holder.worker.shutdownGracefully().addListener(new GenericFutureListener() {
+          @Override
+          public void operationComplete(Future future) throws Exception {
+            if (counter.decrementAndGet() == 0) {
+              terminationFuture.setSuccess(null);
+            }
           }
         });
       }

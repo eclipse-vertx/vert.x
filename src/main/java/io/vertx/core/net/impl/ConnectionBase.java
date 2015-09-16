@@ -16,22 +16,17 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.FileRegion;
+import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.NetMetrics;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.NetworkMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -56,36 +51,49 @@ public abstract class ConnectionBase {
   protected final VertxInternal vertx;
   protected final Channel channel;
   protected final ContextImpl context;
-  protected final NetMetrics metrics;
+  protected final NetworkMetrics metrics;
   protected Handler<Throwable> exceptionHandler;
   protected Handler<Void> closeHandler;
   private boolean read;
   private boolean needsFlush;
+  private Thread ctxThread;
+  private boolean needsAsyncFlush;
 
-  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetMetrics metrics) {
+  protected ConnectionBase(VertxInternal vertx, Channel channel, ContextImpl context, NetworkMetrics metrics) {
     this.vertx = vertx;
     this.channel = channel;
     this.context = context;
     this.metrics = metrics;
-    metrics.connected(remoteAddress());
   }
 
   protected synchronized final void startRead() {
     checkContext();
     read = true;
+    if (ctxThread == null) {
+      ctxThread = Thread.currentThread();
+    }
   }
 
   protected synchronized final void endReadAndFlush() {
     read = false;
     if (needsFlush) {
       needsFlush = false;
-      // flush now
-      channel.flush();
+      if (needsAsyncFlush) {
+        // If the connection has been written to from outside the event loop thread e.g. from a worker thread
+        // Then Netty might end up executing the flush *before* the write as Netty checks for event loop and if not
+        // it executes using the executor.
+        // To avoid this ordering issue we must runOnContext in this situation
+        context.runOnContext(v -> channel.flush());
+      } else {
+        // flush now
+        channel.flush();
+      }
     }
   }
 
   public synchronized ChannelFuture queueForWrite(final Object obj) {
     needsFlush = true;
+    needsAsyncFlush = Thread.currentThread() != ctxThread;
     return channel.write(obj);
   }
 
@@ -139,8 +147,10 @@ public abstract class ConnectionBase {
     return context;
   }
 
+  protected abstract Object metric();
+
   protected synchronized void handleException(Throwable t) {
-    metrics.exceptionOccurred(remoteAddress(), t);
+    metrics.exceptionOccurred(metric(), remoteAddress(), t);
     if (exceptionHandler != null) {
       exceptionHandler.handle(t);
     } else {
@@ -149,7 +159,9 @@ public abstract class ConnectionBase {
   }
 
   protected synchronized void handleClosed() {
-    metrics.disconnected(remoteAddress());
+    if (metrics instanceof TCPMetrics) {
+      ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+    }
     if (closeHandler != null) {
       closeHandler.handle(null);
     }
@@ -159,19 +171,17 @@ public abstract class ConnectionBase {
 
   protected void addFuture(final Handler<AsyncResult<Void>> completionHandler, final ChannelFuture future) {
     if (future != null) {
-      future.addListener(channelFuture -> {
-        context.executeSync(() -> {
-          if (completionHandler != null) {
-            if (channelFuture.isSuccess()) {
-              completionHandler.handle(Future.succeededFuture());
-            } else {
-              completionHandler.handle(Future.failedFuture(channelFuture.cause()));
-            }
-          } else if (!channelFuture.isSuccess()) {
-            handleException(channelFuture.cause());
+      future.addListener(channelFuture -> context.executeFromIO(() -> {
+        if (completionHandler != null) {
+          if (channelFuture.isSuccess()) {
+            completionHandler.handle(Future.succeededFuture());
+          } else {
+            completionHandler.handle(Future.failedFuture(channelFuture.cause()));
           }
-        });
-      });
+        } else if (!channelFuture.isSuccess()) {
+          handleException(channelFuture.cause());
+        }
+      }));
     }
   }
 
@@ -179,22 +189,38 @@ public abstract class ConnectionBase {
     return !isSSL();
   }
 
+  public void reportBytesRead(long numberOfBytes) {
+    if (metrics.isEnabled()) {
+      metrics.bytesRead(metric(), remoteAddress(), numberOfBytes);
+    }
+  }
+
+  public void reportBytesWritten(long numberOfBytes) {
+    if (metrics.isEnabled()) {
+      metrics.bytesWritten(metric(), remoteAddress(), numberOfBytes);
+    }
+  }
+
   private boolean isSSL() {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
-  protected ChannelFuture sendFile(RandomAccessFile raf, long fileLength) throws IOException {
+  protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
     // Write the content.
     ChannelFuture writeFuture;
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
-      writeFuture = writeToChannel(new ChunkedFile(raf, 0, fileLength, 8192));
+      writeFuture = writeToChannel(new ChunkedFile(raf, offset, length, 8192));
     } else {
       // No encryption - use zero-copy.
-      FileRegion region = new DefaultFileRegion(raf.getChannel(), 0, fileLength);
+      FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
       writeFuture = writeToChannel(region);
     }
-    writeFuture.addListener(fut -> raf.close());
+    if (writeFuture != null) {
+      writeFuture.addListener(fut -> raf.close());
+    } else {
+      raf.close();
+    }
     return writeFuture;
   }
 
@@ -220,9 +246,4 @@ public abstract class ConnectionBase {
     if (addr == null) return null;
     return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
   }
-
-  public NetMetrics netMetrics() {
-    return metrics;
-  }
-
 }

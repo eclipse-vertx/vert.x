@@ -26,7 +26,7 @@ import io.vertx.core.net.NetworkOptions;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class DatagramSocketOptions extends NetworkOptions {
 
   /**
@@ -70,12 +70,8 @@ public class DatagramSocketOptions extends NetworkOptions {
    */
   public DatagramSocketOptions() {
     super();
+    init();
     setReuseAddress(DEFAULT_REUSE_ADDRESS); // default is different for DatagramSocket
-    broadcast = DEFAULT_BROADCAST;
-    loopbackModeDisabled = DEFAULT_LOOPBACK_MODE_DISABLED;
-    multicastTimeToLive = DEFAULT_MULTICAST_TIME_TO_LIVE;
-    multicastNetworkInterface = DEFAULT_MULTICAST_NETWORK_INTERFACE;
-    ipV6 = DEFAULT_IPV6;
   }
 
   /**
@@ -99,12 +95,16 @@ public class DatagramSocketOptions extends NetworkOptions {
    */
   public DatagramSocketOptions(JsonObject json) {
     super(json);
-    this.broadcast = json.getBoolean("broadcast", DEFAULT_BROADCAST);
-    this.loopbackModeDisabled = json.getBoolean("loopbackModeDisabled", DEFAULT_LOOPBACK_MODE_DISABLED);
-    this.multicastTimeToLive = json.getInteger("multicastTimeToLive", DEFAULT_MULTICAST_TIME_TO_LIVE);
-    this.multicastNetworkInterface = json.getString("multicastNetworkInterface", DEFAULT_MULTICAST_NETWORK_INTERFACE);
-    this.ipV6 = json.getBoolean("ipV6", DEFAULT_IPV6);
-    setReuseAddress(json.getBoolean("reuseAddress", DEFAULT_REUSE_ADDRESS));
+    init();
+    DatagramSocketOptionsConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    broadcast = DEFAULT_BROADCAST;
+    loopbackModeDisabled = DEFAULT_LOOPBACK_MODE_DISABLED;
+    multicastTimeToLive = DEFAULT_MULTICAST_TIME_TO_LIVE;
+    multicastNetworkInterface = DEFAULT_MULTICAST_NETWORK_INTERFACE;
+    ipV6 = DEFAULT_IPV6;
   }
 
   @Override

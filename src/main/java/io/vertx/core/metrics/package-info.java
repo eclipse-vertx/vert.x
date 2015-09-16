@@ -14,13 +14,5 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-/**
- * == Metrics
- *
- * TODO
- */
-@Document(fileName = "metrics.adoc")
 package io.vertx.core.metrics;
-
-import io.vertx.docgen.Document;
 

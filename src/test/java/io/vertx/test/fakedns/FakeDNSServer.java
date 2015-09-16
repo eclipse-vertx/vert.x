@@ -53,6 +53,8 @@ public final class FakeDNSServer extends DnsServer {
   public static final int PORT = 53530;
 
   private final RecordStore store;
+  private DatagramAcceptor acceptor;
+
 
   private FakeDNSServer(RecordStore store) {
     this.store = store;
@@ -281,22 +283,28 @@ public final class FakeDNSServer extends DnsServer {
     UdpTransport transport = new UdpTransport("127.0.0.1", PORT);
     setTransports( transport );
 
-    DatagramAcceptor acceptor = transport.getAcceptor();
+    acceptor = transport.getAcceptor();
 
     acceptor.setHandler(new DnsProtocolHandler(this, store) {
       @Override
-      public void sessionCreated( IoSession session ) throws Exception {
+      public void sessionCreated(IoSession session) throws Exception {
         // USe our own codec to support AAAA testing
-        session.getFilterChain().addFirst( "codec",
+        session.getFilterChain().addFirst("codec",
           new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
       }
     });
 
     // Allow the port to be reused even if the socket is in TIME_WAIT state
-    ((DatagramSessionConfig)acceptor.getSessionConfig()).setReuseAddress(true);
+    ((DatagramSessionConfig) acceptor.getSessionConfig()).setReuseAddress(true);
 
     // Start the listener
     acceptor.bind();
+  }
+
+
+  @Override
+  public void stop() {
+    acceptor.dispose();
   }
 
 

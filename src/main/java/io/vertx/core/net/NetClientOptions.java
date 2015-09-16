@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -24,7 +25,7 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class NetClientOptions extends ClientOptionsBase {
 
   /**
@@ -45,8 +46,7 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public NetClientOptions() {
     super();
-    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
-    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
+    init();
   }
 
   /**
@@ -67,8 +67,13 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public NetClientOptions(JsonObject json) {
     super(json);
-    this.reconnectAttempts = json.getInteger("reconnectAttempts", DEFAULT_RECONNECT_ATTEMPTS);
-    this.reconnectInterval = json.getLong("reconnectInterval", DEFAULT_RECONNECT_INTERVAL);
+    init();
+    NetClientOptionsConverter.fromJson(json, this);
+  }
+
+  private void init() {
+    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
+    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
   }
 
   @Override
@@ -132,21 +137,51 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setKeyStoreOptions(KeyStoreOptions keyStore) {
-    super.setKeyStoreOptions(keyStore);
+  public NetClientOptions setKeyStoreOptions(JksOptions options) {
+    super.setKeyStoreOptions(options);
     return this;
   }
 
   @Override
-  public NetClientOptions setTrustStoreOptions(TrustStoreOptions trustStore) {
-    super.setTrustStoreOptions(trustStore);
+  public NetClientOptions setPfxKeyCertOptions(PfxOptions options) {
+    return (NetClientOptions) super.setPfxKeyCertOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    return (NetClientOptions) super.setPemKeyCertOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setTrustStoreOptions(JksOptions options) {
+    super.setTrustStoreOptions(options);
     return this;
+  }
+
+  @Override
+  public NetClientOptions setPemTrustOptions(PemTrustOptions options) {
+    return (NetClientOptions) super.setPemTrustOptions(options);
+  }
+
+  @Override
+  public NetClientOptions setPfxTrustOptions(PfxOptions options) {
+    return (NetClientOptions) super.setPfxTrustOptions(options);
   }
 
   @Override
   public NetClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
+  }
+
+  @Override
+  public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (NetClientOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public NetClientOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (NetClientOptions) super.addCrlValue(crlValue);
   }
 
   @Override

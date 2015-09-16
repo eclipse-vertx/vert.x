@@ -16,8 +16,9 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.VertxException;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.Map;
 import java.util.Timer;
@@ -32,24 +33,28 @@ public class BlockedThreadChecker {
   private static final Logger log = LoggerFactory.getLogger(BlockedThreadChecker.class);
 
   private static final Object O = new Object();
-  private Map<VertxThread, Object> threads = new WeakHashMap<>();
+  private final Map<VertxThread, Object> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
-  BlockedThreadChecker(long interval, long maxEventLoopExecTime, long maxWorkerExecTime) {
+  BlockedThreadChecker(long interval, long maxEventLoopExecTime, long maxWorkerExecTime, long warningExceptionTime) {
     timer = new Timer("vertx-blocked-thread-checker", true);
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
-        long now = System.nanoTime();
-        for (VertxThread thread: threads.keySet()) {
-          long execStart = thread.startTime();
-          long dur = now - execStart;
-          if (execStart != 0 && dur > (thread.isWorker() ? maxWorkerExecTime : maxEventLoopExecTime)) {
-            log.warn("Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms" + " time " + maxEventLoopExecTime);
-            if (dur/1000000 > 5000) {
-              StackTraceElement[] stack = thread.getStackTrace();
-              for (StackTraceElement elem: stack) {
-                System.out.println(elem);
+        synchronized (BlockedThreadChecker.this) {
+          long now = System.nanoTime();
+          for (VertxThread thread : threads.keySet()) {
+            long execStart = thread.startTime();
+            long dur = now - execStart;
+            final long timeLimit = thread.isWorker() ? maxWorkerExecTime : maxEventLoopExecTime;
+            if (execStart != 0 && dur > timeLimit) {
+              final String message = "Thread " + thread + " has been blocked for " + (dur / 1000000) + " ms, time limit is " + (timeLimit / 1000000);
+              if (dur <= warningExceptionTime) {
+                log.warn(message);
+              } else {
+                VertxException stackTrace = new VertxException("Thread blocked");
+                stackTrace.setStackTrace(thread.getStackTrace());
+                log.warn(message, stackTrace);
               }
             }
           }

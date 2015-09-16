@@ -76,7 +76,7 @@ public class ConcurrentHashSet<E> implements Set<E> {
 
   @Override
   public boolean remove(Object o) {
-    return map.remove(o) == null;
+    return map.remove(o) != null;
   }
 
   @Override

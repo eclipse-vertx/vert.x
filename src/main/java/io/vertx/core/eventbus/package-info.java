@@ -88,7 +88,7 @@
  *
  * However you are not forced to use JSON if you don't want to.
  *
- * The event bus is very flexible and also supports supports sending arbitrary objects over the event bus.
+ * The event bus is very flexible and also supports sending arbitrary objects over the event bus.
  * You do this by defining a {@link io.vertx.core.eventbus.MessageCodec codec} for the objects you want to send.
  *
  * === The Event Bus API
@@ -99,7 +99,7 @@
  *
  * You get a reference to the event bus as follows:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example0_5}
  * ----
@@ -111,7 +111,7 @@
  * This simplest way to register a handler is using {@link io.vertx.core.eventbus.EventBus#consumer(String, io.vertx.core.Handler)}.
  * Here's an example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example1}
  * ----
@@ -125,7 +125,7 @@
  * Alternatively you can use {@link io.vertx.core.eventbus.EventBus#consumer(String, io.vertx.core.Handler)} to
  * to return a +MessageConsumer+ with no handler set, and then set the handler on that. For example:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example2}
  * ----
@@ -136,7 +136,7 @@
  * If you want to be notified when this has completed, you can register a {@link io.vertx.core.eventbus.MessageConsumer#completionHandler completion handler}
  * on the +MessageConsumer+ object.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example3}
  * ----
@@ -148,7 +148,7 @@
  * If you are on a clustered event bus, un-registering can take some time to propagate across the nodes, if you want to
  * be notified when this is complete use {@link io.vertx.core.eventbus.MessageConsumer#unregister(io.vertx.core.Handler)}.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example4}
  * ----
@@ -158,7 +158,7 @@
  * Publishing a message is simple. Just use {@link io.vertx.core.eventbus.EventBus#publish} specifying the
  * address to publish it to.
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example5}
  * ----
@@ -172,20 +172,16 @@
  *
  * You can send a message with {@link io.vertx.core.eventbus.EventBus#send}
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example6}
  * ----
  *
- * ==== Setting headers on messages
+ * include::override/eventbus_headers.adoc[]
  *
- * Messages sent over the event bus can also contain headers. This can be specified by providing a
- * {@link io.vertx.core.eventbus.DeliveryOptions} when sending or publishing:
+ * ==== Message ordering
  *
- * [source,java]
- * ----
- * {@link examples.EventBusExamples#example7}
- * ----
+ * Vert.x will deliver messages to any particular handler in the same order they were sent from any particular sender.
  *
  * ==== The Message object
  *
@@ -210,14 +206,14 @@
  *
  * The receiver:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example8}
  * ----
  *
  * The sender:
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example9}
  * ----
@@ -242,30 +238,7 @@
  *
  * In all cases the reply handler will be called with the specific failure.
  *
- * ==== Message Codecs
- *
- * You can send any object you like across the event bus if you define and register a {@link io.vertx.core.eventbus.MessageCodec message codec} for it.
- *
- * Message codecs have a name and you specify that name in the {@link io.vertx.core.eventbus.DeliveryOptions}
- * when sending or publishing the message:
- *
- * [source,java]
- * ----
- * {@link examples.EventBusExamples#example10}
- * ----
- *
- * If you always want the same codec to be used for a particular type then you can register a default codec for it, then
- * you don't have to specify the codec on each send in the delivery options:
- *
- * [source,java]
- * ----
- * {@link examples.EventBusExamples#example11}
- * ----
- *
- * You unregister a message codec with {@link io.vertx.core.eventbus.EventBus#unregisterCodec}.
- *
- * Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
- * allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.
+ * include::override/eventbus.adoc[]
  *
  * ==== Clustered Event Bus
  *
@@ -277,7 +250,7 @@
  * If you're creating your Vert.x instance programmatically you get a clustered event bus by configuring the Vert.x
  * instance as clustered;
  *
- * [source,java]
+ * [source,$lang]
  * ----
  * {@link examples.EventBusExamples#example12}
  * ----
@@ -289,7 +262,7 @@
  *
  * You can run Vert.x clustered on the command line with
  *
- *  vertx run MyVerticle -cluster
+ *  vertx run my-verticle.js -cluster
  *
  * === Automatic clean-up in verticles
  *

@@ -23,7 +23,9 @@ import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
+
+import java.util.Objects;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -46,8 +48,13 @@ public class WindowsFileSystem extends FileSystemImpl {
   @Override
   protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms,
                                                Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(path);
+    Objects.requireNonNull(perms);
     logInternal(perms);
     logInternal(dirPerms);
+    if (log.isDebugEnabled()) {
+      log.debug("You are running on Windows and POSIX style file permissions are not supported!");
+    }
     return new BlockingAction<Void>(handler) {
       @Override
       public Void perform() {

@@ -1,0 +1,238 @@
+== Using the file system with Vert.x
+
+The Vert.x `link:../../apidocs/io/vertx/core/file/FileSystem.html[FileSystem]` object provides many operations for manipulating the file system.
+
+There is one file system object per Vert.x instance, and you obtain it with  `link:../../apidocs/io/vertx/core/Vertx.html#fileSystem--[fileSystem]`.
+
+A blocking and a non blocking version of each operation is provided. The non blocking versions take a handler
+which is called when the operation completes or an error occurs.
+
+Here's an example of an asynchronous copy of a file:
+
+[source,java]
+----
+FileSystem fs = vertx.fileSystem();
+
+// Copy file from foo.txt to bar.txt
+fs.copy("foo.txt", "bar.txt", res -> {
+    if (res.succeeded()) {
+        // Copied ok!
+    } else {
+        // Something went wrong
+    }
+});
+----
+The blocking versions are named `xxxBlocking` and return the results or throw exceptions directly. In many
+cases, depending on the operating system and file system, some of the potentially blocking operations can return
+quickly, which is why we provide them, but it's highly recommended that you test how long they take to return in your
+particular application before using them from an event loop, so as not to break the Golden Rule.
+
+Here's the copy using the blocking API:
+
+[source,java]
+----
+FileSystem fs = vertx.fileSystem();
+
+// Copy file from foo.txt to bar.txt synchronously
+fs.copyBlocking("foo.txt", "bar.txt");
+----
+
+Many operations exist to copy, move, truncate, chmod and many other file operations. We won't list them all here,
+please consult the `link:../../apidocs/io/vertx/core/file/FileSystem.html[API docs]` for the full list.
+
+Let's see a couple of examples using asynchronous methods:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx();
+
+// Read a file
+vertx.fileSystem().readFile("target/classes/readme.txt", result -> {
+    if (result.succeeded()) {
+        System.out.println(result.result());
+    } else {
+        System.err.println("Oh oh ..." + result.cause());
+    }
+});
+
+// Copy a file
+vertx.fileSystem().copy("target/classes/readme.txt", "target/classes/readme2.txt", result -> {
+    if (result.succeeded()) {
+        System.out.println("File copied");
+    } else {
+        System.err.println("Oh oh ..." + result.cause());
+    }
+});
+
+// Write a file
+vertx.fileSystem().writeFile("target/classes/hello.txt", Buffer.buffer("Hello"), result -> {
+    if (result.succeeded()) {
+        System.out.println("File written");
+    } else {
+        System.err.println("Oh oh ..." + result.cause());
+    }
+});
+
+// Check existence and delete
+vertx.fileSystem().exists("target/classes/junk.txt", result -> {
+    if (result.succeeded() && result.result()) {
+        vertx.fileSystem().delete("target/classes/junk.txt", r -> {
+            System.out.println("File deleted");
+        });
+    } else {
+        System.err.println("Oh oh ... - cannot delete the file: " + result.cause());
+    }
+});
+----
+
+=== Asynchronous files
+
+Vert.x provides an asynchronous file abstraction that allows you to manipulate a file on the file system.
+
+You open an `link:../../apidocs/io/vertx/core/file/AsyncFile.html[AsyncFile]` as follows:
+
+[source,java]
+----
+OpenOptions options = new OpenOptions();
+fileSystem.open("myfile.txt", options, res -> {
+    if (res.succeeded()) {
+        AsyncFile file = res.result();
+    } else {
+        // Something went wrong!
+    }
+});
+----
+
+`AsyncFile` implements `ReadStream` and `WriteStream` so you can _pump_
+files to and from other stream objects such as net sockets, http requests and responses, and WebSockets.
+
+They also allow you to read and write directly to them.
+
+==== Random access writes
+
+To use an `AsyncFile` for random access writing you use the
+`link:../../apidocs/io/vertx/core/file/AsyncFile.html#write-io.vertx.core.buffer.Buffer-long-io.vertx.core.Handler-[write]` method.
+
+The parameters to the method are:
+
+* `buffer`: the buffer to write.
+* `position`: an integer position in the file where to write the buffer. If the position is greater or equal to the size
+ of the file, the file will be enlarged to accommodate the offset.
+* `handler`: the result handler
+
+Here is an example of random access writes:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx();
+vertx.fileSystem().open("target/classes/hello.txt", new OpenOptions(), result -> {
+    if (result.succeeded()) {
+        AsyncFile file = result.result();
+        Buffer buff = Buffer.buffer("foo");
+        for (int i = 0; i < 5; i++) {
+            file.write(buff, buff.length() * i, ar -> {
+                if (ar.succeeded()) {
+                    System.out.println("Written ok!");
+                    // etc
+                } else {
+                    System.err.println("Failed to write: " + ar.cause());
+                }
+            });
+        }
+    } else {
+        System.err.println("Cannot open file " + result.cause());
+    }
+});
+----
+
+==== Random access reads
+
+To use an `AsyncFile` for random access reads you use the
+`link:../../apidocs/io/vertx/core/file/AsyncFile.html#read-io.vertx.core.buffer.Buffer-int-long-int-io.vertx.core.Handler-[read]`
+method.
+
+The parameters to the method are:
+
+* `buffer`: the buffer into which the data will be read.
+* `offset`: an integer offset into the buffer where the read data will be placed.
+* `position`: the position in the file where to read data from.
+* `length`: the number of bytes of data to read
+* `handler`: the result handler
+
+Here's an example of random access reads:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx();
+vertx.fileSystem().open("target/classes/les_miserables.txt", new OpenOptions(), result -> {
+    if (result.succeeded()) {
+        AsyncFile file = result.result();
+        Buffer buff = Buffer.buffer(1000);
+        for (int i = 0; i < 10; i++) {
+            file.read(buff, i * 100, i * 100, 100, ar -> {
+                if (ar.succeeded()) {
+                    System.out.println("Read ok!");
+                } else {
+                    System.err.println("Failed to write: " + ar.cause());
+                }
+            });
+        }
+    } else {
+        System.err.println("Cannot open file " + result.cause());
+    }
+});
+----
+
+==== Opening Options
+
+When opening an `AsyncFile`, you pass an `link:../../apidocs/io/vertx/core/file/OpenOptions.html[OpenOptions]` instance.
+These options describe the behavior of the file access. For instance, you can configure the file permissions with the
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setRead-boolean-[setRead]`, `link:../../apidocs/io/vertx/core/file/OpenOptions.html#setWrite-boolean-[setWrite]`
+and `link:../../apidocs/io/vertx/core/file/OpenOptions.html#setPerms-java.lang.String-[setPerms]` methods.
+
+You can also configure the behavior if the open file already exists with
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setCreateNew-boolean-[setCreateNew]` and
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setTruncateExisting-boolean-[setTruncateExisting]`.
+
+You can also mark the file to be deleted on
+close or when the JVM is shutdown with `link:../../apidocs/io/vertx/core/file/OpenOptions.html#setDeleteOnClose-boolean-[setDeleteOnClose]`.
+
+==== Flushing data to underlying storage.
+
+In the `OpenOptions`, you can enable/disable the automatic synchronisation of the content on every write using
+`link:../../apidocs/io/vertx/core/file/OpenOptions.html#setDsync-boolean-[setDsync]`. In that case, you can manually flush any writes from the OS
+cache by calling the `link:../../apidocs/io/vertx/core/file/AsyncFile.html#flush--[flush]` method.
+
+This method can also be called with an handler which will be called when the flush is complete.
+
+==== Using AsyncFile as ReadStream and WriteStream
+
+`AsyncFile` implements `ReadStream` and `WriteStream`. You can then
+use them with a _pump_ to pump data to and from other read and write streams. For example, this would
+copy the content to another `AsyncFile`:
+
+[source,java]
+----
+Vertx vertx = Vertx.vertx();
+final AsyncFile output = vertx.fileSystem().openBlocking("target/classes/plagiary.txt", new OpenOptions());
+
+vertx.fileSystem().open("target/classes/les_miserables.txt", new OpenOptions(), result -> {
+    if (result.succeeded()) {
+        AsyncFile file = result.result();
+        Pump.pump(file, output).start();
+        file.endHandler((r) -> {
+            System.out.println("Copy done");
+        });
+    } else {
+        System.err.println("Cannot open file " + result.cause());
+    }
+});
+----
+
+You can also use the _pump_ to write file content into HTTP responses, or more generally in any
+`WriteStream`.
+
+==== Closing an AsyncFile
+
+To close an `AsyncFile` call the `link:../../apidocs/io/vertx/core/file/AsyncFile.html#close--[close]` method. Closing is asynchronous and
+if you want to be notified when the close has been completed you can specify a handler function as an argument.

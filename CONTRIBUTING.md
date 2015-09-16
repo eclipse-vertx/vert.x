@@ -21,7 +21,7 @@ If you don’t, you need to [register](https://dev.eclipse.org/site_login/create
 
 * Add your github username in your Eclipse Foundation account settings. Log in it to Eclipse and go to account settings.
 
-* "Sign-off" your commits
+* "Sign-off" your commits (NOTE! This is only necessary if contributing to the vertx-core project)
 
 Every commit you make in your patch or pull request MUST be "signed off".
 

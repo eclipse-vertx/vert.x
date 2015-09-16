@@ -20,16 +20,16 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -55,11 +55,14 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
         assertEquals(received, msg.body());
-        if (options != null && options.getHeaders() != null) {
+        if (options != null) {
           assertNotNull(msg.headers());
-          assertEquals(options.getHeaders().size(), msg.headers().size());
-          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
-            assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+          int numHeaders = options.getHeaders() != null ? options.getHeaders().size() : 0;
+          assertEquals(numHeaders, msg.headers().size());
+          if (numHeaders != 0) {
+            for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
+              assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+            }
           }
         }
       } else {
@@ -176,7 +179,7 @@ public class ClusteredEventBusTest extends EventBusTestBase {
       public void handle(AsyncResult<Void> ar) {
         assertTrue(ar.succeeded());
         if (registerCount.incrementAndGet() == 2) {
-          vertices[0].eventBus().publish(ADDRESS1, (T)val);
+          vertices[0].eventBus().publish(ADDRESS1, val);
         }
       }
     }
@@ -305,33 +308,6 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     await();
   }
 
-  // Make sure connection times out correctly on no pong
-  @Test
-  public void testConnectionTimesOutNoPong() throws Exception {
-    // Set an unreasonably quick reply time so it's bound to timeout
-    startNodes(2, new VertxOptions().setClusterPingInterval(1).setClusterPingReplyInterval(1));
-    VertxInternal vertxI = (VertxInternal)vertices[0];
-    vertxI.simulateEventBusUnresponsive();
-    AtomicBoolean sending = new AtomicBoolean();
-    MessageConsumer<String> consumer = vertices[0].eventBus().<String>consumer("foobar").handler(msg -> {
-      if (!sending.get()) {
-        sending.set(true);
-        vertx.setTimer(2000, id -> {
-          vertices[1].eventBus().send("foobar", "whatever2");
-        });
-      } else {
-        fail("should not receive message");
-      }
-    });
-    consumer.completionHandler(ar -> {
-      assertTrue(ar.succeeded());
-      vertices[1].eventBus().send("foobar", "whatever");
-    });
-    // wait a while for the message to get there (which it never will)
-    vertx.setTimer(4000, id -> testComplete());
-    await();
-  }
-
   @Test
   public void testConsumerHandlesCompletionAsynchronously1() {
     startNodes(2);
@@ -362,4 +338,93 @@ public class ClusteredEventBusTest extends EventBusTestBase {
     });
     await();
   }
+
+  @Test
+  public void testSubsRemovedForClosedNode() throws Exception {
+    testSubsRemoved(latch -> {
+      vertices[1].close(onSuccess(v -> {
+        latch.countDown();
+      }));
+    });
+
+  }
+
+  @Test
+  public void testSubsRemovedForKilledNode() throws Exception {
+    testSubsRemoved(latch -> {
+      VertxInternal vi = (VertxInternal)vertices[1];
+      vi.getClusterManager().leave(onSuccess(v -> {
+        latch.countDown();
+      }));
+    });
+
+  }
+
+  private void testSubsRemoved(Consumer<CountDownLatch> action) throws Exception {
+    startNodes(3);
+    CountDownLatch regLatch = new CountDownLatch(1);
+    AtomicInteger cnt = new AtomicInteger();
+    vertices[0].eventBus().consumer(ADDRESS1, msg -> {
+      int c = cnt.getAndIncrement();
+      assertEquals(msg.body(), "foo" + c);
+      if (c == 9) {
+        testComplete();
+      }
+      if (c > 9) {
+        fail("too many messages");
+      }
+    }).completionHandler(onSuccess(v -> {
+      vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+        fail("shouldn't get message");
+      }).completionHandler(onSuccess(v2 -> {
+        regLatch.countDown();
+      }));
+    }));
+    awaitLatch(regLatch);
+
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    action.accept(closeLatch);
+    awaitLatch(closeLatch);
+
+    // Allow time for kill to be propagate
+    Thread.sleep(2000);
+
+    vertices[2].runOnContext(v -> {
+      // Now send some messages from node 2 - they should ALL go to node 0
+      EventBus ebSender = vertices[2].eventBus();
+      for (int i = 0; i < 10; i++) {
+        ebSender.send(ADDRESS1, "foo" + i);
+      }
+    });
+
+    await();
+
+  }
+
+  @Test
+  public void sendNoContext() throws Exception {
+    int size = 1000;
+    ConcurrentLinkedDeque<Integer> expected = new ConcurrentLinkedDeque<>();
+    ConcurrentLinkedDeque<Integer> obtained = new ConcurrentLinkedDeque<>();
+    startNodes(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[1].eventBus().<Integer>consumer(ADDRESS1, msg -> {
+      obtained.add(msg.body());
+      if (obtained.size() == expected.size()) {
+        assertEquals(new ArrayList<>(expected), new ArrayList<>(obtained));
+        testComplete();
+      }
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    latch.await();
+    EventBus bus = vertices[0].eventBus();
+    for (int i = 0;i < size;i++) {
+      expected.add(i);
+      bus.send(ADDRESS1, i);
+    }
+    await();
+  }
+
 }

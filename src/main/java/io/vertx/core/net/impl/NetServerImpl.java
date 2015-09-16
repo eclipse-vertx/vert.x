@@ -40,10 +40,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
-import io.vertx.core.metrics.spi.NetMetrics;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
@@ -55,7 +56,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetServerImpl implements NetServer, Closeable {
+public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
@@ -71,7 +71,6 @@ public class NetServerImpl implements NetServer, Closeable {
   private final NetServerOptions options;
   private final ContextImpl creatingContext;
   private final SSLHelper sslHelper;
-  private final NetMetrics metrics;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
@@ -85,19 +84,19 @@ public class NetServerImpl implements NetServer, Closeable {
   private volatile int actualPort;
   private boolean listenersRun;
   private ContextImpl listenContext;
+  private TCPMetrics metrics;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyStoreOptions()), KeyStoreHelper.create(vertx, options.getTrustStoreOptions()));
+    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.creatingContext = vertx.getContext();
     if (creatingContext != null) {
-      if (creatingContext.isWorker()) {
-        throw new IllegalStateException("Cannot use NetServer in a worker verticle");
+      if (creatingContext.isMultiThreadedWorkerContext()) {
+        throw new IllegalStateException("Cannot use NetServer in a multi-threaded worker verticle");
       }
       creatingContext.addCloseHook(this);
     }
-    this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
   @Override
@@ -205,7 +204,7 @@ public class NetServerImpl implements NetServer, Closeable {
               NetServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               vertx.sharedNetServers().put(id, NetServerImpl.this);
-              metrics.listening(new SocketAddressImpl(id.port, id.host));
+              metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
             } else {
               vertx.sharedNetServers().remove(id);
             }
@@ -230,7 +229,7 @@ public class NetServerImpl implements NetServer, Closeable {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
         this.actualPort = shared.actualPort();
-        metrics.listening(new SocketAddressImpl(id.port, id.host));
+        metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(id.port, id.host), options);
         if (connectStream.handler() != null) {
           actualServer.handlerManager.addHandler(connectStream.handler(), listenContext);
         }
@@ -244,6 +243,7 @@ public class NetServerImpl implements NetServer, Closeable {
             res = Future.succeededFuture(NetServerImpl.this);
           } else {
             listening = false;
+
             res = Future.failedFuture(actualServer.bindFuture.cause());
           }
           // Call with expectRightThread = false as if server is already listening
@@ -252,7 +252,7 @@ public class NetServerImpl implements NetServer, Closeable {
           listenContext.runOnContext(v -> listenHandler.handle(res));
         } else if (!actualServer.bindFuture.isSuccess()) {
           // No handler - log so user can see failure
-          log.error(actualServer.bindFuture.cause());
+          log.error("Failed to listen", actualServer.bindFuture.cause());
           listening = false;
         }
       });
@@ -320,16 +320,13 @@ public class NetServerImpl implements NetServer, Closeable {
   }
 
   @Override
-  public String metricBaseName() {
-    return metrics.baseName();
+  public boolean isMetricsEnabled() {
+    return metrics != null && metrics.isEnabled();
   }
 
   @Override
-  public Map<String, JsonObject> metrics() {
-    String name = metricBaseName();
-    return vertx.metrics().entrySet().stream()
-      .filter(e -> e.getKey().startsWith(name))
-      .collect(Collectors.toMap(e -> e.getKey().substring(name.length() + 1), Map.Entry::getValue));
+  public Metrics getMetrics() {
+    return metrics;
   }
 
   private void applyConnectionOptions(ServerBootstrap bootstrap) {
@@ -375,18 +372,22 @@ public class NetServerImpl implements NetServer, Closeable {
       vertx.sharedNetServers().remove(id);
     }
 
+    ContextImpl currCon = vertx.getContext();
+
     for (NetSocketImpl sock : socketMap.values()) {
       sock.close();
     }
 
-    // We need to reset it since sock.internalClose() above can call into the close handlers of sockets on the same thread
-    // which can cause context id for the thread to change!
-
-    ContextImpl.setContext(closeContext);
+    // Sanity check
+    if (vertx.getContext() != currCon) {
+      throw new IllegalStateException("Context was changed");
+    }
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cg -> {
-      metrics.close();
+      if (metrics != null) {
+        metrics.close();
+      }
       executeCloseDone(closeContext, done, fut.cause());
     });
 
@@ -400,7 +401,7 @@ public class NetServerImpl implements NetServer, Closeable {
 
   private class ServerHandler extends VertxNetHandler {
     public ServerHandler() {
-      super(NetServerImpl.this.vertx, socketMap);
+      super(socketMap);
     }
 
     @Override
@@ -432,13 +433,14 @@ public class NetServerImpl implements NetServer, Closeable {
     }
 
     private void connected(Channel ch, HandlerHolder<NetSocket> handler) {
-      handler.context.executeSync(() -> doConnected(ch, handler));
-    }
-
-    private void doConnected(Channel ch, HandlerHolder<NetSocket> handler) {
-      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics);
+      // Need to set context before constructor is called as writehandler registration needs this
+      ContextImpl.setContext(handler.context);
+      NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics, null);
       socketMap.put(ch, sock);
-      handler.handler.handle(sock);
+      handler.context.executeFromIO(() -> {
+        sock.setMetric(metrics.connected(sock.remoteAddress()));
+        handler.handler.handle(sock);
+      });
     }
   }
 
