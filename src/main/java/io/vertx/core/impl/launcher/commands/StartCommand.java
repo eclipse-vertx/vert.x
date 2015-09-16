@@ -90,7 +90,6 @@ public class StartCommand extends DefaultCommand {
     this.redirect = redirect;
   }
 
-
   /**
    * Starts the application in background.
    */
@@ -112,6 +111,7 @@ public class StartCommand extends DefaultCommand {
     } else {
       // probably a `vertx` command line usage, or in IDE.
       ExecUtils.addArgument(cmd, CommandLineUtils.getFirstSegmentOfCommand());
+      ExecUtils.addArgument(cmd, "run");
     }
 
     getArguments().stream().forEach(arg -> ExecUtils.addArgument(cmd, arg));
