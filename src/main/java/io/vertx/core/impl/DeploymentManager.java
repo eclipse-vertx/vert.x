@@ -137,23 +137,37 @@ public class DeploymentManager {
             deployVerticle(resolvedName, options, completionHandler);
             return;
           } else {
-            Verticle[] verticles = new Verticle[options.getInstances()];
-            try {
-              for (int i = 0; i < options.getInstances(); i++) {
-                verticles[i] = verticleFactory.createVerticle(identifier, cl);
-                if (verticles[i] == null) {
-                  throw new NullPointerException("VerticleFactory::createVerticle returned null");
+            if (verticleFactory.blockingCreate()) {
+              vertx.<Verticle[]>executeBlocking(createFut -> {
+                try {
+                  Verticle[] verticles = createVerticles(verticleFactory, identifier, options.getInstances(), cl);
+                  createFut.complete(verticles);
+                } catch (Exception e) {
+                  createFut.fail(e);
                 }
-              }
-              doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, verticles);
+              }, res -> {
+                if (res.succeeded()) {
+                  doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, res.result());
+                } else {
+                  // Try the next one
+                  doDeployVerticle(iter, res.cause(), identifier, deploymentID, options, parentContext, callingContext, cl, completionHandler);
+                }
+              });
               return;
-            } catch (Exception e) {
-              err = e;
+            } else {
+              try {
+                Verticle[] verticles = createVerticles(verticleFactory, identifier, options.getInstances(), cl);
+                doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, verticles);
+                return;
+              } catch (Exception e) {
+                err = e;
+              }
             }
           }
         } else {
           err = ar.cause();
         }
+        // Try the next one
         doDeployVerticle(iter, err, identifier, deploymentID, options, parentContext, callingContext, cl, completionHandler);
       });
     } else {
@@ -164,6 +178,17 @@ public class DeploymentManager {
         // not handled or impossible ?
       }
     }
+  }
+
+  private Verticle[] createVerticles(VerticleFactory verticleFactory, String identifier, int instances, ClassLoader cl) throws Exception {
+    Verticle[] verticles = new Verticle[instances];
+    for (int i = 0; i < instances; i++) {
+      verticles[i] = verticleFactory.createVerticle(identifier, cl);
+      if (verticles[i] == null) {
+        throw new NullPointerException("VerticleFactory::createVerticle returned null");
+      }
+    }
+    return verticles;
   }
 
   private String getSuffix(int pos, String str) {

@@ -41,9 +41,9 @@
     } else if (kind == CLASS_JSON_ARRAY) {
       return 'Json array';
     } else if (kind == CLASS_DATA_OBJECT) {
-      return 'link:' + type.raw.simpleName + '.html[' + type.raw.simpleName + ']';
+      return 'link:dataobjects.html#' + type.raw.simpleName + '[' + type.raw.simpleName + ']';
     } else if (kind == CLASS_ENUM) {
-      return 'Enum';
+      return 'link:enums.html#' + type.raw.simpleName + '[' + type.raw.simpleName + ']';
     } else if (kind == CLASS_API) {
       if (type.name == 'io.vertx.core.buffer.Buffer') {
         return "Buffer"
@@ -54,6 +54,7 @@
   }
 }
 
+[[@{type.simpleName}]]\n
 == @{type.simpleName}\n
 \n
 @if{doc != null}
@@ -71,14 +72,13 @@
 	@code{propertyType=getDataType(property.type)}
 	@code{arrayPrefix = property.array ? 'Array of ' : ''}
 	@if{propertyType != null}
-		\n
-		|[[@{property.name}]]`@{property.name}`\n
-		|`@{arrayPrefix}@{getDataType(property.type)}`\n
-		|@if{property.doc != null}
+		|[[@{property.name}]]`@{property.name}`
+		|`@{arrayPrefix}@{getDataType(property.type)}`
+		|@if{property.doc != null}\n
 		+++\n
-		@{renderDocToHtml('', property.doc, renderTagLinkToHtml).trim()}
+		@{renderDocToHtml('', property.doc, renderTagLinkToHtml).trim()}\n
 		+++\n
-		@else{}-@end{}
+		@else{}-\n@end{}
 	@end{}
 @end{}
 |===\n
