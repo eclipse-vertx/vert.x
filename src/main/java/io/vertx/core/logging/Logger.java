@@ -70,12 +70,28 @@ public class Logger {
     delegate.error(message, t);
   }
 
+  public void error(final Object message, final Object... objects) {
+    delegate.error(message, objects);
+  }
+
+  public void error(final Object message, final Throwable t, final Object... objects) {
+    delegate.error(message, t, objects);
+  }
+
   public void warn(final Object message) {
     delegate.warn(message);
   }
 
   public void warn(final Object message, final Throwable t) {
     delegate.warn(message, t);
+  }
+
+  public void warn(final Object message, final Object... objects) {
+    delegate.warn(message, objects);
+  }
+
+  public void warn(final Object message, final Throwable t, final Object... objects) {
+    delegate.warn(message, t, objects);
   }
 
   public void info(final Object message) {
@@ -86,6 +102,14 @@ public class Logger {
     delegate.info(message, t);
   }
 
+  public void info(final Object message, final Object... objects) {
+    delegate.info(message, objects);
+  }
+
+  public void info(final Object message, final Throwable t, final Object... objects) {
+    delegate.info(message, t, objects);
+  }
+
   public void debug(final Object message) {
     delegate.debug(message);
   }
@@ -94,12 +118,28 @@ public class Logger {
     delegate.debug(message, t);
   }
 
+  public void debug(final Object message, final Object... objects) {
+    delegate.debug(message, objects);
+  }
+
+  public void debug(final Object message, final Throwable t, final Object... objects) {
+    delegate.debug(message, t, objects);
+  }
+
   public void trace(final Object message) {
     delegate.trace(message);
   }
 
   public void trace(final Object message, final Throwable t) {
     delegate.trace(message, t);
+  }
+
+  public void trace(final Object message, final Object... objects) {
+    delegate.trace(message, objects);
+  }
+
+  public void trace(final Object message, final Throwable t, final Object... objects) {
+    delegate.trace(message, t, objects);
   }
 
 }
