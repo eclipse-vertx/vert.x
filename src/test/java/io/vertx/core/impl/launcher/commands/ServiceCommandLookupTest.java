@@ -38,6 +38,10 @@ public class ServiceCommandLookupTest {
     ensureCommand(commands, "run");
     ensureCommand(commands, "bare");
     ensureCommand(commands, "version");
+
+    ensureCommand(commands, "list");
+    ensureCommand(commands, "start");
+    ensureCommand(commands, "stop");
   }
 
   private void ensureCommand(Collection<CommandFactory<?>> commands, String name) {
