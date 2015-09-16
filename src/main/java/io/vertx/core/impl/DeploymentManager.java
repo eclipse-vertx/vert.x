@@ -149,7 +149,6 @@ public class DeploymentManager {
                 if (res.succeeded()) {
                   doDeploy(identifier, deploymentID, options, parentContext, callingContext, completionHandler, cl, res.result());
                 } else {
-                  // TODO
                   // Try the next one
                   doDeployVerticle(iter, res.cause(), identifier, deploymentID, options, parentContext, callingContext, cl, completionHandler);
                 }
