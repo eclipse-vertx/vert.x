@@ -31,15 +31,9 @@ public class CommandLineUtils {
   public static String getJar() {
     // Check whether or not the "sun.java.command" system property is defined,
     // if it is, check whether the first segment of the command ends with ".jar".
-    final String command = getCommand();
-    if (command != null) {
-      final String[] segments = command.split(" ");
-      if (segments.length >= 1) {
-        // Fat Jar ?
-        if (segments[0].endsWith(".jar")) {
-          return segments[0];
-        }
-      }
+    String segment = getFirstSegmentOfCommand();
+    if (segment != null && segment.endsWith(".jar")) {
+      return segment;
     } else {
       // Second attend is to check the classpath. If the classpath contains only one element,
       // it's the fat jar
@@ -67,7 +61,7 @@ public class CommandLineUtils {
   public static String getFirstSegmentOfCommand() {
     String cmd = getCommand();
     if (cmd != null) {
-      final String[] segments = cmd.split(" ");
+      String[] segments = cmd.split(" ");
       if (segments.length >= 1) {
         return segments[0];
       }

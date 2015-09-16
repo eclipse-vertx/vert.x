@@ -242,7 +242,7 @@ public abstract class ContextImpl implements Context {
   @Override
   public List<String> processArgs() {
     // As we are maintaining the launcher and starter class, choose the right one.
-    final List<String> processArgument = VertxCommandLauncher.getProcessArguments();
+    List<String> processArgument = VertxCommandLauncher.getProcessArguments();
     return processArgument != null ? processArgument : Starter.PROCESS_ARGS;
   }
 

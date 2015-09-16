@@ -51,7 +51,7 @@ import java.util.jar.Manifest;
  * {@code java -jar myapp.jar}
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
- * @deprecated USe {@link Launcher} instead
+ * @deprecated Use {@link Launcher} instead
  */
 @Deprecated
 public class Starter {
