@@ -108,6 +108,7 @@ public class CommandTestBase {
       try {
         Thread.sleep(10);
       } catch (InterruptedException ignore) {
+        Thread.currentThread().interrupt();
       }
       long now = System.currentTimeMillis();
       if (now - start > timeout) {

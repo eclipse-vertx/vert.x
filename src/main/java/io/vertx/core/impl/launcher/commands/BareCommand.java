@@ -184,6 +184,7 @@ public class BareCommand extends ClasspathHandler {
         }
       } catch (InterruptedException e) {
         log.error("Thread interrupted in startup");
+        Thread.currentThread().interrupt();
         return null;
       }
       if (result.get().failed()) {
@@ -205,7 +206,7 @@ public class BareCommand extends ClasspathHandler {
    * Hook called after starting vert.x.
    */
   protected void afterStartingVertx() {
-    final Object main = executionContext.main();
+    Object main = executionContext.main();
     if (main instanceof VertxLifecycleHooks) {
       ((VertxLifecycleHooks) main).afterStartingVertx(vertx);
     }
@@ -217,7 +218,7 @@ public class BareCommand extends ClasspathHandler {
    * @param options the deployment options
    */
   protected void beforeStartingVertx(VertxOptions options) {
-    final Object main = executionContext.main();
+    Object main = executionContext.main();
     if (main instanceof VertxLifecycleHooks) {
       ((VertxLifecycleHooks) main).beforeStartingVertx(options);
     }

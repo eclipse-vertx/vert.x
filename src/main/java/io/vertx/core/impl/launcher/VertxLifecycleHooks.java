@@ -27,7 +27,7 @@ import io.vertx.core.VertxOptions;
 public interface VertxLifecycleHooks {
 
   /**
-   * Hook for sub-classes of the starter class before the vertx instance is started.
+   * Hook for sub-classes of the starter class before the vertx instance is started. Options can still be updated.
    *
    * @param options the vert.x options
    */
@@ -41,7 +41,7 @@ public interface VertxLifecycleHooks {
   void afterStartingVertx(Vertx vertx);
 
   /**
-   * Hook for sub classes of the starter class before the verticle is deployed.
+   * Hook for sub classes of the starter class before the verticle is deployed. Deployment options can still be updated.
    *
    * @param deploymentOptions the deployment options
    */

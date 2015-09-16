@@ -114,7 +114,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
    */
   protected void load() {
     for (CommandFactoryLookup lookup : lookups) {
-      final Collection<CommandFactory> commands = lookup.lookup();
+      Collection<CommandFactory<?>> commands = lookup.lookup();
       for (CommandFactory factory : commands) {
         CLI cli = factory.define();
         commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
@@ -139,7 +139,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
   protected Command getNewCommandInstance(String name, CommandLine commandLine) {
     CommandRegistration registration = commandByName.get(name);
     if (registration != null) {
-      final Command command = registration.factory.create(commandLine);
+      Command command = registration.factory.create(commandLine);
       registration.addCommand(command);
       return command;
     }
@@ -347,7 +347,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     // We check whether or not we have a main verticle specified via the getMainVerticle method.
     // By default this method retrieve the value from the 'Main-Verticle' Manifest header. However it can be overridden.
 
-    final String verticle = getMainVerticle();
+    String verticle = getMainVerticle();
     if (verticle != null) {
       // We have a main verticle, append it to the arg list and execute the default command (run)
       String[] newArgs = new String[args.length + 1];

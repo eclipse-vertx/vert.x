@@ -47,8 +47,8 @@ public class ServiceCommandFactoryLoader implements CommandFactoryLookup {
   }
 
   @Override
-  public Collection<CommandFactory> lookup() {
-    List<CommandFactory> commands = new ArrayList<>();
+  public Collection<CommandFactory<?>> lookup() {
+    List<CommandFactory<?>> commands = new ArrayList<>();
     loader.forEach(commands::add);
     return commands;
   }

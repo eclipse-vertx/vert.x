@@ -24,6 +24,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.launcher.DefaultCommand;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -157,6 +158,8 @@ public abstract class ClasspathHandler extends DefaultCommand {
       Method method = manager.getClass().getMethod("deploy", String.class, Vertx.class, DeploymentOptions.class,
           Handler.class);
       method.invoke(manager, verticle, vertx, options, completionHandler);
+    } catch (InvocationTargetException e) {
+      log.error("Failed to deploy verticle " + verticle, e.getCause());
     } catch (Exception e) {
       log.error("Failed to deploy verticle " + verticle, e);
     } finally {

@@ -32,6 +32,6 @@ public interface CommandFactoryLookup {
    *
    * @return the set of commands, empty if none are found.
    */
-  Collection<CommandFactory> lookup();
+  Collection<CommandFactory<?>> lookup();
 
 }
