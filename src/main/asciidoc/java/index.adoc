@@ -1206,3 +1206,7 @@ follow security best practice, especially if your service is public facing.
 
 For example you should always run them in a DMZ and with an user account that has limited rights in order to limit
 the extent of damage in case the service was compromised.
+
+== Vert.x Command Line Interface API
+
+include::cli.adoc[]

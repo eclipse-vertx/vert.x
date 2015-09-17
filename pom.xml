@@ -229,6 +229,7 @@
               <maven-groupId>${project.groupId}</maven-groupId>
               <maven-artifactId>${project.artifactId}</maven-artifactId>
               <maven-version>${project.version}</maven-version>
+              <examples-dir>${project.basedir}/src/main/java/examples</examples-dir>
             </attributes>
           </configuration>
           <executions>

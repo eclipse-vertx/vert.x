@@ -1159,6 +1159,10 @@
  * For example you should always run them in a DMZ and with an user account that has limited rights in order to limit
  * the extent of damage in case the service was compromised.
  *
+ * == Vert.x Command Line Interface API
+ *
+ * include::cli.adoc[]
+ *
  */
 @Document(fileName = "index.adoc")
 @io.vertx.codegen.annotations.ModuleGen(name = "vertx", groupPackage = "io.vertx")
