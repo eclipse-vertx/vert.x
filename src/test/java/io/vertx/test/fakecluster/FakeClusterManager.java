@@ -167,6 +167,17 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
+  public void addNodeListener(NodeListener listener) {
+    doAddNodeListener(listener);
+    this.nodeListener = listener;
+  }
+
+  @Override
+  public void removeNodeListener(NodeListener listener) {
+    doRemoveNodeListener(listener);
+  }
+
+  @Override
   public void join(Handler<AsyncResult<Void>> resultHandler) {
     this.nodeID = UUID.randomUUID().toString();
     doJoin(nodeID, this);

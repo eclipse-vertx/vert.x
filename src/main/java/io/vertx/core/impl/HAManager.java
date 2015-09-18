@@ -133,7 +133,7 @@ public class HAManager {
     haInfo.put("server_id", new JsonObject().put("host", serverID.host).put("port", serverID.port));
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
-    clusterManager.nodeListener(new NodeListener() {
+    clusterManager.addNodeListener(new NodeListener() {
       @Override
       public void nodeAdded(String nodeID) {
         HAManager.this.nodeAdded(nodeID);

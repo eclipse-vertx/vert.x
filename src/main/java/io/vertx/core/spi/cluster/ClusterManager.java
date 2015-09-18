@@ -84,7 +84,22 @@ public interface ClusterManager {
    *
    * @param listener
    */
+  @Deprecated
   void nodeListener(NodeListener listener);
+
+  /**
+   * Add a listener that will be called when a node joins or leaves the cluster.
+   *
+   * @param listener
+   */
+  void addNodeListener(NodeListener listener);
+
+  /**
+   * Remove a listener.
+   *
+   * @param listener
+   */
+  void removeNodeListener(NodeListener listener);
 
   /**
    * Join the cluster
