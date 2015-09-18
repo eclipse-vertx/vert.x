@@ -25,18 +25,21 @@ import io.vertx.core.spi.launcher.DefaultCommand;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A command starting a vert.x application in the background.  The application is identified by its id.
+ * A command stopping a vert.x application launched using the `start` command.  The application is
+ * identified by its id.
  *
  * @author Clement Escoffier <clement@apache.org>
  */
 @Name("stop")
 @Summary("Stop a vert.x application")
-@Description("This command stops a vert.x application started with the `start` command. The command requires the application id as argument. Use the `list` command to get the list of application")
+@Description("This command stops a vert.x application started with the `start` command. The command requires the " +
+    "application id as argument. Use the `list` command to get the list of applications")
 public class StopCommand extends DefaultCommand {
 
   private String id;
@@ -93,14 +96,15 @@ public class StopCommand extends DefaultCommand {
   }
 
   private void terminateWindowsApplication() {
-    List<String> cmd = new ArrayList<>();
     // Use wmic.
-    cmd.add("WMIC");
-    cmd.add("PROCESS");
-    cmd.add("WHERE");
-    cmd.add("CommandLine like '%vertx.id=" + id + "%'");
-    cmd.add("CALL");
-    cmd.add("TERMINATE");
+    List<String> cmd = Arrays.asList(
+        "WMIC",
+        "PROCESS",
+        "WHERE",
+        "CommandLine like '%vertx.id=" + id + "%'",
+        "CALL",
+        "TERMINATE"
+    );
 
     try {
       final Process process = new ProcessBuilder(cmd).start();
@@ -115,12 +119,7 @@ public class StopCommand extends DefaultCommand {
 
   private String pid() {
     try {
-      List<String> cmd = new ArrayList<>();
-      cmd.add("sh");
-      cmd.add("-c");
-      cmd.add("ps ax | grep \"" + id + "\"");
-
-      final Process process = new ProcessBuilder(cmd).start();
+      final Process process = new ProcessBuilder(Arrays.asList("sh", "-c", "ps ax | grep \"" + id + "\"")).start();
       BufferedReader reader =
           new BufferedReader(new InputStreamReader(process.getInputStream()));
       String line;
@@ -131,6 +130,10 @@ public class StopCommand extends DefaultCommand {
         }
       }
       process.waitFor();
+      reader.close();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      e.printStackTrace(out);
     } catch (Exception e) {
       e.printStackTrace(out);
     }

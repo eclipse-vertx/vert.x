@@ -133,10 +133,7 @@ public class StartCommand extends DefaultCommand {
     List<String> args = executionContext.commandLine().allArguments();
     // Add system properties passed as parameter
     if (systemProperties != null) {
-      args.addAll(
-          systemProperties.stream().map(
-              entry -> "-D" + entry)
-              .collect(Collectors.toList()));
+      systemProperties.stream().map(entry -> "-D" + entry).forEach(args::add);
     }
 
     // Add id - it's important as it's the application mark.
