@@ -149,4 +149,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Fluent
   AsyncFile setWritePos(long writePos);
 
+  /**
+   * Sets the buffer size that will be used to read the data from the file. Changing this value will impact how much
+   * the data will be read at a time from the file system.
+   * @param readBufferSize the buffer size
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  AsyncFile setReadBufferSize(int readBufferSize);
 }
