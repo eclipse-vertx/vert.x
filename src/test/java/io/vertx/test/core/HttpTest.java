@@ -589,7 +589,7 @@ public class HttpTest extends HttpTestBase {
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
     assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
+    assertEquals(tsPassword, ((JksOptions) copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -4300,6 +4300,138 @@ public class HttpTest extends HttpTestBase {
         assertEquals(200, resp.statusCode());
         testComplete();
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testMultipleRedirects() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowRedirect(true).setMaxRedirects(10));
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (count.incrementAndGet() < 10) {
+        req.response().setStatusCode(302);
+        req.response().putHeader(HttpHeaders.LOCATION, "/blah2");
+        req.response().end();
+      } else {
+        req.response().setStatusCode(200);
+        req.response().end();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals(10, count.get());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testTooManyRedirects() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowRedirect(true).setMaxRedirects(10));
+    server.requestHandler(req -> {
+      req.response().setStatusCode(302);
+      req.response().putHeader(HttpHeaders.LOCATION, "/blah2");
+      req.response().end();
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest clientRequest = client.get(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        fail("Didn't expect this");
+      });
+
+      clientRequest.exceptionHandler(ex -> {
+        // expecting an exception
+        assertTrue(ex instanceof VertxException);
+        testComplete();
+      });
+
+      clientRequest.end();
+    });
+    await(5, TimeUnit.SECONDS);
+  }
+
+  @Test
+  public void testRedirect302Relative() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowRedirect(true));
+    server.requestHandler(req -> {
+      if ("/blah".equals(req.path())) {
+        req.response().setStatusCode(302);
+        req.response().putHeader(HttpHeaders.LOCATION, "/blah2");
+        req.response().end();
+      } else if ("/blah2".equals(req.path())) {
+        req.response().setStatusCode(200);
+        req.response().end();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testRedirect302Absolute() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowRedirect(true));
+    server.requestHandler(req -> {
+      if ("/blah".equals(req.path())) {
+        req.response().setStatusCode(302);
+        req.response().putHeader(HttpHeaders.LOCATION, "http://localhost:" + HttpTestBase.DEFAULT_HTTP_PORT + "/blah2");
+        req.response().end();
+      } else if ("/blah2".equals(req.path())) {
+        req.response().setStatusCode(200);
+        req.response().end();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testRedirect303Post() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowRedirect(true));
+    server.requestHandler(req -> {
+      if ("/blah".equals(req.path())) {
+        assertEquals(HttpMethod.POST, req.method());
+        req.response().setStatusCode(303);
+        req.response().putHeader(HttpHeaders.LOCATION, "http://localhost:" + HttpTestBase.DEFAULT_HTTP_PORT + "/blah2");
+        req.response().end();
+      } else if ("/blah2".equals(req.path())) {
+        assertEquals(HttpMethod.GET, req.method());
+        req.response().setStatusCode(200);
+        req.response().end();
+      }
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest post = client.post(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah", resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+      post.end();
     });
     await();
   }

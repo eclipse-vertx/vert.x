@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
@@ -38,6 +39,8 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
@@ -57,12 +60,13 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
-  private final String host;
-  private final int port;
+  private String host;
+  private int port;
+  private int redirectCount;
   private final HttpClientImpl client;
-  private final HttpRequest request;
+  private HttpRequest request;
   private final VertxInternal vertx;
-  private final io.vertx.core.http.HttpMethod method;
+  private io.vertx.core.http.HttpMethod method;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
@@ -333,22 +337,81 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     if (!exceptionOccurred) {
       cancelOutstandingTimeoutTimer();
       try {
-        if (resp.statusCode() == 100) {
+        int statusCode = resp.statusCode();
+        if (statusCode == 100) {
           if (continueHandler != null) {
             continueHandler.handle(null);
           }
         } else {
-          if (respHandler != null) {
-            respHandler.handle(resp);
+          boolean handled = false;
+          if (client.getOptions().isFollowRedirect()) {
+            if (statusCode == 303) { // see other should be performed as GET request
+              method = io.vertx.core.http.HttpMethod.GET;
+              performRedirect(resp);
+              handled = true;
+            } else if (statusCode == 301 || statusCode == 302 || statusCode == 307) {
+              switch (method) {
+                case DELETE:
+                case PUT:
+                case POST:
+                  // do not redirect on POST/PUT/DELETE automatically
+                  // according to RFC2616
+                  break;
+                default:
+                  performRedirect(resp);
+                  handled = true;
+              }
+            }
           }
-          if (endHandler != null) {
-            endHandler.handle(null);
+          if (!handled) {
+            if (respHandler != null) {
+              respHandler.handle(resp);
+            }
+            if (endHandler != null) {
+              endHandler.handle(null);
+            }
           }
         }
       } catch (Throwable t) {
         handleException(t);
       }
     }
+  }
+
+  private void performRedirect(HttpClientResponseImpl resp) throws URISyntaxException {
+    if (++redirectCount >= client.getOptions().getMaxRedirects()) {
+      throw new VertxException("Too many redirects: " + redirectCount);
+    }
+    String location = resp.getHeader(io.vertx.core.http.HttpHeaders.LOCATION);
+    URI uri = new URI(location);
+    URI absoluteUri;
+    if (!uri.isAbsolute()) {
+      absoluteUri = new URI(this.uri()).resolve(location);
+    } else {
+      absoluteUri = uri;
+      host = absoluteUri.getHost();
+      port = absoluteUri.getPort();
+    }
+
+    resp.endHandler((nothing) -> {
+      String newUri = absoluteUri.toString();
+      reset(newUri);
+      end();
+    });
+  }
+
+  private void reset(String newUri) {
+    request = new DefaultHttpRequest(toNettyHttpVersion(client.getOptions().getProtocolVersion()), toNettyHttpMethod(method), newUri, false);
+    if (headers != null) {
+      MultiMap oldHeaders = headers;
+      headers = new HeadersAdaptor(request.headers());
+      headers.addAll(oldHeaders);
+    }
+    headWritten = false;
+    completed = false;
+    written = 0;
+    conn = null;
+    connecting = false;
   }
 
   synchronized HttpRequest getRequest() {

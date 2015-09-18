@@ -24,7 +24,6 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -75,11 +74,23 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_DEFAULT_PORT = 80;
 
   /**
+   * The default value for follow redirect = false
+   */
+  public static final boolean DEFAULT_FOLLOW_REDIRECT = false;
+
+  /**
+   * The default value for max directs = 30
+   */
+  public static final int DEFAULT_MAX_REDIRECTS = 30;
+
+  /**
    * The default protocol version = HTTP/1.1
    */
   public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
 
   private boolean verifyHost = true;
+  private boolean followRedirect = false;
+  private int maxRedirects;
   private int maxPoolSize;
   private boolean keepAlive;
   private boolean pipelining;
@@ -113,6 +124,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
+    this.followRedirect = other.followRedirect;
+    this.maxRedirects = other.maxRedirects;
   }
 
   /**
@@ -136,6 +149,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
+    followRedirect = DEFAULT_FOLLOW_REDIRECT;
+    maxRedirects = DEFAULT_MAX_REDIRECTS;
   }
 
   @Override
@@ -442,6 +457,29 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  public boolean isFollowRedirect() {
+    return followRedirect;
+  }
+
+  /**
+   * Set whether it should automatically follow the redirect
+   * @param followRedirect the follow redirect boolean flag
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setFollowRedirect(boolean followRedirect) {
+    this.followRedirect = followRedirect;
+    return this;
+  }
+
+  public int getMaxRedirects() {
+    return this.maxRedirects;
+  }
+
+  public HttpClientOptions setMaxRedirects(int maxRedirects) {
+    this.maxRedirects = maxRedirects;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -459,6 +497,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (verifyHost != that.verifyHost) return false;
     if (!defaultHost.equals(that.defaultHost)) return false;
     if (protocolVersion != that.protocolVersion) return false;
+    if (followRedirect != that.followRedirect) return false;
+    if (maxRedirects != that.maxRedirects) return false;
 
     return true;
   }
@@ -475,6 +515,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + defaultHost.hashCode();
     result = 31 * result + defaultPort;
     result = 31 * result + protocolVersion.hashCode();
+    result = 31 * result + (followRedirect ? 1 : 0);
+    result = 31 * result + maxRedirects;
     return result;
   }
 }
