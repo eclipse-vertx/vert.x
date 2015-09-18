@@ -100,7 +100,7 @@ public interface ClusterManager {
    * @param listener
    */
   void removeNodeListener(NodeListener listener);
-
+ 
   /**
    * Join the cluster
    */
