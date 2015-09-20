@@ -200,7 +200,7 @@ public class RunCommandTest extends CommandTestBase {
       line = buff.readLine();
       builder.append(line).append("\n");
     } while (line != null);
-
+    buff.close();
     return new JsonObject(builder.toString());
   }
 

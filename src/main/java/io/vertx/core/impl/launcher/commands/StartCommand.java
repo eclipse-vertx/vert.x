@@ -24,6 +24,7 @@ import io.vertx.core.spi.launcher.DefaultCommand;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ public class StartCommand extends DefaultCommand {
   private String id;
   private String launcher;
   private boolean redirect;
+  private String jvmOptions;
 
   /**
    * Sets the "application id" that would be to stop the application and be lsited in the {@code list} command.
@@ -51,6 +53,19 @@ public class StartCommand extends DefaultCommand {
   @Description("The id of the application, a random UUID by default")
   public void setApplicationId(String id) {
     this.id = id;
+  }
+
+  /**
+   * Sets the Java Virtual Machine options to pass to the spwaned process. If not set, the JVM_OPTS environment
+   * variable is used.
+   *
+   * @param options the jvm options
+   */
+  @Option(longName = "jvm-opts", required = false, acceptValue = true)
+  @Description("Java Virtual Machine options to pass to the spawned process such as \"-Xmx1G -Xms256m " +
+      "-XX:MaxPermSize=256m\". If not set the `JVM_OPTS` environment variable is used.")
+  public void setJvmOptions(String options) {
+    this.jvmOptions = options;
   }
 
   /**
@@ -131,6 +146,16 @@ public class StartCommand extends DefaultCommand {
       ExecUtils.addArgument(cmd, "/B");
     }
     ExecUtils.addArgument(cmd, getJava().getAbsolutePath());
+
+    // Compute JVM Options
+    if (jvmOptions == null) {
+      String opts = System.getenv("JVM_OPTS");
+      if (opts != null) {
+        Arrays.stream(opts.split(" ")).forEach(s -> ExecUtils.addArgument(cmd, s));
+      }
+    } else {
+      Arrays.stream(jvmOptions.split(" ")).forEach(s -> ExecUtils.addArgument(cmd, s));
+    }
   }
 
   private File getJava() {
