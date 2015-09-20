@@ -17,6 +17,7 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.Launcher;
+import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,6 +54,44 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
     waitForStartup();
     assertThat(output.toString()).contains("Starting vert.x application");
+
+    output.reset();
+    cli.dispatch(new String[]{"list"});
+    assertThat(output.toString()).hasLineCount(2);
+
+    // Extract id.
+    String[] lines = output.toString().split(System.lineSeparator());
+    String id = lines[1];
+    output.reset();
+    cli.dispatch(new String[]{"stop", id});
+    assertThat(output.toString())
+        .contains("Stopping vert.x application '" + id + "'")
+        .contains("Application '" + id + "' stopped");
+
+    waitForShutdown();
+
+    waitUntil(() -> {
+      output.reset();
+      cli.dispatch(new String[]{"list"});
+      return !output.toString().contains(id);
+    });
+
+    assertThat(output.toString()).hasLineCount(2).contains("No vert.x application found");
+  }
+
+  @Test
+  public void testStartListStopWithJVMOptions() throws InterruptedException, IOException {
+    record();
+
+    cli.dispatch(new String[]{"start", "run", HttpTestVerticle.class.getName(),
+        "--launcher-class", Launcher.class.getName(), "--jvm-opts", "'-Dfoo=bar -Dbaz=bar'", "--redirect-output"});
+
+    waitForStartup();
+    assertThat(output.toString()).contains("Starting vert.x application");
+
+    JsonObject content = RunCommandTest.getContent();
+    assertThat(content.getString("foo")).isEqualToIgnoringCase("bar");
+    assertThat(content.getString("baz")).isEqualToIgnoringCase("bar");
 
     output.reset();
     cli.dispatch(new String[]{"list"});
