@@ -28,6 +28,7 @@ import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.SocketDefaults;
 import io.vertx.core.streams.Pump;
 import org.junit.Assume;
@@ -612,7 +613,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
     assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
     assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
-    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
+    assertEquals(def.getClientAuth(), json.getClientAuth());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
@@ -2992,7 +2993,7 @@ public class HttpTest extends HttpTestBase {
     setOptions(serverOptions, getServerTrustOptions(serverTrust));
     setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
-      serverOptions.setClientAuthRequired(true);
+      serverOptions.setClientAuth(SSLHelper.ClientAuth.REQUIRED);
     }
     if (serverUsesCrl) {
       serverOptions.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
