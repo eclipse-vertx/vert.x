@@ -37,7 +37,6 @@ import io.vertx.core.http.WebSocketStream;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import org.junit.Test;
 
@@ -343,7 +342,7 @@ public class WebsocketTest extends VertxTestBase {
     setOptions(serverOptions, getServerTrustOptions(serverTrust));
     setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
-      serverOptions.setClientAuth(SSLHelper.ClientAuth.REQUIRED);
+      serverOptions.setClientAuthRequired(true);
     }
     if (serverUsesCrl) {
       serverOptions.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));

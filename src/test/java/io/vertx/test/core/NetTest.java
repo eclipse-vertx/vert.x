@@ -24,7 +24,6 @@ import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.SocketDefaults;
 import org.junit.Assume;
@@ -532,13 +531,13 @@ public class NetTest extends VertxTestBase {
   public void testDefaultServerOptionsJson() {
     NetServerOptions def = new NetServerOptions();
     NetServerOptions json = new NetServerOptions(new JsonObject());
-    assertEquals(def.getClientAuth(), json.getClientAuth());
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
     assertEquals(def.getPort(), json.getPort());
     assertEquals(def.getHost(), json.getHost());
-    assertEquals(def.getClientAuth(), json.getClientAuth());
+    assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
     assertEquals(def.getAcceptBacklog(), json.getAcceptBacklog());
@@ -1087,7 +1086,7 @@ public class NetTest extends VertxTestBase {
       options.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
     }
     if (requireClientAuth) {
-      options.setClientAuth(SSLHelper.ClientAuth.REQUIRED);
+      options.setClientAuthRequired(true);
     }
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
