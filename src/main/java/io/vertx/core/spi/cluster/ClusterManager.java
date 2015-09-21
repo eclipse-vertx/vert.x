@@ -49,11 +49,11 @@ public interface ClusterManager {
 
   void setVertx(Vertx vertx);
 
-  /**
+  /** 
    * Return an async multi-map for the given name
    */
   <K, V> void getAsyncMultiMap(String name, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler);
-  
+
   /**
    * Return an async map for the given name
    */
