@@ -16,6 +16,8 @@
 
 package io.vertx.core;
 
+import io.netty.channel.EventLoop;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.json.JsonObject;
@@ -214,5 +216,14 @@ public interface Context {
    * to this context
    */
   int getInstanceCount();
+
+  /**
+   * Return the Netty EventLoop used by this Context. This can be used to integrate
+   * a Netty Server with a Vert.x runtime, specially the Context part.
+   *
+   * @return the EventLoop
+   */
+  @GenIgnore
+  EventLoop nettyEventLoop();
 
 }

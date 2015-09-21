@@ -56,7 +56,7 @@ public class HandlerManager<T> {
   }
 
   public synchronized void addHandler(Handler<T> handler, ContextImpl context) {
-    EventLoop worker = context.eventLoop();
+    EventLoop worker = context.nettyEventLoop();
     availableWorkers.addWorker(worker);
     Handlers<T> handlers = new Handlers<>();
     Handlers<T> prev = handlerMap.putIfAbsent(worker, handlers);
@@ -68,7 +68,7 @@ public class HandlerManager<T> {
   }
 
   public synchronized void removeHandler(Handler<T> handler, ContextImpl context) {
-    EventLoop worker = context.eventLoop();
+    EventLoop worker = context.nettyEventLoop();
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {
       throw new IllegalStateException("Can't find handler");

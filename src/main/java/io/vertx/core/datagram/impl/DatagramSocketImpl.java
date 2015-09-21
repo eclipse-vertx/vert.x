@@ -61,7 +61,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
       throw new IllegalStateException("Cannot use DatagramSocket in a multi-threaded worker verticle");
     }
     channel().config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
-    context.eventLoop().register(channel);
+    context.nettyEventLoop().register(channel);
     channel.pipeline().addLast("handler", new DatagramServerHandler(this));
     channel().config().setMaxMessagesPerRead(1);
   }

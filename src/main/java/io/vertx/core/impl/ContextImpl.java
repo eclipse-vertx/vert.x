@@ -247,7 +247,7 @@ public abstract class ContextImpl implements Context {
     return processArgument != null ? processArgument : Starter.PROCESS_ARGS;
   }
 
-  public EventLoop eventLoop() {
+  public EventLoop nettyEventLoop() {
     return eventLoop;
   }
 
