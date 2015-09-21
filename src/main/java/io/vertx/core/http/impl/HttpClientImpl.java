@@ -639,7 +639,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler,
                                Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
     Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.eventLoop());
+    bootstrap.group(context.nettyEventLoop());
     bootstrap.channelFactory(new VertxNioSocketChannelFactory());
     sslHelper.validate(vertx);
     bootstrap.handler(new ChannelInitializer<Channel>() {

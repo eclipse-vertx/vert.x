@@ -80,7 +80,7 @@ public final class DnsClientImpl implements DnsClient {
 
     actualCtx = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
-    bootstrap.group(actualCtx.eventLoop());
+    bootstrap.group(actualCtx.nettyEventLoop());
     bootstrap.channel(NioDatagramChannel.class);
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
