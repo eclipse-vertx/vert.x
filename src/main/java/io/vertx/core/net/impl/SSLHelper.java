@@ -86,7 +86,7 @@ public class SSLHelper {
     this.ssl = options.isSsl();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
-    this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
+    this.clientAuth = options.getClientAuth();
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
@@ -106,7 +106,7 @@ public class SSLHelper {
     this.ssl = options.isSsl();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
-    this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
+    this.clientAuth = options.getClientAuth();
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
