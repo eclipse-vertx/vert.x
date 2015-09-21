@@ -28,7 +28,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.1.0-Client-Auth-Support-SNAPSHOT</version>
+  <version>3.1.0-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
