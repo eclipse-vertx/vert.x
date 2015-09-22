@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * A command starting a vert.x application in the background.
@@ -106,18 +105,12 @@ public class StartCommand extends DefaultCommand {
 
     if (launcher != null) {
       ExecUtils.addArgument(cmd, launcher);
-    }
-
-    if (isLaunchedAsFatJar()) {
+    } else if (isLaunchedAsFatJar()) {
       ExecUtils.addArgument(cmd, "-jar");
       ExecUtils.addArgument(cmd, CommandLineUtils.getJar());
     } else {
       // probably a `vertx` command line usage, or in IDE.
-      if (launcher == null) {
-        // If the launcher is null, extract the launcher class from the caller.
-        ExecUtils.addArgument(cmd, CommandLineUtils.getFirstSegmentOfCommand());
-      }
-      ExecUtils.addArgument(cmd, "run");
+      ExecUtils.addArgument(cmd, CommandLineUtils.getFirstSegmentOfCommand());
     }
 
     getArguments().stream().forEach(arg -> ExecUtils.addArgument(cmd, arg));
