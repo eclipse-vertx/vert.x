@@ -84,7 +84,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
     record();
 
     cli.dispatch(new String[]{"start", "run", HttpTestVerticle.class.getName(),
-        "--launcher-class", Launcher.class.getName(), "--jvm-opts", "'-Dfoo=bar -Dbaz=bar'", "--redirect-output"});
+        "--launcher-class", Launcher.class.getName(), "--jvm-opts=-Dfoo=bar -Dbaz=bar", "--redirect-output"});
 
     waitForStartup();
     assertThat(output.toString()).contains("Starting vert.x application");
@@ -146,9 +146,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
     cli.dispatch(new String[]{"start", "run", HttpTestVerticle.class.getName(),
         "--launcher-class", Launcher.class.getName(), "--vertx.id=hello"});
 
-
     waitForStartup();
-
 
     assertThat(output.toString()).contains("Starting vert.x application").contains("hello");
 
