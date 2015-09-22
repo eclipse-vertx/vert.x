@@ -40,6 +40,7 @@ public class StartCommand extends DefaultCommand {
 
   private String id;
   private String launcher;
+  private boolean redirect;
 
   /**
    * Sets the "application id" that would be to stop the application and be lsited in the {@code list} command.
@@ -64,6 +65,18 @@ public class StartCommand extends DefaultCommand {
   }
 
   /**
+   * Whether or not the created process error streams and output streams needs to be redirected to the launcher process.
+   *
+   * @param redirect {@code true} to enable redirection, {@code false} otherwise
+   */
+  @Option(longName = "redirect-output", flag = true)
+  @Hidden
+  public void setRedirect(boolean redirect) {
+    this.redirect = redirect;
+  }
+
+
+  /**
    * Starts the application in background.
    */
   @Override
@@ -78,17 +91,28 @@ public class StartCommand extends DefaultCommand {
 
     if (launcher != null) {
       ExecUtils.addArgument(cmd, launcher);
-    } else if (isLaunchedAsFatJar()) {
+    }
+
+    if (isLaunchedAsFatJar()) {
       ExecUtils.addArgument(cmd, "-jar");
       ExecUtils.addArgument(cmd, CommandLineUtils.getJar());
     } else {
-      ExecUtils.addArgument(cmd, CommandLineUtils.getFirstSegmentOfCommand());
+      // probably a `vertx` command line usage, or in IDE.
+      if (launcher == null) {
+        // If the launcher is null, extract the launcher class from the caller.
+        ExecUtils.addArgument(cmd, CommandLineUtils.getFirstSegmentOfCommand());
+      }
+      ExecUtils.addArgument(cmd, "run");
     }
 
     getArguments().stream().forEach(arg -> ExecUtils.addArgument(cmd, arg));
 
     try {
       builder.command(cmd);
+      if (redirect) {
+        builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+      }
       builder.start();
       out.println(id);
     } catch (IOException e) {
