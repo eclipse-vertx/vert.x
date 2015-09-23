@@ -55,15 +55,15 @@ public class StartCommand extends DefaultCommand {
   }
 
   /**
-   * Sets the Java Virtual Machine options to pass to the spwaned process. If not set, the JVM_OPTS environment
+   * Sets the Java Virtual Machine options to pass to the spawned process. If not set, the JAVA_OPTS environment
    * variable is used.
    *
    * @param options the jvm options
    */
-  @Option(longName = "jvm-opts", required = false, acceptValue = true)
+  @Option(longName = "java-opts", required = false, acceptValue = true)
   @Description("Java Virtual Machine options to pass to the spawned process such as \"-Xmx1G -Xms256m " +
-      "-XX:MaxPermSize=256m\". If not set the `JVM_OPTS` environment variable is used.")
-  public void setJvmOptions(String options) {
+      "-XX:MaxPermSize=256m\". If not set the `JAVA_OPTS` environment variable is used.")
+  public void setJavaOptions(String options) {
     this.jvmOptions = options;
   }
 
@@ -142,7 +142,7 @@ public class StartCommand extends DefaultCommand {
 
     // Compute JVM Options
     if (jvmOptions == null) {
-      String opts = System.getenv("JVM_OPTS");
+      String opts = System.getenv("JAVA_OPTS");
       if (opts != null) {
         Arrays.stream(opts.split(" ")).forEach(s -> ExecUtils.addArgument(cmd, s));
       }
