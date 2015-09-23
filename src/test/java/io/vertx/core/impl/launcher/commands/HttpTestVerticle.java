@@ -31,6 +31,15 @@ public class HttpTestVerticle extends AbstractVerticle {
           .put("metrics", vertx.isMetricsEnabled())
           .put("id", System.getProperty("vertx.id", "no id"))
           .put("conf", config());
+
+      if (System.getProperty("foo") != null) {
+        json.put("foo", System.getProperty("foo"));
+      }
+
+      if (System.getProperty("baz") != null) {
+        json.put("baz", System.getProperty("baz"));
+      }
+
       request.response().putHeader("content-type", "application/json").end(json.encodePrettily());
     }).listen(8080);
   }

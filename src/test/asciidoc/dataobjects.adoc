@@ -30,21 +30,6 @@
 ^|Name | Type ^| Description
 |===
 
-[[ParentDataObject]]
-== ParentDataObject
-
-++++
- @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[parentProperty]]`parentProperty`|`String`|-
-|===
-
 [[TestDataObject]]
 == TestDataObject
 
@@ -127,6 +112,21 @@
 |[[stringValue]]`stringValue`|`String`|-
 |[[stringValueMap]]`stringValueMap`|`String`|-
 |[[stringValues]]`stringValues`|`Array of String`|-
+|===
+
+[[ParentDataObject]]
+== ParentDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[parentProperty]]`parentProperty`|`String`|-
 |===
 
 [[AggregatedDataObject]]

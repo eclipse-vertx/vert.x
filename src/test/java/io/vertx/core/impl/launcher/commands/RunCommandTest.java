@@ -188,7 +188,7 @@ public class RunCommandTest extends CommandTestBase {
         .openConnection()).getResponseCode();
   }
 
-  private JsonObject getContent() throws IOException {
+  public static JsonObject getContent() throws IOException {
     URL url = new URL("http://localhost:8080");
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.connect();
@@ -200,7 +200,7 @@ public class RunCommandTest extends CommandTestBase {
       line = buff.readLine();
       builder.append(line).append("\n");
     } while (line != null);
-
+    buff.close();
     return new JsonObject(builder.toString());
   }
 

@@ -26,7 +26,7 @@ import io.vertx.core.logging.LoggerFactory;
  */
 public class VertxIsolatedDeployer {
 
-  private static final Logger log = LoggerFactory.getLogger(RunCommand.class);
+  private static final Logger log = LoggerFactory.getLogger(VertxIsolatedDeployer.class);
 
   private String deploymentId;
   private Vertx vertx;

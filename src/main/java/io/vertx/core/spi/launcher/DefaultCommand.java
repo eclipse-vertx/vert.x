@@ -35,7 +35,7 @@ import java.util.List;
 public abstract class DefaultCommand implements Command {
 
   private File cwd;
-  private List<String> props;
+  protected List<String> systemProperties;
 
   /**
    * The execution context of the command.
@@ -80,7 +80,7 @@ public abstract class DefaultCommand implements Command {
   @Description("Set a system property")
   @Hidden
   public void setSystemProps(List<String> props) {
-    this.props = props;
+    this.systemProperties = props;
   }
 
   @Override
@@ -106,8 +106,8 @@ public abstract class DefaultCommand implements Command {
    * Sets the system properties specified by the user command line.
    */
   protected void applySystemProperties() {
-    if (props != null) {
-      for (String prop : props) {
+    if (systemProperties != null) {
+      for (String prop : systemProperties) {
         int p = prop.indexOf('=');
         if (p > 0) {
           String key = prop.substring(0, p);
@@ -122,8 +122,8 @@ public abstract class DefaultCommand implements Command {
    * Un-sets the system properties specified by the user command line.
    */
   protected void unapplySystemProperties() {
-    if (props != null) {
-      for (String prop : props) {
+    if (systemProperties != null) {
+      for (String prop : systemProperties) {
         int p = prop.indexOf('=');
         if (p > 0) {
           String key = prop.substring(0, p);
