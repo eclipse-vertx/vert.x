@@ -936,7 +936,7 @@
  *
  * [source]
  * ----
- * java -jar my-verticle-fat.jar start -Dvertx.id=my-app-name
+ * java -jar my-verticle-fat.jar start -Dvertx-id=my-app-name
  * ----
  *
  * If `my-app-name` is not set, a random id will be used (and display on the command prompt). You can pass `run`
@@ -944,7 +944,7 @@
  *
  * [source]
  * ----
- * java -jar my-verticle-fat.jar start -Dvertx.id=my-app-name -cluster
+ * java -jar my-verticle-fat.jar start -Dvertx-id=my-app-name -cluster
  * ----
  *
  * Once launched in background, you can stop it with the `stop` command:
@@ -961,9 +961,13 @@
  * java -jar my-verticle-fat.jar list
  * ----
  *
- * The `start`, `stop` and `list` command are also available from the `vertx` tool.
+ * The `start`, `stop` and `list` command are also available from the `vertx` tool. The start` command supports a couple of options:
  *
- * The set of command is extensible, refer to the <<Extending the vert.x Launcher>> section
+ *  * `vertx-id` : the application id, uses a random UUID if not set
+ *  * `java-opts` : the Java Virtual Machine options, uses the `JAVA_OPTS` environment variable if not set.
+ *  * `redirect-output` : redirect the spawned process output and error streams to the parent process streams.
+ *
+ * The set of commands is extensible, refer to the <<Extending the vert.x Launcher>> section.
  *
  * == Cluster Managers
  *
