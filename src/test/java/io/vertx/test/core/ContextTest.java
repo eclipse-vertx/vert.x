@@ -90,4 +90,32 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testExecuteOrderedBlocking() throws Exception {
+    Context context = vertx.getOrCreateContext();
+    context.executeBlocking(f -> {
+      assertTrue(Context.isOnWorkerThread());
+      f.complete(1 + 2);
+    }, r -> {
+      assertTrue(Context.isOnEventLoopThread());
+      assertEquals(r.result(), 3);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testExecuteUnorderedBlocking() throws Exception {
+    Context context = vertx.getOrCreateContext();
+    context.executeBlocking(f -> {
+      assertTrue(Context.isOnWorkerThread());
+      f.complete(1 + 2);
+    }, false, r -> {
+      assertTrue(Context.isOnEventLoopThread());
+      assertEquals(r.result(), 3);
+      testComplete();
+    });
+    await();
+  }
 }

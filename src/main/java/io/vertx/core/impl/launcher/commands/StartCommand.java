@@ -24,9 +24,9 @@ import io.vertx.core.spi.launcher.DefaultCommand;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * A command starting a vert.x application in the background.
@@ -41,6 +41,9 @@ public class StartCommand extends DefaultCommand {
   private String id;
   private String launcher;
 
+  private boolean redirect;
+  private String jvmOptions;
+
   /**
    * Sets the "application id" that would be to stop the application and be lsited in the {@code list} command.
    *
@@ -53,6 +56,19 @@ public class StartCommand extends DefaultCommand {
   }
 
   /**
+   * Sets the Java Virtual Machine options to pass to the spawned process. If not set, the JAVA_OPTS environment
+   * variable is used.
+   *
+   * @param options the jvm options
+   */
+  @Option(longName = "java-opts", required = false, acceptValue = true)
+  @Description("Java Virtual Machine options to pass to the spawned process such as \"-Xmx1G -Xms256m " +
+      "-XX:MaxPermSize=256m\". If not set the `JAVA_OPTS` environment variable is used.")
+  public void setJavaOptions(String options) {
+    this.jvmOptions = options;
+  }
+
+  /**
    * A hidden option to set the launcher class.
    *
    * @param clazz the class
@@ -62,6 +78,18 @@ public class StartCommand extends DefaultCommand {
   public void setLauncherClass(String clazz) {
     this.launcher = clazz;
   }
+
+  /**
+   * Whether or not the created process error streams and output streams needs to be redirected to the launcher process.
+   *
+   * @param redirect {@code true} to enable redirection, {@code false} otherwise
+   */
+  @Option(longName = "redirect-output", flag = true)
+  @Hidden
+  public void setRedirect(boolean redirect) {
+    this.redirect = redirect;
+  }
+
 
   /**
    * Starts the application in background.
@@ -82,6 +110,7 @@ public class StartCommand extends DefaultCommand {
       ExecUtils.addArgument(cmd, "-jar");
       ExecUtils.addArgument(cmd, CommandLineUtils.getJar());
     } else {
+      // probably a `vertx` command line usage, or in IDE.
       ExecUtils.addArgument(cmd, CommandLineUtils.getFirstSegmentOfCommand());
     }
 
@@ -89,6 +118,10 @@ public class StartCommand extends DefaultCommand {
 
     try {
       builder.command(cmd);
+      if (redirect) {
+        builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+      }
       builder.start();
       out.println(id);
     } catch (IOException e) {
@@ -107,6 +140,16 @@ public class StartCommand extends DefaultCommand {
       ExecUtils.addArgument(cmd, "/B");
     }
     ExecUtils.addArgument(cmd, getJava().getAbsolutePath());
+
+    // Compute JVM Options
+    if (jvmOptions == null) {
+      String opts = System.getenv("JAVA_OPTS");
+      if (opts != null) {
+        Arrays.stream(opts.split(" ")).forEach(s -> ExecUtils.addArgument(cmd, s));
+      }
+    } else {
+      Arrays.stream(jvmOptions.split(" ")).forEach(s -> ExecUtils.addArgument(cmd, s));
+    }
   }
 
   private File getJava() {
@@ -133,10 +176,7 @@ public class StartCommand extends DefaultCommand {
     List<String> args = executionContext.commandLine().allArguments();
     // Add system properties passed as parameter
     if (systemProperties != null) {
-      args.addAll(
-          systemProperties.stream().map(
-              entry -> "-D" + entry)
-              .collect(Collectors.toList()));
+      systemProperties.stream().map(entry -> "-D" + entry).forEach(args::add);
     }
 
     // Add id - it's important as it's the application mark.

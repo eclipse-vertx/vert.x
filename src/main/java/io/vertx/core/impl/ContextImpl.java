@@ -221,6 +221,7 @@ public abstract class ContextImpl implements Context {
   protected abstract void checkCorrectThread();
 
   // Run the task asynchronously on this same context
+  @Override
   public void runOnContext(Handler<Void> task) {
     try {
       executeAsync(task);
@@ -246,7 +247,7 @@ public abstract class ContextImpl implements Context {
     return processArgument != null ? processArgument : Starter.PROCESS_ARGS;
   }
 
-  public EventLoop eventLoop() {
+  public EventLoop nettyEventLoop() {
     return eventLoop;
   }
 
@@ -259,8 +260,14 @@ public abstract class ContextImpl implements Context {
     executeBlocking(action, null, true, true, resultHandler);
   }
 
+  @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(null, blockingCodeHandler, false, ordered, resultHandler);
+  }
+
+  @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 
   protected synchronized Map<String, Object> contextData() {

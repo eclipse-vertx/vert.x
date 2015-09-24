@@ -708,7 +708,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
-      EventLoop el = context.eventLoop();
+      EventLoop el = context.nettyEventLoop();
       Runnable toRun = () -> context.runOnContext(this);
       if (periodic) {
         future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
