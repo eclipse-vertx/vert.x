@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class ContextImpl implements Context {
+public abstract class ContextImpl implements ContextInternal {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
@@ -305,7 +305,11 @@ public abstract class ContextImpl implements Context {
 
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {
     return () -> {
-      VertxThread current = getCurrentThread();
+      Thread th = Thread.currentThread();
+      if (!(th instanceof VertxThread)) {
+        throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + th);
+      }
+      VertxThread current = (VertxThread) th;
       if (THREAD_CHECKS && checkThread) {
         if (contextThread == null) {
           contextThread = current;
@@ -333,10 +337,6 @@ public abstract class ContextImpl implements Context {
         }
       }
     };
-  }
-
-  private VertxThread getCurrentThread() {
-    return (VertxThread) Thread.currentThread();
   }
 
   private void setTCCL() {

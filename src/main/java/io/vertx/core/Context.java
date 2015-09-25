@@ -217,13 +217,4 @@ public interface Context {
    */
   int getInstanceCount();
 
-  /**
-   * Return the Netty EventLoop used by this Context. This can be used to integrate
-   * a Netty Server with a Vert.x runtime, specially the Context part.
-   *
-   * @return the EventLoop
-   */
-  @GenIgnore
-  EventLoop nettyEventLoop();
-
 }

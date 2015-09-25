@@ -30,6 +30,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import org.junit.Test;
@@ -53,7 +54,7 @@ public class EventLoopGroupTest extends VertxTestBase {
 
   @Test
   public void testNettyServerUsesContextEventLoop() throws Exception {
-    Context context = vertx.getOrCreateContext();
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     AtomicReference<Thread> contextThread = new AtomicReference<>();
     CountDownLatch latch = new CountDownLatch(1);
     context.runOnContext(v -> {
@@ -69,36 +70,51 @@ public class EventLoopGroupTest extends VertxTestBase {
       @Override
       protected void initChannel(SocketChannel ch) throws Exception {
         assertSame(contextThread.get(), Thread.currentThread());
-        assertSame(context, Vertx.currentContext());
-        ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-          @Override
-          public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            assertSame(contextThread.get(), Thread.currentThread());
-            assertSame(context, Vertx.currentContext());
-          }
-          @Override
-          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            ByteBuf buf = (ByteBuf) msg;
-            assertEquals("hello", buf.toString(StandardCharsets.UTF_8));
-            assertSame(contextThread.get(), Thread.currentThread());
-            assertSame(context, Vertx.currentContext());
-          }
-          @Override
-          public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-            assertSame(contextThread.get(), Thread.currentThread());
-            assertSame(context, Vertx.currentContext());
-            ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-          }
-          @Override
-          public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            assertSame(contextThread.get(), Thread.currentThread());
-            assertSame(context, Vertx.currentContext());
-            testComplete();
-          }
-          @Override
-          public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            fail(cause.getMessage());
-          }
+        context.executeFromIO(() -> {
+          assertSame(contextThread.get(), Thread.currentThread());
+          assertSame(context, Vertx.currentContext());
+          ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelActive(ChannelHandlerContext ctx) throws Exception {
+              assertSame(contextThread.get(), Thread.currentThread());
+              context.executeFromIO(() -> {
+                assertSame(contextThread.get(), Thread.currentThread());
+                assertSame(context, Vertx.currentContext());
+              });
+            }
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+              ByteBuf buf = (ByteBuf) msg;
+              assertEquals("hello", buf.toString(StandardCharsets.UTF_8));
+              assertSame(contextThread.get(), Thread.currentThread());
+              context.executeFromIO(() -> {
+                assertSame(contextThread.get(), Thread.currentThread());
+                assertSame(context, Vertx.currentContext());
+              });
+            }
+            @Override
+            public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+              assertSame(contextThread.get(), Thread.currentThread());
+              context.executeFromIO(() -> {
+                assertSame(contextThread.get(), Thread.currentThread());
+                assertSame(context, Vertx.currentContext());
+                ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+              });
+            }
+            @Override
+            public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+              assertSame(contextThread.get(), Thread.currentThread());
+              context.executeFromIO(() -> {
+                assertSame(contextThread.get(), Thread.currentThread());
+                assertSame(context, Vertx.currentContext());
+                testComplete();
+              });
+            }
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+              fail(cause.getMessage());
+            }
+          });
         });
       }
     });
