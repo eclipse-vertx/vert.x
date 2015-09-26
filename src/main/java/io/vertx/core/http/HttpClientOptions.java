@@ -231,6 +231,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions addEnabledProtocol(String protocol) {
+    super.addEnabledProtocol(protocol);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
