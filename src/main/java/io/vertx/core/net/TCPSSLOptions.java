@@ -73,6 +73,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean ssl;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
+  private Set<String> enabledProtocols = new HashSet<>();
   private Set<String> enabledCipherSuites = new HashSet<>();
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
@@ -100,6 +101,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.ssl = other.isSsl();
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
     this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
+    this.enabledProtocols = other.getEnabledProtocols() == null ? new HashSet<>() : new HashSet<>(other.getEnabledProtocols());
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new HashSet<>() : new HashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
@@ -320,6 +322,17 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Add an enabled protocol
+   *
+   * @param protocol  the protocol
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions addEnabledProtocol(String protocol) {
+    enabledProtocols.add(protocol);
+    return this;
+  }
+
+  /**
    * Add an enabled cipher suite
    *
    * @param suite  the suite
@@ -328,6 +341,14 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
     return this;
+  }
+
+  /**
+   *
+   * @return the enabled protocols
+   */
+  public Set<String> getEnabledProtocols() {
+    return enabledProtocols;
   }
 
   /**
