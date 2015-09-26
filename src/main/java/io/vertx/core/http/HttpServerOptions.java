@@ -187,6 +187,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions addEnabledProtocol(String protocol) {
+    super.addEnabledProtocol(protocol);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;

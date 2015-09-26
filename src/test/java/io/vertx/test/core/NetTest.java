@@ -1018,62 +1018,69 @@ public class NetTest extends VertxTestBase {
   @Test
   // StartTLS
   public void testStartTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, true, true);
+    testTLS(false, false, true, false, false, true, true, true, null, null);
   }
 
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false);
+    testTLS(false, false, true, false, false, true, true, false, null, null);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(false, true, true, false, false, false, true, false);
+    testTLS(false, true, true, false, false, false, true, false, null, null);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(false, false, true, false, false, false, false, false);
+    testTLS(false, false, true, false, false, false, false, false, null, null);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(true, true, true, true, false, false, true, false);
+    testTLS(true, true, true, true, false, false, true, false, null, null);
   }
 
   @Test
   //Client specifies cert and it's not required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(true, true, true, true, true, false, true, false);
+    testTLS(true, true, true, true, true, false, true, false, null, null);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(false, true, true, true, true, false, false, false);
+    testTLS(false, true, true, true, true, false, false, false, null, null);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(true, true, true, false, true, false, false, false);
+    testTLS(true, true, true, false, true, false, false, false, null, null);
+  }
+
+  @Test
+  // Specify some protocols
+  public void testTLSProtocols() throws Exception {
+    testTLS(false, false, true, false, false, true, true, false, ENABLED_PROTOCOLS, null);
   }
 
   @Test
   // Specify some cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false, ENABLED_CIPHER_SUITES);
+    testTLS(false, false, true, false, false, true, true, false, null, ENABLED_CIPHER_SUITES);
   }
 
   void testTLS(boolean clientCert, boolean clientTrust,
                boolean serverCert, boolean serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
                boolean shouldPass, boolean startTLS,
-               String... enabledCipherSuites) throws Exception {
+               String[] enabledProtocols,
+               String[] enabledCipherSuites) throws Exception {
     server.close();
     NetServerOptions options = new NetServerOptions();
     if (!startTLS) {
@@ -1088,8 +1095,15 @@ public class NetTest extends VertxTestBase {
     if (requireClientAuth) {
       options.setClientAuthRequired(true);
     }
-    for (String suite: enabledCipherSuites) {
-      options.addEnabledCipherSuite(suite);
+    if (enabledProtocols != null) {
+      for (String protocol : enabledProtocols) {
+        options.addEnabledProtocol(protocol);
+      }
+    }
+    if (enabledCipherSuites != null) {
+      for (String suite : enabledCipherSuites) {
+        options.addEnabledCipherSuite(suite);
+      }
     }
 
     options.setPort(4043);
@@ -1133,8 +1147,15 @@ public class NetTest extends VertxTestBase {
         if (clientCert) {
           clientOptions.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
         }
-        for (String suite: enabledCipherSuites) {
-          clientOptions.addEnabledCipherSuite(suite);
+        if (enabledProtocols != null) {
+          for (String protocol : enabledProtocols) {
+            clientOptions.addEnabledProtocol(protocol);
+          }
+        }
+        if (enabledCipherSuites != null) {
+          for (String suite : enabledCipherSuites) {
+            clientOptions.addEnabledCipherSuite(suite);
+          }
         }
       }
       client = vertx.createNetClient(clientOptions);
