@@ -19,7 +19,6 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.SocketDefaults;
 
 
 /**
@@ -31,17 +30,17 @@ public abstract class NetworkOptions {
   /**
    * The default value of TCP send buffer size
    */
-  public static final int DEFAULT_SEND_BUFFER_SIZE = SocketDefaults.instance.getTcpSendBufferSize();
+  public static final int DEFAULT_SEND_BUFFER_SIZE = -1;
 
   /**
    * The default value of TCP receive buffer size
    */
-  public static final int DEFAULT_RECEIVE_BUFFER_SIZE = SocketDefaults.instance.getTcpReceiveBufferSize();
+  public static final int DEFAULT_RECEIVE_BUFFER_SIZE = -1;
 
   /**
    * The default value of traffic class
    */
-  public static final int DEFAULT_TRAFFIC_CLASS = SocketDefaults.instance.getTrafficClass();
+  public static final int DEFAULT_TRAFFIC_CLASS = -1;
 
   /**
    * The default value of reuse address

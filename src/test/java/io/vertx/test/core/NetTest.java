@@ -25,7 +25,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.net.impl.SocketDefaults;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -117,12 +116,12 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setTcpNoDelay(false));
     assertFalse(options.isTcpNoDelay());
 
-    boolean tcpKeepAlive = SocketDefaults.instance.isTcpKeepAlive();
+    boolean tcpKeepAlive = false;
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
     assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
 
-    int soLinger = SocketDefaults.instance.getSoLinger();
+    int soLinger = -1;
     assertEquals(soLinger, options.getSoLinger());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
@@ -211,12 +210,12 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setTcpNoDelay(false));
     assertFalse(options.isTcpNoDelay());
 
-    boolean tcpKeepAlive = SocketDefaults.instance.isTcpKeepAlive();
+    boolean tcpKeepAlive = false;
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
     assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
 
-    int soLinger = SocketDefaults.instance.getSoLinger();
+    int soLinger = -1;
     assertEquals(soLinger, options.getSoLinger());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
