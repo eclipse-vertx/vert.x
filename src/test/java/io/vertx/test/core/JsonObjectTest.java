@@ -1621,6 +1621,23 @@ public class JsonObjectTest {
     assertEquals(obj2, obj1);
   }
 
+  @Test
+  public void testStreamCorrectTypes() throws Exception {
+    String json = "{\"object1\": {\"object2\": 12}}";
+    JsonObject object = new JsonObject(json);
+    testStreamCorrectTypes(object.copy());
+    testStreamCorrectTypes(object);
+  }
+
+  private void testStreamCorrectTypes(JsonObject object) {
+    object.stream().forEach(entry -> {
+      String key = entry.getKey();
+      Object val = entry.getValue();
+      assertEquals("object1", key);
+      assertTrue("Expecting JsonObject, found: " + val.getClass().getCanonicalName(), val instanceof JsonObject);
+    });
+  }
+
   private JsonObject createJsonObject() {
     JsonObject obj = new JsonObject();
     obj.put("mystr", "bar");
