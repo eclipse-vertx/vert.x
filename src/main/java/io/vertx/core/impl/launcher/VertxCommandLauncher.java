@@ -268,6 +268,13 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
   }
 
   protected String getCommandLinePrefix() {
+    // Check whether `vertx.cli.usage.prefix` is set, if so use it. This system property let scripts configure the value
+    // displayed by the usage, even if they are calling java.
+    String sysProp = System.getProperty("vertx.cli.usage.prefix");
+    if (sysProp != null) {
+      return sysProp;
+    }
+
     String jar = CommandLineUtils.getJar();
     if (jar != null) {
       return "java -jar " + jar;
