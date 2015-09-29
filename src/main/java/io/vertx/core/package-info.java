@@ -971,6 +971,57 @@
  *
  * The set of commands is extensible, refer to the <<Extending the vert.x Launcher>> section.
  *
+ * === Live Redeploy
+ *
+ * When developing it may be convenient to automatically redeploy your application upon file changes. The `vertx`
+ * command line tool and more generally the {@link io.vertx.core.Launcher} class offers this feature. Here are some
+ * examples:
+ *
+ * [source]
+ * ----
+ * vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy"
+ * vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy,**&#47;*.rb"
+ * java io.vertx.core.Launcher run org.acme.MyVerticle –redeploy="**&#47;*.class" -cp ...
+ * ----
+ *
+ * The redeployment process is implemented as follows. First your application is launched as a background application
+ * (with the `start` command). On matching file changes, the process is stopped and the application is restarted.
+ * This way avoids leaks.
+ *
+ * To enable the live redeploy, pass the `--redeploy` option to the `run` command. The `--redeploy` indicates the
+ * set of file to _watch_. This set can use Ant-style patterns (with `\**`, `*` and `?`). You can specify
+ * several sets by separating them using a comma (`,`). Patterns are relative to the current working directory.
+ *
+ * Parameters passed to the `run` command are passed to the application. Java Virtual Machine options can be
+ * configured using `--java-opts`.
+ *
+ * The redeploy feature can be used in your IDE:
+ *
+ * * Eclipse - create a _Run_ configuration, using the `io.vertx.core.Launcher` class a _main class_. In the _Program
+ * arguments_ area (in the _Arguments_ tab), write `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.java`.
+ * You can also add other parameters. The redeployment works smoothly as Eclipse incrementally compiles your files on
+ * save.
+ * * IntelliJ - create a _Run_ configuration (_Application_), set the _Main class_ to `io.vertx.core.Launcher`. In
+ * the Program arguments write: `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.class
+ * --launcher-class=io.vertx.core.Launcher`. As you can see, you need to set the `launcher-class` parameter because
+ * IntelliJ wraps your main class in its own class. To trigger the redeployment, you need to _make_ the project or
+ * the module explicitly (_Build_ menu -> _Make project_).
+ *
+ * To debug your application, create your run configuration as a remote application and configure the debugger
+ * using `--java-opts`. However, don’t forget to re-plug the debugger after every redeployment as a new process is
+ * created every time.
+ *
+ * You can also hook your build process in the redeploy cycle:
+ *
+ * [source]
+ * ----
+ * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --on-redeploy="mvn package"
+ * ----
+ *
+ * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
+ * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
+ * or `grunt` to update your resources.
+ *
  * == Cluster Managers
  *
  * In Vert.x a cluster manager is used for various functions including:
