@@ -4656,4 +4656,26 @@ public class HttpTest extends HttpTestBase {
   }
 
 
+  @Test
+  public void testSetWriteQueueMaxSize() throws Exception {
+
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setWriteQueueMaxSize(256 * 1024);
+      // Now something bigger
+      resp.setWriteQueueMaxSize(512 * 1024);
+      // And something smaller again
+      resp.setWriteQueueMaxSize(128 * 1024);
+      resp.setWriteQueueMaxSize(129 * 1024);
+      resp.end();
+    }).listen(8080, onSuccess(s -> {
+      client.getNow(8080, "localhost", "/", resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+
 }
