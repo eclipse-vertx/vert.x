@@ -167,12 +167,15 @@ public class Watcher implements Runnable {
             Path fileName = ev.context();
             File theFile = new File(keyToFile.get(key), fileName.toFile().getName());
 
+            log.debug("Watcher ~> " + kind + " " + theFile.getAbsolutePath());
+
             if (kind == ENTRY_CREATE) {
               if (theFile.isDirectory()) {
                 // A new directory is created, the WatchService is not very nice with this, we need to register it.
                 try {
                   final WatchKey newKey = register(theFile.toPath());
                   keyToFile.put(newKey, theFile);
+                  log.debug("Watcher ~> new directory added to watch list :" + theFile.getAbsolutePath());
                 } catch (IOException e) {
                   log.error("Cannot register directory " + theFile.getAbsolutePath());
                 }

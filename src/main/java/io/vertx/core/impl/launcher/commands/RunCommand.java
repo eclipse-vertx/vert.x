@@ -214,7 +214,7 @@ public class RunCommand extends BareCommand {
     watcher.watch();
   }
 
-  private void stopBackgroundApplication(Handler<Void> onCompletion) {
+  protected void stopBackgroundApplication(Handler<Void> onCompletion) {
     executionContext.execute("stop", vertxApplicationBackgroundId);
     if (onCompletion != null) {
       onCompletion.handle(null);
