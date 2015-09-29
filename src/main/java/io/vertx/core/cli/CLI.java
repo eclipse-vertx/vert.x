@@ -49,7 +49,7 @@ public interface CLI {
   /**
    * Creates an instance of {@link CLI} using the default implementation.
    *
-   * @param name the name of the CLI (must not be {@link null})
+   * @param name the name of the CLI (must not be {@code null})
    * @return the created instance of {@link CLI}
    */
   static CLI create(String name) {
@@ -148,7 +148,7 @@ public interface CLI {
   /**
    * Adds an option.
    *
-   * @param option the option, must not be {@link null}.
+   * @param option the option, must not be {@code null}.
    * @return the current {@link CLI} instance
    */
   @Fluent
@@ -158,7 +158,7 @@ public interface CLI {
    * Adds a set of options. Unlike {@link #setOptions(List)}}, this method does not remove the existing options.
    * The given list is appended to the existing list.
    *
-   * @param options the options, must not be {@link null}
+   * @param options the options, must not be {@code null}
    * @return the current {@link CLI} instance
    */
   @Fluent
@@ -167,7 +167,7 @@ public interface CLI {
   /**
    * Sets the list of arguments.
    *
-   * @param options the list of options, must not be {@link null}
+   * @param options the list of options, must not be {@code null}
    * @return the current {@link CLI} instance
    */
   @Fluent
@@ -183,7 +183,7 @@ public interface CLI {
   /**
    * Adds an argument.
    *
-   * @param arg the argument, must not be {@link null}
+   * @param arg the argument, must not be {@code null}
    * @return the current {@link CLI} instance
    */
   @Fluent
@@ -193,7 +193,7 @@ public interface CLI {
    * Adds a set of arguments. Unlike {@link #setArguments(List)}, this method does not remove the existing arguments.
    * The given list is appended to the existing list.
    *
-   * @param args the arguments, must not be {@link null}
+   * @param args the arguments, must not be {@code null}
    * @return the current {@link CLI} instance
    */
   @Fluent
@@ -202,7 +202,7 @@ public interface CLI {
   /**
    * Sets the list of arguments.
    *
-   * @param args the list of arguments, must not be {@link null}
+   * @param args the list of arguments, must not be {@code null}
    * @return the current {@link CLI} instance
    */
   @Fluent
@@ -211,16 +211,16 @@ public interface CLI {
   /**
    * Gets an {@link Option} based on its name (short name, long name or argument name).
    *
-   * @param name the name, must not be {@link null}
-   * @return the {@link Option}, {@link null} if not found
+   * @param name the name, must not be {@code null}
+   * @return the {@link Option}, {@code null} if not found
    */
   Option getOption(String name);
 
   /**
    * Gets an {@link Argument} based on its name (argument name).
    *
-   * @param name the name of the argument, must not be {@link null}
-   * @return the {@link Argument}, {@link null} if not found.
+   * @param name the name of the argument, must not be {@code null}
+   * @return the {@link Argument}, {@code null} if not found.
    */
   Argument getArgument(String name);
 
@@ -228,7 +228,7 @@ public interface CLI {
    * Gets an {@link Argument} based on its index.
    *
    * @param index the index, must be positive or zero.
-   * @return the {@link Argument}, {@link null} if not found.
+   * @return the {@link Argument}, {@code null} if not found.
    */
   Argument getArgument(int index);
 

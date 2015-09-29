@@ -121,7 +121,7 @@ public interface CommandLine {
    * Gets the raw value of the given option. Raw values are the values as given in the user command line.
    *
    * @param option the option
-   * @return the value, {@link null} if none.
+   * @return the value, {@code null} if none.
    */
   String getRawValueForOption(Option option);
 
@@ -137,7 +137,7 @@ public interface CommandLine {
    * Gets the raw value of the given argument. Raw values are the values as given in the user command line.
    *
    * @param arg the argument
-   * @return the value, {@link null} if none.
+   * @return the value, {@code null} if none.
    */
   String getRawValueForArgument(Argument arg);
 
