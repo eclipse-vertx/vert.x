@@ -31,8 +31,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+<<<<<<< HEAD
+ * A command starting a vert.x application in the background.  The application is identified by its id.
+=======
  * A command stopping a vert.x application launched using the `start` command.  The application is
  * identified by its id.
+>>>>>>> 7ef9592646f5720efc4cf777e1e74bcee3d84c6f
  *
  * @author Clement Escoffier <clement@apache.org>
  */

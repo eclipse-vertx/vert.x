@@ -35,11 +35,12 @@ import java.util.UUID;
  */
 @Name("start")
 @Summary("Start a vert.x application in background")
-@Description("Start a vert.x application as a background service. The application is identified with an id that can be set using the `vertx.id` option. If not set a random UUID is generated. The application can be stopped with the `stop` command.")
+@Description("Start a vert.x application as a background service. The application is identified with an id that can be set using the `vertx-id` option. If not set a random UUID is generated. The application can be stopped with the `stop` command.")
 public class StartCommand extends DefaultCommand {
 
   private String id;
   private String launcher;
+
   private boolean redirect;
   private String jvmOptions;
 
@@ -48,7 +49,7 @@ public class StartCommand extends DefaultCommand {
    *
    * @param id the id
    */
-  @Option(longName = "vertx.id", shortName = "id", required = false, acceptValue = true)
+  @Option(longName = "vertx-id", shortName = "id", required = false, acceptValue = true)
   @Description("The id of the application, a random UUID by default")
   public void setApplicationId(String id) {
     this.id = id;
@@ -135,7 +136,7 @@ public class StartCommand extends DefaultCommand {
       ExecUtils.addArgument(cmd, "cmd.exe");
       ExecUtils.addArgument(cmd, "/C");
       ExecUtils.addArgument(cmd, "start");
-      ExecUtils.addArgument(cmd, "vertx.id - " + id);
+      ExecUtils.addArgument(cmd, "vertx-id - " + id);
       ExecUtils.addArgument(cmd, "/B");
     }
     ExecUtils.addArgument(cmd, getJava().getAbsolutePath());
