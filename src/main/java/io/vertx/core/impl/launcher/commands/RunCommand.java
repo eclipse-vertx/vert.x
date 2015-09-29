@@ -224,7 +224,9 @@ public class RunCommand extends BareCommand {
   protected void startAsBackgroundApplication(Handler<Void> onCompletion) {
     // We need to copy all options and arguments.
     List<String> args = new ArrayList<>();
-    args.add("--vertx.id=" + vertxApplicationBackgroundId);
+    // Pre-prend the command.
+    args.add("run");
+    args.add("--vertx-id=" + vertxApplicationBackgroundId);
     args.addAll(executionContext.commandLine().allArguments());
     // No need to add the main-verticle as it's part of the allArguments list.
     if (cluster) {
