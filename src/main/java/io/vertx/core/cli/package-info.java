@@ -15,11 +15,11 @@
  */
 
 /**
- * Vert.x Core provides an API for parsing command line options passed to programs. It's also able to print help
+ * Vert.x Core provides an API for parsing command line arguments passed to programs. It's also able to print help
  * messages detailing the options available for a command line tool. Even if such features are far from
- * the vert.x core topics, this API is used in the {@link io.vertx.core.Launcher} class that you can use in _fat-jar_
+ * the Vert.x core topics, this API is used in the {@link io.vertx.core.Launcher} class that you can use in _fat-jar_
  * and in the `vertx` command line tools. In addition, it's polyglot (can be used from any supported language) and is
- * used in vert.x shell.
+ * used in Vert.x Shell.
  *
  * Vert.x CLI provides a model to describe your command line interface, but also a parser. This parser supports
  * different types of syntax:
@@ -34,7 +34,7 @@
  *
  * 1. The definition of the command line interface
  * 2. The parsing of the user command line
- * 3. The interrogation
+ * 3. The query / interrogation
  *
  * === Definition Stage
  *
@@ -85,7 +85,7 @@
  * ----
  *
  * An option can be _hidden_ using the {@link io.vertx.core.cli.Option#setHidden(boolean)} method. Hidden option are
- * not listed in the usage.
+ * not listed in the usage, but can still be used in the user command line (for power-users).
  *
  * Options can also be instantiated from their JSON form.
  *
@@ -148,8 +148,9 @@
  * object containing the values. By default, it validates the user command line and checks that each mandatory options
  * and arguments have been set as well as the number of values received by each option. You can disable the
  * validation by passing `false` as second parameter of {@link io.vertx.core.cli.CLI#parse(java.util.List, boolean)}.
+ * This is useful if you want to check an argument or option is present even if the parsed command line is invalid.
  *
- * === Interrogation Stage
+ * === Query / Interrogation Stage
  *
  * Once parsed, you can retrieve the values of the options and arguments from the
  * {@link io.vertx.core.cli.CommandLine} object returned by the {@link io.vertx.core.cli.CLI#parse(java.util.List)}

@@ -890,9 +890,9 @@
  * There is nothing really Vert.x specific about this, you could do this with any Java application
  *
  * You can either create your own main class and specify that in the manifest, but it's recommended that you write your
- * code as verticles and use the Vert.x `Launcher` class as your main class. This is the same main class used when
- * running Vert.x at the command line and therefore allows you to specify command line arguments, such as
- * `-instances` in order to scale your application more easily.
+ * code as verticles and use the Vert.x {@link io.vertx.core.Launcher} class (`io.vertx.core.Launcher`) as your main
+ * class. This is the same main class used when running Vert.x at the command line and therefore allows you to
+ * specify command line arguments, such as `-instances` in order to scale your application more easily.
  *
  * To deploy your verticle in a _fatjar_ like this you must have a _manifest_ with:
  *
@@ -923,7 +923,7 @@
  *
  * The `vertx` command line and the `Launcher` also provide other _commands_ in addition to `run` and `version`:
  *
- * You can create a `bare instance using:
+ * You can create a `bare` instance using:
  *
  * [source]
  * ----
@@ -939,8 +939,8 @@
  * java -jar my-verticle-fat.jar start -Dvertx-id=my-app-name
  * ----
  *
- * If `my-app-name` is not set, a random id will be used (and display on the command prompt). You can pass `run`
- * options to the `start` commands:
+ * If `my-app-name` is not set, a random id will be generated, and printed on the command prompt. You can pass `run`
+ * options to the `start` command:
  *
  * [source]
  * ----
@@ -966,6 +966,8 @@
  *  * `vertx-id` : the application id, uses a random UUID if not set
  *  * `java-opts` : the Java Virtual Machine options, uses the `JAVA_OPTS` environment variable if not set.
  *  * `redirect-output` : redirect the spawned process output and error streams to the parent process streams.
+ *
+ *  If option values contain spaces, don't forget to wrap the value between {@code ""} (double-quotes).
  *
  * The set of commands is extensible, refer to the <<Extending the vert.x Launcher>> section.
  *
@@ -1267,7 +1269,7 @@
  * === Sub-classing the Launcher
  *
  * You can also create a sub-class of {@link io.vertx.core.Launcher} to start your application. The class has been
- * designed to be easily extendable.
+ * designed to be easily extensible.
  *
  */
 @Document(fileName = "index.adoc")
