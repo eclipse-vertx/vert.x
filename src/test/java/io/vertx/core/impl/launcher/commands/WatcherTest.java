@@ -34,6 +34,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class WatcherTest extends CommandTestBase {
 
+  // Note about sleep time - the watcher service is not very reliable and depends on the file system. So to be sure
+  // we catch the change, we need to wait. 2 seconds seems to be ok.
+
   private Watcher watcher;
   private AtomicInteger deploy;
   private AtomicInteger undeploy;
@@ -50,14 +53,12 @@ public class WatcherTest extends CommandTestBase {
 
     watcher = new Watcher(root, Collections.singletonList("**/*.txt"),
         next -> {
-          System.out.println("deploy");
           deploy.incrementAndGet();
           if (next != null) {
             next.handle(null);
           }
         },
         next -> {
-          System.out.println("undeploy");
           undeploy.incrementAndGet();
           if (next != null) {
             next.handle(null);
@@ -95,7 +96,7 @@ public class WatcherTest extends CommandTestBase {
     File file = new File(root, "foo.nope");
     file.createNewFile();
 
-    Thread.sleep(1000);
+    Thread.sleep(2000);
     assertThat(undeploy.get()).isEqualTo(0);
     assertThat(deploy.get()).isEqualTo(1);
   }
@@ -111,7 +112,7 @@ public class WatcherTest extends CommandTestBase {
     waitUntil(() -> deploy.get() == 1);
 
     // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
-    Thread.sleep(1000);
+    Thread.sleep(2000);
     // Simulate a 'touch'
     file.setLastModified(System.currentTimeMillis());
 
@@ -130,7 +131,7 @@ public class WatcherTest extends CommandTestBase {
     waitUntil(() -> deploy.get() == 1);
 
     // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
-    Thread.sleep(1000);
+    Thread.sleep(2000);
     file.delete();
 
     // undeployment followed by redeployment
@@ -141,14 +142,14 @@ public class WatcherTest extends CommandTestBase {
   public void testFileAdditionInDirectory() throws IOException, InterruptedException {
     watcher.watch();
     // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
-    Thread.sleep(1000);
+    Thread.sleep(2000);
 
     // Initial deployment
     waitUntil(() -> deploy.get() == 1);
 
     File newDir = new File(root, "directory");
     newDir.mkdir();
-    Thread.sleep(1000);
+    Thread.sleep(2000);
     File file = new File(newDir, "foo.txt");
     file.createNewFile();
 

@@ -44,17 +44,20 @@ public class RunCommand extends BareCommand {
 
   protected DeploymentOptions deploymentOptions;
 
-  private boolean cluster;
-  private boolean ha;
+  protected boolean cluster;
+  protected boolean ha;
 
-  private int instances;
-  private String config;
-  private boolean worker;
+  protected int instances;
+  protected String config;
+  protected boolean worker;
 
-  private String mainVerticle;
-  private List<String> redeploy;
-  private String vertxApplicationBackgroundId;
-  private String onRedeployCommand;
+  protected String mainVerticle;
+  protected List<String> redeploy;
+
+
+  protected String vertxApplicationBackgroundId;
+  protected String onRedeployCommand;
+  protected Watcher watcher;
 
   /**
    * Enables / disables the high-availability.
@@ -115,6 +118,11 @@ public class RunCommand extends BareCommand {
     this.config = configuration;
   }
 
+  /**
+   * Sets the main verticle that is deployed.
+   *
+   * @param verticle the verticle
+   */
   @Argument(index = 0, argName = "main-verticle", required = true)
   public void setMainVerticle(String verticle) {
     this.mainVerticle = verticle;
@@ -198,33 +206,65 @@ public class RunCommand extends BareCommand {
     }
   }
 
-  private void initializeRedeployment() {
+  /**
+   * Initializes the redeployment cycle. In "redeploy mode", the application is launched as background, and is
+   * restarted after every change. A {@link Watcher} instance is responsible for monitoring files and triggering the
+   * redeployment.
+   */
+  protected synchronized void initializeRedeployment() {
+    if (watcher != null) {
+      throw new IllegalStateException("Redeployment already started ? The watcher already exists");
+    }
     // Compute the application id. We append "-redeploy" to ease the identification in the process list.
     vertxApplicationBackgroundId = UUID.randomUUID().toString() + "-redeploy";
-    Watcher watcher = new Watcher(getCwd(), redeploy, this::startAsBackgroundApplication,
-        this::stopBackgroundApplication, onRedeployCommand);
+    watcher = new Watcher(getCwd(), redeploy,
+        this::startAsBackgroundApplication,  // On deploy
+        this::stopBackgroundApplication, // On undeploy
+        onRedeployCommand); // In between command
+
     // Close the watcher when the JVM is terminating.
     // Notice that the vert.x finalizer is not registered when we run in redeploy mode.
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        watcher.close();
+        shutdownRedeployment();
       }
     });
     // Start the watching process, it triggers the initial deployment.
     watcher.watch();
   }
 
-  protected void stopBackgroundApplication(Handler<Void> onCompletion) {
+  /**
+   * Stop the redeployment if started.
+   */
+  protected synchronized void shutdownRedeployment() {
+    if (watcher != null) {
+      watcher.close();
+      watcher = null;
+    }
+  }
+
+  /**
+   * On-Undeploy action invoked while redeploying. It just stops the application launched in background.
+   *
+   * @param onCompletion an optional on-completion handler. If set it must be invoked at the end of this method.
+   */
+  protected synchronized void stopBackgroundApplication(Handler<Void> onCompletion) {
     executionContext.execute("stop", vertxApplicationBackgroundId);
     if (onCompletion != null) {
       onCompletion.handle(null);
     }
   }
 
+  /**
+   * On-Deploy action invoked while redeploying. It just starts the application in background, copying all input
+   * parameters. In addition, the vertx application id is set.
+   *
+   * @param onCompletion an optional on-completion handler. If set it must be invoked at the end of this method.
+   */
   protected void startAsBackgroundApplication(Handler<Void> onCompletion) {
     // We need to copy all options and arguments.
     List<String> args = new ArrayList<>();
-    // Pre-prend the command.
+    // Prepend the command.
     args.add("run");
     args.add("--vertx-id=" + vertxApplicationBackgroundId);
     args.addAll(executionContext.commandLine().allArguments());

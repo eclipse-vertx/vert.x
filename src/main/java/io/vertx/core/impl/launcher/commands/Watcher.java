@@ -47,7 +47,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
  */
 public class Watcher implements Runnable {
 
-  protected final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final static Logger LOGGER = LoggerFactory.getLogger(Watcher.class);
 
   private final List<String> includes;
   private final File root;
@@ -58,7 +58,7 @@ public class Watcher implements Runnable {
   private WatchService service;
   private volatile boolean closed;
 
-  private Map<WatchKey, File> keyToFile = new HashMap<>();
+  private final Map<WatchKey, File> keyToFile = new HashMap<>();
 
   /**
    * Creates a new {@link Watcher}.
@@ -107,19 +107,19 @@ public class Watcher implements Runnable {
     try {
       service = FileSystems.getDefault().newWatchService();
     } catch (IOException e) {
-      log.error("Cannot initialize the watcher", e);
+      LOGGER.error("Cannot initialize the watcher", e);
       return this;
     }
 
     try {
       registerAll(root.toPath());
     } catch (IOException e) {
-      log.error("Cannot register current directory into the watcher service", e);
+      LOGGER.error("Cannot register current directory into the watcher service", e);
       return this;
     }
 
     new Thread(this).start();
-    log.info("Starting the vert.x application in redeploy mode");
+    LOGGER.info("Starting the vert.x application in redeploy mode");
     deploy.handle(null);
 
     return this;
@@ -129,13 +129,13 @@ public class Watcher implements Runnable {
    * Stops watching. This method stops the underlying {@link WatchService}.
    */
   public void close() {
-    log.info("Stopping redeployment");
+    LOGGER.info("Stopping redeployment");
     closed = true;
     if (service != null) {
       try {
         service.close();
       } catch (IOException e) {
-        log.error("Cannot stop the watcher service", e);
+        LOGGER.error("Cannot stop the watcher service", e);
       }
     }
     // Un-deploy application on close.
@@ -167,7 +167,7 @@ public class Watcher implements Runnable {
             Path fileName = ev.context();
             File theFile = new File(keyToFile.get(key), fileName.toFile().getName());
 
-            log.debug("Watcher ~> " + kind + " " + theFile.getAbsolutePath());
+            LOGGER.debug("Watcher ~> " + kind + " " + theFile.getAbsolutePath());
 
             if (kind == ENTRY_CREATE) {
               if (theFile.isDirectory()) {
@@ -175,9 +175,9 @@ public class Watcher implements Runnable {
                 try {
                   final WatchKey newKey = register(theFile.toPath());
                   keyToFile.put(newKey, theFile);
-                  log.debug("Watcher ~> new directory added to watch list :" + theFile.getAbsolutePath());
+                  LOGGER.debug("Watcher ~> new directory added to watch list :" + theFile.getAbsolutePath());
                 } catch (IOException e) {
-                  log.error("Cannot register directory " + theFile.getAbsolutePath());
+                  LOGGER.error("Cannot register directory " + theFile.getAbsolutePath());
                 }
               } else {
                 if (match(theFile)) {
@@ -207,7 +207,7 @@ public class Watcher implements Runnable {
         }
       }
     } catch (Throwable e) {
-      log.error("An error have been encountered while watching resources - leaving the redeploy mode", e);
+      LOGGER.error("An error have been encountered while watching resources - leaving the redeploy mode", e);
     }
   }
 
@@ -217,13 +217,13 @@ public class Watcher implements Runnable {
    * @param theFile the file having triggered the redeployment.
    */
   private void trigger(File theFile) {
-    log.info("Trigger redeploy after a change of " + theFile.getAbsolutePath());
+    LOGGER.info("Trigger redeploy after a change of " + theFile.getAbsolutePath());
     // 1)
     undeploy.handle(v1 -> {
       // 2)
       executeUserCommand(v2 -> {
         // 3)
-        deploy.handle(v3 -> log.info("Redeployment done"));
+        deploy.handle(v3 -> LOGGER.info("Redeployment done"));
       });
     });
 

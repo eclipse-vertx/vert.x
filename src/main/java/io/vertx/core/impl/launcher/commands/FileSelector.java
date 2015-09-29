@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * Utility methods to test path matching. This is used by the {@link Watcher} to determeine whether or not a file
+ * Utility methods to test path matching. This is used by the {@link Watcher} to determine whether or not a file
  * triggers a redeployment.
  *
  * @author Clement Escoffier <clement@apache.org>
@@ -268,14 +268,7 @@ public final class FileSelector {
       strIdxStart++;
     }
     if (strIdxStart > strIdxEnd) {
-      // All characters in the string are used. Check if only '*'s are
-      // left in the pattern. If so, we succeeded. Otherwise failure.
-      for (int i = patIdxStart; i <= patIdxEnd; i++) {
-        if (patArr[i] != '*') {
-          return false;
-        }
-      }
-      return true;
+      return checkOnlyStartsLeft(patArr, patIdxStart, patIdxEnd);
     }
 
     // Process characters after last star
@@ -289,12 +282,7 @@ public final class FileSelector {
     if (strIdxStart > strIdxEnd) {
       // All characters in the string are used. Check if only '*'s are
       // left in the pattern. If so, we succeeded. Otherwise failure.
-      for (int i = patIdxStart; i <= patIdxEnd; i++) {
-        if (patArr[i] != '*') {
-          return false;
-        }
-      }
-      return true;
+      return checkOnlyStartsLeft(patArr, patIdxStart, patIdxEnd);
     }
 
     // process pattern between stars. padIdxStart and patIdxEnd point
@@ -340,6 +328,12 @@ public final class FileSelector {
 
     // All characters in the string are used. Check if only '*'s are left
     // in the pattern. If so, we succeeded. Otherwise failure.
+    return checkOnlyStartsLeft(patArr, patIdxStart, patIdxEnd);
+  }
+
+  private static boolean checkOnlyStartsLeft(char[] patArr, int patIdxStart, int patIdxEnd) {
+    // All characters in the string are used. Check if only '*'s are
+    // left in the pattern. If so, we succeeded. Otherwise failure.
     for (int i = patIdxStart; i <= patIdxEnd; i++) {
       if (patArr[i] != '*') {
         return false;

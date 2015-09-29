@@ -32,9 +32,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class RedeployTest extends CommandTestBase {
 
-  @Before
-  public void setUp() throws IOException {
-    super.setUp();
+  private void waitForTermination() {
+    waitUntil(() -> {
+      try {
+        RunCommandTest.getHttpCode();
+        return false;
+      } catch (IOException e) {
+        return true;
+      }
+    });
   }
 
   @After
@@ -47,9 +53,12 @@ public class RedeployTest extends CommandTestBase {
       close(vertx);
 
       run.stopBackgroundApplication(null);
+      run.shutdownRedeployment();
     }
 
     FakeClusterManager.reset();
+
+    waitForTermination();
   }
 
   @Test
