@@ -135,14 +135,53 @@ public class DefaultCLITest {
   public void testUsageComputationWhenUsingRequiredOptionAndArgument() {
     final CLI cli = CLI.create("test")
         .addOption(new Option().setLongName("file").setShortName("f").setDescription("a file").setRequired(true))
-        .addArgument(new Argument().setArgName("foo").setRequired(true));
+        .addArgument(new Argument().setArgName("foo").setDescription("foo").setRequired(true));
 
     StringBuilder builder = new StringBuilder();
     cli.usage(builder);
 
     assertThat(builder)
         .contains("test -f <value> foo")
-        .contains(" -f,--file <value>   a file");
+        .contains(" -f,--file <value>   a file")
+    .contains("<foo>               foo");
+  }
+
+  @Test
+  public void testUsageComputationWithSeveralArguments() {
+    final CLI cli = CLI.create("test")
+        .addOption(new Option().setLongName("file").setShortName("f").setDescription("a file").setRequired(true))
+        .addArgument(new Argument().setIndex(0).setArgName("foo").setDescription("foo"))
+        .addArgument(new Argument().setIndex(1))
+        .addArgument(new Argument().setIndex(2).setArgName("bar").setDescription("bar"));
+
+    StringBuilder builder = new StringBuilder();
+    cli.usage(builder);
+
+    assertThat(builder)
+        .contains("test -f <value> foo value bar")
+        .contains(" -f,--file <value>   a file")
+        .contains("<foo>               foo")
+        .contains("<value>")
+        .contains("<bar>               bar");
+  }
+
+  @Test
+  public void testUsageComputationWithHiddenArguments() {
+    final CLI cli = CLI.create("test")
+        .addOption(new Option().setLongName("file").setShortName("f").setDescription("a file").setRequired(true))
+        .addArgument(new Argument().setIndex(0).setArgName("foo").setDescription("foo"))
+        .addArgument(new Argument().setIndex(1))
+        .addArgument(new Argument().setIndex(2).setArgName("bar").setDescription("bar").setHidden(true));
+
+    StringBuilder builder = new StringBuilder();
+    cli.usage(builder);
+
+    assertThat(builder)
+        .contains("test -f <value> foo value")
+        .contains(" -f,--file <value>   a file")
+        .contains("<foo>               foo")
+        .contains("<value>")
+        .doesNotContain("bar");
   }
 
   @Test
