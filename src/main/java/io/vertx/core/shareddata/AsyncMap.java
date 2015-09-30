@@ -54,10 +54,10 @@ public interface AsyncMap<K, V> {
    *
    * @param k  the key
    * @param v  the value
-   * @param timeout  the timoeout, in ms
+   * @param ttl  The time to live (in ms) for the entry
    * @param completionHandler  the handler
    */
-  void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler);
+  void put(K k, V v, long ttl, Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Put the entry only if there is no entry with the key already present. If key already present then the existing
@@ -75,10 +75,10 @@ public interface AsyncMap<K, V> {
    *
    * @param k  the key
    * @param v  the value
-   * @param timeout  the timeout, in ms
+   * @param ttl  The time to live (in ms) for the entry
    * @param completionHandler  the handler
    */
-  void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler);
+  void putIfAbsent(K k, V v, long ttl, Handler<AsyncResult<V>> completionHandler);
 
   /**
    * Remove a value from the map, asynchronously.
