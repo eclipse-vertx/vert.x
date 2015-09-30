@@ -66,6 +66,7 @@ public class SSLHelper {
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private ClientAuth clientAuth = ClientAuth.NONE;
+  private Set<String> enabledProtocols;
   private Set<String> enabledCipherSuites;
   private boolean verifyHost;
 
@@ -78,6 +79,7 @@ public class SSLHelper {
     this.trustAll = options.isTrustAll();
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
+    this.enabledProtocols = options.getEnabledProtocols();
     this.enabledCipherSuites = options.getEnabledCipherSuites();
     this.verifyHost = options.isVerifyHost();
   }
@@ -89,6 +91,7 @@ public class SSLHelper {
     this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
+    this.enabledProtocols = options.getEnabledProtocols();
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
@@ -99,6 +102,7 @@ public class SSLHelper {
     this.trustAll = options.isTrustAll();
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
+    this.enabledProtocols = options.getEnabledProtocols();
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
@@ -109,6 +113,7 @@ public class SSLHelper {
     this.clientAuth = options.isClientAuthRequired() ? ClientAuth.REQUIRED : ClientAuth.NONE;
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
+    this.enabledProtocols = options.getEnabledProtocols();
     this.enabledCipherSuites = options.getEnabledCipherSuites();
   }
 
@@ -226,9 +231,13 @@ public class SSLHelper {
       engine.setEnabledCipherSuites(toUse);
     }
     engine.setUseClientMode(client);
-    Set<String> enabledProtocols = new HashSet<>(Arrays.asList(ENABLED_PROTOCOLS));
-    enabledProtocols.retainAll(Arrays.asList(engine.getEnabledProtocols()));
-    engine.setEnabledProtocols(enabledProtocols.toArray(new String[0]));
+    if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
+      engine.setEnabledProtocols(enabledProtocols.toArray(new String[0]));
+    } else {
+      Set<String> protocols = new HashSet<>(Arrays.asList(ENABLED_PROTOCOLS));
+      protocols.retainAll(Arrays.asList(engine.getEnabledProtocols()));
+      engine.setEnabledProtocols(protocols.toArray(new String[0]));
+    }
     if (!client) {
       switch (getClientAuth()) {
         case REQUEST: {

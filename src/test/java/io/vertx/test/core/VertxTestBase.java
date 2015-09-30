@@ -237,6 +237,13 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
+  protected static final String[] ENABLED_PROTOCOLS =
+    new String[] {
+      "TLSv1",
+      "TLSv1.1",
+      "TLSv1.2",
+    };
+
   protected static final String[] ENABLED_CIPHER_SUITES =
     new String[] {
       "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
