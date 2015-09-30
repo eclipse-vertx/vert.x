@@ -441,6 +441,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       ReplyException re = (ReplyException) cause;
       assertEquals(-1, re.failureCode());
       assertEquals(ReplyFailure.NO_HANDLERS, re.failureType());
+      assertEquals("No handlers for address " + ADDRESS1, re.getMessage());
       testComplete();
     });
     await();
