@@ -404,12 +404,13 @@ public class UsageMessageFormatter {
   }
 
   /**
-   * Renders the specified Options and return the rendered Options
+   * Renders the specified Options and Arguments and return the rendered output
    * in a StringBuilder.
    *
-   * @param sb      The StringBuilder to place the rendered Options into.
-   * @param options The command line Options
-   * @return the StringBuilder with the rendered Options contents.
+   * @param sb        The StringBuilder to place the rendered Options and Arguments into.
+   * @param options   The command line Options
+   * @param arguments The command line Arguments
+   * @return the StringBuilder with the rendered content.
    */
   protected StringBuilder renderOptionsAndArguments(StringBuilder sb, List<Option> options, List<Argument> arguments) {
     final String lpad = createPadding(leftPad);
