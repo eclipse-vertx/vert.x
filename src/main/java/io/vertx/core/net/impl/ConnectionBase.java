@@ -131,8 +131,17 @@ public abstract class ConnectionBase {
   }
 
   public void doSetWriteQueueMaxSize(int size) {
-    channel.config().setWriteBufferLowWaterMark(size / 2);
-    channel.config().setWriteBufferHighWaterMark(size);
+    ChannelConfig config = channel.config();
+    int high = config.getWriteBufferHighWaterMark();
+    int newLow = size / 2;
+    int newHigh = size;
+    if (newLow >= high) {
+      config.setWriteBufferHighWaterMark(newHigh);
+      config.setWriteBufferLowWaterMark(newLow);
+    } else {
+      config.setWriteBufferLowWaterMark(newLow);
+      config.setWriteBufferHighWaterMark(newHigh);
+    }
   }
 
   protected void checkContext() {
