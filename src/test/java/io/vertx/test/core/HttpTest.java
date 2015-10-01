@@ -4654,5 +4654,54 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testTwoServersDifferentEventLoopsCloseOne() throws Exception {
+    CountDownLatch latch1 = new CountDownLatch(2);
+    AtomicInteger server1Count = new AtomicInteger();
+    AtomicInteger server2Count = new AtomicInteger();
+    vertx.createHttpServer().requestHandler(req -> {
+      server1Count.incrementAndGet();
+      req.response().end();
+    }).listen(8080, onSuccess(s -> {
+      latch1.countDown();
+    }));
+    HttpServer server2 = vertx.createHttpServer().requestHandler(req -> {
+      server2Count.incrementAndGet();
+      req.response().end();
+    }).listen(8080, onSuccess(s -> {
+      latch1.countDown();
+    }));
+    awaitLatch(latch1);
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setDefaultPort(8080));
+
+    for (int i = 0; i < 2; i++) {
+      CountDownLatch latch2 = new CountDownLatch(1);
+      client.getNow("/", resp -> {
+        assertEquals(200, resp.statusCode());
+        latch2.countDown();
+      });
+      awaitLatch(latch2);
+    }
+
+    // Now close server 2
+    CountDownLatch latch3 = new CountDownLatch(1);
+    server2.close(onSuccess(v -> {
+      latch3.countDown();
+    }));
+    awaitLatch(latch3);
+    // Send some more requests
+    for (int i = 0; i < 2; i++) {
+      CountDownLatch latch2 = new CountDownLatch(1);
+      client.getNow("/", resp -> {
+        assertEquals(200, resp.statusCode());
+        latch2.countDown();
+      });
+      awaitLatch(latch2);
+    }
+
+    assertEquals(3, server1Count.get());
+    assertEquals(1, server2Count.get());
+  }
+
 
 }

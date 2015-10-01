@@ -76,7 +76,7 @@ public class HandlerManager<T> {
     if (handlers.isEmpty()) {
       handlerMap.remove(worker);
     }
-    if (handlers.isEmpty()) {
+    if (handlerMap.isEmpty()) {
       hasHandlers = false;
     }
     //Available workers does it's own reference counting -since workers can be shared across different Handlers
