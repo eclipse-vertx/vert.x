@@ -710,13 +710,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         HandlerHolder holder = handlers.choose();
         if (holder != null) {
           metrics.messageReceived(msg.address(), !msg.send(), local, 1);
-          doReceive(msg, holder, local);
+          doReceive(msg, holder);
         }
       } else {
         // Publish
         metrics.messageReceived(msg.address(), !msg.send(), local, handlers.list.size());
         for (HandlerHolder holder: handlers.list) {
-          doReceive(msg, holder, local);
+          doReceive(msg, holder);
         }
       }
     } else {
@@ -742,7 +742,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
 
-  private <T> void doReceive(MessageImpl msg, HandlerHolder<T> holder, boolean local) {
+  private <T> void doReceive(MessageImpl msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
     @SuppressWarnings("unchecked")
     Message<T> copied = msg.copyBeforeReceive();
