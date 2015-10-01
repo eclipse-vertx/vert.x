@@ -496,10 +496,11 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       AtomicReference<MessageConsumer> refReg = new AtomicReference<>();
       // Add a timeout to remove the reply handler to prevent leaks in case a reply never comes
       timeoutID = vertx.setTimer(options.getSendTimeout(), timerID -> {
-        log.warn("Message reply handler timed out as no reply was received - it will be removed");
+        log.warn(String.format("Message reply handler for address [%s] timed out as no reply was received - it will be removed", message.address()));
         refReg.get().unregister();
         metrics.replyFailure(message.address(), ReplyFailure.TIMEOUT);
-        replyHandler.handle(Future.failedFuture(new ReplyException(ReplyFailure.TIMEOUT, "Timed out waiting for reply")));
+        replyHandler.handle(Future.failedFuture(new ReplyException(ReplyFailure.TIMEOUT,
+            String.format("Timed out waiting for reply for address [%s]", message.address()))));
       });
       simpleReplyHandler = convertHandler(replyHandler);
       MessageConsumer registration = registerHandler(message.replyAddress(), simpleReplyHandler, true, true, timeoutID);
