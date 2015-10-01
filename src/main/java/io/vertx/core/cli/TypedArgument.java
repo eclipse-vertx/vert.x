@@ -55,7 +55,7 @@ public class TypedArgument<T> extends Argument {
   }
 
   /**
-   * @return the argument type, cannot be {@link null} for valid argument.
+   * @return the argument type, cannot be {@code null} for valid argument.
    */
   public Class<T> getType() {
     return type;

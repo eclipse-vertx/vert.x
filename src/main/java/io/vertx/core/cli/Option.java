@@ -225,7 +225,7 @@ public class Option {
   /**
    * Sets te arg name for this option.
    *
-   * @param argName the arg name, must not be {@link null}
+   * @param argName the arg name, must not be {@code null}
    * @return the current {@link Option} instance
    */
   public Option setArgName(String argName) {
