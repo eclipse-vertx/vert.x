@@ -139,7 +139,7 @@ public class WatcherTest extends CommandTestBase {
   }
 
   @Test
-  public void testFileAdditionInDirectory() throws IOException, InterruptedException {
+  public void testFileAdditionAndModificationInDirectory() throws IOException, InterruptedException {
     watcher.watch();
     // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
     Thread.sleep(2000);
@@ -155,6 +155,18 @@ public class WatcherTest extends CommandTestBase {
 
     // undeployment followed by redeployment
     waitUntil(() -> undeploy.get() == 1 && deploy.get() == 2);
+
+    // Update file
+    // Simulate a 'touch'
+    file.setLastModified(System.currentTimeMillis());
+
+    // undeployment followed by redeployment
+    waitUntil(() -> undeploy.get() == 2 && deploy.get() == 3);
+
+    // delete directory
+    deleteRecursive(newDir);
+
+    waitUntil(() -> undeploy.get() == 2 && deploy.get() == 3);
   }
 
   public static boolean deleteRecursive(File path) {
