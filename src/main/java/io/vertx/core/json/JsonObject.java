@@ -718,7 +718,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a stream of the entries.
    */
   public Stream<Map.Entry<String, Object>> stream() {
-    return map.entrySet().stream();
+    return Json.asStream(iterator());
   }
 
   /**

@@ -58,7 +58,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
 
-  public static final int BUFFER_SIZE = 8192;
+  public static final int DEFAULT_READ_BUFFER_SIZE = 8192;
 
   private final VertxInternal vertx;
   private final AsynchronousFileChannel ch;
@@ -71,6 +71,7 @@ public class AsyncFileImpl implements AsyncFile {
   private long writePos;
   private int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
   private int lwm = maxWrites / 2;
+  private int readBufferSize = DEFAULT_READ_BUFFER_SIZE;
   private boolean paused;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -182,6 +183,12 @@ public class AsyncFileImpl implements AsyncFile {
     check();
     this.maxWrites = maxSize;
     this.lwm = maxWrites / 2;
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile setReadBufferSize(int readBufferSize) {
+    this.readBufferSize = readBufferSize;
     return this;
   }
 
@@ -307,8 +314,8 @@ public class AsyncFileImpl implements AsyncFile {
   private synchronized void doRead() {
     if (!readInProgress) {
       readInProgress = true;
-      Buffer buff = Buffer.buffer(BUFFER_SIZE);
-      read(buff, 0, readPos, BUFFER_SIZE, ar -> {
+      Buffer buff = Buffer.buffer(readBufferSize);
+      read(buff, 0, readPos, readBufferSize, ar -> {
         if (ar.succeeded()) {
           readInProgress = false;
           Buffer buffer = ar.result();

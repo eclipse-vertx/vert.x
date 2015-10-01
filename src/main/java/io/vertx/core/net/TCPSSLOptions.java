@@ -19,13 +19,8 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.SocketDefaults;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Base class. TCP and SSL related options
@@ -43,12 +38,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * The default value of TCP keep alive
    */
-  public static final boolean DEFAULT_TCP_KEEP_ALIVE = SocketDefaults.instance.isTcpKeepAlive();
+  public static final boolean DEFAULT_TCP_KEEP_ALIVE = false;
 
   /**
    * The default value of SO_linger
    */
-  public static final int DEFAULT_SO_LINGER = SocketDefaults.instance.getSoLinger();
+  public static final int DEFAULT_SO_LINGER = -1;
 
   /**
    * The default value of Netty use pooled buffers = false

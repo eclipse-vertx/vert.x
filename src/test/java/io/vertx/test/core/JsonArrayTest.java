@@ -1055,4 +1055,18 @@ public class JsonArrayTest {
     assertNotEquals(array, new JsonArray(Collections.singletonList(new JsonArray().add(4))));
   }
 
+  @Test
+  public void testStreamCorrectTypes() throws Exception {
+    String json = "{\"object1\": [{\"object2\": 12}]}";
+    JsonObject object = new JsonObject(json);
+    testStreamCorrectTypes(object.copy());
+    testStreamCorrectTypes(object);
+  }
+
+  private void testStreamCorrectTypes(JsonObject object) {
+    object.getJsonArray("object1").stream().forEach(innerMap -> {
+      assertTrue("Expecting JsonObject, found: " + innerMap.getClass().getCanonicalName(), innerMap instanceof JsonObject);
+    });
+  }
+
 }

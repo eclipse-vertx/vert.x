@@ -21,7 +21,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -353,14 +352,12 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Provide a handler that will be called just before the headers are written to the wire.<p>
    * This provides a hook allowing you to add any more headers or do any more operations before this occurs.
-   * The handler will be passed a future, when you've completed the work you want to do you should complete (or fail)
-   * the future. This can be done after the handler has returned.
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse headersEndHandler(Handler<Future<Void>> handler);
+  HttpServerResponse headersEndHandler(Handler<Void> handler);
 
   /**
    * Provide a handler that will be called just before the last part of the body is written to the wire
