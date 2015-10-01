@@ -64,7 +64,7 @@ public class RedeployTest extends CommandTestBase {
   @Test
   public void testStartingApplicationInRedeployMode() {
     cli.dispatch(new Launcher(), new String[]{"run",
-        HttpTestVerticle.class.getName(), "--redeploy=**/*.txt",
+        HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
         "--launcher-class=" + Launcher.class.getName()
     });
     waitUntil(() -> {
@@ -79,7 +79,7 @@ public class RedeployTest extends CommandTestBase {
   @Test
   public void testStartingApplicationInRedeployModeWithCluster() throws IOException {
     cli.dispatch(new Launcher(), new String[]{"run",
-        HttpTestVerticle.class.getName(), "--redeploy=**/*.txt",
+        HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
         "--launcher-class=" + Launcher.class.getName(),
         "--cluster"
     });
@@ -96,7 +96,7 @@ public class RedeployTest extends CommandTestBase {
   @Test
   public void testRedeployment() throws IOException {
     cli.dispatch(new Launcher(), new String[]{"run",
-        HttpTestVerticle.class.getName(), "--redeploy=**/*.txt",
+        HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
         "--launcher-class=" + Launcher.class.getName(),
     });
     waitUntil(() -> {

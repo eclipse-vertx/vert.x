@@ -53,7 +53,7 @@ public class DefaultParserTest {
 
     StringBuilder usage = new StringBuilder();
     cli.usage(usage);
-    assertThat(usage).startsWith("Usage: test [-f <value>]\n");
+    assertThat(usage).startsWith("Usage: test [-f <value>]");
     assertThat(usage).contains("-f,--file <value>");
   }
 
@@ -73,7 +73,7 @@ public class DefaultParserTest {
 
     StringBuilder usage = new StringBuilder();
     cli.usage(usage);
-    assertThat(usage).startsWith("Usage: test [-f <value>]\n");
+    assertThat(usage).startsWith("Usage: test [-f <value>]");
   }
 
   @Test

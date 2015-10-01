@@ -18,8 +18,8 @@ package io.vertx.core.cli.impl;
 
 import io.vertx.core.cli.*;
 import io.vertx.core.cli.Option;
-import io.vertx.core.cli.annotations.*;
 import io.vertx.core.cli.annotations.Argument;
+import io.vertx.core.cli.annotations.*;
 import io.vertx.core.cli.converters.*;
 import org.junit.Test;
 
@@ -54,12 +54,11 @@ public class CLIConfiguratorTest {
     CLI command = CLIConfigurator.define(HelloClI.class);
     StringBuilder builder = new StringBuilder();
     command.usage(builder);
-    assertThat(builder).isEqualToIgnoringCase("Usage: hello -n <name>\n" +
-        "\n" +
-        "A command saying hello.\n" +
-        "\n" +
-        "A simple cli to wish you a good day. Pass your name with `--name`\n\n" +
-        " -n,--name <name>   your name\n");
+    assertThat(builder)
+        .containsIgnoringCase("Usage: hello -n <name>")
+        .containsIgnoringCase("A command saying hello.")
+        .containsIgnoringCase("A simple cli to wish you a good day. Pass your name with `--name`")
+        .containsIgnoringCase(" -n,--name <name>   your name");
   }
 
   @Test
