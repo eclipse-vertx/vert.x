@@ -16,28 +16,19 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import com.sun.nio.file.SensitivityWatchEventModifier;
 import io.vertx.core.Handler;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static java.nio.file.StandardWatchEventKinds.*;
+import java.nio.file.WatchService;
+import java.util.*;
 
 /**
- * A file alteration monitor based on a {@link WatchService} and watching files matching a set of includes patterns.
- * These patterns are Ant patterns (can use {@literal **, * or ?}). This class takes 2 {@link Handler} as parameter
- * and orchestrate the redeployment method when a matching file is modified (created, updated or deleted). Users have
- * the possibility to execute a shell command during the redeployment. On a file change, the {@code undeploy}
+ * A file alteration monitor based on a home made file system scan and watching files matching a set of includes
+ * patterns. These patterns are Ant patterns (can use {@literal **, * or ?}). This class takes 2 {@link Handler} as
+ * parameter and orchestrate the redeployment method when a matching file is modified (created, updated or deleted).
+ * Users have the possibility to execute a shell command during the redeployment. On a file change, the {@code undeploy}
  * {@link Handler} is called, followed by the execution of the user command. Then the {@code deploy} {@link Handler}
  * is invoked.
  * <p/>
@@ -49,16 +40,23 @@ public class Watcher implements Runnable {
 
   private final static Logger LOGGER = LoggerFactory.getLogger(Watcher.class);
 
+  private final long gracePeriod;
+  private final Map<File, Map<File, FileInfo>> fileMap = new HashMap<>();
+  private final Set<File> filesToWatch = new HashSet<>();
+  private final long scanPeriod;
+
+  /**
+   * This field is always access from the scan thread. No need to be volatile.
+   */
+  private long lastChange = -1;
+
   private final List<String> includes;
   private final File root;
   private final Handler<Handler<Void>> deploy;
   private final Handler<Handler<Void>> undeploy;
   private final String cmd;
 
-  private WatchService service;
   private volatile boolean closed;
-
-  private final Map<WatchKey, File> keyToFile = new HashMap<>();
 
   /**
    * Creates a new {@link Watcher}.
@@ -68,15 +66,121 @@ public class Watcher implements Runnable {
    * @param deploy            the function called when deployment is required
    * @param undeploy          the function called when un-deployment is required
    * @param onRedeployCommand an optional command executed after the un-deployment and before the deployment
+   * @param gracePeriod       the amount of time in milliseconds to wait between two redeploy even
+   *                          if there are changes
+   * @param scanPeriod        the time in millisecond between 2 file system scans
    */
   public Watcher(File root, List<String> includes, Handler<Handler<Void>> deploy, Handler<Handler<Void>> undeploy,
-                 String onRedeployCommand) {
+                 String onRedeployCommand, long gracePeriod, long scanPeriod) {
+    this.gracePeriod = gracePeriod;
     this.root = root;
     this.includes = includes;
     this.deploy = deploy;
     this.undeploy = undeploy;
     this.cmd = onRedeployCommand;
+    this.scanPeriod = scanPeriod;
+    addFileToWatch(root);
   }
+
+  private void addFileToWatch(File file) {
+    filesToWatch.add(file);
+    Map<File, FileInfo> map = new HashMap<>();
+    if (file.isDirectory()) {
+      // We're watching a directory contents and its children for changes
+      File[] children = file.listFiles();
+      if (children != null) {
+        for (File child : children) {
+          map.put(child, new FileInfo(child.lastModified(), child.length()));
+          if (child.isDirectory()) {
+            addFileToWatch(child);
+          }
+        }
+      }
+    } else {
+      // Not a directory - we're watching a specific file - e.g. a jar
+      map.put(file, new FileInfo(file.lastModified(), file.length()));
+    }
+    fileMap.put(file, map);
+  }
+
+  private boolean changesHaveOccurred() {
+
+    boolean changed = false;
+    for (File toWatch : new HashSet<>(filesToWatch)) {
+
+      // The new files in the directory
+      Map<File, File> newFiles = new HashMap<>();
+      if (toWatch.isDirectory()) {
+        File[] files = toWatch.exists() ? toWatch.listFiles() : new File[]{};
+
+        if (files == null) {
+          // something really bad happened to the file system.
+          throw new IllegalStateException("Cannot scan the file system to detect file changes");
+        }
+
+        for (File file : files) {
+          newFiles.put(file, file);
+        }
+      } else {
+        newFiles.put(toWatch, toWatch);
+      }
+
+      // Lookup the old list for that file/directory
+      Map<File, FileInfo> currentFileMap = fileMap.get(toWatch);
+      for (Map.Entry<File, FileInfo> currentEntry : new HashMap<>(currentFileMap).entrySet()) {
+        File currFile = currentEntry.getKey();
+        FileInfo currInfo = currentEntry.getValue();
+        File newFile = newFiles.get(currFile);
+        if (newFile == null) {
+          // File has been deleted
+          currentFileMap.remove(currFile);
+          if (currentFileMap.isEmpty()) {
+            fileMap.remove(toWatch);
+            filesToWatch.remove(toWatch);
+          }
+          LOGGER.trace("File: " + currFile + " has been deleted");
+          if (match(currFile)) {
+            changed = true;
+          }
+        } else if (newFile.lastModified() != currInfo.lastModified || newFile.length() != currInfo.length) {
+          // File has been modified
+          currentFileMap.put(newFile, new FileInfo(newFile.lastModified(), newFile.length()));
+          LOGGER.trace("File: " + currFile + " has been modified");
+          if (match(currFile)) {
+            changed = true;
+          }
+        }
+      }
+
+      // Now process any added files
+      for (File newFile : newFiles.keySet()) {
+        if (!currentFileMap.containsKey(newFile)) {
+          // Add new file
+          currentFileMap.put(newFile, new FileInfo(newFile.lastModified(), newFile.length()));
+          if (newFile.isDirectory()) {
+            addFileToWatch(newFile);
+          }
+          LOGGER.trace("File was added: " + newFile);
+          if (match(newFile)) {
+            changed = true;
+          }
+        }
+      }
+    }
+
+    long now = System.currentTimeMillis();
+    if (changed) {
+      lastChange = now;
+    }
+
+    if (lastChange != -1 && now - lastChange >= gracePeriod) {
+      lastChange = -1;
+      return true;
+    }
+
+    return false;
+  }
+
 
   /**
    * Checks whether the given file matches one of the {@link #includes} patterns.
@@ -104,20 +208,6 @@ public class Watcher implements Runnable {
    * @return the current watcher.
    */
   public Watcher watch() {
-    try {
-      service = FileSystems.getDefault().newWatchService();
-    } catch (IOException e) {
-      LOGGER.error("Cannot initialize the watcher", e);
-      return this;
-    }
-
-    try {
-      registerAll(root.toPath());
-    } catch (IOException e) {
-      LOGGER.error("Cannot register current directory into the watcher service", e);
-      return this;
-    }
-
     new Thread(this).start();
     LOGGER.info("Starting the vert.x application in redeploy mode");
     deploy.handle(null);
@@ -130,14 +220,8 @@ public class Watcher implements Runnable {
    */
   public void close() {
     LOGGER.info("Stopping redeployment");
+    // closing the redeployment thread. If waiting, it will shutdown at the next iteration.
     closed = true;
-    if (service != null) {
-      try {
-        service.close();
-      } catch (IOException e) {
-        LOGGER.error("Cannot stop the watcher service", e);
-      }
-    }
     // Un-deploy application on close.
     undeploy.handle(null);
   }
@@ -149,75 +233,23 @@ public class Watcher implements Runnable {
   public void run() {
     try {
       while (!closed) {
-        WatchKey key;
-        try {
-          key = service.poll(10, TimeUnit.MILLISECONDS);
-        } catch (ClosedWatchServiceException | InterruptedException e) {
-          // Closing the watch mode.
-          return;
+        if (changesHaveOccurred()) {
+          trigger();
         }
-        if (key != null) {
-          for (WatchEvent<?> event : key.pollEvents()) {
-            // get event type
-            WatchEvent.Kind<?> kind = event.kind();
-
-            // get file object
-            @SuppressWarnings("unchecked")
-            WatchEvent<Path> ev = (WatchEvent<Path>) event;
-            Path fileName = ev.context();
-            File theFile = new File(keyToFile.get(key), fileName.toFile().getName());
-
-            LOGGER.debug("Watcher ~> " + kind + " " + theFile.getAbsolutePath());
-
-            if (kind == ENTRY_CREATE) {
-              if (theFile.isDirectory()) {
-                // A new directory is created, the WatchService is not very nice with this, we need to register it.
-                try {
-                  final WatchKey newKey = register(theFile.toPath());
-                  keyToFile.put(newKey, theFile);
-                  LOGGER.debug("Watcher ~> new directory added to watch list :" + theFile.getAbsolutePath());
-                } catch (IOException e) {
-                  LOGGER.error("Cannot register directory " + theFile.getAbsolutePath());
-                }
-              } else {
-                if (match(theFile)) {
-                  trigger(theFile);
-                }
-              }
-            } else if (kind == ENTRY_DELETE) {
-              if (theFile.isDirectory()) {
-                // If it is a directory, check whether or not it was registered, if it does, unregister it.
-                // Notice that it does not trigger events for deleted sub-files files.
-                removeDirectory(theFile);
-              } else {
-                if (match(theFile)) {
-                  trigger(theFile);
-                }
-              }
-            } else if (kind == ENTRY_MODIFY) {
-              if (!theFile.isDirectory()) {
-                if (match(theFile)) {
-                  trigger(theFile);
-                }
-              }
-            }
-          }
-          // IMPORTANT: The key must be reset after processed
-          key.reset();
-        }
+        // Wait for the next scan.
+        Thread.sleep(scanPeriod);
       }
     } catch (Throwable e) {
       LOGGER.error("An error have been encountered while watching resources - leaving the redeploy mode", e);
+      close();
     }
   }
 
   /**
    * Redeployment process.
-   *
-   * @param theFile the file having triggered the redeployment.
    */
-  private void trigger(File theFile) {
-    LOGGER.info("Trigger redeploy after a change of " + theFile.getAbsolutePath());
+  private void trigger() {
+    LOGGER.info("Redeploying!");
     // 1)
     undeploy.handle(v1 -> {
       // 2)
@@ -226,8 +258,6 @@ public class Watcher implements Runnable {
         deploy.handle(v3 -> LOGGER.info("Redeployment done"));
       });
     });
-
-
   }
 
   private void executeUserCommand(Handler<Void> onCompletion) {
@@ -256,51 +286,13 @@ public class Watcher implements Runnable {
     onCompletion.handle(null);
   }
 
-  private void removeDirectory(File theFile) {
-    for (Map.Entry<WatchKey, File> entry : keyToFile.entrySet()) {
-      if (entry.getValue().getAbsolutePath().equals(theFile.getAbsolutePath())) {
-        keyToFile.remove(entry.getKey());
-        return;
-      }
-    }
-  }
+  private static final class FileInfo {
+    long lastModified;
+    long length;
 
-  /**
-   * Traverses the directory tree to register all directories in the watch service.
-   *
-   * @param root the root
-   * @throws IOException cannot traverse the tree
-   */
-  private void registerAll(final Path root) throws IOException {
-    // register directory and sub-directories
-    Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-      @Override
-      public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-          throws IOException {
-        final WatchKey key = register(dir);
-        keyToFile.put(key, dir.toFile());
-        return FileVisitResult.CONTINUE;
-      }
-    });
-  }
-
-  /**
-   * Registers a directory into the {@link WatchService}. We listen for all events (creation, deletion and
-   * modification). To increase reactivity we also pass the sensitivity modifier to 'high' (OpenJDK and Oracle JVM
-   * only).
-   *
-   * @param dir the directory
-   * @return the watch key
-   * @throws IOException if it cannot be registered.
-   */
-  private WatchKey register(Path dir) throws IOException {
-    try {
-      // Detect whether or not the Sensitivity modifier is available. It not a class not found exception is thrown
-      this.getClass().getClassLoader().loadClass("com.sun.nio.file.SensitivityWatchEventModifier");
-      return dir.register(service, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY},
-          SensitivityWatchEventModifier.HIGH);
-    } catch (ClassNotFoundException e) {
-      return dir.register(service, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+    private FileInfo(long lastModified, long length) {
+      this.lastModified = lastModified;
+      this.length = length;
     }
   }
 }

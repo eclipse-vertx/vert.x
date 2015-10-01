@@ -34,8 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class WatcherTest extends CommandTestBase {
 
-  // Note about sleep time - the watcher service is not very reliable and depends on the file system. So to be sure
-  // we catch the change, we need to wait. 2 seconds seems to be ok.
+  // Note about sleep time - the watcher is configured with a short scan period to avoid that this tests take too
+  // much time.
 
   private Watcher watcher;
   private AtomicInteger deploy;
@@ -64,7 +64,9 @@ public class WatcherTest extends CommandTestBase {
             next.handle(null);
           }
         },
-        null);
+        null,
+        10,
+        10);
   }
 
   @After
@@ -96,7 +98,7 @@ public class WatcherTest extends CommandTestBase {
     File file = new File(root, "foo.nope");
     file.createNewFile();
 
-    Thread.sleep(2000);
+    Thread.sleep(500);
     assertThat(undeploy.get()).isEqualTo(0);
     assertThat(deploy.get()).isEqualTo(1);
   }
@@ -112,7 +114,7 @@ public class WatcherTest extends CommandTestBase {
     waitUntil(() -> deploy.get() == 1);
 
     // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
-    Thread.sleep(2000);
+    Thread.sleep(500);
     // Simulate a 'touch'
     file.setLastModified(System.currentTimeMillis());
 
@@ -131,7 +133,7 @@ public class WatcherTest extends CommandTestBase {
     waitUntil(() -> deploy.get() == 1);
 
     // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
-    Thread.sleep(2000);
+    Thread.sleep(500);
     file.delete();
 
     // undeployment followed by redeployment
@@ -142,19 +144,21 @@ public class WatcherTest extends CommandTestBase {
   public void testFileAdditionAndModificationInDirectory() throws IOException, InterruptedException {
     watcher.watch();
     // Wait until the file monitoring is set up (ugly, but I don't know any way to detect this).
-    Thread.sleep(2000);
+    Thread.sleep(500);
 
     // Initial deployment
     waitUntil(() -> deploy.get() == 1);
 
     File newDir = new File(root, "directory");
     newDir.mkdir();
-    Thread.sleep(2000);
+    Thread.sleep(500);
     File file = new File(newDir, "foo.txt");
     file.createNewFile();
 
     // undeployment followed by redeployment
     waitUntil(() -> undeploy.get() == 1 && deploy.get() == 2);
+
+    Thread.sleep(1000);
 
     // Update file
     // Simulate a 'touch'
@@ -163,10 +167,12 @@ public class WatcherTest extends CommandTestBase {
     // undeployment followed by redeployment
     waitUntil(() -> undeploy.get() == 2 && deploy.get() == 3);
 
+    Thread.sleep(1000);
+
     // delete directory
     deleteRecursive(newDir);
 
-    waitUntil(() -> undeploy.get() == 2 && deploy.get() == 3);
+    waitUntil(() -> undeploy.get() == 3 && deploy.get() == 4);
   }
 
   public static boolean deleteRecursive(File path) {
