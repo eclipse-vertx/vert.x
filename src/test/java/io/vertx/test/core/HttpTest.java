@@ -1029,11 +1029,10 @@ public class HttpTest extends HttpTestBase {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
     server.requestHandler(req -> {
-      req.response().headersEndHandler(fut -> {
+      req.response().headersEndHandler(v -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
-        fut.complete();
       });
       req.response().bodyEndHandler(v -> {
         assertEquals(1, cnt.getAndIncrement());
@@ -1055,11 +1054,10 @@ public class HttpTest extends HttpTestBase {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
     server.requestHandler(req -> {
-      req.response().headersEndHandler(fut -> {
+      req.response().headersEndHandler(v -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
-        fut.complete();
       });
       req.response().bodyEndHandler(v -> {
         assertEquals(1, cnt.getAndIncrement());
@@ -1086,11 +1084,10 @@ public class HttpTest extends HttpTestBase {
     String content = "iqdioqwdqwiojqwijdwqd";
     File toSend = setupFile("somefile.txt", content);
     server.requestHandler(req -> {
-      req.response().headersEndHandler(fut -> {
+      req.response().headersEndHandler(v -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
-        fut.complete();
       });
       req.response().bodyEndHandler(v -> {
         assertEquals(1, cnt.getAndIncrement());
