@@ -414,7 +414,7 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testChmodNonRecursive3() throws Exception {
-    testChmodNonRecursive( "rw-rw-rw-");
+    testChmodNonRecursive("rw-rw-rw-");
   }
 
   @Test
@@ -450,7 +450,7 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testChmodRecursive1() throws Exception {
-    testChmodRecursive("rw-------",  "rwx------");
+    testChmodRecursive("rw-------", "rwx------");
   }
 
   @Test
@@ -1254,6 +1254,42 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testReadStreamWithBufferSize() throws Exception {
+    String fileName = "some-file.dat";
+    int chunkSize = 16384;
+    int chunks = 1;
+    byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
+    createFile(fileName, content);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
+      if (ar.succeeded()) {
+        AsyncFile rs = ar.result();
+        rs.setReadBufferSize(chunkSize);
+        Buffer buff = Buffer.buffer();
+        int[] callCount = {0};
+        rs.handler((buff1) -> {
+          buff.appendBuffer(buff1);
+          callCount[0]++;
+        });
+        rs.exceptionHandler(t -> fail(t.getMessage()));
+        rs.endHandler(v -> {
+          ar.result().close(ar2 -> {
+            if (ar2.failed()) {
+              fail(ar2.cause().getMessage());
+            } else {
+              assertEquals(1, callCount[0]);
+              assertEquals(Buffer.buffer(content), buff);
+              testComplete();
+            }
+          });
+        });
+      } else {
+        fail(ar.cause().getMessage());
+      }
+    });
+    await();
+  }
+
+  @Test
   public void testReadStreamSetReadPos() throws Exception {
     String fileName = "some-file.dat";
     int chunkSize = 1000;
@@ -1294,7 +1330,7 @@ public class FileSystemTest extends VertxTestBase {
     String fileName2 = "some-other-file.dat";
 
     //Non integer multiple of buffer size
-    int fileSize = (int) (AsyncFileImpl.BUFFER_SIZE * 1000.3);
+    int fileSize = (int) (AsyncFileImpl.DEFAULT_READ_BUFFER_SIZE * 1000.3);
     byte[] content = TestUtils.randomByteArray(fileSize);
     createFile(fileName1, content);
 
