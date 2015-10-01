@@ -24,6 +24,7 @@ import io.vertx.core.spi.launcher.CommandFactoryLookup;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
@@ -384,15 +385,18 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     try {
       Enumeration<URL> resources = RunCommand.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
       while (resources.hasMoreElements()) {
-        Manifest manifest = new Manifest(resources.nextElement().openStream());
+        InputStream stream = resources.nextElement().openStream();
+        Manifest manifest = new Manifest(stream);
         Attributes attributes = manifest.getMainAttributes();
         String mainClass = attributes.getValue("Main-Class");
         if (main.getClass().getName().equals(mainClass)) {
           String command = attributes.getValue("Main-Command");
           if (command != null) {
+            stream.close();
             return command;
           }
         }
+        stream.close();
       }
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
@@ -414,15 +418,18 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     try {
       Enumeration<URL> resources = RunCommand.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
       while (resources.hasMoreElements()) {
-        Manifest manifest = new Manifest(resources.nextElement().openStream());
+        InputStream stream = resources.nextElement().openStream();
+        Manifest manifest = new Manifest(stream);
         Attributes attributes = manifest.getMainAttributes();
         String mainClass = attributes.getValue("Main-Class");
         if (main != null && main.getClass().getName().equals(mainClass)) {
           String theMainVerticle = attributes.getValue("Main-Verticle");
           if (theMainVerticle != null) {
+            stream.close();
             return theMainVerticle;
           }
         }
+        stream.close();
       }
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
