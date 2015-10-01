@@ -24,13 +24,15 @@ public class HttpTestVerticle extends AbstractVerticle {
 
   @Override
   public void start() throws Exception {
-    vertx.createHttpServer().requestHandler(request-> {
+    long time = System.nanoTime();
+    vertx.createHttpServer().requestHandler(request -> {
       JsonObject json = new JsonObject();
       json
           .put("clustered", vertx.isClustered())
           .put("metrics", vertx.isMetricsEnabled())
           .put("id", System.getProperty("vertx.id", "no id"))
-          .put("conf", config());
+          .put("conf", config())
+          .put("startTime", time);
 
       if (System.getProperty("foo") != null) {
         json.put("foo", System.getProperty("foo"));

@@ -112,7 +112,7 @@ public class Argument {
   }
 
   /**
-   * @return the arg name, {@link null} if not defined.
+   * @return the arg name, {@code null} if not defined.
    */
   public String getArgName() {
     return argName;
@@ -121,7 +121,7 @@ public class Argument {
   /**
    * Sets the argument name of this {@link Argument}.
    *
-   * @param argName the argument name, must not be {@link null}
+   * @param argName the argument name, must not be {@code null}
    * @return the current {@link Argument} instance
    */
   public Argument setArgName(String argName) {
@@ -131,7 +131,7 @@ public class Argument {
   }
 
   /**
-   * @return the description, {@link null} if not defined.
+   * @return the description, {@code null} if not defined.
    */
   public String getDescription() {
     return description;
@@ -207,7 +207,7 @@ public class Argument {
   }
 
   /**
-   * @return the argument default value, {@link null} if not specified.
+   * @return the argument default value, {@code null} if not specified.
    */
   public String getDefaultValue() {
     return defaultValue;

@@ -16,6 +16,7 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.*;
@@ -26,7 +27,11 @@ import io.vertx.core.spi.launcher.ExecutionContext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * The vert.x run command that lets you execute verticles.
@@ -39,14 +44,20 @@ public class RunCommand extends BareCommand {
 
   protected DeploymentOptions deploymentOptions;
 
-  private boolean cluster;
-  private boolean ha;
+  protected boolean cluster;
+  protected boolean ha;
 
-  private int instances;
-  private String config;
-  private boolean worker;
+  protected int instances;
+  protected String config;
+  protected boolean worker;
 
-  private String mainVerticle;
+  protected String mainVerticle;
+  protected List<String> redeploy;
+
+
+  protected String vertxApplicationBackgroundId;
+  protected String onRedeployCommand;
+  protected Watcher watcher;
 
   /**
    * Enables / disables the high-availability.
@@ -107,9 +118,28 @@ public class RunCommand extends BareCommand {
     this.config = configuration;
   }
 
+  /**
+   * Sets the main verticle that is deployed.
+   *
+   * @param verticle the verticle
+   */
   @Argument(index = 0, argName = "main-verticle", required = true)
   public void setMainVerticle(String verticle) {
     this.mainVerticle = verticle;
+  }
+
+  @Option(longName = "redeploy", argName = "includes")
+  @Description("Enable automatic redeployment of the application. This option takes a set on includes as parameter " +
+      "indicating which files need to be watched. Patterns are separated by a comma.")
+  @ParsedAsList
+  public void setRedeploy(List<String> redeploy) {
+    this.redeploy = redeploy;
+  }
+
+  @Option(longName = "onRedeploy", argName = "cmd")
+  @Description("Optional shell command executed when a redeployment is triggered")
+  public void setOnRedeployCommand(String command) {
+    this.onRedeployCommand = command;
   }
 
   /**
@@ -159,18 +189,127 @@ public class RunCommand extends BareCommand {
    */
   @Override
   public void run() {
-    super.run();
-    if (vertx == null) {
-      return; // Already logged.
+    if (redeploy == null || redeploy.isEmpty()) {
+      super.run();
+      if (vertx == null) {
+        return; // Already logged.
+      }
+      JsonObject conf = getConfiguration();
+      deploymentOptions = new DeploymentOptions();
+      configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
+      deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
+      beforeDeployingVerticle(deploymentOptions);
+      deploy();
+    } else {
+      // redeploy is set, start the redeployment infrastructure (watcher).
+      initializeRedeployment();
+    }
+  }
+
+  /**
+   * Initializes the redeployment cycle. In "redeploy mode", the application is launched as background, and is
+   * restarted after every change. A {@link Watcher} instance is responsible for monitoring files and triggering the
+   * redeployment.
+   */
+  protected synchronized void initializeRedeployment() {
+    if (watcher != null) {
+      throw new IllegalStateException("Redeployment already started ? The watcher already exists");
+    }
+    // Compute the application id. We append "-redeploy" to ease the identification in the process list.
+    vertxApplicationBackgroundId = UUID.randomUUID().toString() + "-redeploy";
+    watcher = new Watcher(getCwd(), redeploy,
+        this::startAsBackgroundApplication,  // On deploy
+        this::stopBackgroundApplication, // On undeploy
+        onRedeployCommand); // In between command
+
+    // Close the watcher when the JVM is terminating.
+    // Notice that the vert.x finalizer is not registered when we run in redeploy mode.
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        shutdownRedeployment();
+      }
+    });
+    // Start the watching process, it triggers the initial deployment.
+    watcher.watch();
+  }
+
+  /**
+   * Stop the redeployment if started.
+   */
+  protected synchronized void shutdownRedeployment() {
+    if (watcher != null) {
+      watcher.close();
+      watcher = null;
+    }
+  }
+
+  /**
+   * On-Undeploy action invoked while redeploying. It just stops the application launched in background.
+   *
+   * @param onCompletion an optional on-completion handler. If set it must be invoked at the end of this method.
+   */
+  protected synchronized void stopBackgroundApplication(Handler<Void> onCompletion) {
+    executionContext.execute("stop", vertxApplicationBackgroundId);
+    if (onCompletion != null) {
+      onCompletion.handle(null);
+    }
+  }
+
+  /**
+   * On-Deploy action invoked while redeploying. It just starts the application in background, copying all input
+   * parameters. In addition, the vertx application id is set.
+   *
+   * @param onCompletion an optional on-completion handler. If set it must be invoked at the end of this method.
+   */
+  protected void startAsBackgroundApplication(Handler<Void> onCompletion) {
+    // We need to copy all options and arguments.
+    List<String> args = new ArrayList<>();
+    // Prepend the command.
+    args.add("run");
+    args.add("--vertx-id=" + vertxApplicationBackgroundId);
+    args.addAll(executionContext.commandLine().allArguments());
+    // No need to add the main-verticle as it's part of the allArguments list.
+    if (cluster) {
+      args.add("--cluster");
+    }
+    if (clusterHost != null) {
+      args.add("--cluster-host=" + clusterHost);
+    }
+    if (clusterPort != 0) {
+      args.add("--cluster-port=" + clusterPort);
+    }
+    if (ha) {
+      args.add("--ha");
+    }
+    if (haGroup != null && !haGroup.equals("__DEFAULT__")) {
+      args.add("--hagroup=" + haGroup);
+    }
+    if (quorum != -1) {
+      args.add("--quorum=" + quorum);
+    }
+    if (classpath != null && !classpath.isEmpty()) {
+      args.add("--classpath=" + classpath.stream().collect(Collectors.joining(File.pathSeparator)));
+    }
+    if (config != null) {
+      args.add("--config=" + config);
+    }
+    if (instances != 1) {
+      args.add("--instances=" + instances);
+    }
+    if (worker) {
+      args.add("--worker");
+    }
+    if (systemProperties != null) {
+      args.addAll(systemProperties.stream().map(s -> "-D" + s).collect(Collectors.toList()));
     }
 
-    JsonObject conf = getConfiguration();
-    deploymentOptions = new DeploymentOptions();
-    configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
-    deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
-    beforeDeployingVerticle(deploymentOptions);
+    // Enable stream redirection
+    args.add("--redirect-output");
 
-    deploy();
+    executionContext.execute("start", args.toArray(new String[args.size()]));
+    if (onCompletion != null) {
+      onCompletion.handle(null);
+    }
   }
 
   protected void deploy() {

@@ -26,7 +26,9 @@ import org.junit.Test;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,7 +63,34 @@ public class RunCommandTest extends CommandTestBase {
 
   private void setManifest(String name) throws IOException {
     File source = new File("target/test-classes/META-INF/" + name);
-    Files.copy(source.toPath(), manifest.toPath());
+    Files.copy(source.toPath(), manifest.toPath(),
+        StandardCopyOption.REPLACE_EXISTING,
+        StandardCopyOption.COPY_ATTRIBUTES);
+  }
+
+  @Test
+  public void testDeploymentOfJavaVerticle() {
+    cli.dispatch(new Launcher(), new String[] {"run", HttpTestVerticle.class.getName()});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+  }
+
+  @Test
+  public void testDeploymentOfJavaVerticleWithCluster() throws IOException {
+    cli.dispatch(new Launcher(), new String[] {"run", HttpTestVerticle.class.getName(), "-cluster"});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    assertThat(getContent().getBoolean("clustered")).isTrue();
   }
 
   @Test
@@ -183,7 +212,7 @@ public class RunCommandTest extends CommandTestBase {
     assertThat(((RunCommand)cli.getExistingCommandInstance("run")).options.getMetricsOptions().isEnabled()).isTrue();
   }
 
-  private int getHttpCode() throws IOException {
+  public static int getHttpCode() throws IOException {
     return ((HttpURLConnection) new URL("http://localhost:8080")
         .openConnection()).getResponseCode();
   }

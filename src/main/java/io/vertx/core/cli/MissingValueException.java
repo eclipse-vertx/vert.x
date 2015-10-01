@@ -51,14 +51,14 @@ public class MissingValueException extends CLIException {
   }
 
   /**
-   * @return the option, may be {@link null} if the exception is about an argument.
+   * @return the option, may be {@code null} if the exception is about an argument.
    */
   public Option getOption() {
     return option;
   }
 
   /**
-   * @return the argument, may be {@link null} if the exception is about an option.
+   * @return the argument, may be {@code null} if the exception is about an option.
    */
   public Argument getArgument() {
     return argument;
