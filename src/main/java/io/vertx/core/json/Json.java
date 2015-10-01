@@ -27,8 +27,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -117,6 +120,11 @@ public class Json {
       throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
     }
     return val;
+  }
+
+  static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
+    Iterable<T> iterable = () -> sourceIterator;
+    return StreamSupport.stream(iterable.spliterator(), false);
   }
 
   private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
