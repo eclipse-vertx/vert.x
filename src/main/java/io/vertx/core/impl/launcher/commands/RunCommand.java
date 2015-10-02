@@ -58,6 +58,8 @@ public class RunCommand extends BareCommand {
   protected String vertxApplicationBackgroundId;
   protected String onRedeployCommand;
   protected Watcher watcher;
+  private long redeployScanPeriod;
+  private long redeployGracePeriod;
 
   /**
    * Enables / disables the high-availability.
@@ -143,6 +145,22 @@ public class RunCommand extends BareCommand {
     this.onRedeployCommand = command;
   }
 
+  @Option(longName = "redeploy-scan-period", argName = "period")
+  @Description("When redeploy is enabled, this option configures the file system scanning period to detect file " +
+      "changes. The time is given in milliseconds. 250 ms by default.")
+  @DefaultValue("250")
+  public void setRedeployScanPeriod(long period) {
+    this.redeployScanPeriod = period;
+  }
+
+  @Option(longName = "redeploy-grace-period", argName = "period")
+  @Description("When redeploy is enabled, this option configures the grace period between 2 redeployments. The time " +
+      "is given in milliseconds. 1000 ms by default.")
+  @DefaultValue("1000")
+  public void setRedeployGracePeriod(long period) {
+    this.redeployGracePeriod = period;
+  }
+
   /**
    * Validates the command line parameters.
    *
@@ -221,7 +239,9 @@ public class RunCommand extends BareCommand {
     watcher = new Watcher(getCwd(), redeploy,
         this::startAsBackgroundApplication,  // On deploy
         this::stopBackgroundApplication, // On undeploy
-        onRedeployCommand); // In between command
+        onRedeployCommand, // In between command
+        redeployGracePeriod, // The redeploy grace period
+        redeployScanPeriod); // The redeploy scan period
 
     // Close the watcher when the JVM is terminating.
     // Notice that the vert.x finalizer is not registered when we run in redeploy mode.

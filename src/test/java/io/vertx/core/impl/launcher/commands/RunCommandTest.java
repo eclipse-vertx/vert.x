@@ -169,7 +169,7 @@ public class RunCommandTest extends CommandTestBase {
   }
 
   @Test
-  public void testWithCOnfProvidedInline() throws IOException {
+  public void testWithConfProvidedInline() throws IOException {
     setManifest("MANIFEST-Launcher-Http-Verticle.MF");
     cli.dispatch(new Launcher(), new String[] {"--conf={\"name\":\"vertx\"}"});
     waitUntil(() -> {
@@ -183,7 +183,7 @@ public class RunCommandTest extends CommandTestBase {
   }
 
   @Test
-  public void testWithCOnfProvidedAsFile() throws IOException {
+  public void testWithConfProvidedAsFile() throws IOException {
     setManifest("MANIFEST-Launcher-Http-Verticle.MF");
     cli.dispatch(new Launcher(), new String[] {"--conf", "target/test-classes/conf.json"});
     waitUntil(() -> {
