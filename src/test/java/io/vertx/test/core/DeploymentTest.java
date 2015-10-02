@@ -953,6 +953,23 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testDeployWhenClosedShouldFail() throws Exception {
+    CountDownLatch closed = new CountDownLatch(1);
+    vertx.close(ar -> {
+      assertTrue(ar.succeeded());
+      closed.countDown();
+    });
+    awaitLatch(closed);
+    vertx.deployVerticle(new AbstractVerticle() {
+    }, ar -> {
+      assertFalse(ar.succeeded());
+      assertEquals("Vert.x closed", ar.cause().getMessage());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testIsolationGroup1() throws Exception {
     List<String> isolatedClasses = Arrays.asList(TestVerticle.class.getCanonicalName());
     vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(),

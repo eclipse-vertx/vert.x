@@ -518,7 +518,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    deploymentManager.deployVerticle(verticle, options, completionHandler);
+    boolean closed;
+    synchronized (this) {
+      closed = this.closed;
+    }
+    if (closed) {
+      completionHandler.handle(Future.failedFuture("Vert.x closed"));
+    } else {
+      deploymentManager.deployVerticle(verticle, options, completionHandler);
+    }
   }
 
   @Override
