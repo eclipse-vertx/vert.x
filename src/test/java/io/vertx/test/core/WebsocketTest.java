@@ -1273,17 +1273,12 @@ public class WebsocketTest extends VertxTestBase {
     String nonExistingHost = "idont.even.exist";
     int port = 7867;
     HttpClient client = vertx.createHttpClient();
-
     client.websocket(port, nonExistingHost, "", websocket -> {
       websocket.handler(data -> {
-                fail("connection should not succeed");
-              }
-      );
-    }
-            , throwable -> {
-      testComplete();
-    });
-      await();
+        fail("connection should not succeed");
+      });
+    }, throwable -> testComplete());
+    await();
   }
 
 }
