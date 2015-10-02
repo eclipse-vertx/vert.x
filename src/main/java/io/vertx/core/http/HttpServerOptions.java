@@ -20,7 +20,6 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.SSLHelper;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -275,7 +274,14 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setClientAuth(SSLHelper.ClientAuth clientAuth) {
+  @Deprecated
+  public HttpServerOptions setClientAuthRequired(boolean clientAuthRequired) {
+    super.setClientAuthRequired(clientAuthRequired);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions setClientAuth(ClientAuth clientAuth) {
     super.setClientAuth(clientAuth);
     return this;
   }

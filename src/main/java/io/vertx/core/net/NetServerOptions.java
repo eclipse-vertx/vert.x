@@ -18,8 +18,8 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.SSLHelper;
 
 /**
  * Options for configuring a {@link io.vertx.core.net.NetServer}.
@@ -46,10 +46,15 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public static final int DEFAULT_ACCEPT_BACKLOG = 1024;
 
+  /**
+   * Default value of whether client auth is required (SSL/TLS) = false
+   */
+  public static final boolean DEFAULT_CLIENT_AUTH_REQUIRED = false;
+
   private int port;
   private String host;
   private int acceptBacklog;
-  private SSLHelper.ClientAuth clientAuth = SSLHelper.ClientAuth.NONE;
+  private ClientAuth clientAuth = ClientAuth.NONE;
 
   /**
    * Default constructor
@@ -69,7 +74,6 @@ public class NetServerOptions extends TCPSSLOptions {
     this.port = other.getPort();
     this.host = other.getHost();
     this.acceptBacklog = other.getAcceptBacklog();
-    this.clientAuth = other.getClientAuth();
   }
 
   /**
@@ -259,7 +263,24 @@ public class NetServerOptions extends TCPSSLOptions {
    *
    * @return true if client auth is required
    */
-  public SSLHelper.ClientAuth getClientAuth() {
+  @Deprecated
+  public boolean isClientAuthRequired() {
+    return clientAuth == ClientAuth.REQUIRED;
+  }
+
+  /**
+   * Set whether client auth is required
+   *
+   * @param clientAuthRequired  true if client auth is required
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Deprecated
+  public NetServerOptions setClientAuthRequired(boolean clientAuthRequired) {
+    this.clientAuth = clientAuthRequired ? ClientAuth.REQUIRED : ClientAuth.NONE;
+    return this;
+  }
+
+  public ClientAuth getClientAuth() {
     return clientAuth;
   }
 
@@ -271,7 +292,7 @@ public class NetServerOptions extends TCPSSLOptions {
    *                   it won't mandate the certificate to be presented, basically make it optional.
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerOptions setClientAuth(SSLHelper.ClientAuth clientAuth) {
+  public NetServerOptions setClientAuth(ClientAuth clientAuth) {
     this.clientAuth = clientAuth;
     return this;
   }
