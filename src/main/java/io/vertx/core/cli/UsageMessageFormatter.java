@@ -232,6 +232,10 @@ public class UsageMessageFormatter {
    * @param required whether the Option is required or not
    */
   private void appendArgument(StringBuilder buff, Argument argument, boolean required) {
+    if (argument.isHidden()) {
+      return;
+    }
+
     if (!required) {
       buff.append("[");
     }
@@ -271,7 +275,7 @@ public class UsageMessageFormatter {
       buildWrapped(builder, "\n" + cli.getDescription());
     }
     builder.append("\n");
-    computeOptions(builder, cli.getOptions());
+    computeOptionsAndArguments(builder, cli.getOptions(), cli.getArguments());
   }
 
 
@@ -317,11 +321,12 @@ public class UsageMessageFormatter {
   /**
    * Computes the help for the specified Options to the specified writer.
    *
-   * @param buffer  The buffer to write the help to
-   * @param options The command line Options
+   * @param buffer    The buffer to write the help to
+   * @param options   The command line Options
+   * @param arguments the command line Arguments
    */
-  public void computeOptions(StringBuilder buffer, List<Option> options) {
-    renderOptions(buffer, options);
+  public void computeOptionsAndArguments(StringBuilder buffer, List<Option> options, List<Argument> arguments) {
+    renderOptionsAndArguments(buffer, options, arguments);
     buffer.append(newLine);
   }
 
@@ -399,14 +404,15 @@ public class UsageMessageFormatter {
   }
 
   /**
-   * Renders the specified Options and return the rendered Options
+   * Renders the specified Options and Arguments and return the rendered output
    * in a StringBuilder.
    *
-   * @param sb      The StringBuilder to place the rendered Options into.
-   * @param options The command line Options
-   * @return the StringBuilder with the rendered Options contents.
+   * @param sb        The StringBuilder to place the rendered Options and Arguments into.
+   * @param options   The command line Options
+   * @param arguments The command line Arguments
+   * @return the StringBuilder with the rendered content.
    */
-  protected StringBuilder renderOptions(StringBuilder sb, List<Option> options) {
+  protected StringBuilder renderOptionsAndArguments(StringBuilder sb, List<Option> options, List<Argument> arguments) {
     final String lpad = createPadding(leftPad);
     final String dpad = createPadding(descPad);
 
@@ -422,18 +428,18 @@ public class UsageMessageFormatter {
     }
 
     for (Option option : options) {
+      StringBuilder buf = new StringBuilder();
       if (option.isHidden()) {
         continue;
       }
-      StringBuilder optBuf = new StringBuilder();
 
       if (isNullOrEmpty(option.getShortName())) {
-        optBuf.append(lpad).append("   ").append(getLongOptionPrefix()).append(option.getLongName());
+        buf.append(lpad).append("   ").append(getLongOptionPrefix()).append(option.getLongName());
       } else {
-        optBuf.append(lpad).append(getOptionPrefix()).append(option.getShortName());
+        buf.append(lpad).append(getOptionPrefix()).append(option.getShortName());
 
         if (!isNullOrEmpty(option.getLongName())) {
-          optBuf.append(',').append(getLongOptionPrefix()).append(option.getLongName());
+          buf.append(',').append(getLongOptionPrefix()).append(option.getLongName());
         }
       }
 
@@ -441,20 +447,30 @@ public class UsageMessageFormatter {
         String argName = option.getArgName();
         if (argName != null && argName.length() == 0) {
           // if the option has a blank argname
-          optBuf.append(' ');
+          buf.append(' ');
         } else {
-          optBuf.append(!isNullOrEmpty(option.getLongName()) ? longOptSeparator : " ");
-          optBuf.append("<").append(argName != null ? option.getArgName() : getArgName()).append(">");
+          buf.append(!isNullOrEmpty(option.getLongName()) ? longOptSeparator : " ");
+          buf.append("<").append(argName != null ? option.getArgName() : getArgName()).append(">");
         }
       }
+      prefixList.add(buf);
+      max = buf.length() > max ? buf.length() : max;
+    }
 
-      prefixList.add(optBuf);
-      max = optBuf.length() > max ? optBuf.length() : max;
+    for (Argument argument : arguments) {
+      StringBuilder buf = new StringBuilder();
+      if (argument.isHidden()) {
+        continue;
+      }
+      buf.append(lpad).append("<").append(argument.getArgName()).append(">");
+
+      prefixList.add(buf);
+      max = buf.length() > max ? buf.length() : max;
     }
 
     int x = 0;
 
-    // Use an iterator to detect the last item.
+    // Append options - Use an iterator to detect the last item.
     for (Iterator<Option> it = options.iterator(); it.hasNext(); ) {
       Option option = it.next();
       if (option.isHidden()) {
@@ -475,6 +491,36 @@ public class UsageMessageFormatter {
       }
 
       renderWrappedText(sb, width, nextLineTabStop, optBuf.toString());
+
+      if (it.hasNext()) {
+        sb.append(getNewLine());
+      }
+    }
+
+    // Append arguments - Use an iterator to detect the last item.
+    if (!options.isEmpty() && !arguments.isEmpty()) {
+      sb.append(getNewLine());
+    }
+    for (Iterator<Argument> it = arguments.iterator(); it.hasNext(); ) {
+      Argument argument = it.next();
+      if (argument.isHidden()) {
+        continue;
+      }
+      StringBuilder argBuf = new StringBuilder(prefixList.get(x++).toString());
+
+      if (argBuf.length() < max) {
+        argBuf.append(createPadding(max - argBuf.length()));
+      }
+
+      argBuf.append(dpad);
+
+      int nextLineTabStop = max + descPad;
+
+      if (argument.getDescription() != null) {
+        argBuf.append(argument.getDescription());
+      }
+
+      renderWrappedText(sb, width, nextLineTabStop, argBuf.toString());
 
       if (it.hasNext()) {
         sb.append(getNewLine());

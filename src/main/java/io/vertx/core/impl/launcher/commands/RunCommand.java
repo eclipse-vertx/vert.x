@@ -124,6 +124,7 @@ public class RunCommand extends BareCommand {
    * @param verticle the verticle
    */
   @Argument(index = 0, argName = "main-verticle", required = true)
+  @Description("The main verticle to deploy, it can be a fully qualified class name or a file.")
   public void setMainVerticle(String verticle) {
     this.mainVerticle = verticle;
   }
