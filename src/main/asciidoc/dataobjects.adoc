@@ -1,5 +1,30 @@
 = Cheatsheets
 
+[[DeliveryOptions]]
+== DeliveryOptions
+
+++++
+ Delivery options are used to configure message delivery.
+ <p>
+ Delivery options allow to configure delivery timeout and message codec name, and to provide any headers
+ that you wish to send with the message.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[codecName]]`codecName`|`String`|
++++
+Set the codec name.
++++
+|[[sendTimeout]]`sendTimeout`|`Number (long)`|
++++
+Set the send timeout.
++++
+|===
+
 [[NetworkOptions]]
 == NetworkOptions
 
@@ -27,31 +52,6 @@ Set the TCP send buffer size
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
 Set the value of traffic class
-+++
-|===
-
-[[DeliveryOptions]]
-== DeliveryOptions
-
-++++
- Delivery options are used to configure message delivery.
- <p>
- Delivery options allow to configure delivery timeout and message codec name, and to provide any headers
- that you wish to send with the message.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[codecName]]`codecName`|`String`|
-+++
-Set the codec name.
-+++
-|[[sendTimeout]]`sendTimeout`|`Number (long)`|
-+++
-Set the send timeout.
 +++
 |===
 
@@ -433,6 +433,20 @@ Set the store as a buffer
 +++
 |===
 
+[[TrustOptions]]
+== TrustOptions
+
+++++
+ Certification authority configuration options.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|===
+
 [[Option]]
 == Option
 
@@ -492,20 +506,6 @@ Sets the short name of this option.
 +++
 Sets whether or not this option can receive a value.
 +++
-|===
-
-[[TrustOptions]]
-== TrustOptions
-
-++++
- Certification authority configuration options.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
 |===
 
 [[NetServerOptions]]
@@ -615,25 +615,6 @@ Set whether Netty pooled buffers are enabled
 +++
 |===
 
-[[MetricsOptions]]
-== MetricsOptions
-
-++++
- Vert.x metrics base configuration, this class can be extended by provider implementations to configure
- those specific implementations.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[enabled]]`enabled`|`Boolean`|
-+++
-Set whether metrics will be enabled on the Vert.x instance.
-+++
-|===
-
 [[ClientOptionsBase]]
 == ClientOptionsBase
 
@@ -733,6 +714,25 @@ Set whether Netty pooled buffers are enabled
 +++
 |===
 
+[[MetricsOptions]]
+== MetricsOptions
+
+++++
+ Vert.x metrics base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[enabled]]`enabled`|`Boolean`|
++++
+Set whether metrics will be enabled on the Vert.x instance.
++++
+|===
+
 [[DeploymentOptions]]
 == DeploymentOptions
 
@@ -780,20 +780,6 @@ Set whether the verticle(s) should be deployed as a multi-threaded worker vertic
 +++
 Set whether the verticle(s) should be deployed as a worker verticle
 +++
-|===
-
-[[KeyCertOptions]]
-== KeyCertOptions
-
-++++
- Key/cert configuration options.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
 |===
 
 [[PemKeyCertOptions]]
@@ -864,6 +850,20 @@ Set the path to the key file
 +++
 Set the key a a buffer
 +++
+|===
+
+[[KeyCertOptions]]
+== KeyCertOptions
+
+++++
+ Key/cert configuration options.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
 |===
 
 [[HttpServerOptions]]
@@ -986,56 +986,6 @@ Set whether Netty pooled buffers are enabled
 |[[websocketSubProtocols]]`websocketSubProtocols`|`String`|
 +++
 Set the websocket subprotocols supported by the server.
-+++
-|===
-
-[[DatagramSocketOptions]]
-== DatagramSocketOptions
-
-++++
- Options used to configure a datagram socket.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[broadcast]]`broadcast`|`Boolean`|
-+++
-Set if the socket can receive broadcast packets
-+++
-|[[ipV6]]`ipV6`|`Boolean`|
-+++
-Set if IP v6 should be used
-+++
-|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
-+++
-Set if loopback mode is disabled
-+++
-|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
-+++
-Set the multicast network interface address
-+++
-|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
-+++
-Set the multicast ttl value
-+++
-|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
-+++
-Set the TCP receive buffer size
-+++
-|[[reuseAddress]]`reuseAddress`|`Boolean`|
-+++
-Set the value of reuse address
-+++
-|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
-+++
-Set the TCP send buffer size
-+++
-|[[trafficClass]]`trafficClass`|`Number (int)`|
-+++
-Set the value of traffic class
 +++
 |===
 
@@ -1171,6 +1121,56 @@ Set whether Netty pooled buffers are enabled
 |[[verifyHost]]`verifyHost`|`Boolean`|
 +++
 Set whether hostname verification is enabled
++++
+|===
+
+[[DatagramSocketOptions]]
+== DatagramSocketOptions
+
+++++
+ Options used to configure a datagram socket.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[broadcast]]`broadcast`|`Boolean`|
++++
+Set if the socket can receive broadcast packets
++++
+|[[ipV6]]`ipV6`|`Boolean`|
++++
+Set if IP v6 should be used
++++
+|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
++++
+Set if loopback mode is disabled
++++
+|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
++++
+Set the multicast network interface address
++++
+|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
++++
+Set the multicast ttl value
++++
+|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
++++
+Set the TCP receive buffer size
++++
+|[[reuseAddress]]`reuseAddress`|`Boolean`|
++++
+Set the value of reuse address
++++
+|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
++++
+Set the TCP send buffer size
++++
+|[[trafficClass]]`trafficClass`|`Number (int)`|
++++
+Set the value of traffic class
 +++
 |===
 

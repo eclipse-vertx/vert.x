@@ -62,7 +62,30 @@
  *
  * [source, java]
  * ----
- * include::{examples-dir}/cli/AnnotatedCli.java[tags=content]
+ * &#64;Name("some-name")
+ * &#64;Summary("some short summary.")
+ * &#64;Description("some long description")
+ * public class AnnotatedCli {
+ *
+ *   private boolean flag;
+ *   private String name;
+ *   private String arg;
+ *
+ *  &#64;Option(shortName = "f", flag = true)
+ *  public void setFlag(boolean flag) {
+ *    this.flag = flag;
+ *  }
+ *
+ *  &#64;Option(longName = "name")
+ *  public void setName(String name) {
+ *    this.name = name;
+ *  }
+ *
+ *  &#64;Argument(index = 0)
+ *  public void setArg(String arg) {
+ *   this.arg = arg;
+ *  }
+ * }
  * ----
  *
  * Once annotated, you can define the {@link io.vertx.core.cli.CLI} and inject the values using:

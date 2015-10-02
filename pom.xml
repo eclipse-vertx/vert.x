@@ -175,6 +175,9 @@
                 <compilerArgs>
                   <arg>-Adocgen.output=${asciidoc.dir}/java</arg>
                   <arg>-AoutputDirectory=${project.basedir}/src/main</arg>
+                  <arg>-Amaven.groupId=${project.groupId}</arg>
+                  <arg>-Amaven.artifactId=${project.artifactId}</arg>
+                  <arg>-Amaven.version=${project.version}</arg>
                 </compilerArgs>
                 <generatedSourcesDirectory>${generated.dir}</generatedSourcesDirectory>
               </configuration>
@@ -225,12 +228,6 @@
             <relativeBaseDir>true</relativeBaseDir>
             <backend>html</backend>
             <doctype>book</doctype>
-            <attributes>
-              <maven-groupId>${project.groupId}</maven-groupId>
-              <maven-artifactId>${project.artifactId}</maven-artifactId>
-              <maven-version>${project.version}</maven-version>
-              <examples-dir>${project.basedir}/src/main/java/examples</examples-dir>
-            </attributes>
           </configuration>
           <executions>
             <execution>
