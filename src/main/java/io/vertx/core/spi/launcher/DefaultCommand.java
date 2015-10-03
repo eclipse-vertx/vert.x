@@ -99,7 +99,7 @@ public abstract class DefaultCommand implements Command {
 
   @Override
   public void tearDown() throws CLIException {
-    unapplySystemProperties();
+    // Default implementation - does nothing.
   }
 
   /**
@@ -113,21 +113,6 @@ public abstract class DefaultCommand implements Command {
           String key = prop.substring(0, p);
           String val = prop.substring(p + 1);
           System.setProperty(key, val);
-        }
-      }
-    }
-  }
-
-  /**
-   * Un-sets the system properties specified by the user command line.
-   */
-  protected void unapplySystemProperties() {
-    if (systemProperties != null) {
-      for (String prop : systemProperties) {
-        int p = prop.indexOf('=');
-        if (p > 0) {
-          String key = prop.substring(0, p);
-          System.clearProperty(key);
         }
       }
     }
