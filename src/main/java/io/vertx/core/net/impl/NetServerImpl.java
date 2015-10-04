@@ -338,8 +338,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
       bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
     }
-
-    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (options.getSoLinger() != -1) {
+      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    }
     if (options.getTrafficClass() != -1) {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
@@ -347,7 +348,9 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    if (options.getAcceptBacklog() != -1) {
+      bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    }
   }
 
   private synchronized void addListener(Runnable runner) {

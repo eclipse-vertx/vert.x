@@ -43,7 +43,7 @@ public class NetServerOptions extends TCPSSLOptions {
   /**
    * The default accept backlog = 1024
    */
-  public static final int DEFAULT_ACCEPT_BACKLOG = 1024;
+  public static final int DEFAULT_ACCEPT_BACKLOG = -1;
 
   /**
    * Default value of whether client auth is required (SSL/TLS) = false

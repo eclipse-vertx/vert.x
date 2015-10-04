@@ -246,7 +246,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustOptions());
 
-    assertEquals(1024, options.getAcceptBacklog());
+    assertEquals(-1, options.getAcceptBacklog());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setAcceptBacklog(rand));
     assertEquals(rand, options.getAcceptBacklog());
