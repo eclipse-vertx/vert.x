@@ -694,7 +694,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
       bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
     }
-    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (options.getSoLinger() != -1) {
+      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    }
     if (options.getTrafficClass() != -1) {
       bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
     }

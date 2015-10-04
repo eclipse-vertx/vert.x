@@ -99,6 +99,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final OrderedExecutorFactory internalOrderedFact;
   private final ThreadFactory eventLoopThreadFactory;
   private final NioEventLoopGroup eventLoopGroup;
+  private final NioEventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
   private EventBusImpl eventBus;
@@ -123,6 +124,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false);
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
     eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
+    ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false);
+    // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
+    // under a lot of load
+    acceptorEventLoopGroup = new NioEventLoopGroup(1, acceptorEventLoopThreadFactory);
+    acceptorEventLoopGroup.setIoRatio(100);
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
@@ -291,6 +297,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public EventLoopGroup getEventLoopGroup() {
     return eventLoopGroup;
+  }
+
+  public EventLoopGroup getAcceptorEventLoopGroup() {
+    return acceptorEventLoopGroup;
   }
 
   public ContextImpl getOrCreateContext() {
@@ -665,23 +675,31 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       workerPool.shutdownNow();
       internalBlockingPool.shutdownNow();
 
-      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
+      acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
         @Override
         public void operationComplete(io.netty.util.concurrent.Future future) throws Exception {
           if (!future.isSuccess()) {
-            log.warn("Failure in shutting down event loop group", future.cause());
+            log.warn("Failure in shutting down acceptor event loop group", future.cause());
           }
-          if (metrics != null) {
-            metrics.close();
-          }
+          eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
+            @Override
+            public void operationComplete(io.netty.util.concurrent.Future future) throws Exception {
+              if (!future.isSuccess()) {
+                log.warn("Failure in shutting down event loop group", future.cause());
+              }
+              if (metrics != null) {
+                metrics.close();
+              }
 
-          checker.close();
+              checker.close();
 
-          if (completionHandler != null) {
-            eventLoopThreadFactory.newThread(() -> {
-              completionHandler.handle(Future.succeededFuture());
-            }).start();
-          }
+              if (completionHandler != null) {
+                eventLoopThreadFactory.newThread(() -> {
+                  completionHandler.handle(Future.succeededFuture());
+                }).start();
+              }
+            }
+          });
         }
       });
     });

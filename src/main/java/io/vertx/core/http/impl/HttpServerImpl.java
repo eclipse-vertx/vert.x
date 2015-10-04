@@ -181,7 +181,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (shared == null) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(availableWorkers);
+        bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
         bootstrap.channelFactory(new VertxNioServerChannelFactory());
         applyConnectionOptions(bootstrap);
         sslHelper.validate(vertx);
@@ -371,15 +371,20 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
     }
 
-    bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (options.getSoLinger() != -1) {
+      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    }
     if (options.getTrafficClass() != -1) {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
     bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
 
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    if (options.getAcceptBacklog() != -1) {
+      bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    }
   }
 
 
