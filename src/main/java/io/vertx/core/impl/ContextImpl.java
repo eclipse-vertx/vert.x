@@ -43,8 +43,10 @@ public abstract class ContextImpl implements ContextInternal {
 
   private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
+  private static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
   private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
   private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
+  private static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
 
   protected final VertxInternal owner;
   protected final String deploymentID;
@@ -61,6 +63,9 @@ public abstract class ContextImpl implements ContextInternal {
 
   protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
+    if (DISABLE_TCCL && !tccl.getClass().getName().equals("sun.misc.Launcher$AppClassLoader")) {
+      log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
+    }
     this.orderedInternalPoolExec = orderedInternalPoolExec;
     this.workerExec = workerExec;
     this.deploymentID = deploymentID;
@@ -86,10 +91,12 @@ public abstract class ContextImpl implements ContextInternal {
 
   private static void setContext(VertxThread thread, ContextImpl context) {
     thread.setContext(context);
-    if (context != null) {
-      context.setTCCL();
-    } else {
-      Thread.currentThread().setContextClassLoader(null);
+    if (!DISABLE_TCCL) {
+      if (context != null) {
+        context.setTCCL();
+      } else {
+        Thread.currentThread().setContextClassLoader(null);
+      }
     }
   }
 
