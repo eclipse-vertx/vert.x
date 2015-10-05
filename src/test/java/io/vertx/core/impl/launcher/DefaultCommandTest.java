@@ -60,8 +60,9 @@ public class DefaultCommandTest {
     assertThat(System.getProperty("x")).isEqualToIgnoringCase("y");
 
     command.tearDown();
-    assertThat(System.getProperty("foo")).isNull();
-    assertThat(System.getProperty("x")).isNull();
+    // System properties are not removed by the tearDown.
+    assertThat(System.getProperty("foo")).isEqualToIgnoringCase("bar");
+    assertThat(System.getProperty("x")).isEqualToIgnoringCase("y");
   }
 
 }
