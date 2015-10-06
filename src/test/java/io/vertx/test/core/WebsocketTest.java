@@ -23,18 +23,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.ServerWebSocketStream;
-import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.WebSocketStream;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
@@ -342,7 +331,7 @@ public class WebsocketTest extends VertxTestBase {
     setOptions(serverOptions, getServerTrustOptions(serverTrust));
     setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
-      serverOptions.setClientAuthRequired(true);
+      serverOptions.setClientAuth(ClientAuth.REQUIRED);
     }
     if (serverUsesCrl) {
       serverOptions.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));

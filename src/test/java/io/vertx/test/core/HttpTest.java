@@ -2988,7 +2988,7 @@ public class HttpTest extends HttpTestBase {
     setOptions(serverOptions, getServerTrustOptions(serverTrust));
     setOptions(serverOptions, getServerCertOptions(serverCert));
     if (requireClientAuth) {
-      serverOptions.setClientAuthRequired(true);
+      serverOptions.setClientAuth(ClientAuth.REQUIRED);
     }
     if (serverUsesCrl) {
       serverOptions.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));

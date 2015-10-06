@@ -20,6 +20,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -1085,7 +1086,7 @@ public class NetTest extends VertxTestBase {
       options.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
     }
     if (requireClientAuth) {
-      options.setClientAuthRequired(true);
+      options.setClientAuth(ClientAuth.REQUIRED);
     }
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);

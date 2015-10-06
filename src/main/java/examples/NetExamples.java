@@ -19,6 +19,7 @@ package examples;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.net.*;
 
 /**
@@ -253,7 +254,7 @@ public class NetExamples {
   public void example23(Vertx vertx) {
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
-        setClientAuthRequired(true).
+        setClientAuth(ClientAuth.REQUIRED).
         setTrustStoreOptions(
             new JksOptions().
                 setPath("/path/to/your/truststore.jks").
@@ -266,7 +267,7 @@ public class NetExamples {
     Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
-        setClientAuthRequired(true).
+        setClientAuth(ClientAuth.REQUIRED).
         setTrustStoreOptions(
             new JksOptions().
                 setValue(myTrustStoreAsABuffer).
@@ -278,7 +279,7 @@ public class NetExamples {
   public void example25(Vertx vertx) {
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
-        setClientAuthRequired(true).
+        setClientAuth(ClientAuth.REQUIRED).
         setPfxTrustOptions(
             new PfxOptions().
                 setPath("/path/to/your/truststore.pfx").
@@ -291,7 +292,7 @@ public class NetExamples {
     Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
-        setClientAuthRequired(true).
+        setClientAuth(ClientAuth.REQUIRED).
         setPfxTrustOptions(
             new PfxOptions().
                 setValue(myTrustStoreAsABuffer).
@@ -303,7 +304,7 @@ public class NetExamples {
   public void example27(Vertx vertx) {
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
-        setClientAuthRequired(true).
+        setClientAuth(ClientAuth.REQUIRED).
         setPemTrustOptions(
             new PemTrustOptions().
                 addCertPath("/path/to/your/server-ca.pem")
@@ -315,7 +316,7 @@ public class NetExamples {
     Buffer myCaAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-ca.pfx");
     NetServerOptions options = new NetServerOptions().
         setSsl(true).
-        setClientAuthRequired(true).
+        setClientAuth(ClientAuth.REQUIRED).
         setPemTrustOptions(
             new PemTrustOptions().
                 addCertValue(myCaAsABuffer)

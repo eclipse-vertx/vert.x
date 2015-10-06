@@ -18,6 +18,7 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -53,7 +54,7 @@ public class NetServerOptions extends TCPSSLOptions {
   private int port;
   private String host;
   private int acceptBacklog;
-  private boolean clientAuthRequired;
+  private ClientAuth clientAuth = ClientAuth.NONE;
 
   /**
    * Default constructor
@@ -73,7 +74,6 @@ public class NetServerOptions extends TCPSSLOptions {
     this.port = other.getPort();
     this.host = other.getHost();
     this.acceptBacklog = other.getAcceptBacklog();
-    this.clientAuthRequired = other.isClientAuthRequired();
   }
 
   /**
@@ -91,7 +91,6 @@ public class NetServerOptions extends TCPSSLOptions {
     this.port = DEFAULT_PORT;
     this.host = DEFAULT_HOST;
     this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
-    this.clientAuthRequired = DEFAULT_CLIENT_AUTH_REQUIRED;
   }
 
   @Override
@@ -264,8 +263,9 @@ public class NetServerOptions extends TCPSSLOptions {
    *
    * @return true if client auth is required
    */
+  @Deprecated
   public boolean isClientAuthRequired() {
-    return clientAuthRequired;
+    return clientAuth == ClientAuth.REQUIRED;
   }
 
   /**
@@ -274,8 +274,26 @@ public class NetServerOptions extends TCPSSLOptions {
    * @param clientAuthRequired  true if client auth is required
    * @return a reference to this, so the API can be used fluently
    */
+  @Deprecated
   public NetServerOptions setClientAuthRequired(boolean clientAuthRequired) {
-    this.clientAuthRequired = clientAuthRequired;
+    this.clientAuth = clientAuthRequired ? ClientAuth.REQUIRED : ClientAuth.NONE;
+    return this;
+  }
+
+  public ClientAuth getClientAuth() {
+    return clientAuth;
+  }
+
+  /**
+   * Set whether client auth is required
+   *
+   * @param clientAuth One of "NONE, REQUEST, REQUIRED". If it's set to "REQUIRED" then server will require the
+   *                   SSL cert to be presented otherwise it won't accept the request. If it's set to "REQUEST" then
+   *                   it won't mandate the certificate to be presented, basically make it optional.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetServerOptions setClientAuth(ClientAuth clientAuth) {
+    this.clientAuth = clientAuth;
     return this;
   }
 
@@ -288,7 +306,7 @@ public class NetServerOptions extends TCPSSLOptions {
     NetServerOptions that = (NetServerOptions) o;
 
     if (acceptBacklog != that.acceptBacklog) return false;
-    if (clientAuthRequired != that.clientAuthRequired) return false;
+    if (clientAuth != that.clientAuth) return false;
     if (port != that.port) return false;
     if (host != null ? !host.equals(that.host) : that.host != null) return false;
 
@@ -301,7 +319,7 @@ public class NetServerOptions extends TCPSSLOptions {
     result = 31 * result + port;
     result = 31 * result + (host != null ? host.hashCode() : 0);
     result = 31 * result + acceptBacklog;
-    result = 31 * result + (clientAuthRequired ? 1 : 0);
+    result = 31 * result + clientAuth.hashCode();
     return result;
   }
 }
