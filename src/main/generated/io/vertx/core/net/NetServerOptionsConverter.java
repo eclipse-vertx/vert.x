@@ -30,6 +30,9 @@ public class NetServerOptionsConverter {
     if (json.getValue("acceptBacklog") instanceof Number) {
       obj.setAcceptBacklog(((Number)json.getValue("acceptBacklog")).intValue());
     }
+    if (json.getValue("clientAuth") instanceof String) {
+      obj.setClientAuth(io.vertx.core.http.ClientAuth.valueOf((String)json.getValue("clientAuth")));
+    }
     if (json.getValue("clientAuthRequired") instanceof Boolean) {
       obj.setClientAuthRequired((Boolean)json.getValue("clientAuthRequired"));
     }
@@ -43,6 +46,9 @@ public class NetServerOptionsConverter {
 
   public static void toJson(NetServerOptions obj, JsonObject json) {
     json.put("acceptBacklog", obj.getAcceptBacklog());
+    if (obj.getClientAuth() != null) {
+      json.put("clientAuth", obj.getClientAuth().name());
+    }
     json.put("clientAuthRequired", obj.isClientAuthRequired());
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());

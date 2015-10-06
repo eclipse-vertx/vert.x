@@ -457,7 +457,7 @@ The password for the trust store should also be provided:
 ----
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
-    setClientAuthRequired(true).
+    setClientAuth(ClientAuth.REQUIRED).
     setTrustStoreOptions(
         new JksOptions().
             setPath("/path/to/your/truststore.jks").
@@ -473,7 +473,7 @@ Alternatively you can read the trust store yourself as a buffer and provide that
 Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
-    setClientAuthRequired(true).
+    setClientAuth(ClientAuth.REQUIRED).
     setTrustStoreOptions(
         new JksOptions().
             setValue(myTrustStoreAsABuffer).
@@ -489,7 +489,7 @@ extension can also be loaded in a similar fashion than JKS trust stores:
 ----
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
-    setClientAuthRequired(true).
+    setClientAuth(ClientAuth.REQUIRED).
     setPfxTrustOptions(
         new PfxOptions().
             setPath("/path/to/your/truststore.pfx").
@@ -505,7 +505,7 @@ Buffer configuration is also supported:
 Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
-    setClientAuthRequired(true).
+    setClientAuth(ClientAuth.REQUIRED).
     setPfxTrustOptions(
         new PfxOptions().
             setValue(myTrustStoreAsABuffer).
@@ -520,7 +520,7 @@ Another way of providing server certificate authority using a list `.pem` files.
 ----
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
-    setClientAuthRequired(true).
+    setClientAuth(ClientAuth.REQUIRED).
     setPemTrustOptions(
         new PemTrustOptions().
             addCertPath("/path/to/your/server-ca.pem")
@@ -535,7 +535,7 @@ Buffer configuration is also supported:
 Buffer myCaAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-ca.pfx");
 NetServerOptions options = new NetServerOptions().
     setSsl(true).
-    setClientAuthRequired(true).
+    setClientAuth(ClientAuth.REQUIRED).
     setPemTrustOptions(
         new PemTrustOptions().
             addCertValue(myCaAsABuffer)

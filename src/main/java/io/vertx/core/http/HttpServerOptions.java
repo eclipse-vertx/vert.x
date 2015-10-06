@@ -219,6 +219,20 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  @Override
+  @Deprecated
+  public HttpServerOptions setClientAuthRequired(boolean clientAuthRequired) {
+    super.setClientAuthRequired(clientAuthRequired);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions setClientAuth(ClientAuth clientAuth) {
+    super.setClientAuth(clientAuth);
+    return this;
+  }
+
+
   /**
    * @return true if the server supports compression
    */
@@ -271,19 +285,6 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public String getWebsocketSubProtocols() {
     return websocketSubProtocols;
-  }
-
-  @Override
-  @Deprecated
-  public HttpServerOptions setClientAuthRequired(boolean clientAuthRequired) {
-    super.setClientAuthRequired(clientAuthRequired);
-    return this;
-  }
-
-  @Override
-  public HttpServerOptions setClientAuth(ClientAuth clientAuth) {
-    super.setClientAuth(clientAuth);
-    return this;
   }
 
   /**

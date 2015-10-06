@@ -524,6 +524,10 @@ Sets whether or not this option can receive a value.
 +++
 Set the accept back log
 +++
+|[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|
++++
+Set whether client auth is required
++++
 |[[clientAuthRequired]]`clientAuthRequired`|`Boolean`|
 +++
 Set whether client auth is required
@@ -881,6 +885,10 @@ Set the key a a buffer
 |[[acceptBacklog]]`acceptBacklog`|`Number (int)`|
 +++
 Set the accept back log
++++
+|[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|
++++
+Set whether client auth is required
 +++
 |[[clientAuthRequired]]`clientAuthRequired`|`Boolean`|
 +++

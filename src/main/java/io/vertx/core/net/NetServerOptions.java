@@ -47,14 +47,14 @@ public class NetServerOptions extends TCPSSLOptions {
   public static final int DEFAULT_ACCEPT_BACKLOG = -1;
 
   /**
-   * Default value of whether client auth is required (SSL/TLS) = false
+   * Default value of whether client auth is required (SSL/TLS) = No
    */
-  public static final boolean DEFAULT_CLIENT_AUTH_REQUIRED = false;
+  public static final ClientAuth DEFAULT_CLIENT_AUTH = ClientAuth.NONE;
 
   private int port;
   private String host;
   private int acceptBacklog;
-  private ClientAuth clientAuth = ClientAuth.NONE;
+  private ClientAuth clientAuth = DEFAULT_CLIENT_AUTH;
 
   /**
    * Default constructor
@@ -74,6 +74,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.port = other.getPort();
     this.host = other.getHost();
     this.acceptBacklog = other.getAcceptBacklog();
+    this.clientAuth = other.getClientAuth();
   }
 
   /**
@@ -85,12 +86,6 @@ public class NetServerOptions extends TCPSSLOptions {
     super(json);
     init();
     NetServerOptionsConverter.fromJson(json, this);
-  }
-
-  private void init() {
-    this.port = DEFAULT_PORT;
-    this.host = DEFAULT_HOST;
-    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
   }
 
   @Override
@@ -322,4 +317,12 @@ public class NetServerOptions extends TCPSSLOptions {
     result = 31 * result + clientAuth.hashCode();
     return result;
   }
+
+  private void init() {
+    this.port = DEFAULT_PORT;
+    this.host = DEFAULT_HOST;
+    this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
+    this.clientAuth = DEFAULT_CLIENT_AUTH;
+  }
+
 }
