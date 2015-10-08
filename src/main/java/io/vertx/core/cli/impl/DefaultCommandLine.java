@@ -35,6 +35,7 @@ public class DefaultCommandLine implements CommandLine {
   protected Map<Option, List<String>> optionValues = new HashMap<>();
   protected List<Option> optionsSeenInCommandLine = new ArrayList<>();
   protected Map<Argument, List<String>> argumentValues = new HashMap<>();
+  protected boolean valid;
 
   public DefaultCommandLine(CLI cli) {
     this.cli = cli;
@@ -215,7 +216,7 @@ public class DefaultCommandLine implements CommandLine {
   @Override
   public String getRawValueForArgument(Argument arg) {
     List values = argumentValues.get(arg);
-    if (values == null  || values.isEmpty()) {
+    if (values == null || values.isEmpty()) {
       return arg.getDefaultValue();
     }
     return values.get(0).toString();
@@ -341,5 +342,25 @@ public class DefaultCommandLine implements CommandLine {
     }
     final String[] segments = raw.split(option.getListSeparator());
     return Arrays.stream(segments).map(s -> create(s.trim(), option)).collect(Collectors.toList());
+  }
+
+  /**
+   * Checks whether or not the command line is valid, i.e. all constraints from arguments and options have been
+   * satisfied. This method is used when the parser validation is disabled.
+   *
+   * @return {@code true} if the current {@link CommandLine} object is valid. {@link false} otherwise.
+   */
+  @Override
+  public boolean isValid() {
+    return valid;
+  }
+
+  /**
+   * Sets whether or not the {@link CommandLine} is valid.
+   *
+   * @param validity {@code true} if the command line is valid.
+   */
+  void setValidity(boolean validity) {
+    this.valid = validity;
   }
 }

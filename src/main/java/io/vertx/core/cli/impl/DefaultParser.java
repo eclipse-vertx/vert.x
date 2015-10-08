@@ -120,8 +120,7 @@ public class DefaultParser {
       cla.forEach(this::visit);
     }
 
-
-    if (validate) {
+    try {
       // check the values of the last option
       checkRequiredValues();
 
@@ -130,6 +129,13 @@ public class DefaultParser {
 
       // Call global validation.
       validate();
+      commandLine.setValidity(true);
+    } catch (CLIException e) {
+      if (validate) {
+        throw  e;
+      } else {
+        commandLine.setValidity(false);
+      }
     }
 
     return commandLine;

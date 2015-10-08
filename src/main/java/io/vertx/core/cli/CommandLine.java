@@ -86,7 +86,7 @@ public interface CommandLine {
    * @param name the name
    * @param <T>  the expected component type
    * @return the values, {@code null} if not set
-   * @see #getRawValuesForArgument(Option)
+   * @see #getRawValuesForOption(Option)
    */
   @GenIgnore
   <T> List<T> getOptionValues(String name);
@@ -95,7 +95,7 @@ public interface CommandLine {
    * Gets the values of an argument with the matching index.
    *
    * @param index the index
-   * @param <T>  the expected component type
+   * @param <T>   the expected component type
    * @return the values, {@code null} if not set
    * @see #getArgumentValue(int)
    * @see #getRawValueForArgument(Argument)
@@ -182,10 +182,18 @@ public interface CommandLine {
   boolean isArgumentAssigned(Argument arg);
 
   /**
-   * check whether or not the given option has been seen in the user command line.
+   * Checks whether or not the given option has been seen in the user command line.
    *
    * @param option the option
    * @return {@code true} if the user command line has used the option
    */
   boolean isSeenInCommandLine(Option option);
+
+  /**
+   * Checks whether or not the command line is valid, i.e. all constraints from arguments and options have been
+   * satisfied. This method is used when the parser validation is disabled.
+   *
+   * @return {@code true} if the current {@link CommandLine} object is valid. {@link false} otherwise.
+   */
+  boolean isValid();
 }
