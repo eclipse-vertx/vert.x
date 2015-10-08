@@ -86,10 +86,22 @@ public interface CommandLine {
    * @param name the name
    * @param <T>  the expected component type
    * @return the values, {@code null} if not set
-   * @see #getRawValues(Option)
+   * @see #getRawValuesForArgument(Option)
    */
   @GenIgnore
   <T> List<T> getOptionValues(String name);
+
+  /**
+   * Gets the values of an argument with the matching index.
+   *
+   * @param index the index
+   * @param <T>  the expected component type
+   * @return the values, {@code null} if not set
+   * @see #getArgumentValue(int)
+   * @see #getRawValueForArgument(Argument)
+   */
+  @GenIgnore
+  <T> List<T> getArgumentValues(int index);
 
   /**
    * Gets the value of an option marked as a flag.
@@ -114,8 +126,28 @@ public interface CommandLine {
    *
    * @param option the option
    * @return the list of values, empty if none
+   * @deprecated use {@link #getRawValuesForOption(Option)}
    */
-  List<String> getRawValues(Option option);
+  @Deprecated
+  default List<String> getRawValues(Option option) {
+    return getRawValuesForOption(option);
+  }
+
+  /**
+   * Gets the raw values of the given option. Raw values are simple "String", not converted to the option type.
+   *
+   * @param option the option
+   * @return the list of values, empty if none
+   */
+  List<String> getRawValuesForOption(Option option);
+
+  /**
+   * Gets the raw values of the given argument. Raw values are simple "String", not converted to the argument type.
+   *
+   * @param argument the argument
+   * @return the list of values, empty if none
+   */
+  List<String> getRawValuesForArgument(Argument argument);
 
   /**
    * Gets the raw value of the given option. Raw values are the values as given in the user command line.
@@ -156,5 +188,4 @@ public interface CommandLine {
    * @return {@code true} if the user command line has used the option
    */
   boolean isSeenInCommandLine(Option option);
-
 }

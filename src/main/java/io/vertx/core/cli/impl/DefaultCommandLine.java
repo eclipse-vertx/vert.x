@@ -34,7 +34,7 @@ public class DefaultCommandLine implements CommandLine {
   protected List<String> allArgs = new ArrayList<>();
   protected Map<Option, List<String>> optionValues = new HashMap<>();
   protected List<Option> optionsSeenInCommandLine = new ArrayList<>();
-  protected Map<Argument, Object> argumentValues = new HashMap<>();
+  protected Map<Argument, List<String>> argumentValues = new HashMap<>();
 
   public DefaultCommandLine(CLI cli) {
     this.cli = cli;
@@ -107,11 +107,35 @@ public class DefaultCommandLine implements CommandLine {
       if (typed.isParsedAsList()) {
         return createFromList(getRawValueForOption(option), typed);
       } else {
-        return getRawValues(option).stream().map(s -> create(s, typed))
+        return getRawValuesForOption(option).stream().map(s -> create(s, typed))
             .collect(Collectors.toList());
       }
     } else {
-      return (List<T>) getRawValues(option);
+      return (List<T>) getRawValuesForOption(option);
+    }
+  }
+
+  /**
+   * Gets the values of an argument with the matching index.
+   *
+   * @param index the index
+   * @return the values, {@code null} if not set
+   * @see #getArgumentValue(int)
+   * @see #getRawValueForArgument(Argument)
+   */
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> List<T> getArgumentValues(int index) {
+    Argument argument = cli.getArgument(index);
+    if (argument == null) {
+      return null;
+    }
+    if (argument instanceof TypedArgument) {
+      TypedArgument<T> typed = (TypedArgument<T>) argument;
+      return getRawValuesForArgument(typed).stream().map(s -> create(s, typed))
+          .collect(Collectors.toList());
+    } else {
+      return (List<T>) getRawValuesForArgument(argument);
     }
   }
 
@@ -140,12 +164,21 @@ public class DefaultCommandLine implements CommandLine {
 
   @Override
   public boolean isOptionAssigned(Option option) {
-    return !getRawValues(option).isEmpty();
+    return !getRawValuesForOption(option).isEmpty();
   }
 
   @Override
-  public List<String> getRawValues(Option option) {
+  public List<String> getRawValuesForOption(Option option) {
     List<?> list = optionValues.get(option);
+    if (list != null) {
+      return list.stream().map(Object::toString).collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<String> getRawValuesForArgument(Argument argument) {
+    List<?> list = argumentValues.get(argument);
     if (list != null) {
       return list.stream().map(Object::toString).collect(Collectors.toList());
     }
@@ -169,7 +202,7 @@ public class DefaultCommandLine implements CommandLine {
   @Override
   public String getRawValueForOption(Option option) {
     if (isOptionAssigned(option)) {
-      return getRawValues(option).get(0);
+      return getRawValuesForOption(option).get(0);
     }
     return option.getDefaultValue();
   }
@@ -181,15 +214,20 @@ public class DefaultCommandLine implements CommandLine {
 
   @Override
   public String getRawValueForArgument(Argument arg) {
-    Object v = argumentValues.get(arg);
-    if (v == null) {
+    List values = argumentValues.get(arg);
+    if (values == null  || values.isEmpty()) {
       return arg.getDefaultValue();
     }
-    return v.toString();
+    return values.get(0).toString();
   }
 
   public DefaultCommandLine setRawValue(Argument arg, String rawValue) {
-    argumentValues.put(arg, rawValue);
+    List<String> list = argumentValues.get(arg);
+    if (list == null) {
+      list = new ArrayList<>();
+      argumentValues.put(arg, list);
+    }
+    list.add(rawValue);
     return this;
   }
 

@@ -17,6 +17,7 @@
 package io.vertx.core.cli.impl;
 
 import io.vertx.core.cli.*;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -457,6 +458,119 @@ public class DefaultParserTest {
     assertThat((boolean) evaluated.getOptionValue("d")).isTrue();
     assertThat((boolean) evaluated.getOptionValue("e")).isTrue();
     assertThat((boolean) evaluated.getOptionValue("f")).isTrue();
+  }
+
+  @Test(expected = CLIException.class)
+  public void testThatNonUniqueArgumentIndexAreDetected() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument().setIndex(0));
+    cli.addArgument(new Argument().setIndex(1));
+    cli.addArgument(new Argument().setIndex(1)); // conflict
+
+    cli.parse( Arrays.asList("a", "b", "c"));
+  }
+
+  @Test(expected = CLIException.class)
+  public void testThatOnlyTheLastArgumentCanBeMultivalued() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument().setIndex(0));
+    cli.addArgument(new Argument().setIndex(1).setMultiValued(true));
+    cli.addArgument(new Argument().setIndex(2));
+
+    cli.parse( Arrays.asList("a", "b", "c", "d"));
+  }
+
+  @Test(expected = CLIException.class)
+  public void testThatOnlyOneArgumentCanBeMultivalued() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument().setIndex(0));
+    cli.addArgument(new Argument().setIndex(1).setMultiValued(true));
+    cli.addArgument(new Argument().setIndex(2).setMultiValued(true));
+
+    cli.parse( Arrays.asList("a", "b", "c", "d"));
+  }
+
+  @Test
+  public void testWhenThereAreNoDeclaredArguments() {
+    CLI cli = new DefaultCLI().setName("test");
+    CommandLine cl = cli.parse( Arrays.asList("a", "b", "c"));
+    assertThat(cl.allArguments()).containsExactly("a", "b", "c");
+  }
+
+  @Test
+  public void testWithArgumentReceivingMultipleValues() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument().setIndex(0).setArgName("arg").setDescription("argument1"));
+    cli.addArgument(new Argument().setIndex(1).setMultiValued(true).setArgName("m").setDescription("multiple arg"));
+    CommandLine cl = cli.parse( Arrays.asList("a", "b", "c"));
+    assertThat((String) cl.getArgumentValue(0)).isEqualTo("a");
+    assertThat(cl.getArgumentValues(1)).containsExactly("b", "c");
+    assertThat((String) cl.getArgumentValue(1)).isEqualTo("b");
+
+    StringBuilder builder = new StringBuilder();
+    cli.usage(builder);
+
+    assertThat(builder).contains("test arg m...");
+  }
+
+  @Test
+  public void testWithMultipleArgumentReceivingSingleValues() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument().setIndex(0));
+    cli.addArgument(new Argument().setIndex(1).setMultiValued(true));
+    CommandLine cl = cli.parse( Arrays.asList("a", "b"));
+    assertThat((String) cl.getArgumentValue(0)).isEqualTo("a");
+    assertThat(cl.getArgumentValues(1)).containsExactly("b");
+    assertThat((String) cl.getArgumentValue(1)).isEqualTo("b");
+  }
+
+  @Test
+  public void testWithMultipleRequiredArgument() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument().setIndex(0));
+    cli.addArgument(new Argument().setIndex(1).setMultiValued(true).setRequired(true));
+    CommandLine cl = cli.parse( Arrays.asList("a", "b", "c"));
+    assertThat((String) cl.getArgumentValue(0)).isEqualTo("a");
+    assertThat(cl.getArgumentValues(1)).containsExactly("b", "c");
+    assertThat((String) cl.getArgumentValue(1)).isEqualTo("b");
+
+    cl = cli.parse( Arrays.asList("a", "b"));
+    assertThat((String) cl.getArgumentValue(0)).isEqualTo("a");
+    assertThat(cl.getArgumentValues(1)).containsExactly("b");
+    assertThat((String) cl.getArgumentValue(1)).isEqualTo("b");
+
+    try {
+      cli.parse(Collections.singletonList("a"));
+      Assert.fail("required argument not fultilled");
+    } catch (MissingValueException e) {
+      // OK.
+    }
+  }
+
+  @Test
+  public void testThatArgumentIndexCanBeGenerated() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument());
+    cli.addArgument(new Argument());
+    cli.addArgument(new Argument().setMultiValued(true));
+
+    CommandLine line = cli.parse(Arrays.asList("a", "b", "c", "d"));
+    assertThat((String) line.getArgumentValue(0)).isEqualToIgnoringCase("a");
+    assertThat((String) line.getArgumentValue(1)).isEqualToIgnoringCase("b");
+    assertThat(line.getArgumentValues(2)).containsExactly("c", "d");
+  }
+
+  @Test
+  public void testThatArgumentIndexCanBeGeneratedWithPartiallyNumberedArguments() {
+    CLI cli = new DefaultCLI().setName("test");
+    cli.addArgument(new Argument());
+    cli.addArgument(new Argument().setIndex(1));
+    cli.addArgument(new Argument().setMultiValued(true));
+
+    CommandLine line = cli.parse(Arrays.asList("a", "b", "c", "d"));
+    assertThat((String) line.getArgumentValue(0)).isEqualToIgnoringCase("a");
+    assertThat((String) line.getArgumentValue(1)).isEqualToIgnoringCase("b");
+    assertThat(line.getArgumentValues(2)).containsExactly("c", "d");
   }
 
 }

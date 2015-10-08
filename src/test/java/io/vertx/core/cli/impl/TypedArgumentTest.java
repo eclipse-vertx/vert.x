@@ -100,12 +100,11 @@ public class TypedArgumentTest {
     cli.addArgument(new TypedArgument<String>().setIndex(2).setArgName("3").setType(String.class));
 
     assertThat(cli.getArguments()).hasSize(3);
+    evaluated = cli.parse(Arrays.asList("a", "b", "c"));
     Iterator<Argument> iterator = cli.getArguments().iterator();
     assertThat(iterator.next().getArgName()).isEqualTo("2");
     assertThat(iterator.next().getArgName()).isEqualTo("1");
     assertThat(iterator.next().getArgName()).isEqualTo("3");
-
-    evaluated = cli.parse(Arrays.asList("a", "b", "c"));
 
     assertThat((String) evaluated.getArgumentValue("2")).isEqualTo("a");
     assertThat((String) evaluated.getArgumentValue("1")).isEqualTo("b");

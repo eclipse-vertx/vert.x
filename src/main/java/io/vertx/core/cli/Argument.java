@@ -38,8 +38,9 @@ public class Argument {
 
   /**
    * The argument index. Must be positive or null.
+   * It is set fo -1 by default to check that the index was set.
    */
-  protected int index;
+  protected int index = -1;
 
   /**
    * The argument name used in the usage.
@@ -67,6 +68,11 @@ public class Argument {
   protected String defaultValue;
 
   /**
+   * Whether or not this argument can receive multiple value. Only the last argument can receive multiple values.
+   */
+  protected boolean multiValued = false;
+
+  /**
    * Creates a new empty instance of {@link Argument}.
    */
   public Argument() {
@@ -86,6 +92,7 @@ public class Argument {
     hidden = other.hidden;
     required = other.required;
     defaultValue = other.defaultValue;
+    multiValued = other.multiValued;
   }
 
   /**
@@ -225,6 +232,24 @@ public class Argument {
   }
 
   /**
+   * @return whether or not the argument can receive several values.
+   */
+  public boolean isMultiValued() {
+    return multiValued;
+  }
+
+  /**
+   * Sets whether or not the argument can receive several values. Only the last argument can receive several values.
+   *
+   * @param multiValued {@code true} to mark this argument as multi-valued.
+   * @return the current {@link Argument} instance
+   */
+  public Argument setMultiValued(boolean multiValued) {
+    this.multiValued = multiValued;
+    return this;
+  }
+
+  /**
    * Checks that the argument configuration is valid. This method is mainly made for children classes adding
    * constraint to the configuration. The parser verifies that arguments are valid before starting
    * the parsing.
@@ -232,7 +257,9 @@ public class Argument {
    * If the configuration is not valid, this method throws a {@link IllegalArgumentException}.
    */
   public void ensureValidity() {
-
+    if (index < 0) {
+      throw new IllegalArgumentException("The index cannot be negative");
+    }
   }
 
 }

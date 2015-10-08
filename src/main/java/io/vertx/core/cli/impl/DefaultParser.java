@@ -89,6 +89,25 @@ public class DefaultParser {
     skipParsing = false;
     this.cli = cli;
 
+    // Automatic numbering of argument if not set
+    int current = 0;
+    for (Argument argument : cli.getArguments()) {
+      if (argument.getIndex() == -1) {
+        argument.setIndex(current);
+        current++;
+      } else {
+        current = argument.getIndex() + 1;
+      }
+    }
+
+    // Sort the argument by index.
+    cli.getArguments().sort((o1, o2) -> {
+      if (o1.getIndex() == o2.getIndex()) {
+        return 1;
+      }
+      return Integer.valueOf(o1.getIndex()).compareTo(o2.getIndex());
+    });
+
     // Check argument and option validity
     cli.getOptions().stream().forEach(Option::ensureValidity);
     cli.getArguments().stream().forEach(Argument::ensureValidity);
@@ -98,9 +117,7 @@ public class DefaultParser {
     expectedOpts = getRequiredOptions();
 
     if (cla != null) {
-      for (String arg : cla) {
-        visit(arg);
-      }
+      cla.forEach(this::visit);
     }
 
 
@@ -119,23 +136,45 @@ public class DefaultParser {
   }
 
   protected void validate() throws CLIException {
+
+
+    // Check that only the last argument is multi-values and that index are unique
+    boolean multiValue = false;
+    List<Integer> usedIndexes = new ArrayList<>();
+    for (Argument argument : cli.getArguments()) {
+      if (usedIndexes.contains(argument.getIndex())) {
+        throw new CLIException("Only one argument can use the index " + argument.getIndex());
+      }
+      usedIndexes.add(argument.getIndex());
+      if (multiValue) {
+        throw new CLIException("Only the last argument can be multi-valued");
+      }
+      multiValue = argument.isMultiValued();
+    }
+
     // Add value to the specified arguments
     Iterator<Argument> iterator = cli.getArguments().iterator();
-    // No more defined arguments, just ignore them.
-    commandLine.allArguments().stream().filter(value -> iterator.hasNext()).forEach(value -> {
-      Argument model = iterator.next();
-      commandLine.setRawValue(model, value);
-    });
+    Argument current = null;
+    if (iterator.hasNext()) {
+      current = iterator.next();
+    }
+    for (String v : commandLine.allArguments()) {
+      if (current != null) {
+        commandLine.setRawValue(current, v);
+        if (!current.isMultiValued()) {
+          if (iterator.hasNext()) {
+            current = iterator.next();
+          } else {
+            current = null;
+          }
+        }
+      }
+    }
 
-    List<Integer> usedIndexes = new ArrayList<>();
     for (Argument arg : cli.getArguments()) {
       if (arg.isRequired() && !commandLine.isArgumentAssigned(arg)) {
         throw new MissingValueException(arg);
       }
-      if (usedIndexes.contains(arg.getIndex())) {
-        throw new CLIException("Only one argument can use the index " + arg.getIndex());
-      }
-      usedIndexes.add(arg.getIndex());
     }
   }
 

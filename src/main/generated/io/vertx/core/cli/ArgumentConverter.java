@@ -42,6 +42,9 @@ public class ArgumentConverter {
     if (json.getValue("index") instanceof Number) {
       obj.setIndex(((Number)json.getValue("index")).intValue());
     }
+    if (json.getValue("multiValued") instanceof Boolean) {
+      obj.setMultiValued((Boolean)json.getValue("multiValued"));
+    }
     if (json.getValue("required") instanceof Boolean) {
       obj.setRequired((Boolean)json.getValue("required"));
     }
@@ -59,6 +62,7 @@ public class ArgumentConverter {
     }
     json.put("hidden", obj.isHidden());
     json.put("index", obj.getIndex());
+    json.put("multiValued", obj.isMultiValued());
     json.put("required", obj.isRequired());
   }
 }

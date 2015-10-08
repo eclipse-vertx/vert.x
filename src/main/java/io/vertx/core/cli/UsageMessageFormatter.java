@@ -242,6 +242,10 @@ public class UsageMessageFormatter {
 
     buff.append(argument.getArgName());
 
+    if (argument.isMultiValued()) {
+      buff.append("...");
+    }
+
     // if the Option is not a required option
     if (!required) {
       buff.append("]");
