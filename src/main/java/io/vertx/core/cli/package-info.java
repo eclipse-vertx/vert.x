@@ -150,6 +150,9 @@
  * validation by passing `false` as second parameter of {@link io.vertx.core.cli.CLI#parse(java.util.List, boolean)}.
  * This is useful if you want to check an argument or option is present even if the parsed command line is invalid.
  *
+ * You can check whether or not the
+ * {@link io.vertx.core.cli.CommandLine} is valid using {@link io.vertx.core.cli.CommandLine#isValid()}.
+ *
  * === Query / Interrogation Stage
  *
  * Once parsed, you can retrieve the values of the options and arguments from the
@@ -159,6 +162,14 @@
  * [source,$lang]
  * ----
  * {@link examples.cli.CLIExamples#example8}
+ * ----
+ *
+ * One of your option can have been marked as "help". If a user command line enabled a "help" option, the validation
+ * won't failed, but give you the opportunity to check if the user asks for help:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.cli.CLIExamples#example9}
  * ----
  *
  * [language,java]

@@ -91,6 +91,7 @@ public class CLIConfigurator {
         .setSingleValued(option.acceptValue())
         .setArgName(option.argName())
         .setFlag(option.flag())
+        .setHelp(option.help())
         .setRequired(option.required());
 
     // Description

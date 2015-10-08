@@ -21,6 +21,8 @@ import io.vertx.core.cli.CLI;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.Option;
 
+import java.io.PrintStream;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -116,5 +118,22 @@ public class CLIExamples {
     String opt = commandLine.getOptionValue("my-option");
     boolean flag = commandLine.isFlagEnabled("my-flag");
     String arg0 = commandLine.getArgumentValue(0);
+  }
+
+  public void example9(PrintStream stream) {
+    CLI cli = CLI.create("test")
+        .addOption(
+            new Option().setLongName("help").setShortName("h").setFlag(true).setHelp(true))
+        .addOption(
+            new Option().setLongName("mandatory").setRequired(true));
+
+    CommandLine line = cli.parse(Collections.singletonList("-h"));
+
+    // The parsing does not fail and let you do:
+    if (!line.isValid() && line.isAskingForHelp()) {
+      StringBuilder builder = new StringBuilder();
+      cli.usage(builder);
+      stream.print(builder.toString());
+    }
   }
 }

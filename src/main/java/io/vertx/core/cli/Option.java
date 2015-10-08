@@ -95,6 +95,13 @@ public class Option {
   protected boolean flag;
 
   /**
+   * whether or not the option is a "help" option. Is the user execute the command line enabling a help option, the
+   * command line validation won't fail, and give the command the opportunity to display the usage message, instead
+   * of throwing an exception during the parsing.
+   */
+  protected boolean help;
+
+  /**
    * Creates a new empty instance of {@link Option}.
    */
   public Option() {
@@ -117,6 +124,7 @@ public class Option {
     this.multiValued = other.multiValued;
     this.defaultValue = other.defaultValue;
     this.flag = other.flag;
+    this.help = other.help;
   }
 
   /**
@@ -368,4 +376,23 @@ public class Option {
     return this;
   }
 
+  /**
+   * Checks whether or not this option is a "Help" option.
+   *
+   * @return {@code true} if this option is a "help" option.
+   */
+  public boolean isHelp() {
+    return help;
+  }
+
+  /**
+   * Sets whether or not this option is a "help" option
+   *
+   * @param help {@code true} to set this option as a "Help" option
+   * @return the current {@link Option}
+   */
+  public Option setHelp(boolean help) {
+    this.help = help;
+    return this;
+  }
 }

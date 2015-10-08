@@ -196,4 +196,11 @@ public interface CommandLine {
    * @return {@code true} if the current {@link CommandLine} object is valid. {@link false} otherwise.
    */
   boolean isValid();
+
+  /**
+   * Checks whether or not the user has passed a "help" option and is asking for help.
+   *
+   * @return {@code true} if the user command line has enabled a "Help" option, {@link false} otherwise.
+   */
+  boolean isAskingForHelp();
 }

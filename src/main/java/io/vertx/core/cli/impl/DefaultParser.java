@@ -131,7 +131,7 @@ public class DefaultParser {
       validate();
       commandLine.setValidity(true);
     } catch (CLIException e) {
-      if (validate) {
+      if (validate  && ! commandLine.isAskingForHelp()) {
         throw  e;
       } else {
         commandLine.setValidity(false);

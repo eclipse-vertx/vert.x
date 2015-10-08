@@ -363,4 +363,19 @@ public class DefaultCommandLine implements CommandLine {
   void setValidity(boolean validity) {
     this.valid = validity;
   }
+
+  /**
+   * Checks whether or not the user has passed a "help" option and is asking for help.
+   *
+   * @return {@code true} if the user command line has enabled a "Help" option, {@link false} otherwise.
+   */
+  @Override
+  public boolean isAskingForHelp() {
+    for (Option option : cli.getOptions()) {
+      if (option.isHelp() && isSeenInCommandLine(option)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
