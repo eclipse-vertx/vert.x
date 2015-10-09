@@ -55,6 +55,8 @@
  *
  * For booleans, the boolean values are evaluated to {@code true}: `on`, `yes`, `1`, `true`.
  *
+ * If one of your option as an `enum` as type, it computes the set of choices automatically.
+ *
  * === Using annotations
  *
  * You can also define your CLI using annotations. Definition is done using annotation on the class and on _setter_
@@ -94,6 +96,7 @@
  * ----
  * {@link examples.cli.TypedCLIExamples#example4}
  * ----
+ *
  */
 @Document(fileName = "cli-for-java.adoc")
 package io.vertx.core.cli.annotations;

@@ -191,6 +191,9 @@ public class DefaultCommandLine implements CommandLine {
       throw new CLIException("The option " + option.getName() + " does not accept value or has " +
           "already been set");
     }
+    if (! option.getChoices().isEmpty()  && ! option.getChoices().contains(value)) {
+      throw new InvalidValueException(option, value);
+    }
     List<String> list = optionValues.get(option);
     if (list == null) {
       list = new ArrayList<>();

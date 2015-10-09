@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -193,16 +194,15 @@ public class UsageMessageFormatter {
   /**
    * Appends the usage clause for an Option to a StringBuilder.
    *
-   * @param buff     the StringBuilder to append to
-   * @param option   the Option to append
-   * @param required whether the Option is required or not
+   * @param buff   the StringBuilder to append to
+   * @param option the Option to append
    */
-  private void appendOption(StringBuilder buff, Option option, boolean required) {
+  private void appendOption(StringBuilder buff, Option option) {
     if (option.isHidden()) {
       return;
     }
 
-    if (!required) {
+    if (!option.isRequired()) {
       buff.append("[");
     }
 
@@ -212,14 +212,19 @@ public class UsageMessageFormatter {
       buff.append("--").append(option.getLongName());
     }
 
-    // if the Option accepts values and a non blank argname
-    if (option.acceptValue() && (option.getArgName() == null || option.getArgName().length() != 0)) {
+    if (!option.getChoices().isEmpty()) {
       buff.append(isNullOrEmpty(option.getShortName()) ? getLongOptionSeparator() : " ");
-      buff.append("<").append(option.getArgName() != null ? option.getArgName() : getArgName()).append(">");
+      buff.append(option.getChoices().stream().collect(Collectors.joining(", ", "{", "}")));
+    } else {
+      // if the Option accepts values and a non blank argname
+      if (option.acceptValue() && (option.getArgName() == null || option.getArgName().length() != 0)) {
+        buff.append(isNullOrEmpty(option.getShortName()) ? getLongOptionSeparator() : " ");
+        buff.append("<").append(option.getArgName() != null ? option.getArgName() : getArgName()).append(">");
+      }
     }
 
     // if the Option is not a required option
-    if (!required) {
+    if (!option.isRequired()) {
       buff.append("]");
     }
   }
@@ -308,7 +313,7 @@ public class UsageMessageFormatter {
 
     // iterate over the options
     for (Option option : cli.getOptions()) {
-      appendOption(buff, option, option.isRequired());
+      appendOption(buff, option);
       buff.append(" ");
     }
 
@@ -447,7 +452,10 @@ public class UsageMessageFormatter {
         }
       }
 
-      if (option.acceptValue()) {
+      if (!option.getChoices().isEmpty()) {
+        buf.append(!isNullOrEmpty(option.getLongName()) ? longOptSeparator : " ");
+        buf.append(option.getChoices().stream().collect(Collectors.joining(", ", "{", "}")));
+      } else if (option.acceptValue()) {
         String argName = option.getArgName();
         if (argName != null && argName.length() == 0) {
           // if the option has a blank argname

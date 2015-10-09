@@ -20,6 +20,8 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Models command line options. Options are values passed to a command line interface using -x or --x. Supported
@@ -102,6 +104,12 @@ public class Option {
   protected boolean help;
 
   /**
+   * if the option value has to be in a definited set, this field represents the set of values. Value are sorted
+   * alphabetically.
+   */
+  protected Set<String> choices = new TreeSet<>();
+
+  /**
    * Creates a new empty instance of {@link Option}.
    */
   public Option() {
@@ -125,6 +133,7 @@ public class Option {
     this.defaultValue = other.defaultValue;
     this.flag = other.flag;
     this.help = other.help;
+    this.choices = other.choices;
   }
 
   /**
@@ -393,6 +402,37 @@ public class Option {
    */
   public Option setHelp(boolean help) {
     this.help = help;
+    return this;
+  }
+
+  /**
+   * @return get the list of choices for the given option. Empty if this option does not define choices.
+   */
+  public Set<String> getChoices() {
+    return choices;
+  }
+
+  /**
+   * Sets the list of values accepted by this option. If the value set by the user does not match once of these
+   * values, a {@link InvalidValueException} exception is thrown.
+   *
+   * @param choices the choices
+   * @return the current {@link Option}
+   */
+  public Option setChoices(Set<String> choices) {
+    this.choices = choices;
+    return this;
+  }
+
+  /**
+   * Adds a choice to the list of values accepted by this option. If the value set by the user does not match once of these
+   * values, a {@link InvalidValueException} exception is thrown.
+   *
+   * @param choice the choice
+   * @return the current {@link Option}
+   */
+  public Option addChoice(String choice) {
+    this.choices.add(choice);
     return this;
   }
 }

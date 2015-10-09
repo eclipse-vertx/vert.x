@@ -30,6 +30,12 @@ public class OptionConverter {
     if (json.getValue("argName") instanceof String) {
       obj.setArgName((String)json.getValue("argName"));
     }
+    if (json.getValue("choices") instanceof JsonArray) {
+      json.getJsonArray("choices").forEach(item -> {
+        if (item instanceof String)
+          obj.addChoice((String)item);
+      });
+    }
     if (json.getValue("defaultValue") instanceof String) {
       obj.setDefaultValue((String)json.getValue("defaultValue"));
     }

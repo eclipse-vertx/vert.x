@@ -76,6 +76,15 @@ public class CLIExamples {
             .setDescription("an optional option with a default value"));
   }
 
+  public void example41() {
+    CLI cli = CLI.create("some-name")
+        .addOption(new Option()
+            .setLongName("color")
+            .setDefaultValue("green")
+            .addChoice("blue").addChoice("red").addChoice("green")
+            .setDescription("a color"));
+  }
+
   public void example5() {
     CLI cli = CLI.create("some-name")
         .addArgument(new Argument()
@@ -84,6 +93,18 @@ public class CLIExamples {
             .setArgName("arg1"))
         .addArgument(new Argument()
             .setIndex(1)
+            .setDescription("the second argument")
+            .setArgName("arg2"));
+  }
+
+  public void example51() {
+    CLI cli = CLI.create("some-name")
+        // will have the index 0
+        .addArgument(new Argument()
+            .setDescription("the first argument")
+            .setArgName("arg1"))
+        // will have the index 1
+        .addArgument(new Argument()
             .setDescription("the second argument")
             .setArgName("arg2"));
   }

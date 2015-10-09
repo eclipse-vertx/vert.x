@@ -87,6 +87,13 @@
  * An option can be _hidden_ using the {@link io.vertx.core.cli.Option#setHidden(boolean)} method. Hidden option are
  * not listed in the usage, but can still be used in the user command line (for power-users).
  *
+ * If the option value is contrained to a fixed set, you can set the different acceptable choices:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.cli.CLIExamples#example41}
+ * ----
+ *
  * Options can also be instantiated from their JSON form.
  *
  * ==== Arguments
@@ -94,12 +101,19 @@
  * Unlike options, arguments do not have a _key_ and are identified by their _index_. For example, in
  * `java com.acme.Foo`, `com.acme.Foo` is an argument.
  *
- * Arguments do not have a name, there are identified using a mandatory 0-based index. The first parameter has the
+ * Arguments do not have a name, there are identified using a 0-based index. The first parameter has the
  * index `0`:
  *
  * [source,$lang]
  * ----
  * {@link examples.cli.CLIExamples#example5}
+ * ----
+ *
+ * If you don't set the argument indexes, it computes it automatically by using the declaration order.
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.cli.CLIExamples#example51}
  * ----
  *
  * The `argName` is optional and used in the usage message.
@@ -109,6 +123,8 @@
  * * be hidden using {@link io.vertx.core.cli.Argument#setHidden(boolean)}
  * * be mandatory using {@link io.vertx.core.cli.Argument#setRequired(boolean)}
  * * have a default value using {@link io.vertx.core.cli.Argument#setDefaultValue(java.lang.String)}
+ * * receive several values using {@link io.vertx.core.cli.Argument#setMultiValued(boolean)} - only the last argument
+ * can be multi-valued.
  *
  * Arguments can also be instantiated from their JSON form.
  *

@@ -80,4 +80,9 @@ public @interface Option {
    * Whether or not this option is a "Help" option. Help options are generally flag.
    */
   boolean help() default false;
+
+  /**
+   * The set of choices accepted as values by this option. No need to call this methods for enums.
+   */
+  String[] choices() default {};
 }
