@@ -284,6 +284,7 @@ public class UsageMessageFormatter {
       buildWrapped(builder, "\n" + cli.getDescription());
     }
     builder.append("\n");
+    builder.append("Options:\n");
     computeOptionsAndArguments(builder, cli.getOptions(), cli.getArguments());
   }
 
