@@ -154,12 +154,20 @@ public class CLIConfigurator {
       arg.setDescription(description.value());
     }
 
+    if (ReflectionUtils.isMultiple(method)) {
+      arg
+          .setType(ReflectionUtils.getComponentType(method.getParameters()[0]))
+          .setMultiValued(true);
+    } else {
+      final Class<?> type = method.getParameters()[0].getType();
+      arg.setType(type);
+    }
+
     Hidden hidden = method.getAnnotation(Hidden.class);
     if (hidden != null) {
       arg.setHidden(true);
     }
 
-    arg.setType(method.getParameters()[0].getType());
     ConvertedBy convertedBy = method.getAnnotation(ConvertedBy.class);
     if (convertedBy != null) {
       arg.setConverter(ReflectionUtils.newInstance(convertedBy.value()));
@@ -192,6 +200,10 @@ public class CLIConfigurator {
       return null;
     }
 
+    boolean multiple = ReflectionUtils.isMultiple(method);
+    if (multiple) {
+      return createMultiValueContainer(method, commandLine.getArgumentValues(argument.getIndex()));
+    }
     return commandLine.getArgumentValue(argument.getIndex());
   }
 

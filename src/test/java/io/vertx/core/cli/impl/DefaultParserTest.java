@@ -17,14 +17,13 @@
 package io.vertx.core.cli.impl;
 
 import io.vertx.core.cli.*;
-import io.vertx.core.cli.annotations.CLIConfigurator;
-import io.vertx.core.cli.annotations.Name;
-import org.junit.Assert;
+import io.vertx.core.cli.Argument;
+import io.vertx.core.cli.Option;
+import io.vertx.core.cli.annotations.*;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.Collections;
@@ -519,6 +518,16 @@ public class DefaultParserTest {
   }
 
   @Test
+  public void testAnnotatedClassWithArgumentReceivingMultipleValues() {
+    CLI cli = CLI.create(CLIUsingMultipleArgument.class);
+
+    CLIUsingMultipleArgument instance = new CLIUsingMultipleArgument();
+
+    CommandLine cl = cli.parse(Arrays.asList("a", "b", "-s=1", "-s=2"));
+    CLIConfigurator.inject(cl, instance);
+  }
+
+  @Test
   public void testWithMultipleArgumentReceivingSingleValues() {
     CLI cli = new DefaultCLI().setName("test");
     cli.addArgument(new Argument().setIndex(0));
@@ -777,6 +786,25 @@ public class DefaultParserTest {
     public void setFoo(String f) {
 
     }
+  }
+
+  @Name("test")
+  private class CLIUsingMultipleArgument {
+
+    @io.vertx.core.cli.annotations.Argument(index = 0)
+    public void setList(List<String> s) {
+      if (s.size() != 2) {
+        throw new IllegalArgumentException("2 arguments expected");
+      }
+    }
+
+    @io.vertx.core.cli.annotations.Option(shortName = "s")
+    public void setOpts(List<String> s) {
+      if (s.size() != 2) {
+        throw new IllegalArgumentException("2 values expected");
+      }
+    }
+
   }
 
 }
