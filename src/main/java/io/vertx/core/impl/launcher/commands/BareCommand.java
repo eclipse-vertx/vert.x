@@ -198,17 +198,19 @@ public class BareCommand extends ClasspathHandler {
       instance = create(options);
     }
     addShutdownHook();
-    afterStartingVertx();
+    afterStartingVertx(instance);
     return instance;
   }
 
   /**
    * Hook called after starting vert.x.
+   *
+   * @param instance the created vert.x instance.
    */
-  protected void afterStartingVertx() {
+  protected void afterStartingVertx(Vertx instance) {
     Object main = executionContext.main();
     if (main instanceof VertxLifecycleHooks) {
-      ((VertxLifecycleHooks) main).afterStartingVertx(vertx);
+      ((VertxLifecycleHooks) main).afterStartingVertx(instance);
     }
   }
 

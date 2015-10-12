@@ -526,6 +526,7 @@ public class LauncherTest extends VertxTestBase {
       assertTrue(beforeStartingVertxInvoked);
       assertTrue(afterStartingVertxInvoked);
       assertTrue(beforeDeployingVerticle);
+      assertNotNull(vertx);
     }
   }
 
