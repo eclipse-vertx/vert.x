@@ -125,7 +125,8 @@ public interface EventBusMetrics<H> extends Metrics {
   void messageRead(String address, int numberOfBytes);
 
   /**
-   * Called whenever there is a reply failure on the event bus.<p/>
+   * Called whenever the event bus delivers a reply failure to the sender/publisher, the
+   * {@link io.vertx.core.eventbus.ReplyFailure reply failure} indicates the nature of the failure.<p/>
    *
    * No specific thread and context can be expected when this method is called.
    *
