@@ -22,7 +22,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.streams.WriteStream;
 
 /**
  * A Vert.x event-bus is a light-weight distributed messaging system which allows different parts of your application,
@@ -248,6 +247,8 @@ public interface EventBus extends Measured {
    */
   @GenIgnore
   EventBus unregisterDefaultCodec(Class clazz);
+
+  void start(Handler<AsyncResult<Void>> completionHandler);
 
 }
 

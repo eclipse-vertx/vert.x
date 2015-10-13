@@ -16,7 +16,6 @@
 
 package io.vertx.core;
 
-import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextImpl;
@@ -216,5 +215,11 @@ public interface Context {
    * to this context
    */
   int getInstanceCount();
+
+  @GenIgnore
+  void addCloseHook(Closeable hook);
+
+  @GenIgnore
+  void removeCloseHook(Closeable hook);
 
 }

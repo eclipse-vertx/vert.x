@@ -17,7 +17,6 @@
 package io.vertx.test.fakecluster;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -323,7 +322,6 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public void get(final K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
-      ContextImpl ctx = (ContextImpl)Vertx.currentContext();
       vertx.executeBlocking(fut -> {
         ChoosableIterable<V> it = map.get(k);
         if (it == null) {

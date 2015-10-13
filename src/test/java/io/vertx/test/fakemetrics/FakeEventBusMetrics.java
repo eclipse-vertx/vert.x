@@ -133,7 +133,7 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   public boolean isEnabled() {
-    throw new UnsupportedOperationException();
+    return true;
   }
 
   public void close() {
