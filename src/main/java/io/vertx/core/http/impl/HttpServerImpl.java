@@ -49,8 +49,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.streams.ReadStream;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -87,7 +85,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
-  private ChannelFuture bindFuture;
+  private AsyncResolveBindConnectHelper<ChannelFuture> bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
   private ContextImpl listenContext;
@@ -217,16 +215,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         addHandlers(this, listenContext);
         try {
-          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
-          Channel serverChannel = bindFuture.channel();
-          serverChannelGroup.add(serverChannel);
-          bindFuture.addListener(channelFuture -> {
-              if (!channelFuture.isSuccess()) {
-                vertx.sharedHttpServers().remove(id);
-              } else {
-                metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
-              }
-            });
+          bindFuture = AsyncResolveBindConnectHelper.doBind(vertx, port, host, bootstrap);
+
+          bindFuture.addListener(res -> {
+            if (res.failed()) {
+              vertx.sharedHttpServers().remove(id);
+            } else {
+              Channel serverChannel = res.result().channel();
+              serverChannelGroup.add(serverChannel);
+              metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
+            }
+          });
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
@@ -246,14 +245,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         addHandlers(actualServer, listenContext);
         metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
       }
-      actualServer.bindFuture.addListener(future -> {
+      actualServer.bindFuture.addListener(res -> {
         if (listenHandler != null) {
-          final AsyncResult<HttpServer> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture(HttpServerImpl.this);
-          } else {
-            res = Future.failedFuture(future.cause());
+          AsyncResult<HttpServer> ares;
+          if (res.failed()) {
+            ares = Future.failedFuture(res.cause());
             listening = false;
+          } else {
+            ares = Future.succeededFuture(HttpServerImpl.this);
           }
           // FIXME - workaround for https://github.com/netty/netty/issues/2586
           // If listen already succeeded on a different event loop, and then addListener is called again
@@ -262,19 +261,20 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           // To reproduce set the boolean parameter on execute (below) to true.
           // Then run Httptest.testTwoServersSameAddressDifferentContext()
           try {
-            listenContext.runOnContext((v) -> listenHandler.handle(res));
+            listenContext.runOnContext((v) -> listenHandler.handle(ares));
           } catch (Exception e) {
             e.printStackTrace();
           }
-        } else if (!future.isSuccess()) {
+        } else if (res.failed()) {
           listening  = false;
           // No handler - log so user can see failure
-          log.error(future.cause());
+          log.error(res.cause());
         }
       });
     }
     return this;
   }
+
 
   @Override
   public void close() {
