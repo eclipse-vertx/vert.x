@@ -329,25 +329,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, port, host);
   }
 
-//  private int getClusterPublicPort(VertxOptions options, int actualPort) {
-//    // We retain the old system property for backwards compat
-//    int publicPort = Integer.getInteger("vertx.cluster.public.port", options.getClusterPublicPort());
-//    if (publicPort == -1) {
-//      // Get the actual port, wildcard port of zero might have been specified
-//      publicPort = actualPort;
-//    }
-//    return publicPort;
-//  }
-//
-//  private String getClusterPublicHost(VertxOptions options) {
-//    // We retain the old system property for backwards compat
-//    String publicHost = System.getProperty("vertx.cluster.public.host", options.getClusterPublicHost());
-//    if (publicHost == null) {
-//      publicHost = options.getClusterHost();
-//    }
-//    return publicHost;
-//  }
-
   private VertxMetrics initialiseMetrics(VertxOptions options) {
     if (options.getMetricsOptions() != null && options.getMetricsOptions().isEnabled()) {
       ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
