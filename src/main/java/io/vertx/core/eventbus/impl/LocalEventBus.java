@@ -14,11 +14,10 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.eventbus.impl.local;
+package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.eventbus.impl.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -75,7 +74,7 @@ public class LocalEventBus implements EventBus, MetricsProvider {
 
   @Override
   public <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPub(createMessage(true, address, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
+    sendOrPubInternal(createMessage(true, address, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
     return this;
   }
 
@@ -192,7 +191,7 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     return metrics;
   }
 
-  public LocalMessage createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  protected LocalMessage createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
@@ -200,32 +199,15 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     return msg;
   }
 
-  public <T> void addRegistration(String address, HandlerRegistration<T> registration,
+  protected <T> void addRegistration(String address, HandlerRegistration<T> registration,
                                   boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(registration.getHandler(), "handler");
-    doAddRegistration(address, registration, replyHandler, localOnly);
+    addLocalRegistration(address, registration, replyHandler, localOnly);
     registration.setResult(Future.succeededFuture());
   }
 
-  protected <T> HandlerRegistration<T> createReplyHandlerRegistration(LocalMessage message,
-                                                                      DeliveryOptions options,
-                                                                      Handler<AsyncResult<Message<T>>> replyHandler) {
-    if (replyHandler != null) {
-      long timeout = options.getSendTimeout();
-      String replyAddress = generateReplyAddress();
-      message.setReplyAddress(replyAddress);
-      Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
-      HandlerRegistration<T> registration =
-        new HandlerRegistration<>(vertx, metrics, this, replyAddress, true, true, replyHandler, timeout);
-      registration.handler(simpleReplyHandler);
-      return registration;
-    } else {
-      return null;
-    }
-  }
-
-  protected <T> boolean doAddRegistration(String address, HandlerRegistration<T> registration,
-                                          boolean replyHandler, boolean localOnly) {
+  protected <T> boolean addLocalRegistration(String address, HandlerRegistration<T> registration,
+                                             boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
     Context context = Vertx.currentContext();
@@ -258,12 +240,12 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     return newAddress;
   }
 
-  public <T> void removeRegistration(String address, HandlerRegistration<T> handler, Handler<AsyncResult<Void>> completionHandler) {
-    removeRegistration(address, handler);
+  protected <T> void removeRegistration(String address, HandlerRegistration<T> handler, Handler<AsyncResult<Void>> completionHandler) {
+    removeLocalRegistration(address, handler);
     callCompletionHandlerAsync(completionHandler);
   }
 
-  protected <T> HandlerHolder removeRegistration(String address, HandlerRegistration<T> handler) {
+  protected <T> HandlerHolder removeLocalRegistration(String address, HandlerRegistration<T> handler) {
     Handlers handlers = handlerMap.get(address);
     HandlerHolder lastHolder = null;
     if (handlers != null) {
@@ -289,21 +271,25 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     return lastHolder;
   }
 
-  protected <T> void sendReply(LocalMessage message, DeliveryOptions options,
+  protected <T> void sendReply(LocalMessage replyMessage, LocalMessage replierMessage, DeliveryOptions options,
                                Handler<AsyncResult<Message<T>>> replyHandler) {
-    if (message.address() == null) {
+    if (replyMessage.address() == null) {
       throw new IllegalStateException("address not specified");
     } else {
-      sendOrPub(message, options, replyHandler);
+      HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(replyMessage, options, replyHandler);
+      sendReply(replyMessage, replierMessage, options, replyHandlerRegistration);
     }
   }
 
+  protected <T> void sendReply(LocalMessage replyMessage, LocalMessage replierMessage, DeliveryOptions options,
+                               HandlerRegistration<T> replyHandlerRegistration) {
+    sendOrPub(replyMessage, options, replyHandlerRegistration);
+  }
+
   protected <T> void sendOrPub(LocalMessage message, DeliveryOptions options,
-                               Handler<AsyncResult<Message<T>>> replyHandler) {
-    checkStarted();
-    HandlerRegistration<T> registration = createReplyHandlerRegistration(message, options, replyHandler);
+                               HandlerRegistration<T> replyHandlerRegistration) {
     metrics.messageSent(message.address(), !message.send(), true, false);
-    serveMessage(message, registration, true);
+    deliverMessageLocally(message, replyHandlerRegistration);
   }
 
   protected <T> Handler<Message<T>> convertHandler(Handler<AsyncResult<Message<T>>> handler) {
@@ -327,8 +313,8 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     }
   }
 
-  protected <T> void serveMessage(LocalMessage msg, HandlerRegistration<T> handlerRegistration, boolean local) {
-    if (!serveMessage(msg, local)) {
+  protected <T> void deliverMessageLocally(LocalMessage msg, HandlerRegistration<T> handlerRegistration) {
+    if (!deliverMessageLocally(msg)) {
       // no handlers
       if (handlerRegistration != null) {
         handlerRegistration.sendAsyncResultFailure(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
@@ -336,7 +322,11 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     }
   }
 
-  protected <T> boolean serveMessage(LocalMessage msg, boolean local) {
+  protected boolean isMessageLocal(LocalMessage msg) {
+    return true;
+  }
+
+  protected <T> boolean deliverMessageLocally(LocalMessage msg) {
     msg.setBus(this);
     Handlers handlers = handlerMap.get(msg.address());
     if (handlers != null) {
@@ -344,19 +334,19 @@ public class LocalEventBus implements EventBus, MetricsProvider {
         //Choose one
         HandlerHolder holder = handlers.choose();
         if (holder != null) {
-          metrics.messageReceived(msg.address(), !msg.send(), local, 1);
-          doServe(msg, holder);
+          metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), 1);
+          deliverToHandler(msg, holder);
         }
       } else {
         // Publish
-        metrics.messageReceived(msg.address(), !msg.send(), local, handlers.list.size());
+        metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), handlers.list.size());
         for (HandlerHolder holder: handlers.list) {
-          doServe(msg, holder);
+          deliverToHandler(msg, holder);
         }
       }
       return true;
     } else {
-      metrics.messageReceived(msg.address(), !msg.send(), local, 0);
+      metrics.messageReceived(msg.address(), !msg.send(), isMessageLocal(msg), 0);
       return false;
     }
   }
@@ -371,6 +361,30 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     return Long.toString(replySequence.incrementAndGet());
   }
 
+  private <T> HandlerRegistration<T> createReplyHandlerRegistration(LocalMessage message,
+                                                                    DeliveryOptions options,
+                                                                    Handler<AsyncResult<Message<T>>> replyHandler) {
+    if (replyHandler != null) {
+      long timeout = options.getSendTimeout();
+      String replyAddress = generateReplyAddress();
+      message.setReplyAddress(replyAddress);
+      Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
+      HandlerRegistration<T> registration =
+        new HandlerRegistration<>(vertx, metrics, this, replyAddress, true, true, replyHandler, timeout);
+      registration.handler(simpleReplyHandler);
+      return registration;
+    } else {
+      return null;
+    }
+  }
+
+  private <T> void sendOrPubInternal(LocalMessage message, DeliveryOptions options,
+                                     Handler<AsyncResult<Message<T>>> replyHandler) {
+    checkStarted();
+    HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(message, options, replyHandler);
+    sendOrPub(message, options, replyHandlerRegistration);
+  }
+
   private void unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
     for (Handlers handlers: handlerMap.values()) {
@@ -380,7 +394,7 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     }
   }
 
-  private <T> void doServe(LocalMessage msg, HandlerHolder<T> holder) {
+  private <T> void deliverToHandler(LocalMessage msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
     @SuppressWarnings("unchecked")
     Message<T> copied = msg.copyBeforeReceive();

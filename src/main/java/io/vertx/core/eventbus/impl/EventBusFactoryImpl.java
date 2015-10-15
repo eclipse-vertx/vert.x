@@ -4,7 +4,6 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.spi.EventBusFactory;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
-import io.vertx.core.eventbus.impl.local.LocalEventBus;
 import io.vertx.core.impl.HAManager;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;

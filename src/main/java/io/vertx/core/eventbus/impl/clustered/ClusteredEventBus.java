@@ -19,13 +19,8 @@ package io.vertx.core.eventbus.impl.clustered;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.eventbus.impl.HandlerHolder;
-import io.vertx.core.eventbus.impl.HandlerRegistration;
-import io.vertx.core.eventbus.impl.local.LocalEventBus;
-import io.vertx.core.eventbus.impl.local.LocalMessage;
+import io.vertx.core.eventbus.impl.*;
 import io.vertx.core.impl.HAManager;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -143,7 +138,7 @@ public class ClusteredEventBus extends LocalEventBus {
   }
 
   @Override
-  public LocalMessage createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  protected LocalMessage createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
@@ -152,9 +147,9 @@ public class ClusteredEventBus extends LocalEventBus {
   }
 
   @Override
-  public <T> void addRegistration(String address, HandlerRegistration<T> registration,
+  protected <T> void addRegistration(String address, HandlerRegistration<T> registration,
                                   boolean replyHandler, boolean localOnly) {
-    boolean newAddress = doAddRegistration(address, registration, replyHandler, localOnly);
+    boolean newAddress = addLocalRegistration(address, registration, replyHandler, localOnly);
     if (newAddress && subs != null && !replyHandler && !localOnly) {
       // Propagate the information
       subs.add(address, serverID, registration::setResult);
@@ -164,8 +159,8 @@ public class ClusteredEventBus extends LocalEventBus {
   }
 
   @Override
-  public <T> void removeRegistration(String address, HandlerRegistration<T> handler, Handler<AsyncResult<Void>> completionHandler) {
-    HandlerHolder lastHolder = removeRegistration(address, handler);;
+  protected <T> void removeRegistration(String address, HandlerRegistration<T> handler, Handler<AsyncResult<Void>> completionHandler) {
+    HandlerHolder lastHolder = removeLocalRegistration(address, handler);;
     if (lastHolder != null && subs != null && !lastHolder.isLocalOnly()) {
       removeSub(address, serverID, completionHandler);
     } else {
@@ -173,27 +168,24 @@ public class ClusteredEventBus extends LocalEventBus {
     }
   }
 
-  protected <T> void sendReply(ServerID replyDest, LocalMessage message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
-    if (message.address() == null) {
-      throw new IllegalStateException("address not specified");
-    } else {
-      sendReply(replyDest, (ClusteredMessage)message, options, replyHandler);
-    }
+  @Override
+  protected <T> void sendReply(LocalMessage replyMessage, LocalMessage replierMessage, DeliveryOptions options,
+                               HandlerRegistration<T> replyHandlerRegistration) {
+    clusteredSendReply(((ClusteredMessage) replierMessage).getSender(),
+      (ClusteredMessage) replyMessage, options, replyHandlerRegistration);
   }
 
   @Override
   protected <T> void sendOrPub(LocalMessage message, DeliveryOptions options,
-                               Handler<AsyncResult<Message<T>>> replyHandler) {
-    checkStarted();
-    final HandlerRegistration<T> registration = createReplyHandlerRegistration(message, options, replyHandler);
+                               HandlerRegistration<T> replyHandlerRegistration) {
     Handler<AsyncResult<ChoosableIterable<ServerID>>> resultHandler = asyncResult -> {
       if (asyncResult.succeeded()) {
         ChoosableIterable<ServerID> serverIDs = asyncResult.result();
         if (serverIDs != null && !serverIDs.isEmpty()) {
-          sendToSubs(serverIDs, message, registration);
+          sendToSubs(serverIDs, message, replyHandlerRegistration);
         } else {
           metrics.messageSent(message.address(), !message.send(), true, false);
-          serveMessage(message, registration, true);
+          deliverMessageLocally(message, replyHandlerRegistration);
         }
       } else {
         log.error("Failed to send message", asyncResult.cause());
@@ -213,6 +205,12 @@ public class ClusteredEventBus extends LocalEventBus {
   protected String generateReplyAddress() {
     // The address is a cryptographically secure id that can't be guessed
     return UUID.randomUUID().toString();
+  }
+
+  @Override
+  protected boolean isMessageLocal(LocalMessage msg) {
+    ClusteredMessage clusteredMessage = (ClusteredMessage)msg;
+    return !clusteredMessage.isFromWire();
   }
 
   private void setNodeCrashedHandler(HAManager haManager) {
@@ -266,7 +264,7 @@ public class ClusteredEventBus extends LocalEventBus {
               // Just send back pong directly on connection
               socket.write(PONG);
             } else {
-              serveMessage(received, false);
+              deliverMessageLocally(received);
             }
           }
         }
@@ -277,7 +275,7 @@ public class ClusteredEventBus extends LocalEventBus {
   }
 
   private <T> void sendToSubs(ChoosableIterable<ServerID> subs, LocalMessage message,
-                              HandlerRegistration<T> handlerRegistration) {
+                              HandlerRegistration<T> replyHandlerRegistration) {
     String address = message.address();
     if (message.send()) {
       // Choose one
@@ -287,7 +285,7 @@ public class ClusteredEventBus extends LocalEventBus {
         sendRemote(sid, message);
       } else {
         metrics.messageSent(address, false, true, false);
-        serveMessage(message, handlerRegistration, true);
+        deliverMessageLocally(message, replyHandlerRegistration);
       }
     } else {
       // Publish
@@ -303,24 +301,20 @@ public class ClusteredEventBus extends LocalEventBus {
       }
       metrics.messageSent(address, true, local, remote);
       if (local) {
-        serveMessage(message, handlerRegistration, true);
+        deliverMessageLocally(message, replyHandlerRegistration);
       }
     }
   }
 
-  private <T> void sendReply(ServerID replyDest, ClusteredMessage message, DeliveryOptions options,
-                             Handler<AsyncResult<Message<T>>> replyHandler) {
-    HandlerRegistration<T> registration = null;
-    if (replyHandler != null) {
-      registration = createReplyHandlerRegistration(message, options, replyHandler);
-    }
+  private <T> void clusteredSendReply(ServerID replyDest, ClusteredMessage message, DeliveryOptions options,
+                                      HandlerRegistration<T> replyHandlerRegistration) {
     String address = message.address();
     if (!replyDest.equals(serverID)) {
       metrics.messageSent(address, false, false, true);
       sendRemote(replyDest, message);
     } else {
       metrics.messageSent(address, false, true, false);
-      serveMessage(message, registration, true);
+      deliverMessageLocally(message, replyHandlerRegistration);
     }
   }
 

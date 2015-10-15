@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.eventbus.impl.local;
+package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -152,9 +152,8 @@ public class LocalMessage<U, V> implements Message<V> {
 
   protected <R> void sendReply(LocalMessage msg, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (bus != null) {
-      bus.sendReply(msg, options, replyHandler);
+      bus.sendReply(msg, this, options, replyHandler);
     }
   }
-
 
 }
