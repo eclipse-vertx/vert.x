@@ -177,7 +177,9 @@ public class LocalEventBus implements EventBus, MetricsProvider {
     if (metrics != null) {
       metrics.close();
     }
-    vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+    if (completionHandler != null) {
+      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+    }
   }
 
   @Override

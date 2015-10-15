@@ -126,10 +126,14 @@ public class ClusteredEventBus extends LocalEventBus {
           for (ConnectionHolder holder: connections.values()) {
             holder.close();
           }
-          completionHandler.handle(ar);
+          if (completionHandler != null) {
+            completionHandler.handle(ar);
+          }
         });
       } else {
-        completionHandler.handle(ar1);
+        if (completionHandler != null) {
+          completionHandler.handle(ar1);
+        }
       }
     });
 
