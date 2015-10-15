@@ -54,6 +54,9 @@ public class ClusteredEventBus extends LocalEventBus {
 
   private static final Logger log = LoggerFactory.getLogger(ClusteredEventBus.class);
 
+  public static final String CLUSTER_PUBLIC_HOST_PROP_NAME = "vertx.cluster.public.host";
+  public static final String CLUSTER_PUBLIC_PORT_PROP_NAME = "vertx.cluster.public.port";
+
   private static final Buffer PONG = Buffer.buffer(new byte[] { (byte)1 });
   private static final String SERVER_ID_HA_KEY = "server_id";
   private static final String SUBS_MAP_NAME = "__vertx.subs";
@@ -227,7 +230,7 @@ public class ClusteredEventBus extends LocalEventBus {
 
   private int getClusterPublicPort(VertxOptions options, int actualPort) {
     // We retain the old system property for backwards compat
-    int publicPort = Integer.getInteger("vertx.cluster.public.port", options.getClusterPublicPort());
+    int publicPort = Integer.getInteger(CLUSTER_PUBLIC_PORT_PROP_NAME, options.getClusterPublicPort());
     if (publicPort == -1) {
       // Get the actual port, wildcard port of zero might have been specified
       publicPort = actualPort;
@@ -237,7 +240,7 @@ public class ClusteredEventBus extends LocalEventBus {
 
   private String getClusterPublicHost(VertxOptions options) {
     // We retain the old system property for backwards compat
-    String publicHost = System.getProperty("vertx.cluster.public.host", options.getClusterPublicHost());
+    String publicHost = System.getProperty(CLUSTER_PUBLIC_HOST_PROP_NAME, options.getClusterPublicHost());
     if (publicHost == null) {
       publicHost = options.getClusterHost();
     }
