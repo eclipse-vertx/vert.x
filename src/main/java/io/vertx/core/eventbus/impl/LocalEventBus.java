@@ -202,7 +202,12 @@ public class LocalEventBus implements EventBus, MetricsProvider {
   protected <T> void addRegistration(String address, HandlerRegistration<T> registration,
                                   boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(registration.getHandler(), "handler");
-    addLocalRegistration(address, registration, replyHandler, localOnly);
+    boolean newAddress = addLocalRegistration(address, registration, replyHandler, localOnly);
+    addRegistration(newAddress, address, registration, replyHandler, localOnly);
+  }
+
+  protected <T> void addRegistration(boolean newAddress, String address, HandlerRegistration<T> registration,
+                                     boolean replyHandler, boolean localOnly) {
     registration.setResult(Future.succeededFuture());
   }
 
@@ -241,7 +246,12 @@ public class LocalEventBus implements EventBus, MetricsProvider {
   }
 
   protected <T> void removeRegistration(String address, HandlerRegistration<T> handler, Handler<AsyncResult<Void>> completionHandler) {
-    removeLocalRegistration(address, handler);
+    HandlerHolder holder = removeLocalRegistration(address, handler);
+    removeRegistration(holder, address, handler, completionHandler);
+  }
+
+  protected <T> void removeRegistration(HandlerHolder handlerHolder, String address, HandlerRegistration<T> handler,
+                                        Handler<AsyncResult<Void>> completionHandler) {
     callCompletionHandlerAsync(completionHandler);
   }
 

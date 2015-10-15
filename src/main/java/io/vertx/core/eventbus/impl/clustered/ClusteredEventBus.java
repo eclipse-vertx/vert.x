@@ -147,9 +147,8 @@ public class ClusteredEventBus extends LocalEventBus {
   }
 
   @Override
-  protected <T> void addRegistration(String address, HandlerRegistration<T> registration,
-                                  boolean replyHandler, boolean localOnly) {
-    boolean newAddress = addLocalRegistration(address, registration, replyHandler, localOnly);
+  protected <T> void addRegistration(boolean newAddress, String address, HandlerRegistration<T> registration,
+                                     boolean replyHandler, boolean localOnly) {
     if (newAddress && subs != null && !replyHandler && !localOnly) {
       // Propagate the information
       subs.add(address, serverID, registration::setResult);
@@ -159,8 +158,8 @@ public class ClusteredEventBus extends LocalEventBus {
   }
 
   @Override
-  protected <T> void removeRegistration(String address, HandlerRegistration<T> handler, Handler<AsyncResult<Void>> completionHandler) {
-    HandlerHolder lastHolder = removeLocalRegistration(address, handler);;
+  protected <T> void removeRegistration(HandlerHolder lastHolder, String address, HandlerRegistration<T> handler,
+                                        Handler<AsyncResult<Void>> completionHandler) {
     if (lastHolder != null && subs != null && !lastHolder.isLocalOnly()) {
       removeSub(address, serverID, completionHandler);
     } else {
