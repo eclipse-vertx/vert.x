@@ -29,7 +29,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   private final Vertx vertx;
   private final EventBusMetrics metrics;
-  private final LocalEventBus eventBus;
+  private final EventBusImpl eventBus;
   private final String address;
   private final boolean replyHandler;
   private final boolean localOnly;
@@ -46,7 +46,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private boolean paused;
   private Object metric;
 
-  public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, LocalEventBus eventBus, String address,
+  public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
                              boolean replyHandler, boolean localOnly,
                              Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     this.vertx = vertx;

@@ -21,7 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.eventbus.impl.LocalMessage;
+import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClusteredMessage<U, V> extends LocalMessage<U, V> {
+public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   private static final Logger log = LoggerFactory.getLogger(ClusteredMessage.class);
 
@@ -236,13 +236,6 @@ public class ClusteredMessage<U, V> extends LocalMessage<U, V> {
     buff.appendInt(strBytes.length);
     buff.appendBytes(strBytes);
   }
-
-//  @Override
-//  protected <R> void sendReply(LocalMessage msg, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
-//    if (bus != null) {
-//      ((ClusteredEventBus)bus).sendReply(sender, msg, options, replyHandler);
-//    }
-//  }
 
   ServerID getSender() {
     return sender;

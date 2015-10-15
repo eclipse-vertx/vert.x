@@ -30,12 +30,12 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class LocalMessage<U, V> implements Message<V> {
+public class MessageImpl<U, V> implements Message<V> {
 
-  private static final Logger log = LoggerFactory.getLogger(LocalMessage.class);
+  private static final Logger log = LoggerFactory.getLogger(MessageImpl.class);
 
   protected MessageCodec<U, V> messageCodec;
-  protected LocalEventBus bus;
+  protected EventBusImpl bus;
   protected String address;
   protected String replyAddress;
   protected MultiMap headers;
@@ -43,12 +43,12 @@ public class LocalMessage<U, V> implements Message<V> {
   protected V receivedBody;
   protected boolean send;
 
-  public LocalMessage() {
+  public MessageImpl() {
   }
 
-  public LocalMessage(String address, String replyAddress, MultiMap headers, U sentBody,
-                      MessageCodec<U, V> messageCodec,
-                      boolean send) {
+  public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
+                     MessageCodec<U, V> messageCodec,
+                     boolean send) {
     this.messageCodec = messageCodec;
     this.address = address;
     this.replyAddress = replyAddress;
@@ -57,7 +57,7 @@ public class LocalMessage<U, V> implements Message<V> {
     this.send = send;
   }
 
-  protected LocalMessage(LocalMessage<U, V> other) {
+  protected MessageImpl(MessageImpl<U, V> other) {
     this.bus = other.bus;
     this.address = other.address;
     this.replyAddress = other.replyAddress;
@@ -76,8 +76,8 @@ public class LocalMessage<U, V> implements Message<V> {
     this.send = other.send;
   }
 
-  public LocalMessage<U, V> copyBeforeReceive() {
-    return new LocalMessage<>(this);
+  public MessageImpl<U, V> copyBeforeReceive() {
+    return new MessageImpl<>(this);
   }
 
   @Override
@@ -146,11 +146,11 @@ public class LocalMessage<U, V> implements Message<V> {
     return messageCodec;
   }
 
-  public void setBus(LocalEventBus bus) {
+  public void setBus(EventBusImpl bus) {
     this.bus = bus;
   }
 
-  protected <R> void sendReply(LocalMessage msg, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
+  protected <R> void sendReply(MessageImpl msg, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (bus != null) {
       bus.sendReply(msg, this, options, replyHandler);
     }

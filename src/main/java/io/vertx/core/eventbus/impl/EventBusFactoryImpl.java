@@ -19,7 +19,7 @@ public class EventBusFactoryImpl implements EventBusFactory {
     if (options.isClustered()) {
       eb = new ClusteredEventBus(vertx, options, clusterManager, haManager);
     } else {
-      eb = new LocalEventBus(vertx);
+      eb = new EventBusImpl(vertx);
     }
     return eb;
   }
