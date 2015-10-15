@@ -191,14 +191,14 @@
  *
  * The headers of the message are available with {@link io.vertx.core.eventbus.Message#headers}.
  *
- * ==== Replying to messages
+ * ==== Acknowledging messages / sending replies
  *
- * Sometimes after you send a message you want to receive a reply from the recipient.
- * This is known as the *request-response pattern*.
+ * When using {@link io.vertx.core.eventbus.EventBus#send} the event bus attempts to deliver the message to a
+ * {@link io.vertx.core.eventbus.MessageConsumer} registered with the event bus.
  *
- * To do this you can specify a reply handler when sending the message.
+ * In some cases it's useful for the sender to know when the consumer has received the message and "processed" it.
  *
- * When the receiver receives the message they can reply to it by calling {@link io.vertx.core.eventbus.Message#reply}.
+ * To acknowledge that the message has been processed the consumer can reply to the message by calling {@link io.vertx.core.eventbus.Message#reply}.
  *
  * When this happens it causes a reply to be sent back to the sender and the reply handler is invoked with the reply.
  *
@@ -218,8 +218,19 @@
  * {@link examples.EventBusExamples#example9}
  * ----
  *
- * The replies themselves can also be replied to so you can create a dialog between two different parties
- * consisting of multiple rounds.
+ * The reply can contain a message body which can contain useful information.
+ *
+ * What the "processing" actually means is application defined and depends entirely on what the message consumer does
+ * and is not something that the Vert.x event bus itself knows or cares about.
+ *
+ * Some examples:
+ *
+ * * A simple message consumer which implements a service which returns the time of the day would acknowledge with a message
+ * containing the time of day in the reply body
+ * * A message consumer which implements a persistent queue, might acknowledge with `true` if the message was successfully
+ * persisted in storage, or `false` if not.
+ * * A message consumer which processes an order might acknowledge with `true` when the order has been successfully processed
+ * so it can be deleted from the database
  *
  * ==== Sending with timeouts
  *
