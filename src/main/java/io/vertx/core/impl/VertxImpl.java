@@ -29,7 +29,6 @@ import io.vertx.core.datagram.impl.DatagramSocketImpl;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -52,9 +51,9 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
+import io.vertx.core.spi.EventBusFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -75,6 +74,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
+
+  private static final EventBusFactory eventBusFactory = ServiceHelper.loadFactory(EventBusFactory.class);
 
   static {
     // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
@@ -102,7 +103,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NioEventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
-  private EventBusImpl eventBus;
+  private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
 
@@ -145,54 +146,33 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.clusterManager.join(ar -> {
         if (ar.failed()) {
           log.error("Failed to join cluster", ar.cause());
-        }
-        clusterManager.<String, ServerID>getAsyncMultiMap("subs", ar2 -> {
-          if (ar2.succeeded()) {
-            AsyncMultiMap<String, ServerID> subs = ar2.result();
-            NetServer server = createNetServer(new NetServerOptions().setPort(options.getClusterPort()).setHost(options.getClusterHost()));
-            EventBusImpl.EventBusNetServer ebServer = new EventBusImpl.EventBusNetServer(server);
-            server.listen(asyncResult -> {
-              if (asyncResult.succeeded()) {
-                int serverPort = getClusterPublicPort(options, server.actualPort());
-                String serverHost = getClusterPublicHost(options);
-                ServerID serverID = new ServerID(serverPort, serverHost);
-                // Provide a memory barrier as we are setting from a different thread
-                synchronized (VertxImpl.this) {
-                  haManager = new HAManager(this, serverID, deploymentManager, clusterManager,
-                    options.getQuorumSize(), options.getHAGroup(), haEnabled);
-                  eventBus = new EventBusImpl(this, options.getClusterPingInterval(), options.getClusterPingReplyInterval(),
-                    clusterManager, haManager, subs, serverID, ebServer);
-                }
-                if (resultHandler != null) {
-                  resultHandler.handle(Future.succeededFuture(this));
-                }
-              } else {
-                if (resultHandler != null) {
-                  resultHandler.handle(Future.failedFuture(asyncResult.cause()));
-                } else {
-                  log.error(asyncResult.cause());
-                }
-             }
-            });
-          } else {
-            if (resultHandler != null) {
-              resultHandler.handle(Future.failedFuture(ar2.cause()));
-            } else {
-              log.error(ar2.cause());
-            }
+        } else {
+          // Provide a memory barrier as we are setting from a different thread
+          synchronized (VertxImpl.this) {
+            haManager = new HAManager(this, deploymentManager, clusterManager, options.getQuorumSize(),
+                                      options.getHAGroup(), haEnabled);
+            createAndStartEventBus(options, resultHandler);
           }
-        });
+        }
       });
-      this.sharedData = new SharedDataImpl(this, clusterManager);
     } else {
       this.clusterManager = null;
-      this.sharedData = new SharedDataImpl(this, null);
-      this.eventBus = new EventBusImpl(this);
-      if (resultHandler != null) {
-        // TODO shouldn't this be run async?
-        resultHandler.handle(Future.succeededFuture(this));
-      }
+      createAndStartEventBus(options, resultHandler);
     }
+    this.sharedData = new SharedDataImpl(this, clusterManager);
+  }
+
+  private void createAndStartEventBus(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    eventBus = eventBusFactory.createEventBus(this, options, clusterManager, haManager);
+    eventBus.start(ar2 -> {
+      if (ar2.succeeded()) {
+        if (resultHandler != null) {
+          resultHandler.handle(Future.succeededFuture(this));
+        }
+      } else {
+        log.error("Failed to start event bus", ar2.cause());
+      }
+    });
   }
 
   /**
@@ -349,25 +329,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, port, host);
   }
 
-  private int getClusterPublicPort(VertxOptions options, int actualPort) {
-    // We retain the old system property for backwards compat
-    int publicPort = Integer.getInteger("vertx.cluster.public.port", options.getClusterPublicPort());
-    if (publicPort == -1) {
-      // Get the actual port, wildcard port of zero might have been specified
-      publicPort = actualPort;
-    }
-    return publicPort;
-  }
-
-  private String getClusterPublicHost(VertxOptions options) {
-    // We retain the old system property for backwards compat
-    String publicHost = System.getProperty("vertx.cluster.public.host", options.getClusterPublicHost());
-    if (publicHost == null) {
-      publicHost = options.getClusterHost();
-    }
-    return publicHost;
-  }
-
   private VertxMetrics initialiseMetrics(VertxOptions options) {
     if (options.getMetricsOptions() != null && options.getMetricsOptions().isEnabled()) {
       ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
@@ -456,9 +417,28 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     close(null);
   }
 
+  private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
+    if (clusterManager != null) {
+      // Workaround fo Hazelcast bug https://github.com/hazelcast/hazelcast/issues/5220
+      if (clusterManager instanceof ExtendedClusterManager) {
+        ExtendedClusterManager ecm = (ExtendedClusterManager)clusterManager;
+        ecm.beforeLeave();
+      }
+      clusterManager.leave(ar -> {
+        if (ar.failed()) {
+          log.error("Failed to leave cluster", ar.cause());
+        }
+        if (completionHandler != null) {
+          runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+        }
+      });
+    } else if (completionHandler != null) {
+      runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+    }
+  }
+
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
-
     if (closed || eventBus == null) {
       // Just call the handler directly since pools shutdown
       if (completionHandler != null) {
@@ -471,37 +451,37 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       if (haManager() != null) {
         haManager().stop();
       }
-
       eventBus.close(ar2 -> {
+        closeClusterManager(ar3 -> {
+          // Copy set to prevent ConcurrentModificationException
+          Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
+          Set<NetServer> netServers = new HashSet<>(sharedNetServers.values());
+          sharedHttpServers.clear();
+          sharedNetServers.clear();
 
-        // Copy set to prevent ConcurrentModificationException
-        Set<HttpServer> httpServers = new HashSet<>(sharedHttpServers.values());
-        Set<NetServer> netServers = new HashSet<>(sharedNetServers.values());
-        sharedHttpServers.clear();
-        sharedNetServers.clear();
+          int serverCount = httpServers.size() + netServers.size();
 
-        int serverCount = httpServers.size() + netServers.size();
+          AtomicInteger serverCloseCount = new AtomicInteger();
 
-        AtomicInteger serverCloseCount = new AtomicInteger();
+          Handler<AsyncResult<Void>> serverCloseHandler = res -> {
+            if (res.failed()) {
+              log.error("Failure in shutting down server", res.cause());
+            }
+            if (serverCloseCount.incrementAndGet() == serverCount) {
+              deleteCacheDirAndShutdown(completionHandler);
+            }
+          };
 
-        Handler<AsyncResult<Void>> serverCloseHandler = res -> {
-          if (res.failed()) {
-            log.error("Failure in shutting down server", res.cause());
+          for (HttpServer server : httpServers) {
+            server.close(serverCloseHandler);
           }
-          if (serverCloseCount.incrementAndGet() == serverCount) {
+          for (NetServer server : netServers) {
+            server.close(serverCloseHandler);
+          }
+          if (serverCount == 0) {
             deleteCacheDirAndShutdown(completionHandler);
           }
-        };
-
-        for (HttpServer server : httpServers) {
-          server.close(serverCloseHandler);
-        }
-        for (NetServer server : netServers) {
-          server.close(serverCloseHandler);
-        }
-        if (serverCount == 0) {
-          deleteCacheDirAndShutdown(completionHandler);
-        }
+        });
       });
     });
   }

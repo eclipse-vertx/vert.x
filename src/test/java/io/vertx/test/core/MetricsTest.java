@@ -258,7 +258,7 @@ public class MetricsTest extends VertxTestBase {
     return registration.get();
   }
 
-  private void testHandlerProcessMessage(Vertx from, Vertx to, int expectedLocalCoult) {
+  private void testHandlerProcessMessage(Vertx from, Vertx to, int expectedLocalCount) {
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(to.eventBus());
     to.eventBus().consumer(ADDRESS1, msg -> {
       HandlerMetric registration = assertRegistration(metrics);
@@ -267,7 +267,7 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(1, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
       assertEquals(0, registration.failureCount.get());
-      assertEquals(expectedLocalCoult, registration.localCount.get());
+      assertEquals(expectedLocalCount, registration.localCount.get());
       msg.reply("pong");
     }).completionHandler(onSuccess(v -> {
       from.eventBus().send(ADDRESS1, "ping", reply -> {
@@ -278,7 +278,7 @@ public class MetricsTest extends VertxTestBase {
         // This might take a little time
         waitUntil(() -> 1 == registration.endCount.get());
         assertEquals(0, registration.failureCount.get());
-        assertEquals(expectedLocalCoult, registration.localCount.get());
+        assertEquals(expectedLocalCount, registration.localCount.get());
         testComplete();
       });
     }));
