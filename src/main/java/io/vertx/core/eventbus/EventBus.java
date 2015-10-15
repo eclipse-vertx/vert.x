@@ -194,13 +194,6 @@ public interface EventBus extends Measured {
   <T> MessageProducer<T> publisher(String address, DeliveryOptions options);
 
   /**
-   * Close the event bus and release any resources held
-   *
-   * @param completionHandler may be {@code null}
-   */
-  void close(Handler<AsyncResult<Void>> completionHandler);
-
-  /**
    * Register a message codec.
    * <p>
    * You can register a message codec if you want to send any non standard message across the event bus.
@@ -248,7 +241,20 @@ public interface EventBus extends Measured {
   @GenIgnore
   EventBus unregisterDefaultCodec(Class clazz);
 
+  /**
+   * Start the event bus. This would not normally be called in user code
+   *
+   * @param completionHandler
+   */
   void start(Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Close the event bus and release any resources held. This would not normally be called in user code
+   *
+   * @param completionHandler may be {@code null}
+   */
+  void close(Handler<AsyncResult<Void>> completionHandler);
+
 
 }
 
