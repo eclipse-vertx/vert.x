@@ -35,7 +35,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private final boolean replyHandler;
   private final boolean localOnly;
   private final Handler<AsyncResult<Message<T>>> asyncResultHandler;
-  private long timeoutID;
+  private long timeoutID = -1;
   private boolean registered;
   private Handler<Message<T>> handler;
   private AsyncResult<Void> result;
