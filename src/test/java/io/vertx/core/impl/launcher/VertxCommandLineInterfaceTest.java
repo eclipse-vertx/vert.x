@@ -159,7 +159,7 @@ public class VertxCommandLineInterfaceTest {
 
     assertThat(baos.toString())
         .contains("-o1 <opt>", " [-o2] ")
-        .contains("arg1 [arg2]")
+        .contains("arg1", "[arg2]")
         .contains("A command with options and arguments.") // Summary
         .contains("This is a complex command.") // Description
         .contains("-o1,--option1 <opt>") // Option
