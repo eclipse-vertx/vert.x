@@ -115,7 +115,9 @@ public class FileResolver {
             return unpackFromFileURL(url, fileName, cl);
           case "jar":
             return unpackFromJarURL(url, fileName);
-          case "bundle":
+          case "bundle": // Apache Felix, Knopflerfish
+          case "bundleentry": // Equinox
+          case "bundleresource": // Equinox
             return unpackFromBundleURL(url);
           default:
             throw new IllegalStateException("Invalid url protocol: " + prot);
@@ -195,9 +197,9 @@ public class FileResolver {
   }
 
   /**
-   * bundle:// urls are used by OSGi implementations to refer to a file contained in a bundle, or in a fragment. There
-   * is not much we can do to get the file from it, except reading it from the url. This method copies the files by
-   * reading it from the url.
+   * bundle:/, bundleresource:/ and bundleentry:/ urls are used by OSGi implementations to refer to a file
+   * contained in a bundle, or in a fragment. There is not much we can do to get the file from it, except
+   * reading it from the url. This method copies the files by reading it from the url.
    *
    * @param url      the url
    * @return the extracted file
