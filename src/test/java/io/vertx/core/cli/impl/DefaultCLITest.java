@@ -61,7 +61,19 @@ public class DefaultCLITest {
     cli.usage(builder);
     assertThat(builder)
         .contains("test [-f]")
+        .contains("Options and Arguments")
         .contains(" -f   turn on/off");
+  }
+
+  @Test
+  public void testUsageWhenNoArgsAndOptions() {
+    final CLI cli = CLI.create("test").setDescription("A simple test command.");
+
+    StringBuilder builder = new StringBuilder();
+    cli.usage(builder);
+    assertThat(builder)
+        .contains("test")
+        .doesNotContain("Options").doesNotContain("Arguments");
   }
 
   @Test
