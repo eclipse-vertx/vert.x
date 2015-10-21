@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -93,6 +94,16 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HAManager {
+
+  // Latches for increase probability of race reproduction.
+
+  // Defer removing of haInfo from clusterMap until other threads get get haInfo for left node
+  public static CountDownLatch beforeRemoveLatch;
+
+  // Defer resume failover unitl second node left topology.
+  // In this case two failover completion handlers will contend on totDeployed variable in ComplexHATest.
+  public static CountDownLatch anotherNodeKilledLatch = new CountDownLatch(2);
+
 
   private static final Logger log = LoggerFactory.getLogger(HAManager.class);
 
@@ -272,16 +283,32 @@ public class HAManager {
       } else {
         JsonObject clusterInfo = new JsonObject(sclusterInfo);
         checkRemoveSubs(leftNodeID, clusterInfo);
-        checkFailover(leftNodeID, clusterInfo);
+        checkFailover(leftNodeID, leftNodeID, clusterInfo, FailoverMode.REGULAR);
       }
 
       // We also check for and potentially resume any previous failovers that might have failed
       // We can determine this if there any ids in the cluster map which aren't in the node list
       List<String> nodes = clusterManager.getNodes();
 
-      for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
+      Set<Map.Entry<String, String>> entries = clusterMap.entrySet();
+
+      // Need to copy entries before latch will be released because remove on Map affect original entries
+      Set<Map.Entry<String, String>> entriesCopy = entries.stream()
+              .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue()))
+              .collect(Collectors.toSet());
+
+      beforeRemoveLatch.countDown();
+
+      try {
+        anotherNodeKilledLatch.await();
+      }
+      catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+
+      for (Map.Entry<String, String> entry: entriesCopy) {
         if (!nodes.contains(entry.getKey())) {
-          checkFailover(entry.getKey(), new JsonObject(entry.getValue()));
+          checkFailover(leftNodeID, entry.getKey(), new JsonObject(entry.getValue()), FailoverMode.RESUME);
         }
       }
     }
@@ -436,12 +463,20 @@ public class HAManager {
   }
 
   // Handle failover
-  private void checkFailover(String failedNodeID, JsonObject theHAInfo) {
+  // leftNodeId - original ID of left node
+  // leftNodeId and failedNodeId are always equals for regular failover but can differ
+  // in case of resume failover because topology could be changed
+  private void checkFailover(String leftNodeId, String failedNodeID, JsonObject theHAInfo, FailoverMode mode) {
     try {
       JsonArray deployments = theHAInfo.getJsonArray("verticles");
       String group = theHAInfo.getString("group");
-      String chosen = chooseHashedNode(group, failedNodeID.hashCode());
+      String chosen = chooseHashedNode(group, failedNodeID.hashCode(), mode);
       if (chosen != null && chosen.equals(this.nodeID)) {
+
+        if (leftNodeId.equals(failedNodeID) && mode == FailoverMode.RESUME) {
+          log.error("RACE IS POSSIBLE!!! failoverCompleteHandler for node " + leftNodeId + " was already invoked!");
+        }
+
         if (deployments != null && deployments.size() != 0) {
           log.info("node" + nodeID + " says: Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
           for (Object obj: deployments) {
@@ -449,8 +484,13 @@ public class HAManager {
             processFailover(app);
           }
         }
+
+        if (mode == FailoverMode.REGULAR)
+          beforeRemoveLatch.await();
+
         // Failover is complete! We can now remove the failed node from the cluster map
         clusterMap.remove(failedNodeID);
+
         callFailoverCompleteHandler(failedNodeID, theHAInfo, true);
       }
     } catch (Throwable t) {
@@ -460,7 +500,7 @@ public class HAManager {
   }
 
   private void checkRemoveSubs(String failedNodeID, JsonObject theHAInfo) {
-    String chosen = chooseHashedNode(null, failedNodeID.hashCode());
+    String chosen = chooseHashedNode(null, failedNodeID.hashCode(), FailoverMode.SUBS);
     if (chosen != null && chosen.equals(this.nodeID)) {
       callFailoverCompleteHandler(nodeCrashedHandler, failedNodeID, theHAInfo, true);
     }
@@ -530,8 +570,11 @@ public class HAManager {
   }
 
   // Compute the failover node
-  private String chooseHashedNode(String group, int hashCode) {
+  private String chooseHashedNode(String group, int hashCode, FailoverMode mode) {
+    String res;
+
     List<String> nodes = clusterManager.getNodes();
+
     ArrayList<String> matchingMembers = new ArrayList<>();
     for (String node: nodes) {
       String sclusterInfo = clusterMap.get(node);
@@ -547,11 +590,18 @@ public class HAManager {
       // Hashcodes can be -ve so make it positive
       long absHash = (long)hashCode + Integer.MAX_VALUE;
       long lpos = absHash % matchingMembers.size();
-      return matchingMembers.get((int)lpos);
+      res = matchingMembers.get((int)lpos);
     } else {
-      return null;
+      res = null;
     }
+
+    if (mode == FailoverMode.RESUME)
+      beforeRemoveLatch.countDown();
+
+    return res;
   }
 
-
+  private enum FailoverMode {
+    REGULAR, RESUME, SUBS
+  }
 }
