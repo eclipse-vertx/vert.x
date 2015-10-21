@@ -1322,6 +1322,17 @@
  * You can also create a sub-class of {@link io.vertx.core.Launcher} to start your application. The class has been
  * designed to be easily extensible.
  *
+ * A {@link io.vertx.core.Launcher} sub-class can:
+ *
+ * * customize the vert.x configuration in {@link io.vertx.core.Launcher#beforeStartingVertx(io.vertx.core.VertxOptions)}
+ * * retrieve the vert.x instance created by the "run" or "bare" command by
+ * overriding {@link io.vertx.core.Launcher#afterStartingVertx(io.vertx.core.Vertx)}
+ * * configure the default verticle and command with
+ * {@link io.vertx.core.impl.launcher.VertxCommandLauncher#getMainVerticle()} and
+ * {@link io.vertx.core.impl.launcher.VertxCommandLauncher#getDefaultCommand()}
+ * * add / remove commands using {@link io.vertx.core.impl.launcher.VertxCommandLauncher#register(java.lang.Class)}
+ * and {@link io.vertx.core.impl.launcher.VertxCommandLauncher#unregister(java.lang.String)}
+ *
  */
 @Document(fileName = "index.adoc")
 @io.vertx.codegen.annotations.ModuleGen(name = "vertx", groupPackage = "io.vertx")
