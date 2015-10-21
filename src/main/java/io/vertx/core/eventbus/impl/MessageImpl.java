@@ -96,6 +96,9 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public V body() {
+    if (receivedBody == null && sentBody != null) {
+      receivedBody = messageCodec.transform(sentBody);
+    }
     return receivedBody;
   }
 

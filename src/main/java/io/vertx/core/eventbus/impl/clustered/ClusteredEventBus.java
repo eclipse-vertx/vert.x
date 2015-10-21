@@ -168,12 +168,12 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void sendReply(SendContext<T> sendContext, MessageImpl replierMessage) {
+  protected <T> void sendReply(SendContextImpl<T> sendContext, MessageImpl replierMessage) {
     clusteredSendReply(((ClusteredMessage) replierMessage).getSender(), sendContext);
   }
 
   @Override
-  protected <T> void sendOrPub(SendContext<T> sendContext) {
+  protected <T> void sendOrPub(SendContextImpl<T> sendContext) {
     String address = sendContext.message.address();
     Handler<AsyncResult<ChoosableIterable<ServerID>>> resultHandler = asyncResult -> {
       if (asyncResult.succeeded()) {
@@ -271,7 +271,7 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToSubs(ChoosableIterable<ServerID> subs, SendContext<T> sendContext) {
+  private <T> void sendToSubs(ChoosableIterable<ServerID> subs, SendContextImpl<T> sendContext) {
     String address = sendContext.message.address();
     if (sendContext.message.send()) {
       // Choose one
@@ -302,7 +302,7 @@ public class ClusteredEventBus extends EventBusImpl {
     }
   }
 
-  private <T> void clusteredSendReply(ServerID replyDest, SendContext<T> sendContext) {
+  private <T> void clusteredSendReply(ServerID replyDest, SendContextImpl<T> sendContext) {
     MessageImpl message = sendContext.message;
     String address = message.address();
     if (!replyDest.equals(serverID)) {

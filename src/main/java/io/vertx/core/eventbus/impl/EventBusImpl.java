@@ -24,9 +24,12 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -37,6 +40,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class EventBusImpl implements EventBus, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
+
+  private List<Handler<SendContext>> interceptors = new CopyOnWriteArrayList<>();
 
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
@@ -50,12 +55,29 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     this.metrics = vertx.metricsSPI().createMetrics(this);
   }
 
+  @Override
+  public EventBus addInterceptor(Handler<SendContext> interceptor) {
+    interceptors.add(interceptor);
+    return this;
+  }
+
+  @Override
+  public EventBus removeInterceptor(Handler<SendContext> interceptor) {
+    interceptors.remove(interceptor);
+    return this;
+  }
+
   public synchronized void start(Handler<AsyncResult<Void>> completionHandler) {
     if (started) {
       throw new IllegalStateException("Already started");
     }
     started = true;
     completionHandler.handle(Future.succeededFuture());
+  }
+
+  @Override
+  public <T> EventBus sendReliable(String address, Object message, Handler<AsyncResult<Boolean>> ackHandler) {
+    return null;
   }
 
   @Override
@@ -289,15 +311,15 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       throw new IllegalStateException("address not specified");
     } else {
       HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(replyMessage, options, replyHandler);
-      sendReply(new SendContext<>(replyMessage, options, replyHandlerRegistration), replierMessage);
+      sendReply(new SendContextImpl<>(replyMessage, options, replyHandlerRegistration), replierMessage);
     }
   }
 
-  protected <T> void sendReply(SendContext<T> sendContext, MessageImpl replierMessage) {
+  protected <T> void sendReply(SendContextImpl<T> sendContext, MessageImpl replierMessage) {
     sendOrPub(sendContext);
   }
 
-  protected <T> void sendOrPub(SendContext<T> sendContext) {
+  protected <T> void sendOrPub(SendContextImpl<T> sendContext) {
     MessageImpl message = sendContext.message;
     metrics.messageSent(message.address(), !message.send(), true, false);
     deliverMessageLocally(sendContext);
@@ -324,7 +346,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
   }
 
-  protected <T> void deliverMessageLocally(SendContext<T> sendContext) {
+  protected <T> void deliverMessageLocally(SendContextImpl<T> sendContext) {
     if (!deliverMessageLocally(sendContext.message)) {
       // no handlers
       if (sendContext.handlerRegistration != null) {
@@ -394,8 +416,40 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                      Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
     HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(message, options, replyHandler);
-    sendOrPub(new SendContext<>(message, options, replyHandlerRegistration));
+    SendContextImpl<T> sendContext = new SendContextImpl<>(message, options, replyHandlerRegistration);
+    sendContext.next();
   }
+
+  protected class SendContextImpl<T> implements SendContext<T> {
+
+    public final MessageImpl message;
+    public final DeliveryOptions options;
+    public final HandlerRegistration<T> handlerRegistration;
+    public final Iterator<Handler<SendContext>> iter;
+
+    public SendContextImpl(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration) {
+      this.message = message;
+      this.options = options;
+      this.handlerRegistration = handlerRegistration;
+      this.iter = interceptors.iterator();
+    }
+
+    @Override
+    public Message<T> message() {
+      return message;
+    }
+
+    @Override
+    public void next() {
+      if (iter.hasNext()) {
+        Handler<SendContext> handler = iter.next();
+        handler.handle(this);
+      } else {
+        sendOrPub(this);
+      }
+    }
+  }
+
 
   private void unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
