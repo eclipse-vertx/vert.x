@@ -76,11 +76,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   @Override
-  public <T> EventBus sendReliable(String address, Object message, Handler<AsyncResult<Boolean>> ackHandler) {
-    return null;
-  }
-
-  @Override
   public EventBus send(String address, Object message) {
     return send(address, message, new DeliveryOptions(), null);
   }

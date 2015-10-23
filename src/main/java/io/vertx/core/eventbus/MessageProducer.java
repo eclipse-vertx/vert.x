@@ -51,9 +51,13 @@ public interface MessageProducer<T> extends WriteStream<T> {
   @Fluent
   MessageProducer<T> deliveryOptions(DeliveryOptions options);
 
+  @Fluent
+  MessageProducer<T> setCredits(int credits);
+
   /**
    * @return The address to which the producer produces messages.
    */
   String address();
 
+  void close();
 }

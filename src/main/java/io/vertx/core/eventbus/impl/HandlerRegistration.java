@@ -27,6 +27,8 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   private static final Logger log = LoggerFactory.getLogger(HandlerRegistration.class);
 
+  public static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
+
   private final Vertx vertx;
   private final EventBusMetrics metrics;
   private final EventBusImpl eventBus;
@@ -41,7 +43,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
-  private int maxBufferedMessages;
+  private int maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
   private final Queue<Message<T>> pending = new ArrayDeque<>(8);
   private boolean paused;
   private Object metric;
@@ -163,6 +165,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   public void handle(Message<T> message) {
     Handler<Message<T>> theHandler = null;
     synchronized (this) {
+      String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
+      if (creditsAddress != null) {
+        eventBus.send(creditsAddress, 1);
+      }
       if (paused) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);

@@ -19,29 +19,54 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
-import io.vertx.core.streams.WriteStream;
+
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class MessageProducerImpl<T> implements MessageProducer<T> {
 
+  public static final int DEFAULT_INITIAL_CREDITS = 1000;
+  public static final String CREDIT_ADDRESS_HEADER_NAME = "__vertx.credit";
+
   private final EventBus bus;
   private final boolean send;
   private final String address;
+  private final Queue<T> pending = new ArrayDeque<>();
   private DeliveryOptions options;
+  private final MessageConsumer<Integer> creditConsumer;
+  private int credits = DEFAULT_INITIAL_CREDITS;
 
   public MessageProducerImpl(EventBus bus, String address, boolean send, DeliveryOptions options) {
     this.bus = bus;
     this.address = address;
     this.send = send;
     this.options = options;
+    if (send) {
+      String creditAddress = UUID.randomUUID().toString() + "-credit";
+      creditConsumer = bus.consumer(creditAddress, msg -> {
+        doReceiveCredit(msg.body());
+      });
+      options.addHeader(CREDIT_ADDRESS_HEADER_NAME, creditAddress);
+    } else {
+      creditConsumer = null;
+    }
   }
 
   @Override
   public synchronized MessageProducer<T> deliveryOptions(DeliveryOptions options) {
     this.options = options;
+    return this;
+  }
+
+  @Override
+  public MessageProducer<T> setCredits(int credits) {
+    this.credits = credits;
     return this;
   }
 
@@ -58,7 +83,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   @Override
   public synchronized MessageProducer<T> write(T data) {
     if (send) {
-      bus.send(address, data, options);
+      doSend(data);
     } else {
       bus.publish(address, data, options);
     }
@@ -78,6 +103,42 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   @Override
   public String address() {
     return address;
+  }
+
+  @Override
+  public void close() {
+    if (creditConsumer != null) {
+      creditConsumer.unregister();
+    }
+  }
+
+  // Just in case user forget to call close()
+  @Override
+  protected void finalize() throws Throwable {
+    close();
+    super.finalize();
+  }
+
+  private synchronized void doSend(T data) {
+    if (credits > 0) {
+      credits--;
+      bus.send(address, data, options);
+    } else {
+      pending.add(data);
+    }
+  }
+
+  private synchronized void doReceiveCredit(int credit) {
+    credits += credit;
+    while (credits > 0) {
+      T data = pending.poll();
+      if (pending == null) {
+        break;
+      } else {
+        credits--;
+        bus.send(address, data, options);
+      }
+    }
   }
 
 }

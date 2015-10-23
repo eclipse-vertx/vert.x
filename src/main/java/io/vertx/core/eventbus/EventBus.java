@@ -62,9 +62,6 @@ public interface EventBus extends Measured {
   @Fluent
   <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
 
-  <T> EventBus sendReliable(String address, Object message, Handler<AsyncResult<Boolean>> ackHandler);
-
-
   /**
    * Like {@link #send(String, Object)} but specifying {@code options} that can be used to configure the delivery.
    *
@@ -260,6 +257,8 @@ public interface EventBus extends Measured {
   EventBus addInterceptor(Handler<SendContext> interceptor);
 
   EventBus removeInterceptor(Handler<SendContext> interceptor);
+
+
 
 
 }
