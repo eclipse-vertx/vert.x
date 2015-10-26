@@ -114,11 +114,15 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
               } else {
                 sids = new ChoosableSet<>(0);
               }
-              ChoosableSet<V> prev = cache.putIfAbsent(k, sids);
-              if (prev != null) {
-                // Merge them
-                prev.merge(sids);
-                sids = prev;
+              //SBKD-322 quick fix for memory leak that has been caused by adding to subscribers cache
+              //empty sets. When no subscribers are present just omit caching it.
+              if (!sids.isEmpty()) {
+            	  ChoosableSet<V> prev = cache.putIfAbsent(k, sids);
+            	  if (prev != null) {
+            		  // Merge them
+            		  prev.merge(sids);
+            		  sids = prev;
+            	  }
               }
               sids.setInitialised();
               sresult.setResult(sids);
