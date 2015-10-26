@@ -22,6 +22,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.EventBusHook;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
@@ -60,43 +61,50 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DefaultEventBus implements EventBus {
 
-  private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
+	private static final Logger log = LoggerFactory.getLogger(DefaultEventBus.class);
 
-  private static final Buffer PONG = new Buffer(new byte[] { (byte)1 });
-  private static final long PING_INTERVAL = 20000;
-  private static final long PING_REPLY_INTERVAL = 20000;
-  private final VertxInternal vertx;
-  private ServerID serverID;
-  private NetServer server;
-  private AsyncMultiMap<String, ServerID> subs;
-  private long defaultReplyTimeout = -1;
-  private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
-  private final ClusterManager clusterMgr;
-  private final AtomicLong replySequence = new AtomicLong(0);
+	private static final Buffer PONG = new Buffer(new byte[] { (byte) 1 });
+	private static final long PING_INTERVAL = 20000;
+	private static final long PING_REPLY_INTERVAL = 20000;
+	private final VertxInternal vertx;
+	private ServerID serverID;
+	private NetServer server;
+	private AsyncMultiMap<String, ServerID> subs;
+	private long defaultReplyTimeout = -1;
+	private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
+	private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
+	private final ClusterManager clusterMgr;
+	private final AtomicLong replySequence = new AtomicLong(0);
 
-  public DefaultEventBus(VertxInternal vertx) {
-    // Just some dummy server ID
-    this.vertx = vertx;
-    this.serverID = new ServerID(-1, "localhost");
-    this.server = null;
-    this.subs = null;
-    this.clusterMgr = null;
-    ManagementRegistry.registerEventBus(serverID);
-  }
+	private EventBusHook eventBusHook;
 
-  public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
-    this(vertx, port, hostname, clusterManager, null);
-  }
+	public EventBus setHook(EventBusHook hook) {
+		this.eventBusHook = hook;
+		return this;
+	}
 
-  public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
-                         Handler<AsyncResult<Void>> listenHandler) {
-    this.vertx = vertx;
-    this.clusterMgr = clusterManager;
-    this.subs = clusterMgr.getAsyncMultiMap("subs");
-    this.server = setServer(port, hostname, listenHandler);
-    ManagementRegistry.registerEventBus(serverID);
-  }
+	public DefaultEventBus(VertxInternal vertx) {
+		// Just some dummy server ID
+		this.vertx = vertx;
+		this.serverID = new ServerID(-1, "localhost");
+		this.server = null;
+		this.subs = null;
+		this.clusterMgr = null;
+		ManagementRegistry.registerEventBus(serverID);
+	}
+
+	public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager) {
+		this(vertx, port, hostname, clusterManager, null);
+	}
+
+	public DefaultEventBus(VertxInternal vertx, int port, String hostname, ClusterManager clusterManager,
+			Handler<AsyncResult<Void>> listenHandler) {
+		this.vertx = vertx;
+		this.clusterMgr = clusterManager;
+		this.subs = clusterMgr.getAsyncMultiMap("subs");
+		this.server = setServer(port, hostname, listenHandler);
+		ManagementRegistry.registerEventBus(serverID);
+	}
 
   @Override
   public EventBus send(String address, Object message, final Handler<Message> replyHandler) {
@@ -954,18 +962,32 @@ public class DefaultEventBus implements EventBus {
     // Each handler gets a fresh copy
     final Message<T> copied = msg.copy();
 
+		// if beforeReceive call is true, cancels the receive
+		if (eventBusHook != null && eventBusHook.beforeReceive(copied))
+			return;
+
     holder.context.execute(new Runnable() {
       public void run() {
         // Need to check handler is still there - the handler might have been removed after the message were sent but
         // before it was received
+				boolean delivered = false;
         try {
           if (!holder.removed) {
             holder.handler.handle(copied);
+						// call the delivered confirmation
+						if (eventBusHook != null)
+							eventBusHook.delivered(copied);
+						delivered = true;
           }
         } finally {
           if (holder.replyHandler) {
             unregisterHandler(msg.address, holder.handler);
           }
+
+					// call the afterReceive - message might not have been delivered if client disconnected during msg receive
+					if (eventBusHook != null)
+						eventBusHook.afterReceive(copied, delivered);
+
         }
       }
     });

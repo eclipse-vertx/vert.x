@@ -68,4 +68,6 @@ public interface SockJSSocket extends ReadStream<SockJSSocket>, WriteStream<Sock
    * Return the URI corresponding to the last request for this socket or the websocket handshake
    */
   String uri();
+
+	String transportType();
 }
