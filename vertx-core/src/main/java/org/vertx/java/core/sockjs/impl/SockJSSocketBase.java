@@ -58,4 +58,7 @@ public abstract class SockJSSocketBase implements SockJSSocket {
   public void close() {
     vertx.eventBus().unregisterHandler(writeHandlerID, writeHandler);
   }
+
+	@Override
+	public abstract String transportType();
 }

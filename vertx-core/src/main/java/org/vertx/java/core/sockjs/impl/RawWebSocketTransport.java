@@ -104,6 +104,11 @@ class RawWebSocketTransport {
     }
 
     @Override
+		public String transportType() {
+			return this.getClass().getCanonicalName();
+		}
+
+		@Override
     public InetSocketAddress remoteAddress() {
       return ws.remoteAddress();
     }

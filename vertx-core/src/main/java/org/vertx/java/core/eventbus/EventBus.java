@@ -552,5 +552,12 @@ public interface EventBus {
    * Return the value for default send timeout
    */
   long getDefaultReplyTimeout();
-}
 
+	/**
+	 * sets the eventbus hook for message delivery
+	 * @param eventbushook
+	 * @return
+	 */
+	EventBus setHook(EventBusHook eventbushook);
+
+}
