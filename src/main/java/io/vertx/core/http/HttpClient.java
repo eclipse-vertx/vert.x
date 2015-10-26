@@ -671,6 +671,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
@@ -691,6 +692,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
@@ -715,6 +717,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
@@ -737,6 +740,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
@@ -766,6 +770,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -794,6 +799,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -826,6 +832,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -856,6 +863,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -875,6 +883,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
@@ -895,6 +904,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
   /**
@@ -920,6 +930,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -949,6 +960,7 @@ public interface HttpClient extends Measured {
    * @param failureHandler handler that will be called if websocekt connection fails
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
