@@ -245,6 +245,7 @@ public interface EventBus extends Measured {
    *
    * @param completionHandler
    */
+  @GenIgnore
   void start(Handler<AsyncResult<Void>> completionHandler);
 
   /**
@@ -252,6 +253,7 @@ public interface EventBus extends Measured {
    *
    * @param completionHandler may be {@code null}
    */
+  @GenIgnore
   void close(Handler<AsyncResult<Void>> completionHandler);
 
   EventBus addInterceptor(Handler<SendContext> interceptor);
