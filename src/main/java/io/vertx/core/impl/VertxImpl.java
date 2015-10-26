@@ -825,7 +825,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     @Override
     public synchronized TimeoutStream resume() {
       this.paused = false;
-      return null;
+      return this;
     }
 
     @Override
