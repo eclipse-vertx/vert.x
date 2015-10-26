@@ -16,6 +16,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -84,6 +85,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * @return the query part of the uri. For example someparam=32&amp;someotherparam=x
    */
+  @Nullable
   String query();
 
   /**
@@ -105,6 +107,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param headerName  the header name
    * @return the header value
    */
+  @Nullable
   String getHeader(String headerName);
 
   /**
@@ -128,6 +131,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param paramName  the param name
    * @return the param value
    */
+  @Nullable
   String getParam(String paramName);
 
 
@@ -165,7 +169,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   @Fluent
-  HttpServerRequest bodyHandler(Handler<Buffer> bodyHandler);
+  HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler);
 
   /**
    * Get a net socket for the underlying connection of this request.
@@ -203,7 +207,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> uploadHandler);
+  HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> uploadHandler);
 
   /**
    * Returns a map of all form attributes in the request.
@@ -224,6 +228,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param attributeName  the attribute name
    * @return the attribute value
    */
+  @Nullable
   String getFormAttribute(String attributeName);
 
   /**

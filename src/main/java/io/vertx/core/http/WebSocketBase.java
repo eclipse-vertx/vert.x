@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -126,7 +127,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  WebSocketBase closeHandler(Handler<Void> handler);
+  WebSocketBase closeHandler(@Nullable Handler<Void> handler);
 
   /**
    * Set a frame handler on the connection. This handler will be called when frames are read on the connection.
@@ -135,7 +136,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  WebSocketBase frameHandler(Handler<WebSocketFrame> handler);
+  WebSocketBase frameHandler(@Nullable Handler<WebSocketFrame> handler);
 
   /**
    * Close the WebSocket.

@@ -15,6 +15,7 @@
  */
 package io.vertx.core.datagram;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -137,7 +138,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source,
+  DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source,
                                       Handler<AsyncResult<DatagramSocket>> handler);
 
   /**
@@ -162,7 +163,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return  a reference to this, so the API can be used fluently
    */
   @Fluent
-  DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source,
+  DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source,
                                         Handler<AsyncResult<DatagramSocket>> handler);
 
   /**

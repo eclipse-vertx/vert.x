@@ -17,6 +17,7 @@
 package io.vertx.core.cli;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.cli.impl.DefaultCommandLine;
 
@@ -60,6 +61,7 @@ public interface CommandLine {
    * @param <T>  the expected type
    * @return the value, {@code null} if not set
    */
+  @Nullable
   <T> T getOptionValue(String name);
 
   /**
@@ -69,6 +71,7 @@ public interface CommandLine {
    * @param <T>  the expected type
    * @return the value, {@code null} if not set
    */
+  @Nullable
   <T> T getArgumentValue(String name);
 
   /**
@@ -78,6 +81,7 @@ public interface CommandLine {
    * @param <T>   the expected type
    * @return the value, {@code null} if not set
    */
+  @Nullable
   <T> T getArgumentValue(int index);
 
   /**
@@ -155,7 +159,7 @@ public interface CommandLine {
    * @param option the option
    * @return the value, {@code null} if none.
    */
-  String getRawValueForOption(Option option);
+  @Nullable String getRawValueForOption(Option option);
 
   /**
    * Checks whether or not the given option accept more values.
@@ -171,7 +175,7 @@ public interface CommandLine {
    * @param arg the argument
    * @return the value, {@code null} if none.
    */
-  String getRawValueForArgument(Argument arg);
+  @Nullable String getRawValueForArgument(Argument arg);
 
   /**
    * Checks whether or not the given argument has been assigned in the command line.

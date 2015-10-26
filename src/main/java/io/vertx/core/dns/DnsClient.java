@@ -16,6 +16,7 @@
 package io.vertx.core.dns;
 
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -45,7 +46,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  DnsClient lookup(String name, Handler<AsyncResult<String>> handler);
+  DnsClient lookup(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
    * Try to lookup the A (ipv4) record for the given name. The first found will be used.
@@ -57,7 +58,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  DnsClient lookup4(String name, Handler<AsyncResult<String>> handler);
+  DnsClient lookup4(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
    * Try to lookup the AAAA (ipv6) record for the given name. The first found will be used.
@@ -69,7 +70,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  DnsClient lookup6(String name, Handler<AsyncResult<String>> handler);
+  DnsClient lookup6(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
    * Try to resolve all A (ipv4) records for the given name.
@@ -144,7 +145,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
-  DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler);
+  DnsClient resolvePTR(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
    * Try to resolve the NS records for the given name.
@@ -181,5 +182,5 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
-  DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<String>> handler);
+  DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<@Nullable String>> handler);
 }

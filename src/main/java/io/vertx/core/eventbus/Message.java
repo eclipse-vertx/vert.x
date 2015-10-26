@@ -17,6 +17,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -62,6 +63,7 @@ public interface Message<T> {
    *
    * @return the reply address, or null, if message was sent without a reply handler.
    */
+  @Nullable
   String replyAddress();
 
   /**
