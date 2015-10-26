@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -51,7 +52,7 @@ public interface HttpServer extends Measured {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  HttpServer requestHandler(Handler<HttpServerRequest> handler);
+  HttpServer requestHandler(@Nullable Handler<HttpServerRequest> handler);
 
   /**
    * @return  the request handler
@@ -73,7 +74,7 @@ public interface HttpServer extends Measured {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  HttpServer websocketHandler(Handler<ServerWebSocket> handler);
+  HttpServer websocketHandler(@Nullable Handler<ServerWebSocket> handler);
 
   /**
    * @return the websocketHandler

@@ -17,6 +17,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -48,7 +49,7 @@ public interface NetServer extends Measured {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  NetServer connectHandler(Handler<NetSocket> handler);
+  NetServer connectHandler(@Nullable Handler<NetSocket> handler);
 
   @GenIgnore
   Handler<NetSocket> connectHandler();

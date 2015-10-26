@@ -19,6 +19,7 @@ package io.vertx.core;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -105,7 +106,7 @@ public interface Vertx extends Measured {
    *
    * @return The current context or null if no current context
    */
-  static Context currentContext() {
+  static @Nullable Context currentContext() {
     return factory.context();
   }
 

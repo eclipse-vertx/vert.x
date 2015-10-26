@@ -16,6 +16,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -178,7 +179,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientRequest continueHandler(Handler<Void> handler);
+  HttpClientRequest continueHandler(@Nullable Handler<Void> handler);
 
   /**
    * Forces the head of the request to be written before {@link #end()} is called on the request or any data is

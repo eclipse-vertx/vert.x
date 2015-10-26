@@ -17,6 +17,7 @@
 package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 
@@ -79,6 +80,6 @@ public interface WriteStream<T> extends StreamBase {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  WriteStream<T> drainHandler(Handler<Void> handler);
+  WriteStream<T> drainHandler(@Nullable Handler<Void> handler);
 
 }

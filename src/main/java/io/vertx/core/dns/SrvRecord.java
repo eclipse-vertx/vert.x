@@ -15,6 +15,7 @@
  */
 package io.vertx.core.dns;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -58,5 +59,6 @@ public interface SrvRecord {
   /**
    * Returns the name of the host for the service.
    */
+  @Nullable
   String target();
 }

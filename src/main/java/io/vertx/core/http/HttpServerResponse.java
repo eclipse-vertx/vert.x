@@ -19,6 +19,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -190,7 +191,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse closeHandler(Handler<Void> handler);
+  HttpServerResponse closeHandler(@Nullable Handler<Void> handler);
 
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
@@ -357,7 +358,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse headersEndHandler(Handler<Void> handler);
+  HttpServerResponse headersEndHandler(@Nullable Handler<Void> handler);
 
   /**
    * Provide a handler that will be called just before the last part of the body is written to the wire
@@ -368,6 +369,6 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse bodyEndHandler(Handler<Void> handler);
+  HttpServerResponse bodyEndHandler(@Nullable Handler<Void> handler);
 
 }

@@ -17,6 +17,7 @@
 package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 
@@ -35,5 +36,5 @@ public interface StreamBase {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  StreamBase exceptionHandler(Handler<Throwable> handler);
+  StreamBase exceptionHandler(@Nullable Handler<Throwable> handler);
 }
