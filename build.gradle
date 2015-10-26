@@ -206,6 +206,3 @@ task release(dependsOn: ['clean', 'test', 'dist']) {
   group = 'vert.x'
   description 'Clean and fully test the current version before creating the distribution'
 }
-
-
-
