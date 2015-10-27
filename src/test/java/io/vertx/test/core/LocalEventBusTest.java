@@ -1275,5 +1275,29 @@ public class LocalEventBusTest extends EventBusTestBase {
     closeVertx();
     await();
   }
+
+  @Test
+  public void testHandlerRegistrationDoesNotCancelTimer0() throws Exception {
+    HandlerRegistration<String> handlerRegistration = new HandlerRegistration<String>(vertx, null, null, null, false,
+        false, null, -1);
+
+    AtomicBoolean timerFinished = new AtomicBoolean(false);
+
+    long tid1 = vertx.setTimer(1000, id -> {
+      timerFinished.set(true);
+    });
+
+    if (tid1 != 0) {
+      fail("timer id is not 0, the issue will not show");
+    }
+
+    handlerRegistration.unregister();
+
+    vertx.setTimer(2000, id2 -> {
+      assertTrue("timer did not finish", timerFinished.get());
+      testComplete();
+    });
+    await();
+  }
 }
 
