@@ -557,7 +557,6 @@ public class NetTest extends VertxTestBase {
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
     int trafficClass = TestUtils.randomByte() + 128;
-    System.out.println("trafficClass = " + trafficClass);
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
     int soLinger = TestUtils.randomPositiveInt();

@@ -17,6 +17,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -31,19 +32,21 @@ import java.util.UUID;
  */
 public class MessageProducerImpl<T> implements MessageProducer<T> {
 
-  public static final int DEFAULT_INITIAL_CREDITS = 1000;
   public static final String CREDIT_ADDRESS_HEADER_NAME = "__vertx.credit";
 
+  private final Vertx vertx;
   private final EventBus bus;
   private final boolean send;
   private final String address;
   private final Queue<T> pending = new ArrayDeque<>();
-  private DeliveryOptions options;
   private final MessageConsumer<Integer> creditConsumer;
-  private int credits = DEFAULT_INITIAL_CREDITS;
+  private DeliveryOptions options;
+  private int credits = DEFAULT_WRITE_QUEUE_MAX_SIZE;
+  private Handler<Void> drainHandler;
 
-  public MessageProducerImpl(EventBus bus, String address, boolean send, DeliveryOptions options) {
-    this.bus = bus;
+  public MessageProducerImpl(Vertx vertx, String address, boolean send, DeliveryOptions options) {
+    this.vertx = vertx;
+    this.bus = vertx.eventBus();
     this.address = address;
     this.send = send;
     this.options = options;
@@ -65,8 +68,8 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public MessageProducer<T> setCredits(int credits) {
-    this.credits = credits;
+  public MessageProducer<T> send(T message) {
+    write(message);
     return this;
   }
 
@@ -76,7 +79,8 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public MessageProducer<T> setWriteQueueMaxSize(int maxSize) {
+  public synchronized MessageProducer<T> setWriteQueueMaxSize(int maxSize) {
+    this.credits = maxSize;
     return this;
   }
 
@@ -92,11 +96,12 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public boolean writeQueueFull() {
-    return false;
+    return pending.size() >= 0;
   }
 
   @Override
-  public MessageProducer<T> drainHandler(Handler<Void> handler) {
+  public synchronized MessageProducer<T> drainHandler(Handler<Void> handler) {
+    this.drainHandler = handler;
     return this;
   }
 
@@ -132,12 +137,17 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     credits += credit;
     while (credits > 0) {
       T data = pending.poll();
-      if (pending == null) {
+      if (data == null) {
         break;
       } else {
         credits--;
         bus.send(address, data, options);
       }
+    }
+    final Handler<Void> theDrainHandler = drainHandler;
+    if (theDrainHandler != null && pending.isEmpty()) {
+      this.drainHandler = null;
+      vertx.runOnContext(v -> theDrainHandler.handle(null));
     }
   }
 

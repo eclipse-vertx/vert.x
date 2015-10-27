@@ -165,16 +165,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   public void handle(Message<T> message) {
     Handler<Message<T>> theHandler = null;
     synchronized (this) {
-      String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
-      if (creditsAddress != null) {
-        eventBus.send(creditsAddress, 1);
-      }
       if (paused) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {
           if (discardHandler != null) {
             discardHandler.handle(message);
+          } else {
+            log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer");
           }
         }
       } else {
@@ -196,6 +194,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
     if (theHandler != null) {
+      String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
+      if (creditsAddress != null) {
+        eventBus.send(creditsAddress, 1);
+      }
       handleMessage(theHandler, message);
     }
   }

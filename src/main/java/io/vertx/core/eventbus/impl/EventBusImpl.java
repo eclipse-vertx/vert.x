@@ -41,8 +41,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
-  private List<Handler<SendContext>> interceptors = new CopyOnWriteArrayList<>();
-
+  private final List<Handler<SendContext>> interceptors = new CopyOnWriteArrayList<>();
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
@@ -99,27 +98,27 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   @Override
   public <T> MessageProducer<T> sender(String address) {
     Objects.requireNonNull(address, "address");
-    return new MessageProducerImpl<>(this, address, true, new DeliveryOptions());
+    return new MessageProducerImpl<>(vertx, address, true, new DeliveryOptions());
   }
 
   @Override
   public <T> MessageProducer<T> sender(String address, DeliveryOptions options) {
     Objects.requireNonNull(address, "address");
     Objects.requireNonNull(options, "options");
-    return new MessageProducerImpl<>(this, address, true, options);
+    return new MessageProducerImpl<>(vertx, address, true, options);
   }
 
   @Override
   public <T> MessageProducer<T> publisher(String address) {
     Objects.requireNonNull(address, "address");
-    return new MessageProducerImpl<>(this, address, false, new DeliveryOptions());
+    return new MessageProducerImpl<>(vertx, address, false, new DeliveryOptions());
   }
 
   @Override
   public <T> MessageProducer<T> publisher(String address, DeliveryOptions options) {
     Objects.requireNonNull(address, "address");
     Objects.requireNonNull(options, "options");
-    return new MessageProducerImpl<>(this, address, false, options);
+    return new MessageProducerImpl<>(vertx, address, false, options);
   }
 
   @Override
@@ -306,7 +305,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       throw new IllegalStateException("address not specified");
     } else {
       HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(replyMessage, options, replyHandler);
-      sendReply(new SendContextImpl<>(replyMessage, options, replyHandlerRegistration), replierMessage);
+      new ReplySendContextImpl<>(replyMessage, options, replyHandlerRegistration, replierMessage).next();
     }
   }
 
@@ -438,9 +437,39 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     public void next() {
       if (iter.hasNext()) {
         Handler<SendContext> handler = iter.next();
-        handler.handle(this);
+        try {
+          handler.handle(this);
+        } catch (Throwable t) {
+          log.error("Failure in interceptor", t);
+        }
       } else {
         sendOrPub(this);
+      }
+    }
+
+    @Override
+    public boolean send() {
+      return message.send();
+    }
+  }
+
+  protected class ReplySendContextImpl<T> extends SendContextImpl<T> {
+
+    private final MessageImpl replierMessage;
+
+    public ReplySendContextImpl(MessageImpl message, DeliveryOptions options, HandlerRegistration<T> handlerRegistration,
+                                MessageImpl replierMessage) {
+      super(message, options, handlerRegistration);
+      this.replierMessage = replierMessage;
+    }
+
+    @Override
+    public void next() {
+      if (iter.hasNext()) {
+        Handler<SendContext> handler = iter.next();
+        handler.handle(this);
+      } else {
+        sendReply(this, replierMessage);
       }
     }
   }

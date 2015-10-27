@@ -235,7 +235,7 @@ public interface EventBus extends Measured {
    * Unregister a default message codec.
    * <p>
    * @param clazz  the class for which the codec was registered
-   * @return @return a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
   EventBus unregisterDefaultCodec(Class clazz);
@@ -243,7 +243,7 @@ public interface EventBus extends Measured {
   /**
    * Start the event bus. This would not normally be called in user code
    *
-   * @param completionHandler
+   * @param completionHandler  handler will be called when event bus is started
    */
   @GenIgnore
   void start(Handler<AsyncResult<Void>> completionHandler);
@@ -256,12 +256,21 @@ public interface EventBus extends Measured {
   @GenIgnore
   void close(Handler<AsyncResult<Void>> completionHandler);
 
+  /**
+   * Add an interceptor that will be called whenever a message is sent from Vert.x
+   *
+   * @param interceptor  the interceptor
+   * @return a reference to this, so the API can be used fluently
+   */
   EventBus addInterceptor(Handler<SendContext> interceptor);
 
+  /**
+   * Remove an interceptor
+   *
+   * @param interceptor  the interceptor
+   * @return a reference to this, so the API can be used fluently
+   */
   EventBus removeInterceptor(Handler<SendContext> interceptor);
-
-
-
 
 }
 
