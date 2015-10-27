@@ -1277,7 +1277,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testHandlerRegistrationDoesNotCancelTimer0() throws Exception {
+  public void testConsumerUnregisterDoesNotCancelTimer0() throws Exception {
     AtomicBoolean timerFinished = new AtomicBoolean(false);
 
     long tid1 = vertx.setTimer(1000, id -> {
