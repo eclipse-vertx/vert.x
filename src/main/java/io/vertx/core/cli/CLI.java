@@ -89,7 +89,6 @@ public interface CLI {
   /**
    * @return the CLI name.
    */
-  @Nullable
   String getName();
 
   /**
