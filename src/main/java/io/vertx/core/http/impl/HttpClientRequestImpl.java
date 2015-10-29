@@ -318,7 +318,11 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   synchronized void handleDrained() {
     if (drainHandler != null) {
-      drainHandler.handle(null);
+      try {
+        drainHandler.handle(null);
+      } catch (Throwable t) {
+        handleException(t);
+      }
     }
   }
 
