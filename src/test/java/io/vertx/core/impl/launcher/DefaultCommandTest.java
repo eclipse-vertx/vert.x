@@ -19,7 +19,9 @@ import io.vertx.core.cli.CLI;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.CLIConfigurator;
+import io.vertx.core.cli.annotations.Name;
 import io.vertx.core.impl.launcher.commands.HelloCommand;
+import io.vertx.core.spi.launcher.DefaultCommand;
 import io.vertx.core.spi.launcher.ExecutionContext;
 import org.junit.Test;
 
@@ -31,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultCommandTest {
 
   HelloCommand command = new HelloCommand();
-  
+
   private CommandLine parse(CLI cli, String... args) throws CLIException {
     return cli.parse(Arrays.asList(args));
   }
@@ -63,6 +65,33 @@ public class DefaultCommandTest {
     // System properties are not removed by the tearDown.
     assertThat(System.getProperty("foo")).isEqualToIgnoringCase("bar");
     assertThat(System.getProperty("x")).isEqualToIgnoringCase("y");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testThatCLINeedsAName() {
+    CLIConfigurator.define(MyCommandWithoutName.class);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testThatCLINeedsANonEmptyName() {
+    CLIConfigurator.define(MyCommandWithoutEmptyName.class);
+  }
+
+  public static class MyCommandWithoutName extends DefaultCommand {
+
+    @Override
+    public void run() throws CLIException {
+
+    }
+  }
+
+  @Name(value = "")
+  public static class MyCommandWithoutEmptyName extends DefaultCommand {
+
+    @Override
+    public void run() throws CLIException {
+
+    }
   }
 
 }

@@ -29,6 +29,7 @@ import java.util.Set;
 
 /**
  * Class responsible for defining CLI using annotations and injecting values extracted by the parser.
+ *
  * @author Clement Escoffier <clement@apache.org>
  */
 public class CLIConfigurator {
@@ -49,9 +50,14 @@ public class CLIConfigurator {
     final Hidden hidden = clazz.getAnnotation(Hidden.class);
     final Name name = clazz.getAnnotation(Name.class);
 
-    if (name != null) {
-      cli.setName(name.value());
+    if (name == null) {
+      throw new IllegalArgumentException("The command cannot be defined, the @Name annotation is missing.");
     }
+    if (name.value() == null || name.value().isEmpty()) {
+      throw new IllegalArgumentException("The command cannot be defined, the @Name value is empty or null.");
+    }
+    cli.setName(name.value());
+
     if (summary != null) {
       cli.setSummary(summary.value());
     }
