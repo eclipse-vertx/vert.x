@@ -61,50 +61,52 @@ public class CLIConfiguratorTest {
         .containsIgnoringCase(" -n,--name <name>   your name");
   }
 
+  @Name("test")
+  public static class CommandForDefaultValueTest {
+    @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
+    @DefaultValue("bar")
+    public void setFoo(String foo) {
+    }
+  }
+
   @Test
   public void testOptionsWithDefaultValue() {
-    Object object = new Object() {
-      @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
-      @DefaultValue("bar")
-      public void setFoo(String foo) {
-      }
-    };
-
-    CLI cli = CLIConfigurator.define(object.getClass());
+    CLI cli = CLIConfigurator.define(CommandForDefaultValueTest.class);
 
     assertThat(cli.getOptions()).hasSize(1);
     assertThat(find(cli.getOptions(), "option").getDefaultValue()).isEqualTo("bar");
     assertThat(find(cli.getOptions(), "option").getName()).isEqualTo("option");
   }
 
+  @Name("test")
+  public static class CommandForDescriptionTest {
+    @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
+    @Description("This option is awesome")
+    public void setFoo(String foo) {
+    }
+  }
 
   @Test
   public void testOptionsWithDescription() {
-    Object command = new Object() {
-      @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
-      @Description("This option is awesome")
-      public void setFoo(String foo) {
-      }
-    };
-
-    CLI cli = CLIConfigurator.define(command.getClass());
+    CLI cli = CLIConfigurator.define(CommandForDescriptionTest.class);
 
     assertThat(cli.getOptions()).hasSize(1);
     assertThat(find(cli.getOptions(), "option").getDescription())
         .isEqualTo("This option is awesome");
   }
 
+  @Name("test")
+  public static class CommandForParsedAsList {
+    @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
+    @ParsedAsList(separator = ":")
+    public void setFoo(List<String> foo) {
+
+    }
+  }
+
   @Test
   public void testOptionsParsedAsList() {
-    Object object = new Object() {
-      @io.vertx.core.cli.annotations.Option(longName = "option", shortName = "o")
-      @ParsedAsList(separator = ":")
-      public void setFoo(List<String> foo) {
-
-      }
-    };
-
-    CLI command = CLIConfigurator.define(object.getClass());
+    CLI command = CLIConfigurator.define(CommandForParsedAsList.class);
     assertThat(command.getOptions()).hasSize(1);
     assertThat(((TypedOption) find(command.getOptions(), "option"))
         .getListSeparator()).isEqualTo(":");
@@ -113,36 +115,36 @@ public class CLIConfiguratorTest {
         .isEqualTo(String.class);
   }
 
+  @Name("test")
+  public static class CommandForTypeExtractTest {
+    @io.vertx.core.cli.annotations.Option(longName = "list", shortName = "l")
+    public void setFoo(List<String> list) {
+    }
+
+    @io.vertx.core.cli.annotations.Option(longName = "set", shortName = "s")
+    public void setFoo(Set<Character> set) {
+    }
+
+    @io.vertx.core.cli.annotations.Option(longName = "collection", shortName = "c")
+    public void setFoo(Collection<Integer> collection) {
+    }
+
+    @io.vertx.core.cli.annotations.Option(longName = "tree", shortName = "t")
+    public void setFoo(TreeSet<String> list) {
+    }
+
+    @io.vertx.core.cli.annotations.Option(longName = "al", shortName = "al")
+    public void setFoo(ArrayList<String> list) {
+    }
+
+    @io.vertx.core.cli.annotations.Option(longName = "array", shortName = "a")
+    public void setFoo(int[] list) {
+    }
+  }
+
   @Test
   public void testTypeExtraction() {
-    Object object = new Object() {
-
-      @io.vertx.core.cli.annotations.Option(longName = "list", shortName = "l")
-      public void setFoo(List<String> list) {
-      }
-
-      @io.vertx.core.cli.annotations.Option(longName = "set", shortName = "s")
-      public void setFoo(Set<Character> set) {
-      }
-
-      @io.vertx.core.cli.annotations.Option(longName = "collection", shortName = "c")
-      public void setFoo(Collection<Integer> collection) {
-      }
-
-      @io.vertx.core.cli.annotations.Option(longName = "tree", shortName = "t")
-      public void setFoo(TreeSet<String> list) {
-      }
-
-      @io.vertx.core.cli.annotations.Option(longName = "al", shortName = "al")
-      public void setFoo(ArrayList<String> list) {
-      }
-
-      @io.vertx.core.cli.annotations.Option(longName = "array", shortName = "a")
-      public void setFoo(int[] list) {
-      }
-    };
-
-    CLI command = CLIConfigurator.define(object.getClass());
+    CLI command = CLIConfigurator.define(CommandForTypeExtractTest.class);
 
     assertThat(command.getOptions()).hasSize(6);
     TypedOption model = (TypedOption) find(command.getOptions(), "list");
@@ -282,101 +284,107 @@ public class CLIConfiguratorTest {
     assertThat(command.doubles).hasSize(3).containsExactly(1.0, 2.2, 3.3);
   }
 
-  @Test
-  public void testArgumentInjection() throws CLIException {
+  @Name("test")
+  public static class CommandForArgumentInjectionTest {
 
     AtomicReference<String> reference = new AtomicReference<>();
 
-    Object command = new Object() {
+    @Argument(index = 0)
+    public void setX(String s) {
+      reference.set(s);
+    }
+  }
 
-      @Argument(index = 0)
-      public void setX(String s) {
-        reference.set(s);
-      }
-    };
+  @Test
+  public void testArgumentInjection() throws CLIException {
+    CommandForArgumentInjectionTest command = new CommandForArgumentInjectionTest();
     CLI cli = CLIConfigurator.define(command.getClass()).setName("test");
     CommandLine evaluatedCLI = parse(cli, "foo");
     CLIConfigurator.inject(evaluatedCLI, command);
-    assertThat(reference.get()).isEqualTo("foo");
+    assertThat(command.reference.get()).isEqualTo("foo");
+  }
+
+  @Name("test")
+  public class CommandForConvertedValueTest {
+    AtomicReference<Person4> reference = new AtomicReference<>();
+
+    @Argument(index = 0, required = false)
+    @DefaultValue("Bill,Balantine")
+    @ConvertedBy(Person4Converter.class)
+    public void setX(Person4 s) {
+      reference.set(s);
+    }
   }
 
   @Test
   public void testArgumentInjectionWithConvertedByAndDefaultValue() throws CLIException {
-
-    AtomicReference<Person4> reference = new AtomicReference<>();
-
-    Object command = new Object() {
-      @Argument(index = 0, required = false)
-      @DefaultValue("Bill,Balantine")
-      @ConvertedBy(Person4Converter.class)
-      public void setX(Person4 s) {
-        reference.set(s);
-      }
-    };
+    CommandForConvertedValueTest command = new CommandForConvertedValueTest();
 
     CLI cli = CLIConfigurator.define(command.getClass()).setName("test");
     CommandLine evaluatedCLI = parse(cli, "Bob,Morane");
     CLIConfigurator.inject(evaluatedCLI, command);
-    assertThat(reference.get().first).isEqualTo("Bob");
-    assertThat(reference.get().last).isEqualTo("Morane");
+    assertThat(command.reference.get().first).isEqualTo("Bob");
+    assertThat(command.reference.get().last).isEqualTo("Morane");
 
     evaluatedCLI = parse(cli);
     CLIConfigurator.inject(evaluatedCLI, command);
-    assertThat(reference.get().first).isEqualTo("Bill");
-    assertThat(reference.get().last).isEqualTo("Balantine");
+    assertThat(command.reference.get().first).isEqualTo("Bill");
+    assertThat(command.reference.get().last).isEqualTo("Balantine");
+  }
+
+  @Name("test")
+  public static class CommandForMultipleArgumentTest {
+
+    AtomicReference<String> x = new AtomicReference<>();
+    AtomicReference<Integer> y = new AtomicReference<>();
+
+    @Argument(index = 0)
+    public void setX(String s) {
+      x.set(s);
+    }
+
+    @Argument(index = 1)
+    public void setY(int s) {
+      y.set(s);
+    }
   }
 
   @Test
   public void testArgumentInjectionWithSeveralArguments() throws CLIException {
-
-    AtomicReference<String> x = new AtomicReference<>();
-    AtomicReference<Integer> y = new AtomicReference<>();
-
-    Object command = new Object() {
-
-      @Argument(index = 0)
-      public void setX(String s) {
-        x.set(s);
-      }
-
-      @Argument(index = 1)
-      public void setY(int s) {
-        y.set(s);
-      }
-    };
-
+    CommandForMultipleArgumentTest command = new CommandForMultipleArgumentTest();
     CLI cli = CLIConfigurator.define(command.getClass()).setName("test");
     CommandLine evaluatedCLI = parse(cli, "foo", "1");
     CLIConfigurator.inject(evaluatedCLI, command);
-    assertThat(x.get()).isEqualTo("foo");
-    assertThat(y.get()).isEqualTo(1);
+    assertThat(command.x.get()).isEqualTo("foo");
+    assertThat(command.y.get()).isEqualTo(1);
+  }
+
+  @Name("test")
+  public static class CommandWithDefaultValueOnArgument {
+    AtomicReference<String> x = new AtomicReference<>();
+    AtomicReference<Integer> y = new AtomicReference<>();
+
+    @Argument(index = 0)
+    public void setX(String s) {
+      x.set(s);
+    }
+
+    @Argument(index = 1, required = false)
+    @DefaultValue("25")
+    public void setY(int s) {
+      y.set(s);
+    }
   }
 
   @Test
   public void testArgumentWithDefaultValue() throws CLIException {
-
-    AtomicReference<String> x = new AtomicReference<>();
-    AtomicReference<Integer> y = new AtomicReference<>();
-
-    Object command = new Object() {
-
-      @Argument(index = 0)
-      public void setX(String s) {
-        x.set(s);
-      }
-
-      @Argument(index = 1, required = false)
-      @DefaultValue("25")
-      public void setY(int s) {
-        y.set(s);
-      }
-    };
+    CommandWithDefaultValueOnArgument command = new CommandWithDefaultValueOnArgument();
 
     CLI cli = CLIConfigurator.define(command.getClass()).setName("test");
     CommandLine evaluatedCLI = parse(cli, "foo");
     CLIConfigurator.inject(evaluatedCLI, command);
-    assertThat(x.get()).isEqualTo("foo");
-    assertThat(y.get()).isEqualTo(25);
+    assertThat(command.x.get()).isEqualTo("foo");
+    assertThat(command.y.get()).isEqualTo(25);
   }
 
   private Option find(List<Option> options, String name) {
