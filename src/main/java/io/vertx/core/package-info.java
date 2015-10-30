@@ -1015,10 +1015,10 @@
  *
  * [source]
  * ----
- * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --on-redeploy="mvn package"
+ * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --onRedeploy="mvn package"
  * ----
  *
- * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
+ * The "onRedeploy" option specifies a command invoked after the shutdown of the application and before the
  * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
  * or `grunt` to update your resources.
  *
