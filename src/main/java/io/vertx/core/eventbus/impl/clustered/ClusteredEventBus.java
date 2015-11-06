@@ -141,7 +141,7 @@ public class ClusteredEventBus extends EventBusImpl {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send);
+    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, this);
     return msg;
   }
 

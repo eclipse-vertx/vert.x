@@ -48,13 +48,14 @@ public class MessageImpl<U, V> implements Message<V> {
 
   public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec,
-                     boolean send) {
+                     boolean send, EventBusImpl bus) {
     this.messageCodec = messageCodec;
     this.address = address;
     this.replyAddress = replyAddress;
     this.headers = headers;
     this.sentBody = sentBody;
     this.send = send;
+    this.bus = bus;
   }
 
   protected MessageImpl(MessageImpl<U, V> other) {

@@ -18,6 +18,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.WriteStream;
 
@@ -39,6 +40,8 @@ public interface MessageProducer<T> extends WriteStream<T> {
    * @return  reference to this for fluency
    */
   MessageProducer<T> send(T message);
+
+  <R> MessageProducer<T> send(T message, Handler<AsyncResult<Message<R>>> replyHandler);
 
   @Override
   MessageProducer<T> exceptionHandler(Handler<Throwable> handler);

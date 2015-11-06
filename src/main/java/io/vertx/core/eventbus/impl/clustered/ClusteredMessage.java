@@ -21,6 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
+import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.logging.Logger;
@@ -49,8 +50,8 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   }
 
   public ClusteredMessage(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,
-                          MessageCodec<U, V> messageCodec, boolean send) {
-    super(address, replyAddress, headers, sentBody, messageCodec, send);
+                          MessageCodec<U, V> messageCodec, boolean send, EventBusImpl bus) {
+    super(address, replyAddress, headers, sentBody, messageCodec, send, bus);
     this.sender = sender;
   }
 

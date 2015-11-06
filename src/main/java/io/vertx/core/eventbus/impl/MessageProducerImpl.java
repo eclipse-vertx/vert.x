@@ -16,12 +16,10 @@
 
 package io.vertx.core.eventbus.impl;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.MessageProducer;
+import io.vertx.core.eventbus.*;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -69,7 +67,13 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public MessageProducer<T> send(T message) {
-    write(message);
+    doSend(message, null);
+    return this;
+  }
+
+  @Override
+  public <R> MessageProducer<T> send(T message, Handler<AsyncResult<Message<R>>> replyHandler) {
+    doSend(message, replyHandler);
     return this;
   }
 
@@ -87,7 +91,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   @Override
   public synchronized MessageProducer<T> write(T data) {
     if (send) {
-      doSend(data);
+      doSend(data, null);
     } else {
       bus.publish(address, data, options);
     }
@@ -124,10 +128,14 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     super.finalize();
   }
 
-  private synchronized void doSend(T data) {
+  private synchronized <R> void doSend(T data, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (credits > 0) {
       credits--;
-      bus.send(address, data, options);
+      if (replyHandler == null) {
+        bus.send(address, data, options);
+      } else {
+        bus.send(address, data, options, replyHandler);
+      }
     } else {
       pending.add(data);
     }
