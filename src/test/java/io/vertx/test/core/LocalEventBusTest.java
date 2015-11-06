@@ -1238,7 +1238,9 @@ public class LocalEventBusTest extends EventBusTestBase {
       producer.write("no-header");
     });
     consumer.handler(msg -> {
-      switch (msg.body()) {
+      String body = msg.body();
+      assertNotNull(body);
+      switch (body) {
         case "no-header":
           assertNull(msg.headers().get("header-name"));
           producer.deliveryOptions(new DeliveryOptions().addHeader("header-name", "header-value"));

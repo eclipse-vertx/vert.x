@@ -6,7 +6,6 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
-import io.vertx.core.eventbus.impl.local.LocalEventBus;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -28,9 +27,11 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   private static final Logger log = LoggerFactory.getLogger(HandlerRegistration.class);
 
+  public static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
+
   private final Vertx vertx;
   private final EventBusMetrics metrics;
-  private final LocalEventBus eventBus;
+  private final EventBusImpl eventBus;
   private final String address;
   private final boolean replyHandler;
   private final boolean localOnly;
@@ -42,12 +43,12 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
-  private int maxBufferedMessages;
+  private int maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
   private final Queue<Message<T>> pending = new ArrayDeque<>(8);
   private boolean paused;
   private Object metric;
 
-  public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, LocalEventBus eventBus, String address,
+  public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
                              boolean replyHandler, boolean localOnly,
                              Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     this.vertx = vertx;
@@ -170,6 +171,8 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         } else {
           if (discardHandler != null) {
             discardHandler.handle(message);
+          } else {
+            log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer");
           }
         }
       } else {
@@ -191,6 +194,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
     if (theHandler != null) {
+      String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
+      if (creditsAddress != null) {
+        eventBus.send(creditsAddress, 1);
+      }
       handleMessage(theHandler, message);
     }
   }

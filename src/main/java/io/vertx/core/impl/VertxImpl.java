@@ -29,6 +29,8 @@ import io.vertx.core.datagram.impl.DatagramSocketImpl;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.impl.EventBusImpl;
+import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -51,7 +53,6 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
-import io.vertx.core.spi.EventBusFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -74,8 +75,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
-
-  private static final EventBusFactory eventBusFactory = ServiceHelper.loadFactory(EventBusFactory.class);
 
   static {
     // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
@@ -163,7 +162,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void createAndStartEventBus(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    eventBus = eventBusFactory.createEventBus(this, options, clusterManager, haManager);
+    if (options.isClustered()) {
+      eventBus = new ClusteredEventBus(this, options, clusterManager, haManager);
+    } else {
+      eventBus = new EventBusImpl(this);
+    }
     eventBus.start(ar2 -> {
       if (ar2.succeeded()) {
         if (resultHandler != null) {

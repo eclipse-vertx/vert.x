@@ -106,7 +106,6 @@ class ConnectionHolder {
     });
   }
 
-
   private synchronized void connected(NetSocket socket) {
     this.socket = socket;
     connected = true;
