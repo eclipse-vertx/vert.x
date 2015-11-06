@@ -155,9 +155,9 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   public void testRecursivelyUnpack() throws Exception {
     File file = resolver.resolveFile(webRoot + "/subdir");
     assertTrue(file.exists());
-    File sub = new File(new File(file, "subdir2"), "subfile2.html");
+    File sub = new File(file, "subfile.html");
     assertTrue(sub.exists());
-    assertEquals("<html><body>subfile2</body></html>", readFile(sub));
+    assertEquals("<html><body>subfile</body></html>", readFile(sub));
   }
 
   @Test
