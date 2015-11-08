@@ -1278,21 +1278,14 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testConsumerUnregisterDoesNotCancelTimer0() throws Exception {
-    AtomicBoolean timerFinished = new AtomicBoolean(false);
-
-    long tid1 = vertx.setTimer(1000, id -> {
-      timerFinished.set(true);
-    });
-
-    if (tid1 != 0) {
-      fail("timer id is not 0, the issue will not show");
-    }
-
-    eb.consumer(ADDRESS1).unregister();
-
-    vertx.setTimer(2000, id2 -> {
-      assertTrue("timer did not finish", timerFinished.get());
-      testComplete();
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      // The delay does not matter so much, it will always be executed after this task anyway
+      vertx.setTimer(50, id -> {
+        assertEquals(0, (long) id);
+        testComplete();
+      });
+      eb.consumer(ADDRESS1).unregister();
     });
     await();
   }
