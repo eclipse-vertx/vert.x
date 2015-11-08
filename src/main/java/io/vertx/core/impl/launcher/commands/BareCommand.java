@@ -291,6 +291,15 @@ public class BareCommand extends ClasspathHandler {
         return meth;
       }
     }
+
+    // This set contains the overridden methods
+    meths = clazz.getMethods();
+    for (Method meth : meths) {
+      if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {
+        return meth;
+      }
+    }
+
     return null;
   }
 

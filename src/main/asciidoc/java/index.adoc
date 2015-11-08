@@ -1060,10 +1060,10 @@ You can also hook your build process in the redeploy cycle:
 
 [source]
 ----
-java –jar target/my-fat-jar.jar –redeploy="**/*.java" --on-redeploy="mvn package"
+java –jar target/my-fat-jar.jar –redeploy="**/*.java" --onRedeploy="mvn package"
 ----
 
-The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
+The "onRedeploy" option specifies a command invoked after the shutdown of the application and before the
 restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
 or `grunt` to update your resources.
 
@@ -1369,3 +1369,14 @@ By default, it executed the `run` command. However, you can configure the defaul
 
 You can also create a sub-class of `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` to start your application. The class has been
 designed to be easily extensible.
+
+A `link:../../apidocs/io/vertx/core/Launcher.html[Launcher]` sub-class can:
+
+* customize the vert.x configuration in `link:../../apidocs/io/vertx/core/Launcher.html#beforeStartingVertx-io.vertx.core.VertxOptions-[beforeStartingVertx]`
+* retrieve the vert.x instance created by the "run" or "bare" command by
+overriding `link:../../apidocs/io/vertx/core/Launcher.html#afterStartingVertx-io.vertx.core.Vertx-[afterStartingVertx]`
+* configure the default verticle and command with
+`link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#getMainVerticle--[getMainVerticle]` and
+`link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#getDefaultCommand--[getDefaultCommand]`
+* add / remove commands using `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#register-java.lang.Class-[register]`
+and `link:../../apidocs/io/vertx/core/impl/launcher/VertxCommandLauncher.html#unregister-java.lang.String-[unregister]`

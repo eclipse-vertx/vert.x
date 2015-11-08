@@ -1015,10 +1015,10 @@
  *
  * [source]
  * ----
- * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --on-redeploy="mvn package"
+ * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --onRedeploy="mvn package"
  * ----
  *
- * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
+ * The "onRedeploy" option specifies a command invoked after the shutdown of the application and before the
  * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
  * or `grunt` to update your resources.
  *
@@ -1321,6 +1321,17 @@
  *
  * You can also create a sub-class of {@link io.vertx.core.Launcher} to start your application. The class has been
  * designed to be easily extensible.
+ *
+ * A {@link io.vertx.core.Launcher} sub-class can:
+ *
+ * * customize the vert.x configuration in {@link io.vertx.core.Launcher#beforeStartingVertx(io.vertx.core.VertxOptions)}
+ * * retrieve the vert.x instance created by the "run" or "bare" command by
+ * overriding {@link io.vertx.core.Launcher#afterStartingVertx(io.vertx.core.Vertx)}
+ * * configure the default verticle and command with
+ * {@link io.vertx.core.impl.launcher.VertxCommandLauncher#getMainVerticle()} and
+ * {@link io.vertx.core.impl.launcher.VertxCommandLauncher#getDefaultCommand()}
+ * * add / remove commands using {@link io.vertx.core.impl.launcher.VertxCommandLauncher#register(java.lang.Class)}
+ * and {@link io.vertx.core.impl.launcher.VertxCommandLauncher#unregister(java.lang.String)}
  *
  */
 @Document(fileName = "index.adoc")

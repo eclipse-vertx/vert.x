@@ -49,6 +49,16 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
   }
 
   /**
+   * Utility method to execute a specific command.
+   *
+   * @param cmd  the command
+   * @param args the arguments
+   */
+  public static void executeCommand(String cmd, String... args) {
+    new Launcher().execute(cmd, args);
+  }
+
+  /**
    * Hook for sub-classes of {@link Launcher} before the vertx instance is started.
    */
   public void beforeStartingVertx(VertxOptions options) {

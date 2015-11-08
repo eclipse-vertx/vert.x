@@ -84,7 +84,7 @@ public class UsageMessageFormatter {
    * <p/>
    * Defaults to case-insensitive alphabetical sorting by option key.
    */
-  private Comparator<Option> optionComparator =
+  protected Comparator<Option> optionComparator =
       (opt1, opt2) -> opt1.getName().compareToIgnoreCase(opt2.getName());
 
   public void setWidth(int width) {
@@ -197,7 +197,7 @@ public class UsageMessageFormatter {
    * @param buff   the StringBuilder to append to
    * @param option the Option to append
    */
-  private void appendOption(StringBuilder buff, Option option) {
+  protected void appendOption(StringBuilder buff, Option option) {
     if (option.isHidden()) {
       return;
     }
@@ -236,7 +236,7 @@ public class UsageMessageFormatter {
    * @param argument the argument to add
    * @param required whether the Option is required or not
    */
-  private void appendArgument(StringBuilder buff, Argument argument, boolean required) {
+  protected void appendArgument(StringBuilder buff, Argument argument, boolean required) {
     if (argument.isHidden()) {
       return;
     }
@@ -284,7 +284,13 @@ public class UsageMessageFormatter {
       buildWrapped(builder, "\n" + cli.getDescription());
     }
     builder.append("\n");
-    builder.append("Options:\n");
+
+    if (cli.getOptions().isEmpty()  && cli.getArguments().isEmpty()) {
+      // When we have neither options and arguments, just leave.
+      return;
+    }
+
+    builder.append("Options and Arguments:\n");
     computeOptionsAndArguments(builder, cli.getOptions(), cli.getArguments());
   }
 
@@ -409,7 +415,7 @@ public class UsageMessageFormatter {
 
   }
 
-  private static boolean isNullOrEmpty(String s) {
+  public static boolean isNullOrEmpty(String s) {
     return s == null || s.trim().length() == 0;
   }
 
@@ -599,7 +605,7 @@ public class UsageMessageFormatter {
    * @param nextLineTabStop The position on the next line for the first tab.
    * @param text            The text to be rendered.
    */
-  private Appendable renderWrappedTextBlock(StringBuilder sb, int width, int nextLineTabStop, String text) {
+  public Appendable renderWrappedTextBlock(StringBuilder sb, int width, int nextLineTabStop, String text) {
     try {
       BufferedReader in = new BufferedReader(new StringReader(text));
       String line;

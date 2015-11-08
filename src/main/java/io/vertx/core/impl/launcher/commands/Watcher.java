@@ -269,7 +269,8 @@ public class Watcher implements Runnable {
         } else {
           ExecUtils.addArgument(command, "sh");
           ExecUtils.addArgument(command, "-c");
-          ExecUtils.addArgument(command, cmd);
+          // Do not add quote to the given command:
+          command.add(cmd);
         }
 
         final Process process = new ProcessBuilder(command)
