@@ -1275,5 +1275,26 @@ public class LocalEventBusTest extends EventBusTestBase {
     closeVertx();
     await();
   }
+
+  @Test
+  public void testConsumerUnregisterDoesNotCancelTimer0() throws Exception {
+    AtomicBoolean timerFinished = new AtomicBoolean(false);
+
+    long tid1 = vertx.setTimer(1000, id -> {
+      timerFinished.set(true);
+    });
+
+    if (tid1 != 0) {
+      fail("timer id is not 0, the issue will not show");
+    }
+
+    eb.consumer(ADDRESS1).unregister();
+
+    vertx.setTimer(2000, id2 -> {
+      assertTrue("timer did not finish", timerFinished.get());
+      testComplete();
+    });
+    await();
+  }
 }
 
