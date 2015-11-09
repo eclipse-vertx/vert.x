@@ -21,10 +21,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.HAManager;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
+import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -63,14 +65,19 @@ public class ComplexHATest extends VertxTestBase {
   }
 
   @Test
-  @Repeat(times = 10)
+  @Repeat(times = 500)
   public void testComplexFailover() {
     try {
       int numNodes = 8;
       createNodes(numNodes);
+
+      // minus 1 left node and 1 chosen for regular failover node
+      HAManager.beforeRemoveLatch = new CountDownLatch(aliveNodes.size() - 2);
+
       deployRandomVerticles(() -> {
         killRandom();
       });
+
       await(10, TimeUnit.MINUTES);
     } catch (Throwable t) {
       // Need to explicitly catch throwables in repeats or they will be swallowed
@@ -181,6 +188,7 @@ public class ComplexHATest extends VertxTestBase {
     killedNode = pos;
     v.executeBlocking(fut -> {
       v.simulateKill();
+      HAManager.anotherNodeKilledLatch.countDown();
       fut.complete();
     }, ar -> {
       assertTrue(ar.succeeded());

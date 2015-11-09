@@ -65,11 +65,12 @@ public class FakeClusterManager implements ClusterManager {
     }
   }
 
-  private static void doLeave(String nodeID) {
+  private void doLeave(String nodeID) {
     nodes.remove(nodeID);
     for (NodeListener listener: new ArrayList<>(nodeListeners)) {
       if (listener != null) {
-        listener.nodeLeft(nodeID);
+        // In distributed environment this events will be received asynchronously
+        vertx.executeBlocking(f -> listener.nodeLeft(nodeID), false, null);
       }
     }
   }
