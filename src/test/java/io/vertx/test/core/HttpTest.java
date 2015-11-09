@@ -1149,12 +1149,12 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testParamUmlauteDecoding() throws UnsupportedEncodingException {
     testParamDecoding("äüö");
-  } 
-  
+  }
+
   @Test
   public void testParamPlusDecoding() throws UnsupportedEncodingException {
     testParamDecoding("+");
-  } 
+  }
 
   @Test
   public void testParamPercentDecoding() throws UnsupportedEncodingException {
@@ -1177,7 +1177,7 @@ public class HttpTest extends HttpTestBase {
   }
 
   private void testParamDecoding(String value) throws UnsupportedEncodingException {
-    
+
     server.requestHandler(req -> {
       req.setExpectMultipart(true);
       req.endHandler(v -> {
@@ -1739,6 +1739,38 @@ public class HttpTest extends HttpTestBase {
     }));
     await();
   }
+
+  @Test
+  public void testClientExceptionHandlerCalledWhenExceptionOnDataHandler() throws Exception {
+    server.requestHandler(request -> {
+      request.response().end("foo");
+    }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+      // Exception handler should be called for any exceptions in the data handler
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.handler(data -> {
+          throw new RuntimeException("should be caught");
+        });
+        resp.exceptionHandler(t -> testComplete());
+      }).exceptionHandler(error -> fail()).end();
+    }));
+    await();
+  }
+
+  @Test
+   public void testClientExceptionHandlerCalledWhenExceptionOnBodyHandler() throws Exception {
+     server.requestHandler(request -> {
+       request.response().end("foo");
+     }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
+       // Exception handler should be called for any exceptions in the data handler
+       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+         resp.bodyHandler(data -> {
+           throw new RuntimeException("should be caught");
+         });
+         resp.exceptionHandler(t -> testComplete());
+       }).exceptionHandler(error -> fail()).end();
+     }));
+     await();
+   }
 
   @Test
   public void testNoExceptionHandlerCalledWhenResponseReceivedOK() throws Exception {
@@ -2504,6 +2536,32 @@ public class HttpTest extends HttpTestBase {
             assertFalse(req.writeQueueFull());
             testComplete();
           });
+
+          // Tell the server to resume
+          vertx.eventBus().send("server_resume", "");
+        }
+      });
+    });
+
+    await();
+  }
+
+  @Test
+  public void testClientRequestExceptionHandlerCalledWhenExceptionOnDrainHandler() {
+    pausingServer(s -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
+      req.setChunked(true);
+      assertFalse(req.writeQueueFull());
+      req.setWriteQueueMaxSize(1000);
+      Buffer buff = TestUtils.randomBuffer(10000);
+      vertx.setPeriodic(1, id -> {
+        req.write(buff);
+        if (req.writeQueueFull()) {
+          vertx.cancelTimer(id);
+          req.drainHandler(v -> {
+            throw new RuntimeException("error");
+          })
+          .exceptionHandler(t -> testComplete());
 
           // Tell the server to resume
           vertx.eventBus().send("server_resume", "");
@@ -4415,7 +4473,7 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testAbsoluteURIServer() {
     server.close();
-    // Listen on all addresses 
+    // Listen on all addresses
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("0.0.0.0"));
     server.requestHandler(req -> {
       String absURI = req.absoluteURI();
