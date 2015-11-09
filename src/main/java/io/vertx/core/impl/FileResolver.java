@@ -29,6 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -242,7 +244,14 @@ public class FileResolver {
       throw new IllegalStateException("Failed to create cache dir");
     }
     // Add shutdown hook to delete on exit
-    shutdownHook = new Thread(() -> deleteCacheDir(ar -> {}));
+    shutdownHook = new Thread(() -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      deleteCacheDir(ar -> latch.countDown());
+      try {
+        latch.await(10, TimeUnit.SECONDS);
+      } catch (Exception ignore) {
+      }
+    });
     Runtime.getRuntime().addShutdownHook(shutdownHook);
   }
 
