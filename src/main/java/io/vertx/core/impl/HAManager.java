@@ -280,7 +280,7 @@ public class HAManager {
       List<String> nodes = clusterManager.getNodes();
 
       for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
-        if (!nodes.contains(entry.getKey())) {
+        if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
           checkFailover(entry.getKey(), new JsonObject(entry.getValue()));
         }
       }
