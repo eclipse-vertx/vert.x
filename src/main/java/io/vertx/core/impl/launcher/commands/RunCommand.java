@@ -312,7 +312,7 @@ public class RunCommand extends BareCommand {
       args.add("--classpath=" + classpath.stream().collect(Collectors.joining(File.pathSeparator)));
     }
     if (config != null) {
-      args.add("--config=" + config);
+      args.add("--conf=" + config);
     }
     if (instances != 1) {
       args.add("--instances=" + instances);

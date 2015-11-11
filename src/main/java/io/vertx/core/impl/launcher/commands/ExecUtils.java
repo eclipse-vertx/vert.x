@@ -72,7 +72,7 @@ public class ExecUtils {
   }
 
   /**
-   * Adds an argument to the given list. It automatially add quotes to the argument if necessary.
+   * Adds an argument to the given list. It automatically adds quotes to the argument if necessary.
    *
    * @param args the list of arguments
    * @param argument the argument to add
