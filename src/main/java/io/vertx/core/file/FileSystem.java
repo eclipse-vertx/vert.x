@@ -17,6 +17,7 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -172,20 +173,20 @@ public interface FileSystem {
    * Change the ownership on the file represented by {@code path} to {@code user} and {code group}, asynchronously.
    *
    * @param path  the path to the file
-   * @param user  the user name
-   * @param group  the user group
+   * @param user  the user name, {@code null} will not change the user name
+   * @param group  the user group, {@code null} will not change the user group name
    * @param handler  the handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler);
+  FileSystem chown(String path, @Nullable String user, @Nullable String group, Handler<AsyncResult<Void>> handler);
 
   /**
    * Blocking version of {@link #chown(String, String, String, Handler)}
    *
    */
   @Fluent
-  FileSystem chownBlocking(String path, String user, String group) ;
+  FileSystem chownBlocking(String path, @Nullable String user, @Nullable String group) ;
 
   /**
    * Obtain properties for the file represented by {@code path}, asynchronously.

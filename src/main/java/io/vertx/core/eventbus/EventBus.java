@@ -22,7 +22,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.streams.WriteStream;
 
 /**
  * A Vert.x event-bus is a light-weight distributed messaging system which allows different parts of your application,
@@ -195,13 +194,6 @@ public interface EventBus extends Measured {
   <T> MessageProducer<T> publisher(String address, DeliveryOptions options);
 
   /**
-   * Close the event bus and release any resources held
-   *
-   * @param completionHandler may be {@code null}
-   */
-  void close(Handler<AsyncResult<Void>> completionHandler);
-
-  /**
    * Register a message codec.
    * <p>
    * You can register a message codec if you want to send any non standard message across the event bus.
@@ -248,6 +240,23 @@ public interface EventBus extends Measured {
    */
   @GenIgnore
   EventBus unregisterDefaultCodec(Class clazz);
+
+  /**
+   * Start the event bus. This would not normally be called in user code
+   *
+   * @param completionHandler
+   */
+  @GenIgnore
+  void start(Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Close the event bus and release any resources held. This would not normally be called in user code
+   *
+   * @param completionHandler may be {@code null}
+   */
+  @GenIgnore
+  void close(Handler<AsyncResult<Void>> completionHandler);
+
 
 }
 

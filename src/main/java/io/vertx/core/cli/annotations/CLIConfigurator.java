@@ -29,6 +29,7 @@ import java.util.Set;
 
 /**
  * Class responsible for defining CLI using annotations and injecting values extracted by the parser.
+ *
  * @author Clement Escoffier <clement@apache.org>
  */
 public class CLIConfigurator {
@@ -49,9 +50,14 @@ public class CLIConfigurator {
     final Hidden hidden = clazz.getAnnotation(Hidden.class);
     final Name name = clazz.getAnnotation(Name.class);
 
-    if (name != null) {
-      cli.setName(name.value());
+    if (name == null) {
+      throw new IllegalArgumentException("The command cannot be defined, the @Name annotation is missing.");
     }
+    if (name.value() == null || name.value().isEmpty()) {
+      throw new IllegalArgumentException("The command cannot be defined, the @Name value is empty or null.");
+    }
+    cli.setName(name.value());
+
     if (summary != null) {
       cli.setSummary(summary.value());
     }
@@ -91,6 +97,7 @@ public class CLIConfigurator {
         .setSingleValued(option.acceptValue())
         .setArgName(option.argName())
         .setFlag(option.flag())
+        .setHelp(option.help())
         .setRequired(option.required());
 
     // Description
@@ -153,12 +160,20 @@ public class CLIConfigurator {
       arg.setDescription(description.value());
     }
 
+    if (ReflectionUtils.isMultiple(method)) {
+      arg
+          .setType(ReflectionUtils.getComponentType(method.getParameters()[0]))
+          .setMultiValued(true);
+    } else {
+      final Class<?> type = method.getParameters()[0].getType();
+      arg.setType(type);
+    }
+
     Hidden hidden = method.getAnnotation(Hidden.class);
     if (hidden != null) {
       arg.setHidden(true);
     }
 
-    arg.setType(method.getParameters()[0].getType());
     ConvertedBy convertedBy = method.getAnnotation(ConvertedBy.class);
     if (convertedBy != null) {
       arg.setConverter(ReflectionUtils.newInstance(convertedBy.value()));
@@ -191,6 +206,10 @@ public class CLIConfigurator {
       return null;
     }
 
+    boolean multiple = ReflectionUtils.isMultiple(method);
+    if (multiple) {
+      return createMultiValueContainer(method, commandLine.getArgumentValues(argument.getIndex()));
+    }
     return commandLine.getArgumentValue(argument.getIndex());
   }
 

@@ -21,6 +21,8 @@ import io.vertx.core.cli.CLI;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.Option;
 
+import java.io.PrintStream;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -74,6 +76,15 @@ public class CLIExamples {
             .setDescription("an optional option with a default value"));
   }
 
+  public void example41() {
+    CLI cli = CLI.create("some-name")
+        .addOption(new Option()
+            .setLongName("color")
+            .setDefaultValue("green")
+            .addChoice("blue").addChoice("red").addChoice("green")
+            .setDescription("a color"));
+  }
+
   public void example5() {
     CLI cli = CLI.create("some-name")
         .addArgument(new Argument()
@@ -82,6 +93,18 @@ public class CLIExamples {
             .setArgName("arg1"))
         .addArgument(new Argument()
             .setIndex(1)
+            .setDescription("the second argument")
+            .setArgName("arg2"));
+  }
+
+  public void example51() {
+    CLI cli = CLI.create("some-name")
+        // will have the index 0
+        .addArgument(new Argument()
+            .setDescription("the first argument")
+            .setArgName("arg1"))
+        // will have the index 1
+        .addArgument(new Argument()
             .setDescription("the second argument")
             .setArgName("arg2"));
   }
@@ -116,5 +139,22 @@ public class CLIExamples {
     String opt = commandLine.getOptionValue("my-option");
     boolean flag = commandLine.isFlagEnabled("my-flag");
     String arg0 = commandLine.getArgumentValue(0);
+  }
+
+  public void example9(PrintStream stream) {
+    CLI cli = CLI.create("test")
+        .addOption(
+            new Option().setLongName("help").setShortName("h").setFlag(true).setHelp(true))
+        .addOption(
+            new Option().setLongName("mandatory").setRequired(true));
+
+    CommandLine line = cli.parse(Collections.singletonList("-h"));
+
+    // The parsing does not fail and let you do:
+    if (!line.isValid() && line.isAskingForHelp()) {
+      StringBuilder builder = new StringBuilder();
+      cli.usage(builder);
+      stream.print(builder.toString());
+    }
   }
 }

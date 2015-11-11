@@ -34,12 +34,7 @@ public class DefaultCLI implements CLI {
   protected boolean hidden;
 
   protected List<Option> options = new ArrayList<>();
-  private Set<Argument> arguments = new TreeSet<>((o1, o2) -> {
-    if (o1.getIndex() == o2.getIndex()) {
-      return 1;
-    }
-    return Integer.valueOf(o1.getIndex()).compareTo(o2.getIndex());
-  });
+  private List<Argument> arguments = new ArrayList<>();
 
   /**
    * Parses the user command line interface and create a new {@link CommandLine} containing extracting values.
@@ -142,7 +137,7 @@ public class DefaultCLI implements CLI {
 
   @Override
   public List<Argument> getArguments() {
-    return new ArrayList<>(this.arguments);
+    return arguments;
   }
 
   @Override
@@ -162,8 +157,8 @@ public class DefaultCLI implements CLI {
   @Override
   public CLI setArguments(List<Argument> args) {
     Objects.requireNonNull(args);
-    arguments = new TreeSet<>();
-    return addArguments(args);
+    arguments = new ArrayList<>(args);
+    return this;
   }
 
   @Override

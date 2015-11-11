@@ -711,32 +711,37 @@
  *
  * However, the bundle has some dependencies on Jackson and Netty. To get the vert.x core bundle resolved deploy:
  *
- * * Jackson Annotation [2.5.0,3)
- * * Jackson Core [2.5.0,3)
- * * Jackson Databind [2.5.0,3)
- * * Netty Buffer [4.0.27,5)
- * * Netty Codec [4.0.27,5)
- * * Netty Codec/Socks [4.0.27,5)
- * * Netty Codec/Common [4.0.27,5)
- * * Netty Codec/Handler [4.0.27,5)
- * * Netty Codec/Transport [4.0.27,5)
+ * * Jackson Annotation [2.6.0,3)
+ * * Jackson Core [2.6.2,3)
+ * * Jackson Databind [2.6.2,3)
+ * * Netty Buffer [4.0.31,5)
+ * * Netty Codec [4.0.31,5)
+ * * Netty Codec/Socks [4.0.31,5)
+ * * Netty Codec/Common [4.0.31,5)
+ * * Netty Codec/Handler [4.0.31,5)
+ * * Netty Codec/Transport [4.0.31,5)
  *
- * Here is a working deployment on Apache Felix 4.6.1:
+ * Here is a working deployment on Apache Felix 5.2.0:
  *
  *[source]
  *----
- *   14|Active     |    1|Jackson-annotations (2.5.3)
- *   15|Active     |    1|Jackson-core (2.5.3)
- *   16|Active     |    1|jackson-databind (2.5.3)
- *   17|Active     |    1|Netty/Buffer (4.0.27.Final)
- *   18|Active     |    1|Netty/Codec (4.0.27.Final)
- *   19|Active     |    1|Netty/Codec/HTTP (4.0.27.Final)
- *   20|Active     |    1|Netty/Codec/Socks (4.0.27.Final)
- *   21|Active     |    1|Netty/Common (4.0.27.Final)
- *   22|Active     |    1|Netty/Handler (4.0.27.Final)
- *   23|Active     |    1|Netty/Transport (4.0.27.Final)
- *   25|Active     |    1|Vert.x Core (3.0.0.SNAPSHOT)
+ * 14|Active     |    1|Jackson-annotations (2.6.0)
+ * 15|Active     |    1|Jackson-core (2.6.2)
+ * 16|Active     |    1|jackson-databind (2.6.2)
+ * 18|Active     |    1|Netty/Buffer (4.0.31.Final)
+ * 19|Active     |    1|Netty/Codec (4.0.31.Final)
+ * 20|Active     |    1|Netty/Codec/HTTP (4.0.31.Final)
+ * 21|Active     |    1|Netty/Codec/Socks (4.0.31.Final)
+ * 22|Active     |    1|Netty/Common (4.0.31.Final)
+ * 23|Active     |    1|Netty/Handler (4.0.31.Final)
+ * 24|Active     |    1|Netty/Transport (4.0.31.Final)
+ * 25|Active     |    1|Netty/Transport/SCTP (4.0.31.Final)
+ * 26|Active     |    1|Vert.x Core (3.1.0)
  *----
+ *
+ * On Equinox, you may want to disable the `ContextFinder` with the following framework property:
+ * `eclipse.bundle.setTCCL=false`
+ *
  *
  * == The 'vertx' command line
  *
@@ -1015,10 +1020,10 @@
  *
  * [source]
  * ----
- * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --on-redeploy="mvn package"
+ * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --onRedeploy="mvn package"
  * ----
  *
- * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
+ * The "onRedeploy" option specifies a command invoked after the shutdown of the application and before the
  * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
  * or `grunt` to update your resources.
  *
@@ -1321,6 +1326,17 @@
  *
  * You can also create a sub-class of {@link io.vertx.core.Launcher} to start your application. The class has been
  * designed to be easily extensible.
+ *
+ * A {@link io.vertx.core.Launcher} sub-class can:
+ *
+ * * customize the vert.x configuration in {@link io.vertx.core.Launcher#beforeStartingVertx(io.vertx.core.VertxOptions)}
+ * * retrieve the vert.x instance created by the "run" or "bare" command by
+ * overriding {@link io.vertx.core.Launcher#afterStartingVertx(io.vertx.core.Vertx)}
+ * * configure the default verticle and command with
+ * {@link io.vertx.core.impl.launcher.VertxCommandLauncher#getMainVerticle()} and
+ * {@link io.vertx.core.impl.launcher.VertxCommandLauncher#getDefaultCommand()}
+ * * add / remove commands using {@link io.vertx.core.impl.launcher.VertxCommandLauncher#register(java.lang.Class)}
+ * and {@link io.vertx.core.impl.launcher.VertxCommandLauncher#unregister(java.lang.String)}
  *
  */
 @Document(fileName = "index.adoc")

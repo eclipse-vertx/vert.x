@@ -18,6 +18,7 @@ package io.vertx.core;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 
@@ -56,7 +57,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @param name The name of the header to search
    * @return The first header value or {@code null} if there is no such entry
    */
-  String get(String name);
+  @Nullable String get(String name);
 
   /**
    * Returns the values with the specified name

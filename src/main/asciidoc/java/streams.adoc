@@ -101,7 +101,7 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-And there we have it. The `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]` event handler will
+And there we have it. The `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[drainHandler]` event handler will
 get called when the write queue is ready to accept more data, this resumes the `NetSocket` which
 allows it to read more data.
 
@@ -134,7 +134,7 @@ Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 Functions:
 
-- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#handler-io.vertx.core.Handler-[handler]`:
+- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#handler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[handler]`:
 set a handler which will receive items from the ReadStream.
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#pause--[pause]`:
 pause the handler. When paused no items will be received in the handler.
@@ -142,7 +142,7 @@ pause the handler. When paused no items will be received in the handler.
 resume the handler. The handler will be called if any item arrives.
 - `link:../../apidocs/io/vertx/core/streams/ReadStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`:
 Will be called if an exception occurs on the ReadStream.
-- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#endHandler-io.vertx.core.Handler-[endHandler]`:
+- `link:../../apidocs/io/vertx/core/streams/ReadStream.html#endHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[endHandler]`:
 Will be called when end of stream is reached. This might be when EOF is reached if the ReadStream represents a file,
 or when end of request is reached if it's an HTTP request, or when the connection is closed if it's a TCP socket.
 
@@ -166,7 +166,7 @@ represents the actual number of bytes written and not the number of buffers.
 returns `true` if the write queue is considered full.
 - `link:../../apidocs/io/vertx/core/streams/WriteStream.html#exceptionHandler-io.vertx.core.Handler-[exceptionHandler]`:
 Will be called if an exception occurs on the `WriteStream`.
-- `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-io.vertx.core.Handler-[drainHandler]`:
+- `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[drainHandler]`:
 The handler will be called if the `WriteStream` is considered no longer full.
 
 === Pump
@@ -183,3 +183,4 @@ This has the same meaning as `link:../../apidocs/io/vertx/core/streams/WriteStre
 A pump can be started and stopped multiple times.
 
 When a pump is first created it is _not_ started. You need to call the `start()` method to start it.
+<a href="mailto:julien@julienviet.com">Julien Viet</a>

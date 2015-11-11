@@ -138,4 +138,10 @@ public class TypedArgument<T> extends Argument {
     super.setRequired(required);
     return this;
   }
+
+  @Override
+  public TypedArgument<T> setMultiValued(boolean multiValued) {
+    super.setMultiValued(multiValued);
+    return this;
+  }
 }

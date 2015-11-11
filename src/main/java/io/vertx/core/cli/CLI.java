@@ -18,6 +18,7 @@ package io.vertx.core.cli;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.cli.annotations.CLIConfigurator;
 import io.vertx.core.cli.impl.DefaultCLI;
@@ -102,7 +103,7 @@ public interface CLI {
   /**
    * @return the CLI description.
    */
-  String getDescription();
+  @Nullable String getDescription();
 
   @Fluent
   CLI setDescription(String desc);
@@ -110,7 +111,7 @@ public interface CLI {
   /**
    * @return the CLI summary.
    */
-  String getSummary();
+  @Nullable String getSummary();
 
   /**
    * Sets the summary of the CLI.
@@ -214,6 +215,7 @@ public interface CLI {
    * @param name the name, must not be {@code null}
    * @return the {@link Option}, {@code null} if not found
    */
+  @Nullable
   Option getOption(String name);
 
   /**
@@ -222,6 +224,7 @@ public interface CLI {
    * @param name the name of the argument, must not be {@code null}
    * @return the {@link Argument}, {@code null} if not found.
    */
+  @Nullable
   Argument getArgument(String name);
 
   /**
@@ -230,6 +233,7 @@ public interface CLI {
    * @param index the index, must be positive or zero.
    * @return the {@link Argument}, {@code null} if not found.
    */
+  @Nullable
   Argument getArgument(int index);
 
   /**

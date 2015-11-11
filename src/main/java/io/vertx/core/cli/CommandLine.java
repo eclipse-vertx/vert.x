@@ -17,6 +17,7 @@
 package io.vertx.core.cli;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.cli.impl.DefaultCommandLine;
 
@@ -60,6 +61,7 @@ public interface CommandLine {
    * @param <T>  the expected type
    * @return the value, {@code null} if not set
    */
+  @Nullable
   <T> T getOptionValue(String name);
 
   /**
@@ -69,6 +71,7 @@ public interface CommandLine {
    * @param <T>  the expected type
    * @return the value, {@code null} if not set
    */
+  @Nullable
   <T> T getArgumentValue(String name);
 
   /**
@@ -78,6 +81,7 @@ public interface CommandLine {
    * @param <T>   the expected type
    * @return the value, {@code null} if not set
    */
+  @Nullable
   <T> T getArgumentValue(int index);
 
   /**
@@ -86,10 +90,22 @@ public interface CommandLine {
    * @param name the name
    * @param <T>  the expected component type
    * @return the values, {@code null} if not set
-   * @see #getRawValues(Option)
+   * @see #getRawValuesForOption(Option)
    */
   @GenIgnore
   <T> List<T> getOptionValues(String name);
+
+  /**
+   * Gets the values of an argument with the matching index.
+   *
+   * @param index the index
+   * @param <T>   the expected component type
+   * @return the values, {@code null} if not set
+   * @see #getArgumentValue(int)
+   * @see #getRawValueForArgument(Argument)
+   */
+  @GenIgnore
+  <T> List<T> getArgumentValues(int index);
 
   /**
    * Gets the value of an option marked as a flag.
@@ -114,8 +130,28 @@ public interface CommandLine {
    *
    * @param option the option
    * @return the list of values, empty if none
+   * @deprecated use {@link #getRawValuesForOption(Option)}
    */
-  List<String> getRawValues(Option option);
+  @Deprecated
+  default List<String> getRawValues(Option option) {
+    return getRawValuesForOption(option);
+  }
+
+  /**
+   * Gets the raw values of the given option. Raw values are simple "String", not converted to the option type.
+   *
+   * @param option the option
+   * @return the list of values, empty if none
+   */
+  List<String> getRawValuesForOption(Option option);
+
+  /**
+   * Gets the raw values of the given argument. Raw values are simple "String", not converted to the argument type.
+   *
+   * @param argument the argument
+   * @return the list of values, empty if none
+   */
+  List<String> getRawValuesForArgument(Argument argument);
 
   /**
    * Gets the raw value of the given option. Raw values are the values as given in the user command line.
@@ -123,7 +159,7 @@ public interface CommandLine {
    * @param option the option
    * @return the value, {@code null} if none.
    */
-  String getRawValueForOption(Option option);
+  @Nullable String getRawValueForOption(Option option);
 
   /**
    * Checks whether or not the given option accept more values.
@@ -139,7 +175,7 @@ public interface CommandLine {
    * @param arg the argument
    * @return the value, {@code null} if none.
    */
-  String getRawValueForArgument(Argument arg);
+  @Nullable String getRawValueForArgument(Argument arg);
 
   /**
    * Checks whether or not the given argument has been assigned in the command line.
@@ -150,11 +186,25 @@ public interface CommandLine {
   boolean isArgumentAssigned(Argument arg);
 
   /**
-   * check whether or not the given option has been seen in the user command line.
+   * Checks whether or not the given option has been seen in the user command line.
    *
    * @param option the option
    * @return {@code true} if the user command line has used the option
    */
   boolean isSeenInCommandLine(Option option);
 
+  /**
+   * Checks whether or not the command line is valid, i.e. all constraints from arguments and options have been
+   * satisfied. This method is used when the parser validation is disabled.
+   *
+   * @return {@code true} if the current {@link CommandLine} object is valid. {@link false} otherwise.
+   */
+  boolean isValid();
+
+  /**
+   * Checks whether or not the user has passed a "help" option and is asking for help.
+   *
+   * @return {@code true} if the user command line has enabled a "Help" option, {@link false} otherwise.
+   */
+  boolean isAskingForHelp();
 }

@@ -17,6 +17,7 @@
 package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 
@@ -45,7 +46,7 @@ public interface ReadStream<T> extends StreamBase {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  ReadStream<T> handler(Handler<T> handler);
+  ReadStream<T> handler(@Nullable Handler<T> handler);
 
   /**
    * Pause the {@code ReadSupport}. While it's paused, no data will be sent to the {@code dataHandler}
@@ -69,6 +70,6 @@ public interface ReadStream<T> extends StreamBase {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  ReadStream<T> endHandler(Handler<Void> endHandler);
+  ReadStream<T> endHandler(@Nullable Handler<Void> endHandler);
 
 }

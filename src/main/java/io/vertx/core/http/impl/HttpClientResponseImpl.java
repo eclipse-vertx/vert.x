@@ -202,7 +202,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       }
       bytesRead += data.length();
       if (dataHandler != null) {
-        dataHandler.handle(data);
+        try {
+          dataHandler.handle(data);
+        } catch (Throwable t) {
+          handleException(t);
+        }
       }
     }
   }
@@ -218,7 +222,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       this.trailer = trailer;
       trailers = new HeadersAdaptor(trailer.trailingHeaders());
       if (endHandler != null) {
-        endHandler.handle(null);
+        try {
+          endHandler.handle(null);
+        } catch (Throwable t) {
+          handleException(t);
+        }
       }
     }
   }

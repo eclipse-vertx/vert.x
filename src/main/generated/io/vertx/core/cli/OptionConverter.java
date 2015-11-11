@@ -30,6 +30,12 @@ public class OptionConverter {
     if (json.getValue("argName") instanceof String) {
       obj.setArgName((String)json.getValue("argName"));
     }
+    if (json.getValue("choices") instanceof JsonArray) {
+      json.getJsonArray("choices").forEach(item -> {
+        if (item instanceof String)
+          obj.addChoice((String)item);
+      });
+    }
     if (json.getValue("defaultValue") instanceof String) {
       obj.setDefaultValue((String)json.getValue("defaultValue"));
     }
@@ -38,6 +44,9 @@ public class OptionConverter {
     }
     if (json.getValue("flag") instanceof Boolean) {
       obj.setFlag((Boolean)json.getValue("flag"));
+    }
+    if (json.getValue("help") instanceof Boolean) {
+      obj.setHelp((Boolean)json.getValue("help"));
     }
     if (json.getValue("hidden") instanceof Boolean) {
       obj.setHidden((Boolean)json.getValue("hidden"));
@@ -70,6 +79,7 @@ public class OptionConverter {
       json.put("description", obj.getDescription());
     }
     json.put("flag", obj.isFlag());
+    json.put("help", obj.isHelp());
     json.put("hidden", obj.isHidden());
     if (obj.getLongName() != null) {
       json.put("longName", obj.getLongName());

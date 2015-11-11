@@ -18,10 +18,7 @@ package io.vertx.core.impl.launcher;
 import io.vertx.core.cli.*;
 import io.vertx.core.cli.annotations.CLIConfigurator;
 import io.vertx.core.impl.launcher.commands.RunCommand;
-import io.vertx.core.spi.launcher.Command;
-import io.vertx.core.spi.launcher.CommandFactory;
-import io.vertx.core.spi.launcher.CommandFactoryLookup;
-import io.vertx.core.spi.launcher.ExecutionContext;
+import io.vertx.core.spi.launcher.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +36,7 @@ import java.util.stream.Collectors;
  */
 public class VertxCommandLauncher extends UsageMessageFormatter {
 
-  private static List<String> PROCESS_ARGS;
+  protected static List<String> PROCESS_ARGS;
 
   /**
    * @return the process argument. Verticles can use this method to retrieve the arguments.
@@ -63,14 +60,19 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
    */
   protected Object main;
 
-  private class CommandRegistration {
+  /**
+   * Handles a command registration.
+   */
+  public static class CommandRegistration {
     public final CommandFactory factory;
     public final CLI cli;
     private List<Command> commands = new ArrayList<>();
 
-    private CommandRegistration(CommandFactory factory, CLI cli) {
-      Objects.nonNull(factory);
-      Objects.nonNull(cli);
+    public CommandRegistration(CommandFactory factory) {
+      this(factory, factory.define());
+    }
+
+    public CommandRegistration(CommandFactory factory, CLI cli) {
       this.factory = factory;
       this.cli = cli;
     }
@@ -116,11 +118,27 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
   protected void load() {
     for (CommandFactoryLookup lookup : lookups) {
       Collection<CommandFactory<?>> commands = lookup.lookup();
-      for (CommandFactory factory : commands) {
-        CLI cli = factory.define();
-        commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
-      }
+      commands.forEach(this::register);
     }
+  }
+
+  public VertxCommandLauncher register(CommandFactory factory) {
+    CLI cli = factory.define();
+    commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
+    return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public VertxCommandLauncher register(Class<? extends Command> clazz) {
+    DefaultCommandFactory factory = new DefaultCommandFactory(clazz);
+    CLI cli = factory.define();
+    commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
+    return this;
+  }
+
+  public VertxCommandLauncher unregister(String name) {
+    commandByName.remove(name);
+    return this;
   }
 
   /**
@@ -226,7 +244,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
   }
 
 
-  private void printCommandUsage(CLI cli) {
+  protected void printCommandUsage(CLI cli) {
     StringBuilder builder = new StringBuilder();
     cli.usage(builder, getCommandLinePrefix());
     getPrintStream().println(builder.toString());
@@ -288,7 +306,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     return "vertx";
   }
 
-  private static boolean isAskingForHelp(String command) {
+  protected static boolean isAskingForHelp(String command) {
     return command.equalsIgnoreCase("--help")
         || command.equalsIgnoreCase("-help")
         || command.equalsIgnoreCase("-h")
@@ -296,7 +314,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
         || command.equalsIgnoreCase("/?");
   }
 
-  private static boolean isAskingForVersion(String command) {
+  protected static boolean isAskingForVersion(String command) {
     return command.equalsIgnoreCase("-version") || command.equalsIgnoreCase("--version");
   }
 

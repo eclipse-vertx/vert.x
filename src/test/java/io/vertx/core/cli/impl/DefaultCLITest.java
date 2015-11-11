@@ -16,13 +16,11 @@
 
 package io.vertx.core.cli.impl;
 
-import io.vertx.core.cli.Argument;
-import io.vertx.core.cli.CLI;
-import io.vertx.core.cli.CommandLine;
-import io.vertx.core.cli.Option;
+import io.vertx.core.cli.*;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,7 +61,19 @@ public class DefaultCLITest {
     cli.usage(builder);
     assertThat(builder)
         .contains("test [-f]")
+        .contains("Options and Arguments")
         .contains(" -f   turn on/off");
+  }
+
+  @Test
+  public void testUsageWhenNoArgsAndOptions() {
+    final CLI cli = CLI.create("test").setDescription("A simple test command.");
+
+    StringBuilder builder = new StringBuilder();
+    cli.usage(builder);
+    assertThat(builder)
+        .contains("test")
+        .doesNotContain("Options").doesNotContain("Arguments");
   }
 
   @Test
@@ -194,6 +204,32 @@ public class DefaultCLITest {
 
     assertThat(builder)
         .contains("test [foo]");
+  }
+
+  @Test
+  public void testCommandLineValidationWhenValid() {
+    final CLI cli = CLI.create("test")
+        .addArgument(new Argument().setArgName("foo").setRequired(true));
+
+    CommandLine commandLine = cli.parse(Collections.singletonList("foo"));
+    assertThat(commandLine.isValid()).isTrue();
+  }
+
+  @Test(expected = MissingValueException.class)
+  public void testCommandLineValidationWhenInvalid() {
+    final CLI cli = CLI.create("test")
+        .addArgument(new Argument().setArgName("foo").setRequired(true));
+
+    cli.parse(Collections.<String>emptyList());
+  }
+
+  @Test
+  public void testCommandLineValidationWhenInvalidWithValidationDisabled() {
+    final CLI cli = CLI.create("test")
+        .addArgument(new Argument().setArgName("foo").setRequired(true));
+
+    CommandLine commandLine = cli.parse(Collections.<String>emptyList(), false);
+    assertThat(commandLine.isValid()).isEqualTo(false);
   }
 
 }

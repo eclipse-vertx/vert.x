@@ -16,8 +16,8 @@
 
 package io.vertx.core;
 
-import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.json.JsonObject;
@@ -143,7 +143,7 @@ public interface Context {
    *
    * @return the configuration of the deployment or null if not a Verticle deployment
    */
-  JsonObject config();
+  @Nullable JsonObject config();
 
   /**
    * The process args
@@ -216,5 +216,11 @@ public interface Context {
    * to this context
    */
   int getInstanceCount();
+
+  @GenIgnore
+  void addCloseHook(Closeable hook);
+
+  @GenIgnore
+  void removeCloseHook(Closeable hook);
 
 }

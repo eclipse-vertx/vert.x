@@ -19,6 +19,7 @@ package io.vertx.core.impl;
 import io.vertx.core.*;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -27,10 +28,12 @@ import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Enumeration;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -44,6 +47,7 @@ import java.util.zip.ZipFile;
  * There is one cache dir per Vert.x instance and they are deleted on Vert.x shutdown.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
  */
 public class FileResolver {
 
@@ -114,8 +118,10 @@ public class FileResolver {
           case "file":
             return unpackFromFileURL(url, fileName, cl);
           case "jar":
-            return unpackFromJarURL(url, fileName);
-          case "bundle":
+            return unpackFromJarURL(url, fileName, cl);
+          case "bundle": // Apache Felix, Knopflerfish
+          case "bundleentry": // Equinox
+          case "bundleresource": // Equinox
             return unpackFromBundleURL(url);
           default:
             throw new IllegalStateException("Invalid url protocol: " + prot);
@@ -158,16 +164,22 @@ public class FileResolver {
     return cacheFile;
   }
 
-  private synchronized  File unpackFromJarURL(URL url, String fileName) {
+  private static ZipInputStream toZipInputStream(URL url, ClassLoader cl) throws IOException{
+    String[] breadcrumbs = url.getPath().substring(5).split(".jar!");
+    if (breadcrumbs.length == 2){
+      // Normal case. Jar is on file system and desired path is in there
+      return new ZipInputStream(new FileInputStream(breadcrumbs[0] + ".jar"));
+    } else{
+      // Jar of jars. Desired path is inside a jar that is itself inside another jar
+      // E.g., Spring Boot fat jar format: application.jar!/lib/dependency.jar!/webroot/hello.html
+      return new ZipInputStream(cl.getResourceAsStream(breadcrumbs[1].substring(1) + ".jar"));
+    }
+  }
 
-    String path = url.getPath();
-    String jarFile = path.substring(5, path.lastIndexOf(".jar!") + 4);
-
-    try {
-      ZipFile zip = new ZipFile(jarFile);
-      Enumeration<? extends ZipEntry> entries = zip.entries();
-      while (entries.hasMoreElements()) {
-        ZipEntry entry = entries.nextElement();
+  private synchronized  File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+    try (ZipInputStream zip = toZipInputStream(url, cl)){
+      ZipEntry entry = zip.getNextEntry();
+      while (entry != null) {
         String name = entry.getName();
         if (name.startsWith(fileName)) {
           File file = new File(cacheDir, name);
@@ -176,16 +188,19 @@ public class FileResolver {
             file.mkdirs();
           } else {
             file.getParentFile().mkdirs();
-            try (InputStream is = zip.getInputStream(entry)) {
+            try {
               if (ENABLE_CACHING) {
-                Files.copy(is, file.toPath());
+                Files.copy(zip, file.toPath());
               } else {
-                Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(zip, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
               }
             } catch (FileAlreadyExistsException ignore) {
+            } finally {
+              zip.closeEntry();
             }
           }
         }
+        entry = zip.getNextEntry();
       }
     } catch (IOException e) {
       throw new VertxException(e);
@@ -195,9 +210,9 @@ public class FileResolver {
   }
 
   /**
-   * bundle:// urls are used by OSGi implementations to refer to a file contained in a bundle, or in a fragment. There
-   * is not much we can do to get the file from it, except reading it from the url. This method copies the files by
-   * reading it from the url.
+   * bundle:/, bundleresource:/ and bundleentry:/ urls are used by OSGi implementations to refer to a file
+   * contained in a bundle, or in a fragment. There is not much we can do to get the file from it, except
+   * reading it from the url. This method copies the files by reading it from the url.
    *
    * @param url      the url
    * @return the extracted file
@@ -242,7 +257,14 @@ public class FileResolver {
       throw new IllegalStateException("Failed to create cache dir");
     }
     // Add shutdown hook to delete on exit
-    shutdownHook = new Thread(() -> deleteCacheDir(ar -> {}));
+    shutdownHook = new Thread(() -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      deleteCacheDir(ar -> latch.countDown());
+      try {
+        latch.await(10, TimeUnit.SECONDS);
+      } catch (Exception ignore) {
+      }
+    });
     Runtime.getRuntime().addShutdownHook(shutdownHook);
   }
 
@@ -253,8 +275,5 @@ public class FileResolver {
       handler.handle(Future.succeededFuture());
     }
   }
-
-
-
 }
 

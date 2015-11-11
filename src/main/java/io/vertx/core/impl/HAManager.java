@@ -21,7 +21,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
@@ -114,12 +113,12 @@ public class HAManager {
   private long quorumTimerID;
   private volatile boolean attainedQuorum;
   private volatile FailoverCompleteHandler failoverCompleteHandler;
-  private volatile FailoverCompleteHandler removeSubsHandler;
+  private volatile FailoverCompleteHandler nodeCrashedHandler;
   private volatile boolean failDuringFailover;
   private volatile boolean stopped;
   private volatile boolean killed;
 
-  public HAManager(VertxInternal vertx, ServerID serverID, DeploymentManager deploymentManager,
+  public HAManager(VertxInternal vertx, DeploymentManager deploymentManager,
                    ClusterManager clusterManager, int quorumSize, String group, boolean enabled) {
     this.vertx = vertx;
     this.deploymentManager = deploymentManager;
@@ -130,7 +129,6 @@ public class HAManager {
     this.haInfo = new JsonObject();
     haInfo.put("verticles", new JsonArray());
     haInfo.put("group", this.group);
-    haInfo.put("server_id", new JsonObject().put("host", serverID.host).put("port", serverID.port));
     this.clusterMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
     this.nodeID = clusterManager.getNodeID();
     clusterManager.nodeListener(new NodeListener() {
@@ -172,6 +170,12 @@ public class HAManager {
     }
   }
 
+  public void addDataToAHAInfo(String key, JsonObject value) {
+    synchronized (haInfo) {
+      haInfo.put(key, value);
+      clusterMap.put(nodeID, haInfo.encode());
+    }
+  }
   // Deploy an HA verticle
   public void deployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                              final Handler<AsyncResult<String>> doneHandler) {
@@ -212,8 +216,8 @@ public class HAManager {
     this.failoverCompleteHandler = failoverCompleteHandler;
   }
 
-  public void setRemoveSubsHandler(FailoverCompleteHandler removeSubsHandler) {
-    this.removeSubsHandler = removeSubsHandler;
+  public void setNodeCrashedHandler(FailoverCompleteHandler removeSubsHandler) {
+    this.nodeCrashedHandler = removeSubsHandler;
   }
 
   public boolean isKilled() {
@@ -276,7 +280,7 @@ public class HAManager {
       List<String> nodes = clusterManager.getNodes();
 
       for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
-        if (!nodes.contains(entry.getKey())) {
+        if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
           checkFailover(entry.getKey(), new JsonObject(entry.getValue()));
         }
       }
@@ -458,7 +462,7 @@ public class HAManager {
   private void checkRemoveSubs(String failedNodeID, JsonObject theHAInfo) {
     String chosen = chooseHashedNode(null, failedNodeID.hashCode());
     if (chosen != null && chosen.equals(this.nodeID)) {
-      callFailoverCompleteHandler(removeSubsHandler, failedNodeID, theHAInfo, true);
+      callFailoverCompleteHandler(nodeCrashedHandler, failedNodeID, theHAInfo, true);
     }
   }
 

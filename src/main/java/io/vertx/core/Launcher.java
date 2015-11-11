@@ -49,21 +49,31 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
   }
 
   /**
-   * Hook for sub-classes of {@link Starter} before the vertx instance is started.
+   * Utility method to execute a specific command.
+   *
+   * @param cmd  the command
+   * @param args the arguments
+   */
+  public static void executeCommand(String cmd, String... args) {
+    new Launcher().execute(cmd, args);
+  }
+
+  /**
+   * Hook for sub-classes of {@link Launcher} before the vertx instance is started.
    */
   public void beforeStartingVertx(VertxOptions options) {
 
   }
 
   /**
-   * Hook for sub-classes of {@link Starter} after the vertx instance is started.
+   * Hook for sub-classes of {@link Launcher} after the vertx instance is started.
    */
   public void afterStartingVertx(Vertx vertx) {
 
   }
 
   /**
-   * Hook for sub-classes of {@link Starter} before the verticle is deployed.
+   * Hook for sub-classes of {@link Launcher} before the verticle is deployed.
    */
   public void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
 
