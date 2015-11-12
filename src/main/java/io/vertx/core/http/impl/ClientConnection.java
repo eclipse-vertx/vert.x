@@ -64,7 +64,6 @@ class ClientConnection extends ConnectionBase {
   private final ConnectionLifeCycleListener listener;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
-  private final Handler<Throwable> exceptionHandler;
   private final Object metric;
   private final HttpClientMetrics metrics;
 
