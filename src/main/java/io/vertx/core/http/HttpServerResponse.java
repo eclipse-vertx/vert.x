@@ -362,13 +362,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Provide a handler that will be called just before the last part of the body is written to the wire
-   * and the response is ended.<p>
+   * and the response is ended. The parameter to the handler will be the full size of the response.<p>
    * This provides a hook allowing you to do any more operations before this occurs.
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse bodyEndHandler(@Nullable Handler<Void> handler);
+  HttpServerResponse bodyEndHandler(@Nullable Handler<Long> handler);
 
 }
