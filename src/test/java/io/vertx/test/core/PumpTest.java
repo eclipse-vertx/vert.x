@@ -92,6 +92,30 @@ public class PumpTest {
     }
   }
 
+  @Test(expected = NullPointerException.class)
+  public void testPumpReadStreamNull() {
+    FakeReadStream<MyClass> rs = new FakeReadStream<>();
+    Pump.pump(rs, null);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testPumpWriteStreamNull() {
+    FakeWriteStream<MyClass> ws = new FakeWriteStream<>();
+    Pump.pump(null, ws);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testPumpReadStreamNull2() {
+    FakeReadStream<MyClass> rs = new FakeReadStream<>();
+    Pump.pump(rs, null, 1000);
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testPumpWriteStreamNull2() {
+    FakeWriteStream<MyClass> ws = new FakeWriteStream<>();
+    Pump.pump(null, ws, 1000);
+  }
+
   private class FakeReadStream<T> implements ReadStream<T> {
 
     private Handler<T> dataHandler;
