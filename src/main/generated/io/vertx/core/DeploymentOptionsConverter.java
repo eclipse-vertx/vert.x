@@ -31,7 +31,7 @@ public class DeploymentOptionsConverter {
       obj.setConfig(((JsonObject)json.getValue("config")).copy());
     }
     if (json.getValue("extraClasspath") instanceof JsonArray) {
-      java.util.List<java.lang.String> list = new java.util.ArrayList<>();
+      java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
       json.getJsonArray("extraClasspath").forEach( item -> {
         if (item instanceof String)
           list.add((String)item);
@@ -45,7 +45,7 @@ public class DeploymentOptionsConverter {
       obj.setInstances(((Number)json.getValue("instances")).intValue());
     }
     if (json.getValue("isolatedClasses") instanceof JsonArray) {
-      java.util.List<java.lang.String> list = new java.util.ArrayList<>();
+      java.util.ArrayList<java.lang.String> list = new java.util.ArrayList<>();
       json.getJsonArray("isolatedClasses").forEach( item -> {
         if (item instanceof String)
           list.add((String)item);

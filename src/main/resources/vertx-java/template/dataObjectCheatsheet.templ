@@ -70,7 +70,7 @@
 ^|Name | Type ^| Description\n
 @foreach{property:properties}
 	@code{propertyType=getDataType(property.type)}
-	@code{arrayPrefix = property.array ? 'Array of ' : ''}
+	@code{arrayPrefix = (property.list || property.set) ? 'Array of ' : ''}
 	@if{propertyType != null}
 		|[[@{property.name}]]`@{property.name}`
 		|`@{arrayPrefix}@{getDataType(property.type)}`

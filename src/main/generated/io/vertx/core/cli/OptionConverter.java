@@ -72,6 +72,13 @@ public class OptionConverter {
     if (obj.getArgName() != null) {
       json.put("argName", obj.getArgName());
     }
+    if (obj.getChoices() != null) {
+      json.put("choices", new JsonArray(
+          obj.getChoices().
+              stream().
+              map(item -> item).
+              collect(java.util.stream.Collectors.toList())));
+    }
     if (obj.getDefaultValue() != null) {
       json.put("defaultValue", obj.getDefaultValue());
     }
@@ -85,6 +92,9 @@ public class OptionConverter {
       json.put("longName", obj.getLongName());
     }
     json.put("multiValued", obj.isMultiValued());
+    if (obj.getName() != null) {
+      json.put("name", obj.getName());
+    }
     json.put("required", obj.isRequired());
     if (obj.getShortName() != null) {
       json.put("shortName", obj.getShortName());

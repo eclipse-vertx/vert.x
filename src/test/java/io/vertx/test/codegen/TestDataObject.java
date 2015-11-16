@@ -72,14 +72,6 @@ public class TestDataObject {
   private List<Object> objects;
 
   private List<String> addedStringValues = new ArrayList<>();
-  private List<Boolean> addedBooleanValues = new ArrayList<>();
-  private List<Byte> addedByteValues = new ArrayList<>();
-  private List<Short> addedShortValues = new ArrayList<>();
-  private List<Integer> addedIntValues = new ArrayList<>();
-  private List<Long> addedLongValues = new ArrayList<>();
-  private List<Float> addedFloatValues = new ArrayList<>();
-  private List<Double> addedDoubleValues = new ArrayList<>();
-  private List<Character> addedCharValues = new ArrayList<>();
   private List<Boolean> addedBoxedBooleanValues = new ArrayList<>();
   private List<Byte> addedBoxedByteValues = new ArrayList<>();
   private List<Short> addedBoxedShortValues = new ArrayList<>();
@@ -459,78 +451,6 @@ public class TestDataObject {
 
   public TestDataObject addAddedStringValue(String addedStringValue) {
     this.addedStringValues.add(addedStringValue);
-    return this;
-  }
-
-  public List<Boolean> getAddedBooleanValues() {
-    return addedBooleanValues;
-  }
-
-  public TestDataObject addAddedBooleanValue(boolean addedBoxedBooleanValue) {
-    this.addedBooleanValues.add(addedBoxedBooleanValue);
-    return this;
-  }
-
-  public List<Byte> getAddedByteValues() {
-    return addedByteValues;
-  }
-
-  public TestDataObject addAddedByteValue(byte addedBoxedByteValue) {
-    this.addedByteValues.add(addedBoxedByteValue);
-    return this;
-  }
-
-  public List<Short> getAddedShortValues() {
-    return addedShortValues;
-  }
-
-  public TestDataObject addAddedShortValue(short addedBoxedShortValue) {
-    this.addedShortValues.add(addedBoxedShortValue);
-    return this;
-  }
-
-  public List<Integer> getAddedIntValues() {
-    return addedIntValues;
-  }
-
-  public TestDataObject addAddedIntValue(int addedBoxedIntValue) {
-    this.addedIntValues.add(addedBoxedIntValue);
-    return this;
-  }
-
-  public List<Long> getAddedLongValues() {
-    return addedLongValues;
-  }
-
-  public TestDataObject addAddedLongValue(long addedBoxedLongValue) {
-    this.addedLongValues.add(addedBoxedLongValue);
-    return this;
-  }
-
-  public List<Float> getAddedFloatValues() {
-    return addedFloatValues;
-  }
-
-  public TestDataObject addAddedFloatValue(float addedBoxedFloatValue) {
-    this.addedFloatValues.add(addedBoxedFloatValue);
-    return this;
-  }
-
-  public List<Double> getAddedDoubleValues() {
-    return addedDoubleValues;
-  }
-
-  public TestDataObject addAddedDoubleValue(double addedBoxedDoubleValue) {
-    this.addedDoubleValues.add(addedBoxedDoubleValue);
-    return this;
-  }
-
-  public List<Character> getAddedCharValues() {
-    return addedCharValues;
-  }
-
-  public TestDataObject addAddedCharValue(char addedBoxedCharValue) {
-    this.addedCharValues.add(addedBoxedCharValue);
     return this;
   }
 

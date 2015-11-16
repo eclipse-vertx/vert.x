@@ -1,5 +1,35 @@
 = Cheatsheets
 
+[[NetworkOptions]]
+== NetworkOptions
+
+++++
+ @author <a href="http://tfox.org">Tim Fox</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
++++
+Return the TCP receive buffer size, in bytes
++++
+|[[reuseAddress]]`reuseAddress`|`Boolean`|
++++
+@return  the value of reuse address
++++
+|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
++++
+Return the TCP send buffer size, in bytes.
++++
+|[[trafficClass]]`trafficClass`|`Number (int)`|
++++
+@return  the value of traffic class
++++
+|===
+
 [[DeliveryOptions]]
 == DeliveryOptions
 
@@ -17,41 +47,17 @@
 ^|Name | Type ^| Description
 |[[codecName]]`codecName`|`String`|
 +++
-Set the codec name.
+Get the codec name.
+ <p>
+ When sending or publishing a message a codec name can be provided. This must correspond with a previously registered
+ message codec. This allows you to send arbitrary objects on the event bus (e.g. POJOs).
 +++
 |[[sendTimeout]]`sendTimeout`|`Number (long)`|
 +++
-Set the send timeout.
-+++
-|===
-
-[[NetworkOptions]]
-== NetworkOptions
-
-++++
- @author <a href="http://tfox.org">Tim Fox</a>
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
-+++
-Set the TCP receive buffer size
-+++
-|[[reuseAddress]]`reuseAddress`|`Boolean`|
-+++
-Set the value of reuse address
-+++
-|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
-+++
-Set the TCP send buffer size
-+++
-|[[trafficClass]]`trafficClass`|`Number (int)`|
-+++
-Set the value of traffic class
+Get the send timeout.
+ <p>
+ When sending a message with a response handler a send timeout can be provided. If no response is received
+ within the timeout the handler will be called with a failure.
 +++
 |===
 
@@ -69,27 +75,27 @@ Set the value of traffic class
 ^|Name | Type ^| Description
 |[[create]]`create`|`Boolean`|
 +++
-Set whether the file should be created if it does not already exist.
+Should the file be created if it does not already exist?
 +++
 |[[createNew]]`createNew`|`Boolean`|
 +++
-Set whether the file should be created and fail if it does exist already.
+Should the file be created if and the open fail if it already exists?
 +++
 |[[deleteOnClose]]`deleteOnClose`|`Boolean`|
 +++
-Set whether the file should be deleted when it's closed, or the JVM is shutdown.
+Should the file be deleted when it's closed, or the JVM is shutdown.
 +++
 |[[dsync]]`dsync`|`Boolean`|
 +++
-Set whether every write to the file's content  ill be written synchronously to the underlying hardware.
+If true then every write to the file's content will be written synchronously to the underlying hardware.
 +++
 |[[perms]]`perms`|`String`|
 +++
-Set the permissions string
+Get the permissions string to be used if creating a file
 +++
 |[[read]]`read`|`Boolean`|
 +++
-Set whether the file is to be opened for reading
+Is the file to opened for reading?
 +++
 |[[sparse]]`sparse`|`Boolean`|
 +++
@@ -97,15 +103,15 @@ Set whether a hint should be provided that the file to created is sparse
 +++
 |[[sync]]`sync`|`Boolean`|
 +++
-Set whether every write to the file's content and meta-data will be written synchronously to the underlying hardware.
+If true then every write to the file's content and metadata will be written synchronously to the underlying hardware.
 +++
 |[[truncateExisting]]`truncateExisting`|`Boolean`|
 +++
-Set whether the file should be truncated to zero length on opening if it exists and is opened for write
+If the file exists and is opened for writing should the file be truncated to zero length on open?
 +++
 |[[write]]`write`|`Boolean`|
 +++
-Set whether the file is to be opened for writing
+Is the file to opened for writing?
 +++
 |===
 
@@ -141,15 +147,15 @@ Set whether the file is to be opened for writing
 ^|Name | Type ^| Description
 |[[password]]`password`|`String`|
 +++
-Set the password for the key store
+@return the password for the key store
 +++
 |[[path]]`path`|`String`|
 +++
-Set the path to the key store
+Get the path to the ksy store
 +++
 |[[value]]`value`|`Buffer`|
 +++
-Set the key store as a buffer
+Get the key store as a buffer
 +++
 |===
 
@@ -167,79 +173,95 @@ Set the key store as a buffer
 ^|Name | Type ^| Description
 |[[blockedThreadCheckInterval]]`blockedThreadCheckInterval`|`Number (long)`|
 +++
-Sets the value of blocked thread check period, in ms.
+Get the value of blocked thread check period, in ms.
+ <p>
+ This setting determines how often Vert.x will check whether event loop threads are executing for too long.
 +++
 |[[clusterHost]]`clusterHost`|`String`|
 +++
-Set the hostname to be used for clustering.
+Get the host name to be used for clustering.
 +++
 |[[clusterPingInterval]]`clusterPingInterval`|`Number (long)`|
 +++
-Set the value of cluster ping interval, in ms.
+Get the value of cluster ping interval, in ms.
+ <p>
+ Nodes in the cluster ping each other at this interval to determine whether they are still running.
 +++
 |[[clusterPingReplyInterval]]`clusterPingReplyInterval`|`Number (long)`|
 +++
-Set the value of cluster ping reply interval, in ms.
+Get the value of cluster ping reply interval, in ms.
+ <p>
+ After sending a ping, if a pong is not received in this time, the node will be considered dead.
 +++
 |[[clusterPort]]`clusterPort`|`Number (int)`|
 +++
-Set the port to be used for clustering.
+Get the port to be used for clustering
 +++
 |[[clusterPublicHost]]`clusterPublicHost`|`String`|
 +++
-Set the public facing hostname to be used for clustering.
- Sometimes, e.g. when running on certain clouds, the local address the server listens on for clustering is not the same
- address that other nodes connect to it at, as the OS / cloud infrastructure does some kind of proxying.
- If this is the case you can specify a public hostname which is different from the hostname the server listens at.
- The default value is null which means use the same as the cluster hostname.
+Get the public facing hostname to be used when clustering.
 +++
 |[[clusterPublicPort]]`clusterPublicPort`|`Number (int)`|
 +++
-See link for an explanation.
+Get the public facing port to be used when clustering.
 +++
 |[[clustered]]`clustered`|`Boolean`|
 +++
-Set whether or not the Vert.x instance will be clustered.
+Is the Vert.x instance clustered?
 +++
 |[[eventLoopPoolSize]]`eventLoopPoolSize`|`Number (int)`|
 +++
-Set the number of event loop threads to be used by the Vert.x instance.
+Get the number of event loop threads to be used by the Vert.x instance.
 +++
 |[[haEnabled]]`haEnabled`|`Boolean`|
 +++
-Set whether HA will be enabled on the Vert.x instance.
+Will HA be enabled on the Vert.x instance?
 +++
 |[[haGroup]]`haGroup`|`String`|
 +++
-Set the HA group to be used when HA is enabled.
+Get the HA group to be used when HA is enabled.
 +++
 |[[internalBlockingPoolSize]]`internalBlockingPoolSize`|`Number (int)`|
 +++
-Set the value of internal blocking pool size
+Get the value of internal blocking pool size.
+ <p>
+ Vert.x maintains a pool for internal blocking operations
 +++
 |[[maxEventLoopExecuteTime]]`maxEventLoopExecuteTime`|`Number (long)`|
 +++
-Sets the value of max event loop execute time, in ns.
+Get the value of max event loop execute time, in ns.
+ <p>
+ Vert.x will automatically log a warning if it detects that event loop threads haven't returned within this time.
+ <p>
+ This can be used to detect where the user is blocking an event loop thread, contrary to the Golden Rule of the
+ holy Event Loop.
 +++
 |[[maxWorkerExecuteTime]]`maxWorkerExecuteTime`|`Number (long)`|
 +++
-Sets the value of max worker execute time, in ns.
+Get the value of max worker execute time, in ns.
+ <p>
+ Vert.x will automatically log a warning if it detects that worker threads haven't returned within this time.
+ <p>
+ This can be used to detect where the user is blocking a worker thread for too long. Although worker threads
+ can be blocked longer than event loop threads, they shouldn't be blocked for long periods of time.
 +++
 |[[metricsOptions]]`metricsOptions`|`link:dataobjects.html#MetricsOptions[MetricsOptions]`|
 +++
-Set the metrics options
+@return the metrics options
 +++
 |[[quorumSize]]`quorumSize`|`Number (int)`|
 +++
-Set the quorum size to be used when HA is enabled.
+Get the quorum size to be used when HA is enabled.
 +++
 |[[warningExceptionTime]]`warningExceptionTime`|`Number (long)`|
 +++
-Set the threshold value above this, the blocked warning contains a stack trace.
+Get the threshold value above this, the blocked warning contains a stack trace.
 +++
 |[[workerPoolSize]]`workerPoolSize`|`Number (int)`|
 +++
-Set the maximum number of worker threads to be used by the Vert.x instance.
+Get the maximum number of worker threads to be used by the Vert.x instance.
+ <p>
+ Worker threads are used for running blocking code and worker verticles.
 +++
 |===
 
@@ -258,31 +280,31 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 ^|Name | Type ^| Description
 |[[argName]]`argName`|`String`|
 +++
-Sets the argument name of this link.
+@return the arg name, <code>null</code> if not defined.
 +++
 |[[defaultValue]]`defaultValue`|`String`|
 +++
-Sets the default value of this link.
+@return the argument default value, <code>null</code> if not specified.
 +++
 |[[description]]`description`|`String`|
 +++
-Sets the description of the link.
+@return the description, <code>null</code> if not defined.
 +++
 |[[hidden]]`hidden`|`Boolean`|
 +++
-Sets whether or not the current link is hidden.
+@return whether or not the current link is hidden.
 +++
 |[[index]]`index`|`Number (int)`|
 +++
-Sets the argument index.
+@return the argument index.
 +++
 |[[multiValued]]`multiValued`|`Boolean`|
 +++
-Sets whether or not the argument can receive several values. Only the last argument can receive several values.
+@return whether or not the argument can receive several values.
 +++
 |[[required]]`required`|`Boolean`|
 +++
-Sets whether or not the current link is required.
+@return whether or not the current link is required.
 +++
 |===
 
@@ -300,24 +322,23 @@ Sets whether or not the current link is required.
 ^|Name | Type ^| Description
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|
 +++
-Set the connect timeout
+@return the value of connect timeout
 +++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
-Add a CRL path
+
 +++
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
-Add a CRL value
+Get the CRL values
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
-Set the idle timeout, in seconds. zero means don't timeout.
- This determines if a connection will timeout and be closed if no data is received within the timeout.
+@return  the idle timeout, in seconds
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -341,47 +362,47 @@ Set the trust options in pfx format
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
-Set the TCP receive buffer size
+Return the TCP receive buffer size, in bytes
 +++
 |[[reconnectAttempts]]`reconnectAttempts`|`Number (int)`|
 +++
-Set the value of reconnect attempts
+@return  the value of reconnect attempts
 +++
 |[[reconnectInterval]]`reconnectInterval`|`Number (long)`|
 +++
-Set the reconnect interval
+@return  the value of reconnect interval
 +++
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
-Set the value of reuse address
+@return  the value of reuse address
 +++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
-Set the TCP send buffer size
+Return the TCP send buffer size, in bytes.
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
-Set whether SO_linger keep alive is enabled
+
 +++
 |[[ssl]]`ssl`|`Boolean`|
 +++
-Set whether SSL/TLS is enabled
+
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
-Set whether TCP keep alive is enabled
+@return is TCP keep alive enabled?
 +++
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
-Set whether TCP no delay is enabled
+@return TCP no delay enabled ?
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
-Set the value of traffic class
+@return  the value of traffic class
 +++
 |[[trustAll]]`trustAll`|`Boolean`|
 +++
-Set whether all server certificates should be trusted
+
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -389,7 +410,7 @@ Set the trust options in jks format, aka Java trustore
 +++
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
-Set whether Netty pooled buffers are enabled
+@return are Netty pooled buffers enabled?
 +++
 |===
 
@@ -425,30 +446,16 @@ Set whether Netty pooled buffers are enabled
 ^|Name | Type ^| Description
 |[[password]]`password`|`String`|
 +++
-Set the password
+Get the password
 +++
 |[[path]]`path`|`String`|
 +++
-Set the path
+Get the path
 +++
 |[[value]]`value`|`Buffer`|
 +++
-Set the store as a buffer
+Get the store as a buffer
 +++
-|===
-
-[[TrustOptions]]
-== TrustOptions
-
-++++
- Certification authority configuration options.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
 |===
 
 [[Option]]
@@ -468,56 +475,55 @@ Set the store as a buffer
 ^|Name | Type ^| Description
 |[[argName]]`argName`|`String`|
 +++
-Sets te arg name for this option.
+@return the option arg name used in usage messages, <code>null</code> if not set.
 +++
 |[[choices]]`choices`|`Array of String`|
 +++
-Adds a choice to the list of values accepted by this option. If the value set by the user does not match once of these
- values, a link exception is thrown.
+@return get the list of choices for the given option. Empty if this option does not define choices.
 +++
 |[[defaultValue]]`defaultValue`|`String`|
 +++
-Sets the default value of this option
+@return the default value of this option, <code>null</code> if not set.
 +++
 |[[description]]`description`|`String`|
 +++
-Sets te description of this option.
+@return the description of this option, <code>null</code> if not set.
 +++
 |[[flag]]`flag`|`Boolean`|
 +++
-Configures the current link to be a flag. It will be evaluated to <code>true</code> if it's found in
- the command line. If you need a flag that may receive a value, use, in this order:
- <code><pre>
-   option.setFlag(true).setSingleValued(true)
- </pre></code>
+@return whether or not this option is a flag.
 +++
 |[[help]]`help`|`Boolean`|
 +++
-Sets whether or not this option is a "help" option
+Checks whether or not this option is a "Help" option.
 +++
 |[[hidden]]`hidden`|`Boolean`|
 +++
-Sets whether or not this option should be hidden
+@return whtehr or not this option is hidden.
 +++
 |[[longName]]`longName`|`String`|
 +++
-Sets the long name of this option.
+@return the option long name, <code>null</code> if not set.
 +++
 |[[multiValued]]`multiValued`|`Boolean`|
 +++
-Sets whether or not this option can receive several values.
+@return whether or not this option can receive several values.
++++
+|[[name]]`name`|`String`|
++++
+@return the option name. It returns the long name if set, the short name otherwise. It cannot return <code>null</code> for valid option
 +++
 |[[required]]`required`|`Boolean`|
 +++
-Sets whether or not this option is mandatory.
+@return whether or not this option is mandatory.
 +++
 |[[shortName]]`shortName`|`String`|
 +++
-Sets the short name of this option.
+@return the short name of this option, <code>null</code> if not set.
 +++
 |[[singleValued]]`singleValued`|`Boolean`|
 +++
-Sets whether or not this option can receive a value.
+@return whether or not this option is single valued.
 +++
 |===
 
@@ -535,7 +541,7 @@ Sets whether or not this option can receive a value.
 ^|Name | Type ^| Description
 |[[acceptBacklog]]`acceptBacklog`|`Number (int)`|
 +++
-Set the accept back log
+@return the value of accept backlog
 +++
 |[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|
 +++
@@ -543,28 +549,27 @@ Set whether client auth is required
 +++
 |[[clientAuthRequired]]`clientAuthRequired`|`Boolean`|
 +++
-Set whether client auth is required
+
 +++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
-Add a CRL path
+
 +++
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
-Add a CRL value
+Get the CRL values
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+
 +++
 |[[host]]`host`|`String`|
 +++
-Set the host
+
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
-Set the idle timeout, in seconds. zero means don't timeout.
- This determines if a connection will timeout and be closed if no data is received within the timeout.
+@return  the idle timeout, in seconds
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -588,39 +593,39 @@ Set the trust options in pfx format
 +++
 |[[port]]`port`|`Number (int)`|
 +++
-Set the port
+
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
-Set the TCP receive buffer size
+Return the TCP receive buffer size, in bytes
 +++
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
-Set the value of reuse address
+@return  the value of reuse address
 +++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
-Set the TCP send buffer size
+Return the TCP send buffer size, in bytes.
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
-Set whether SO_linger keep alive is enabled
+
 +++
 |[[ssl]]`ssl`|`Boolean`|
 +++
-Set whether SSL/TLS is enabled
+
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
-Set whether TCP keep alive is enabled
+@return is TCP keep alive enabled?
 +++
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
-Set whether TCP no delay is enabled
+@return TCP no delay enabled ?
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
-Set the value of traffic class
+@return  the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -628,7 +633,26 @@ Set the trust options in jks format, aka Java trustore
 +++
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
-Set whether Netty pooled buffers are enabled
+@return are Netty pooled buffers enabled?
++++
+|===
+
+[[MetricsOptions]]
+== MetricsOptions
+
+++++
+ Vert.x metrics base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[enabled]]`enabled`|`Boolean`|
++++
+Will metrics be enabled on the Vert.x instance?
 +++
 |===
 
@@ -646,24 +670,23 @@ Set whether Netty pooled buffers are enabled
 ^|Name | Type ^| Description
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|
 +++
-Set the connect timeout
+@return the value of connect timeout
 +++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
-Add a CRL path
+
 +++
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
-Add a CRL value
+Get the CRL values
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
-Set the idle timeout, in seconds. zero means don't timeout.
- This determines if a connection will timeout and be closed if no data is received within the timeout.
+@return  the idle timeout, in seconds
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -687,39 +710,39 @@ Set the trust options in pfx format
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
-Set the TCP receive buffer size
+Return the TCP receive buffer size, in bytes
 +++
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
-Set the value of reuse address
+@return  the value of reuse address
 +++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
-Set the TCP send buffer size
+Return the TCP send buffer size, in bytes.
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
-Set whether SO_linger keep alive is enabled
+
 +++
 |[[ssl]]`ssl`|`Boolean`|
 +++
-Set whether SSL/TLS is enabled
+
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
-Set whether TCP keep alive is enabled
+@return is TCP keep alive enabled?
 +++
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
-Set whether TCP no delay is enabled
+@return TCP no delay enabled ?
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
-Set the value of traffic class
+@return  the value of traffic class
 +++
 |[[trustAll]]`trustAll`|`Boolean`|
 +++
-Set whether all server certificates should be trusted
+
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -727,26 +750,7 @@ Set the trust options in jks format, aka Java trustore
 +++
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
-Set whether Netty pooled buffers are enabled
-+++
-|===
-
-[[MetricsOptions]]
-== MetricsOptions
-
-++++
- Vert.x metrics base configuration, this class can be extended by provider implementations to configure
- those specific implementations.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[enabled]]`enabled`|`Boolean`|
-+++
-Set whether metrics will be enabled on the Vert.x instance.
+@return are Netty pooled buffers enabled?
 +++
 |===
 
@@ -765,37 +769,40 @@ Set whether metrics will be enabled on the Vert.x instance.
 ^|Name | Type ^| Description
 |[[config]]`config`|`Json object`|
 +++
-Set the JSON configuration that will be passed to the verticle(s) when it's deployed
+Get the JSON configuration that will be passed to the verticle(s) when deployed.
 +++
 |[[extraClasspath]]`extraClasspath`|`Array of String`|
 +++
-Set any extra classpath to be used when deploying the verticle.
+Get any extra classpath to be used when deploying the verticle.
  <p>
  Ignored if no isolation group is set.
 +++
 |[[ha]]`ha`|`Boolean`|
 +++
-Set whether the verticle(s) will be deployed as HA.
+Will the verticle(s) be deployed as HA (highly available) ?
 +++
 |[[instances]]`instances`|`Number (int)`|
 +++
-Set the number of instances that should be deployed.
+Get the number of instances that should be deployed.
 +++
 |[[isolatedClasses]]`isolatedClasses`|`Array of String`|
 +++
-Set the isolated class names.
+Get the list of isolated class names, the names can be a Java class fully qualified name such as
+ 'com.mycompany.myproject.engine.MyClass' or a wildcard matching such as `com.mycompany.myproject.*`.
 +++
 |[[isolationGroup]]`isolationGroup`|`String`|
 +++
-Set the isolation group that will be used when deploying the verticle(s)
+Get the isolation group that will be used when deploying the verticle(s)
 +++
 |[[multiThreaded]]`multiThreaded`|`Boolean`|
 +++
-Set whether the verticle(s) should be deployed as a multi-threaded worker verticle
+Should the verticle(s) be deployed as a multi-threaded worker verticle?
+ <p>
+ Ignored if link is not true.
 +++
 |[[worker]]`worker`|`Boolean`|
 +++
-Set whether the verticle(s) should be deployed as a worker verticle
+Should the verticle(s) be deployed as a worker verticle?
 +++
 |===
 
@@ -853,34 +860,20 @@ Set whether the verticle(s) should be deployed as a worker verticle
 ^|Name | Type ^| Description
 |[[certPath]]`certPath`|`String`|
 +++
-Set the path to the certificate
+Get the path to the certificate file
 +++
 |[[certValue]]`certValue`|`Buffer`|
 +++
-Set the certificate as a buffer
+Get the certificate as a buffer
 +++
 |[[keyPath]]`keyPath`|`String`|
 +++
-Set the path to the key file
+Get the path to the key file
 +++
 |[[keyValue]]`keyValue`|`Buffer`|
 +++
-Set the key a a buffer
+Get the key as a buffer
 +++
-|===
-
-[[KeyCertOptions]]
-== KeyCertOptions
-
-++++
- Key/cert configuration options.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
 |===
 
 [[HttpServerOptions]]
@@ -897,7 +890,7 @@ Set the key a a buffer
 ^|Name | Type ^| Description
 |[[acceptBacklog]]`acceptBacklog`|`Number (int)`|
 +++
-Set the accept back log
+@return the value of accept backlog
 +++
 |[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|
 +++
@@ -905,36 +898,35 @@ Set whether client auth is required
 +++
 |[[clientAuthRequired]]`clientAuthRequired`|`Boolean`|
 +++
-Set whether client auth is required
+
 +++
 |[[compressionSupported]]`compressionSupported`|`Boolean`|
 +++
-Set whether the server supports compression
+@return true if the server supports compression
 +++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
-Add a CRL path
+
 +++
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
-Add a CRL value
+Get the CRL values
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+
 +++
 |[[handle100ContinueAutomatically]]`handle100ContinueAutomatically`|`Boolean`|
 +++
-Set whether 100 Continue should be handled automatically
+@return whether 100 Continue should be handled automatically
 +++
 |[[host]]`host`|`String`|
 +++
-Set the host
+
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
-Set the idle timeout, in seconds. zero means don't timeout.
- This determines if a connection will timeout and be closed if no data is received within the timeout.
+@return  the idle timeout, in seconds
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -942,7 +934,7 @@ Set the key/cert options in jks format, aka Java keystore.
 +++
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
-Set the maximum websocket frames size
+@return  the maximum websocket framesize
 +++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
@@ -962,39 +954,39 @@ Set the trust options in pfx format
 +++
 |[[port]]`port`|`Number (int)`|
 +++
-Set the port
+
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
-Set the TCP receive buffer size
+Return the TCP receive buffer size, in bytes
 +++
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
-Set the value of reuse address
+@return  the value of reuse address
 +++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
-Set the TCP send buffer size
+Return the TCP send buffer size, in bytes.
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
-Set whether SO_linger keep alive is enabled
+
 +++
 |[[ssl]]`ssl`|`Boolean`|
 +++
-Set whether SSL/TLS is enabled
+
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
-Set whether TCP keep alive is enabled
+@return is TCP keep alive enabled?
 +++
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
-Set whether TCP no delay is enabled
+@return TCP no delay enabled ?
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
-Set the value of traffic class
+@return  the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1002,11 +994,61 @@ Set the trust options in jks format, aka Java trustore
 +++
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
-Set whether Netty pooled buffers are enabled
+@return are Netty pooled buffers enabled?
 +++
 |[[websocketSubProtocols]]`websocketSubProtocols`|`String`|
 +++
-Set the websocket subprotocols supported by the server.
+@return Get the websocket subprotocols
++++
+|===
+
+[[DatagramSocketOptions]]
+== DatagramSocketOptions
+
+++++
+ Options used to configure a datagram socket.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[broadcast]]`broadcast`|`Boolean`|
++++
+@return true if the socket receive broadcast packets?
++++
+|[[ipV6]]`ipV6`|`Boolean`|
++++
+@return  true if IP v6 be used?
++++
+|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
++++
+@return true if loopback mode is disabled
++++
+|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
++++
+Get the multicast network interface address
++++
+|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
++++
+@return the multicast ttl value
++++
+|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
++++
+Return the TCP receive buffer size, in bytes
++++
+|[[reuseAddress]]`reuseAddress`|`Boolean`|
++++
+@return  the value of reuse address
++++
+|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
++++
+Return the TCP send buffer size, in bytes.
++++
+|[[trafficClass]]`trafficClass`|`Number (int)`|
++++
+@return  the value of traffic class
 +++
 |===
 
@@ -1024,36 +1066,35 @@ Set the websocket subprotocols supported by the server.
 ^|Name | Type ^| Description
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|
 +++
-Set the connect timeout
+@return the value of connect timeout
 +++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
-Add a CRL path
+
 +++
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
-Add a CRL value
+Get the CRL values
 +++
 |[[defaultHost]]`defaultHost`|`String`|
 +++
-Set the default host name to be used by this client in requests if none is provided when making the request.
+Get the default host name to be used by this client in requests if none is provided when making the request.
 +++
 |[[defaultPort]]`defaultPort`|`Number (int)`|
 +++
-Set the default port to be used by this client in requests if none is provided when making the request.
+Get the default port to be used by this client in requests if none is provided when making the request.
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
-Set the idle timeout, in seconds. zero means don't timeout.
- This determines if a connection will timeout and be closed if no data is received within the timeout.
+@return  the idle timeout, in seconds
 +++
 |[[keepAlive]]`keepAlive`|`Boolean`|
 +++
-Set whether keep alive is enabled on the client
+Is keep alive enabled on the client?
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1061,11 +1102,11 @@ Set the key/cert options in jks format, aka Java keystore.
 +++
 |[[maxPoolSize]]`maxPoolSize`|`Number (int)`|
 +++
-Set the maximum pool size for connections
+Get the maximum pool size for connections
 +++
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
-Set the max websocket frame size
+Get the maximum websocket framesize to use
 +++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
@@ -1085,47 +1126,47 @@ Set the trust options in pfx format
 +++
 |[[pipelining]]`pipelining`|`Boolean`|
 +++
-Set whether pipe-lining is enabled on the client
+Is pipe-lining enabled on the client
 +++
 |[[protocolVersion]]`protocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|
 +++
-Set the protocol version.
+Get the protocol version.
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
-Set the TCP receive buffer size
+Return the TCP receive buffer size, in bytes
 +++
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
-Set the value of reuse address
+@return  the value of reuse address
 +++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
-Set the TCP send buffer size
+Return the TCP send buffer size, in bytes.
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
-Set whether SO_linger keep alive is enabled
+
 +++
 |[[ssl]]`ssl`|`Boolean`|
 +++
-Set whether SSL/TLS is enabled
+
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
-Set whether TCP keep alive is enabled
+@return is TCP keep alive enabled?
 +++
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
-Set whether TCP no delay is enabled
+@return TCP no delay enabled ?
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
-Set the value of traffic class
+@return  the value of traffic class
 +++
 |[[trustAll]]`trustAll`|`Boolean`|
 +++
-Set whether all server certificates should be trusted
+
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1133,65 +1174,15 @@ Set the trust options in jks format, aka Java trustore
 +++
 |[[tryUseCompression]]`tryUseCompression`|`Boolean`|
 +++
-Set whether compression is enabled
+Is compression enabled on the client?
 +++
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
-Set whether Netty pooled buffers are enabled
+@return are Netty pooled buffers enabled?
 +++
 |[[verifyHost]]`verifyHost`|`Boolean`|
 +++
-Set whether hostname verification is enabled
-+++
-|===
-
-[[DatagramSocketOptions]]
-== DatagramSocketOptions
-
-++++
- Options used to configure a datagram socket.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[broadcast]]`broadcast`|`Boolean`|
-+++
-Set if the socket can receive broadcast packets
-+++
-|[[ipV6]]`ipV6`|`Boolean`|
-+++
-Set if IP v6 should be used
-+++
-|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
-+++
-Set if loopback mode is disabled
-+++
-|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
-+++
-Set the multicast network interface address
-+++
-|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
-+++
-Set the multicast ttl value
-+++
-|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
-+++
-Set the TCP receive buffer size
-+++
-|[[reuseAddress]]`reuseAddress`|`Boolean`|
-+++
-Set the value of reuse address
-+++
-|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
-+++
-Set the TCP send buffer size
-+++
-|[[trafficClass]]`trafficClass`|`Number (int)`|
-+++
-Set the value of traffic class
+Is hostname verification (for SSL/TLS) enabled?
 +++
 |===
 
@@ -1237,11 +1228,11 @@ Set the value of traffic class
 ^|Name | Type ^| Description
 |[[certPaths]]`certPaths`|`Array of String`|
 +++
-Add a certificate path
+@return  the certificate paths used to locate certificates
 +++
 |[[certValues]]`certValues`|`Array of Buffer`|
 +++
-Add a certificate value
+
 +++
 |===
 
@@ -1259,20 +1250,19 @@ Add a certificate value
 ^|Name | Type ^| Description
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
-Add a CRL path
+
 +++
 |[[crlValues]]`crlValues`|`Array of Buffer`|
 +++
-Add a CRL value
+Get the CRL values
 +++
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
-Add an enabled cipher suite
+
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
-Set the idle timeout, in seconds. zero means don't timeout.
- This determines if a connection will timeout and be closed if no data is received within the timeout.
+@return  the idle timeout, in seconds
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1296,35 +1286,35 @@ Set the trust options in pfx format
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
-Set the TCP receive buffer size
+Return the TCP receive buffer size, in bytes
 +++
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
-Set the value of reuse address
+@return  the value of reuse address
 +++
 |[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
 +++
-Set the TCP send buffer size
+Return the TCP send buffer size, in bytes.
 +++
 |[[soLinger]]`soLinger`|`Number (int)`|
 +++
-Set whether SO_linger keep alive is enabled
+
 +++
 |[[ssl]]`ssl`|`Boolean`|
 +++
-Set whether SSL/TLS is enabled
+
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
-Set whether TCP keep alive is enabled
+@return is TCP keep alive enabled?
 +++
 |[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
 +++
-Set whether TCP no delay is enabled
+@return TCP no delay enabled ?
 +++
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
-Set the value of traffic class
+@return  the value of traffic class
 +++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -1332,7 +1322,7 @@ Set the trust options in jks format, aka Java trustore
 +++
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
-Set whether Netty pooled buffers are enabled
+@return are Netty pooled buffers enabled?
 +++
 |===
 

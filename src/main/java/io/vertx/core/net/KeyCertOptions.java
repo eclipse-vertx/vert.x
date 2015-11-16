@@ -15,14 +15,11 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.DataObject;
-
 /**
  * Key/cert configuration options.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject
 public interface KeyCertOptions {
 
   /**

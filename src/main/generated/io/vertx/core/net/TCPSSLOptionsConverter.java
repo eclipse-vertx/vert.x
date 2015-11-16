@@ -98,6 +98,13 @@ public class TCPSSLOptionsConverter {
               map(item -> item.getBytes()).
               collect(java.util.stream.Collectors.toList())));
     }
+    if (obj.getEnabledCipherSuites() != null) {
+      json.put("enabledCipherSuites", new JsonArray(
+          obj.getEnabledCipherSuites().
+              stream().
+              map(item -> item).
+              collect(java.util.stream.Collectors.toList())));
+    }
     json.put("idleTimeout", obj.getIdleTimeout());
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
