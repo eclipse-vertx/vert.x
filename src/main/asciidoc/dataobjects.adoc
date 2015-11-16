@@ -437,6 +437,20 @@ Set the store as a buffer
 +++
 |===
 
+[[TrustOptions]]
+== TrustOptions
+
+++++
+ Certification authority configuration options.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|===
+
 [[Option]]
 == Option
 
@@ -505,20 +519,6 @@ Sets the short name of this option.
 +++
 Sets whether or not this option can receive a value.
 +++
-|===
-
-[[TrustOptions]]
-== TrustOptions
-
-++++
- Certification authority configuration options.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
 |===
 
 [[NetServerOptions]]
@@ -799,20 +799,6 @@ Set whether the verticle(s) should be deployed as a worker verticle
 +++
 |===
 
-[[KeyCertOptions]]
-== KeyCertOptions
-
-++++
- Key/cert configuration options.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|===
-
 [[PemKeyCertOptions]]
 == PemKeyCertOptions
 
@@ -881,6 +867,20 @@ Set the path to the key file
 +++
 Set the key a a buffer
 +++
+|===
+
+[[KeyCertOptions]]
+== KeyCertOptions
+
+++++
+ Key/cert configuration options.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
 |===
 
 [[HttpServerOptions]]
@@ -1007,56 +1007,6 @@ Set whether Netty pooled buffers are enabled
 |[[websocketSubProtocols]]`websocketSubProtocols`|`String`|
 +++
 Set the websocket subprotocols supported by the server.
-+++
-|===
-
-[[DatagramSocketOptions]]
-== DatagramSocketOptions
-
-++++
- Options used to configure a datagram socket.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[broadcast]]`broadcast`|`Boolean`|
-+++
-Set if the socket can receive broadcast packets
-+++
-|[[ipV6]]`ipV6`|`Boolean`|
-+++
-Set if IP v6 should be used
-+++
-|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
-+++
-Set if loopback mode is disabled
-+++
-|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
-+++
-Set the multicast network interface address
-+++
-|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
-+++
-Set the multicast ttl value
-+++
-|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
-+++
-Set the TCP receive buffer size
-+++
-|[[reuseAddress]]`reuseAddress`|`Boolean`|
-+++
-Set the value of reuse address
-+++
-|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
-+++
-Set the TCP send buffer size
-+++
-|[[trafficClass]]`trafficClass`|`Number (int)`|
-+++
-Set the value of traffic class
 +++
 |===
 
@@ -1192,6 +1142,56 @@ Set whether Netty pooled buffers are enabled
 |[[verifyHost]]`verifyHost`|`Boolean`|
 +++
 Set whether hostname verification is enabled
++++
+|===
+
+[[DatagramSocketOptions]]
+== DatagramSocketOptions
+
+++++
+ Options used to configure a datagram socket.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[broadcast]]`broadcast`|`Boolean`|
++++
+Set if the socket can receive broadcast packets
++++
+|[[ipV6]]`ipV6`|`Boolean`|
++++
+Set if IP v6 should be used
++++
+|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
++++
+Set if loopback mode is disabled
++++
+|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
++++
+Set the multicast network interface address
++++
+|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
++++
+Set the multicast ttl value
++++
+|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
++++
+Set the TCP receive buffer size
++++
+|[[reuseAddress]]`reuseAddress`|`Boolean`|
++++
+Set the value of reuse address
++++
+|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
++++
+Set the TCP send buffer size
++++
+|[[trafficClass]]`trafficClass`|`Number (int)`|
++++
+Set the value of traffic class
 +++
 |===
 
