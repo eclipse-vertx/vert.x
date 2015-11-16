@@ -18,6 +18,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.WriteStream;
 
@@ -29,6 +30,18 @@ import io.vertx.core.streams.WriteStream;
  */
 @VertxGen
 public interface MessageProducer<T> extends WriteStream<T> {
+
+  int DEFAULT_WRITE_QUEUE_MAX_SIZE = 1000;
+
+  /**
+   * Synonym for {@link #write(Object)}.
+   *
+   * @param message  the message to send
+   * @return  reference to this for fluency
+   */
+  MessageProducer<T> send(T message);
+
+  <R> MessageProducer<T> send(T message, Handler<AsyncResult<Message<R>>> replyHandler);
 
   @Override
   MessageProducer<T> exceptionHandler(Handler<Throwable> handler);
@@ -56,4 +69,5 @@ public interface MessageProducer<T> extends WriteStream<T> {
    */
   String address();
 
+  void close();
 }

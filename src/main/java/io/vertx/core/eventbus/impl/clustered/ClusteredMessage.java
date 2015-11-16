@@ -17,15 +17,12 @@
 package io.vertx.core.eventbus.impl.clustered;
 
 import io.netty.util.CharsetUtil;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.eventbus.impl.local.LocalMessage;
+import io.vertx.core.eventbus.impl.EventBusImpl;
+import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -37,7 +34,7 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ClusteredMessage<U, V> extends LocalMessage<U, V> {
+public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   private static final Logger log = LoggerFactory.getLogger(ClusteredMessage.class);
 
@@ -53,8 +50,8 @@ public class ClusteredMessage<U, V> extends LocalMessage<U, V> {
   }
 
   public ClusteredMessage(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,
-                          MessageCodec<U, V> messageCodec, boolean send) {
-    super(address, replyAddress, headers, sentBody, messageCodec, send);
+                          MessageCodec<U, V> messageCodec, boolean send, EventBusImpl bus) {
+    super(address, replyAddress, headers, sentBody, messageCodec, send, bus);
     this.sender = sender;
   }
 
@@ -241,11 +238,8 @@ public class ClusteredMessage<U, V> extends LocalMessage<U, V> {
     buff.appendBytes(strBytes);
   }
 
-  @Override
-  protected <R> void sendReply(LocalMessage msg, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
-    if (bus != null & replyAddress() != null) {
-      ((ClusteredEventBus)bus).sendReply(sender, msg, options, replyHandler);
-    }
+  ServerID getSender() {
+    return sender;
   }
 
   public boolean isFromWire() {
