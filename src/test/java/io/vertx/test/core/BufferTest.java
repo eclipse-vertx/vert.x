@@ -258,10 +258,10 @@ public class BufferTest {
     assertIndexOutOfBoundsException(() -> b.setShort(-1, (short) 0));
     assertIndexOutOfBoundsException(() -> b.setBuffer(-1, b));
     assertIndexOutOfBoundsException(() -> b.setBuffer(0, b, -1, 0));
-    assertIllegalArgumentException(() -> b.setBuffer(0, b, 0, -1));
+    assertIndexOutOfBoundsException(() -> b.setBuffer(0, b, 0, -1));
     assertIndexOutOfBoundsException(() -> b.setBytes(-1, TestUtils.randomByteArray(1)));
     assertIndexOutOfBoundsException(() -> b.setBytes(-1, TestUtils.randomByteArray(1), -1, 0));
-    assertIllegalArgumentException(() -> b.setBytes(-1, TestUtils.randomByteArray(1), 0, -1));
+    assertIndexOutOfBoundsException(() -> b.setBytes(-1, TestUtils.randomByteArray(1), 0, -1));
     assertIndexOutOfBoundsException(() -> b.setString(-1, ""));
     assertIndexOutOfBoundsException(() -> b.setString(-1, "", "UTF-8"));
   }
