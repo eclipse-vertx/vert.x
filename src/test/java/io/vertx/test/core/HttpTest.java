@@ -4601,6 +4601,49 @@ public class HttpTest extends HttpTestBase {
     });
   }
 
+  @Test
+  public void testUnsupportedMethod() throws Exception {
+    testUnsupportedMethod("XTRACK /someuri HTTP/1.1\r\nHost: localhost\r\n\r\n", true);
+  }
+
+  @Test
+  public void testUnsupportedHttpVersion() throws Exception {
+    testUnsupportedMethod("GET /someuri HTTP/1.7\r\nHost: localhost\r\n\r\n", false);
+  }
+
+  private void testUnsupportedMethod(String rawReq, boolean method) throws Exception {
+    vertx.createHttpServer()
+      .requestHandler(req -> {
+        try {
+          if (method) {
+            req.method();
+          } else {
+            req.version();
+          }
+          fail("Should throw exception");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+      })
+      .listen(8080, r -> {
+        if (r.succeeded()) {
+          NetClient client = vertx.createNetClient();
+          // Send a raw request
+          client.connect(8080, "localhost", onSuccess(conn -> {
+            conn.write(rawReq);
+            Buffer respBuff = Buffer.buffer();
+            conn.handler(respBuff::appendBuffer);
+            conn.closeHandler(v -> {
+              // Server should automatically close it after sending back 501
+              assertTrue(respBuff.toString().contains("501 Not Implemented"));
+              client.close();
+              testComplete();
+            });
+          }));
+        }
+      });
+    await();
+  }
 
   private void pausingServer(Consumer<HttpServer> consumer) {
     server.requestHandler(req -> {

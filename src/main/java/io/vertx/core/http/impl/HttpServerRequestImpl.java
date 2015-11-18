@@ -112,6 +112,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
         version = HttpVersion.HTTP_1_1;
       } else {
+        sendNotImplementedAndClose();
         throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
       }
     }
@@ -121,7 +122,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
-      method = io.vertx.core.http.HttpMethod.valueOf(request.getMethod().toString());
+      String sMethod = request.getMethod().toString();
+      try {
+        method = io.vertx.core.http.HttpMethod.valueOf(sMethod);
+      } catch (IllegalArgumentException e) {
+        sendNotImplementedAndClose();
+        throw new IllegalStateException("Unsupported HTTP method: " + sMethod);
+      }
     }
     return method;
   }
@@ -407,6 +414,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         exceptionHandler.handle(t);
       }
     }
+  }
+
+  private void sendNotImplementedAndClose() {
+    response().setStatusCode(501).end();
+    response().close();
   }
 
   private void checkEnded() {
