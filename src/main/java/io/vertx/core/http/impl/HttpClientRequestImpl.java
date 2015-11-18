@@ -95,14 +95,16 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public synchronized  HttpClientRequest handler(Handler<HttpClientResponse> handler) {
-    if (handler != null) {
-      checkComplete();
-      respHandler = checkConnect(method, handler);
-    } else {
-      respHandler = null;
+  public  HttpClientRequest handler(Handler<HttpClientResponse> handler) {
+    synchronized (getLock()) {
+      if (handler != null) {
+        checkComplete();
+        respHandler = checkConnect(method, handler);
+      } else {
+        respHandler = null;
+      }
+      return this;
     }
-    return this;
   }
 
   @Override
@@ -116,30 +118,36 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest endHandler(Handler<Void> endHandler) {
-    if (endHandler != null) {
+  public HttpClientRequest endHandler(Handler<Void> endHandler) {
+    synchronized (getLock()) {
+      if (endHandler != null) {
+        checkComplete();
+      }
+      this.endHandler = endHandler;
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequestImpl setChunked(boolean chunked) {
+    synchronized (getLock()) {
       checkComplete();
+      if (written > 0) {
+        throw new IllegalStateException("Cannot set chunked after data has been written on request");
+      }
+      // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
+      if (client.getOptions().getProtocolVersion() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
+        this.chunked = chunked;
+      }
+      return this;
     }
-    this.endHandler = endHandler;
-    return this;
   }
 
   @Override
-  public synchronized HttpClientRequestImpl setChunked(boolean chunked) {
-    checkComplete();
-    if (written > 0) {
-      throw new IllegalStateException("Cannot set chunked after data has been written on request");
+  public boolean isChunked() {
+    synchronized (getLock()) {
+      return chunked;
     }
-    // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
-    if (client.getOptions().getProtocolVersion() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
-      this.chunked = chunked;
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized boolean isChunked() {
-    return chunked;
   }
 
   @Override
@@ -153,209 +161,263 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public synchronized MultiMap headers() {
-    if (headers == null) {
-      headers = new HeadersAdaptor(request.headers());
+  public MultiMap headers() {
+    synchronized (getLock()) {
+      if (headers == null) {
+        headers = new HeadersAdaptor(request.headers());
+      }
+      return headers;
     }
-    return headers;
   }
 
   @Override
-  public synchronized HttpClientRequest putHeader(String name, String value) {
-    checkComplete();
-    headers().set(name, value);
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequest putHeader(String name, Iterable<String> values) {
-    checkComplete();
-    headers().set(name, values);
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequestImpl write(Buffer chunk) {
-    checkComplete();
-    checkResponseHandler();
-    ByteBuf buf = chunk.getByteBuf();
-    write(buf, false);
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequestImpl write(String chunk) {
-    checkComplete();
-    checkResponseHandler();
-    return write(Buffer.buffer(chunk));
-  }
-
-  @Override
-  public synchronized HttpClientRequestImpl write(String chunk, String enc) {
-    Objects.requireNonNull(enc, "no null encoding accepted");
-    checkComplete();
-    checkResponseHandler();
-    return write(Buffer.buffer(chunk, enc));
-  }
-
-  @Override
-  public synchronized HttpClientRequest setWriteQueueMaxSize(int maxSize) {
-    checkComplete();
-    if (conn != null) {
-      conn.doSetWriteQueueMaxSize(maxSize);
-    } else {
-      pendingMaxSize = maxSize;
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized boolean writeQueueFull() {
-    checkComplete();
-    return conn != null && conn.isNotWritable();
-  }
-
-  @Override
-  public synchronized HttpClientRequest drainHandler(Handler<Void> handler) {
-    checkComplete();
-    this.drainHandler = handler;
-    if (conn != null) {
-      conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    if (handler != null) {
+  public HttpClientRequest putHeader(String name, String value) {
+    synchronized (getLock()) {
       checkComplete();
-      this.exceptionHandler = t -> {
-        cancelOutstandingTimeoutTimer();
-        handler.handle(t);
-      };
-    } else {
-      this.exceptionHandler = null;
+      headers().set(name, value);
+      return this;
     }
-    return this;
   }
 
   @Override
-  public synchronized HttpClientRequest continueHandler(Handler<Void> handler) {
-    checkComplete();
-    this.continueHandler = handler;
-    return this;
+  public HttpClientRequest putHeader(String name, Iterable<String> values) {
+    synchronized (getLock()) {
+      checkComplete();
+      headers().set(name, values);
+      return this;
+    }
   }
 
   @Override
-  public synchronized HttpClientRequestImpl sendHead() {
-    checkComplete();
-    checkResponseHandler();
+  public HttpClientRequestImpl write(Buffer chunk) {
+    synchronized (getLock()) {
+      checkComplete();
+      checkResponseHandler();
+      ByteBuf buf = chunk.getByteBuf();
+      write(buf, false);
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequestImpl write(String chunk) {
+    synchronized (getLock()) {
+      checkComplete();
+      checkResponseHandler();
+      return write(Buffer.buffer(chunk));
+    }
+  }
+
+  @Override
+  public HttpClientRequestImpl write(String chunk, String enc) {
+    synchronized (getLock()) {
+      Objects.requireNonNull(enc, "no null encoding accepted");
+      checkComplete();
+      checkResponseHandler();
+      return write(Buffer.buffer(chunk, enc));
+    }
+  }
+
+  private Object getLock() {
     if (conn != null) {
-      if (!headWritten) {
-        writeHead();
-      }
+      return conn;
     } else {
-      connect();
-      writeHead = true;
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized void end(String chunk) {
-    end(Buffer.buffer(chunk));
-  }
-
-  @Override
-  public synchronized void end(String chunk, String enc) {
-    Objects.requireNonNull(enc, "no null encoding accepted");
-    end(Buffer.buffer(chunk, enc));
-  }
-
-  @Override
-  public synchronized void end(Buffer chunk) {
-    checkComplete();
-    checkResponseHandler();
-    if (!chunked && !contentLengthSet()) {
-      headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
-    }
-    write(chunk.getByteBuf(), true);
-  }
-
-  @Override
-  public synchronized void end() {
-    checkComplete();
-    checkResponseHandler();
-    write(Unpooled.EMPTY_BUFFER, true);
-  }
-
-  @Override
-  public synchronized HttpClientRequest setTimeout(long timeoutMs) {
-    cancelOutstandingTimeoutTimer();
-    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id ->  handleTimeout(timeoutMs));
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequest putHeader(CharSequence name, CharSequence value) {
-    checkComplete();
-    headers().set(name, value);
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) {
-    checkComplete();
-    headers().set(name, values);
-    return this;
-  }
-
-  synchronized void dataReceived() {
-    if (currentTimeoutTimerId != -1) {
-      lastDataReceived = System.currentTimeMillis();
+      return this;
     }
   }
 
-  synchronized void handleDrained() {
-    if (drainHandler != null) {
-      try {
-        drainHandler.handle(null);
-      } catch (Throwable t) {
-        handleException(t);
+  @Override
+  public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
+    synchronized (getLock()) {
+      checkComplete();
+      if (conn != null) {
+        conn.doSetWriteQueueMaxSize(maxSize);
+      } else {
+        pendingMaxSize = maxSize;
       }
+      return this;
     }
   }
 
-  synchronized void handleException(Throwable t) {
-    cancelOutstandingTimeoutTimer();
-    exceptionOccurred = true;
-    getExceptionHandler().handle(t);
+  @Override
+  public boolean writeQueueFull() {
+    synchronized (getLock()) {
+      checkComplete();
+      return conn != null && conn.isNotWritable();
+    }
   }
 
-  synchronized void handleResponse(HttpClientResponseImpl resp) {
-    // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-    if (!exceptionOccurred) {
-      cancelOutstandingTimeoutTimer();
-      try {
-        if (resp.statusCode() == 100) {
-          if (continueHandler != null) {
-            continueHandler.handle(null);
-          }
-        } else {
-          if (respHandler != null) {
-            respHandler.handle(resp);
-          }
-          if (endHandler != null) {
-            endHandler.handle(null);
-          }
+  @Override
+  public HttpClientRequest drainHandler(Handler<Void> handler) {
+    synchronized (getLock()) {
+      checkComplete();
+      this.drainHandler = handler;
+      if (conn != null) {
+        conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
+      }
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
+    synchronized (getLock()) {
+      if (handler != null) {
+        checkComplete();
+        this.exceptionHandler = t -> {
+          cancelOutstandingTimeoutTimer();
+          handler.handle(t);
+        };
+      } else {
+        this.exceptionHandler = null;
+      }
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequest continueHandler(Handler<Void> handler) {
+    synchronized (getLock()) {
+      checkComplete();
+      this.continueHandler = handler;
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequestImpl sendHead() {
+    synchronized (getLock()) {
+      checkComplete();
+      checkResponseHandler();
+      if (conn != null) {
+        if (!headWritten) {
+          writeHead();
         }
-      } catch (Throwable t) {
-        handleException(t);
+      } else {
+        connect();
+        writeHead = true;
+      }
+      return this;
+    }
+  }
+
+  @Override
+  public void end(String chunk) {
+    synchronized (getLock()) {
+      end(Buffer.buffer(chunk));
+    }
+  }
+
+  @Override
+  public void end(String chunk, String enc) {
+    synchronized (getLock()) {
+      Objects.requireNonNull(enc, "no null encoding accepted");
+      end(Buffer.buffer(chunk, enc));
+    }
+  }
+
+  @Override
+  public void end(Buffer chunk) {
+    synchronized (getLock()) {
+      checkComplete();
+      checkResponseHandler();
+      if (!chunked && !contentLengthSet()) {
+        headers().set(CONTENT_LENGTH, String.valueOf(chunk.length()));
+      }
+      write(chunk.getByteBuf(), true);
+    }
+  }
+
+  @Override
+  public void end() {
+    synchronized (getLock()) {
+      checkComplete();
+      checkResponseHandler();
+      write(Unpooled.EMPTY_BUFFER, true);
+    }
+  }
+
+  @Override
+  public HttpClientRequest setTimeout(long timeoutMs) {
+    synchronized (getLock()) {
+      cancelOutstandingTimeoutTimer();
+      currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequest putHeader(CharSequence name, CharSequence value) {
+    synchronized (getLock()) {
+      checkComplete();
+      headers().set(name, value);
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) {
+    synchronized (getLock()) {
+      checkComplete();
+      headers().set(name, values);
+      return this;
+    }
+  }
+
+  void dataReceived() {
+    synchronized (getLock()) {
+      if (currentTimeoutTimerId != -1) {
+        lastDataReceived = System.currentTimeMillis();
       }
     }
   }
 
-  synchronized HttpRequest getRequest() {
+  void handleDrained() {
+    synchronized (getLock()) {
+      if (drainHandler != null) {
+        try {
+          drainHandler.handle(null);
+        } catch (Throwable t) {
+          handleException(t);
+        }
+      }
+    }
+  }
+
+  void handleException(Throwable t) {
+    synchronized (getLock()) {
+      cancelOutstandingTimeoutTimer();
+      exceptionOccurred = true;
+      getExceptionHandler().handle(t);
+    }
+  }
+
+  void handleResponse(HttpClientResponseImpl resp) {
+    synchronized (getLock()) {
+      // If an exception occurred (e.g. a timeout fired) we won't receive the response.
+      if (!exceptionOccurred) {
+        cancelOutstandingTimeoutTimer();
+        try {
+          if (resp.statusCode() == 100) {
+            if (continueHandler != null) {
+              continueHandler.handle(null);
+            }
+          } else {
+            if (respHandler != null) {
+              respHandler.handle(resp);
+            }
+            if (endHandler != null) {
+              endHandler.handle(null);
+            }
+          }
+        } catch (Throwable t) {
+          handleException(t);
+        }
+      }
+    }
+  }
+
+  HttpRequest getRequest() {
     return request;
   }
 
