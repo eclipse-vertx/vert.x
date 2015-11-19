@@ -41,6 +41,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -75,6 +76,17 @@ public class MetricsTest extends VertxTestBase {
   public void testSendMessageInCluster() {
     startNodes(2);
     testBroadcastMessage(vertices[0], new Vertx[]{vertices[1]}, false, false, true);
+  }
+
+  @Test
+  public void testEventBusInitializedWithCluster() {
+    startNodes(1);
+    waitUntil(() -> FakeVertxMetrics.eventBus.get() != null);
+  }
+
+  @Test
+  public void testEventBusInitializedLocal() {
+    waitUntil(() -> FakeVertxMetrics.eventBus.get() != null);
   }
 
   @Test

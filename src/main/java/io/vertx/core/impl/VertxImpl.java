@@ -169,6 +169,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     eventBus.start(ar2 -> {
       if (ar2.succeeded()) {
+        // If the metric provider wants to use the event bus, it cannot use it in its constructor as the event bus
+        // may not be initialized yet. We invokes the eventBusInitialized so it can starts using the event bus.
+        metrics.eventBusInitialized(eventBus);
+
         if (resultHandler != null) {
           resultHandler.handle(Future.succeededFuture(this));
         }
@@ -337,7 +341,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       ServiceLoader<VertxMetricsFactory> factories = ServiceLoader.load(VertxMetricsFactory.class);
       if (factories.iterator().hasNext()) {
         VertxMetricsFactory factory = factories.iterator().next();
-        return factory.metrics(this, options);
+        VertxMetrics metrics = factory.metrics(this, options);
+        Objects.requireNonNull(metrics, "The metric instance created from " + factory + " cannot be null");
+        return metrics;
       } else {
         log.warn("Metrics has been set to enabled but no VertxMetricsFactory found on classpath");
       }
