@@ -19,6 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
@@ -531,5 +532,50 @@ public class MetricsTest extends VertxTestBase {
     });
     await();
 
+  }
+
+  @Test
+  public void testDatagram1() throws Exception {
+    testDatagram("127.0.0.1", packet -> {
+      assertEquals("127.0.0.1", packet.remoteAddress.host());
+      assertEquals(1234, packet.remoteAddress.port());
+      assertEquals(5, packet.numberOfBytes);
+    });
+  }
+
+  @Test
+  public void testDatagram2() throws Exception {
+    testDatagram("localhost", packet -> {
+      assertEquals("localhost", packet.remoteAddress.host());
+      assertEquals(1234, packet.remoteAddress.port());
+      assertEquals(5, packet.numberOfBytes);
+    });
+  }
+
+  private void testDatagram(String host, Consumer<PacketMetric> checker) throws Exception {
+    DatagramSocket peer1 = vertx.createDatagramSocket();
+    DatagramSocket peer2 = vertx.createDatagramSocket();
+    CountDownLatch latch = new CountDownLatch(1);
+    peer1.handler(packet -> {
+      FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.getMetrics(peer1);
+      FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.getMetrics(peer2);
+      assertEquals(1, peer1Metrics.getReads().size());
+      PacketMetric read = peer1Metrics.getReads().get(0);
+      assertEquals(5, read.numberOfBytes);
+      assertEquals(0, peer1Metrics.getWrites().size());
+      assertEquals(0, peer2Metrics.getReads().size());
+      assertEquals(1, peer2Metrics.getWrites().size());
+      checker.accept(peer2Metrics.getWrites().get(0));
+      testComplete();
+    });
+    peer1.listen(1234, host, ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    peer2.send("hello", 1234, host, ar -> {
+      assertTrue(ar.succeeded());
+    });
+    await();
   }
 }

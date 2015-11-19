@@ -132,7 +132,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    throw new UnsupportedOperationException();
+    return new FakeDatagramSocketMetrics(socket);
   }
 
   public boolean isEnabled() {
