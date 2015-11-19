@@ -1034,7 +1034,8 @@ public class HttpTest extends HttpTestBase {
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
       });
-      req.response().bodyEndHandler(v -> {
+      req.response().bodyEndHandler(size -> {
+        assertEquals(Long.valueOf(0), size);
         assertEquals(1, cnt.getAndIncrement());
         complete();
       });
@@ -1053,23 +1054,62 @@ public class HttpTest extends HttpTestBase {
   public void testResponseEndHandlers2() {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
+    String content = "blah";
     server.requestHandler(req -> {
       req.response().headersEndHandler(v -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
       });
-      req.response().bodyEndHandler(v -> {
+      req.response().bodyEndHandler(size -> {
+        assertEquals(Long.valueOf(content.length()), size);
         assertEquals(1, cnt.getAndIncrement());
         complete();
       });
-      req.response().end("blah");
+      req.response().end(content);
     }).listen(onSuccess(server -> {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
         assertEquals(200, res.statusCode());
         assertEquals("wibble", res.headers().get("extraheader"));
         res.bodyHandler(buff -> {
-          assertEquals(Buffer.buffer("blah"), buff);
+          assertEquals(Buffer.buffer(content), buff);
+          complete();
+        });
+      }).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testResponseEndHandlersChunkedResponse() {
+    waitFor(2);
+    AtomicInteger cnt = new AtomicInteger();
+    String chunk = "blah";
+    int numChunks = 6;
+    StringBuilder content = new StringBuilder(chunk.length() * numChunks);
+    IntStream.range(0, numChunks).forEach(i -> content.append(chunk));
+    server.requestHandler(req -> {
+      req.response().headersEndHandler(v -> {
+        // Insert another header
+        req.response().putHeader("extraheader", "wibble");
+        assertEquals(0, cnt.getAndIncrement());
+      });
+      req.response().bodyEndHandler(size -> {
+        assertEquals(Long.valueOf(content.length()), size);
+        assertEquals(1, cnt.getAndIncrement());
+        complete();
+      });
+      req.response().setChunked(true);
+      // note that we have a -1 here because the last chunk is written via end(chunk)
+      IntStream.range(0, numChunks - 1).forEach(x -> req.response().write(chunk));
+      // End with a chunk to ensure size is correctly calculated
+      req.response().end(chunk);
+    }).listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+        assertEquals(200, res.statusCode());
+        assertEquals("wibble", res.headers().get("extraheader"));
+        res.bodyHandler(buff -> {
+          assertEquals(Buffer.buffer(content.toString()), buff);
           complete();
         });
       }).end();
@@ -1089,7 +1129,8 @@ public class HttpTest extends HttpTestBase {
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
       });
-      req.response().bodyEndHandler(v -> {
+      req.response().bodyEndHandler(size -> {
+        assertEquals(Long.valueOf(content.length()), size);
         assertEquals(1, cnt.getAndIncrement());
         complete();
       });

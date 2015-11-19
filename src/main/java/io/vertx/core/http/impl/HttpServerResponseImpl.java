@@ -65,7 +65,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> headersEndHandler;
-  private Handler<Void> bodyEndHandler;
+  private Handler<Long> bodyEndHandler;
   private boolean chunked;
   private boolean closed;
   private ChannelFuture channelFuture;
@@ -73,6 +73,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private LastHttpContent trailing;
   private MultiMap trailers;
   private String statusMessage;
+  private long bytesWritten;
 
   HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
   	this.vertx = vertx;
@@ -370,7 +371,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse bodyEndHandler(Handler<Void> handler) {
+  public HttpServerResponse bodyEndHandler(Handler<Long> handler) {
     synchronized (conn) {
       this.bodyEndHandler = handler;
       return this;
@@ -379,6 +380,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void end0(ByteBuf data) {
     checkWritten();
+    bytesWritten += data.readableBytes();
     if (!headWritten) {
       // if the head was not written yet we can write out everything in one go
       // which is cheaper.
@@ -415,7 +417,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     written = true;
     conn.responseComplete();
     if (bodyEndHandler != null) {
-      bodyEndHandler.handle(null);
+      bodyEndHandler.handle(bytesWritten);
     }
   }
 
@@ -438,6 +440,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
 
       long contentLength = Math.min(length, file.length() - offset);
+      bytesWritten = contentLength;
       if (!contentLengthSet()) {
         putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
       }
@@ -497,7 +500,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       conn.responseComplete();
 
       if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
+        bodyEndHandler.handle(bytesWritten);
       }
     }
   }
@@ -577,6 +580,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
       }
 
+      bytesWritten += chunk.readableBytes();
       if (!headWritten) {
         prepareHeaders();
         channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));
