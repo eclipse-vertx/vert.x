@@ -441,7 +441,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics, null);
       socketMap.put(ch, sock);
       handler.context.executeFromIO(() -> {
-        sock.setMetric(metrics.connected(sock.remoteAddress()));
+        sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
         handler.handler.handle(sock);
       });
     }

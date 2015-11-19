@@ -222,7 +222,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics, null);
     socketMap.put(ch, sock);
     context.executeFromIO(() -> {
-      sock.setMetric(metrics.connected(sock.remoteAddress()));
+      sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       connectHandler.handle(Future.succeededFuture(sock));
     });
   }

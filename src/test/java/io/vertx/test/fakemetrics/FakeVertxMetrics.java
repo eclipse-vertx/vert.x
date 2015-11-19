@@ -82,7 +82,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   public TCPMetrics<?> createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
     return new TCPMetrics<Object>() {
 
-      public Object connected(SocketAddress remoteAddress) {
+      public Object connected(SocketAddress remoteAddress, String remoteName) {
         return null;
       }
 
@@ -110,7 +110,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   public TCPMetrics<?> createMetrics(NetClient client, NetClientOptions options) {
     return new TCPMetrics<Object>() {
 
-      public Object connected(SocketAddress remoteAddress) {
+      public Object connected(SocketAddress remoteAddress, String remoteName) {
         return null;
       }
 
@@ -136,7 +136,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    throw new UnsupportedOperationException();
+    return new FakeDatagramSocketMetrics(socket);
   }
 
   public boolean isEnabled() {

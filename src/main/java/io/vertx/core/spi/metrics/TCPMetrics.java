@@ -41,12 +41,16 @@ import io.vertx.core.net.SocketAddress;
 public interface TCPMetrics<S> extends NetworkMetrics<S> {
 
   /**
-   * Called when a client has connected, which is applicable for TCP connections.
+   * Called when a client has connected, which is applicable for TCP connections.<p/>
+   *
+   * The remote name of the client is a best effort to provide the name of the remote host, i.e if the name
+   * is specified at creation time, this name will be used otherwise it will be the remote address.
    *
    * @param remoteAddress the remote address of the client
+   * @param remoteName the remote name of the client
    * @return the socket metric
    */
-  S connected(SocketAddress remoteAddress);
+  S connected(SocketAddress remoteAddress, String remoteName);
 
   /**
    * Called when a client has disconnected, which is applicable for TCP connections.

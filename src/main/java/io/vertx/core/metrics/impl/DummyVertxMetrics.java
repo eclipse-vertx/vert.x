@@ -174,7 +174,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public Void connected(SocketAddress remoteAddress) {
+    public Void connected(SocketAddress remoteAddress, String remoteName) {
       return null;
     }
 
@@ -225,7 +225,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public Void connected(SocketAddress remoteAddress) {
+    public Void connected(SocketAddress remoteAddress, String remoteName) {
       return null;
     }
 
@@ -267,7 +267,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   protected class DummyTCPMetrics implements TCPMetrics<Void> {
 
     @Override
-    public Void connected(SocketAddress remoteAddress) {
+    public Void connected(SocketAddress remoteAddress, String remoteName) {
       return null;
     }
 

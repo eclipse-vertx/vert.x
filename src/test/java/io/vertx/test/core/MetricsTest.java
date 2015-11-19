@@ -21,6 +21,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.HttpClient;
@@ -35,13 +36,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -561,7 +563,16 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testHttpConnect() {
+  public void testHttpConnect1() throws Exception {
+    testHttpConnect("localhost", socketMetric -> assertEquals("localhost", socketMetric.remoteName));
+  }
+
+  @Test
+  public void testHttpConnect2() throws Exception {
+    testHttpConnect(InetAddress.getLocalHost().getHostAddress(), socketMetric -> assertEquals(socketMetric.remoteAddress.host(), socketMetric.remoteName));
+  }
+
+  private void testHttpConnect(String host, Consumer<SocketMetric> checker) {
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
@@ -578,15 +589,17 @@ public class MetricsTest extends VertxTestBase {
         assertFalse(serverMetric.socket.connected.get());
         assertEquals(5, serverMetric.socket.bytesRead.get());
         assertEquals(5, serverMetric.socket.bytesWritten.get());
+        assertEquals(serverMetric.socket.remoteAddress.host(), serverMetric.socket.remoteName);
         assertFalse(clientMetric.get().socket.connected.get());
         assertEquals(5, clientMetric.get().socket.bytesRead.get());
         assertEquals(5, clientMetric.get().socket.bytesWritten.get());
+        checker.accept(clientMetric.get().socket);
         testComplete();
       });
     }).listen(8080, ar1 -> {
       assertTrue(ar1.succeeded());
       HttpClient client = vertx.createHttpClient();
-      HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, "localhost", "/");
+      HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, host, "/");
       FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
       request.handler(resp -> {
         assertEquals(200, resp.statusCode());
@@ -603,5 +616,50 @@ public class MetricsTest extends VertxTestBase {
     });
     await();
 
+  }
+
+  @Test
+  public void testDatagram1() throws Exception {
+    testDatagram("127.0.0.1", packet -> {
+      assertEquals("127.0.0.1", packet.remoteAddress.host());
+      assertEquals(1234, packet.remoteAddress.port());
+      assertEquals(5, packet.numberOfBytes);
+    });
+  }
+
+  @Test
+  public void testDatagram2() throws Exception {
+    testDatagram("localhost", packet -> {
+      assertEquals("localhost", packet.remoteAddress.host());
+      assertEquals(1234, packet.remoteAddress.port());
+      assertEquals(5, packet.numberOfBytes);
+    });
+  }
+
+  private void testDatagram(String host, Consumer<PacketMetric> checker) throws Exception {
+    DatagramSocket peer1 = vertx.createDatagramSocket();
+    DatagramSocket peer2 = vertx.createDatagramSocket();
+    CountDownLatch latch = new CountDownLatch(1);
+    peer1.handler(packet -> {
+      FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.getMetrics(peer1);
+      FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.getMetrics(peer2);
+      assertEquals(1, peer1Metrics.getReads().size());
+      PacketMetric read = peer1Metrics.getReads().get(0);
+      assertEquals(5, read.numberOfBytes);
+      assertEquals(0, peer1Metrics.getWrites().size());
+      assertEquals(0, peer2Metrics.getReads().size());
+      assertEquals(1, peer2Metrics.getWrites().size());
+      checker.accept(peer2Metrics.getWrites().get(0));
+      testComplete();
+    });
+    peer1.listen(1234, host, ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    peer2.send("hello", 1234, host, ar -> {
+      assertTrue(ar.succeeded());
+    });
+    await();
   }
 }

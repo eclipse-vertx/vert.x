@@ -533,7 +533,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         conn.requestHandler(reqHandler.handler);
         connectionMap.put(ch, conn);
         reqHandler.context.executeFromIO(() -> {
-          conn.setMetric(metrics.connected(conn.remoteAddress()));
+          conn.setMetric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
           conn.handleMessage(msg);
         });
       }
@@ -561,7 +561,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
             serverOrigin, shake, metrics);
-          wsConn.setMetric(metrics.connected(wsConn.remoteAddress()));
+          wsConn.setMetric(metrics.connected(wsConn.remoteAddress(), wsConn.remoteName()));
           wsConn.wsHandler(wsHandler.handler);
 
           Runnable connectRunnable = () -> {

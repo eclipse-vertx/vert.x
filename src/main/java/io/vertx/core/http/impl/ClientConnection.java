@@ -89,7 +89,7 @@ class ClientConnection extends ConnectionBase {
     this.listener = listener;
     this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
-    this.metric = metrics.connected(remoteAddress());
+    this.metric = metrics.connected(remoteAddress(), remoteName());
   }
 
   @Override
