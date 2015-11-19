@@ -27,11 +27,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SocketMetric {
 
   public final SocketAddress remoteAddress;
+  public final String remoteName;
   public final AtomicBoolean connected = new AtomicBoolean(true);
   public final AtomicLong bytesRead = new AtomicLong();
   public final AtomicLong bytesWritten = new AtomicLong();
 
-  public SocketMetric(SocketAddress remoteAddress) {
+  public SocketMetric(SocketAddress remoteAddress, String remoteName) {
     this.remoteAddress = remoteAddress;
+    this.remoteName = remoteName;
   }
 }

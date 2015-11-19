@@ -109,7 +109,7 @@ public class MetricsContextTest extends AsyncTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
-          public Void connected(SocketAddress remoteAddress) {
+          public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
@@ -212,7 +212,7 @@ public class MetricsContextTest extends AsyncTestBase {
             checker.accept(expectedThread.get(), expectedContext.get());
           }
           @Override
-          public Void connected(SocketAddress remoteAddress) {
+          public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
@@ -315,7 +315,7 @@ public class MetricsContextTest extends AsyncTestBase {
             responseEndCalled.set(true);
           }
           @Override
-          public Void connected(SocketAddress remoteAddress) {
+          public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
@@ -425,7 +425,7 @@ public class MetricsContextTest extends AsyncTestBase {
             websocketDisconnected.set(true);
           }
           @Override
-          public Void connected(SocketAddress remoteAddress) {
+          public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
@@ -522,7 +522,7 @@ public class MetricsContextTest extends AsyncTestBase {
       public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
         return new DummyTCPMetrics() {
           @Override
-          public Void connected(SocketAddress remoteAddress) {
+          public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;
@@ -615,7 +615,7 @@ public class MetricsContextTest extends AsyncTestBase {
       public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
         return new DummyTCPMetrics() {
           @Override
-          public Void connected(SocketAddress remoteAddress) {
+          public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
             return null;

@@ -82,8 +82,8 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
-  public SocketMetric connected(SocketAddress remoteAddress) {
-    return new SocketMetric(remoteAddress);
+  public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
+    return new SocketMetric(remoteAddress, remoteName);
   }
 
   @Override

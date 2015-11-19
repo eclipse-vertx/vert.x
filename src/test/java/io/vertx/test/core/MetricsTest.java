@@ -32,11 +32,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -476,7 +478,16 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testHttpConnect() {
+  public void testHttpConnect1() throws Exception {
+    testHttpConnect("localhost", socketMetric -> assertEquals("localhost", socketMetric.remoteName));
+  }
+
+  @Test
+  public void testHttpConnect2() throws Exception {
+    testHttpConnect(InetAddress.getLocalHost().getHostAddress(), socketMetric -> assertEquals(socketMetric.remoteAddress.host(), socketMetric.remoteName));
+  }
+
+  private void testHttpConnect(String host, Consumer<SocketMetric> checker) {
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
@@ -493,15 +504,17 @@ public class MetricsTest extends VertxTestBase {
         assertFalse(serverMetric.socket.connected.get());
         assertEquals(5, serverMetric.socket.bytesRead.get());
         assertEquals(5, serverMetric.socket.bytesWritten.get());
+        assertEquals(serverMetric.socket.remoteAddress.host(), serverMetric.socket.remoteName);
         assertFalse(clientMetric.get().socket.connected.get());
         assertEquals(5, clientMetric.get().socket.bytesRead.get());
         assertEquals(5, clientMetric.get().socket.bytesWritten.get());
+        checker.accept(clientMetric.get().socket);
         testComplete();
       });
     }).listen(8080, ar1 -> {
       assertTrue(ar1.succeeded());
       HttpClient client = vertx.createHttpClient();
-      HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, "localhost", "/");
+      HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, host, "/");
       FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
       request.handler(resp -> {
         assertEquals(200, resp.statusCode());

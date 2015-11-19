@@ -72,8 +72,8 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   @Override
-  public SocketMetric connected(SocketAddress remoteAddress) {
-    return new SocketMetric(remoteAddress);
+  public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
+    return new SocketMetric(remoteAddress, remoteName);
   }
 
   @Override

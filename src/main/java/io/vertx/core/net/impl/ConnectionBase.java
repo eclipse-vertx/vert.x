@@ -244,6 +244,13 @@ public abstract class ConnectionBase {
     }
   }
 
+  public String remoteName() {
+    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+    if (addr == null) return null;
+    // Use hostString that does not trigger a DNS resolution
+    return addr.getHostString();
+  }
+
   public SocketAddress remoteAddress() {
     InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
     if (addr == null) return null;
