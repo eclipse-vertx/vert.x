@@ -158,4 +158,15 @@ public interface VertxMetrics extends Metrics, Measured {
    * @return the datagram metrics SPI
    */
   DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options);
+
+  /**
+   * Metrics cannot use the event bus in their constructor as the event bus is not yet initialized. When the event
+   * bus is initialized, this method is called with the event bus instance as parameter. By default, this method does
+   * nothing.
+   *
+   * @param bus the event bus
+   */
+  default void eventBusInitialized(EventBus bus) {
+    // Do nothing by default.
+  }
 }
