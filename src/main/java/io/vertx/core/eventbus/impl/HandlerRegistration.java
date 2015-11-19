@@ -33,7 +33,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private final EventBusMetrics metrics;
   private final EventBusImpl eventBus;
   private final String address;
-  private final boolean replyHandler;
+  private final String repliedAddress;
   private final boolean localOnly;
   private final Handler<AsyncResult<Message<T>>> asyncResultHandler;
   private long timeoutID = -1;
@@ -49,13 +49,13 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Object metric;
 
   public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
-                             boolean replyHandler, boolean localOnly,
+                             String repliedAddress, boolean localOnly,
                              Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
     this.vertx = vertx;
     this.metrics = metrics;
     this.eventBus = eventBus;
     this.address = address;
-    this.replyHandler = replyHandler;
+    this.repliedAddress = repliedAddress;
     this.localOnly = localOnly;
     this.asyncResultHandler = asyncResultHandler;
     if (timeout != -1) {
@@ -150,14 +150,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     this.result = result;
     if (completionHandler != null) {
       if (result.succeeded()) {
-        metric = metrics.handlerRegistered(address, replyHandler);
+        metric = metrics.handlerRegistered(address, repliedAddress);
       }
       Handler<AsyncResult<Void>> callback = completionHandler;
       vertx.runOnContext(v -> callback.handle(result));
     } else if (result.failed()) {
       log.error("Failed to propagate registration for handler " + handler + " and address " + address);
     } else {
-      metric = metrics.handlerRegistered(address, replyHandler);
+      metric = metrics.handlerRegistered(address, repliedAddress);
     }
   }
 
@@ -225,7 +225,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     this.handler = handler;
     if (this.handler != null && !registered) {
       registered = true;
-      eventBus.addRegistration(address, this, replyHandler, localOnly);
+      eventBus.addRegistration(address, this, repliedAddress != null, localOnly);
     } else if (this.handler == null && registered) {
       // This will set registered to false
       this.unregister();

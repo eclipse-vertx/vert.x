@@ -816,7 +816,7 @@ public class MetricsContextTest extends AsyncTestBase {
             return true;
           }
           @Override
-          public Void handlerRegistered(String address, boolean replyHandler) {
+          public Void handlerRegistered(String address, String repliedAddress) {
             registeredCalled.set(true);
             return null;
           }

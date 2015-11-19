@@ -37,6 +37,8 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   private final List<HandlerMetric> registrations = new ArrayList<>();
   private final Map<String, AtomicInteger> encoded = new ConcurrentHashMap<>();
   private final Map<String, AtomicInteger> decoded = new ConcurrentHashMap<>();
+  private final List<String> replyFailureAddresses = Collections.synchronizedList(new ArrayList<>());
+  private final List<ReplyFailure> replyFailures = Collections.synchronizedList(new ArrayList<>());
 
   public FakeEventBusMetrics(EventBus eventBus) {
     super(eventBus);
@@ -62,6 +64,14 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
     return registrations;
   }
 
+  public List<String> getReplyFailureAddresses() {
+    return replyFailureAddresses;
+  }
+
+  public List<ReplyFailure> getReplyFailures() {
+    return replyFailures;
+  }
+
   public int getEncodedBytes(String address) {
     AtomicInteger value = encoded.get(address);
     return value != null ? value.get() : 0;
@@ -73,8 +83,8 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   @Override
-  public HandlerMetric handlerRegistered(String address, boolean replyHandler) {
-    HandlerMetric registration = new HandlerMetric(address, replyHandler);
+  public HandlerMetric handlerRegistered(String address, String repliedAddress) {
+    HandlerMetric registration = new HandlerMetric(address, repliedAddress);
     registrations.add(registration);
     return registration;
   }
@@ -129,7 +139,8 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   public void replyFailure(String address, ReplyFailure failure) {
-    throw new UnsupportedOperationException();
+    replyFailureAddresses.add(address);
+    replyFailures.add(failure);
   }
 
   public boolean isEnabled() {

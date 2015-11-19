@@ -136,7 +136,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> consumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, false, false, null, -1);
+    return new HandlerRegistration<>(vertx, metrics, this, address, null, false, null, -1);
   }
 
   @Override
@@ -151,7 +151,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> localConsumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, false, true, null, -1);
+    return new HandlerRegistration<>(vertx, metrics, this, address, null, true, null, -1);
   }
 
   @Override
@@ -343,6 +343,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   protected <T> void deliverMessageLocally(SendContextImpl<T> sendContext) {
     if (!deliverMessageLocally(sendContext.message)) {
       // no handlers
+      metrics.replyFailure(sendContext.message.address, ReplyFailure.NO_HANDLERS);
       if (sendContext.handlerRegistration != null) {
         sendContext.handlerRegistration.sendAsyncResultFailure(ReplyFailure.NO_HANDLERS, "No handlers for address "
                                                                + sendContext.message.address);
@@ -398,7 +399,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       message.setReplyAddress(replyAddress);
       Handler<Message<T>> simpleReplyHandler = convertHandler(replyHandler);
       HandlerRegistration<T> registration =
-        new HandlerRegistration<>(vertx, metrics, this, replyAddress, true, true, replyHandler, timeout);
+        new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, replyHandler, timeout);
       registration.handler(simpleReplyHandler);
       return registration;
     } else {

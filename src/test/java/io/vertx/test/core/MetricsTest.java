@@ -19,7 +19,10 @@ package io.vertx.test.core;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
@@ -33,6 +36,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -232,7 +236,7 @@ public class MetricsTest extends VertxTestBase {
     assertEquals(1, metrics.getRegistrations().size());
     HandlerMetric registration = metrics.getRegistrations().get(0);
     assertEquals(ADDRESS1, registration.address);
-    assertEquals(false, registration.replyHandler);
+    assertEquals(null, registration.repliedAddress);
     consumer.unregister(ar -> {
       assertTrue(ar.succeeded());
       assertEquals(0, metrics.getRegistrations().size());
@@ -263,7 +267,7 @@ public class MetricsTest extends VertxTestBase {
     to.eventBus().consumer(ADDRESS1, msg -> {
       HandlerMetric registration = assertRegistration(metrics);
       assertEquals(ADDRESS1, registration.address);
-      assertEquals(false, registration.replyHandler);
+      assertEquals(null, registration.repliedAddress);
       assertEquals(1, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
       assertEquals(0, registration.failureCount.get());
@@ -273,7 +277,7 @@ public class MetricsTest extends VertxTestBase {
       from.eventBus().send(ADDRESS1, "ping", reply -> {
         HandlerMetric registration = assertRegistration(metrics);
         assertEquals(ADDRESS1, registration.address);
-        assertEquals(false, registration.replyHandler);
+        assertEquals(null, registration.repliedAddress);
         assertEquals(1, registration.beginCount.get());
         // This might take a little time
         waitUntil(() -> 1 == registration.endCount.get());
@@ -322,7 +326,7 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       waitUntil(() -> metrics.getRegistrations().size() == 2);
       HandlerMetric registration = metrics.getRegistrations().get(1);
-      assertTrue(registration.replyHandler);
+      assertEquals(ADDRESS1, registration.repliedAddress);
       assertEquals(0, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
       assertEquals(0, registration.localCount.get());
@@ -335,13 +339,13 @@ public class MetricsTest extends VertxTestBase {
     vertx.eventBus().send(ADDRESS1, "ping", reply -> {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       HandlerMetric registration = metrics.getRegistrations().get(1);
-      assertTrue(registration.replyHandler);
+      assertEquals(ADDRESS1, registration.repliedAddress);
       assertEquals(1, registration.beginCount.get());
       assertEquals(0, registration.endCount.get());
       assertEquals(1, registration.localCount.get());
       vertx.runOnContext(v -> {
         assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
-        assertTrue(registration.replyHandler);
+        assertEquals(ADDRESS1, registration.repliedAddress);
         assertEquals(1, registration.beginCount.get());
         assertEquals(1, registration.endCount.get());
         assertEquals(1, registration.localCount.get());
@@ -369,6 +373,75 @@ public class MetricsTest extends VertxTestBase {
       vertices[0].eventBus().send(ADDRESS1, Buffer.buffer(new byte[1000]));
     });
     await();
+  }
+
+  @Test
+  public void testReplyFailureNoHandlers() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    EventBus eb = vertx.eventBus();
+    eb.send(ADDRESS1, "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
+      assertTrue(ar.failed());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    assertEquals(Collections.singletonList(ADDRESS1), metrics.getReplyFailureAddresses());
+    assertEquals(Collections.singletonList(ReplyFailure.NO_HANDLERS), metrics.getReplyFailures());
+  }
+
+  @Test
+  public void testReplyFailureTimeout1() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    EventBus eb = vertx.eventBus();
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    eb.consumer(ADDRESS1, msg -> {
+      // Do not reply
+    });
+    eb.send(ADDRESS1, "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
+      assertTrue(ar.failed());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    assertEquals(1, metrics.getReplyFailureAddresses().size());
+    assertEquals(Collections.singletonList(ReplyFailure.TIMEOUT), metrics.getReplyFailures());
+  }
+
+  @Test
+  public void testReplyFailureTimeout2() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    EventBus eb = vertx.eventBus();
+    eb.consumer(ADDRESS1, msg -> {
+      msg.reply("juu", new DeliveryOptions().setSendTimeout(10), ar -> {
+        assertTrue(ar.failed());
+        latch.countDown();
+      });
+    });
+    eb.send(ADDRESS1, "bar", ar -> {
+      // Do not reply
+    });
+    awaitLatch(latch);
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    assertEquals(1, metrics.getReplyFailureAddresses().size());
+    assertEquals(Collections.singletonList(ReplyFailure.TIMEOUT), metrics.getReplyFailures());
+  }
+
+  @Test
+  public void testReplyFailureRecipientFailure() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    EventBus eb = vertx.eventBus();
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    AtomicReference<String> replyAddress = new AtomicReference<>();
+    eb.consumer("foo", msg -> {
+      replyAddress.set(msg.replyAddress());
+      msg.fail(0, "whatever");
+    });
+    eb.send("foo", "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
+      assertTrue(ar.failed());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    assertEquals(Collections.singletonList(replyAddress.get()), metrics.getReplyFailureAddresses());
+    assertEquals(Collections.singletonList(ReplyFailure.RECIPIENT_FAILURE), metrics.getReplyFailures());
   }
 
   @Test

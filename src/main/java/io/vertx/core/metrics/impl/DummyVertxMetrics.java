@@ -119,7 +119,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public Void handlerRegistered(String address, boolean replyHandler) {
+    public Void handlerRegistered(String address, String repliedAddress) {
       return null;
     }
 
