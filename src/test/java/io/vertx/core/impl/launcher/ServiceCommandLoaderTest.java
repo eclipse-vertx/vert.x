@@ -19,11 +19,14 @@ import io.vertx.core.cli.CLI;
 import io.vertx.core.spi.launcher.CommandFactory;
 import org.junit.Test;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 
@@ -48,5 +51,22 @@ public class ServiceCommandLoaderTest {
       }
     }
     fail("Cannot find '" + name + "' in " + clis.stream().map(CLI::getName).collect(Collectors.toList()));
+  }
+
+  @Test
+  public void testNoCommandsWhenLoadedFromEmptyClassloader() {
+    ClassLoader classLoader = new URLClassLoader(new URL[0], null);
+    loader = new ServiceCommandFactoryLoader(classLoader);
+    assertThat(loader.lookup()).isEmpty();
+  }
+
+
+  @Test
+  public void testCommandsWhenUsingClassloaderHierarchy() {
+    ClassLoader classLoader = new URLClassLoader(new URL[0], ServiceCommandLoaderTest.class.getClassLoader());
+    loader = new ServiceCommandFactoryLoader(classLoader);
+    Collection<CommandFactory<?>> commands = loader.lookup();
+    ensureCommand(commands, "Hello");
+    ensureCommand(commands, "Bye");
   }
 }

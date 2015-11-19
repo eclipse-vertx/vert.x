@@ -94,10 +94,11 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
   }
 
   /**
-   * Creates a new {@link VertxCommandLauncher} using the default {@link ServiceCommandFactoryLoader}.
+   * Creates a new {@link VertxCommandLauncher} using the default {@link ServiceCommandFactoryLoader}. It uses the
+   * classloader having loaded {@link VertxCommandLauncher}.
    */
   public VertxCommandLauncher() {
-    this(Collections.singletonList(new ServiceCommandFactoryLoader()));
+    this(Collections.singletonList(new ServiceCommandFactoryLoader(VertxCommandLauncher.class.getClassLoader())));
   }
 
   /**
