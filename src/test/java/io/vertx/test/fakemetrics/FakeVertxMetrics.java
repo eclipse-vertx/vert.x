@@ -37,10 +37,14 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
+
+  public static AtomicReference<EventBus> eventBus = new AtomicReference<>();
 
   public FakeVertxMetrics(Vertx vertx) {
     super(vertx);
@@ -139,4 +143,8 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     throw new UnsupportedOperationException();
   }
 
+  @Override
+  public void eventBusInitialized(EventBus bus) {
+    this.eventBus.set(bus);
+  }
 }
