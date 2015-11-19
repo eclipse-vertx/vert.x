@@ -33,10 +33,11 @@ public class ServiceCommandFactoryLoader implements CommandFactoryLookup {
   private ServiceLoader<CommandFactory> loader;
 
   /**
-   * Creates a new instance of {@link ServiceCommandFactoryLoader} using the default classloader.
+   * Creates a new instance of {@link ServiceCommandFactoryLoader} using the classloader having loaded the
+   * {@link ServiceCommandFactoryLoader} class.
    */
   public ServiceCommandFactoryLoader() {
-    this.loader = ServiceLoader.load(CommandFactory.class, null);
+    this.loader = ServiceLoader.load(CommandFactory.class, getClass().getClassLoader());
   }
 
   /**
