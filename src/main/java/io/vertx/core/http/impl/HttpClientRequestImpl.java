@@ -218,14 +218,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  private Object getLock() {
-    if (conn != null) {
-      return conn;
-    } else {
-      return this;
-    }
-  }
-
   @Override
   public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
     synchronized (getLock()) {
@@ -419,6 +411,25 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   HttpRequest getRequest() {
     return request;
+  }
+
+  // After connecting we should synchronize on the client connection instance to prevent deadlock conditions
+  // but there is a catch - the client connection is null before connecting so we synchronized on this before that
+  // point
+  private Object getLock() {
+    // We do the initial check outside the synchronized block to prevent the hit of synchronized once the conn has
+    // been set
+    if (conn != null) {
+      return conn;
+    } else {
+      synchronized (this) {
+        if (conn != null) {
+          return conn;
+        } else {
+          return this;
+        }
+      }
+    }
   }
 
   private Handler<HttpClientResponse> checkConnect(io.vertx.core.http.HttpMethod method, Handler<HttpClientResponse> handler) {
