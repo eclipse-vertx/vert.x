@@ -22,6 +22,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.Socket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -35,7 +36,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
-public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
+public interface WebSocketBase extends Socket {
 
   @Override
   WebSocketBase exceptionHandler(Handler<Throwable> handler);
@@ -137,22 +138,5 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   WebSocketBase frameHandler(@Nullable Handler<WebSocketFrame> handler);
-
-  /**
-   * Close the WebSocket.
-   */
-  void close();
-
-  /**
-   * @return the remote address for this socket
-   */
-  @CacheReturn
-  SocketAddress remoteAddress();
-
-  /**
-   * @return the local address for this socket
-   */
-  @CacheReturn
-  SocketAddress localAddress();
 
 }

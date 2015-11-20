@@ -44,7 +44,7 @@ import javax.security.cert.X509Certificate;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
+public interface NetSocket extends Socket {
 
   @Override
   NetSocket exceptionHandler(Handler<Throwable> handler);
@@ -179,21 +179,6 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
-   * @return the remote address for this socket
-   */
-  @CacheReturn
-  SocketAddress remoteAddress();
-
-  /**
-   * @return the local address for this socket
-   */
-  @CacheReturn
-  SocketAddress localAddress();
-
-  /**
-   * Close the NetSocket
-   */
-  void close();
 
   /**
    * Set a handler that will be called when the NetSocket is closed
