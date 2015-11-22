@@ -285,9 +285,11 @@ class ClientConnection extends ConnectionBase {
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
     if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
-      listener.responseEnded(this);
+      currentResponse = null;
+      listener.responseEnded(this, currentRequest == null);
+    } else {
+      currentResponse = null;
     }
-    currentResponse = null;
   }
 
   synchronized void handleWsFrame(WebSocketFrameInternal frame) {
@@ -340,7 +342,7 @@ class ClientConnection extends ConnectionBase {
       throw new IllegalStateException("No write in progress");
     }
     currentRequest = null;
-    listener.requestEnded(this);
+    listener.requestEnded(this, currentResponse == null);
   }
 
   public String hostHeader() {

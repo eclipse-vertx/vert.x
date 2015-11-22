@@ -100,29 +100,39 @@ public abstract class ConnectionManager {
     }
 
     // Called when the request has ended
-    public synchronized void requestEnded(ClientConnection conn) {
+    public synchronized void requestEnded(ClientConnection conn, boolean available) {
       if (pipelining) {
         // Maybe the connection can be reused
         Waiter waiter = waiters.poll();
         if (waiter != null) {
           waiter.context.runOnContext(v -> waiter.handler.handle(conn));
         }
+      } else if (keepAlive && available) {
+        // In case a request is received after the response was received
+        dispose(conn);
       }
     }
 
     // Called when the response has ended
-    public synchronized void responseEnded(ClientConnection conn) {
+    public synchronized void responseEnded(ClientConnection conn, boolean available) {
       if (pipelining || keepAlive) {
-        Waiter waiter = waiters.poll();
-        if (waiter != null) {
-          waiter.context.runOnContext(v -> waiter.handler.handle(conn));
-        } else if (!pipelining || conn.getOutstandingRequestCount() == 0) {
-          // Return to set of available
-          availableConnections.add(conn);
+        if (available) {
+          // Response is ended we can reuse it
+          dispose(conn);
         }
       } else {
         // Close it now
         conn.close();
+      }
+    }
+
+    private void dispose(ClientConnection conn) {
+      Waiter waiter = waiters.poll();
+      if (waiter != null) {
+        waiter.context.runOnContext(v -> waiter.handler.handle(conn));
+      } else if (!pipelining || conn.getOutstandingRequestCount() == 0) {
+        // Return to set of available
+        availableConnections.add(conn);
       }
     }
 

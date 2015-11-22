@@ -21,9 +21,9 @@ package io.vertx.core.http.impl;
  */
 public interface ConnectionLifeCycleListener {
 
-  void requestEnded(ClientConnection conn);
+  void requestEnded(ClientConnection conn, boolean available);
 
-  void responseEnded(ClientConnection conn);
+  void responseEnded(ClientConnection conn, boolean available);
 
   void connectionClosed(ClientConnection conn);
 }
