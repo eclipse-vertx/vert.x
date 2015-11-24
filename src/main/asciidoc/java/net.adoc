@@ -325,8 +325,9 @@ only apply to creating initial connections.
 
 [source,java]
 ----
-NetClientOptions options = new NetClientOptions();
-options.setReconnectAttempts(10).setReconnectInterval(500);
+NetClientOptions options = new NetClientOptions().
+    setReconnectAttempts(10).
+    setReconnectInterval(500);
 
 NetClient client = vertx.createNetClient(options);
 ----
