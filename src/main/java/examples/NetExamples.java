@@ -180,8 +180,9 @@ public class NetExamples {
 
   public void example16(Vertx vertx) {
 
-    NetClientOptions options = new NetClientOptions();
-    options.setReconnectAttempts(10).setReconnectInterval(500);
+    NetClientOptions options = new NetClientOptions().
+        setReconnectAttempts(10).
+        setReconnectInterval(500);
 
     NetClient client = vertx.createNetClient(options);
   }
