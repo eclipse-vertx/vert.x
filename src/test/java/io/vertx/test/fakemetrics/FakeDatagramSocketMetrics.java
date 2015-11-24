@@ -29,11 +29,16 @@ import java.util.List;
  */
 public class FakeDatagramSocketMetrics extends FakeMetricsBase implements DatagramSocketMetrics {
 
+  private volatile SocketAddress localAddress;
   private final List<PacketMetric> reads = Collections.synchronizedList(new ArrayList<>());
   private final List<PacketMetric> writes = Collections.synchronizedList(new ArrayList<>());
 
   public FakeDatagramSocketMetrics(Measured measured) {
     super(measured);
+  }
+
+  public SocketAddress getLocalAddress() {
+    return localAddress;
   }
 
   public List<PacketMetric> getReads() {
@@ -46,7 +51,7 @@ public class FakeDatagramSocketMetrics extends FakeMetricsBase implements Datagr
 
   @Override
   public void listening(SocketAddress localAddress) {
-
+    this.localAddress = localAddress;
   }
 
   @Override
