@@ -157,7 +157,7 @@ public class SLF4JLogDelegate implements LogDelegate {
 
     if (logger instanceof LocationAwareLogger) {
       LocationAwareLogger l = (LocationAwareLogger) logger;
-      l.log(null, FQCN, level, msg, null, t);
+      l.log(null, FQCN, level, msg, params, t);
     } else {
       switch (level) {
         case TRACE_INT:
