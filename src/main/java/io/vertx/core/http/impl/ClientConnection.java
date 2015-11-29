@@ -56,6 +56,8 @@ class ClientConnection extends ConnectionBase {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
+  private static final VertxException CONNECTION_CLOSED_EXCEPTION;
+
   private final HttpClientImpl client;
   private final String hostHeader;
   private final boolean ssl;
@@ -73,6 +75,11 @@ class ClientConnection extends ConnectionBase {
   private HttpClientResponseImpl currentResponse;
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
+
+  static {
+    CONNECTION_CLOSED_EXCEPTION = new VertxException("Connection was closed");
+    CONNECTION_CLOSED_EXCEPTION.setStackTrace(new StackTraceElement[0]);
+  }
 
   ClientConnection(VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
@@ -304,14 +311,13 @@ class ClientConnection extends ConnectionBase {
       ws.handleClosed();
     }
     // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
-    Exception e = new VertxException("Connection was closed");
     for (HttpClientRequestImpl req: requests) {
-      req.handleException(e);
+      req.handleException(CONNECTION_CLOSED_EXCEPTION);
     }
     if (currentRequest != null) {
-      currentRequest.handleException(e);
+      currentRequest.handleException(CONNECTION_CLOSED_EXCEPTION);
     } else if (currentResponse != null) {
-      currentResponse.handleException(e);
+      currentResponse.handleException(CONNECTION_CLOSED_EXCEPTION);
     }
   }
 
