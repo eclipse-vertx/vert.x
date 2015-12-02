@@ -4160,7 +4160,7 @@ public class HttpTest extends HttpTestBase {
           assertTrue(contexts.size() >= numConns);
           latch2.countDown();
         }
-      }).end();
+      }).exceptionHandler(this::fail).end();
     }
     awaitLatch(latch2);
     // Close should be in own context

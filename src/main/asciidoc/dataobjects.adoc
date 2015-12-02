@@ -1,30 +1,5 @@
 = Cheatsheets
 
-[[DeliveryOptions]]
-== DeliveryOptions
-
-++++
- Delivery options are used to configure message delivery.
- <p>
- Delivery options allow to configure delivery timeout and message codec name, and to provide any headers
- that you wish to send with the message.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[codecName]]`codecName`|`String`|
-+++
-Set the codec name.
-+++
-|[[sendTimeout]]`sendTimeout`|`Number (long)`|
-+++
-Set the send timeout.
-+++
-|===
-
 [[NetworkOptions]]
 == NetworkOptions
 
@@ -52,6 +27,31 @@ Set the TCP send buffer size
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
 Set the value of traffic class
++++
+|===
+
+[[DeliveryOptions]]
+== DeliveryOptions
+
+++++
+ Delivery options are used to configure message delivery.
+ <p>
+ Delivery options allow to configure delivery timeout and message codec name, and to provide any headers
+ that you wish to send with the message.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[codecName]]`codecName`|`String`|
++++
+Set the codec name.
++++
+|[[sendTimeout]]`sendTimeout`|`Number (long)`|
++++
+Set the send timeout.
 +++
 |===
 
@@ -286,50 +286,6 @@ Sets whether or not the current link is required.
 +++
 |===
 
-[[PfxOptions]]
-== PfxOptions
-
-++++
- Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
- <p>
- When used as a key store, it should point to a store containing a private key and its certificate.
- When used as a trust store, it should point to a store containing a list of accepted certificates.
- <p>
-
- The store can either be loaded by Vert.x from the filesystem:
- <p>
- <pre>
- HttpServerOptions options = new HttpServerOptions();
- options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
- </pre>
-
- Or directly provided as a buffer:<p>
-
- <pre>
- Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
- options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
- </pre>
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[password]]`password`|`String`|
-+++
-Set the password
-+++
-|[[path]]`path`|`String`|
-+++
-Set the path
-+++
-|[[value]]`value`|`Buffer`|
-+++
-Set the store as a buffer
-+++
-|===
-
 [[NetClientOptions]]
 == NetClientOptions
 
@@ -434,6 +390,50 @@ Set the trust options in jks format, aka Java trustore
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
++++
+|===
+
+[[PfxOptions]]
+== PfxOptions
+
+++++
+ Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
+ <p>
+ When used as a key store, it should point to a store containing a private key and its certificate.
+ When used as a trust store, it should point to a store containing a list of accepted certificates.
+ <p>
+
+ The store can either be loaded by Vert.x from the filesystem:
+ <p>
+ <pre>
+ HttpServerOptions options = new HttpServerOptions();
+ options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
+ </pre>
+
+ Or directly provided as a buffer:<p>
+
+ <pre>
+ Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
+ options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
+ </pre>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[password]]`password`|`String`|
++++
+Set the password
++++
+|[[path]]`path`|`String`|
++++
+Set the path
++++
+|[[value]]`value`|`Buffer`|
++++
+Set the store as a buffer
 +++
 |===
 
@@ -622,6 +622,25 @@ Set whether Netty pooled buffers are enabled
 +++
 |===
 
+[[MetricsOptions]]
+== MetricsOptions
+
+++++
+ Vert.x metrics base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[enabled]]`enabled`|`Boolean`|
++++
+Set whether metrics will be enabled on the Vert.x instance.
++++
+|===
+
 [[ClientOptionsBase]]
 == ClientOptionsBase
 
@@ -718,25 +737,6 @@ Set the trust options in jks format, aka Java trustore
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
-+++
-|===
-
-[[MetricsOptions]]
-== MetricsOptions
-
-++++
- Vert.x metrics base configuration, this class can be extended by provider implementations to configure
- those specific implementations.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[enabled]]`enabled`|`Boolean`|
-+++
-Set whether metrics will be enabled on the Vert.x instance.
 +++
 |===
 

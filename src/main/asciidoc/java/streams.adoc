@@ -3,28 +3,28 @@
 There are several objects in Vert.x that allow items to be read from and written.
 
 In previous versions the streams.adoc package was manipulating `link:../../apidocs/io/vertx/core/buffer/Buffer.html[Buffer]`
-objects exclusively. From now, streams are not anymore coupled to buffers and work with any kind of objects.
+objects exclusively. From now, streams are not coupled to buffers anymore and they work with any kind of objects.
 
-In Vert.x, calls to write item return immediately and writes are internally queued.
+In Vert.x, write calls return immediately, and writes are queued internally.
 
 It's not hard to see that if you write to an object faster than it can actually write the data to
-its underlying resource then the write queue could grow without bound - eventually resulting in
-exhausting available memory.
+its underlying resource, then the write queue can grow unbounded - eventually resulting in
+memory exhaustion.
 
-To solve this problem a simple flow control capability is provided by some objects in the Vert.x API.
+To solve this problem a simple flow control (_back-pressure_) capability is provided by some objects in the Vert.x API.
 
-Any flow control aware object that can be written-to implements `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]`,
-and any flow control object that can be read-from is said to implement `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]`.
+Any flow control aware object that can be _written-to_ implements `link:../../apidocs/io/vertx/core/streams/WriteStream.html[WriteStream]`,
+while any flow control object that can be _read-from_ is said to implement `link:../../apidocs/io/vertx/core/streams/ReadStream.html[ReadStream]`.
 
-Let's take an example where we want to read from a `ReadStream` and write the data to a `WriteStream`.
+Let's take an example where we want to read from a `ReadStream` then write the data to a `WriteStream`.
 
-A very simple example would be reading from a `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` on a server and writing back to the
-same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`, but you can
-do this between any `ReadStream` and any `WriteStream`, including HTTP requests and response,
-async files, WebSockets, etc.
+A very simple example would be reading from a `link:../../apidocs/io/vertx/core/net/NetSocket.html[NetSocket]` then writing back to the
+same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`. Note that this works
+between any `ReadStream` and `WriteStream` compliant object, including HTTP requests, HTTP responses,
+async files I/O, WebSockets, etc.
 
-A naive way to do this would be to directly take the data that's been read and immediately write it
-to the `NetSocket`, for example:
+A naive way to do this would be to directly take the data that has been read and immediately write it
+to the `NetSocket`:
 
 [source,java]
 ----
@@ -39,10 +39,10 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-There's a problem with the above example: If data is read from the socket faster than it can be
+There is a problem with the example above: if data is read from the socket faster than it can be
 written back to the socket, it will build up in the write queue of the `NetSocket`, eventually
 running out of RAM. This might happen, for example if the client at the other end of the socket
-wasn't reading very fast, effectively putting back-pressure on the connection.
+wasn't reading fast enough, effectively putting back-pressure on the connection.
 
 Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before
 writing to it:
@@ -63,7 +63,7 @@ server.connectHandler(sock -> {
 ----
 
 This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we
-really want to do is pause the `NetSocket` when the write queue is full. Let's do that:
+really want to do is pause the `NetSocket` when the write queue is full:
 
 [source,java]
 ----
@@ -102,12 +102,12 @@ server.connectHandler(sock -> {
 ----
 
 And there we have it. The `link:../../apidocs/io/vertx/core/streams/WriteStream.html#drainHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[drainHandler]` event handler will
-get called when the write queue is ready to accept more data, this resumes the `NetSocket` which
-allows it to read more data.
+get called when the write queue is ready to accept more data, this resumes the `NetSocket` that
+allows more data to be read.
 
-It's very common to want to do this when writing Vert.x applications, so we provide a helper class
-called `link:../../apidocs/io/vertx/core/streams/Pump.html[Pump]` which does all this hard work for you. You just feed it the `ReadStream` and
-the `WriteStream` and it tell it to start:
+Wanting to do this is quite common while writing Vert.x applications, so we provide a helper class
+called `link:../../apidocs/io/vertx/core/streams/Pump.html[Pump]` that does all of this hard work for you.
+You just feed it the `ReadStream` plus the `WriteStream` then start it:
 
 [source,java]
 ----
@@ -119,9 +119,9 @@ server.connectHandler(sock -> {
 }).listen();
 ----
 
-Which does exactly the same thing as the more verbose example.
+This does exactly the same thing as the more verbose example.
 
-Let's look at the methods on `ReadStream` and `WriteStream` in more detail:
+Let's now look at the methods on `ReadStream` and `WriteStream` in more detail:
 
 === ReadStream
 

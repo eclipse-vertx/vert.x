@@ -411,6 +411,11 @@ public class AsyncTestBase {
     }
   }
 
+  protected void fail(Throwable cause) {
+    checkThread();
+    handleThrowable(cause);
+  }
+
   protected void assertSame(Object expected, Object actual) {
     checkThread();
     try {
