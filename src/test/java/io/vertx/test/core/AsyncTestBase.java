@@ -589,7 +589,11 @@ public class AsyncTestBase {
   }
 
   protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
-    assertTrue(latch.await(10, TimeUnit.SECONDS));
+    awaitLatch(latch, 10);
+  }
+
+  protected void awaitLatch(CountDownLatch latch, int numSecs) throws InterruptedException {
+    assertTrue(latch.await(numSecs, TimeUnit.SECONDS));
   }
 
   protected void waitUntil(BooleanSupplier supplier) {
