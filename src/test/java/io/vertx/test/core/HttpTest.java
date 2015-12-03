@@ -4161,7 +4161,7 @@ public class HttpTest extends HttpTestBase {
         }
       }).exceptionHandler(this::fail).end();
     }
-    awaitLatch(latch2, 20);
+    awaitLatch(latch2);
     // Close should be in own context
     server.close(ar -> {
       assertTrue(ar.succeeded());
