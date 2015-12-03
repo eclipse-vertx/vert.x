@@ -588,7 +588,7 @@ public class HttpTest extends HttpTestBase {
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
     assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions) copy.getTrustOptions()).getPassword());
+    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -1379,7 +1379,7 @@ public class HttpTest extends HttpTestBase {
         assertEquals(headers.size() + 1, resp.headers().size());
 
         headers.forEach((k,v) -> assertEquals(v, resp.headers().get(k)));
-        headers.forEach((k, v) -> assertEquals(v, resp.getHeader(k)));
+        headers.forEach((k,v) -> assertEquals(v, resp.getHeader(k)));
 
         testComplete();
       }).end();
@@ -1721,7 +1721,7 @@ public class HttpTest extends HttpTestBase {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       for (int i = 0; i < numReqs; i++) {
         client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail("Connect should not be called")).
-            exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
+          exceptionHandler(error -> latch.countDown()).endHandler(done -> fail()).end();
       }
     }));
     awaitLatch(latch);
@@ -2561,7 +2561,7 @@ public class HttpTest extends HttpTestBase {
           req.drainHandler(v -> {
             throw new RuntimeException("error");
           })
-              .exceptionHandler(t -> testComplete());
+          .exceptionHandler(t -> testComplete());
 
           // Tell the server to resume
           vertx.eventBus().send("server_resume", "");
@@ -3243,8 +3243,7 @@ public class HttpTest extends HttpTestBase {
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
-    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {
-    });
+    HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", (handler) -> {});
     try {
       req.end();
       fail("Was expecting a failure");
@@ -4319,27 +4318,26 @@ public class HttpTest extends HttpTestBase {
       assertFalse(req.isEnded());
       req.endHandler(v -> {
         assertTrue(req.isEnded());
-        try {
-          req.endHandler(v2 -> {
-          });
+        try  {
+          req.endHandler(v2 -> {});
           fail("Shouldn't be able to set end handler");
         } catch (IllegalStateException e) {
           // OK
         }
-        try {
+        try  {
           req.setExpectMultipart(true);
           fail("Shouldn't be able to set expect multipart");
         } catch (IllegalStateException e) {
           // OK
         }
-        try {
+        try  {
           req.bodyHandler(v2 -> {
           });
           fail("Shouldn't be able to set body handler");
         } catch (IllegalStateException e) {
           // OK
         }
-        try {
+        try  {
           req.handler(v2 -> {
           });
           fail("Shouldn't be able to set handler");
@@ -4415,7 +4413,7 @@ public class HttpTest extends HttpTestBase {
         assertTrue(Vertx.currentContext().isWorkerContext());
         assertTrue(Context.isOnWorkerThread());
         HttpServer server1 = vertx.createHttpServer(new HttpServerOptions()
-            .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+                .setHost(HttpTestBase.DEFAULT_HTTP_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
         server1.requestHandler(req -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
@@ -4582,9 +4580,9 @@ public class HttpTest extends HttpTestBase {
       .listen(8080, r -> {
         if (r.succeeded()) {
           HttpClient client = vertx.createHttpClient(new HttpClientOptions()
-                  .setKeepAlive(true)
-                  .setPipelining(true)
-                  .setDefaultPort(8080)
+              .setKeepAlive(true)
+              .setPipelining(true)
+              .setDefaultPort(8080)
           );
           IntStream.range(0, 5).forEach(i -> recursiveCall(client, receivedRequests, sendRequests));
         }
@@ -4745,12 +4743,11 @@ public class HttpTest extends HttpTestBase {
       }
     }).listen(8080, onSuccess(s -> {
       HttpClientOptions ops = new HttpClientOptions()
-          .setDefaultPort(8080)
-          .setPipelining(true)
-          .setKeepAlive(true);
+        .setDefaultPort(8080)
+        .setPipelining(true)
+        .setKeepAlive(true);
       HttpClient client = vertx.createHttpClient(ops);
-      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {
-      }));
+      IntStream.range(0, sendRequests).forEach(x -> client.getNow("/", r -> {}));
     }));
     await();
   }
@@ -4823,65 +4820,6 @@ public class HttpTest extends HttpTestBase {
         testComplete();
       });
     }));
-    await();
-  }
-
-  @Test
-  public void testReuseRequestEndingAfterResponse() throws Exception {
-
-    CountDownLatch respondToReq1 = new CountDownLatch(1);
-    CountDownLatch endReq1 = new CountDownLatch(1);
-    AtomicBoolean gotReq1 = new AtomicBoolean();
-    AtomicBoolean gotReq2 = new AtomicBoolean();
-
-    server.requestHandler(req -> {
-      if (req.path().equals("/first")) {
-        gotReq1.set(true);
-        try {
-          respondToReq1.await();
-        } catch (InterruptedException e) {
-          fail(e.getMessage());
-          return;
-        }
-      } else if (req.path().equals("/second")) {
-        gotReq2.set(true);
-      }
-      req.response().end();
-    });
-
-    CountDownLatch latch = new CountDownLatch(1);
-    server.listen(DEFAULT_HTTP_PORT, ar -> {
-      assertTrue(ar.succeeded());
-      latch.countDown();
-
-    });
-
-    awaitLatch(latch);
-
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
-    HttpClientRequest req = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
-      endReq1.countDown();
-    });
-
-    req.setChunked(true);
-    req.sendHead();
-    waitUntil(gotReq1::get);
-
-    // Create another request that will get in the queue
-    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/second", resp -> {
-      assertTrue(gotReq1.get());
-      assertTrue(gotReq2.get());
-      testComplete();
-    });
-    req2.sendHead();
-
-    // Allow the server to send the response then wait until we get the response
-    respondToReq1.countDown();
-    awaitLatch(endReq1);
-
-    // Now we can end the first response and the second request gets the pooled connection
-    req.end();
-
     await();
   }
 
