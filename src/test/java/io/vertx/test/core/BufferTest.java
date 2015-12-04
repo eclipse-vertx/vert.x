@@ -18,6 +18,9 @@ package io.vertx.test.core;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -27,6 +30,7 @@ import static io.vertx.test.core.TestUtils.assertIndexOutOfBoundsException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -793,5 +797,39 @@ public class BufferTest {
     assertEquals(rand, buff.getLong(10));
     buff.appendString(TestUtils.randomUnicodeString(100));
     assertEquals(10, sliced.length());
+  }
+
+  @Test
+  public void testToJsonObject() throws Exception {
+    JsonObject obj = new JsonObject();
+    obj.put("wibble", "wibble_value");
+    obj.put("foo", 5);
+    obj.put("bar", true);
+    Buffer buff = Buffer.buffer(obj.encode());
+    assertEquals(obj, buff.toJsonObject());
+
+    buff = Buffer.buffer(TestUtils.randomAlphaString(10));
+    try {
+      buff.toJsonObject();
+      fail();
+    } catch (DecodeException ignore) {
+    }
+  }
+
+  @Test
+  public void testToJsonArray() throws Exception {
+    JsonArray arr = new JsonArray();
+    arr.add("wibble");
+    arr.add(5);
+    arr.add(true);
+    Buffer buff = Buffer.buffer(arr.encode());
+    assertEquals(arr, buff.toJsonArray());
+
+    buff = Buffer.buffer(TestUtils.randomAlphaString(10));
+    try {
+      buff.toJsonObject();
+      fail();
+    } catch (DecodeException ignore) {
+    }
   }
 }

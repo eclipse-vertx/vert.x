@@ -21,6 +21,8 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.ServiceHelper;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
 
@@ -104,10 +106,16 @@ public interface Buffer extends ClusterSerializable {
     return factory.buffer(byteBuf);
   }
 
+  String toString();
+
   /**
    * Returns a {@code String} representation of the Buffer with the encoding specified by {@code enc}
    */
   String toString(String enc);
+
+  JsonObject toJsonObject();
+
+  JsonArray toJsonArray();
 
   /**
    * Returns the {@code byte} at position {@code pos} in the Buffer.
