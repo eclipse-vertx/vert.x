@@ -99,6 +99,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase implements ServerWebS
   }
 
   @Override
+  public void end() {
+    close();
+  }
+
+  @Override
   public void close() {
     synchronized (conn) {
       checkClosed();

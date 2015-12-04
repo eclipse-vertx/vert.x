@@ -169,4 +169,10 @@ public class WebSocketImpl extends WebSocketImplBase implements WebSocket {
       this.metric = metric;
     }
   }
+
+  @Override
+  public void end() {
+    close();
+  }
+
 }

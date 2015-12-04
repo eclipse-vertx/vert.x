@@ -62,6 +62,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   AsyncFile exceptionHandler(Handler<Throwable> handler);
 
   /**
+   * Close the file, see {@link #close()}.
+   */
+  @Override
+  void end();
+
+  /**
    * Close the file. The actual close happens asynchronously.
    */
   void close();

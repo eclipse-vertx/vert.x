@@ -279,6 +279,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   }
 
   @Override
+  public void end() {
+    close();
+  }
+
+  @Override
   protected synchronized void handleClosed() {
     checkContext();
     if (endHandler != null) {

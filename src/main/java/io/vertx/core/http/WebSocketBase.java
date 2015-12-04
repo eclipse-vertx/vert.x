@@ -139,6 +139,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase frameHandler(@Nullable Handler<WebSocketFrame> handler);
 
   /**
+   * Calls {@link #close()}
+   */
+  @Override
+  void end();
+
+  /**
    * Close the WebSocket.
    */
   void close();

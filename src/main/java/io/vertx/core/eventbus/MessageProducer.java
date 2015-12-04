@@ -69,5 +69,14 @@ public interface MessageProducer<T> extends WriteStream<T> {
    */
   String address();
 
+  /**
+   * Closes the producer, calls {@link #close()}
+   */
+  @Override
+  void end();
+
+  /**
+   * Closes the producer, this method should be called when the message producer is not used anymore.
+   */
   void close();
 }

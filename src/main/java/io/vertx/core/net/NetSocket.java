@@ -191,6 +191,12 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   SocketAddress localAddress();
 
   /**
+   * Calls {@link #close()}
+   */
+  @Override
+  void end();
+
+  /**
    * Close the NetSocket
    */
   void close();

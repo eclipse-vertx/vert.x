@@ -203,6 +203,10 @@ public class PumpTest {
     public FakeWriteStream exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
+
+    @Override
+    public void end() {
+    }
   }
 
   static class MyClass {

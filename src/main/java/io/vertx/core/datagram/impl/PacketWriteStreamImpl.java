@@ -74,4 +74,8 @@ class PacketWriteStreamImpl implements PacketWritestream, Handler<AsyncResult<Da
   public PacketWritestream drainHandler(Handler<Void> handler) {
     return this;
   }
+
+  @Override
+  public void end() {
+  }
 }

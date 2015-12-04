@@ -117,6 +117,10 @@ public class AsyncFileImpl implements AsyncFile {
     closeInternal(handler);
   }
 
+  @Override
+  public void end() {
+    close();
+  }
 
   @Override
   public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {

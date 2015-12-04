@@ -115,6 +115,11 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
+  public void end() {
+    close();
+  }
+
+  @Override
   public void close() {
     if (creditConsumer != null) {
       creditConsumer.unregister();
