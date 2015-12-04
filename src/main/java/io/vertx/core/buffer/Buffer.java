@@ -106,6 +106,9 @@ public interface Buffer extends ClusterSerializable {
     return factory.buffer(byteBuf);
   }
 
+  /**
+   * Returns a {@code String} representation of the Buffer with the {@code UTF-8 }encoding
+   */
   String toString();
 
   /**
@@ -113,8 +116,14 @@ public interface Buffer extends ClusterSerializable {
    */
   String toString(String enc);
 
+  /**
+   * Returns a Json object representation of the Buffer
+   */
   JsonObject toJsonObject();
 
+  /**
+   * Returns a Json array representation of the Buffer
+   */
   JsonArray toJsonArray();
 
   /**
