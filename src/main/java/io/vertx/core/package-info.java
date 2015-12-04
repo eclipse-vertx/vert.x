@@ -1076,7 +1076,7 @@
  * Log4J or SLF4J.
  *
  * To do this you should set a system property called `vertx.logger-delegate-factory-class-name` with the name of a Java
- * class which implements the interface {@link io.vertx.core.logging.LoggerFactory}. We provide pre-built implementations for
+ * class which implements the interface {@link io.vertx.core.spi.logging.LogDelegateFactory}. We provide pre-built implementations for
  * Log4J and SLF4J with the class names `io.vertx.core.logging.Log4jLogDelegateFactory` and `io.vertx.core.logging.SLF4JLogDelegateFactory`
  * respectively. If you want to use these implementations you should also make sure the relevant Log4J or SLF4J jars
  * are on your classpath.
