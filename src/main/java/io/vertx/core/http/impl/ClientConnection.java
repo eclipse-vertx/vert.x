@@ -270,7 +270,7 @@ class ClientConnection extends ConnectionBase {
     if (requestForResponse == null) {
       throw new IllegalStateException("No response handler");
     }
-    HttpClientResponseImpl nResp = new HttpClientResponseImpl(vertx, requestForResponse, this, resp);
+    HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, this, resp);
     currentResponse = nResp;
     requestForResponse.handleResponse(nResp);
   }
