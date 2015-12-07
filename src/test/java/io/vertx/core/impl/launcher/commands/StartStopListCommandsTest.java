@@ -58,10 +58,11 @@ public class StartStopListCommandsTest extends CommandTestBase {
     output.reset();
     cli.dispatch(new String[]{"list"});
     assertThat(output.toString()).hasLineCount(2);
+    assertThat(output.toString()).contains("\t" + HttpTestVerticle.class.getName());
 
     // Extract id.
     String[] lines = output.toString().split(System.lineSeparator());
-    String id = lines[1];
+    String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     output.reset();
     cli.dispatch(new String[]{"stop", id});
     assertThat(output.toString())
@@ -99,7 +100,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
     // Extract id.
     String[] lines = output.toString().split(System.lineSeparator());
-    String id = lines[1];
+    String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     output.reset();
     cli.dispatch(new String[]{"stop", id});
     assertThat(output.toString())
@@ -154,7 +155,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
     // Extract id.
     String[] lines = output.toString().split(System.lineSeparator());
-    String id = lines[1];
+    String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     assertThat(id).isEqualToIgnoringCase("hello");
     output.reset();
     cli.dispatch(new String[]{"stop", id});
@@ -190,7 +191,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
     // Extract id.
     String[] lines = output.toString().split(System.lineSeparator());
-    String id = lines[1];
+    String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     assertThat(id).isEqualToIgnoringCase("hello");
     output.reset();
     cli.dispatch(new String[]{"stop", id});
@@ -226,7 +227,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
 
     // Extract id.
     String[] lines = output.toString().split(System.lineSeparator());
-    String id = lines[1];
+    String id = lines[1].trim().substring(0, lines[1].trim().indexOf("\t"));
     assertThat(id).isEqualToIgnoringCase("hello");
     output.reset();
     cli.dispatch(new String[]{"stop", id});
@@ -248,6 +249,24 @@ public class StartStopListCommandsTest extends CommandTestBase {
   private int getHttpCode() throws IOException {
     return ((HttpURLConnection) new URL("http://localhost:8080")
         .openConnection()).getResponseCode();
+  }
+
+  @Test
+  public void testFatJarExtraction() {
+    String command = "java -jar fat.jar -Dvertx.id=xxx --cluster";
+    assertThat(ListCommand.extractApplicationDetails(command)).isEqualTo("fat.jar");
+
+    command = "java -jar bin/fat.jar -Dvertx.id=xxx --cluster";
+    assertThat(ListCommand.extractApplicationDetails(command)).isEqualTo("bin/fat.jar");
+
+    command = "java foo bar -Dvertx.id=xxx --cluster";
+    assertThat(ListCommand.extractApplicationDetails(command)).isEqualTo("");
+  }
+
+  @Test
+  public void testVerticleExtraction() {
+    String command = "vertx run verticle test1 -Dvertx.id=xxx --cluster";
+    assertThat(ListCommand.extractApplicationDetails(command)).isEqualTo("verticle");
   }
 
 }

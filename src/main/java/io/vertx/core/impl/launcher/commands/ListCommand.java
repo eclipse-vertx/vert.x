@@ -43,6 +43,10 @@ public class ListCommand extends DefaultCommand {
 
   private final static Pattern PS = Pattern.compile("-Dvertx.id=(.*)\\s*");
 
+  private final static Pattern FAT_JAR_EXTRACTION = Pattern.compile("-jar (\\S*)");
+
+  private final static Pattern VERTICLE_EXTRACTION = Pattern.compile("run (\\S*)");
+
   // Note about stack traces - the stack trace are printed on the stream passed to the command.
 
   /**
@@ -98,7 +102,9 @@ public class ListCommand extends DefaultCommand {
     while ((line = reader.readLine()) != null) {
       final Matcher matcher = PS.matcher(line);
       if (matcher.find()) {
-        out.println(matcher.group(1));
+        String id = matcher.group(1);
+        String details = extractApplicationDetails(line);
+        out.println(id + "\t" + details);
         none = false;
       }
     }
@@ -107,5 +113,25 @@ public class ListCommand extends DefaultCommand {
     if (none) {
       out.println("No vert.x application found.");
     }
+  }
+
+  /**
+   * Tries to extract the fat jar name of the verticle name. It's a best-effort approach looking at the name of the
+   * jar or to the verticle name from the command line. If not found, no details are returned (empty string).
+   *
+   * @return the details, empty if it cannot be extracted.
+   */
+  protected static String extractApplicationDetails(String line) {
+    Matcher matcher = FAT_JAR_EXTRACTION.matcher(line);
+    if (matcher.find()) {
+      return matcher.group(1);
+    } else {
+      matcher = VERTICLE_EXTRACTION.matcher(line);
+      if (matcher.find()) {
+        return matcher.group(1);
+      }
+    }
+    // No details.
+    return "";
   }
 }
