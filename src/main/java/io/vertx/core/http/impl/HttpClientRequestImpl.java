@@ -67,7 +67,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private Handler<Void> endHandler;
   private boolean chunked;
   private Handler<Void> continueHandler;
-  private ClientConnection conn;
+  private volatile ClientConnection conn;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
