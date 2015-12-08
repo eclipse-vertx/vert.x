@@ -2161,6 +2161,53 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testTimedOutWaiterDoesntConnect() throws Exception {
+    long responseDelay = 300;
+    int requests = 6;
+    client.close();
+    CountDownLatch firstCloseLatch = new CountDownLatch(1);
+    server.close(onSuccess(v -> firstCloseLatch.countDown()));
+    // Make sure server is closed before continuing
+    awaitLatch(firstCloseLatch);
+
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setMaxPoolSize(1));
+    AtomicInteger connectCount = new AtomicInteger(0);
+    // We need a net server because we need to intercept the socket connection, not just full http requests
+    NetServer server = vertx.createNetServer(new NetServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+    server.connectHandler(socket -> {
+      connectCount.incrementAndGet();
+      // Delay and write a proper http response
+      vertx.setTimer(responseDelay, time -> socket.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"));
+    });
+
+    CountDownLatch latch = new CountDownLatch(requests);
+
+    server.listen(onSuccess(s -> {
+      for(int count = 0; count < requests; count++) {
+        HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+          resp.bodyHandler(buff -> {
+            assertEquals("OK", buff.toString());
+            latch.countDown();
+          });
+        });
+        // Odd requests get a timeout less than the responseDelay, since we have a pool size of one and a delay all but
+        // the first request should end up in the wait queue, the odd numbered requests should time out so we should get
+        // (requests + 1 / 2) connect attempts
+        if (count % 2 == 1) {
+          req.setTimeout(responseDelay / 2);
+          req.exceptionHandler(ex -> latch.countDown());
+        }
+        req.end();
+      }
+    }));
+
+    awaitLatch(latch);
+
+    assertEquals("Incorrect number of connect attempts.", (requests + 1) / 2, connectCount.get());
+    server.close();
+  }
+
+  @Test
   public void testPipeliningOrder() throws Exception {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
