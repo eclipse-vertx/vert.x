@@ -39,12 +39,14 @@ public abstract class ConnectionManager {
   private final int maxSockets;
   private final boolean keepAlive;
   private final boolean pipelining;
+  private final int maxWaiterQueueSize;
   private final Map<TargetAddress, ConnQueue> connQueues = new ConcurrentHashMap<>();
 
-  ConnectionManager(int maxSockets, boolean keepAlive, boolean pipelining) {
+  ConnectionManager(int maxSockets, boolean keepAlive, boolean pipelining, int maxWaiterQueueSize) {
     this.maxSockets = maxSockets;
     this.keepAlive = keepAlive;
     this.pipelining = pipelining;
+    this.maxWaiterQueueSize = maxWaiterQueueSize;
   }
 
   public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
@@ -91,8 +93,12 @@ public abstract class ConnectionManager {
       if (conn != null && !conn.isClosed()) {
         context.runOnContext(v -> handler.handle(conn));
       } else if (connCount == maxSockets) {
-        // Wait in queue
-        waiters.add(new Waiter(handler, connectionExceptionHandler, context));
+        if (maxWaiterQueueSize == -1 || maxWaiterQueueSize > waiters.size()) {
+          // Wait in queue
+          waiters.add(new Waiter(handler, connectionExceptionHandler, context));
+        } else {
+          connectionExceptionHandler.handle(new ConnectionPoolTooBusyException("Too many requests to be handled."));
+        }
       } else {
         // Create a new connection
         createNewConnection(handler, connectionExceptionHandler, context);

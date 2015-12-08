@@ -86,7 +86,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    pool = new ConnectionManager(options.getMaxPoolSize(), options.isKeepAlive(), options.isPipelining())  {
+    pool = new ConnectionManager(options.getMaxPoolSize(), options.isKeepAlive(), options.isPipelining(), options.getMaxWaiterQueueSize())  {
       protected void connect(String host, int port, Handler<ClientConnection> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl context,
                              ConnectionLifeCycleListener listener) {
         internalConnect(context, port, host, connectHandler, connectErrorHandler, listener);

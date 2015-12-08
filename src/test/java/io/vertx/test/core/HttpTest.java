@@ -23,6 +23,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.ConnectionPoolTooBusyException;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
@@ -40,10 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -336,6 +334,7 @@ public class HttpTest extends HttpTestBase {
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
+    int maxWaiterQueueSize = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -360,6 +359,7 @@ public class HttpTest extends HttpTestBase {
     options.setPipelining(pipelining);
     options.setTryUseCompression(tryUseCompression);
     options.setProtocolVersion(protocolVersion);
+    options.setMaxWaiterQueueSize(maxWaiterQueueSize);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -389,6 +389,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(pipelining, copy.isPipelining());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
     assertEquals(protocolVersion, copy.getProtocolVersion());
+    assertEquals(maxWaiterQueueSize, copy.getMaxWaiterQueueSize());
   }
 
   @Test
@@ -410,6 +411,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
+    assertEquals(def.getMaxWaiterQueueSize(), json.getMaxWaiterQueueSize());
   }
 
   @Test
@@ -445,6 +447,7 @@ public class HttpTest extends HttpTestBase {
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
+    int maxWaiterQueueSize = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -468,7 +471,8 @@ public class HttpTest extends HttpTestBase {
       .put("keepAlive", keepAlive)
       .put("pipelining", pipelining)
       .put("tryUseCompression", tryUseCompression)
-      .put("protocolVersion", protocolVersion.name());
+      .put("protocolVersion", protocolVersion.name())
+      .put("maxWaiterQueueSize", maxWaiterQueueSize);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -499,6 +503,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(pipelining, options.isPipelining());
     assertEquals(tryUseCompression, options.isTryUseCompression());
     assertEquals(protocolVersion, options.getProtocolVersion());
+    assertEquals(maxWaiterQueueSize, options.getMaxWaiterQueueSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -4823,5 +4828,66 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testMaxWaiterQueueSize() throws Exception {
+    client.close();
+    CountDownLatch firstCloseLatch = new CountDownLatch(1);
+    server.close(onSuccess(v -> firstCloseLatch.countDown()));
+    // Make sure server is closed before continuing
+    awaitLatch(firstCloseLatch);
 
+    client = vertx.createHttpClient(new HttpClientOptions()
+            .setKeepAlive(false)
+            .setPipelining(false)
+            .setMaxPoolSize(1)
+            .setMaxWaiterQueueSize(1));
+    int requests = 3;
+
+    // Start the servers
+    CountDownLatch startServerLatch = new CountDownLatch(1);
+    CountDownLatch serverRequestLatch = new CountDownLatch(1);
+
+    HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      try {
+        serverRequestLatch.await();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      req.response().end();
+    });
+
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      startServerLatch.countDown();
+    });
+
+    awaitLatch(startServerLatch);
+
+    CountDownLatch reqLatch = new CountDownLatch(requests);
+
+    List<Throwable> exceptions = new LinkedList<>();
+    vertx.runOnContext(v -> {
+      for (int count = 0; count < requests; count++) {
+        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+          assertEquals(200, resp.statusCode());
+        }).exceptionHandler(exceptions::add).end();
+        reqLatch.countDown();
+      }
+      serverRequestLatch.countDown();
+    });
+
+    awaitLatch(reqLatch);
+
+    assertEquals(1, exceptions.size());
+    assertTrue(exceptions.get(0) instanceof ConnectionPoolTooBusyException);
+
+    CountDownLatch serverCloseLatch = new CountDownLatch(1);
+    server.close(ar -> {
+      assertTrue(ar.succeeded());
+      serverCloseLatch.countDown();
+    });
+
+    awaitLatch(serverCloseLatch);
+  }
 }
