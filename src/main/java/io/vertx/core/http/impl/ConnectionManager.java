@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *
@@ -47,7 +48,8 @@ public abstract class ConnectionManager {
     this.pipelining = pipelining;
   }
 
-  public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
+  public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+                            ContextImpl context, AtomicBoolean canceled) {
     if (!keepAlive && pipelining) {
       connectionExceptionHandler.handle(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
@@ -60,7 +62,7 @@ public abstract class ConnectionManager {
           connQueue = prev;
         }
       }
-      connQueue.getConnection(handler, connectionExceptionHandler, context);
+      connQueue.getConnection(handler, connectionExceptionHandler, context, canceled);
     }
   }
 
@@ -86,13 +88,14 @@ public abstract class ConnectionManager {
       this.address = address;
     }
 
-    public synchronized void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
+    public synchronized void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+                                           ContextImpl context, AtomicBoolean canceled) {
       ClientConnection conn = availableConnections.poll();
       if (conn != null && !conn.isClosed()) {
         context.runOnContext(v -> handler.handle(conn));
       } else if (connCount == maxSockets) {
         // Wait in queue
-        waiters.add(new Waiter(handler, connectionExceptionHandler, context));
+        waiters.add(new Waiter(handler, connectionExceptionHandler, context, canceled));
       } else {
         // Create a new connection
         createNewConnection(handler, connectionExceptionHandler, context);
@@ -103,7 +106,7 @@ public abstract class ConnectionManager {
     public synchronized void requestEnded(ClientConnection conn) {
       if (pipelining) {
         // Maybe the connection can be reused
-        Waiter waiter = waiters.poll();
+        Waiter waiter = getNextWaiter();
         if (waiter != null) {
           waiter.context.runOnContext(v -> waiter.handler.handle(conn));
         }
@@ -113,7 +116,7 @@ public abstract class ConnectionManager {
     // Called when the response has ended
     public synchronized void responseEnded(ClientConnection conn) {
       if (pipelining || keepAlive) {
-        Waiter waiter = waiters.poll();
+        Waiter waiter = getNextWaiter();
         if (waiter != null) {
           waiter.context.runOnContext(v -> waiter.handler.handle(conn));
         } else if (!pipelining || conn.getOutstandingRequestCount() == 0) {
@@ -152,6 +155,15 @@ public abstract class ConnectionManager {
       }, connectionExceptionHandler, context, this);
     }
 
+    private Waiter getNextWaiter() {
+      // See if there are any non-canceled waiters in the queue
+      Waiter waiter = waiters.poll();
+      while (waiter != null && waiter.canceled.get()) {
+        waiter = waiters.poll();
+      }
+      return waiter;
+    }
+
     // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
     // conn will be null
     public synchronized void connectionClosed(ClientConnection conn) {
@@ -160,7 +172,7 @@ public abstract class ConnectionManager {
         allConnections.remove(conn);
         availableConnections.remove(conn);
       }
-      Waiter waiter = waiters.poll();
+      Waiter waiter = getNextWaiter();
       if (waiter != null) {
         // There's a waiter - so it can have a new connection
         createNewConnection(waiter.handler, waiter.connectionExceptionHandler, waiter.context);
@@ -202,11 +214,14 @@ public abstract class ConnectionManager {
     final Handler<ClientConnection> handler;
     final Handler<Throwable> connectionExceptionHandler;
     final ContextImpl context;
+    final AtomicBoolean canceled;
 
-    private Waiter(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
+    private Waiter(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context,
+                   AtomicBoolean canceled) {
       this.handler = handler;
       this.connectionExceptionHandler = connectionExceptionHandler;
       this.context = context;
+      this.canceled = canceled;
     }
   }
 

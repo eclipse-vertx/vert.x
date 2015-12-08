@@ -41,6 +41,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -79,7 +80,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private long written;
   private long currentTimeoutTimerId = -1;
   private MultiMap headers;
-  private boolean exceptionOccurred;
+  private AtomicBoolean exceptionOccurred;
   private long lastDataReceived;
   private Object metric;
 
@@ -92,6 +93,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.chunked = false;
     this.method = method;
     this.vertx = vertx;
+    this.exceptionOccurred = new AtomicBoolean(false);
   }
 
   @Override
@@ -379,7 +381,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   void handleException(Throwable t) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
-      exceptionOccurred = true;
+      exceptionOccurred.set(true);
       getExceptionHandler().handle(t);
     }
   }
@@ -387,7 +389,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   void handleResponse(HttpClientResponseImpl resp) {
     synchronized (getLock()) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-      if (!exceptionOccurred) {
+      if (!exceptionOccurred.get()) {
         cancelOutstandingTimeoutTimer();
         try {
           if (resp.statusCode() == 100) {
@@ -584,7 +586,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // they can capture any exceptions on connection
       client.getConnection(port, host, conn -> {
         synchronized (this) {
-          if (exceptionOccurred) {
+          if (exceptionOccurred.get()) {
             // The request already timed out before it has left the pool waiter queue
             // So return it
             conn.close();
@@ -597,7 +599,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
             connect();
           }
         }
-      }, exceptionHandler, vertx.getOrCreateContext());
+      }, exceptionHandler, vertx.getOrCreateContext(), exceptionOccurred);
 
       connecting = true;
     }

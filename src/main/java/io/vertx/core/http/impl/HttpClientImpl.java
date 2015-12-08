@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *
@@ -663,7 +664,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context) {
-    pool.getConnection(port, host, handler, connectionExceptionHandler, context);
+    pool.getConnection(port, host, handler, connectionExceptionHandler, context, new AtomicBoolean(false));
+  }
+
+  void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+                     ContextImpl context, AtomicBoolean canceled) {
+    pool.getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
   }
 
   /**
