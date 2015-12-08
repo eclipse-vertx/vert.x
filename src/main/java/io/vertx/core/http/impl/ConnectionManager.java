@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.Handler;
+import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -41,12 +42,14 @@ public abstract class ConnectionManager {
   private final int maxSockets;
   private final boolean keepAlive;
   private final boolean pipelining;
+  private final int maxWaitQueueSize;
   private final Map<TargetAddress, ConnQueue> connQueues = new ConcurrentHashMap<>();
 
-  ConnectionManager(int maxSockets, boolean keepAlive, boolean pipelining) {
+  ConnectionManager(int maxSockets, boolean keepAlive, boolean pipelining, int maxWaitQueueSize) {
     this.maxSockets = maxSockets;
     this.keepAlive = keepAlive;
     this.pipelining = pipelining;
+    this.maxWaitQueueSize = maxWaitQueueSize;
   }
 
   public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
@@ -96,7 +99,11 @@ public abstract class ConnectionManager {
         context.runOnContext(v -> handler.handle(conn));
       } else if (connCount == maxSockets) {
         // Wait in queue
-        waiters.add(new Waiter(handler, connectionExceptionHandler, context, canceled));
+        if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
+          waiters.add(new Waiter(handler, connectionExceptionHandler, context, canceled));
+        } else {
+          connectionExceptionHandler.handle(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
+        }
       } else {
         // Create a new connection
         createNewConnection(handler, connectionExceptionHandler, context);

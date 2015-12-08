@@ -1097,6 +1097,11 @@ Set the maximum HTTP chunk size
 +++
 Set the maximum pool size for connections
 +++
+|[[maxWaitQueueSize]]`maxWaitQueueSize`|`Number (int)`|
++++
+Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in
+ a ConnectionPoolTooBusyException.  If the value is set to a negative number then the queue will be unbounded.
++++
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
 Set the max websocket frame size

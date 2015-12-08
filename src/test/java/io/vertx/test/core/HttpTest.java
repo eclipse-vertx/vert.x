@@ -186,6 +186,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(HttpVersion.HTTP_1_0, options.getProtocolVersion());
     assertIllegalArgumentException(() -> options.setProtocolVersion(null));
 
+    assertEquals(HttpClientOptions.DEFAULT_MAX_WAIT_QUEUE_SIZE, options.getMaxWaitQueueSize());
+    assertEquals(options, options.setMaxWaitQueueSize(100));
+    assertEquals(100, options.getMaxWaitQueueSize());
+
     testComplete();
   }
 
@@ -336,6 +340,7 @@ public class HttpTest extends HttpTestBase {
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
+    int maxWaitQueueSize = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -360,6 +365,7 @@ public class HttpTest extends HttpTestBase {
     options.setPipelining(pipelining);
     options.setTryUseCompression(tryUseCompression);
     options.setProtocolVersion(protocolVersion);
+    options.setMaxWaitQueueSize(maxWaitQueueSize);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -389,6 +395,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(pipelining, copy.isPipelining());
     assertEquals(tryUseCompression, copy.isTryUseCompression());
     assertEquals(protocolVersion, copy.getProtocolVersion());
+    assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
   }
 
   @Test
@@ -410,6 +417,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
+    assertEquals(def.getMaxWaitQueueSize(), json.getMaxWaitQueueSize());
   }
 
   @Test
@@ -445,6 +453,7 @@ public class HttpTest extends HttpTestBase {
     boolean pipelining = rand.nextBoolean();
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
+    int maxWaitQueueSize = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -468,7 +477,8 @@ public class HttpTest extends HttpTestBase {
       .put("keepAlive", keepAlive)
       .put("pipelining", pipelining)
       .put("tryUseCompression", tryUseCompression)
-      .put("protocolVersion", protocolVersion.name());
+      .put("protocolVersion", protocolVersion.name())
+      .put("maxWaitQueueSize", maxWaitQueueSize);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -499,6 +509,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(pipelining, options.isPipelining());
     assertEquals(tryUseCompression, options.isTryUseCompression());
     assertEquals(protocolVersion, options.getProtocolVersion());
+    assertEquals(maxWaitQueueSize, options.getMaxWaitQueueSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -2742,6 +2753,49 @@ public class HttpTest extends HttpTestBase {
         req.headers().set("count", String.valueOf(i));
         req.end();
       }
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testMaxWaitQueueSizeIsRespected() throws Exception {
+    client.close();
+
+    client = vertx.createHttpClient(new HttpClientOptions().setDefaultHost(DEFAULT_HTTP_HOST).setDefaultPort(DEFAULT_HTTP_PORT)
+        .setPipelining(false).setMaxWaitQueueSize(0).setMaxPoolSize(2));
+
+    server.requestHandler(req -> {
+      req.response().setStatusCode(200);
+      req.response().end("OK");
+    });
+
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req1 = client.get(DEFAULT_TEST_URI, resp -> {
+        resp.bodyHandler(body -> {
+          assertEquals("OK", body.toString());
+        });
+      });
+      req1.exceptionHandler(t -> fail("Should not be called."));
+
+      HttpClientRequest req2 = client.get(DEFAULT_TEST_URI, resp -> {
+        resp.bodyHandler(body -> {
+          assertEquals("OK", body.toString());
+          testComplete();
+        });
+      });
+      req2.exceptionHandler(t -> fail("Should not be called."));
+
+      HttpClientRequest req3 = client.get(DEFAULT_TEST_URI, resp -> {
+        fail("Should not be called.");
+      });
+      req3.exceptionHandler(t -> {
+        assertTrue("Incorrect exception time.", t instanceof ConnectionPoolTooBusyException);
+      });
+
+      req1.end();
+      req2.end();
+      req3.end();
     }));
 
     await();

@@ -83,6 +83,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
 
+  /**
+   * Default max wait queue size = -1 (unbounded)
+   */
+  public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -93,6 +98,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int defaultPort;
   private HttpVersion protocolVersion;
   private int maxChunkSize;
+  private int maxWaitQueueSize;
 
   /**
    * Default constructor
@@ -119,6 +125,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
+    this.maxWaitQueueSize = other.maxWaitQueueSize;
   }
 
   /**
@@ -143,6 +150,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
+    maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
   }
 
   @Override
@@ -467,6 +475,25 @@ public class HttpClientOptions extends ClientOptionsBase {
     return maxChunkSize;
   }
 
+  /**
+   * Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in
+   * a ConnectionPoolTooBusyException.  If the value is set to a negative number then the queue will be unbounded.
+   * @param maxWaitQueueSize the maximum number of waiting requests
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxWaitQueueSize(int maxWaitQueueSize) {
+    this.maxWaitQueueSize = maxWaitQueueSize;
+    return this;
+  }
+
+  /**
+   * Returns the maximum wait queue size
+   * @return the maximum wait queue size
+   */
+  public int getMaxWaitQueueSize() {
+    return maxWaitQueueSize;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -485,6 +512,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (!defaultHost.equals(that.defaultHost)) return false;
     if (protocolVersion != that.protocolVersion) return false;
     if (maxChunkSize != that.maxChunkSize) return false;
+    if (maxWaitQueueSize != that.maxWaitQueueSize) return false;
 
     return true;
   }
@@ -502,6 +530,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + defaultPort;
     result = 31 * result + protocolVersion.hashCode();
     result = 31 * result + maxChunkSize;
+    result = 31 * result + maxWaitQueueSize;
     return result;
   }
 }
