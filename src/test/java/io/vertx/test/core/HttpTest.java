@@ -557,6 +557,7 @@ public class HttpTest extends HttpTestBase {
     int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
+    int maxChunkSize = rand.nextInt(10000);
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
     options.setReuseAddress(reuseAddress);
@@ -579,6 +580,7 @@ public class HttpTest extends HttpTestBase {
     options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
     options.setWebsocketSubProtocols(wsSubProtocol);
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
+    options.setMaxChunkSize(maxChunkSize);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -607,6 +609,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(maxWebsocketFrameSize, copy.getMaxWebsocketFrameSize());
     assertEquals(wsSubProtocol, copy.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, copy.isHandle100ContinueAutomatically());
+    assertEquals(maxChunkSize, copy.getMaxChunkSize());
   }
 
   @Test
@@ -628,6 +631,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.isUsePooledBuffers(), json.isUsePooledBuffers());
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isHandle100ContinueAutomatically(), json.isHandle100ContinueAutomatically());
+    assertEquals(def.getMaxChunkSize(), json.getMaxChunkSize());
   }
 
   @Test
@@ -662,6 +666,7 @@ public class HttpTest extends HttpTestBase {
     int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
+    int maxChunkSize = rand.nextInt(10000);
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -684,7 +689,8 @@ public class HttpTest extends HttpTestBase {
       .put("compressionSupported", compressionSupported)
       .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
       .put("websocketSubProtocols", wsSubProtocol)
-      .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically);
+      .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
+      .put("maxChunkSize", maxChunkSize);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -714,6 +720,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
     assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
+    assertEquals(maxChunkSize, options.getMaxChunkSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

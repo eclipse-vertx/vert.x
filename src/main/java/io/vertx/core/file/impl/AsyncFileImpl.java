@@ -174,7 +174,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFile write(Buffer buffer) {
+  public synchronized AsyncFile write(Buffer buffer) {
     int length = buffer.length();
     doWrite(buffer, writePos, null);
     writePos += length;

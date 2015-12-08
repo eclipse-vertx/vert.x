@@ -33,6 +33,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -157,16 +158,26 @@ public class DatagramTest extends VertxTestBase {
       peer1.send(buffer, 1234, "127.0.0.1", ar2 -> {
         assertTrue(ar2.succeeded());
       });
-      vertx.setTimer(100, l -> {
+      vertx.setTimer(1000, l -> {
+        AtomicInteger count = new AtomicInteger();
         peer2.handler(packet -> {
-          assertFalse(received.get());
-          assertEquals(buffer, packet.data());
-          testComplete();
+          switch (count.getAndIncrement()) {
+            case 0:
+              assertEquals(buffer, packet.data());
+              peer1.send(buffer, 1234, "127.0.0.1", ar2 -> {
+                assertTrue(ar2.succeeded());
+              });
+              break;
+            case 1:
+              assertFalse(received.get());
+              assertEquals(buffer, packet.data());
+              testComplete();
+              break;
+            default:
+              fail();
+          }
         });
         peer2.resume();
-        peer1.send(buffer, 1234, "127.0.0.1", ar2 -> {
-          assertTrue(ar2.succeeded());
-        });
       });
     });
     await();

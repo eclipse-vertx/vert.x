@@ -45,6 +45,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_MAX_WEBSOCKET_FRAME_SIZE = 65536;
 
   /**
+   * Default max HTTP chunk size = 8192
+   */
+  public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
+
+  /**
    * Default value of whether 100-Continue should be handled automatically
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
@@ -53,6 +58,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
   private boolean handle100ContinueAutomatically;
+  private int maxChunkSize;
 
   /**
    * Default constructor
@@ -74,6 +80,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxWebsocketFrameSize = other.getMaxWebsocketFrameSize();
     this.websocketSubProtocols = other.getWebsocketSubProtocols();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
+    this.maxChunkSize = other.getMaxChunkSize();
   }
 
   /**
@@ -92,6 +99,7 @@ public class HttpServerOptions extends NetServerOptions {
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
+    maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
   }
 
   @Override
@@ -304,6 +312,24 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * Set the maximum HTTP chunk size
+   * @param maxChunkSize the maximum chunk size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMaxChunkSize(int maxChunkSize) {
+    this.maxChunkSize = maxChunkSize;
+    return this;
+  }
+
+  /**
+   * Returns the maximum HTTP chunk size
+   * @return the maximum HTTP chunk size
+   */
+  public int getMaxChunkSize() {
+    return maxChunkSize;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -315,6 +341,7 @@ public class HttpServerOptions extends NetServerOptions {
     if (compressionSupported != that.compressionSupported) return false;
     if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
     if (handle100ContinueAutomatically != that.handle100ContinueAutomatically) return false;
+    if (maxChunkSize != that.maxChunkSize) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
 
   }
@@ -326,6 +353,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + (websocketSubProtocols != null ? websocketSubProtocols.hashCode() : 0);
     result = 31 * result + (handle100ContinueAutomatically ? 1 : 0);
+    result = 31 * result + maxChunkSize;
     return result;
   }
 }

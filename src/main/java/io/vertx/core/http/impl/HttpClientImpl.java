@@ -720,7 +720,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, true, host, port));
         }
 
-        pipeline.addLast("codec", new HttpClientCodec(4096, 8192, 8192, false, false));
+        pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
         if (options.isTryUseCompression()) {
           pipeline.addLast("inflater", new HttpContentDecompressor(true));
         }

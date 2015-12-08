@@ -24,7 +24,6 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -80,6 +79,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
 
   /**
+   * Default max HTTP chunk size = 8192
+   */
+  public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
+
+  /**
    * The default maximum waiters in the queue
    */
   public static final int DEFAULT_MAX_WAITER_QUEUE_SIZE = -1;
@@ -93,6 +97,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private String defaultHost;
   private int defaultPort;
   private HttpVersion protocolVersion;
+  private int maxChunkSize;
   private int maxWaiterQueueSize;
 
   /**
@@ -119,6 +124,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
+    this.maxChunkSize = other.maxChunkSize;
     this.maxWaiterQueueSize = other.maxWaiterQueueSize;
   }
 
@@ -143,6 +149,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
+    maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxWaiterQueueSize = DEFAULT_MAX_WAITER_QUEUE_SIZE;
   }
 
@@ -451,6 +458,24 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * Set the maximum HTTP chunk size
+   * @param maxChunkSize the maximum chunk size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxChunkSize(int maxChunkSize) {
+    this.maxChunkSize = maxChunkSize;
+    return this;
+  }
+
+  /**
+   * Returns the maximum HTTP chunk size
+   * @return the maximum HTTP chunk size
+   */
+  public int getMaxChunkSize() {
+    return maxChunkSize;
+  }
+
+  /**
    * Returns the maximum number of waiting requests
    */
   public int getMaxWaiterQueueSize() {
@@ -484,6 +509,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (verifyHost != that.verifyHost) return false;
     if (!defaultHost.equals(that.defaultHost)) return false;
     if (protocolVersion != that.protocolVersion) return false;
+    if (maxChunkSize != that.maxChunkSize) return false;
     if (maxWaiterQueueSize != that.maxWaiterQueueSize) return false;
 
     return true;
@@ -501,6 +527,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + defaultHost.hashCode();
     result = 31 * result + defaultPort;
     result = 31 * result + protocolVersion.hashCode();
+    result = 31 * result + maxChunkSize;
     result = 31 * result + maxWaiterQueueSize;
     return result;
   }
