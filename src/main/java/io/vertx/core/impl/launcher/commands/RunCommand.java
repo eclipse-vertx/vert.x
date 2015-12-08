@@ -141,6 +141,14 @@ public class RunCommand extends BareCommand {
 
   @Option(longName = "onRedeploy", argName = "cmd")
   @Description("Optional shell command executed when a redeployment is triggered")
+  @Hidden
+  @Deprecated
+  public void setOnRedeployCommandOld(String command) {
+    setOnRedeployCommand(command);
+  }
+
+  @Option(longName = "on-redeploy", argName = "cmd")
+  @Description("Optional shell command executed when a redeployment is triggered")
   public void setOnRedeployCommand(String command) {
     this.onRedeployCommand = command;
   }
