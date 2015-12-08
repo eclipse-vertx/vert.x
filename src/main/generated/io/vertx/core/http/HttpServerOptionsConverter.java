@@ -17,7 +17,6 @@
 package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.http.HttpServerOptions}.
@@ -39,6 +38,9 @@ public class HttpServerOptionsConverter {
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
+    if (json.getValue("maxChunkSize") instanceof Number) {
+      obj.setMaxChunkSize(((Number) json.getValue("maxChunkSize")).intValue());
+    }
   }
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
@@ -48,5 +50,6 @@ public class HttpServerOptionsConverter {
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }
+    json.put("maxChunkSize", obj.getMaxChunkSize());
   }
 }
