@@ -140,11 +140,19 @@ public class RunCommand extends BareCommand {
     this.redeploy = redeploy;
   }
 
+  /**
+   * Sets the user command executed during redeployment.
+   * @param command the on redeploy command
+   * @deprecated Use 'on-redeploy' instead. It will be removed in vert.x 3.3
+   */
   @Option(longName = "onRedeploy", argName = "cmd")
-  @Description("Optional shell command executed when a redeployment is triggered")
+  @Description("Optional shell command executed when a redeployment is triggered (deprecated - will be removed in 3" +
+      ".3, use 'on-redeploy' instead")
   @Hidden
   @Deprecated
   public void setOnRedeployCommandOld(String command) {
+    out.println("[WARNING] the 'onRedeploy' option is deprecated, and will be removed in vert.x 3.3. Use " +
+        "'on-redeploy' instead.");
     setOnRedeployCommand(command);
   }
 
