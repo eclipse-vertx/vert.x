@@ -916,6 +916,10 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
+|[[maxChunkSize]]`maxChunkSize`|`Number (int)`|
++++
+Set the maximum HTTP chunk size
++++
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
 Set the maximum websocket frames size
@@ -1084,6 +1088,10 @@ Set whether keep alive is enabled on the client
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
 Set the key/cert options in jks format, aka Java keystore.
++++
+|[[maxChunkSize]]`maxChunkSize`|`Number (int)`|
++++
+Set the maximum HTTP chunk size
 +++
 |[[maxPoolSize]]`maxPoolSize`|`Number (int)`|
 +++

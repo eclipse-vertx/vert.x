@@ -28,6 +28,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 /**
  *
@@ -49,7 +50,7 @@ public abstract class ConnectionManager {
   }
 
   public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
-                            ContextImpl context, AtomicBoolean canceled) {
+                            ContextImpl context, BooleanSupplier canceled) {
     if (!keepAlive && pipelining) {
       connectionExceptionHandler.handle(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
@@ -89,7 +90,7 @@ public abstract class ConnectionManager {
     }
 
     public synchronized void getConnection(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
-                                           ContextImpl context, AtomicBoolean canceled) {
+                                           ContextImpl context, BooleanSupplier canceled) {
       ClientConnection conn = availableConnections.poll();
       if (conn != null && !conn.isClosed()) {
         context.runOnContext(v -> handler.handle(conn));
@@ -158,7 +159,7 @@ public abstract class ConnectionManager {
     private Waiter getNextWaiter() {
       // See if there are any non-canceled waiters in the queue
       Waiter waiter = waiters.poll();
-      while (waiter != null && waiter.canceled.get()) {
+      while (waiter != null && waiter.canceled.getAsBoolean()) {
         waiter = waiters.poll();
       }
       return waiter;
@@ -214,10 +215,10 @@ public abstract class ConnectionManager {
     final Handler<ClientConnection> handler;
     final Handler<Throwable> connectionExceptionHandler;
     final ContextImpl context;
-    final AtomicBoolean canceled;
+    final BooleanSupplier canceled;
 
     private Waiter(Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context,
-                   AtomicBoolean canceled) {
+                   BooleanSupplier canceled) {
       this.handler = handler;
       this.connectionExceptionHandler = connectionExceptionHandler;
       this.context = context;

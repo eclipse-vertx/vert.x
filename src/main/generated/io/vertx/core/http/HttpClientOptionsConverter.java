@@ -36,6 +36,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("keepAlive") instanceof Boolean) {
       obj.setKeepAlive((Boolean)json.getValue("keepAlive"));
     }
+    if (json.getValue("maxChunkSize") instanceof Number) {
+      obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
+    }
     if (json.getValue("maxPoolSize") instanceof Number) {
       obj.setMaxPoolSize(((Number)json.getValue("maxPoolSize")).intValue());
     }
@@ -54,9 +57,6 @@ public class HttpClientOptionsConverter {
     if (json.getValue("verifyHost") instanceof Boolean) {
       obj.setVerifyHost((Boolean)json.getValue("verifyHost"));
     }
-    if (json.getValue("maxChunkSize") instanceof Number) {
-      obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
-    }
   }
 
   public static void toJson(HttpClientOptions obj, JsonObject json) {
@@ -65,6 +65,7 @@ public class HttpClientOptionsConverter {
     }
     json.put("defaultPort", obj.getDefaultPort());
     json.put("keepAlive", obj.isKeepAlive());
+    json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxPoolSize", obj.getMaxPoolSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("pipelining", obj.isPipelining());
@@ -73,6 +74,5 @@ public class HttpClientOptionsConverter {
     }
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("verifyHost", obj.isVerifyHost());
-    json.put("maxChunkSize", obj.getMaxChunkSize());
   }
 }

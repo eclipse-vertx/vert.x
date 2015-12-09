@@ -80,7 +80,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private long written;
   private long currentTimeoutTimerId = -1;
   private MultiMap headers;
-  private AtomicBoolean exceptionOccurred;
+  private boolean exceptionOccurred;
   private long lastDataReceived;
   private Object metric;
 
@@ -93,7 +93,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.chunked = false;
     this.method = method;
     this.vertx = vertx;
-    this.exceptionOccurred = new AtomicBoolean(false);
   }
 
   @Override
@@ -381,7 +380,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   void handleException(Throwable t) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
-      exceptionOccurred.set(true);
+      exceptionOccurred = true;
       getExceptionHandler().handle(t);
     }
   }
@@ -389,7 +388,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   void handleResponse(HttpClientResponseImpl resp) {
     synchronized (getLock()) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-      if (!exceptionOccurred.get()) {
+      if (!exceptionOccurred) {
         cancelOutstandingTimeoutTimer();
         try {
           if (resp.statusCode() == 100) {
@@ -586,7 +585,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // they can capture any exceptions on connection
       client.getConnection(port, host, conn -> {
         synchronized (this) {
-          if (exceptionOccurred.get()) {
+          if (exceptionOccurred) {
             // The request already timed out before it has left the pool waiter queue
             // So return it
             conn.close();
@@ -599,7 +598,11 @@ public class HttpClientRequestImpl implements HttpClientRequest {
             connect();
           }
         }
-      }, exceptionHandler, vertx.getOrCreateContext(), exceptionOccurred);
+      }, exceptionHandler, vertx.getOrCreateContext(), () -> {
+        // No need to synchronize as the thread is the same that set exceptionOccurred to true
+        // exceptionOccurred=true getting the connection => it's a TimeoutException
+        return exceptionOccurred;
+      });
 
       connecting = true;
     }

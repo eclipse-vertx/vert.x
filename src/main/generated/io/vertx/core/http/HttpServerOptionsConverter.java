@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.core.http.HttpServerOptions}.
@@ -32,24 +33,24 @@ public class HttpServerOptionsConverter {
     if (json.getValue("handle100ContinueAutomatically") instanceof Boolean) {
       obj.setHandle100ContinueAutomatically((Boolean)json.getValue("handle100ContinueAutomatically"));
     }
+    if (json.getValue("maxChunkSize") instanceof Number) {
+      obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
+    }
     if (json.getValue("maxWebsocketFrameSize") instanceof Number) {
       obj.setMaxWebsocketFrameSize(((Number)json.getValue("maxWebsocketFrameSize")).intValue());
     }
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
-    if (json.getValue("maxChunkSize") instanceof Number) {
-      obj.setMaxChunkSize(((Number) json.getValue("maxChunkSize")).intValue());
-    }
   }
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
+    json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());
     }
-    json.put("maxChunkSize", obj.getMaxChunkSize());
   }
 }
