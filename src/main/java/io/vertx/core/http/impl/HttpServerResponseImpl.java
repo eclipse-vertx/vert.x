@@ -73,6 +73,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private LastHttpContent trailing;
   private MultiMap trailers;
   private String statusMessage;
+  private long bytesWritten;
 
   HttpServerResponseImpl(final VertxInternal vertx, ServerConnection conn, HttpRequest request) {
   	this.vertx = vertx;
@@ -362,6 +363,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public long bytesWritten() {
+    synchronized (conn) {
+      return bytesWritten;
+    }
+  }
+
+  @Override
   public HttpServerResponse headersEndHandler(Handler<Void> handler) {
     synchronized (conn) {
       this.headersEndHandler = handler;
@@ -379,6 +387,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void end0(ByteBuf data) {
     checkWritten();
+    bytesWritten += data.readableBytes();
     if (!headWritten) {
       // if the head was not written yet we can write out everything in one go
       // which is cheaper.
@@ -438,6 +447,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
 
       long contentLength = Math.min(length, file.length() - offset);
+      bytesWritten = contentLength;
       if (!contentLengthSet()) {
         putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
       }
@@ -577,6 +587,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
       }
 
+      bytesWritten += chunk.readableBytes();
       if (!headWritten) {
         prepareHeaders();
         channelFuture = conn.writeToChannel(new AssembledHttpResponse(response, chunk));

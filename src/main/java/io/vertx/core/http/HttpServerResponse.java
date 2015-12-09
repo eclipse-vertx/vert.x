@@ -371,4 +371,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Fluent
   HttpServerResponse bodyEndHandler(@Nullable Handler<Void> handler);
 
+  /**
+   * @return the total number of bytes written for the body of the response.
+   */
+  long bytesWritten();
 }
