@@ -27,6 +27,7 @@ import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 /**
  * Most data is shuffled around inside Vert.x using buffers.
@@ -115,6 +116,12 @@ public interface Buffer extends ClusterSerializable {
    * Returns a {@code String} representation of the Buffer with the encoding specified by {@code enc}
    */
   String toString(String enc);
+
+  /**
+   * Returns a {@code String} representation of the Buffer with the encoding specified by {@code enc}
+   */
+  @GenIgnore
+  String toString(Charset enc);
 
   /**
    * Returns a Json object representation of the Buffer

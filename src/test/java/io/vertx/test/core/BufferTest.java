@@ -24,6 +24,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertIndexOutOfBoundsException;
@@ -191,6 +192,7 @@ public class BufferTest {
     b.appendString(str);
     assertEquals(b.length(), sb.length);
     assertTrue(str.equals(b.toString("UTF-8")));
+    assertTrue(str.equals(b.toString(StandardCharsets.UTF_8)));
 
     assertNullPointerException(() -> b.appendString(null));
     assertNullPointerException(() -> b.appendString(null, "UTF-8"));

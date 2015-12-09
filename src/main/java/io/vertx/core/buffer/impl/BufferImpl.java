@@ -72,6 +72,11 @@ public class BufferImpl implements Buffer {
     return buffer.toString(Charset.forName(enc));
   }
 
+  public String toString(Charset enc) {
+    return buffer.toString(enc);
+  }
+
+
   @Override
   public JsonObject toJsonObject() {
     return new JsonObject(toString());
