@@ -243,10 +243,14 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public HttpClientRequest drainHandler(Handler<Void> handler) {
     synchronized (getLock()) {
-      checkComplete();
-      this.drainHandler = handler;
-      if (conn != null) {
-        conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
+      if (handler != null) {
+        checkComplete();
+        this.drainHandler = handler;
+        if (conn != null) {
+          conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
+        }
+      } else {
+        this.drainHandler = null;
       }
       return this;
     }
@@ -271,8 +275,12 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   @Override
   public HttpClientRequest continueHandler(Handler<Void> handler) {
     synchronized (getLock()) {
-      checkComplete();
-      this.continueHandler = handler;
+      if (handler != null) {
+        checkComplete();
+        this.continueHandler = handler;
+      } else {
+        this.continueHandler = null;
+      }
       return this;
     }
   }

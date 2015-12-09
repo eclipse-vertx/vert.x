@@ -203,8 +203,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest handler(Handler<Buffer> dataHandler) {
     synchronized (conn) {
-      checkEnded();
-      this.dataHandler = dataHandler;
+      if (dataHandler != null) {
+        checkEnded();
+        this.dataHandler = dataHandler;
+      } else {
+        this.dataHandler = null;
+      }
       return this;
     }
   }
@@ -236,8 +240,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
     synchronized (conn) {
-      checkEnded();
-      this.endHandler = handler;
+      if (handler != null) {
+        checkEnded();
+        this.endHandler = handler;
+      } else {
+        this.endHandler = null;
+      }
       return this;
     }
   }
@@ -278,9 +286,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
-    Buffer body = Buffer.buffer();
-    handler(body::appendBuffer);
-    endHandler(v -> bodyHandler.handle(body));
+    if (bodyHandler != null) {
+      Buffer body = Buffer.buffer();
+      handler(body::appendBuffer);
+      endHandler(v -> bodyHandler.handle(body));
+    } else {
+      handler(null);
+      endHandler(null);
+    }
     return this;
   }
 
@@ -295,8 +308,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
     synchronized (conn) {
-      checkEnded();
-      this.uploadHandler = handler;
+      if (handler != null) {
+        checkEnded();
+        this.uploadHandler = handler;
+      } else {
+        this.uploadHandler = null;
+      }
       return this;
     }
   }
