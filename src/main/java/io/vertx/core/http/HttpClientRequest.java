@@ -89,7 +89,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
    *
-   * @param chunked  true if chunked encoding
+   * @param chunked true if chunked encoding
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -119,9 +119,8 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   /**
    * Put an HTTP header
    *
-   * @param name The header name
+   * @param name  The header name
    * @param value The header value
-   *
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -136,9 +135,8 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   /**
    * Put an HTTP header with multiple values
    *
-   * @param name The header name
+   * @param name   The header name
    * @param values The header values
-   *
    * @return @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
@@ -227,15 +225,16 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void end();
 
   /**
-    * Set's the amount of time after which if a response is not received {@link java.util.concurrent.TimeoutException}
-    * will be sent to the exception handler of this request.
+   * Set's the amount of time after which if the request does not return any data within the timeout period an
+   * {@link java.util.concurrent.TimeoutException} will be passed to the exception handler (if provided) and
+   * the request will be closed.
    * <p>
-   *  Calling this method more than once
-    * has the effect of canceling any existing timeout and starting the timeout from scratch.
-    *
-    * @param timeoutMs The quantity of time in milliseconds.
-    * @return a reference to this, so the API can be used fluently
-    */
+   * Calling this method more than once has the effect of canceling any existing timeout and starting
+   * the timeout from scratch.
+   *
+   * @param timeoutMs The quantity of time in milliseconds.
+   * @return a reference to this, so the API can be used fluently
+   */
   @Fluent
   HttpClientRequest setTimeout(long timeoutMs);
 
