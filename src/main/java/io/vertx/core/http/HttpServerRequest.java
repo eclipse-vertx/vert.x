@@ -73,7 +73,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpMethod method();
   
   /**
-   * @return whether the HTTP connection is secure
+   * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS
    */
   boolean isSSL();
 

@@ -42,12 +42,20 @@ public class HttpServerOptionsConverter {
     if (json.getValue("websocketSubProtocols") instanceof String) {
       obj.setWebsocketSubProtocols((String)json.getValue("websocketSubProtocols"));
     }
+    if (json.getValue("maxInitialLineLength") instanceof Number) {
+      obj.setMaxInitialLineLength(((Number)json.getValue("maxInitialLineLength")).intValue());
+    }
+    if (json.getValue("maxHeaderSize") instanceof Number) {
+      obj.setMaxHeaderSize(((Number)json.getValue("maxHeaderSize")).intValue());
+    }
   }
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("maxChunkSize", obj.getMaxChunkSize());
+    json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
+    json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     if (obj.getWebsocketSubProtocols() != null) {
       json.put("websocketSubProtocols", obj.getWebsocketSubProtocols());

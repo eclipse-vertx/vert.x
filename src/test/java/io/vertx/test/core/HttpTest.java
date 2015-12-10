@@ -627,6 +627,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isHandle100ContinueAutomatically(), json.isHandle100ContinueAutomatically());
     assertEquals(def.getMaxChunkSize(), json.getMaxChunkSize());
+    assertEquals(def.getMaxInitialLineLength(), json.getMaxInitialLineLength());
+    assertEquals(def.getMaxHeaderSize(), json.getMaxHeaderSize());
   }
 
   @Test
@@ -662,6 +664,8 @@ public class HttpTest extends HttpTestBase {
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
+    int maxInitialLineLength = rand.nextInt(10000);
+    int maxHeaderSize = rand.nextInt(10000);
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -685,7 +689,10 @@ public class HttpTest extends HttpTestBase {
       .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
       .put("websocketSubProtocols", wsSubProtocol)
       .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
-      .put("maxChunkSize", maxChunkSize);
+      .put("maxChunkSize", maxChunkSize)
+      .put("maxInitialLineLength", maxInitialLineLength)
+      .put("maxHeaderSize", maxHeaderSize);
+    
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -716,6 +723,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
     assertEquals(maxChunkSize, options.getMaxChunkSize());
+    assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
+    assertEquals(maxHeaderSize, options.getMaxHeaderSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -3152,6 +3161,7 @@ public class HttpTest extends HttpTestBase {
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.requestHandler(req -> {
       req.bodyHandler(buffer -> {
+    	assertEquals(true, req.isSSL());
         assertEquals("foo", buffer.toString());
         req.response().end("bar");
       });
