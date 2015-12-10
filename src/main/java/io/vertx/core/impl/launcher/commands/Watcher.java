@@ -280,7 +280,7 @@ public class Watcher implements Runnable {
 
         process.waitFor();
       } catch (Throwable e) {
-        System.err.println("Error while executing the onRedeploy command : '" + cmd + "'");
+        System.err.println("Error while executing the on-redeploy command : '" + cmd + "'");
         e.printStackTrace();
       }
     }

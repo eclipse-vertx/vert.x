@@ -1020,12 +1020,20 @@
  *
  * [source]
  * ----
- * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --onRedeploy="mvn package"
+ * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --on-redeploy="mvn package"
  * ----
  *
- * The "onRedeploy" option specifies a command invoked after the shutdown of the application and before the
+ * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
  * restart. So you can hook your build tool if it updates some runtime artifacts. For instance, you can launch `gulp`
  * or `grunt` to update your resources.
+ *
+ * The redeploy feature also supports the following settings:
+ *
+ * * `redeploy-scan-period` : the file system check period (in milliseconds), 250ms by default
+ * * `redeploy-grace-period` : the amount of time (in milliseconds) to wait between 2 re-deployments, 1000ms by default
+ * * `redeploy-termination-period` : the amount of time to wait after having stopped the application (before
+ * launching user command). This is useful on Windows, where the process is not killed immediately. The time is given
+ * in milliseconds. 0 ms by default.
  *
  * == Cluster Managers
  *

@@ -81,7 +81,8 @@ public class RedeployTest extends CommandTestBase {
     cli.dispatch(new Launcher(), new String[]{"run",
         HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
         "--launcher-class=" + Launcher.class.getName(),
-        "--cluster"
+        "--cluster",
+        ExecUtils.isWindows() ? "--redeploy-termination-period=3000" : ""
     });
     waitUntil(() -> {
       try {
@@ -89,7 +90,7 @@ public class RedeployTest extends CommandTestBase {
       } catch (IOException e) {
         return false;
       }
-    });
+    }, 20000);
     assertThat(RunCommandTest.getContent().getBoolean("clustered")).isTrue();
   }
 
@@ -98,6 +99,7 @@ public class RedeployTest extends CommandTestBase {
     cli.dispatch(new Launcher(), new String[]{"run",
         HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
         "--launcher-class=" + Launcher.class.getName(),
+        ExecUtils.isWindows() ? "--redeploy-termination-period=3000" : ""
     });
     waitUntil(() -> {
       try {
@@ -120,7 +122,7 @@ public class RedeployTest extends CommandTestBase {
       } catch (IOException e) {
         return false;
       }
-    });
+    }, 20000);
   }
 
 }

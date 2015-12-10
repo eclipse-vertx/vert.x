@@ -60,6 +60,7 @@ public class RunCommand extends BareCommand {
   protected Watcher watcher;
   private long redeployScanPeriod;
   private long redeployGracePeriod;
+  private long redeployTerminationPeriod;
 
   /**
    * Enables / disables the high-availability.
@@ -139,7 +140,23 @@ public class RunCommand extends BareCommand {
     this.redeploy = redeploy;
   }
 
+  /**
+   * Sets the user command executed during redeployment.
+   * @param command the on redeploy command
+   * @deprecated Use 'on-redeploy' instead. It will be removed in vert.x 3.3
+   */
   @Option(longName = "onRedeploy", argName = "cmd")
+  @Description("Optional shell command executed when a redeployment is triggered (deprecated - will be removed in 3" +
+      ".3, use 'on-redeploy' instead")
+  @Hidden
+  @Deprecated
+  public void setOnRedeployCommandOld(String command) {
+    out.println("[WARNING] the 'onRedeploy' option is deprecated, and will be removed in vert.x 3.3. Use " +
+        "'on-redeploy' instead.");
+    setOnRedeployCommand(command);
+  }
+
+  @Option(longName = "on-redeploy", argName = "cmd")
   @Description("Optional shell command executed when a redeployment is triggered")
   public void setOnRedeployCommand(String command) {
     this.onRedeployCommand = command;
@@ -159,6 +176,15 @@ public class RunCommand extends BareCommand {
   @DefaultValue("1000")
   public void setRedeployGracePeriod(long period) {
     this.redeployGracePeriod = period;
+  }
+
+  @Option(longName = "redeploy-termination-period", argName = "period")
+  @Description("When redeploy is enabled, this option configures the time waited to be sure that the previous " +
+      "version of the application has been stopped. It is useful on Windows, where the 'terminate' command may take time to be " +
+      "executed.The time is given in milliseconds. 0 ms by default.")
+  @DefaultValue("0")
+  public void setRedeployStopWaitingTime(long period) {
+    this.redeployTerminationPeriod = period;
   }
 
   /**
@@ -271,6 +297,16 @@ public class RunCommand extends BareCommand {
    */
   protected synchronized void stopBackgroundApplication(Handler<Void> onCompletion) {
     executionContext.execute("stop", vertxApplicationBackgroundId);
+
+    if (redeployTerminationPeriod > 0) {
+      try {
+        Thread.sleep(redeployTerminationPeriod);
+      } catch (InterruptedException e) {
+        // Ignore the exception.
+        Thread.currentThread().interrupt();
+      }
+    }
+
     if (onCompletion != null) {
       onCompletion.handle(null);
     }
