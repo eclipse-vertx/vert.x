@@ -71,6 +71,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the HTTP method for the request.
    */
   HttpMethod method();
+  
+  /**
+   * @return whether the HTTP connection is secure
+   */
+  boolean isSSL();
 
   /**
    * @return the URI of the request. This is usually a relative URI
