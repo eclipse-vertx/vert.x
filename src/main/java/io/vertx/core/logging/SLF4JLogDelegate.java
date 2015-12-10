@@ -192,7 +192,6 @@ public class SLF4JLogDelegate implements LogDelegate {
                     else
                         logger.error(msg, t);
                     break;
-                
                 default:
                     throw new IllegalArgumentException("Unknown log level " + level);
             }
