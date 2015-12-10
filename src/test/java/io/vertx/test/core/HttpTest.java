@@ -590,7 +590,7 @@ public class HttpTest extends HttpTestBase {
     assertNotSame(keyStoreOptions, copy.getKeyCertOptions());
     assertEquals(ksPassword, ((JksOptions) copy.getKeyCertOptions()).getPassword());
     assertNotSame(trustStoreOptions, copy.getTrustOptions());
-    assertEquals(tsPassword, ((JksOptions)copy.getTrustOptions()).getPassword());
+    assertEquals(tsPassword, ((JksOptions) copy.getTrustOptions()).getPassword());
     assertEquals(1, copy.getEnabledCipherSuites().size());
     assertTrue(copy.getEnabledCipherSuites().contains(enabledCipher));
     assertEquals(1, copy.getCrlPaths().size());
@@ -2649,6 +2649,7 @@ public class HttpTest extends HttpTestBase {
       assertFalse(req.writeQueueFull());
       req.setWriteQueueMaxSize(1000);
       Buffer buff = TestUtils.randomBuffer(10000);
+      AtomicBoolean failed = new AtomicBoolean();
       vertx.setPeriodic(1, id -> {
         req.write(buff);
         if (req.writeQueueFull()) {
@@ -2656,7 +2657,12 @@ public class HttpTest extends HttpTestBase {
           req.drainHandler(v -> {
             throw new RuntimeException("error");
           })
-          .exceptionHandler(t -> testComplete());
+              .exceptionHandler(t -> {
+                // Called a second times when testComplete is called and close the http client
+                if (failed.compareAndSet(false, true)) {
+                  testComplete();
+                }
+              });
 
           // Tell the server to resume
           vertx.eventBus().send("server_resume", "");
@@ -2794,14 +2800,18 @@ public class HttpTest extends HttpTestBase {
   @Test
   public void testRequestTimesoutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() {
     server.requestHandler(noOpHandler()); // No response handler so timeout triggers
-
+    AtomicBoolean failed = new AtomicBoolean();
     server.listen(onSuccess(s -> {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         fail("End should not be called because the request should timeout");
       });
       req.exceptionHandler(t -> {
-        assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
-        testComplete();
+        // Catch the first, the second is going to be a connection closed exception when the
+        // server is shutdown on testComplete
+        if (failed.compareAndSet(false, true)) {
+          assertTrue("Expected to end with timeout exception but ended with other exception: " + t, t instanceof TimeoutException);
+          testComplete();
+        }
       });
       req.setTimeout(1000);
       req.end();
