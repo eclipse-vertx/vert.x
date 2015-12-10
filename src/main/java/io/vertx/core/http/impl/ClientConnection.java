@@ -18,14 +18,16 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -73,6 +75,7 @@ class ClientConnection extends ConnectionBase {
   private HttpClientResponseImpl currentResponse;
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
+  private boolean forceClose = false;
 
   ClientConnection(VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
@@ -99,6 +102,10 @@ class ClientConnection extends ConnectionBase {
 
   protected HttpClientMetrics metrics() {
     return metrics;
+  }
+
+  protected boolean isForceClose() {
+    return forceClose;
   }
 
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
@@ -285,6 +292,22 @@ class ClientConnection extends ConnectionBase {
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
     if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
+
+      // See https://tools.ietf.org/html/rfc7230#section-6.3
+      String responseConnectionHeader = currentResponse.getHeader(HttpHeaders.Names.CONNECTION);
+      HttpVersion protocolVersion = requestForResponse.getRequest().getProtocolVersion();
+      String requestConnectionHeader = requestForResponse.getRequest().headers().get(HttpHeaders.Names.CONNECTION);
+
+      // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
+      if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
+        // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
+        forceClose = true;
+      } else if (protocolVersion == HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
+        // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
+        // currently Vertx forces the Connection header if keepalive is enabled for 1.0
+        forceClose = true;
+      }
+
       listener.responseEnded(this);
     }
     currentResponse = null;

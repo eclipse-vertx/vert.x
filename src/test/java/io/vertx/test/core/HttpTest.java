@@ -16,13 +16,15 @@
 
 package io.vertx.test.core;
 
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
@@ -2745,6 +2747,74 @@ public class HttpTest extends HttpTestBase {
     }));
 
     await();
+  }
+
+  @Test
+  public void testServerInitiatedConnectionClose1_1() throws Exception {
+    testConnectionClose(HttpVersion.HTTP_1_1, true, 2, 10, 5);
+  }
+
+  @Test
+  public void testClientInitiatedConnectionClose1_1() throws Exception {
+    testConnectionClose(HttpVersion.HTTP_1_1, false, 2, 10, 5);
+  }
+
+  @Test
+  public void testServerIntitiatedConnectionClose1_0() throws Exception {
+    testConnectionClose(HttpVersion.HTTP_1_0, true, 2, 10, 5);
+  }
+
+  private void testConnectionClose(HttpVersion protocolVersion, boolean serverClose, int requestsPerClose, int totalRequests, int expectedConnections)
+      throws Exception {
+    client.close();
+    AtomicInteger totalConnections = new AtomicInteger(0);
+    AtomicInteger requestCount = new AtomicInteger(0);
+    CountDownLatch latch = new CountDownLatch(totalRequests);
+
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(protocolVersion).setKeepAlive(true).setMaxPoolSize(1));
+
+    // We use a netServer because we need to track the number of actual connections
+    NetServer netServer = vertx.createNetServer(new NetServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+    netServer.connectHandler(socket -> {
+      totalConnections.incrementAndGet();
+      socket.handler(buffer -> {
+        if ( buffer.toString().endsWith("\r\n\r\n")) {
+          int count = requestCount.incrementAndGet();
+          if (protocolVersion == HttpVersion.HTTP_1_0) {
+            socket.write("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n");
+            if (!serverClose || count % requestsPerClose != 0) {
+              socket.write("Connection: keep-alive\r\n");
+            }
+            socket.write("\r\nOK");
+          } else {
+            socket.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n");
+            if (serverClose && count % requestsPerClose == 0) {
+              socket.write("Connection: close\r\n");
+            }
+            socket.write("\r\nOK");
+          }
+        }
+      });
+    });
+
+    netServer.listen(onSuccess(s -> {
+      for (int count = 1; count <= totalRequests; count++) {
+        HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, res -> {
+          res.bodyHandler(buffer -> {
+            assertEquals("OK", buffer.toString());
+            latch.countDown();
+          });
+        });
+        if (!serverClose && count % requestsPerClose == 0) {
+          req.headers().set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
+        }
+        req.end();
+      }
+    }));
+
+    awaitLatch(latch);
+
+    assertEquals(expectedConnections, totalConnections.get());
   }
 
   @Test
