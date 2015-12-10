@@ -243,6 +243,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
+  public boolean isSSL() {
+    return conn.isSSL();
+  }
+  
+  @Override
   public SocketAddress remoteAddress() {
     return conn.remoteAddress();
   }

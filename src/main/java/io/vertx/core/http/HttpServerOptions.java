@@ -48,6 +48,16 @@ public class HttpServerOptions extends NetServerOptions {
    * Default max HTTP chunk size = 8192
    */
   public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
+  
+  /**
+   * Default max length of the initial line (e.g. {@code "GET / HTTP/1.0"}) = 4096
+   */
+  public static final int DEFAULT_MAX_INITIAL_LINE_LENGTH = 4096;
+  
+  /**
+   * Default max length of all headers = 8192
+   */
+  public static final int DEFAULT_MAX_HEADER_SIZE = 8192;
 
   /**
    * Default value of whether 100-Continue should be handled automatically
@@ -59,6 +69,8 @@ public class HttpServerOptions extends NetServerOptions {
   private String websocketSubProtocols;
   private boolean handle100ContinueAutomatically;
   private int maxChunkSize;
+  private int maxInitialLineLength;
+  private int maxHeaderSize;
 
   /**
    * Default constructor
@@ -100,6 +112,8 @@ public class HttpServerOptions extends NetServerOptions {
     maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
+    maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
+    maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
   }
 
   @Override
@@ -328,6 +342,47 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public int getMaxChunkSize() {
     return maxChunkSize;
+  }
+
+  
+  /**
+   * Returns the maximum length of the initial line (e.g. {@code "GET / HTTP/1.0"})
+   * 
+   * @return
+   */
+  public int getMaxInitialLineLength() {
+    return maxInitialLineLength;
+  }
+	
+  /**
+   * Set the maximum length of the initial line (e.g. {@code "GET / HTTP/1.0"})
+   * 
+   * @param maxInitialLineLength
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMaxInitialLineLength(int maxInitialLineLength) {
+    this.maxInitialLineLength = maxInitialLineLength;
+    return this;
+  }
+	
+  /**
+   * Returns the maximum length of all headers
+   * 
+   * @return
+   */
+  public int getMaxHeaderSize() {
+    return maxHeaderSize;
+  }
+	
+  /**
+   * Set the maximum length of all headers
+   * 
+   * @param maxHeaderSize
+   * @return
+   */
+  public HttpServerOptions setMaxHeaderSize(int maxHeaderSize) {
+    this.maxHeaderSize = maxHeaderSize;
+    return this;
   }
 
   @Override
