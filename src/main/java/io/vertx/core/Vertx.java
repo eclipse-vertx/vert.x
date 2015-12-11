@@ -453,6 +453,9 @@ public interface Vertx extends Measured {
    * A {@code Future} instance is passed into {@code blockingCodeHandler}. When the blocking code successfully completes,
    * the handler should call the {@link Future#complete} or {@link Future#complete(Object)} method, or the {@link Future#fail}
    * method if it failed.
+   * <p>
+   * In the {@code blockingCodeHandler} the current context remains the original context and therefore any task
+   * scheduled in the {@code blockingCodeHandler} will be executed on the this context and not on the worker thread.
    *
    * @param blockingCodeHandler  handler representing the blocking code to run
    * @param resultHandler  handler that will be called when the blocking code is complete
