@@ -93,6 +93,8 @@ public class HttpServerOptions extends NetServerOptions {
     this.websocketSubProtocols = other.getWebsocketSubProtocols();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.maxChunkSize = other.getMaxChunkSize();
+    this.maxInitialLineLength = other.getMaxInitialLineLength();
+    this.maxHeaderSize = other.getMaxHeaderSize();
   }
 
   /**

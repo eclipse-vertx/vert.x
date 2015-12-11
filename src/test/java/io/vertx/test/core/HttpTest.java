@@ -4928,5 +4928,46 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
-
+  @Test
+  public void testMaxInitialLineLengthOption() {
+	  
+    String longParam = TestUtils.randomAlphaString(5000);
+	
+    // 5017 = 5000 for longParam and 17 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
+    vertx.createHttpServer(new HttpServerOptions().setMaxInitialLineLength(5017)
+    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+      assertEquals(req.getParam("t"), longParam);
+      req.response().end();
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions())
+      		.request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
+        testComplete();
+      }).end();
+    }));
+    
+    await();
+  }
+  
+  @Test
+  public void testMaxHeaderSizeOption() {
+	  
+    String longHeader = TestUtils.randomAlphaString(9000);
+	
+    // min 9023 = 9000 for longHeader and 23 for "Content-Length: 0 t: "
+    vertx.createHttpServer(new HttpServerOptions().setMaxHeaderSize(10000)
+    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+      assertEquals(req.getHeader("t"), longHeader);
+      req.response().end();
+    }).listen(onSuccess(res -> {
+      HttpClientRequest req = vertx.createHttpClient(new HttpClientOptions())
+      		.request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        testComplete();
+      });
+      // Add longHeader
+      req.putHeader("t", longHeader);
+      req.end();
+    }));
+    
+    await();
+  }
 }
