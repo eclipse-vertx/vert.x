@@ -4984,7 +4984,26 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testConnectionCloseHttp_1_0() throws Exception {
+  public void testConnectionCloseHttp_1_0_NoClose() throws Exception {
+    testConnectionClose(req -> {
+      req.putHeader("Connection", "close");
+      req.end();
+    }, socket -> {
+      AtomicBoolean firstRequest = new AtomicBoolean(true);
+      socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
+        if (firstRequest.getAndSet(false)) {
+          socket.write("HTTP/1.0 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
+              + "Connection: keep-alive\n" + "\n" + "xxx\n");
+        } else {
+          socket.write("HTTP/1.0 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
+              + "\n" + "\n");
+        }
+      }));
+    });
+  }
+
+  @Test
+  public void testConnectionCloseHttp_1_0_Close() throws Exception {
     testConnectionClose(req -> {
       req.putHeader("Connection", "close");
       req.end();
@@ -5004,7 +5023,23 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testConnectionCloseHttp_1_1() throws Exception {
+  public void testConnectionCloseHttp_1_1_NoClose() throws Exception {
+    testConnectionClose(HttpClientRequest::end, socket -> {
+      AtomicBoolean firstRequest = new AtomicBoolean(true);
+      socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
+        if (firstRequest.getAndSet(false)) {
+          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
+              + "\n" + "xxx\n");
+        } else {
+          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
+              + "Connection: close\n" + "\n" + "\n");
+        }
+      }));
+    });
+  }
+
+  @Test
+  public void testConnectionCloseHttp_1_1_Close() throws Exception {
     testConnectionClose(HttpClientRequest::end, socket -> {
       AtomicBoolean firstRequest = new AtomicBoolean(true);
       socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
