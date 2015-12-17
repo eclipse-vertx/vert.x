@@ -1,30 +1,5 @@
 = Cheatsheets
 
-[[DeliveryOptions]]
-== DeliveryOptions
-
-++++
- Delivery options are used to configure message delivery.
- <p>
- Delivery options allow to configure delivery timeout and message codec name, and to provide any headers
- that you wish to send with the message.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[codecName]]`codecName`|`String`|
-+++
-Set the codec name.
-+++
-|[[sendTimeout]]`sendTimeout`|`Number (long)`|
-+++
-Set the send timeout.
-+++
-|===
-
 [[NetworkOptions]]
 == NetworkOptions
 
@@ -52,6 +27,31 @@ Set the TCP send buffer size
 |[[trafficClass]]`trafficClass`|`Number (int)`|
 +++
 Set the value of traffic class
++++
+|===
+
+[[DeliveryOptions]]
+== DeliveryOptions
+
+++++
+ Delivery options are used to configure message delivery.
+ <p>
+ Delivery options allow to configure delivery timeout and message codec name, and to provide any headers
+ that you wish to send with the message.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[codecName]]`codecName`|`String`|
++++
+Set the codec name.
++++
+|[[sendTimeout]]`sendTimeout`|`Number (long)`|
++++
+Set the send timeout.
 +++
 |===
 

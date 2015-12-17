@@ -23,7 +23,7 @@ public interface ConnectionLifeCycleListener {
 
   void requestEnded(ClientConnection conn);
 
-  void responseEnded(ClientConnection conn);
+  void responseEnded(ClientConnection conn, boolean close);
 
   void connectionClosed(ClientConnection conn);
 }

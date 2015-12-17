@@ -285,7 +285,22 @@ class ClientConnection extends ConnectionBase {
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
     if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
-      listener.responseEnded(this);
+
+      boolean close = false;
+      // See https://tools.ietf.org/html/rfc7230#section-6.3
+      String responseConnectionHeader = currentResponse.getHeader(HttpHeaders.Names.CONNECTION);
+      HttpVersion protocolVersion = requestForResponse.getRequest().getProtocolVersion();
+      String requestConnectionHeader = requestForResponse.getRequest().headers().get(HttpHeaders.Names.CONNECTION);
+      // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
+      if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
+        // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
+        close = true;
+      } else if (protocolVersion == HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
+        // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
+        // currently Vertx forces the Connection header if keepalive is enabled for 1.0
+        close = true;
+      }
+      listener.responseEnded(this, close);
     }
     currentResponse = null;
   }
