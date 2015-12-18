@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -122,8 +121,8 @@ public abstract class ConnectionManager {
     }
 
     // Called when the response has ended
-    public synchronized void responseEnded(ClientConnection conn) {
-      if (pipelining || keepAlive) {
+    public synchronized void responseEnded(ClientConnection conn, boolean close) {
+      if ((pipelining || keepAlive) && !close) {
         Waiter waiter = getNextWaiter();
         if (waiter != null) {
           waiter.context.runOnContext(v -> waiter.handler.handle(conn));

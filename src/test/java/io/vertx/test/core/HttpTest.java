@@ -28,6 +28,7 @@ import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.Pump;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -4979,6 +4980,130 @@ public class HttpTest extends HttpTestBase {
         testComplete();
       });
     }));
+    await();
+  }
+
+  @Test
+  public void testConnectionCloseHttp_1_0_NoClose() throws Exception {
+    testConnectionClose(req -> {
+      req.putHeader("Connection", "close");
+      req.end();
+    }, socket -> {
+      AtomicBoolean firstRequest = new AtomicBoolean(true);
+      socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
+        if (firstRequest.getAndSet(false)) {
+          socket.write("HTTP/1.0 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
+              + "Connection: keep-alive\n" + "\n" + "xxx\n");
+        } else {
+          socket.write("HTTP/1.0 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
+              + "\n" + "\n");
+        }
+      }));
+    });
+  }
+
+  @Test
+  public void testConnectionCloseHttp_1_0_Close() throws Exception {
+    testConnectionClose(req -> {
+      req.putHeader("Connection", "close");
+      req.end();
+    }, socket -> {
+      AtomicBoolean firstRequest = new AtomicBoolean(true);
+      socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
+        if (firstRequest.getAndSet(false)) {
+          socket.write("HTTP/1.0 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
+              + "Connection: keep-alive\n" + "\n" + "xxx\n");
+        } else {
+          socket.write("HTTP/1.0 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
+              + "\n" + "\n");
+          socket.close();
+        }
+      }));
+    });
+  }
+
+  @Test
+  public void testConnectionCloseHttp_1_1_NoClose() throws Exception {
+    testConnectionClose(HttpClientRequest::end, socket -> {
+      AtomicBoolean firstRequest = new AtomicBoolean(true);
+      socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
+        if (firstRequest.getAndSet(false)) {
+          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
+              + "\n" + "xxx\n");
+        } else {
+          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
+              + "Connection: close\n" + "\n" + "\n");
+        }
+      }));
+    });
+  }
+
+  @Test
+  public void testConnectionCloseHttp_1_1_Close() throws Exception {
+    testConnectionClose(HttpClientRequest::end, socket -> {
+      AtomicBoolean firstRequest = new AtomicBoolean(true);
+      socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
+        if (firstRequest.getAndSet(false)) {
+          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 4\n"
+              + "\n" + "xxx\n");
+        } else {
+          socket.write("HTTP/1.1 200 OK\n" + "Content-Type: text/plain\n" + "Content-Length: 1\n"
+              + "Connection: close\n" + "\n" + "\n");
+          socket.close();
+        }
+      }));
+    });
+  }
+
+  private void testConnectionClose(
+      Handler<HttpClientRequest> clientRequest,
+      Handler<NetSocket> connectHandler
+  ) throws Exception {
+
+    client.close();
+    server.close();
+
+    NetServerOptions serverOptions = new NetServerOptions();
+
+    CountDownLatch serverLatch = new CountDownLatch(1);
+    vertx.createNetServer(serverOptions).connectHandler(connectHandler).listen(8080, result -> {
+      if (result.succeeded()) {
+        serverLatch.countDown();
+      } else {
+        fail();
+      }
+    });
+
+    awaitLatch(serverLatch);
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+        .setDefaultHost("localhost")
+        .setDefaultPort(8080)
+        .setKeepAlive(true)
+        .setPipelining(false);
+    client = vertx.createHttpClient(clientOptions);
+
+    int requests = 11;
+    AtomicInteger count = new AtomicInteger(requests);
+
+    for (int i = 0; i < requests; i++) {
+      HttpClientRequest req = client.get("/", resp -> {
+        resp.bodyHandler(buffer -> {
+        });
+        resp.endHandler(v -> {
+          if (count.decrementAndGet() == 0) {
+            complete();
+          }
+        });
+        resp.exceptionHandler(th -> {
+          fail();
+        });
+      }).exceptionHandler(th -> {
+        fail();
+      });
+      clientRequest.handle(req);
+    }
+
     await();
   }
 
