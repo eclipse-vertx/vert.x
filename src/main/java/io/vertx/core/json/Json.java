@@ -78,22 +78,19 @@ public class Json {
   }
 
   public static <T> T decodeValue(String str, Class<T> clazz, boolean failOnUnknownProperties) throws DecodeException {
-    ObjectReader reader = mapper.readerFor(clazz);
 
-    if (failOnUnknownProperties) {
-      reader = reader.with(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    } else {
-      reader = reader.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    }
-
-    T ret;
     try {
-      ret = reader.readValue(str);
-    }
-    catch (Exception e) {
+      if (failOnUnknownProperties) {
+        return mapper.readValue(str, clazz);
+      } else {
+        return mapper.readerFor(clazz)
+                .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .readValue(str);
+      }
+    } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage());
     }
-    return ret;
+
   }
 
   @SuppressWarnings("unchecked")
