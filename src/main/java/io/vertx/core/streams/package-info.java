@@ -155,8 +155,6 @@
  * A pump can be started and stopped multiple times.
  *
  * When a pump is first created it is _not_ started. You need to call the `start()` method to start it.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @Document(fileName = "streams.adoc")
 package io.vertx.core.streams;

@@ -84,7 +84,7 @@ server.listen(0, "localhost", res -> {
 
 === Getting notified of incoming connections
 
-To be notified when a connection is made you need to set a `link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[connectHandler]`:
+To be notified when a connection is made you need to set a `link:../../apidocs/io/vertx/core/net/NetServer.html#connectHandler-io.vertx.core.Handler-[connectHandler]`:
 
 [source,java]
 ----
@@ -137,7 +137,7 @@ Write operations are asynchronous and may not occur until some time after the ca
 
 === Closed handler
 
-If you want to be notified when a socket is closed, you can set a `link:../../apidocs/io/vertx/core/net/NetSocket.html#closeHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[closeHandler]`
+If you want to be notified when a socket is closed, you can set a `link:../../apidocs/io/vertx/core/net/NetSocket.html#closeHandler-io.vertx.core.Handler-[closeHandler]`
 on it:
 
 [source,java]
