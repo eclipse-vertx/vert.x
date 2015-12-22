@@ -260,7 +260,7 @@
  * In a perfect world, there will be no war or hunger, all APIs will be written asynchronously and bunny rabbits will
  * skip hand-in-hand with baby lambs across sunny green meadows.
  *
- * *But.. the real world is not like that. (Have you watched the news lately?)*
+ * *But... the real world is not like that. (Have you watched the news lately?)*
  *
  * Fact is, many, if not most libraries, especially in the JVM ecosystem have synchronous APIs and many of the methods are
  * likely to block. A good example is the JDBC API - it's inherently synchronous, and no matter how hard it tries, Vert.x

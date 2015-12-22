@@ -90,12 +90,12 @@
  *     // Do something
  *   }
  *
- *   public void stop(Future<Void> startFuture) {
+ *   public void stop(Future<Void> stopFuture) {
  *     obj.doSomethingThatTakesTime(res -> {
  *       if (res.succeeded()) {
- *         startFuture.complete();
+ *         stopFuture.complete();
  *       } else {
- *         startFuture.fail();
+ *         stopFuture.fail();
  *       }
  *     });
  *   }
