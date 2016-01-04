@@ -5107,5 +5107,39 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
-
+  @Test
+  public void testConnectionCloseDuringPostShouldCallHandleExceptionOnlyOnce() throws Exception {
+    client.close();
+    server.requestHandler(req -> {
+      req.endHandler(v->{
+        req.response().setStatusCode(200);
+        req.response().end();
+      });
+    });
+    AtomicInteger count = new AtomicInteger();
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientOptions clientOptions = new HttpClientOptions()
+              .setIdleTimeout(1);
+      client = vertx.createHttpClient(clientOptions);
+      HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+      post.handler(res->{
+        complete();
+      });
+      post.setChunked(true);
+      for (int i=0; i<10; i++) {
+        post.write(Buffer.buffer(new byte[10000]));
+      }
+      post.exceptionHandler(x-> {
+        count.incrementAndGet();
+        vertx.runOnContext(n->{
+          complete();
+        });
+      });
+      // then stall until timeout and the exception handler will be called.
+      // post.end();
+    });
+    await();
+    assertEquals(count.get(), 1);
+  }
 }
