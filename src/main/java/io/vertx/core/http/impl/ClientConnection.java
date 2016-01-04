@@ -319,7 +319,9 @@ class ClientConnection extends ConnectionBase {
     // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     Exception e = new VertxException("Connection was closed");
     for (HttpClientRequestImpl req: requests) {
-      req.handleException(e);
+      if (req != currentRequest) {
+        req.handleException(e);
+      }
     }
     if (currentRequest != null) {
       currentRequest.handleException(e);
