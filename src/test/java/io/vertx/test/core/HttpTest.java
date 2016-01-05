@@ -639,6 +639,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isHandle100ContinueAutomatically(), json.isHandle100ContinueAutomatically());
     assertEquals(def.getMaxChunkSize(), json.getMaxChunkSize());
+    assertEquals(def.getMaxInitialLineLength(), json.getMaxInitialLineLength());
+    assertEquals(def.getMaxHeaderSize(), json.getMaxHeaderSize());
   }
 
   @Test
@@ -674,6 +676,8 @@ public class HttpTest extends HttpTestBase {
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
+    int maxInitialLineLength = rand.nextInt(10000);
+    int maxHeaderSize = rand.nextInt(10000);
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -697,7 +701,10 @@ public class HttpTest extends HttpTestBase {
       .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
       .put("websocketSubProtocols", wsSubProtocol)
       .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
-      .put("maxChunkSize", maxChunkSize);
+      .put("maxChunkSize", maxChunkSize)
+      .put("maxInitialLineLength", maxInitialLineLength)
+      .put("maxHeaderSize", maxHeaderSize);
+    
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -728,6 +735,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
     assertEquals(maxChunkSize, options.getMaxChunkSize());
+    assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
+    assertEquals(maxHeaderSize, options.getMaxHeaderSize());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -3217,6 +3226,7 @@ public class HttpTest extends HttpTestBase {
     server = vertx.createHttpServer(serverOptions.setPort(4043));
     server.requestHandler(req -> {
       req.bodyHandler(buffer -> {
+    	assertEquals(true, req.isSSL());
         assertEquals("foo", buffer.toString());
         req.response().end("bar");
       });
@@ -4984,6 +4994,48 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testMaxInitialLineLengthOption() {
+	  
+    String longParam = TestUtils.randomAlphaString(5000);
+	
+    // 5017 = 5000 for longParam and 17 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
+    vertx.createHttpServer(new HttpServerOptions().setMaxInitialLineLength(5017)
+    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+      assertEquals(req.getParam("t"), longParam);
+      req.response().end();
+    }).listen(onSuccess(res -> {
+      vertx.createHttpClient(new HttpClientOptions())
+      		.request(HttpMethod.GET, 8080, "localhost", "/?t=" + longParam, resp -> {
+        testComplete();
+      }).end();
+    }));
+    
+    await();
+  }
+  
+  @Test
+  public void testMaxHeaderSizeOption() {
+	  
+    String longHeader = TestUtils.randomAlphaString(9000);
+	
+    // min 9023 = 9000 for longHeader and 23 for "Content-Length: 0 t: "
+    vertx.createHttpServer(new HttpServerOptions().setMaxHeaderSize(10000)
+    						.setHost("localhost").setPort(8080)).requestHandler(req -> {
+      assertEquals(req.getHeader("t"), longHeader);
+      req.response().end();
+    }).listen(onSuccess(res -> {
+      HttpClientRequest req = vertx.createHttpClient(new HttpClientOptions())
+      		.request(HttpMethod.GET, 8080, "localhost", "/", resp -> {
+        testComplete();
+      });
+      // Add longHeader
+      req.putHeader("t", longHeader);
+      req.end();
+    }));
+    
+    await();
+  }
+  
   public void testConnectionCloseHttp_1_0_NoClose() throws Exception {
     testConnectionClose(req -> {
       req.putHeader("Connection", "close");
@@ -5106,6 +5158,5 @@ public class HttpTest extends HttpTestBase {
 
     await();
   }
-
 
 }
