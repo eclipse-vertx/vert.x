@@ -5200,4 +5200,120 @@ public class HttpTest extends HttpTestBase {
 
     await();
   }
+
+  @Test
+  public void testDontReuseConnectionWhenResponseEndsBeforeRequest() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    CountDownLatch serverLatch = new CountDownLatch(1);
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      serverLatch.countDown();
+    });
+
+    awaitLatch(serverLatch);
+    HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+    req1.handler(resp -> {
+      resp.endHandler(v1 -> {
+        // End request after the response ended
+        vertx.setTimer(100, v2 -> {
+          req1.end();
+        });
+      });
+    });
+    // Send head to the server and trigger the request handler
+    req1.sendHead();
+
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    }).end();
+
+    await();
+  }
+
+  @Test
+  public void testDontReuseConnectionWhenResponseEndsDuringAnOngoingRequest() throws Exception {
+    // This test is quite simple but requires coordination:
+    // 1 : client performs request 1
+    // 2 : server handle receive request 1
+    // 3 : client sends head for request 2
+    // 4 : client queues request 3
+    // 5 : server sends response 1
+    // 6 : client gets response 1
+    // 7 : client ends request 2, dequeue the request 3 and ends it
+    // 8 : server handle requests 3 and sends response 2 and 3
+    // the check is at step 6 : when the HttpClient gets the response 1, it should not dequeue the request 3 because
+    // there is the ongoing request 2
+
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
+    server.close();
+    CountDownLatch serverLatch = new CountDownLatch(1);
+    CountDownLatch req1Latch = new CountDownLatch(1);
+    CountDownLatch resp1Latch = new CountDownLatch(1);
+    CountDownLatch req2Latch = new CountDownLatch(1);
+    AtomicInteger count = new AtomicInteger();
+    netServer = vertx.createNetServer().connectHandler(conn -> {
+      conn.handler(buff -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals("GET / HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n\r\n", buff.toString());
+            req1Latch.countDown();
+            break;
+          case 1:
+            assertEquals("GET / HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n\r\n", buff.toString());
+            try {
+              awaitLatch(resp1Latch);
+            } catch (InterruptedException e) {
+              fail(e);
+            }
+            conn.write("HTTP/1.1 200 OK\r\n" + "Content-Length: 7\r\n\n" + "Hello 1");
+            break;
+          case 2:
+            assertEquals("GET / HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n\r\n", buff.toString());
+            conn.write("HTTP/1.1 200 OK\r\n" + "Content-Length: 7\r\n\n" + "Hello 2");
+            conn.write("HTTP/1.1 200 OK\r\n" + "Content-Length: 7\r\n\n" + "Hello 3");
+            break;
+        }
+      });
+    });
+    netServer.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST,
+        ar1 -> {
+          assertTrue(ar1.succeeded());
+          serverLatch.countDown();
+        });
+    awaitLatch(serverLatch);
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.bodyHandler(buf -> assertEquals("Hello 1", buf.toString()));
+      resp.endHandler(v -> {
+        vertx.setTimer(100, timerID -> req2Latch.countDown());
+      });
+    });
+    awaitLatch(req1Latch);
+    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.bodyHandler(buf -> assertEquals("Hello 2", buf.toString()));
+    });
+    req2.sendHead();
+    HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.bodyHandler(buf -> {
+        assertEquals("Hello 3", buf.toString());
+        testComplete();
+      });
+    });
+    req3.sendHead();
+    resp1Latch.countDown();
+    awaitLatch(req2Latch);
+    req2.end();
+    req3.end();
+    await();
+  }
 }
