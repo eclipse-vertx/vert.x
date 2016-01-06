@@ -5159,4 +5159,45 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testPipelinedConnectionIsReturnedToPoolAfterRequest() throws Exception {
+    client.close();
+    server.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
+    CountDownLatch serverLatch = new CountDownLatch(1);
+    CountDownLatch reqLatch = new CountDownLatch(1);
+    AtomicInteger count = new AtomicInteger();
+
+    netServer = vertx.createNetServer().connectHandler(conn -> {
+      conn.handler(buff -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals("GET / HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n\r\n", buff.toString());
+            reqLatch.countDown();
+            break;
+          case 1:
+            assertEquals("GET / HTTP/1.1\r\n" +
+                "Host: localhost:8080\r\n\r\n", buff.toString());
+            conn.close();
+            break;
+        }
+        conn.closeHandler(v -> {
+          testComplete();
+        });
+      });
+    });
+    netServer.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST,
+        ar1 -> {
+          assertTrue(ar1.succeeded());
+          serverLatch.countDown();
+        });
+
+    awaitLatch(serverLatch);
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {});
+    awaitLatch(reqLatch);
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {});
+
+    await();
+  }
 }

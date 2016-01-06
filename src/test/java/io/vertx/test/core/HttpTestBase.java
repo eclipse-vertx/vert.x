@@ -20,6 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.NetServer;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -35,6 +36,7 @@ public class HttpTestBase extends VertxTestBase {
 
   protected HttpServer server;
   protected HttpClient client;
+  protected NetServer netServer;
 
   public void setUp() throws Exception {
     super.setUp();
@@ -48,6 +50,14 @@ public class HttpTestBase extends VertxTestBase {
     if (server != null) {
       CountDownLatch latch = new CountDownLatch(1);
       server.close((asyncResult) -> {
+        assertTrue(asyncResult.succeeded());
+        latch.countDown();
+      });
+      awaitLatch(latch);
+    }
+    if (netServer != null) {
+      CountDownLatch latch = new CountDownLatch(1);
+      netServer.close((asyncResult) -> {
         assertTrue(asyncResult.succeeded());
         latch.countDown();
       });
