@@ -508,7 +508,7 @@
  *
  * By default compression is not enabled.
  *
- * When HTTP compression is enabled the server will check if the client incldes an `Accept-Encoding` header which
+ * When HTTP compression is enabled the server will check if the client includes an `Accept-Encoding` header which
  * includes the supported compressions. Commonly used are deflate and gzip. Both are supported by Vert.x.
  *
  * If such a header is found the server will automatically compress the body of the response with one of the supported
@@ -1012,8 +1012,8 @@
  * ===== The server WebSocket
  *
  * The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve the {@link io.vertx.core.http.ServerWebSocket#headers() headers},
- * {@link io.vertx.core.http.ServerWebSocket#path()} path}, {@link io.vertx.core.http.ServerWebSocket#query() query} and
- * {@link io.vertx.core.http.ServerWebSocket#uri()} URI} of the HTTP request of the WebSocket handshake.
+ * {@link io.vertx.core.http.ServerWebSocket#path() path}, {@link io.vertx.core.http.ServerWebSocket#query() query} and
+ * {@link io.vertx.core.http.ServerWebSocket#uri() URI} of the HTTP request of the WebSocket handshake.
  *
  * ==== WebSockets on the client
  *

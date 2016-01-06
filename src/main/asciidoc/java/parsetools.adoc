@@ -3,7 +3,7 @@
 The record parser allows you to easily parse protocols which are delimited by a sequence of bytes, or fixed
 size records.
 
-It transforms an sequence of input buffer to a sequence of buffer structured as configured (either
+It transforms a sequence of input buffer to a sequence of buffer structured as configured (either
 fixed size or separated records).
 
 For example, if you have a simple ASCII text protocol delimited by '\n' and the input is the following:
