@@ -712,8 +712,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
   }
 
-  private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler,
+  private void internalConnect(ContextImpl clientContext, int port, String host, Handler<ClientConnection> connectHandler,
                                Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
+    ContextImpl context;
+    if (clientContext == null) {
+      // Embedded
+      context = vertx.getOrCreateContext();
+    } else {
+      context = clientContext;
+    }
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
     bootstrap.channelFactory(new VertxNioSocketChannelFactory());

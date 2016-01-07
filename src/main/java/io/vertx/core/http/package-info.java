@@ -921,7 +921,28 @@
  *
  * When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
  *
-  * === Server sharing
+ * === HttpClient usage
+ *
+ * The HttpClient can be used in a Verticle or embedded.
+ *
+ * When used in a Verticle, the Verticle *should use its own client instance*.
+ *
+ * More generally a client should not be shared between different Vert.x contexts as it can lead to unexpected behavior.
+ *
+ * For example a keep-alive connection will call the client handlers on the context of the request that opened the connection, subsequent requests will use
+ * the same context.
+ *
+ * When this happen Vert.x detects it and log a warn:
+ *
+ * ----
+ * Reusing a connection with a different context: an HttpClient is probably shared between different Verticles
+ * ----
+ *
+ * The HttpClient can be embedded in a non Vert.x thread like a unit test or a plain java `main`: the client handlers
+ * will be called by different Vert.x threads and contexts, such contexts are created as needed. For production this
+ * usage is not recommended.
+ *
+ * === Server sharing
  *
  * When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
  * round-robin strategy.

@@ -598,7 +598,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
             connect();
           }
         }
-      }, exceptionHandler, vertx.getOrCreateContext(), () -> {
+      }, exceptionHandler, vertx.getContext(), () -> {
         // No need to synchronize as the thread is the same that set exceptionOccurred to true
         // exceptionOccurred=true getting the connection => it's a TimeoutException
         return exceptionOccurred;
