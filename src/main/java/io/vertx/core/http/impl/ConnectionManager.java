@@ -130,7 +130,7 @@ public abstract class ConnectionManager {
           Waiter waiter = getNextWaiter();
           if (waiter != null) {
             waiter.context.runOnContext(v -> waiter.handler.handle(conn));
-          } else if (!pipelining || conn.getOutstandingRequestCount() == 0) {
+          } else {
             // Return to set of available
             availableConnections.add(conn);
           }
