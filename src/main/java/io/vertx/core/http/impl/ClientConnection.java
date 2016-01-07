@@ -358,6 +358,10 @@ class ClientConnection extends ConnectionBase {
     listener.requestEnded(this);
   }
 
+  synchronized HttpClientRequestImpl getCurrentRequest() {
+    return currentRequest;
+  }
+
   public String hostHeader() {
     return hostHeader;
   }
