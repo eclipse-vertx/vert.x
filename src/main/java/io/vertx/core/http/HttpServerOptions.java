@@ -64,6 +64,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
 
+  /**
+   * Default value of whether proxy protocol is enabled = false
+   */
+  public static final boolean DEFAULT_PROXY_PROTOCOL_ENABLED = false;
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -71,6 +76,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
+  private boolean proxyProtocolEnabled;
 
   /**
    * Default constructor
@@ -95,6 +101,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxChunkSize = other.getMaxChunkSize();
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
+    this.proxyProtocolEnabled = other.isProxyProtocolEnabled();
   }
 
   /**
@@ -116,6 +123,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
+    proxyProtocolEnabled = DEFAULT_PROXY_PROTOCOL_ENABLED;
   }
 
   @Override
@@ -387,6 +395,24 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * @return whether proxy protocol is enabled
+   */
+  public boolean isProxyProtocolEnabled() {
+    return proxyProtocolEnabled;
+  }
+
+  /**
+   * Set whether proxy protocol is enabled
+   *
+   * @param proxyProtocolEnabled true if proxy protocol is enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setProxyProtocolEnabled(boolean proxyProtocolEnabled) {
+    this.proxyProtocolEnabled = proxyProtocolEnabled;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -401,6 +427,7 @@ public class HttpServerOptions extends NetServerOptions {
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxInitialLineLength != that.maxInitialLineLength) return false;
     if (maxHeaderSize != that.maxHeaderSize) return false;
+    if (proxyProtocolEnabled != that.proxyProtocolEnabled) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
 
   }
@@ -415,6 +442,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxInitialLineLength;
     result = 31 * result + maxHeaderSize;
+    result = 31 * result + (proxyProtocolEnabled ? 1 : 0);
     return result;
   }
 }

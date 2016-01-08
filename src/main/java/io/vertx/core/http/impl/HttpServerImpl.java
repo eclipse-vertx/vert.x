@@ -21,6 +21,8 @@ import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -31,6 +33,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
@@ -71,6 +74,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
   private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
   private static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
+  private static final AttributeKey<HAProxyMessage> HAPROXY_PROTOCOL_MSG = AttributeKey.valueOf("HAProxyMessage");
 
   private final HttpServerOptions options;
   private final VertxInternal vertx;
@@ -198,6 +202,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               if (USE_FLASH_POLICY_HANDLER) {
                 pipeline.addLast("flashpolicy", new FlashPolicyHandler());
+              }
+              if (options.isProxyProtocolEnabled()) {
+                pipeline.addLast("proxyProtocolDecoder", new HAProxyMessageDecoder());
               }
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
             		  						, options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
@@ -441,6 +448,15 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           if (log.isTraceEnabled()) log.trace("Server received request: " + request.getUri());
 
+          if (options.isProxyProtocolEnabled()) {
+            HAProxyMessage params = ch.attr(HAPROXY_PROTOCOL_MSG).get();
+            request.headers().
+                add("X-Source-Address", params.sourceAddress()).
+                add("X-Destination-Address", params.destinationAddress()).
+                add("X-Source-Port", params.sourcePort()).
+                add("X-Destination-Port", params.destinationPort());
+          }
+
           if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
             // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
             // it doesn't send a normal 'Connection: Upgrade' header. Instead it
@@ -514,6 +530,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           if (conn != null) {
             conn.handleMessage(msg);
           }
+        } else if (options.isProxyProtocolEnabled() && (msg instanceof HAProxyMessage)) {
+          ch.attr(HAPROXY_PROTOCOL_MSG).set((HAProxyMessage)msg);
         } else {
           throw new IllegalStateException("Invalid message " + msg);
         }

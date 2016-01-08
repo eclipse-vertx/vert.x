@@ -272,6 +272,10 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setCompressionSupported(true));
     assertTrue(options.isCompressionSupported());
 
+    assertFalse(options.isProxyProtocolEnabled());
+    assertEquals(options, options.setProxyProtocolEnabled(true));
+    assertTrue(options.isProxyProtocolEnabled());
+
     assertEquals(65536, options.getMaxWebsocketFrameSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setMaxWebsocketFrameSize(rand));
@@ -561,6 +565,7 @@ public class HttpTest extends HttpTestBase {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean compressionSupported = rand.nextBoolean();
+    boolean proxyProtocolEnabled = rand.nextBoolean();
     int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
@@ -584,6 +589,7 @@ public class HttpTest extends HttpTestBase {
     options.setHost(host);
     options.setAcceptBacklog(acceptBacklog);
     options.setCompressionSupported(compressionSupported);
+    options.setProxyProtocolEnabled(proxyProtocolEnabled);
     options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
     options.setWebsocketSubProtocols(wsSubProtocol);
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
@@ -613,6 +619,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(host, copy.getHost());
     assertEquals(acceptBacklog, copy.getAcceptBacklog());
     assertEquals(compressionSupported, copy.isCompressionSupported());
+    assertEquals(proxyProtocolEnabled, copy.isProxyProtocolEnabled());
     assertEquals(maxWebsocketFrameSize, copy.getMaxWebsocketFrameSize());
     assertEquals(wsSubProtocol, copy.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, copy.isHandle100ContinueAutomatically());
@@ -626,6 +633,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
     assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
     assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
+    assertEquals(def.isProxyProtocolEnabled(), json.isProxyProtocolEnabled());
     assertEquals(def.isClientAuthRequired(), json.isClientAuthRequired());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
@@ -672,6 +680,7 @@ public class HttpTest extends HttpTestBase {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean compressionSupported = rand.nextBoolean();
+    boolean proxyProtocolEnabled = rand.nextBoolean();
     int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
@@ -698,6 +707,7 @@ public class HttpTest extends HttpTestBase {
       .put("host", host)
       .put("acceptBacklog", acceptBacklog)
       .put("compressionSupported", compressionSupported)
+      .put("proxyProtocolEnabled", proxyProtocolEnabled)
       .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
       .put("websocketSubProtocols", wsSubProtocol)
       .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
@@ -731,6 +741,7 @@ public class HttpTest extends HttpTestBase {
     assertEquals(host, options.getHost());
     assertEquals(acceptBacklog, options.getAcceptBacklog());
     assertEquals(compressionSupported, options.isCompressionSupported());
+    assertEquals(proxyProtocolEnabled, options.isProxyProtocolEnabled());
     assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
     assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
@@ -5156,6 +5167,108 @@ public class HttpTest extends HttpTestBase {
       clientRequest.handle(req);
     }
 
+    await();
+  }
+
+  @Test
+  public void testProxyProtocolHeadersOnV1Request() {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setProxyProtocolEnabled(true).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server.requestHandler(req -> {
+      assertEquals("192.168.0.1", req.headers().get("X-Source-Address"));
+      assertEquals("192.168.0.11", req.getHeader("X-Destination-Address"));
+      assertEquals("56324", req.getHeader("X-Source-Port"));
+      assertEquals("443", req.getHeader("X-Destination-Port"));
+      req.response().end();
+    }).listen(onSuccess(server -> {
+      vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, res -> {
+        assertTrue(res.succeeded());
+        res.result().handler(buf -> {
+          assertTrue(buf.toString().contains("HTTP/1.1 200 OK"));
+          testComplete();
+        }).write("PROXY TCP4 192.168.0.1 192.168.0.11 56324 443\r\nGET / HTTP/1.1\r\nConnection: close\r\n\r\n");
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testProxyProtocolHeadersOnV2Request() {
+
+    byte[] header = new byte[28];
+    header[0]  = 0x0D;        // Binary Prefix
+    header[1]  = 0x0A;        // -----
+    header[2]  = 0x0D;        // -----
+    header[3]  = 0x0A;        // -----
+    header[4]  = 0x00;        // -----
+    header[5]  = 0x0D;        // -----
+    header[6]  = 0x0A;        // -----
+    header[7]  = 0x51;        // -----
+    header[8]  = 0x55;        // -----
+    header[9]  = 0x49;        // -----
+    header[10] = 0x54;        // -----
+    header[11] = 0x0A;        // -----
+
+    header[12] = 0x21;        // v2, cmd=PROXY
+    header[13] = 0x11;        // TCP over IPv4
+
+    header[14] = 0x00;        // Remaining Bytes
+    header[15] = 0x0c;        // -----
+
+    header[16] = (byte) 0xc0; // Source Address
+    header[17] = (byte) 0xa8; // -----
+    header[18] = 0x00;        // -----
+    header[19] = 0x01;        // -----
+
+    header[20] = (byte) 0xc0; // Destination Address
+    header[21] = (byte) 0xa8; // -----
+    header[22] = 0x00;        // -----
+    header[23] = 0x0b;        // -----
+
+    header[24] = (byte) 0xdc; // Source Port
+    header[25] = 0x04;        // -----
+
+    header[26] = 0x01;        // Destination Port
+    header[27] = (byte) 0xbb; // -----
+
+    Buffer payload = Buffer.buffer(header).appendString("GET / HTTP/1.1\r\nConnection: close\r\n\r\n");
+
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setProxyProtocolEnabled(true).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+
+    server.requestHandler(req -> {
+      assertEquals("192.168.0.1", req.headers().get("X-Source-Address"));
+      assertEquals("192.168.0.11", req.getHeader("X-Destination-Address"));
+      assertEquals("56324", req.getHeader("X-Source-Port"));
+      assertEquals("443", req.getHeader("X-Destination-Port"));
+      req.response().end();
+    }).listen(onSuccess(server -> {
+      vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, res -> {
+        assertTrue(res.succeeded());
+        res.result().handler(buf -> {
+          assertTrue(buf.toString().contains("HTTP/1.1 200 OK"));
+          testComplete();
+        }).write(payload);
+      });
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testProxyProtocolNoCMD() {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setProxyProtocolEnabled(true).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    server.requestHandler(req -> {
+      req.response().end();
+    }).listen(onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        fail("Should not be called");
+      }).exceptionHandler(t -> {
+        assertEquals("Connection was closed", t.getMessage());
+        testComplete();
+      }).end();
+    }));
     await();
   }
 
