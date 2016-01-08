@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -32,6 +33,15 @@ public class HeadersAdaptor implements MultiMap {
 
   public HeadersAdaptor(HttpHeaders headers) {
     this.headers = headers;
+  }
+
+  @Override
+  public String toString() {
+    return headers
+      .entries()
+      .stream()
+      .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
+      .collect(Collectors.joining(", ", getClass().getSimpleName()+"{", "}"));
   }
 
   @Override

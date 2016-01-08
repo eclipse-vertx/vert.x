@@ -21,12 +21,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ConcurrentHashSet<E> implements Set<E> {
-
   private final Map<E, Object> map;
 
   private static final Object OBJ = new Object();
@@ -37,6 +37,15 @@ public class ConcurrentHashSet<E> implements Set<E> {
 
   public ConcurrentHashSet() {
     map = new ConcurrentHashMap<>();
+  }
+
+  @Override
+  public String toString() {
+    return map
+      .entrySet()
+      .stream()
+      .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
+      .collect(Collectors.joining(", ", getClass().getSimpleName()+"{", "}"));
   }
 
   @Override
