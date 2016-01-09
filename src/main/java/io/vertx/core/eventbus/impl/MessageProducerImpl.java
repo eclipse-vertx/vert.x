@@ -100,7 +100,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public boolean writeQueueFull() {
-    return pending.size() >= 0;
+    return pending.size() > 0;
   }
 
   @Override
@@ -154,6 +154,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
         break;
       } else {
         credits--;
+        System.out.println("sending " + data);
         bus.send(address, data, options);
       }
     }

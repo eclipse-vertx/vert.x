@@ -5,6 +5,9 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
 import org.junit.Test;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,15 +41,17 @@ public class EventBusFlowControlTest extends VertxTestBase {
 
   private void sendBatch(MessageProducer<String> prod, int batchSize, int numBatches, int batchNumber) {
     boolean drainHandlerSet = false;
-    for (int i = 0; i < batchSize; i++) {
-      prod.send("message-" + i);
-      if (prod.writeQueueFull() && !drainHandlerSet) {
-        prod.drainHandler(v -> {
-          if (batchNumber < numBatches - 1) {
-            sendBatch(prod, batchSize, numBatches, batchNumber + 1);
-          }
-        });
-        drainHandlerSet = true;
+    while (batchNumber < numBatches && !drainHandlerSet) {
+      for (int i = 0; i < batchSize; i++) {
+        prod.send("message-" + i);
+        if (prod.writeQueueFull() && !drainHandlerSet) {
+          prod.drainHandler(v -> {
+            if (batchNumber < numBatches - 1) {
+              sendBatch(prod, batchSize, numBatches, batchNumber + 1);
+            }
+          });
+          drainHandlerSet = true;
+        }
       }
     }
   }
@@ -102,6 +107,38 @@ public class EventBusFlowControlTest extends VertxTestBase {
     assertTrue(drainHandlerSet);
     vertx.setTimer(500, tid -> testComplete());
     await();
+  }
+
+  @Test
+  public void testBilto() {
+
+    BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+    MessageConsumer<String> consumer = eb.consumer("some-address", msg -> {
+//      System.out.println("receiving " + msg.body());
+      messages.add(msg.body());
+    });
+    consumer.pause();
+
+    MessageProducer<String> prod = eb.sender("some-address");
+
+    int count = 0;
+    while (!prod.writeQueueFull()) {
+      prod.send("message-" + count++);
+    }
+
+    consumer.resume();
+
+    waitUntil(() -> !prod.writeQueueFull());
+    int the_count = count;
+    waitUntil(() -> messages.size() == the_count);
+
+    prod.drainHandler(v -> {
+      testComplete();
+    });
+    await();
+
+
+
   }
 
   @Override
