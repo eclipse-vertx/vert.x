@@ -239,6 +239,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // Embedded
       context = vertx.getOrCreateContext();
     }
+    registration.setHandlerContext(context);
 
     boolean newAddress = false;
 

@@ -154,7 +154,6 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
         break;
       } else {
         credits--;
-        System.out.println("sending " + data);
         bus.send(address, data, options);
       }
     }

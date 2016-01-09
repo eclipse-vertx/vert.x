@@ -39,6 +39,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private long timeoutID = -1;
   private boolean registered;
   private Handler<Message<T>> handler;
+  private Context handlerContext;
   private AsyncResult<Void> result;
   private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
@@ -146,6 +147,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     }
   }
 
+  synchronized void setHandlerContext(Context context) {
+    handlerContext = context;
+  }
+
   public synchronized void setResult(AsyncResult<Void> result) {
     this.result = result;
     if (completionHandler != null) {
@@ -163,7 +168,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public void handle(Message<T> message) {
-    Handler<Message<T>> theHandler = null;
+    Handler<Message<T>> theHandler;
     synchronized (this) {
       if (paused) {
         if (pending.size() < maxBufferedMessages) {
@@ -175,41 +180,59 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
             log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer");
           }
         }
+        return;
       } else {
-        checkNextTick();
-        if (metrics.isEnabled()) {
-          boolean local = true;
-          if (message instanceof ClusteredMessage) {
-            // A bit hacky
-            ClusteredMessage cmsg = (ClusteredMessage)message;
-            if (cmsg.isFromWire()) {
-              local = false;
-            }
-          }
-          metrics.beginHandleMessage(metric, local);
+        if (pending.size() > 0) {
+          pending.add(message);
+          message = pending.poll();
         }
         theHandler = handler;
       }
     }
-    // Handle the message outside the sync block
-    // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    if (theHandler != null) {
-      String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
-      if (creditsAddress != null) {
-        eventBus.send(creditsAddress, 1);
-      }
-      handleMessage(theHandler, message);
-    }
+    deliver(theHandler, message);
   }
 
-  private void handleMessage(Handler<Message<T>> theHandler, Message<T> message) {
+  private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
+    // Handle the message outside the sync block
+    // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
+    checkNextTick();
+    boolean local = true;
+    if (message instanceof ClusteredMessage) {
+      // A bit hacky
+      ClusteredMessage cmsg = (ClusteredMessage)message;
+      if (cmsg.isFromWire()) {
+        local = false;
+      }
+    }
+    String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
+    if (creditsAddress != null) {
+      eventBus.send(creditsAddress, 1);
+    }
     try {
+      metrics.beginHandleMessage(metric, local);
       theHandler.handle(message);
       metrics.endHandleMessage(metric, null);
     } catch (Exception e) {
       log.error("Failed to handleMessage", e);
       metrics.endHandleMessage(metric, e);
       throw e;
+    }
+  }
+
+  private void checkNextTick() {
+    // Check if there are more pending messages in the queue that can be processed next time around
+    if (!pending.isEmpty()) {
+      handlerContext.runOnContext(v -> {
+        Message<T> message;
+        Handler<Message<T>> theHandler;
+        synchronized (HandlerRegistration.this) {
+          if (paused || (message = pending.poll()) == null) {
+            return;
+          }
+          theHandler = handler;
+        }
+        deliver(theHandler, message);
+      });
     }
   }
 
@@ -275,20 +298,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   @Override
   public synchronized MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
     return this;
-  }
-
-  private void checkNextTick() {
-    // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty()) {
-      vertx.runOnContext(v -> {
-        if (!paused) {
-          Message<T> message = pending.poll();
-          if (message != null) {
-            HandlerRegistration.this.handle(message);
-          }
-        }
-      });
-    }
   }
 
   public Handler<Message<T>> getHandler() {

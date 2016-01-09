@@ -1,15 +1,20 @@
 package io.vertx.test.core;
 
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -110,35 +115,34 @@ public class EventBusFlowControlTest extends VertxTestBase {
   }
 
   @Test
-  public void testBilto() {
-
-    BlockingQueue<String> messages = new LinkedBlockingQueue<>();
-    MessageConsumer<String> consumer = eb.consumer("some-address", msg -> {
-//      System.out.println("receiving " + msg.body());
-      messages.add(msg.body());
+  public void testResumePausedProducer() {
+    BlockingQueue<Integer> sequence = new LinkedBlockingQueue<>();
+    AtomicReference<Context> handlerContext = new AtomicReference<>();
+    MessageConsumer<Integer> consumer = eb.consumer("some-address", msg -> {
+      if (sequence.isEmpty()) {
+        handlerContext.set(Vertx.currentContext());
+      } else {
+        assertEquals(Vertx.currentContext(), handlerContext.get());
+      }
+      sequence.add(msg.body());
     });
     consumer.pause();
-
-    MessageProducer<String> prod = eb.sender("some-address");
-
+    MessageProducer<Integer> prod = eb.sender("some-address");
+    LinkedList<Integer> expected = new LinkedList<>();
     int count = 0;
     while (!prod.writeQueueFull()) {
-      prod.send("message-" + count++);
+      int val = count++;
+      expected.add(val);
+      prod.send(val);
     }
-
     consumer.resume();
-
     waitUntil(() -> !prod.writeQueueFull());
-    int the_count = count;
-    waitUntil(() -> messages.size() == the_count);
-
-    prod.drainHandler(v -> {
-      testComplete();
-    });
-    await();
-
-
-
+    int theCount = count;
+    waitUntil(() -> sequence.size() == theCount);
+    while (expected.size() > 0) {
+      assertEquals(expected.removeFirst(), sequence.poll());
+    }
+    assertNotNull(handlerContext.get());
   }
 
   @Override
