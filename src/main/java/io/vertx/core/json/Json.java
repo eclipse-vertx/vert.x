@@ -18,10 +18,7 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.IOException;
@@ -78,6 +75,11 @@ public class Json {
     catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage());
     }
+  }
+
+  public static void registerModule(Module module){
+    mapper.registerModule(module);
+    prettyMapper.registerModule(module);
   }
 
   @SuppressWarnings("unchecked")
