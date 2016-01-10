@@ -21,8 +21,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 
 /**
@@ -248,6 +248,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   @Override
   public HttpClientOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions addEnabledSecureTransportProtocol(final String protocol) {
+    super.addEnabledSecureTransportProtocol(protocol);
     return this;
   }
 

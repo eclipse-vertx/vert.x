@@ -16,11 +16,15 @@
 
 package io.vertx.core.net;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-
-import java.util.*;
 
 /**
  * Base class. TCP and SSL related options
@@ -71,6 +75,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private Set<String> enabledCipherSuites = new HashSet<>();
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
+  private Set<String> enabledSecureTransportProtocols = new HashSet<>();
 
   /**
    * Default constructor
@@ -98,6 +103,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new HashSet<>() : new HashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
+    this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new HashSet<>() : new HashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
   /**
@@ -375,6 +381,25 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  /**
+   * Add an enabled SSL/TLS protocols
+   *
+   * @param protocol  the SSL/TLS protocol do enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions addEnabledSecureTransportProtocol(String protocol) {
+    enabledSecureTransportProtocols.add(protocol);
+    return this;
+  }
+
+  /**
+   * Returns the enabled SSL/TLS protocols
+   * @return the enabled protocols
+   */
+  public Set<String> getEnabledSecureTransportProtocols() {
+    return enabledSecureTransportProtocols;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -395,6 +420,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
       return false;
     if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null) return false;
     if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
+    if (!enabledSecureTransportProtocols.equals(that.enabledSecureTransportProtocols)) return false;
 
     return true;
   }
@@ -413,6 +439,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (enabledCipherSuites != null ? enabledCipherSuites.hashCode() : 0);
     result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
     result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);
+    result = 31 * result + (enabledSecureTransportProtocols != null ? enabledSecureTransportProtocols
+        .hashCode() : 0);
     return result;
   }
 }

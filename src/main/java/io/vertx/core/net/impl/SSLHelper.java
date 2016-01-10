@@ -16,24 +16,6 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.handler.ssl.SslHandler;
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
 import java.security.cert.CRL;
@@ -47,6 +29,25 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import io.netty.handler.ssl.SslHandler;
+import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
+
 /**
  *
  * This is a pretty sucky class - could do with a refactoring
@@ -58,7 +59,7 @@ public class SSLHelper {
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
   // Make sure SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
-  private static final String[] ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
+  private static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
 
   private boolean ssl;
   private KeyStoreHelper keyStoreHelper;
@@ -69,6 +70,7 @@ public class SSLHelper {
   private ClientAuth clientAuth = ClientAuth.NONE;
   private Set<String> enabledCipherSuites;
   private boolean verifyHost;
+  private Set<String> enabledProtocols;
 
   private SSLContext sslContext;
 
@@ -81,6 +83,7 @@ public class SSLHelper {
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
     this.verifyHost = options.isVerifyHost();
+    this.enabledProtocols = options.getEnabledSecureTransportProtocols();
   }
 
   public SSLHelper(HttpServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -91,6 +94,7 @@ public class SSLHelper {
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.enabledProtocols = options.getEnabledSecureTransportProtocols();
   }
 
   public SSLHelper(NetClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -101,6 +105,7 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.enabledProtocols = options.getEnabledSecureTransportProtocols();
   }
 
   public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -111,6 +116,7 @@ public class SSLHelper {
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.enabledProtocols = options.getEnabledSecureTransportProtocols();
   }
 
   public boolean isSSL() {
@@ -223,9 +229,15 @@ public class SSLHelper {
       engine.setEnabledCipherSuites(toUse);
     }
     engine.setUseClientMode(client);
-    Set<String> enabledProtocols = new HashSet<>(Arrays.asList(ENABLED_PROTOCOLS));
-    enabledProtocols.retainAll(Arrays.asList(engine.getEnabledProtocols()));
-    engine.setEnabledProtocols(enabledProtocols.toArray(new String[0]));
+    Set<String> protocols = new HashSet<>(Arrays.asList(DEFAULT_ENABLED_PROTOCOLS));
+    protocols.retainAll(Arrays.asList(engine.getEnabledProtocols()));
+    if (enabledProtocols != null && !enabledProtocols.isEmpty() && !protocols.isEmpty()) {
+      protocols.retainAll(enabledProtocols);
+      if (protocols.isEmpty()) {
+        log.warn("no SSL/TLS protocols are enabled due to configuration restrictions");
+      }
+    }
+    engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));
     if (!client) {
       switch (getClientAuth()) {
         case REQUEST: {

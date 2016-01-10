@@ -314,6 +314,10 @@ Add a CRL value
 +++
 Add an enabled cipher suite
 +++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
++++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
@@ -547,6 +551,10 @@ Add a CRL value
 +++
 Add an enabled cipher suite
 +++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
++++
 |[[host]]`host`|`String`|
 +++
 Set the host
@@ -622,25 +630,6 @@ Set whether Netty pooled buffers are enabled
 +++
 |===
 
-[[MetricsOptions]]
-== MetricsOptions
-
-++++
- Vert.x metrics base configuration, this class can be extended by provider implementations to configure
- those specific implementations.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[enabled]]`enabled`|`Boolean`|
-+++
-Set whether metrics will be enabled on the Vert.x instance.
-+++
-|===
-
 [[ClientOptionsBase]]
 == ClientOptionsBase
 
@@ -668,6 +657,10 @@ Add a CRL value
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
 Add an enabled cipher suite
++++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
@@ -737,6 +730,25 @@ Set the trust options in jks format, aka Java trustore
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
++++
+|===
+
+[[MetricsOptions]]
+== MetricsOptions
+
+++++
+ Vert.x metrics base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[enabled]]`enabled`|`Boolean`|
++++
+Set whether metrics will be enabled on the Vert.x instance.
 +++
 |===
 
@@ -898,6 +910,10 @@ Add a CRL value
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
 Add an enabled cipher suite
++++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
 +++
 |[[handle100ContinueAutomatically]]`handle100ContinueAutomatically`|`Boolean`|
 +++
@@ -1084,6 +1100,10 @@ Set the default port to be used by this client in requests if none is provided w
 +++
 Add an enabled cipher suite
 +++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
++++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
@@ -1265,6 +1285,10 @@ Add a CRL value
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
 Add an enabled cipher suite
++++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++

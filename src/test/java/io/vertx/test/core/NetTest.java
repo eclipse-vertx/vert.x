@@ -16,28 +16,20 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.*;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.ClientAuth;
-import io.vertx.core.impl.*;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.*;
-import io.vertx.core.net.impl.SocketAddressImpl;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +37,41 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.AsyncResultHandler;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.ClientAuth;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.WorkerContext;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.NetSocketStream;
+import io.vertx.core.net.NetworkOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.SocketAddressImpl;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
@@ -1068,11 +1095,43 @@ public class NetTest extends VertxTestBase {
     testTLS(false, false, true, false, false, true, true, false, ENABLED_CIPHER_SUITES);
   }
 
+  @Test
+  // Specify some bogus protocol
+  public void testInvalidTlsProtocolVersion() throws Exception {
+    testTLS(false, false, true, false, false, true, false, false, new String[0],
+        new String[]{"TLSv1.999"});
+  }
+
+  @Test
+  // Specify a valid protocol
+  public void testSpecificTlsProtocolVersion() throws Exception {
+    testTLS(false, false, true, false, false, true, true, false, new String[0],
+        new String[]{"TLSv1.2"});
+  }
+
+  void testTLS(boolean clientCert, boolean clientTrust,
+      boolean serverCert, boolean serverTrust,
+      boolean requireClientAuth, boolean clientTrustAll,
+      boolean shouldPass, boolean startTLS) throws Exception {
+    testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
+        shouldPass, startTLS, new String[0], new String[0]);
+  }
+
+  void testTLS(boolean clientCert, boolean clientTrust,
+      boolean serverCert, boolean serverTrust,
+      boolean requireClientAuth, boolean clientTrustAll,
+      boolean shouldPass, boolean startTLS,
+      String[] enabledCipherSuites) throws Exception {
+    testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
+        shouldPass, startTLS, enabledCipherSuites, new String[0]);
+  }
+
   void testTLS(boolean clientCert, boolean clientTrust,
                boolean serverCert, boolean serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
                boolean shouldPass, boolean startTLS,
-               String... enabledCipherSuites) throws Exception {
+               String[] enabledCipherSuites,
+               String[] enabledSecureTransportProtocols) throws Exception {
     server.close();
     NetServerOptions options = new NetServerOptions();
     if (!startTLS) {
@@ -1089,6 +1148,9 @@ public class NetTest extends VertxTestBase {
     }
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
+    }
+    for (String protocol : enabledSecureTransportProtocols) {
+      options.addEnabledSecureTransportProtocol(protocol);
     }
 
     options.setPort(4043);
@@ -1134,6 +1196,9 @@ public class NetTest extends VertxTestBase {
         }
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);
+        }
+        for (String protocol : enabledSecureTransportProtocols) {
+          clientOptions.addEnabledSecureTransportProtocol(protocol);
         }
       }
       client = vertx.createNetClient(clientOptions);
