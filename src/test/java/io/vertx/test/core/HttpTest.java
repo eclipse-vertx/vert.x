@@ -5212,4 +5212,37 @@ public class HttpTest extends HttpTestBase {
     await();
   }
 
+
+  @Test
+  public void testDontReuseConnectionWhenResponseEndsDuringAnOngoingRequest() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    CountDownLatch serverLatch = new CountDownLatch(1);
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      serverLatch.countDown();
+    });
+
+    awaitLatch(serverLatch);
+    HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+    req1.handler(resp -> {
+      resp.endHandler(v1 -> {
+        // End request after the response ended
+        vertx.setTimer(100, v2 -> {
+          req1.end();
+        });
+      });
+    });
+    // Send head to the server and trigger the request handler
+    req1.sendHead();
+
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      testComplete();
+    }).end();
+
+    await();
+  }
 }
