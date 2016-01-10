@@ -39,6 +39,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   private final Queue<T> pending = new ArrayDeque<>();
   private final MessageConsumer<Integer> creditConsumer;
   private DeliveryOptions options;
+  private int maxSize = DEFAULT_WRITE_QUEUE_MAX_SIZE;
   private int credits = DEFAULT_WRITE_QUEUE_MAX_SIZE;
   private Handler<Void> drainHandler;
 
@@ -83,8 +84,10 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public synchronized MessageProducer<T> setWriteQueueMaxSize(int maxSize) {
-    this.credits = maxSize;
+  public synchronized MessageProducer<T> setWriteQueueMaxSize(int s) {
+    int delta = s - maxSize;
+    maxSize = s;
+    credits += delta;
     return this;
   }
 
@@ -99,8 +102,8 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public boolean writeQueueFull() {
-    return pending.size() > 0;
+  public synchronized boolean writeQueueFull() {
+    return credits == 0;
   }
 
   @Override
@@ -158,10 +161,9 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
       }
     }
     final Handler<Void> theDrainHandler = drainHandler;
-    if (theDrainHandler != null && pending.isEmpty()) {
+    if (theDrainHandler != null && credits >= maxSize / 2) {
       this.drainHandler = null;
       vertx.runOnContext(v -> theDrainHandler.handle(null));
     }
   }
-
 }
