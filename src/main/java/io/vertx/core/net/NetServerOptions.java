@@ -199,6 +199,12 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions addEnabledSecureTransportProtocol(final String protocol) {
+    super.addEnabledSecureTransportProtocol(protocol);
+    return this;
+  }
+
+  @Override
   public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (NetServerOptions) super.addCrlPath(crlPath);
   }

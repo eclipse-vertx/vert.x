@@ -1112,11 +1112,44 @@ public class NetTest extends VertxTestBase {
     testTLS(false, false, true, false, false, true, true, false, ENABLED_CIPHER_SUITES);
   }
 
+  @Test
+  // Specify some bogus protocol
+  public void testInvalidTlsProtocolVersion() throws Exception {
+    testTLS(false, false, true, false, false, true, false, false, new String[0],
+    new String[]{"TLSv1.999"});
+  }
+
+  @Test
+  // Specify a valid protocol
+  public void testSpecificTlsProtocolVersion() throws Exception {
+    testTLS(false, false, true, false, false, true, true, false, new String[0],
+        new String[]{"TLSv1.2"});
+  }
+
+  void testTLS(boolean clientCert, boolean clientTrust,
+    boolean serverCert, boolean serverTrust,
+    boolean requireClientAuth, boolean clientTrustAll,
+    boolean shouldPass, boolean startTLS) throws Exception {
+        testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
+        shouldPass, startTLS, new String[0], new String[0]);
+  }
+
+  void testTLS(boolean clientCert, boolean clientTrust,
+    boolean serverCert, boolean serverTrust,
+    boolean requireClientAuth, boolean clientTrustAll,
+    boolean shouldPass, boolean startTLS,
+    String[] enabledCipherSuites) throws Exception {
+        testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
+        shouldPass, startTLS, enabledCipherSuites, new String[0]);
+    }
+
+
   void testTLS(boolean clientCert, boolean clientTrust,
                boolean serverCert, boolean serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
                boolean shouldPass, boolean startTLS,
-               String... enabledCipherSuites) throws Exception {
+               String[] enabledCipherSuites,
+               String[] enabledSecureTransportProtocols) throws Exception {
     server.close();
     NetServerOptions options = new NetServerOptions();
     if (!startTLS) {
@@ -1133,6 +1166,9 @@ public class NetTest extends VertxTestBase {
     }
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
+    }
+    for (String protocol : enabledSecureTransportProtocols) {
+      options.addEnabledSecureTransportProtocol(protocol);
     }
 
     Consumer<NetSocket> certificateChainChecker = socket -> {
@@ -1193,6 +1229,9 @@ public class NetTest extends VertxTestBase {
       }
       for (String suite: enabledCipherSuites) {
         clientOptions.addEnabledCipherSuite(suite);
+      }
+      for (String protocol : enabledSecureTransportProtocols) {
+        clientOptions.addEnabledSecureTransportProtocol(protocol);
       }
       client = vertx.createNetClient(clientOptions);
       client.connect(4043, "localhost", ar2 -> {
