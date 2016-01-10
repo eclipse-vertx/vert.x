@@ -17,20 +17,8 @@
 package io.vertx.test.core;
 
 import io.vertx.core.VertxException;
-import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.SSLEngine;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.http.*;
+import io.vertx.core.net.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -227,12 +215,31 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  // Specify some cipher suites
-  public void testTLSCipherSuites() throws Exception {
-    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().enabledCipherSuites(ENABLED_CIPHER_SUITES).pass();
+  // Specify some matching cipher suites
+  public void testTLSMatchingCipherSuites() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledCipherSuites(ENABLED_CIPHER_SUITES).pass();
   }
 
-  // OpenSSL tests
+  @Test
+  // Specify some non matching cipher suites
+  public void testTLSNonMatchingCipherSuites() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledCipherSuites(new String[]{"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"}).clientEnabledCipherSuites(new String[]{"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"}).fail();
+  }
+
+  @Test
+  // Specify some matching TLS protocols
+  public void testTLSMatchingProtocolVersions() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
+  }
+
+  @Test
+  // Specify some non matching TLS protocols
+  public void testTLSNonMatchingProtocolVersions() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello"}).fail();
+  }
+
+
+    // OpenSSL tests
 
   @Test
   // Server uses OpenSSL with PEM
@@ -272,7 +279,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean serverUsesCrl;
     boolean serverOpenSSL;
     boolean serverUsesAlpn;
-    String[] enabledCipherSuites = new String[0];
+    String[] clientEnabledCipherSuites = new String[0];
+    String[] serverEnabledCipherSuites = new String[0];
+    String[] clientEnabledSecureTransportProtocol   = new String[0];
+    String[] serverEnabledSecureTransportProtocol   = new String[0];
+
 
     public TLSTest(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) {
       this.clientCert = clientCert;
@@ -311,8 +322,23 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
-    TLSTest enabledCipherSuites(String[] value) {
-      enabledCipherSuites = value;
+    TLSTest clientEnabledCipherSuites(String[] value) {
+      clientEnabledCipherSuites = value;
+      return this;
+    }
+
+    TLSTest serverEnabledCipherSuites(String[] value) {
+     serverEnabledCipherSuites = value;
+     return this;
+    }
+
+    TLSTest clientEnabledSecureTransportProtocol(String[] value) {
+      clientEnabledSecureTransportProtocol = value;
+      return this;
+    }
+
+    TLSTest serverEnabledSecureTransportProtocol(String[] value) {
+      serverEnabledSecureTransportProtocol = value;
       return this;
     }
 
@@ -352,8 +378,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       setOptions(options, clientTrust.getClientTrustOptions());
       setOptions(options, clientCert.getClientKeyCertOptions());
-      for (String suite: enabledCipherSuites) {
+      for (String suite: clientEnabledCipherSuites) {
         options.addEnabledCipherSuite(suite);
+      }
+      for (String protocols: clientEnabledSecureTransportProtocol) {
+        options.addEnabledSecureTransportProtocol(protocols);
       }
       client = createHttpClient(options);
       HttpServerOptions serverOptions = new HttpServerOptions();
@@ -372,8 +401,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (serverUsesAlpn) {
         serverOptions.setUseAlpn(true);
       }
-      for (String suite: enabledCipherSuites) {
+      for (String suite: serverEnabledCipherSuites) {
         serverOptions.addEnabledCipherSuite(suite);
+      }
+      for (String protocols: serverEnabledSecureTransportProtocol) {
+        serverOptions.addEnabledSecureTransportProtocol(protocols);
       }
       server = createHttpServer(serverOptions.setPort(4043));
       server.requestHandler(req -> {

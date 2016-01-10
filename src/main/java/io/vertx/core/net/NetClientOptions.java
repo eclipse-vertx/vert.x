@@ -175,6 +175,12 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions addEnabledSecureTransportProtocol(final String protocol) {
+    super.addEnabledSecureTransportProtocol(protocol);
+    return this;
+  }
+
+  @Override
   public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
     return (NetClientOptions) super.addCrlPath(crlPath);
   }
