@@ -1089,14 +1089,63 @@ request.continueHandler(v -> {
 
 On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
 when it receives an `Expect: 100-Continue` header.
+
 This is done by setting the option `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setHandle100ContinueAutomatically-boolean-[setHandle100ContinueAutomatically]`.
 
 If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
 `false` (the default), then you can inspect the headers and call `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeContinue--[writeContinue]`
-if you wish the client to continue sending the body or you can reject the request by sending back a failure status code
-if you don't want it to send the body. For example:
+to have the client continue sending the body:
 
+[source,java]
+----
+httpServer.requestHandler(request -> {
+  if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
 
+    // Send a 100 continue response
+    request.response().writeContinue();
+
+    // The client should send the body when it receives the 100 response
+    request.bodyHandler(body -> {
+      // Do something with body
+    });
+
+    request.endHandler(v -> {
+      request.response().end();
+    });
+  }
+});
+----
+
+You can also reject the request by sending back a failure status code directly: in this case the body
+should either be ignored or the connection should be closed (100-Continue is a performance hint and
+cannot be a logical protocol constraint):
+
+[source,java]
+----
+httpServer.requestHandler(request -> {
+  if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
+
+    //
+    boolean rejectAndClose = true;
+    if (rejectAndClose) {
+
+      // Reject with a failure code and close the connection
+      // this is probably best with persistent connection
+      request.response()
+          .setStatusCode(405)
+          .putHeader("Connection", "close")
+          .end();
+    } else {
+
+      // Reject with a failure code and ignore the body
+      // this may be appropriate if the body is small
+      request.response()
+          .setStatusCode(405)
+          .end();
+    }
+  }
+});
+----
 
 === Enabling compression on the client
 
