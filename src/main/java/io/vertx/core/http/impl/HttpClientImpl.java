@@ -636,15 +636,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public synchronized void close() {
-    checkClosed();
-    pool.close();
-    for (ClientConnection conn : connectionMap.values()) {
-      conn.close();
+    synchronized (this) {
+      checkClosed();
+      closed = true;
     }
     if (creatingContext != null) {
       creatingContext.removeCloseHook(closeHook);
     }
-    closed = true;
+    pool.close();
+    for (ClientConnection conn : connectionMap.values()) {
+      conn.close();
+    }
     metrics.close();
   }
 
