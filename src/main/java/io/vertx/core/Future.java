@@ -16,6 +16,7 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.spi.FutureFactory;
@@ -99,9 +100,11 @@ public interface Future<T> extends AsyncResult<T> {
    * future is completed.
    *
    * @param handler  the Handler that will be called with the result
+   * @return a reference to this, so it can be used fluently
    *
    */
-  void setHandler(Handler<AsyncResult<T>> handler);
+  @Fluent
+  Future setHandler(Handler<AsyncResult<T>> handler);
 
   /**
    * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
@@ -123,7 +126,6 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * @param throwable  the failure cause
    */
-  @GenIgnore
   void fail(Throwable throwable);
 
   /**
@@ -132,6 +134,8 @@ public interface Future<T> extends AsyncResult<T> {
    * @param failureMessage  the failure message
    */
   void fail(String failureMessage);
+
+  Handler<AsyncResult<T>> handler();
 
   static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 

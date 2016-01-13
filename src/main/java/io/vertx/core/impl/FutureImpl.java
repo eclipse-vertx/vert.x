@@ -95,9 +95,10 @@ class FutureImpl<T> implements Future<T> {
   /**
    * Set a handler for the result. It will get called when it's complete
    */
-  public void setHandler(Handler<AsyncResult<T>> handler) {
+  public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
     this.handler = handler;
     checkCallHandler();
+    return this;
   }
 
   /**
@@ -113,6 +114,25 @@ class FutureImpl<T> implements Future<T> {
   @Override
   public void complete() {
     complete(null);
+  }
+
+  public void handle(Future<T> ar) {
+    if (ar.succeeded()) {
+      complete(ar.result());
+    } else {
+      fail(ar.cause());
+    }
+  }
+
+  @Override
+  public Handler<AsyncResult<T>> handler() {
+    return ar -> {
+      if (ar.succeeded()) {
+        complete(ar.result());
+      } else {
+        fail(ar.cause());
+      }
+    };
   }
 
   /**
