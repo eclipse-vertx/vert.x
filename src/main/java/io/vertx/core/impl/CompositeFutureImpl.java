@@ -26,27 +26,50 @@ import io.vertx.core.Handler;
  */
 public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements CompositeFuture {
 
-  private final Future[] results;
-  private int flag;
-
-  public CompositeFutureImpl(Future<?>... results) {
-
+  public static CompositeFuture all(Future<?>... results) {
+    CompositeFutureImpl composite = new CompositeFutureImpl(results);
     for (int i = 0;i < results.length;i++) {
       int index = i;
       results[i].setHandler(ar -> {
         if (ar.succeeded()) {
-          flag |= 1 << index;
-          if (!isComplete() && flag == (1 << results.length) - 1) {
-            complete(this);
+          composite.flag |= 1 << index;
+          if (!composite.isComplete() && composite.flag == (1 << results.length) - 1) {
+            composite.complete(composite);
           }
         } else {
-          if (!isComplete()) {
-            fail(ar.cause());
+          if (!composite.isComplete()) {
+            composite.fail(ar.cause());
           }
         }
       });
     }
+    return composite;
+  }
 
+  public static CompositeFuture any(Future<?>... results) {
+    CompositeFutureImpl composite = new CompositeFutureImpl(results);
+    for (int i = 0;i < results.length;i++) {
+      int index = i;
+      results[i].setHandler(ar -> {
+        if (ar.succeeded()) {
+          if (!composite.isComplete()) {
+            composite.complete(composite);
+          }
+        } else {
+          composite.flag |= 1 << index;
+          if (!composite.isComplete() && composite.flag == (1 << results.length) - 1) {
+            composite.fail(ar.cause());
+          }
+        }
+      });
+    }
+    return composite;
+  }
+
+  private final Future[] results;
+  private int flag;
+
+  private CompositeFutureImpl(Future<?>... results) {
     this.results = results;
   }
 
