@@ -19,9 +19,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.FileSystem;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -186,7 +183,7 @@ public class FutureTest extends VertxTestBase {
   public void testCompositeFutureSucceeded() {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.and(f1, f2);
+    CompositeFuture composite = CompositeFuture.all(f1, f2);
     assertFalse(composite.succeeded());
     f1.complete("something");
     assertFalse(composite.succeeded());
@@ -202,7 +199,7 @@ public class FutureTest extends VertxTestBase {
   public void testCompositeFutureFailed() {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.and(f1, f2);
+    CompositeFuture composite = CompositeFuture.all(f1, f2);
     assertFalse(composite.succeeded());
     f1.complete("s");
     assertFalse(composite.succeeded());
