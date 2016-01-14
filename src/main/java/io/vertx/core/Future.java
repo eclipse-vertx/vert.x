@@ -149,6 +149,9 @@ public interface Future<T> extends AsyncResult<T> {
    */
   <U> void compose(Handler<T> handler, Future<U> next);
 
+  /**
+   * @return an handler completing this future
+   */
   Handler<AsyncResult<T>> handler();
 
   static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
