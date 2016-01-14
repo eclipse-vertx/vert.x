@@ -21,6 +21,8 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.spi.FutureFactory;
 
+import java.util.function.Function;
+
 /**
  * Represents the result of an action that may, or may not, have occurred yet.
  * <p>
@@ -134,6 +136,18 @@ public interface Future<T> extends AsyncResult<T> {
    * @param failureMessage  the failure message
    */
   void fail(String failureMessage);
+
+  /**
+   * Compose this future with another future.
+   *
+   * When this future succeeds, the handler will be called with the value.
+   *
+   * When this future fails, the failure will be propagated to the {@code next} future.
+   *
+   * @param handler the handler
+   * @param next the next future
+   */
+  <U> void compose(Handler<T> handler, Future<U> next);
 
   Handler<AsyncResult<T>> handler();
 

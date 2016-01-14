@@ -146,6 +146,17 @@ class FutureImpl<T> implements Future<T> {
   }
 
   @Override
+  public <U> void compose(Handler<T> handler, Future<U> next) {
+    setHandler(ar -> {
+      if (ar.succeeded()) {
+        handler.handle(ar.result());
+      } else {
+        next.fail(ar.cause());
+      }
+    });
+  }
+
+  @Override
   public void fail(String failureMessage) {
     fail(new NoStackTraceThrowable(failureMessage));
   }

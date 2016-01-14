@@ -19,6 +19,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystem;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -207,5 +210,23 @@ public class FutureTest extends VertxTestBase {
     f2.fail(cause);
     assertTrue(composite.failed());
     assertEquals(cause, composite.cause());
+  }
+
+  @Test
+  public void testComposeSucceed() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    f1.compose(string -> f2.complete(string.length()), f2);
+    f1.complete("abcdef");
+    assertEquals(6, (int)f2.result());
+  }
+
+  @Test
+  public void testComposeFail() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    f1.compose(string -> f2.complete(string.length()), f2);
+    f1.fail("abcdef");
+    assertTrue(f2.failed());
   }
 }
