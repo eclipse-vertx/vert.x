@@ -27,6 +27,7 @@ import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 
 /**
@@ -266,6 +267,11 @@ public interface Buffer extends ClusterSerializable {
   String getString(int start, int end);
 
   /**
+   * Return the bytes order of this buffer.
+   */
+  ByteOrder getByteOrder();
+
+  /**
    * Appends the specified {@code Buffer} to the end of this Buffer. The buffer will expand as necessary to accommodate
    * any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
@@ -490,6 +496,13 @@ public interface Buffer extends ClusterSerializable {
    */
   @Fluent
   Buffer setString(int pos, String str, String enc);
+
+  /**
+   *
+   * Sets byte orders with {@code order}
+   */
+  @Fluent
+  Buffer setByteOrder(ByteOrder order);
 
   /**
    * Returns the length of the buffer, measured in bytes.
