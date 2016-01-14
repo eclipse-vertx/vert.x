@@ -149,7 +149,14 @@ class FutureImpl<T> implements Future<T> {
   public <U> void compose(Handler<T> handler, Future<U> next) {
     setHandler(ar -> {
       if (ar.succeeded()) {
-        handler.handle(ar.result());
+        try {
+          handler.handle(ar.result());
+        } catch (Throwable err) {
+          if (next.isComplete()) {
+            throw err;
+          }
+          next.fail(err);
+        }
       } else {
         next.fail(ar.cause());
       }

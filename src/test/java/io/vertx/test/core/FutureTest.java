@@ -226,4 +226,33 @@ public class FutureTest extends VertxTestBase {
     f1.fail("abcdef");
     assertTrue(f2.failed());
   }
+
+  @Test
+  public void testComposeHandlerFail() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    RuntimeException cause = new RuntimeException();
+    f1.compose(string -> { throw cause; }, f2);
+    f1.complete("foo");
+    assertTrue(f2.failed());
+    assertSame(cause, f2.cause());
+  }
+
+  @Test
+  public void testComposeHandlerFailAfterCompletion() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    RuntimeException cause = new RuntimeException();
+    f1.compose(string -> {
+      f2.complete(46);
+      throw cause;
+    }, f2);
+    try {
+      f1.complete("foo");
+    } catch (Exception e) {
+      assertEquals(cause, e);
+    }
+    assertTrue(f2.succeeded());
+    assertEquals(46, (int)f2.result());
+  }
 }
