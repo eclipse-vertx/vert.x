@@ -18,9 +18,7 @@ package examples;
 
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -90,10 +88,10 @@ public class CoreExamples {
 
   public void exampleFuture1(HttpServer httpServer, NetServer netServer) {
     Future<HttpServer> httpServerFuture = Future.future();
-    httpServer.listen(httpServerFuture.handler());
+    httpServer.listen(httpServerFuture.completer());
 
     Future<NetServer> netServerFuture = Future.future();
-    netServer.listen(netServerFuture.handler());
+    netServer.listen(netServerFuture.completer());
 
     CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
       if (ar.succeeded()) {
@@ -123,12 +121,12 @@ public class CoreExamples {
     Future<Void> fut1 = Future.future();
     Future<Void> fut2 = Future.future();
 
-    fs.createFile("/foo", fut1.handler());
+    fs.createFile("/foo", fut1.completer());
     fut1.compose(string -> {
-      fs.writeFile("/foo", Buffer.buffer(), fut2.handler());
+      fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
     }, fut2);
     fut2.compose(integer -> {
-      fs.move("/foo", "/bar", startFuture.handler());
+      fs.move("/foo", "/bar", startFuture.completer());
     }, startFuture);
   }
 

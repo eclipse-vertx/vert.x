@@ -299,10 +299,10 @@ _succeeded_ when all the futures are and _failed_ otherwise:
 [source,java]
 ----
 Future<HttpServer> httpServerFuture = Future.future();
-httpServer.listen(httpServerFuture.handler());
+httpServer.listen(httpServerFuture.completer());
 
 Future<NetServer> netServerFuture = Future.future();
-netServer.listen(netServerFuture.handler());
+netServer.listen(netServerFuture.completer());
 
 CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
   if (ar.succeeded()) {
@@ -313,7 +313,7 @@ CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
 });
 ----
 
-The handler returned by `link:../../apidocs/io/vertx/core/Future.html#handler--[handler]` completes the future.
+The handler returned by `link:../../apidocs/io/vertx/core/Future.html#completer--[completer]` completes the future.
 
 `link:../../apidocs/io/vertx/core/CompositeFuture.html#any-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.any]` takes several futures arguments (up to 6) and returns a future that is
 _failed_ when all the futures are and _succeeded_ otherwise:
@@ -340,12 +340,12 @@ FileSystem fs = vertx.fileSystem();
 Future<Void> fut1 = Future.future();
 Future<Void> fut2 = Future.future();
 
-fs.createFile("/foo", fut1.handler());
+fs.createFile("/foo", fut1.completer());
 fut1.compose(string -> {
-  fs.writeFile("/foo", Buffer.buffer(), fut2.handler());
+  fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
 }, fut2);
 fut2.compose(integer -> {
-  fs.move("/foo", "/bar", startFuture.handler());
+  fs.move("/foo", "/bar", startFuture.completer());
 }, startFuture);
 ----
 

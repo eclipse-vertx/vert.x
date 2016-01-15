@@ -160,7 +160,7 @@ public class FutureTest extends VertxTestBase {
       handler.handle(Future.succeededFuture("the-result"));
     };
     Future<String> fut = Future.future();
-    consumer.accept(fut.handler());
+    consumer.accept(fut.completer());
     assertTrue(fut.isComplete());
     assertTrue(fut.succeeded());
     assertEquals("the-result", fut.result());
@@ -173,7 +173,7 @@ public class FutureTest extends VertxTestBase {
       handler.handle(Future.failedFuture(cause));
     };
     Future<String> fut = Future.future();
-    consumer.accept(fut.handler());
+    consumer.accept(fut.completer());
     assertTrue(fut.isComplete());
     assertTrue(fut.failed());
     assertEquals(cause, fut.cause());

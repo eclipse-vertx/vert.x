@@ -215,7 +215,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   @Override
-  public Handler<AsyncResult<CompositeFuture>> handler() {
+  public Handler<AsyncResult<CompositeFuture>> completer() {
     return this;
   }
 

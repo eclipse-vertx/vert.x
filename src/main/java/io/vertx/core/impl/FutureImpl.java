@@ -125,7 +125,7 @@ class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   }
 
   @Override
-  public Handler<AsyncResult<T>> handler() {
+  public Handler<AsyncResult<T>> completer() {
     return this;
   }
 

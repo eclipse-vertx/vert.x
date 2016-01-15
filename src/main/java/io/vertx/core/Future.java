@@ -167,7 +167,7 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * @return an handler completing this future
    */
-  Handler<AsyncResult<T>> handler();
+  Handler<AsyncResult<T>> completer();
 
   static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
