@@ -101,6 +101,10 @@ class ClientConnection extends ConnectionBase {
     return metrics;
   }
 
+  synchronized HttpClientRequestImpl getCurrentRequest() {
+    return currentRequest;
+  }
+
   synchronized void toWebSocket(String requestURI, MultiMap headers, WebsocketVersion vers, String subProtocols,
                    int maxWebSocketFrameSize, Handler<WebSocket> wsConnect) {
     if (ws != null) {

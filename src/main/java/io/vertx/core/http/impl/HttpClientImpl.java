@@ -636,15 +636,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public synchronized void close() {
-    checkClosed();
-    pool.close();
-    for (ClientConnection conn : connectionMap.values()) {
-      conn.close();
+    synchronized (this) {
+      checkClosed();
+      closed = true;
     }
     if (creatingContext != null) {
       creatingContext.removeCloseHook(closeHook);
     }
-    closed = true;
+    pool.close();
+    for (ClientConnection conn : connectionMap.values()) {
+      conn.close();
+    }
     metrics.close();
   }
 
@@ -712,8 +714,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
   }
 
-  private void internalConnect(ContextImpl context, int port, String host, Handler<ClientConnection> connectHandler,
+  private void internalConnect(ContextImpl clientContext, int port, String host, Handler<ClientConnection> connectHandler,
                                Handler<Throwable> connectErrorHandler, ConnectionLifeCycleListener listener) {
+    ContextImpl context;
+    if (clientContext == null) {
+      // Embedded
+      context = vertx.getOrCreateContext();
+    } else {
+      context = clientContext;
+    }
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
     bootstrap.channelFactory(new VertxNioSocketChannelFactory());

@@ -920,6 +920,14 @@ Set the key/cert options in jks format, aka Java keystore.
 +++
 Set the maximum HTTP chunk size
 +++
+|[[maxHeaderSize]]`maxHeaderSize`|`Number (int)`|
++++
+Set the maximum length of all headers
++++
+|[[maxInitialLineLength]]`maxInitialLineLength`|`Number (int)`|
++++
+Set the maximum length of the initial line (e.g. <code>"GET / HTTP/1.0"</code>)
++++
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
 Set the maximum websocket frames size

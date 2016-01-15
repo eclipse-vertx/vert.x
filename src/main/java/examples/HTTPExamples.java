@@ -560,17 +560,44 @@ public class HTTPExamples {
 
     httpServer.requestHandler(request -> {
       if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
-        // Now decide if you want to accept the request
 
-        boolean accept = true;
-        if (accept) {
-          request.response().writeContinue();
-          request.bodyHandler(body -> {
-            // Do something with body
-          });
+        // Send a 100 continue response
+        request.response().writeContinue();
+
+        // The client should send the body when it receives the 100 response
+        request.bodyHandler(body -> {
+          // Do something with body
+        });
+
+        request.endHandler(v -> {
+          request.response().end();
+        });
+      }
+    });
+  }
+
+  public void example50_2(HttpServer httpServer) {
+
+    httpServer.requestHandler(request -> {
+      if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
+
+        //
+        boolean rejectAndClose = true;
+        if (rejectAndClose) {
+
+          // Reject with a failure code and close the connection
+          // this is probably best with persistent connection
+          request.response()
+              .setStatusCode(405)
+              .putHeader("Connection", "close")
+              .end();
         } else {
-          // Reject with a failure code
-          request.response().setStatusCode(405).end();
+
+          // Reject with a failure code and ignore the body
+          // this may be appropriate if the body is small
+          request.response()
+              .setStatusCode(405)
+              .end();
         }
       }
     });

@@ -16,6 +16,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
@@ -95,6 +96,11 @@ public abstract class ConnectionManager {
                                            ContextImpl context, BooleanSupplier canceled) {
       ClientConnection conn = availableConnections.poll();
       if (conn != null && !conn.isClosed()) {
+        if (context == null) {
+          context = conn.getContext();
+        } else if (context != conn.getContext()) {
+          log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
+        }
         context.runOnContext(v -> handler.handle(conn));
       } else if (connCount == maxSockets) {
         // Wait in queue
@@ -115,7 +121,11 @@ public abstract class ConnectionManager {
         // Maybe the connection can be reused
         Waiter waiter = getNextWaiter();
         if (waiter != null) {
-          waiter.context.runOnContext(v -> waiter.handler.handle(conn));
+          Context context = waiter.context;
+          if (context == null) {
+            context = conn.getContext();
+          }
+          context.runOnContext(v -> waiter.handler.handle(conn));
         }
       }
     }
@@ -123,12 +133,18 @@ public abstract class ConnectionManager {
     // Called when the response has ended
     public synchronized void responseEnded(ClientConnection conn, boolean close) {
       if ((pipelining || keepAlive) && !close) {
-        Waiter waiter = getNextWaiter();
-        if (waiter != null) {
-          waiter.context.runOnContext(v -> waiter.handler.handle(conn));
-        } else if (!pipelining || conn.getOutstandingRequestCount() == 0) {
-          // Return to set of available
-          availableConnections.add(conn);
+        if (conn.getCurrentRequest() == null) {
+          Waiter waiter = getNextWaiter();
+          if (waiter != null) {
+            Context context = waiter.context;
+            if (context == null) {
+              context = conn.getContext();
+            }
+            context.runOnContext(v -> waiter.handler.handle(conn));
+          } else if (conn.getOutstandingRequestCount() == 0) {
+            // Return to set of available from here to not return it several times
+            availableConnections.add(conn);
+          }
         }
       } else {
         // Close it now

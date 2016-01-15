@@ -260,7 +260,7 @@
  * In a perfect world, there will be no war or hunger, all APIs will be written asynchronously and bunny rabbits will
  * skip hand-in-hand with baby lambs across sunny green meadows.
  *
- * *But.. the real world is not like that. (Have you watched the news lately?)*
+ * *But... the real world is not like that. (Have you watched the news lately?)*
  *
  * Fact is, many, if not most libraries, especially in the JVM ecosystem have synchronous APIs and many of the methods are
  * likely to block. A good example is the JDBC API - it's inherently synchronous, and no matter how hard it tries, Vert.x
@@ -984,9 +984,10 @@
  *
  * [source]
  * ----
- * vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy"
- * vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy,**&#47;*.rb"
- * java io.vertx.core.Launcher run org.acme.MyVerticle –redeploy="**&#47;*.class" -cp ...
+ * vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy" --launcher-class=io.vertx.core.Launcher
+ * vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy,**&#47;*.rb"  --launcher-class=io.vertx.core.Launcher
+ * java io.vertx.core.Launcher run org.acme.MyVerticle –redeploy="**&#47;*.class"  --launcher-class=io.vertx.core
+ * .Launcher -cp ...
  * ----
  *
  * The redeployment process is implemented as follows. First your application is launched as a background application
@@ -1000,16 +1001,18 @@
  * Parameters passed to the `run` command are passed to the application. Java Virtual Machine options can be
  * configured using `--java-opts`.
  *
+ * The `--launcher-class` option determine with with _main_ class the application is launcher. It's generally
+ * {@link io.vertx.core.Launcher}, but you have use you own _main_.
+ *
  * The redeploy feature can be used in your IDE:
  *
  * * Eclipse - create a _Run_ configuration, using the `io.vertx.core.Launcher` class a _main class_. In the _Program
- * arguments_ area (in the _Arguments_ tab), write `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.java`.
- * You can also add other parameters. The redeployment works smoothly as Eclipse incrementally compiles your files on
- * save.
+ * arguments_ area (in the _Arguments_ tab), write `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.java
+ * --launcher-class=io.vertx.core.Launcher`. You can also add other parameters. The redeployment works smoothly as
+ * Eclipse incrementally compiles your files on save.
  * * IntelliJ - create a _Run_ configuration (_Application_), set the _Main class_ to `io.vertx.core.Launcher`. In
  * the Program arguments write: `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.class
- * --launcher-class=io.vertx.core.Launcher`. As you can see, you need to set the `launcher-class` parameter because
- * IntelliJ wraps your main class in its own class. To trigger the redeployment, you need to _make_ the project or
+ * --launcher-class=io.vertx.core.Launcher`. To trigger the redeployment, you need to _make_ the project or
  * the module explicitly (_Build_ menu -> _Make project_).
  *
  * To debug your application, create your run configuration as a remote application and configure the debugger
@@ -1021,6 +1024,7 @@
  * [source]
  * ----
  * java –jar target/my-fat-jar.jar –redeploy="**&#47;*.java" --on-redeploy="mvn package"
+ * java -jar build/libs/my-fat-jar.jar --redeploy="src&#47;**&#47;*.java" --on-redeploy='./gradlew shadowJar'
  * ----
  *
  * The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the

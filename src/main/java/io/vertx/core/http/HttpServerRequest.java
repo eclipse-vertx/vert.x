@@ -71,6 +71,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the HTTP method for the request.
    */
   HttpMethod method();
+  
+  /**
+   * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS
+   */
+  boolean isSSL();
 
   /**
    * @return the URI of the request. This is usually a relative URI

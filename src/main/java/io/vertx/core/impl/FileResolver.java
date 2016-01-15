@@ -168,7 +168,10 @@ public class FileResolver {
     String[] breadcrumbs = url.getPath().substring(5).split(".jar!");
     if (breadcrumbs.length == 2){
       // Normal case. Jar is on file system and desired path is in there
-      return new ZipInputStream(new FileInputStream(breadcrumbs[0] + ".jar"));
+      // Need to urldecode it too, since bug in JDK URL class which does not url decode it, so if it contains spaces we
+      // are screwed
+      File file = new File(URLDecoder.decode(breadcrumbs[0] + ".jar", "UTF-8"));
+      return new ZipInputStream(new FileInputStream(file));
     } else{
       // Jar of jars. Desired path is inside a jar that is itself inside another jar
       // E.g., Spring Boot fat jar format: application.jar!/lib/dependency.jar!/webroot/hello.html

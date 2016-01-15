@@ -66,7 +66,7 @@ server.listen(8080, "myhost.com", res -> {
 
 === Getting notified of incoming requests
 
-To be notified when a request arrives you need to set a `link:../../apidocs/io/vertx/core/http/HttpServer.html#requestHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[requestHandler]`:
+To be notified when a request arrives you need to set a `link:../../apidocs/io/vertx/core/http/HttpServer.html#requestHandler-io.vertx.core.Handler-[requestHandler]`:
 
 [source,java]
 ----
@@ -237,7 +237,7 @@ request.endHandler(v -> {
 });
 ----
 
-This is such a common case, that Vert.x provides a `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#bodyHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[bodyHandler]` to do this
+This is such a common case, that Vert.x provides a `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#bodyHandler-io.vertx.core.Handler-[bodyHandler]` to do this
 for you. The body handler is called once when all the body has been received:
 
 [source,java]
@@ -286,7 +286,7 @@ server.requestHandler(request -> {
 Vert.x can also handle file uploads which are encoded in a multi-part request body.
 
 To receive file uploads you tell Vert.x to expect a multi-part form and set an
-`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uploadHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[uploadHandler]` on the request.
+`link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#uploadHandler-io.vertx.core.Handler-[uploadHandler]` on the request.
 
 This handler will be called once for every
 upload that arrives on the server.
@@ -601,7 +601,7 @@ To enable compression use can configure it with `link:../../apidocs/io/vertx/cor
 
 By default compression is not enabled.
 
-When HTTP compression is enabled the server will check if the client incldes an `Accept-Encoding` header which
+When HTTP compression is enabled the server will check if the client includes an `Accept-Encoding` header which
 includes the supported compressions. Commonly used are deflate and gzip. Both are supported by Vert.x.
 
 If such a header is found the server will automatically compress the body of the response with one of the supported
@@ -1061,7 +1061,7 @@ The idea here is it allows the server to authorise and accept/reject the request
 Sending large amounts of data if the request might not be accepted is a waste of bandwidth and ties up the server
 in reading data that it will just discard.
 
-Vert.x allows you to set a `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#continueHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[continueHandler]` on the
+Vert.x allows you to set a `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#continueHandler-io.vertx.core.Handler-[continueHandler]` on the
 client request object
 
 This will be called if the server sends back a `Status: 100 (Continue)` response to signify that it is ok to send
@@ -1089,14 +1089,63 @@ request.continueHandler(v -> {
 
 On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
 when it receives an `Expect: 100-Continue` header.
+
 This is done by setting the option `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setHandle100ContinueAutomatically-boolean-[setHandle100ContinueAutomatically]`.
 
 If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
 `false` (the default), then you can inspect the headers and call `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeContinue--[writeContinue]`
-if you wish the client to continue sending the body or you can reject the request by sending back a failure status code
-if you don't want it to send the body. For example:
+to have the client continue sending the body:
 
+[source,java]
+----
+httpServer.requestHandler(request -> {
+  if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
 
+    // Send a 100 continue response
+    request.response().writeContinue();
+
+    // The client should send the body when it receives the 100 response
+    request.bodyHandler(body -> {
+      // Do something with body
+    });
+
+    request.endHandler(v -> {
+      request.response().end();
+    });
+  }
+});
+----
+
+You can also reject the request by sending back a failure status code directly: in this case the body
+should either be ignored or the connection should be closed (100-Continue is a performance hint and
+cannot be a logical protocol constraint):
+
+[source,java]
+----
+httpServer.requestHandler(request -> {
+  if (request.getHeader("Expect").equalsIgnoreCase("100-Continue")) {
+
+    //
+    boolean rejectAndClose = true;
+    if (rejectAndClose) {
+
+      // Reject with a failure code and close the connection
+      // this is probably best with persistent connection
+      request.response()
+          .setStatusCode(405)
+          .putHeader("Connection", "close")
+          .end();
+    } else {
+
+      // Reject with a failure code and ignore the body
+      // this may be appropriate if the body is small
+      request.response()
+          .setStatusCode(405)
+          .end();
+    }
+  }
+});
+----
 
 === Enabling compression on the client
 
@@ -1161,6 +1210,27 @@ To enable pipe-lining, it must be enabled using `link:../../apidocs/io/vertx/cor
 By default pipe-lining is disabled.
 
 When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
+
+=== HttpClient usage
+
+The HttpClient can be used in a Verticle or embedded.
+
+When used in a Verticle, the Verticle *should use its own client instance*.
+
+More generally a client should not be shared between different Vert.x contexts as it can lead to unexpected behavior.
+
+For example a keep-alive connection will call the client handlers on the context of the request that opened the connection, subsequent requests will use
+the same context.
+
+When this happen Vert.x detects it and log a warn:
+
+----
+Reusing a connection with a different context: an HttpClient is probably shared between different Verticles
+----
+
+The HttpClient can be embedded in a non Vert.x thread like a unit test or a plain java `main`: the client handlers
+will be called by different Vert.x threads and contexts, such contexts are created as needed. For production this
+usage is not recommended.
 
 === Server sharing
 
@@ -1230,7 +1300,7 @@ There are two ways of handling WebSockets on the server side.
 
 ===== WebSocket handler
 
-The first way involves providing a `link:../../apidocs/io/vertx/core/http/HttpServer.html#websocketHandler-(@io.vertx.codegen.annotations.Nullable :: io.vertx.core.Handler)-[websocketHandler]`
+The first way involves providing a `link:../../apidocs/io/vertx/core/http/HttpServer.html#websocketHandler-io.vertx.core.Handler-[websocketHandler]`
 on the server instance.
 
 When a WebSocket connection is made to the server, the handler will be called, passing in an instance of
@@ -1279,8 +1349,8 @@ server.requestHandler(request -> {
 ===== The server WebSocket
 
 The `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html[ServerWebSocket]` instance enables you to retrieve the `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#headers--[headers]`,
-`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#path--[path]` path}, `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#query--[query]` and
-`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#uri--[uri]` URI} of the HTTP request of the WebSocket handshake.
+`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#path--[path]`, `link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#query--[query]` and
+`link:../../apidocs/io/vertx/core/http/ServerWebSocket.html#uri--[URI]` of the HTTP request of the WebSocket handshake.
 
 ==== WebSockets on the client
 

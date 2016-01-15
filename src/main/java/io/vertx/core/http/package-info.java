@@ -508,7 +508,7 @@
  *
  * By default compression is not enabled.
  *
- * When HTTP compression is enabled the server will check if the client incldes an `Accept-Encoding` header which
+ * When HTTP compression is enabled the server will check if the client includes an `Accept-Encoding` header which
  * includes the supported compressions. Commonly used are deflate and gzip. Both are supported by Vert.x.
  *
  * If such a header is found the server will automatically compress the body of the response with one of the supported
@@ -848,14 +848,26 @@
  *
  * On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
  * when it receives an `Expect: 100-Continue` header.
+ *
  * This is done by setting the option {@link io.vertx.core.http.HttpServerOptions#setHandle100ContinueAutomatically(boolean)}.
  *
  * If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
  * `false` (the default), then you can inspect the headers and call {@link io.vertx.core.http.HttpServerResponse#writeContinue()}
- * if you wish the client to continue sending the body or you can reject the request by sending back a failure status code
- * if you don't want it to send the body. For example:
+ * to have the client continue sending the body:
  *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example50_1}
+ * ----
  *
+ * You can also reject the request by sending back a failure status code directly: in this case the body
+ * should either be ignored or the connection should be closed (100-Continue is a performance hint and
+ * cannot be a logical protocol constraint):
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example50_2}
+ * ----
  *
  * === Enabling compression on the client
  *
@@ -921,7 +933,28 @@
  *
  * When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
  *
-  * === Server sharing
+ * === HttpClient usage
+ *
+ * The HttpClient can be used in a Verticle or embedded.
+ *
+ * When used in a Verticle, the Verticle *should use its own client instance*.
+ *
+ * More generally a client should not be shared between different Vert.x contexts as it can lead to unexpected behavior.
+ *
+ * For example a keep-alive connection will call the client handlers on the context of the request that opened the connection, subsequent requests will use
+ * the same context.
+ *
+ * When this happen Vert.x detects it and log a warn:
+ *
+ * ----
+ * Reusing a connection with a different context: an HttpClient is probably shared between different Verticles
+ * ----
+ *
+ * The HttpClient can be embedded in a non Vert.x thread like a unit test or a plain java `main`: the client handlers
+ * will be called by different Vert.x threads and contexts, such contexts are created as needed. For production this
+ * usage is not recommended.
+ *
+ * === Server sharing
  *
  * When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
  * round-robin strategy.
@@ -1012,8 +1045,8 @@
  * ===== The server WebSocket
  *
  * The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve the {@link io.vertx.core.http.ServerWebSocket#headers() headers},
- * {@link io.vertx.core.http.ServerWebSocket#path()} path}, {@link io.vertx.core.http.ServerWebSocket#query() query} and
- * {@link io.vertx.core.http.ServerWebSocket#uri()} URI} of the HTTP request of the WebSocket handshake.
+ * {@link io.vertx.core.http.ServerWebSocket#path() path}, {@link io.vertx.core.http.ServerWebSocket#query() query} and
+ * {@link io.vertx.core.http.ServerWebSocket#uri() URI} of the HTTP request of the WebSocket handshake.
  *
  * ==== WebSockets on the client
  *
