@@ -17,12 +17,17 @@
 package examples;
 
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetServer;
 
 import java.util.Arrays;
 
@@ -81,6 +86,49 @@ public class CoreExamples {
     String blockingMethod(String str) {
       return str;
     }
+  }
+
+  public void exampleFuture1(HttpServer httpServer, NetServer netServer) {
+    Future<HttpServer> httpServerFuture = Future.future();
+    httpServer.listen(httpServerFuture.handler());
+
+    Future<NetServer> netServerFuture = Future.future();
+    netServer.listen(netServerFuture.handler());
+
+    CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
+      if (ar.succeeded()) {
+        // All server started
+      } else {
+        // At least one server failed
+      }
+    });
+  }
+
+  public void exampleFuture2() {
+    Future<String> future1 = Future.future();
+    Future<String> future2 = Future.future();
+    CompositeFuture.any(future1, future2).setHandler(ar -> {
+      if (ar.succeeded()) {
+        // At least one is succeeded
+      } else {
+        // All failed
+      }
+    });
+  }
+
+  public void exampleFuture3(Vertx vertx) {
+
+    FileSystem fs = vertx.fileSystem();
+
+    Future<AsyncFile> f1 = Future.future();
+    Future<Void> f2 = Future.future();
+    Future<Void> f3 = Future.future();
+
+    fs.open("/foo", new OpenOptions(), f1.handler());
+    f1.compose(file -> file.write(Buffer.buffer("some-content"), 56, f2.handler()), f2);
+    f2.compose(integer -> {
+
+    }, f3);
   }
 
   public void example7_1(Vertx vertx) {
