@@ -106,7 +106,7 @@ public interface Future<T> extends AsyncResult<T> {
    *
    */
   @Fluent
-  Future setHandler(Handler<AsyncResult<T>> handler);
+  Future<T> setHandler(Handler<AsyncResult<T>> handler);
 
   /**
    * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
