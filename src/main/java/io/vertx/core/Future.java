@@ -147,7 +147,22 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler
    * @param next the next future
    */
-  <U> void compose(Handler<T> handler, Future<U> next);
+  default <U> void compose(Handler<T> handler, Future<U> next) {
+    setHandler(ar -> {
+      if (ar.succeeded()) {
+        try {
+          handler.handle(ar.result());
+        } catch (Throwable err) {
+          if (next.isComplete()) {
+            throw err;
+          }
+          next.fail(err);
+        }
+      } else {
+        next.fail(ar.cause());
+      }
+    });
+  }
 
   /**
    * @return an handler completing this future

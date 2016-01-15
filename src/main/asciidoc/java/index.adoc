@@ -331,6 +331,8 @@ CompositeFuture.any(future1, future2).setHandler(ar -> {
 });
 ----
 
+`link:../../apidocs/io/vertx/core/Future.html#compose-io.vertx.core.Handler-io.vertx.core.Future-[compose]` chains futures:
+
 == Verticles
 
 Vert.x comes with a simple, scalable, _actor-like_ deployment and concurrency model out of the box that

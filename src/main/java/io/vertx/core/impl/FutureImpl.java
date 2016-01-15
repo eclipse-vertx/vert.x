@@ -20,7 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
-class FutureImpl<T> implements Future<T> {
+class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
   private boolean failed;
   private boolean succeeded;
   private Handler<AsyncResult<T>> handler;
@@ -126,13 +126,16 @@ class FutureImpl<T> implements Future<T> {
 
   @Override
   public Handler<AsyncResult<T>> handler() {
-    return ar -> {
-      if (ar.succeeded()) {
-        complete(ar.result());
-      } else {
-        fail(ar.cause());
-      }
-    };
+    return this;
+  }
+
+  @Override
+  public void handle(AsyncResult<T> ar) {
+    if (ar.succeeded()) {
+      complete(ar.result());
+    } else {
+      fail(ar.cause());
+    }
   }
 
   /**
@@ -143,24 +146,6 @@ class FutureImpl<T> implements Future<T> {
     this.throwable = throwable;
     failed = true;
     checkCallHandler();
-  }
-
-  @Override
-  public <U> void compose(Handler<T> handler, Future<U> next) {
-    setHandler(ar -> {
-      if (ar.succeeded()) {
-        try {
-          handler.handle(ar.result());
-        } catch (Throwable err) {
-          if (next.isComplete()) {
-            throw err;
-          }
-          next.fail(err);
-        }
-      } else {
-        next.fail(ar.cause());
-      }
-    });
   }
 
   @Override
