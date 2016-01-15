@@ -154,7 +154,12 @@ public class JULLogDelegate implements LogDelegate {
     String msg = (message == null) ? "NULL" : message.toString();
     LogRecord record = new LogRecord(level, msg);
     record.setLoggerName(logger.getName());
-    record.setThrown(t);
+    if (t != null) {
+      record.setThrown(t);
+    } else if (params != null && params.length != 0 && params[params.length - 1] instanceof Throwable) {
+      // The exception may be the last parameters (SLF4J uses this convention).
+      record.setThrown((Throwable) params[params.length - 1]);
+    }
     // This will disable stack trace lookup inside JUL. If someone wants location info, they can use their own formatter
     // or use a different logging framework like sl4j, or log4j
     record.setSourceClassName(null);
@@ -163,6 +168,6 @@ public class JULLogDelegate implements LogDelegate {
   }
 
   private void log(Level level, Object message, Throwable t) {
-    log(level, message, t, null);
+    log(level, message, t, (Object[]) null);
   }
 }
