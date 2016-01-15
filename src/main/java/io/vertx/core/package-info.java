@@ -313,7 +313,12 @@
  * {@link examples.CoreExamples#exampleFuture2}
  * ----
  *
- * {@link io.vertx.core.Future#compose} chains futures:
+ * {@link io.vertx.core.Future#compose} can be used for chaining futures:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFuture3}
+ * ----
  *
  * == Verticles
  *

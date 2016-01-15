@@ -331,7 +331,23 @@ CompositeFuture.any(future1, future2).setHandler(ar -> {
 });
 ----
 
-`link:../../apidocs/io/vertx/core/Future.html#compose-io.vertx.core.Handler-io.vertx.core.Future-[compose]` chains futures:
+`link:../../apidocs/io/vertx/core/Future.html#compose-io.vertx.core.Handler-io.vertx.core.Future-[compose]` can be used for chaining futures:
+
+[source,java]
+----
+FileSystem fs = vertx.fileSystem();
+
+Future<Void> fut1 = Future.future();
+Future<Void> fut2 = Future.future();
+
+fs.createFile("/foo", fut1.handler());
+fut1.compose(string -> {
+  fs.writeFile("/foo", Buffer.buffer(), fut2.handler());
+}, fut2);
+fut2.compose(integer -> {
+  fs.move("/foo", "/bar", startFuture.handler());
+}, startFuture);
+----
 
 == Verticles
 

@@ -116,19 +116,20 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFuture3(Vertx vertx) {
+  public void exampleFuture3(Vertx vertx, Future<Void> startFuture) {
 
     FileSystem fs = vertx.fileSystem();
 
-    Future<AsyncFile> f1 = Future.future();
-    Future<Void> f2 = Future.future();
-    Future<Void> f3 = Future.future();
+    Future<Void> fut1 = Future.future();
+    Future<Void> fut2 = Future.future();
 
-    fs.open("/foo", new OpenOptions(), f1.handler());
-    f1.compose(file -> file.write(Buffer.buffer("some-content"), 56, f2.handler()), f2);
-    f2.compose(integer -> {
-
-    }, f3);
+    fs.createFile("/foo", fut1.handler());
+    fut1.compose(string -> {
+      fs.writeFile("/foo", Buffer.buffer(), fut2.handler());
+    }, fut2);
+    fut2.compose(integer -> {
+      fs.move("/foo", "/bar", startFuture.handler());
+    }, startFuture);
   }
 
   public void example7_1(Vertx vertx) {
