@@ -16,6 +16,7 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
@@ -167,7 +168,16 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * @return an handler completing this future
    */
-  Handler<AsyncResult<T>> completer();
+  @CacheReturn
+  default Handler<AsyncResult<T>> completer() {
+    return ar -> {
+      if (ar.succeeded()) {
+        complete(ar.result());
+      } else {
+        ar.failed();
+      }
+    };
+  }
 
   static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 
