@@ -70,7 +70,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #all(Future, Future)} but with list of futures.
+   * Like {@link #all(Future, Future)} but with a list of futures.
    */
   static CompositeFuture all(List<Future> futures) {
     return CompositeFutureImpl.all(futures.toArray(new Future[futures.size()]));
@@ -116,7 +116,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #any(Future, Future)} but with 6 futures.
+   * Like {@link #any(Future, Future)} but with a list of futures.
    */
   static CompositeFuture any(List<Future> futures) {
     return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
