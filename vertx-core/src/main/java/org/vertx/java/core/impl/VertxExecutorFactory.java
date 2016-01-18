@@ -16,7 +16,6 @@
 package org.vertx.java.core.impl;
 
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import org.vertx.java.core.impl.management.ManagementRegistry;
 
 import java.util.concurrent.ExecutorService;
@@ -49,7 +48,7 @@ public class VertxExecutorFactory {
   // The acceptor pools need to be fixed with a backing queue
 
   public static EventLoopGroup eventLoopGroup(String poolName) {
-    return new NioEventLoopGroup(eventLoopSize(), new VertxThreadFactory(poolName));
+    return NettySupport.eventLoopGroup(eventLoopSize(), new VertxThreadFactory(poolName));
   }
 
   public static int eventLoopSize() {
