@@ -306,7 +306,7 @@
  * The handler returned by {@link io.vertx.core.Future#completer()} completes the future.
  *
  * {@link io.vertx.core.CompositeFuture#any} takes several futures arguments (up to 6) and returns a future that is
- * _failed_ when all the futures are and _succeeded_ otherwise:
+ * _succeeded_ if one of the futures is, and _failed_ otherwise:
  *
  * [source,$lang]
  * ----

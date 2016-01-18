@@ -316,7 +316,7 @@ CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
 The handler returned by `link:../../apidocs/io/vertx/core/Future.html#completer--[completer]` completes the future.
 
 `link:../../apidocs/io/vertx/core/CompositeFuture.html#any-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.any]` takes several futures arguments (up to 6) and returns a future that is
-_failed_ when all the futures are and _succeeded_ otherwise:
+_succeeded_ if one of the futures is, and _failed_ otherwise:
 
 [source,java]
 ----
@@ -341,10 +341,10 @@ Future<Void> fut1 = Future.future();
 Future<Void> fut2 = Future.future();
 
 fs.createFile("/foo", fut1.completer());
-fut1.compose(string -> {
+fut1.compose(v -> {
   fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
 }, fut2);
-fut2.compose(integer -> {
+fut2.compose(v -> {
   fs.move("/foo", "/bar", startFuture.completer());
 }, startFuture);
 ----

@@ -122,10 +122,10 @@ public class CoreExamples {
     Future<Void> fut2 = Future.future();
 
     fs.createFile("/foo", fut1.completer());
-    fut1.compose(string -> {
+    fut1.compose(v -> {
       fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
     }, fut2);
-    fut2.compose(integer -> {
+    fut2.compose(v -> {
       fs.move("/foo", "/bar", startFuture.completer());
     }, startFuture);
   }
