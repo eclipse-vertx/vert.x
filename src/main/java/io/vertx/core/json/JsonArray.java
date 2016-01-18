@@ -20,12 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -477,10 +472,17 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
    * Remove the value at the specified position in the JSON array.
    *
    * @param pos  the position to remove the value at
-   * @return the removed value if removed, null otherwise
+   * @return the removed value if removed, null otherwise. If the value is a Map, a {@link JsonObject} is built from
+   * this Map and returned. It the value is a List, a {@link JsonArray} is built form this List and returned.
    */
   public Object remove(int pos) {
-    return list.remove(pos);
+    Object removed = list.remove(pos);
+    if (removed instanceof Map) {
+      return new JsonObject((Map) removed);
+    } else if (removed instanceof ArrayList) {
+      return new JsonArray((List) removed);
+    }
+    return removed;
   }
 
   /**
