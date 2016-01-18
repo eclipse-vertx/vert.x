@@ -22,7 +22,9 @@ import io.vertx.core.Handler;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -181,9 +183,18 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAllSucceeded() {
+    testAllSucceeded(CompositeFuture::all);
+  }
+
+  @Test
+  public void testAllSucceededWithList() {
+    testAllSucceeded((f1, f2) -> CompositeFuture.all(Arrays.asList(f1, f2)));
+  }
+
+  private void testAllSucceeded(BiFunction<Future<String>, Future<Integer>, CompositeFuture> all) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    CompositeFuture composite = all.apply(f1, f2);
     assertNotCompleted(composite);
     assertEquals(null, composite.<String>result(0));
     assertEquals(null, composite.<Integer>result(1));
@@ -199,9 +210,18 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAllFailed() {
+    testAllFailed(CompositeFuture::all);
+  }
+
+  @Test
+  public void testAllFailedWithList() {
+    testAllFailed((f1, f2) -> CompositeFuture.all(Arrays.asList(f1, f2)));
+  }
+
+  private void testAllFailed(BiFunction<Future<String>, Future<Integer>, CompositeFuture> all) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    CompositeFuture composite = all.apply(f1, f2);
     f1.complete("s");
     Exception cause = new Exception();
     f2.fail(cause);
@@ -212,9 +232,18 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAnySucceeded1() {
+    testAnySucceeded1(CompositeFuture::any);
+  }
+
+  @Test
+  public void testAnySucceeded1WithList() {
+    testAnySucceeded1((f1, f2) -> CompositeFuture.any(Arrays.asList(f1, f2)));
+  }
+
+  private void testAnySucceeded1(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.any(f1, f2);
+    CompositeFuture composite = any.apply(f1, f2);
     assertNotCompleted(composite);
     assertEquals(null, composite.<String>result(0));
     assertEquals(null, composite.<Integer>result(1));
@@ -226,9 +255,18 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAnySucceeded2() {
+    testAnySucceeded2(CompositeFuture::any);
+  }
+
+  @Test
+  public void testAnySucceeded2WithList() {
+    testAnySucceeded2(CompositeFuture::any);
+  }
+
+  private void testAnySucceeded2(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.any(f1, f2);
+    CompositeFuture composite = any.apply(f1, f2);
     f1.fail("failure");
     assertNotCompleted(composite);
     f2.complete(3);
@@ -237,9 +275,18 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testAnyFailed() {
+    testAnyFailed(CompositeFuture::any);
+  }
+
+  @Test
+  public void testAnyFailedWithList() {
+    testAnyFailed((f1, f2) -> CompositeFuture.any(Arrays.asList(f1, f2)));
+  }
+
+  private void testAnyFailed(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    CompositeFuture composite = CompositeFuture.any(f1, f2);
+    CompositeFuture composite = any.apply(f1, f2);
     f1.fail("failure");
     assertNotCompleted(composite);
     Throwable cause = new Exception();

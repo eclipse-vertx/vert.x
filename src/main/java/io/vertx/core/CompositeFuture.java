@@ -19,6 +19,8 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.CompositeFutureImpl;
 
+import java.util.List;
+
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
  * needs to be coordinated.
@@ -68,6 +70,13 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
+   * Like {@link #all(Future, Future)} but with list of futures.
+   */
+  static CompositeFuture all(List<Future> futures) {
+    return CompositeFutureImpl.all(futures.toArray(new Future[futures.size()]));
+  }
+
+  /**
    * Return a composite future, succeeded when any futures is succeeded, failed when all futures are failed.
    *
    * @param f1 future
@@ -104,6 +113,13 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    */
   static <T1, T2, T3, T4, T5, T6> CompositeFuture any(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5, Future<T6> f6) {
     return CompositeFutureImpl.any(f1, f2, f3, f4, f5, f6);
+  }
+
+  /**
+   * Like {@link #any(Future, Future)} but with 6 futures.
+   */
+  static CompositeFuture any(List<Future> futures) {
+    return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
   }
 
   @Override
