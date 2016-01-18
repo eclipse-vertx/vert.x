@@ -19,13 +19,12 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
-import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.datagram.DatagramSocket;
 import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.NettySupport;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.impl.ConnectionBase;
 
@@ -379,18 +378,8 @@ public class DefaultDatagramSocket extends ConnectionBase
     return (DatagramChannel) channel;
   }
 
-  private static NioDatagramChannel createChannel(org.vertx.java.core.datagram.InternetProtocolFamily family) {
-    if (family == null) {
-      return new NioDatagramChannel();
-    }
-    switch (family) {
-      case IPv4:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv4);
-      case IPv6:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv6);
-      default:
-        return new NioDatagramChannel();
-    }
+  private static DatagramChannel createChannel(org.vertx.java.core.datagram.InternetProtocolFamily family) {
+    return NettySupport.datagramChannel(family);
   }
 
 

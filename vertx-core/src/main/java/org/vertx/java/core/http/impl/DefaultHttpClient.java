@@ -23,7 +23,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
@@ -48,6 +47,7 @@ import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.core.impl.Closeable;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.NettySupport;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.net.impl.TCPSSLHelper;
@@ -721,7 +721,7 @@ public class DefaultHttpClient implements HttpClient {
       pool.addWorker(actualCtx.getEventLoop());
       bootstrap = new Bootstrap();
       bootstrap.group(pool);
-      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.channel(NettySupport.channel());
       tcpHelper.checkSSL(vertx);
 
       bootstrap.handler(new ChannelInitializer<Channel>() {

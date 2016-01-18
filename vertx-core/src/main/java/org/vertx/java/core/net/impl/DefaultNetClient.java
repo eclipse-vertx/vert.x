@@ -18,7 +18,6 @@ package org.vertx.java.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.Future;
@@ -28,6 +27,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.Closeable;
 import org.vertx.java.core.impl.DefaultContext;
 import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.impl.NettySupport;
 import org.vertx.java.core.impl.VertxInternal;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
@@ -318,7 +318,7 @@ public class DefaultNetClient implements NetClient {
 
       bootstrap = new Bootstrap();
       bootstrap.group(actualCtx.getEventLoop());
-      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.channel(NettySupport.channel());
       bootstrap.handler(new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {
