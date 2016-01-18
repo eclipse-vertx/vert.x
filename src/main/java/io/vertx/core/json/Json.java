@@ -39,6 +39,10 @@ public class Json {
   public static ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
+    initialize();
+  }
+
+  static void initialize(){
     // Non-standard JSON but we allow C style comments in our JSON
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
