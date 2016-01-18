@@ -52,7 +52,7 @@ public interface HttpServer extends Measured {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  HttpServer requestHandler(@Nullable Handler<HttpServerRequest> handler);
+  HttpServer requestHandler(Handler<HttpServerRequest> handler);
 
   /**
    * @return  the request handler
@@ -74,7 +74,7 @@ public interface HttpServer extends Measured {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  HttpServer websocketHandler(@Nullable Handler<ServerWebSocket> handler);
+  HttpServer websocketHandler(Handler<ServerWebSocket> handler);
 
   /**
    * @return the websocketHandler
