@@ -17,7 +17,9 @@ To sign the Eclipse CLA you need to:
   * Obtain an Eclipse Foundation userid. Anyone who currently uses Eclipse Bugzilla or Gerrit systems already has one of those.
 If you don’t, you need to [register](https://dev.eclipse.org/site_login/createaccount.php).
 
-  * Login into the [projects portal](https://projects.eclipse.org/), select “My Account”, and then the “Contributor License Agreement” tab.
+  * Login into the [projects portal](https://projects.eclipse.org/), select “Eclipse CLA” from the top right corner.
+
+  * In the digital signature box you're supposed to write "I AGREE" 
 
 * Add your github username in your Eclipse Foundation account settings. Log in it to Eclipse and go to account settings.
 
