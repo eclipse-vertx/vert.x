@@ -16,9 +16,12 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.spi.FutureFactory;
+
+import java.util.function.Function;
 
 /**
  * Represents the result of an action that may, or may not, have occurred yet.
@@ -99,9 +102,11 @@ public interface Future<T> extends AsyncResult<T> {
    * future is completed.
    *
    * @param handler  the Handler that will be called with the result
+   * @return a reference to this, so it can be used fluently
    *
    */
-  void setHandler(Handler<AsyncResult<T>> handler);
+  @Fluent
+  Future<T> setHandler(Handler<AsyncResult<T>> handler);
 
   /**
    * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.
@@ -123,7 +128,6 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * @param throwable  the failure cause
    */
-  @GenIgnore
   void fail(Throwable throwable);
 
   /**
@@ -132,6 +136,38 @@ public interface Future<T> extends AsyncResult<T> {
    * @param failureMessage  the failure message
    */
   void fail(String failureMessage);
+
+  /**
+   * Compose this future with another future.
+   *
+   * When this future succeeds, the handler will be called with the value.
+   *
+   * When this future fails, the failure will be propagated to the {@code next} future.
+   *
+   * @param handler the handler
+   * @param next the next future
+   */
+  default <U> void compose(Handler<T> handler, Future<U> next) {
+    setHandler(ar -> {
+      if (ar.succeeded()) {
+        try {
+          handler.handle(ar.result());
+        } catch (Throwable err) {
+          if (next.isComplete()) {
+            throw err;
+          }
+          next.fail(err);
+        }
+      } else {
+        next.fail(ar.cause());
+      }
+    });
+  }
+
+  /**
+   * @return an handler completing this future
+   */
+  Handler<AsyncResult<T>> completer();
 
   static FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
 

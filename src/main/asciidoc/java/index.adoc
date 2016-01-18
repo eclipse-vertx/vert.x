@@ -289,6 +289,66 @@ An alternative way to run blocking code is to use a <<worker_verticles, worker v
 
 A worker verticle is always executed with a thread from the worker pool.
 
+== Async coordination
+
+Coordination of multiple asynchronous results can be achieved with Vert.x `link:../../apidocs/io/vertx/core/Future.html[futures]`.
+
+`link:../../apidocs/io/vertx/core/CompositeFuture.html#all-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.all]` takes several futures arguments (up to 6) and returns a future that is
+_succeeded_ when all the futures are and _failed_ otherwise:
+
+[source,java]
+----
+Future<HttpServer> httpServerFuture = Future.future();
+httpServer.listen(httpServerFuture.completer());
+
+Future<NetServer> netServerFuture = Future.future();
+netServer.listen(netServerFuture.completer());
+
+CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
+  if (ar.succeeded()) {
+    // All server started
+  } else {
+    // At least one server failed
+  }
+});
+----
+
+The handler returned by `link:../../apidocs/io/vertx/core/Future.html#completer--[completer]` completes the future.
+
+`link:../../apidocs/io/vertx/core/CompositeFuture.html#any-io.vertx.core.Future-io.vertx.core.Future-[CompositeFuture.any]` takes several futures arguments (up to 6) and returns a future that is
+_succeeded_ if one of the futures is, and _failed_ otherwise:
+
+[source,java]
+----
+Future<String> future1 = Future.future();
+Future<String> future2 = Future.future();
+CompositeFuture.any(future1, future2).setHandler(ar -> {
+  if (ar.succeeded()) {
+    // At least one is succeeded
+  } else {
+    // All failed
+  }
+});
+----
+
+`link:../../apidocs/io/vertx/core/Future.html#compose-io.vertx.core.Handler-io.vertx.core.Future-[compose]` can be used for chaining futures:
+
+[source,java]
+----
+FileSystem fs = vertx.fileSystem();
+
+Future<Void> fut1 = Future.future();
+Future<Void> fut2 = Future.future();
+
+fs.createFile("/foo", fut1.completer());
+fut1.compose(v -> {
+  fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
+}, fut2);
+fut2.compose(v -> {
+  fs.move("/foo", "/bar", startFuture.completer());
+}, startFuture);
+----
+
 == Verticles
 
 Vert.x comes with a simple, scalable, _actor-like_ deployment and concurrency model out of the box that

@@ -291,6 +291,35 @@
  *
  * A worker verticle is always executed with a thread from the worker pool.
  *
+ * == Async coordination
+ *
+ * Coordination of multiple asynchronous results can be achieved with Vert.x {@link io.vertx.core.Future futures}.
+ *
+ * {@link io.vertx.core.CompositeFuture#all} takes several futures arguments (up to 6) and returns a future that is
+ * _succeeded_ when all the futures are and _failed_ otherwise:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFuture1}
+ * ----
+ *
+ * The handler returned by {@link io.vertx.core.Future#completer()} completes the future.
+ *
+ * {@link io.vertx.core.CompositeFuture#any} takes several futures arguments (up to 6) and returns a future that is
+ * _succeeded_ if one of the futures is, and _failed_ otherwise:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFuture2}
+ * ----
+ *
+ * {@link io.vertx.core.Future#compose} can be used for chaining futures:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#exampleFuture3}
+ * ----
+ *
  * == Verticles
  *
  * Vert.x comes with a simple, scalable, _actor-like_ deployment and concurrency model out of the box that
