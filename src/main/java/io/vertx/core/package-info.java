@@ -1346,7 +1346,28 @@
  * }
  * ----
  *
- * Place the jar containing the command into the classpath of your fat-jar (or include it inside) or in the `lib`
+ * You also need an implementation of {@link io.vertx.core.spi.launcher.CommandFactory}:
+ *
+ * [source, java]
+ * ----
+ * public class HelloCommandFactory extends DefaultCommandFactory<HelloCommand> {
+ *   public HelloCommandFactory() {
+ *    super(HelloCommand.class);
+ *   }
+ * }
+ * ----
+ *
+ * Then, create the `src/main/resources/META-INF/services/io.vertx.core.spi.launcher.CommandFactory` and add a line
+ * indicating the fully qualified name of the factory:
+ *
+ * ----
+ * io.vertx.core.launcher.example.HelloCommandFactory
+ * ----
+ *
+ * Builds the jar containing the command. Be sure to includes the SPI file
+ * (`META-INF/services/io.vertx.core.spi.launcher.CommandFactory`).
+ *
+ * Then, place the jar containing the command into the classpath of your fat-jar (or include it inside) or in the `lib`
  * directory of your vert.x distribution, and you would be able to execute:
  *
  * [source]
