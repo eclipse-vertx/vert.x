@@ -45,6 +45,12 @@ public class TCPSSLOptionsConverter {
           obj.addEnabledCipherSuite((String)item);
       });
     }
+    if (json.getValue("enabledSecureTransportProtocols") instanceof JsonArray) {
+      json.getJsonArray("enabledSecureTransportProtocols").forEach(item -> {
+        if (item instanceof String)
+          obj.addEnabledSecureTransportProtocol((String)item);
+      });
+    }
     if (json.getValue("idleTimeout") instanceof Number) {
       obj.setIdleTimeout(((Number)json.getValue("idleTimeout")).intValue());
     }
@@ -101,6 +107,13 @@ public class TCPSSLOptionsConverter {
     if (obj.getEnabledCipherSuites() != null) {
       json.put("enabledCipherSuites", new JsonArray(
           obj.getEnabledCipherSuites().
+              stream().
+              map(item -> item).
+              collect(java.util.stream.Collectors.toList())));
+    }
+    if (obj.getEnabledSecureTransportProtocols() != null) {
+      json.put("enabledSecureTransportProtocols", new JsonArray(
+          obj.getEnabledSecureTransportProtocols().
               stream().
               map(item -> item).
               collect(java.util.stream.Collectors.toList())));
