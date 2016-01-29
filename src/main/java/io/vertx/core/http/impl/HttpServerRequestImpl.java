@@ -450,6 +450,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     private String contentTransferEncoding;
     private Charset charset;
     private boolean completed;
+    private long maxSize = -1;
 
     private NettyFileUpload(HttpServerFileUploadImpl upload, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
       this.upload = upload;
@@ -499,6 +500,28 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     @Override
     public void delete() {
       throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long definedLength() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void checkSize(long newSize) throws IOException {
+      if (maxSize >= 0 && newSize > maxSize) {
+        throw new IOException("Size exceed allowed maximum capacity");
+      }
+    }
+
+    @Override
+    public long getMaxSize() {
+      return maxSize;
+    }
+
+    @Override
+    public void setMaxSize(long maxSize) {
+      this.maxSize = maxSize;
     }
 
     @Override
@@ -613,6 +636,16 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
     @Override
     public FileUpload retain(int increment) {
+      return this;
+    }
+
+    @Override
+    public FileUpload touch(Object hint) {
+      return this;
+    }
+
+    @Override
+    public FileUpload touch() {
       return this;
     }
 

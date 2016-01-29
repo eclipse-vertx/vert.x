@@ -81,6 +81,11 @@ class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpR
   }
 
   @Override
+  public AssembledFullHttpRequest copy(ByteBuf newContent) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public HttpHeaders trailingHeaders() {
     return ((LastHttpContent) content).trailingHeaders();
   }
@@ -94,6 +99,18 @@ class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpR
   @Override
   public AssembledFullHttpRequest retain(int increment) {
     super.retain(increment);
+    return this;
+  }
+
+  @Override
+  public AssembledFullHttpRequest touch(Object hint) {
+    super.touch(hint);
+    return this;
+  }
+
+  @Override
+  public AssembledFullHttpRequest touch() {
+    super.touch();
     return this;
   }
 }

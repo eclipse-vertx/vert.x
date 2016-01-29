@@ -530,14 +530,14 @@ public class WebsocketTest extends VertxTestBase {
 
   private NetSocket getUpgradedNetSocket(HttpServerRequest req, String path) {
     assertEquals(path, req.path());
-    assertEquals("Upgrade", req.headers().get("Connection"));
+    assertEquals("upgrade", req.headers().get("Connection"));
     NetSocket sock = req.netSocket();
     String secHeader = req.headers().get("Sec-WebSocket-Key");
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
     sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
         "Upgrade: WebSocket\r\n" +
-        "Connection: Upgrade\r\n" +
+        "Connection: upgrade\r\n" +
         "Sec-WebSocket-Accept: " + encoded + "\r\n" +
         "\r\n");
     return sock;
@@ -553,7 +553,7 @@ public class WebsocketTest extends VertxTestBase {
       assertEquals(uri, ws.uri());
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
-      assertEquals("Upgrade", ws.headers().get("Connection"));
+      assertEquals("upgrade", ws.headers().get("Connection"));
       ws.handler(data -> ws.write(data));
     });
 
@@ -595,7 +595,7 @@ public class WebsocketTest extends VertxTestBase {
       assertEquals(uri, ws.uri());
       assertEquals(path, ws.path());
       assertEquals(query, ws.query());
-      assertEquals("Upgrade", ws.headers().get("Connection"));
+      assertEquals("upgrade", ws.headers().get("Connection"));
       AtomicInteger count = new AtomicInteger();
       ws.frameHandler(frame -> {
         if (count.get() == 0) {
@@ -1206,7 +1206,7 @@ public class WebsocketTest extends VertxTestBase {
       Buffer data = Buffer.buffer();
       data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
       data.appendString("Upgrade: websocket\r\n");
-      data.appendString("Connection: Upgrade\r\n");
+      data.appendString("Connection: upgrade\r\n");
       data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
       data.appendString("\r\n");
       data.appendBytes(new byte[]{

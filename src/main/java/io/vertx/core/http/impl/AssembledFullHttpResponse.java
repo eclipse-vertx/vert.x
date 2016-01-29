@@ -95,6 +95,11 @@ class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHtt
   }
 
   @Override
+  public AssembledFullHttpResponse copy(ByteBuf newContent) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public AssembledFullHttpResponse setProtocolVersion(HttpVersion version) {
     super.setProtocolVersion(version);
     return this;
@@ -103,5 +108,17 @@ class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHtt
   @Override
   public HttpHeaders trailingHeaders() {
     return ((LastHttpContent) content).trailingHeaders();
+  }
+
+  @Override
+  public AssembledFullHttpResponse touch() {
+    super.touch();
+    return this;
+  }
+
+  @Override
+  public AssembledFullHttpResponse touch(Object hint) {
+    super.touch(hint);
+    return this;
   }
 }

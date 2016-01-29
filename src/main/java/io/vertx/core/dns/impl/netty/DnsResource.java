@@ -110,6 +110,18 @@ public class DnsResource extends DnsEntry implements ByteBufHolder {
   }
 
   @Override
+  public ByteBufHolder touch() {
+    content.touch();
+    return this;
+  }
+
+  @Override
+  public ByteBufHolder touch(Object hint) {
+    content.touch(hint);
+    return this;
+  }
+
+  @Override
   public boolean release() {
     return content.release();
   }
