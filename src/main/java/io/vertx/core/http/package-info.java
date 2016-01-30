@@ -433,14 +433,15 @@
  * {@link examples.HTTPExamples#example25}
  * ----
  *
- * ==== Serving files directly from disk
+ * ==== Serving files directly from disk or the classpath
  *
  * If you were writing a web server, one way to serve a file from disk would be to open it as an {@link io.vertx.core.file.AsyncFile}
  * and pump it to the HTTP response.
  *
  * Or you could load it it one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
  *
- * Alternatively, Vert.x provides a method which allows you to serve a file from disk to an HTTP response in one operation.
+ * Alternatively, Vert.x provides a method which allows you to serve a file from disk or the filesystem to an HTTP response 
+ * in one operation.
  * Where supported by the underlying operating system this may result in the OS directly transferring bytes from the
  * file to the socket without being copied through user-space at all.
  *
@@ -457,12 +458,14 @@
  * Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
  * be notified when the file has been writen you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String, io.vertx.core.Handler)}
  *
+ * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions about the classpath resolution or disabling it.
+ *
  * NOTE: If you use `sendFile` while using HTTPS it will copy through user-space, since if the kernel is copying data
  * directly from disk to socket it doesn't give us an opportunity to apply any encryption.
  *
  * WARNING: If you're going to write web servers directly using Vert.x be careful that users cannot exploit the
- * path to access files outside the directory from which you want to serve them. It may be safer instead to use
- * Vert.x Web.
+ * path to access files outside the directory from which you want to serve them or the classpath It may be safer instead to use
+ * Vert.x Web. 
  *
  * When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
  *
