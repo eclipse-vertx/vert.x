@@ -30,17 +30,17 @@ public class NestedJarFileResolverTest extends FileResolverTestBase {
   public void setUp() throws Exception {
     super.setUp();
     // This is inside the jar webroot3.jar
-    webRoot = "webroot3";
+    webRoot = "webroot4";
 
     prevCL = Thread.currentThread().getContextClassLoader();
-    URL webroot3URL = prevCL.getResource("webroot3.jar");
+    URL webroot3URL = prevCL.getResource("webroot4.jar");
     ClassLoader loader = new ClassLoader(prevCL = Thread.currentThread().getContextClassLoader()) {
       @Override
       public URL getResource(String name) {
         try {
           if (name.startsWith("lib/")) {
             return new URL("jar:" + webroot3URL + "!/" + name);
-          } else if (name.startsWith("webroot3")) {
+          } else if (name.startsWith("webroot4")) {
             return new URL("jar:" + webroot3URL + "!/lib/nested.jar!/" + name.substring(7));
           }
         } catch (MalformedURLException e) {
