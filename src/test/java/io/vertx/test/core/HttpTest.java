@@ -5088,7 +5088,8 @@ public class HttpTest extends HttpTestBase {
     
     await();
   }
-  
+
+  @Test
   public void testConnectionCloseHttp_1_0_NoClose() throws Exception {
     testConnectionClose(req -> {
       req.putHeader("Connection", "close");
