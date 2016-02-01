@@ -407,4 +407,23 @@
     </plugins>
   </reporting>
 
+  <profiles>
+    <profile>
+      <id>coverage</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <configuration>
+                <argLine>-Xmx1200M @{surefireArgLine}</argLine>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
