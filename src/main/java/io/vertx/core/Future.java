@@ -138,6 +138,18 @@ public interface Future<T> extends AsyncResult<T> {
    */
   void fail(String failureMessage);
 
+  @Override
+  T result();
+
+  @Override
+  Throwable cause();
+
+  @Override
+  boolean succeeded();
+
+  @Override
+  boolean failed();
+
   /**
    * Compose this future with another future.
    *
