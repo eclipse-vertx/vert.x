@@ -138,15 +138,35 @@ public interface Future<T> extends AsyncResult<T> {
    */
   void fail(String failureMessage);
 
+  /**
+   * The result of the operation. This will be null if the operation failed.
+   *
+   * @return the result or null if the operation failed.
+   */
   @Override
   T result();
 
+  /**
+   * A Throwable describing failure. This will be null if the operation succeeded.
+   *
+   * @return the cause or null if the operation succeeded.
+   */
   @Override
   Throwable cause();
 
+  /**
+   * Did it succeed?
+   *
+   * @return true if it succeded or false otherwise
+   */
   @Override
   boolean succeeded();
 
+  /**
+   * Did it fail?
+   *
+   * @return true if it failed or false otherwise
+   */
   @Override
   boolean failed();
 
