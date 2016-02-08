@@ -14,6 +14,7 @@
 ^|Name | Description
 |[[HTTP_1_0]]`HTTP_1_0`|-
 |[[HTTP_1_1]]`HTTP_1_1`|-
+|[[HTTP_2]]`HTTP_2`|-
 |===
 
 [[HttpMethod]]
@@ -37,6 +38,7 @@
 |[[TRACE]]`TRACE`|-
 |[[CONNECT]]`CONNECT`|-
 |[[PATCH]]`PATCH`|-
+|[[UNKNOWN]]`UNKNOWN`|-
 |===
 
 [[ClientAuth]]

@@ -28,6 +28,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -195,12 +196,28 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
                 pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, false));
+                pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
+                  @Override
+                  protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
+                    if (protocol.equals("http/1.1")) {
+                      configureHttp1(pipeline);
+                    } else {
+                      pipeline.addLast("handler", new VertxHttp2HandlerBuilder(vertx, requestStream.handler()).build());
+                    }
+                  }
+                });
+              } else {
+                configureHttp1(pipeline);
+                pipeline.addLast("handler", new ServerHandler());
               }
+            }
+
+            public void configureHttp1(ChannelPipeline pipeline) {
               if (USE_FLASH_POLICY_HANDLER) {
                 pipeline.addLast("flashpolicy", new FlashPolicyHandler());
               }
               pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
-            		  						, options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
+                  , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
               pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
               if (options.isCompressionSupported()) {
                 pipeline.addLast("deflater", new HttpChunkContentCompressor());

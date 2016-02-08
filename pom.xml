@@ -63,6 +63,7 @@
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>3.3.0-SNAPSHOT</stack.version>
+    <alpn-boot-version>8.1.6.v20151105</alpn-boot-version>
 
   </properties>
 
@@ -167,6 +168,18 @@
       <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>3.1.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mortbay.jetty.alpn</groupId>
+      <artifactId>alpn-boot</artifactId>
+      <version>${alpn-boot-version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -224,7 +237,7 @@
               <vertx.handle100Continue>true</vertx.handle100Continue>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
-            <argLine>-Xmx1200M</argLine>
+            <argLine>-Xmx1200M -Xbootclasspath/p:${settings.localRepository}/org/mortbay/jetty/alpn/alpn-boot/${alpn-boot-version}/alpn-boot-${alpn-boot-version}.jar</argLine>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
           </configuration>

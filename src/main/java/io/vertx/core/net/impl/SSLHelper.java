@@ -16,6 +16,8 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.handler.ssl.JdkAlpnApplicationProtocolNegotiator;
+import io.netty.handler.ssl.JdkApplicationProtocolNegotiator;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
@@ -265,11 +267,15 @@ public class SSLHelper {
 
   public SslHandler createSslHandler(VertxInternal vertx, boolean client, String host, int port) {
     SSLEngine engine = getContext(vertx).createSSLEngine(host, port);
+    JdkAlpnApplicationProtocolNegotiator apn = new JdkAlpnApplicationProtocolNegotiator(true, "h2", "http/1.1");
+    engine = apn.wrapperFactory().wrapSslEngine(engine, apn, !client);
     return createHandler(engine, client);
   }
 
   public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
     SSLEngine engine = getContext(vertx).createSSLEngine();
+    JdkAlpnApplicationProtocolNegotiator apn = new JdkAlpnApplicationProtocolNegotiator(true, "h2", "http/1.1");
+    engine = apn.wrapperFactory().wrapSslEngine(engine, apn, !client);
     return createHandler(engine, client);
   }
 
