@@ -25,6 +25,7 @@ import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.nio.charset.Charset;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -33,13 +34,13 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   final Vertx vertx;
   final HttpServerRequest request;
-  final Handler<HttpServerFileUpload> uploadHandler;
+  final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
-  NettyFileUploadDataFactory(Vertx vertx, HttpServerRequest request, Handler<HttpServerFileUpload> uploadHandler) {
+  NettyFileUploadDataFactory(Vertx vertx, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.vertx = vertx;
     this.request = request;
-    this.uploadHandler = uploadHandler;
+    this.lazyUploadHandler = lazyUploadHandler;
   }
 
   @Override
@@ -48,6 +49,7 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
         size);
     NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
         contentTransferEncoding, charset);
+    Handler<HttpServerFileUpload> uploadHandler = lazyUploadHandler.get();
     if (uploadHandler != null) {
       uploadHandler.handle(upload);
     }

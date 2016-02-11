@@ -25,6 +25,7 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 import okhttp3.CertificatePinner;
 import okhttp3.ConnectionSpec;
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -131,6 +132,45 @@ public class Http2Test extends HttpTestBase {
     Response response = client.newCall(request).execute();
     assertEquals(Protocol.HTTP_2, response.protocol());
     assertEquals(expectedContent, postContent.toString());
+  }
+
+  @Test
+  public void testPostFileUpload() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      Buffer tot = Buffer.buffer();
+      req.setExpectMultipart(true);
+      req.uploadHandler(upload -> {
+        assertEquals("file", upload.name());
+        assertEquals("tmp-0.txt", upload.filename());
+        assertEquals("image/gif", upload.contentType());
+        upload.handler(tot::appendBuffer);
+        upload.endHandler(v -> {
+          assertEquals(tot, Buffer.buffer("some-content"));
+        });
+      });
+      req.endHandler(v -> {
+        assertEquals(0, req.formAttributes().size());
+        req.response().putHeader("content-type", "text/plain").end("done");
+      });
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    OkHttpClient client = createHttp2Client();
+    Request request = new Request.Builder()
+        .post(new MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("file", "tmp-0.txt", RequestBody.create(MediaType.parse("image/gif"), "some-content"))
+            .build())
+        .url("https://localhost:4043/form")
+        .build();
+    Response response = client.newCall(request).execute();
+    assertEquals(200, response.code());
+    assertEquals(Protocol.HTTP_2, response.protocol());
+    assertEquals("done", response.body().string());
   }
 
   @Test

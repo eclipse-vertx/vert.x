@@ -129,6 +129,9 @@ public class EventBusOptionsConverter {
     if (json.getValue("trustStoreOptions") instanceof JsonObject) {
       obj.setTrustStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)json.getValue("trustStoreOptions")));
     }
+    if (json.getValue("useAlpn") instanceof Boolean) {
+      obj.setUseAlpn((Boolean)json.getValue("useAlpn"));
+    }
     if (json.getValue("usePooledBuffers") instanceof Boolean) {
       obj.setUsePooledBuffers((Boolean)json.getValue("usePooledBuffers"));
     }
@@ -184,6 +187,7 @@ public class EventBusOptionsConverter {
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("trafficClass", obj.getTrafficClass());
     json.put("trustAll", obj.isTrustAll());
+    json.put("useAlpn", obj.isUseAlpn());
     json.put("usePooledBuffers", obj.isUsePooledBuffers());
   }
 }

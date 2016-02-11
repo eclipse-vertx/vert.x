@@ -17,6 +17,16 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.multipart.Attribute;
+import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
+import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -28,6 +38,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
@@ -40,7 +51,6 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.util.ArrayDeque;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -58,11 +68,15 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   private MultiMap headersMap;
   private HttpMethod method;
   private String path;
+  private MultiMap attributes;
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private boolean paused;
   private ArrayDeque<Object> pending = new ArrayDeque<>(8);
+
+  private Handler<HttpServerFileUpload> uploadHandler;
+  private HttpPostRequestDecoder decoder;
 
   public Http2ServerRequestImpl(
       Vertx vertx,
@@ -84,27 +98,69 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
     if (paused || pending.size() > 0) {
       pending.add(END);
     } else {
-      if (endHandler != null) {
-        endHandler.handle(null);
-      }
+      callEnd();
     }
   }
 
   boolean handleData(Buffer data) {
     if (!paused) {
-      if (dataHandler != null) {
-        if (pending.isEmpty()) {
-          dataHandler.handle(data);
-          return true;
-        } else {
-          pending.add(data);
-          checkNextTick(null);
-        }
+      if (pending.isEmpty()) {
+        callHandler(data);
+        return true;
+      } else {
+        pending.add(data);
+        checkNextTick(null);
       }
     } else {
       pending.add(data);
     }
     return false;
+  }
+
+  private void callHandler(Buffer data) {
+    if (decoder != null) {
+      try {
+        decoder.offer(new DefaultHttpContent(data.getByteBuf()));
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+        e.printStackTrace();
+      }
+    }
+    if (dataHandler != null) {
+      dataHandler.handle(data);
+    }
+  }
+
+  private void callEnd() {
+    if (decoder != null) {
+      try {
+        decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+        while (decoder.hasNext()) {
+          InterfaceHttpData data = decoder.next();
+          if (data instanceof Attribute) {
+            Attribute attr = (Attribute) data;
+            try {
+              formAttributes().add(attr.getName(), attr.getValue());
+            } catch (Exception e) {
+              // Will never happen, anyway handle it somehow just in case
+              handleException(e);
+            }
+          }
+        }
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+        handleException(e);
+      } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
+        // ignore this as it is expected
+      } finally {
+        decoder.destroy();
+      }
+    }
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
+  }
+
+  private void handleException(Throwable t) {
+    t.printStackTrace();
   }
 
   private void checkNextTick(Void v) {
@@ -120,14 +176,12 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
         } catch (Http2Exception e) {
           e.printStackTrace();
         }
-        dataHandler.handle(buf);
+        callHandler(buf);
         if (pending.size() > 0) {
           vertx.runOnContext(this::checkNextTick);
         }
       } if (msg == END) {
-        if (endHandler != null) {
-          endHandler.handle(null);
-        }
+        callEnd();
       }
     }
   }
@@ -268,27 +322,56 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
 
   @Override
   public HttpServerRequest setExpectMultipart(boolean expect) {
-    throw new UnsupportedOperationException();
+    if (expect) {
+      if (decoder == null) {
+        CharSequence contentType = headers.get(HttpHeaderNames.CONTENT_TYPE);
+        if (contentType != null) {
+          io.netty.handler.codec.http.HttpMethod method = io.netty.handler.codec.http.HttpMethod.valueOf(headers.method().toString());
+          String lowerCaseContentType = contentType.toString().toLowerCase();
+          boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString());
+          if ((lowerCaseContentType.startsWith(HttpHeaderValues.MULTIPART_FORM_DATA.toString()) || isURLEncoded) &&
+              (method == io.netty.handler.codec.http.HttpMethod.POST ||
+                  method == io.netty.handler.codec.http.HttpMethod.PUT ||
+                  method == io.netty.handler.codec.http.HttpMethod.PATCH ||
+                  method == io.netty.handler.codec.http.HttpMethod.DELETE)) {
+            HttpRequest req = new DefaultHttpRequest(
+                io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
+                method,
+                headers.path().toString());
+            req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
+            decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(vertx, this, () -> uploadHandler), req);
+          }
+        }
+      }
+    } else {
+      decoder = null;
+    }
+    return this;
   }
 
   @Override
   public boolean isExpectMultipart() {
-    throw new UnsupportedOperationException();
+    return decoder != null;
   }
 
   @Override
-  public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> uploadHandler) {
-    throw new UnsupportedOperationException();
+  public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
+    uploadHandler = handler;
+    return this;
   }
 
   @Override
   public MultiMap formAttributes() {
-    throw new UnsupportedOperationException();
+    // Create it lazily
+    if (attributes == null) {
+      attributes = new CaseInsensitiveHeaders();
+    }
+    return attributes;
   }
 
   @Override
   public @Nullable String getFormAttribute(String attributeName) {
-    throw new UnsupportedOperationException();
+    return formAttributes().get(attributeName);
   }
 
   @Override

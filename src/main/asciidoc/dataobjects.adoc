@@ -1161,6 +1161,10 @@ Set whether all server certificates should be trusted.
 +++
 Set the trust options in jks format, aka Java trustore
 +++
+|[[useAlpn]]`useAlpn`|`Boolean`|
++++
+Set the ALPN usage.
++++
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled

@@ -328,7 +328,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
             if ((lowerCaseContentType.startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA) || isURLEncoded) &&
               (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
                 || method.equals(HttpMethod.DELETE))) {
-              decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.vertx(), this, uploadHandler), request);
+              decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.vertx(), this, () -> uploadHandler), request);
             }
           }
         }
