@@ -94,7 +94,7 @@ public class Http2Test extends HttpTestBase {
   public void testGet() throws Exception {
     String content = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
-    CompletableFuture<Void> latch = new CompletableFuture<>();
+    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
           req.endHandler(v -> {
             requestEnded.set(true);
@@ -102,13 +102,10 @@ public class Http2Test extends HttpTestBase {
           req.response().putHeader("content-type", "text/plain").end(content);
         })
         .listen(ar -> {
-          if (ar.succeeded()) {
-            latch.complete(null);
-          } else {
-            latch.completeExceptionally(ar.cause());
-          }
+          assertTrue(ar.succeeded());
+          latch.countDown();
         });
-    latch.get(10, TimeUnit.SECONDS);
+    awaitLatch(latch);
     OkHttpClient client = createHttp2Client();
     Request request = new Request.Builder().url("https://localhost:4043/").build();
     Response response = client.newCall(request).execute();
@@ -119,7 +116,7 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testPost() throws Exception {
     String expectedContent = TestUtils.randomAlphaString(1000);
-    CompletableFuture<Void> latch = new CompletableFuture<>();
+    CountDownLatch latch = new CountDownLatch(1);
     Buffer postContent = Buffer.buffer();
     server.requestHandler(req -> {
       req.handler(postContent::appendBuffer);
@@ -128,13 +125,10 @@ public class Http2Test extends HttpTestBase {
       });
         })
         .listen(ar -> {
-          if (ar.succeeded()) {
-            latch.complete(null);
-          } else {
-            latch.completeExceptionally(ar.cause());
-          }
+          assertTrue(ar.succeeded());
+          latch.countDown();
         });
-    latch.get(10, TimeUnit.SECONDS);
+    awaitLatch(latch);
     OkHttpClient client = createHttp2Client();
     Request request = new Request.Builder()
         .post(RequestBody.create(MediaType.parse("test/plain"), expectedContent))
@@ -148,8 +142,7 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testServerRequestPause() throws Exception {
     String expectedContent = TestUtils.randomAlphaString(1000);
-    CompletableFuture<Void> latch = new CompletableFuture<>();
-    Buffer postContent = Buffer.buffer();
+    CountDownLatch latch = new CountDownLatch(1);
     Thread t = Thread.currentThread();
     AtomicBoolean done = new AtomicBoolean();
     Buffer received = Buffer.buffer();
@@ -171,13 +164,10 @@ public class Http2Test extends HttpTestBase {
       req.pause();
     })
         .listen(ar -> {
-          if (ar.succeeded()) {
-            latch.complete(null);
-          } else {
-            latch.completeExceptionally(ar.cause());
-          }
+          assertTrue(ar.succeeded());
+          latch.countDown();
         });
-    latch.get(10, TimeUnit.SECONDS);
+    awaitLatch(latch);
     OkHttpClient client = createHttp2Client();
     Buffer sent = Buffer.buffer();
     Request request = new Request.Builder()
