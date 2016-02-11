@@ -196,19 +196,22 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
                 pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, false));
-                pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
-                  @Override
-                  protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
-                    if (protocol.equals("http/1.1")) {
-                      configureHttp1(pipeline);
-                    } else {
-                      pipeline.addLast("handler", new VertxHttp2HandlerBuilder(vertx, requestStream.handler()).build());
+                if (sslHelper.isUseALPN()) {
+                  pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
+                    @Override
+                    protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
+                      if (protocol.equals("http/1.1")) {
+                        configureHttp1(pipeline);
+                      } else {
+                        pipeline.addLast("handler", new VertxHttp2HandlerBuilder(vertx, requestStream.handler()).build());
+                      }
                     }
-                  }
-                });
+                  });
+                } else {
+                  configureHttp1(pipeline);
+                }
               } else {
                 configureHttp1(pipeline);
-                pipeline.addLast("handler", new ServerHandler());
               }
             }
 

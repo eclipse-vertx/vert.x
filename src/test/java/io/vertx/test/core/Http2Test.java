@@ -16,16 +16,12 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.CertificatePinner;
 import okhttp3.ConnectionSpec;
 import okhttp3.MediaType;
@@ -35,16 +31,13 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okio.BufferedSink;
-import org.eclipse.jetty.alpn.ALPN;
 import org.junit.Test;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,6 +55,7 @@ public class Http2Test extends HttpTestBase {
     HttpServerOptions options = new HttpServerOptions()
         .setPort(4043)
         .setHost("localhost")
+        .setUseAlpn(true)
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
         .setKeyStoreOptions((JksOptions) getServerCertOptions(KeyCert.JKS));

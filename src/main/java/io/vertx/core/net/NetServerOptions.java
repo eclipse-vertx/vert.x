@@ -149,6 +149,12 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setUseAlpn(boolean useAlpn) {
+    super.setUseAlpn(useAlpn);
+    return this;
+  }
+
+  @Override
   public NetServerOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;

@@ -179,6 +179,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setUseAlpn(boolean useAlpn) {
+    super.setUseAlpn(useAlpn);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
