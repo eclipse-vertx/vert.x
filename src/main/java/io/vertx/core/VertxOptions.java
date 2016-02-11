@@ -110,6 +110,11 @@ public class VertxOptions {
    * The default value of HA enabled = false
    */
   public static final boolean DEFAULT_HA_ENABLED = false;
+  
+  /**
+   * The default name of the Vertx instance
+   */
+  public static final String DEFAULT_NAME = "VertxDefaultName";
 
   /**
    * The default value of warning exception time 5000000000 ns (5 seconds)
@@ -137,7 +142,7 @@ public class VertxOptions {
   private String haGroup = DEFAULT_HA_GROUP;
   private MetricsOptions metrics = new MetricsOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXECPTION_TIME;
-
+  private String vertxName = DEFAULT_NAME;
   /**
    * Default constructor
    */
@@ -624,8 +629,26 @@ public class VertxOptions {
     this.warningExceptionTime = warningExceptionTime;
     return this;
   }
+  
+  /**
+   * Get the vert.x name option
+   * 
+   * @return the name of the vert.x instance
+   */
+  public String getVertxName() {
+	return vertxName;
+  }
 
-  @Override
+  /**
+   * Set the vert.x name option
+   * 
+   * @param vertxName
+   */
+  public void setVertxName(String vertxName) {
+	this.vertxName = vertxName;
+  }
+
+@Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -652,6 +675,7 @@ public class VertxOptions {
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
+    if(!vertxName.equals(that.getVertxName())) return false;
     return !(metrics != null ? !metrics.equals(that.metrics) : that.metrics != null);
 
   }
@@ -702,6 +726,7 @@ public class VertxOptions {
       ", haGroup='" + haGroup + '\'' +
       ", metrics=" + metrics +
       ", warningExceptionTime=" + warningExceptionTime +
+      ", vertxName=" + vertxName +
       '}';
   }
 }

@@ -472,6 +472,13 @@ public interface Vertx extends Measured {
   <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
 
   /**
+   * Return the name of the current Vert.x instance
+   * 
+   * @return the instance name
+   */
+  String getName();
+  
+  /**
    * Return the Netty EventLoopGroup used by Vert.x
    *
    * @return the EventLoopGroup

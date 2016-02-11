@@ -88,4 +88,12 @@ public class CreateVertxTest extends AsyncTestBase {
     await();
   }
 
+  @Test
+  public void testCreateNamedVertxInstance() {
+    VertxOptions options = new VertxOptions();
+    options.setVertxName("Some-name");
+    Vertx vertx = Vertx.vertx(options);
+    assertNotNull(vertx);
+    assertEquals("Some-name", vertx.getName());
+  }
 }

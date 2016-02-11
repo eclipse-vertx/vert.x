@@ -105,6 +105,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
+  private String name;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -159,6 +160,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       createAndStartEventBus(options, resultHandler);
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
+    this.name = options.getVertxName();
   }
 
   private void createAndStartEventBus(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
@@ -657,6 +659,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return fileResolver.resolveFile(fileName);
   }
 
+  @Override
+  public String getName() {
+	return this.name;	
+  }
+	
   @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
     fileResolver.close(res -> {
