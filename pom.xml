@@ -64,6 +64,7 @@
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>3.3.0-SNAPSHOT</stack.version>
 
+    <log4j2.version>2.5</log4j2.version>
   </properties>
 
   <dependencyManagement>
@@ -119,6 +120,18 @@
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>${log4j.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${log4j2.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j2.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -357,7 +370,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.5.3</version>
+        <version>${log4j2.version}.3</version>
         <executions>
           <execution>
             <id>bundle-manifest</id>
@@ -371,6 +384,7 @@
                 <Private-Package>!docoverride*, !examples*</Private-Package>
                 <Import-Package>org.slf4j*;resolution:=optional,
                   org.apache.log4j;resolution:=optional,
+                  org.apache.logging.log4*;resolution:=optional,
                   *
                 </Import-Package>
               </instructions>
