@@ -97,7 +97,18 @@ public interface Buffer extends ClusterSerializable {
   }
 
   /**
+   * <p>
    * Create a new buffer from a Netty {@code ByteBuf}.
+   * <i>Note that</i> the returned buffer is backed by given Netty ByteBuf,
+   * so changes in the returned buffer are reflected in given Netty ByteBuf, and vice-versa.
+   * </p>
+   * <p>
+   * For example, both buffers in the code below share their data:
+   * </p>
+   * <pre>
+   *   Buffer src = Buffer.buffer();
+   *   Buffer clone = Buffer.buffer(src.getByteBuf());
+   * </pre>
    *
    * @param byteBuf  the Netty ByteBuf
    * @return the buffer
