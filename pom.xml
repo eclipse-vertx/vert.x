@@ -54,11 +54,11 @@
   <properties>
 
     <netty.version>4.0.33.Final</netty.version>
-    <jackson.version>2.6.1</jackson.version>
+    <jackson.version>2.7.1</jackson.version>
     <log4j.version>1.2.17</log4j.version>
-    <slf4j.version>1.7.12</slf4j.version>
-    <junit.version>4.11</junit.version>
-    <assertj.version>3.1.0</assertj.version>
+    <slf4j.version>1.7.15</slf4j.version>
+    <junit.version>4.12</junit.version>
+    <assertj.version>3.3.0</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
