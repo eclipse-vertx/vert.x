@@ -253,14 +253,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest bodyHandler(final Handler<Buffer> bodyHandler) {
-    Buffer body = Buffer.buffer();
-    handler(body::appendBuffer);
-    endHandler(v -> bodyHandler.handle(body));
-    return this;
-  }
-
-  @Override
   public NetSocket netSocket() {
     if (netSocket == null) {
       netSocket = conn.createNetSocket();

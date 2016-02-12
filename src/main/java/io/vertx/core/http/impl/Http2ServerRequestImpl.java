@@ -338,11 +338,6 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public NetSocket netSocket() {
     throw new UnsupportedOperationException();
   }

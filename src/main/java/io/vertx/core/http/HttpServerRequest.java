@@ -174,7 +174,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   @Fluent
-  HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler);
+  default HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
+    Buffer body = Buffer.buffer();
+    handler(body::appendBuffer);
+    endHandler(v -> bodyHandler.handle(body));
+    return this;
+  }
 
   /**
    * Get a net socket for the underlying connection of this request.
