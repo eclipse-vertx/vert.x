@@ -48,14 +48,16 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
   private final Vertx vertx;
+  private final String serverOrigin;
   private final IntObjectMap<Http2ServerRequestImpl> requestMap = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
 
-  VertxHttp2Handler(Vertx vertx, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
+  VertxHttp2Handler(Vertx vertx, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
 
     this.vertx = vertx;
+    this.serverOrigin = serverOrigin;
     this.handler = handler;
   }
 
@@ -87,7 +89,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
                             Http2Headers headers, int padding, boolean endOfStream) {
     Http2Connection conn = connection();
     Http2Stream stream = conn.stream(streamId);
-    Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, conn, stream, ctx, encoder(), streamId, headers);
+    Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, serverOrigin, conn, stream, ctx, encoder(), streamId, headers);
     requestMap.put(streamId, req);
     handler.handle(req);
     if (endOfStream) {

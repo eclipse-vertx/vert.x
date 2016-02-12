@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
@@ -39,6 +40,7 @@ import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -106,6 +108,37 @@ public class Http2Test extends HttpTestBase {
     Response response = client.newCall(request).execute();
     assertEquals(Protocol.HTTP_2, response.protocol());
     assertEquals(content, response.body().string());
+  }
+
+  @Test
+  public void testURI() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      assertEquals("/some/path", req.path());
+      assertEquals("foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.query());
+      assertEquals("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.uri());
+      assertEquals("https://localhost:4043/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.absoluteURI());
+      MultiMap params = req.params();
+      Set<String> names = params.names();
+      assertEquals(2, names.size());
+      assertTrue(names.contains("foo"));
+      assertTrue(names.contains("bar"));
+      assertEquals("foo_value", params.get("foo"));
+      assertEquals(Collections.singletonList("foo_value"), params.getAll("foo"));
+      assertEquals("bar_value_2", params.get("bar"));
+      assertEquals(Arrays.asList("bar_value_1", "bar_value_2"), params.getAll("bar"));
+      req.response().putHeader("content-type", "text/plain").end("done");
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    OkHttpClient client = createHttp2Client();
+    Request request = new Request.Builder().url("https://localhost:4043/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2").build();
+    Response response = client.newCall(request).execute();
+    assertEquals(Protocol.HTTP_2, response.protocol());
+    assertEquals("done", response.body().string());
   }
 
   @Test

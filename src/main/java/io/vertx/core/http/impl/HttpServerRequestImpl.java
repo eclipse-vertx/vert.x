@@ -42,10 +42,7 @@ import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -129,7 +126,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public String uri() {
     if (uri == null) {
-      uri = request.getUri();
+      uri = request.uri();
     }
     return uri;
   }
@@ -137,7 +134,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public String path() {
     if (path == null) {
-      path = UriParser.path(uri());
+      path = UriUtils.parsePath(uri());
     }
     return path;
   }
@@ -145,7 +142,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public String query() {
     if (query == null) {
-      query = UriParser.query(uri());
+      query = UriUtils.parseQuery(uri());
     }
     return query;
   }
@@ -176,14 +173,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public MultiMap params() {
     if (params == null) {
-      QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri());
-      Map<String, List<String>> prms = queryStringDecoder.parameters();
-      params = new CaseInsensitiveHeaders();
-      if (!prms.isEmpty()) {
-        for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
-          params.add(entry.getKey(), entry.getValue());
-        }
-      }
+      params = UriUtils.params(uri());
     }
     return params;
   }
@@ -249,19 +239,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   public String absoluteURI() {
     if (absoluteURI == null) {
       try {
-        URI uri = new URI(uri());
-        String scheme = uri.getScheme();
-        if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
-          absoluteURI = uri.toString();
-        } else {
-          String host = headers().get(HttpHeaders.Names.HOST);
-          if (host != null) {
-            absoluteURI = (conn.isSSL() ? "https://" : "http://") + host + uri;
-          } else {
-            // Fall back to the server origin
-            absoluteURI = conn.getServerOrigin() + uri;
-          }
-        }
+        absoluteURI = UriUtils.absoluteURI(conn.getServerOrigin(), this);
       } catch (URISyntaxException e) {
         log.error("Failed to create abs uri", e);
       }

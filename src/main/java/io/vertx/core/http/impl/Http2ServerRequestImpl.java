@@ -21,7 +21,6 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -33,7 +32,6 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -45,29 +43,40 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
+import java.net.URISyntaxException;
 import java.util.ArrayDeque;
+
+import static io.netty.handler.codec.http.HttpScheme.HTTPS;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ServerRequestImpl implements HttpServerRequest {
 
+  private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
   private static final Object END = new Object(); // Marker
 
   private final Vertx vertx;
+  private final String serverOrigin;
   private final ChannelHandlerContext ctx;
   private final Http2Connection conn;
   private final Http2Stream stream;
   private final Http2ServerResponseImpl response;
   private final Http2Headers headers;
   private MultiMap headersMap;
+  private MultiMap params;
   private HttpMethod method;
+  private String absoluteURI;
+  private String uri;
   private String path;
+  private String query;
   private MultiMap attributes;
 
   private Handler<Buffer> dataHandler;
@@ -80,6 +89,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
 
   public Http2ServerRequestImpl(
       Vertx vertx,
+      String serverOrigin,
       Http2Connection conn,
       Http2Stream stream,
       ChannelHandlerContext ctx,
@@ -87,6 +97,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
       int streamId,
       Http2Headers headers) {
     this.vertx = vertx;
+    this.serverOrigin = serverOrigin;
     this.conn = conn;
     this.stream = stream;
     this.headers = headers;
@@ -236,25 +247,31 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
 
   @Override
   public boolean isSSL() {
-    throw new UnsupportedOperationException();
+    return headers.scheme().equals(HTTPS.name());
   }
 
   @Override
   public String uri() {
-    throw new UnsupportedOperationException();
+    if (uri == null) {
+      uri = headers.path().toString();
+    }
+    return uri;
   }
 
   @Override
   public String path() {
     if (path == null) {
-      path = headers.path().toString();
+      path = UriUtils.parsePath(uri());
     }
     return path;
   }
 
   @Override
   public @Nullable String query() {
-    throw new UnsupportedOperationException();
+    if (query == null) {
+      query = UriUtils.parseQuery(uri());
+    }
+    return query;
   }
 
   @Override
@@ -282,12 +299,15 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
 
   @Override
   public MultiMap params() {
-    throw new UnsupportedOperationException();
+    if (params == null) {
+      params = UriUtils.params(uri());
+    }
+    return params;
   }
 
   @Override
   public @Nullable String getParam(String paramName) {
-    throw new UnsupportedOperationException();
+    return params().get(paramName);
   }
 
   @Override
@@ -307,7 +327,14 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
 
   @Override
   public String absoluteURI() {
-    throw new UnsupportedOperationException();
+    if (absoluteURI == null) {
+      try {
+        absoluteURI = UriUtils.absoluteURI(serverOrigin, this);
+      } catch (URISyntaxException e) {
+        log.error("Failed to create abs uri", e);
+      }
+    }
+    return absoluteURI;
   }
 
   @Override

@@ -203,7 +203,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                       if (protocol.equals("http/1.1")) {
                         configureHttp1(pipeline);
                       } else {
-                        pipeline.addLast("handler", new VertxHttp2HandlerBuilder(vertx, requestStream.handler()).build());
+                        pipeline.addLast("handler", new VertxHttp2HandlerBuilder(vertx, serverOrigin, requestStream.handler()).build());
                       }
                     }
                   });
