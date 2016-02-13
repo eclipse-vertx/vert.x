@@ -17,11 +17,14 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -38,14 +41,19 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private final ChannelHandlerContext ctx;
   private final Http2ConnectionEncoder encoder;
-  private final int streamId;
+  private final Http2Stream stream;
   private Http2Headers headers = new DefaultHttp2Headers().status(OK.codeAsText());
   private Http2HeadersAdaptor headersMap;
+  private boolean chunked;
+  private boolean headWritten;
+  private int statusCode = 200;
+  private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
+  private Handler<Void> drainHandler;
 
-  public Http2ServerResponseImpl(ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, int streamId) {
+  public Http2ServerResponseImpl(ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, Http2Stream stream) {
     this.ctx = ctx;
     this.encoder = encoder;
-    this.streamId = streamId;
+    this.stream = stream;
   }
 
   @Override
@@ -54,48 +62,56 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse write(Buffer data) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpServerResponse setWriteQueueMaxSize(int maxSize) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpServerResponse drainHandler(Handler<Void> handler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public int getStatusCode() {
-    throw new UnsupportedOperationException();
+    return statusCode;
   }
 
   @Override
   public HttpServerResponse setStatusCode(int statusCode) {
-    throw new UnsupportedOperationException();
+    if (statusCode < 0) {
+      throw new IllegalArgumentException("code: " + statusCode + " (expected: 0+)");
+    }
+    this.statusCode = statusCode;
+    headers.status("" + statusCode);
+    return this;
   }
 
   @Override
   public String getStatusMessage() {
-    throw new UnsupportedOperationException();
+    if (statusMessage == null) {
+      switch (statusCode / 100) {
+        case 1:
+          return "Informational";
+        case 2:
+          return "Success";
+        case 3:
+          return "Redirection";
+        case 4:
+          return "Client Error";
+        case 5:
+          return "Server Error";
+        default:
+          return "Unknown Status";
+      }
+    }
+    return statusMessage;
   }
 
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
-    throw new UnsupportedOperationException();
+    this.statusMessage = statusMessage;
+    return this;
   }
 
   @Override
   public HttpServerResponse setChunked(boolean chunked) {
-    throw new UnsupportedOperationException();
+    this.chunked = true;
+    return this;
   }
 
   @Override
   public boolean isChunked() {
-    throw new UnsupportedOperationException();
+    return chunked;
   }
 
   @Override
@@ -161,18 +177,28 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse write(String chunk, String enc) {
+  public HttpServerResponse writeContinue() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public HttpServerResponse write(Buffer chunk) {
+    ByteBuf buf = chunk.getByteBuf();
+    return write(buf);
+  }
+
+  @Override
+  public HttpServerResponse write(String chunk, String enc) {
+    return write(Buffer.buffer(chunk, enc).getByteBuf());
   }
 
   @Override
   public HttpServerResponse write(String chunk) {
-    throw new UnsupportedOperationException();
+    return write(Buffer.buffer(chunk).getByteBuf());
   }
 
-  @Override
-  public HttpServerResponse writeContinue() {
-    throw new UnsupportedOperationException();
+  private Http2ServerResponseImpl write(ByteBuf chunk) {
+    return write(chunk, false);
   }
 
   @Override
@@ -182,29 +208,71 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void end(String chunk, String enc) {
-    throw new UnsupportedOperationException();
+    end(Buffer.buffer(chunk, enc));
   }
 
   @Override
   public void end(Buffer chunk) {
-    ByteBuf buf = chunk.getByteBuf();
-    end0(buf);
+    end(chunk.getByteBuf());
   }
 
   @Override
   public void end() {
-    throw new UnsupportedOperationException();
+    end(Unpooled.EMPTY_BUFFER);
   }
 
-  private void end0(ByteBuf data) {
-    encoder.writeHeaders(ctx, streamId, headers, 0, false, ctx.newPromise());
-    encoder.writeData(ctx, streamId, data, 0, true, ctx.newPromise());
+  private void end(ByteBuf chunk) {
+    if (!chunked && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+      headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
+    }
+    write(chunk, true);
+  }
+
+  private void checkSendHeaders() {
+    if (!headWritten) {
+      headWritten = true;
+      if (!headers.contains(HttpHeaderNames.CONTENT_LENGTH) && !chunked) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+            + "body BEFORE sending any data if you are not sending an HTTP chunked response.");
+      }
+      encoder.writeHeaders(ctx, stream.id(), headers, 0, false, ctx.newPromise());
+      headWritten = true;
+    }
+  }
+
+  private Http2ServerResponseImpl write(ByteBuf chunk, boolean last) {
+    checkSendHeaders();
+    encoder.writeData(ctx, stream.id(), chunk, 0, last, ctx.newPromise());
     try {
       encoder.flowController().writePendingBytes();
     } catch (Http2Exception e) {
       e.printStackTrace();
     }
     ctx.flush();
+    return this;
+  }
+
+  @Override
+  public boolean writeQueueFull() {
+    return encoder.flowController().isWritable(stream);
+  }
+
+  @Override
+  public HttpServerResponse setWriteQueueMaxSize(int maxSize) {
+    // It does not seem to be possible to configure this at the moment
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse drainHandler(Handler<Void> handler) {
+    drainHandler = handler;
+    return this;
+  }
+
+  void writabilityChanged() {
+    if (!writeQueueFull() && drainHandler != null) {
+      drainHandler.handle(null);
+    }
   }
 
   @Override
@@ -234,7 +302,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public boolean headWritten() {
-    throw new UnsupportedOperationException();
+    return headWritten;
   }
 
   @Override
@@ -252,8 +320,4 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     throw new UnsupportedOperationException();
   }
 
-  @Override
-  public boolean writeQueueFull() {
-    throw new UnsupportedOperationException();
-  }
 }

@@ -30,7 +30,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.AsciiString;
-import io.netty.util.CharsetUtil;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.Handler;
@@ -55,6 +54,12 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   VertxHttp2Handler(Vertx vertx, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
+
+    encoder.flowController().listener(stream -> {
+      Http2ServerRequestImpl req = requestMap.get(stream.id());
+      Http2ServerResponseImpl resp = req.response();
+      resp.writabilityChanged();
+    });
 
     this.vertx = vertx;
     this.serverOrigin = serverOrigin;
@@ -89,7 +94,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
                             Http2Headers headers, int padding, boolean endOfStream) {
     Http2Connection conn = connection();
     Http2Stream stream = conn.stream(streamId);
-    Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, serverOrigin, conn, stream, ctx, encoder(), streamId, headers);
+    Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, serverOrigin, conn, stream, ctx, encoder(), headers);
     requestMap.put(streamId, req);
     handler.handle(req);
     if (endOfStream) {

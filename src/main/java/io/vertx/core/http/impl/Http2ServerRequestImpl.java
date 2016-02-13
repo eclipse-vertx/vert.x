@@ -94,7 +94,6 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
       Http2Stream stream,
       ChannelHandlerContext ctx,
       Http2ConnectionEncoder encoder,
-      int streamId,
       Http2Headers headers) {
     this.vertx = vertx;
     this.serverOrigin = serverOrigin;
@@ -102,7 +101,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
     this.stream = stream;
     this.headers = headers;
     this.ctx = ctx;
-    this.response = new Http2ServerResponseImpl(ctx, encoder, streamId);
+    this.response = new Http2ServerResponseImpl(ctx, encoder, stream);
   }
 
   void end() {
@@ -275,7 +274,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerResponse response() {
+  public Http2ServerResponseImpl response() {
     return response;
   }
 

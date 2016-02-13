@@ -19,12 +19,16 @@ package io.vertx.test.core;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.CertificatePinner;
 import okhttp3.ConnectionSpec;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -32,18 +36,26 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.BufferedSink;
+import okio.BufferedSource;
+import okio.Okio;
+import okio.Source;
+import okio.Timeout;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -68,6 +80,10 @@ public class Http2Test extends HttpTestBase {
   }
 
   private OkHttpClient createHttp2Client() throws Exception {
+    return createHttp2ClientBuilder().build();
+  }
+
+  private OkHttpClient.Builder createHttp2ClientBuilder() throws Exception {
     CertificatePinner certificatePinner = new CertificatePinner.Builder()
         .add("localhost", "sha1/c9qKvZ9pYojzJD4YQRfuAd0cHVA=")
         .build();
@@ -83,8 +99,7 @@ public class Http2Test extends HttpTestBase {
         .sslSocketFactory(sc.getSocketFactory()).hostnameVerifier((hostname, session) -> true)
         .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
         .certificatePinner(certificatePinner)
-        .connectionSpecs(Collections.singletonList(ConnectionSpec.MODERN_TLS))
-        .build();
+        .connectionSpecs(Collections.singletonList(ConnectionSpec.MODERN_TLS));
   }
 
   @Test
@@ -260,4 +275,39 @@ public class Http2Test extends HttpTestBase {
     assertEquals("hello", response.body().string());
     assertEquals(received, sent);
   }
+
+  @Test
+  public void testServerResponseWritability() throws Exception {
+    final int numBuffers = 32; // 32 * 1024 < 65K (initial flow-control window size)
+    String content = TestUtils.randomAlphaString(1024);
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.putHeader("content-type", "text/plain");
+      resp.setChunked(true);
+      for (int i = 0;i < numBuffers;i++) {
+        vertx.runOnContext(v -> {
+          resp.write(Buffer.buffer(content));
+        });
+      }
+      vertx.runOnContext(v -> {
+        resp.end();
+      });
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    OkHttpClient client = createHttp2Client();
+    Request request = new Request.Builder().url("https://localhost:4043/").build();
+    Response response = client.newCall(request).execute();
+    String s = response.body().string();
+    StringBuilder expected = new StringBuilder();
+    for (int i = 0;i < numBuffers;i++) {
+      expected.append(content);
+    }
+    assertEquals(expected.toString(), s);
+  }
+
 }
