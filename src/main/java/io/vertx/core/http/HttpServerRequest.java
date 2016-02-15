@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -263,5 +264,8 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @CacheReturn
   HttpConnection connection();
+
+  @Fluent
+  HttpServerRequest promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
 
 }

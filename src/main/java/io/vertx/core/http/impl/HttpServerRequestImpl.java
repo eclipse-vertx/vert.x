@@ -26,6 +26,8 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -332,6 +334,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpConnection connection() {
     return null;
+  }
+
+  @Override
+  public HttpServerRequest promisePush(io.vertx.core.http.HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    handler.handle(Future.failedFuture("Push promise not supported with " + version().name()));
+    return this;
   }
 
   void handleData(Buffer data) {

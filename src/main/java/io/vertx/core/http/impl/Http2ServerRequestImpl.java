@@ -26,12 +26,15 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -424,5 +427,23 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpConnection connection() {
     return connection;
+  }
+
+  @Override
+  public HttpServerRequest promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    Http2Headers headers = new DefaultHttp2Headers();
+    headers.method(method.name());
+    headers.path(path);
+    int id = conn.local().nextStreamId();
+    connection.encoder().writePushPromise(ctx, stream.id(), id, headers, 0, ctx.newPromise()).addListener(fut -> {
+      if (fut.isSuccess()) {
+        Http2Stream stream = connection.connection().stream(id);
+        Http2ServerResponseImpl resp = new Http2ServerResponseImpl(ctx, connection.encoder(), stream);
+        handler.handle(Future.succeededFuture(resp));
+      } else {
+        handler.handle(Future.failedFuture(fut.cause()));
+      }
+    });
+    return this;
   }
 }
