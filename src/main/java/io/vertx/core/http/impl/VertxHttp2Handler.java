@@ -35,6 +35,7 @@ import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -42,7 +43,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2FrameListener {
+public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2FrameListener, HttpConnection {
 
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
@@ -50,6 +51,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private final String serverOrigin;
   private final IntObjectMap<Http2ServerRequestImpl> requestMap = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
+  private Handler<Void> closeHandler;
 
   VertxHttp2Handler(Vertx vertx, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
@@ -94,7 +96,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
                             Http2Headers headers, int padding, boolean endOfStream) {
     Http2Connection conn = connection();
     Http2Stream stream = conn.stream(streamId);
-    Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, serverOrigin, conn, stream, ctx, encoder(), headers);
+    Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, this, serverOrigin, conn, stream, ctx, encoder(), headers);
     requestMap.put(streamId, req);
     handler.handle(req);
     if (endOfStream) {
@@ -164,5 +166,21 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
+  }
+
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    super.channelInactive(ctx);
+    if (closeHandler != null) {
+      closeHandler.handle(null);
+    }
+  }
+
+  //
+
+  @Override
+  public HttpConnection closeHandler(Handler<Void> handler) {
+    closeHandler = handler;
+    return this;
   }
 }

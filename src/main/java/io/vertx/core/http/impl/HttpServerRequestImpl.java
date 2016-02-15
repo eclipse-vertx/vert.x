@@ -30,6 +30,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -331,6 +332,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest resetHandler(Handler<Long> handler) {
     return this;
+  }
+
+  @Override
+  public HttpConnection connection() {
+    return null;
   }
 
   void handleData(Buffer data) {

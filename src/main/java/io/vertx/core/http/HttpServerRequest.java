@@ -270,4 +270,10 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @Fluent
   HttpServerRequest resetHandler(Handler<Long> handler);
 
+  /**
+   * @return the http connection associated with this request
+   */
+  @CacheReturn
+  HttpConnection connection();
+
 }

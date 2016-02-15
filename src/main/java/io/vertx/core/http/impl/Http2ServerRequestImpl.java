@@ -37,6 +37,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
@@ -64,6 +65,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   private static final Object END = new Object(); // Marker
 
   private final Vertx vertx;
+  private final VertxHttp2Handler connection;
   private final String serverOrigin;
   private final ChannelHandlerContext ctx;
   private final Http2Connection conn;
@@ -92,6 +94,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
 
   public Http2ServerRequestImpl(
       Vertx vertx,
+      VertxHttp2Handler connection,
       String serverOrigin,
       Http2Connection conn,
       Http2Stream stream,
@@ -99,6 +102,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
       Http2ConnectionEncoder encoder,
       Http2Headers headers) {
     this.vertx = vertx;
+    this.connection = connection;
     this.serverOrigin = serverOrigin;
     this.conn = conn;
     this.stream = stream;
@@ -425,5 +429,10 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   public HttpServerRequest resetHandler(Handler<Long> handler) {
     resetHandler = handler;
     return this;
+  }
+
+  @Override
+  public HttpConnection connection() {
+    return connection;
   }
 }

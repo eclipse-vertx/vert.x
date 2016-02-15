@@ -43,6 +43,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.VertxInternal;
@@ -494,6 +495,39 @@ public class Http2Test extends HttpTestBase {
 
     fut.sync();
 
+    await();
+  }
+
+  @Test
+  public void testConnectionClose() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      HttpConnection conn = req.connection();
+      conn.closeHandler(v -> {
+        testComplete();
+      });
+      req.response().putHeader("Content-Type", "text/plain").end();
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          request.context.close();
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+    });
+    fut.sync();
     await();
   }
 }
