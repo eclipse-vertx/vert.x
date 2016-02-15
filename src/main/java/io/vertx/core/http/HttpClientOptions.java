@@ -24,6 +24,7 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TCPSSLOptions;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -492,6 +493,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public int getMaxWaitQueueSize() {
     return maxWaitQueueSize;
+  }
+
+  @Override
+  public HttpClientOptions setUseAlpn(boolean useAlpn) {
+    return (HttpClientOptions) super.setUseAlpn(useAlpn);
   }
 
   @Override

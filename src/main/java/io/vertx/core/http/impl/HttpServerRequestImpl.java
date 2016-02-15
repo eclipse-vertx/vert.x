@@ -328,6 +328,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
+  @Override
+  public HttpServerRequest resetHandler(Handler<Long> handler) {
+    return this;
+  }
+
   void handleData(Buffer data) {
     synchronized (conn) {
       if (decoder != null) {

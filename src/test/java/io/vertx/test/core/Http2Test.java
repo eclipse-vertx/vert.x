@@ -16,19 +16,41 @@
 
 package io.vertx.test.core;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
+import io.netty.handler.codec.http2.DefaultHttp2Connection;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2ConnectionDecoder;
+import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2ConnectionHandler;
+import io.netty.handler.codec.http2.Http2EventAdapter;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.ssl.ApplicationProtocolNames;
+import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
+import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
-import okhttp3.Call;
-import okhttp3.Callback;
+import io.vertx.core.net.impl.SSLHelper;
 import okhttp3.CertificatePinner;
 import okhttp3.ConnectionSpec;
-import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -36,26 +58,22 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.Okio;
-import okio.Source;
-import okio.Timeout;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -79,6 +97,14 @@ public class Http2Test extends HttpTestBase {
 
   }
 
+  private SSLContext createSSLContext() throws Exception {
+    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, (TrustOptions) getServerCertOptions(KeyCert.JKS));
+    TrustManager[] trustMgrs = helper.getTrustMgrs((VertxInternal) vertx);
+    SSLContext context = SSLContext.getInstance("SSL");
+    context.init(null, trustMgrs, new java.security.SecureRandom());
+    return context;
+  }
+
   private OkHttpClient createHttp2Client() throws Exception {
     return createHttp2ClientBuilder().build();
   }
@@ -88,10 +114,7 @@ public class Http2Test extends HttpTestBase {
         .add("localhost", "sha1/c9qKvZ9pYojzJD4YQRfuAd0cHVA=")
         .build();
 
-    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, (TrustOptions) getServerCertOptions(KeyCert.JKS));
-    TrustManager[] trustMgrs = helper.getTrustMgrs((VertxInternal) vertx);
-    SSLContext sc = SSLContext.getInstance("SSL");
-    sc.init(null, trustMgrs, new java.security.SecureRandom());
+    SSLContext sc = createSSLContext();
 
     return new OkHttpClient.Builder()
         .readTimeout(100, TimeUnit.SECONDS)
@@ -100,6 +123,78 @@ public class Http2Test extends HttpTestBase {
         .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
         .certificatePinner(certificatePinner)
         .connectionSpecs(Collections.singletonList(ConnectionSpec.MODERN_TLS));
+  }
+
+  class TestClient {
+
+    public class Request {
+      public final ChannelHandlerContext context;
+      public final Http2Connection connection;
+      public final Http2ConnectionEncoder encoder;
+      public final Http2ConnectionDecoder decoder;
+      public Request(ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
+        this.context = context;
+        this.connection = connection;
+        this.encoder = encoder;
+        this.decoder = decoder;
+      }
+    }
+
+    public ChannelFuture connect(int port, String host, Consumer<Request> handler) {
+
+      class TestClientHandler extends Http2ConnectionHandler {
+        public TestClientHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
+          super(decoder, encoder, initialSettings);
+        }
+      }
+
+      class TestClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<TestClientHandler, TestClientHandlerBuilder> {
+        @Override
+        protected TestClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
+          return new TestClientHandler(decoder, encoder, initialSettings);
+        }
+        public TestClientHandler build(Http2Connection conn) {
+          connection(conn);
+          frameListener(new Http2EventAdapter() {
+            @Override
+            public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+              return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+            }
+          });
+          return super.build();
+        }
+      }
+
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.group(new NioEventLoopGroup());
+      bootstrap.handler(new ChannelInitializer<Channel>() {
+        @Override
+        protected void initChannel(Channel ch) throws Exception {
+          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true), null, KeyStoreHelper.create((VertxInternal) vertx, getClientTrustOptions(Trust.JKS)));
+          SslHandler sslHandler = sslHelper.createSslHandler((VertxInternal) vertx, true, host, port);
+          ch.pipeline().addLast(sslHandler);
+          ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
+            @Override
+            protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+              if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                ChannelPipeline p = ctx.pipeline();
+                Http2Connection connection = new DefaultHttp2Connection(false);
+                TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder();
+                TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
+                p.addLast(clientHandler);
+                Request request = new Request(ctx, connection, clientHandler.encoder(), clientHandler.decoder());
+                handler.accept(request);
+                return;
+              }
+              ctx.close();
+              throw new IllegalStateException("unknown protocol: " + protocol);
+            }
+          });
+        }
+      });
+      return bootstrap.connect(new InetSocketAddress(host, port));
+    }
   }
 
   @Test
@@ -310,4 +405,45 @@ public class Http2Test extends HttpTestBase {
     assertEquals(expected.toString(), s);
   }
 
+  @Test
+  public void testResetServerStream() throws Exception {
+
+    CountDownLatch latch = new CountDownLatch(1);
+    CompletableFuture<Void> bufReceived = new CompletableFuture<>();
+    AtomicInteger resetCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.handler(buf -> {
+        bufReceived.complete(null);
+      });
+      req.resetHandler(code -> {
+        assertEquals((Long)10L, code);
+        assertEquals(0, resetCount.getAndIncrement());
+      });
+      req.endHandler(v -> {
+        assertEquals(1, resetCount.get());
+        testComplete();
+      });
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+      encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
+      bufReceived.thenAccept(v -> {
+        encoder.writeRstStream(request.context, id, 10, request.context.newPromise());
+        request.context.flush();
+      });
+    });
+
+    fut.sync();
+
+    await();
+  }
 }

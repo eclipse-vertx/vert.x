@@ -76,7 +76,7 @@ public class SSLHelper {
 
   public SSLHelper(HttpClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
-    this.useALPN = false;
+    this.useALPN = options.isUseAlpn();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.trustAll = options.isTrustAll();

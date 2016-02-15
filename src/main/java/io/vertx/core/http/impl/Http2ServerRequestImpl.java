@@ -82,7 +82,10 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private boolean paused;
+  private boolean ended;
   private ArrayDeque<Object> pending = new ArrayDeque<>(8);
+
+  private Handler<Long> resetHandler;
 
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder decoder;
@@ -127,6 +130,18 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
     return false;
   }
 
+  void reset(long code) {
+    ended = true;
+    paused = false;
+    pending.clear();
+    if (resetHandler != null) {
+      resetHandler.handle(code);
+    }
+    if (endHandler != null) {
+      endHandler.handle(null);
+    }
+  }
+
   private void callHandler(Buffer data) {
     if (decoder != null) {
       try {
@@ -141,6 +156,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   }
 
   private void callEnd() {
+    ended = true;
     if (decoder != null) {
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -405,4 +421,9 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
     throw new UnsupportedOperationException();
   }
 
+  @Override
+  public HttpServerRequest resetHandler(Handler<Long> handler) {
+    resetHandler = handler;
+    return this;
+  }
 }

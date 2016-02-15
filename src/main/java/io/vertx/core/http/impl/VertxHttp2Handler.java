@@ -128,6 +128,8 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+    Http2ServerRequestImpl req = requestMap.get(streamId);
+    req.reset(errorCode);
   }
 
   @Override
