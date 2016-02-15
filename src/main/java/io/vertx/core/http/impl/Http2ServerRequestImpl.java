@@ -437,7 +437,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     int id = conn.local().nextStreamId();
     connection.encoder().writePushPromise(ctx, stream.id(), id, headers, 0, ctx.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
-        connection.schedulePushPromise(ctx, id, handler);
+        connection.schedulePush(ctx, id, handler);
       } else {
         handler.handle(Future.failedFuture(fut.cause()));
       }

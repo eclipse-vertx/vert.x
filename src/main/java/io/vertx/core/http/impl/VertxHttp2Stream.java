@@ -22,6 +22,7 @@ package io.vertx.core.http.impl;
 abstract class VertxHttp2Stream {
 
   abstract Http2ServerResponseImpl response();
+
   abstract void reset(long code);
 
 }

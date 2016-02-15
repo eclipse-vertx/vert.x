@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
@@ -41,6 +42,8 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
+import java.util.ArrayDeque;
+
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
 /**
@@ -56,6 +59,10 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private final Handler<HttpServerRequest> handler;
   private Handler<Void> closeHandler;
 
+  private Long maxConcurrentStreams;
+  private int concurrentStreams;
+  private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>();
+
   VertxHttp2Handler(Vertx vertx, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
@@ -65,7 +72,16 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       resp.writabilityChanged();
     });
 
-
+    connection().addListener(new Http2ConnectionAdapter() {
+      @Override
+      public void onStreamClosed(Http2Stream stream) {
+        VertxHttp2Stream removed = requestMap.remove(stream.id());
+        if (removed instanceof Push) {
+          concurrentStreams--;
+          checkPendingPushes();
+        }
+      }
+    });
 
     this.vertx = vertx;
     this.serverOrigin = serverOrigin;
@@ -144,6 +160,10 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
+    Long v = settings.maxConcurrentStreams();
+    if (v != null) {
+      maxConcurrentStreams = v;
+    }
   }
 
   @Override
@@ -180,26 +200,49 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     }
   }
 
-  //
+  private class Push extends VertxHttp2Stream {
 
-  void schedulePushPromise(ChannelHandlerContext ctx, int streamId, Handler<AsyncResult<HttpServerResponse>> handler) {
-    Http2Stream stream = connection().stream(streamId);
-    Http2ServerResponseImpl resp = new Http2ServerResponseImpl(ctx, encoder(), stream);
-    VertxHttp2Stream push = new VertxHttp2Stream() {
-      @Override
-      public Http2ServerResponseImpl response() {
-        return resp;
-      }
-      @Override
-      public void reset(long code) {
-        resp.reset(code);
-      }
-    };
-    requestMap.put(streamId, push);
-    handler.handle(Future.succeededFuture(resp));
+    final Http2ServerResponseImpl response;
+    final Handler<AsyncResult<HttpServerResponse>> handler;
+
+    public Push(Http2ServerResponseImpl response, Handler<AsyncResult<HttpServerResponse>> handler) {
+      this.response = response;
+      this.handler = handler;
+    }
+
+    @Override
+    Http2ServerResponseImpl response() {
+      return response;
+    }
+
+    @Override
+    void reset(long code) {
+      response.reset(code);
+    }
   }
 
-  //
+  void schedulePush(ChannelHandlerContext ctx, int streamId, Handler<AsyncResult<HttpServerResponse>> handler) {
+    Http2Stream stream = connection().stream(streamId);
+    Http2ServerResponseImpl resp = new Http2ServerResponseImpl(ctx, encoder(), stream);
+    Push push = new Push(resp, handler);
+    requestMap.put(streamId, push);
+    if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
+      concurrentStreams++;
+      handler.handle(Future.succeededFuture(resp));
+    } else {
+      pendingPushes.add(push);
+    }
+  }
+
+  void checkPendingPushes() {
+    while ((maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) && pendingPushes.size() > 0) {
+      Push push = pendingPushes.pop();
+      concurrentStreams++;
+      vertx.runOnContext(v -> {
+        push.handler.handle(Future.succeededFuture(push.response));
+      });
+    }
+  }
 
   @Override
   public HttpConnection closeHandler(Handler<Void> handler) {

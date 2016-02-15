@@ -18,7 +18,6 @@ package io.vertx.test.core;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -82,7 +81,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -137,6 +135,8 @@ public class Http2Test extends HttpTestBase {
 
   class TestClient {
 
+    public final Http2Settings settings = new Http2Settings();
+
     public class Request {
       public final ChannelHandlerContext context;
       public final Http2Connection connection;
@@ -165,6 +165,7 @@ public class Http2Test extends HttpTestBase {
         }
         public TestClientHandler build(Http2Connection conn) {
           connection(conn);
+          initialSettings(settings);
           frameListener(new Http2EventAdapter() {
             @Override
             public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
@@ -611,13 +612,66 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeSettings(request.context, new Http2Settings().pushEnabled(true).maxConcurrentStreams(3), request.context.newPromise());
       encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           request.encoder.writeRstStream(ctx, streamId, Http2Error.CANCEL.code(), ctx.newPromise());
           request.context.flush();
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testQueuePushPromise() throws Exception {
+    int numPushes = 10;
+    CountDownLatch latch = new CountDownLatch(1);
+    Set<String> pushSent = new HashSet<>();
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("abc");
+      for (int i = 0;i < numPushes;i++) {
+        int val = i;
+        String path = "/wibble" + val;
+        req.promisePush(HttpMethod.GET, path, ar -> {
+          assertTrue(ar.succeeded());
+          pushSent.add(path);
+          vertx.setTimer(10, id -> {
+            ar.result().end("wibble-" + val);
+          });
+        });
+      }
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    client.settings.maxConcurrentStreams(3);
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        int count = numPushes;
+        Set<String> pushReceived = new HashSet<>();
+        @Override
+        public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+          pushReceived.add(headers.path().toString());
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          if (count-- == 0) {
+            vertx.runOnContext(v -> {
+              assertEquals(numPushes, pushSent.size());
+              assertEquals(pushReceived, pushSent);
+              testComplete();
+            });
+          }
           return super.onDataRead(ctx, streamId, data, padding, endOfStream);
         }
       });
