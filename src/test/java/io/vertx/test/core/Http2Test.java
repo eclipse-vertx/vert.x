@@ -33,6 +33,7 @@ import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
+import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2FrameAdapter;
@@ -72,7 +73,9 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -541,9 +544,12 @@ public class Http2Test extends HttpTestBase {
       req.promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
-        response.end("the_content");
+        try {
+          response./*putHeader("content-type", "application/plain").*/end("the_content");
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
       });
-      req.response().putHeader("Content-Type", "text/plain").end();
     })
         .listen(ar -> {
           assertTrue(ar.succeeded());
@@ -556,22 +562,63 @@ public class Http2Test extends HttpTestBase {
       Http2ConnectionEncoder encoder = request.encoder;
       encoder.writeSettings(request.context, new Http2Settings().pushEnabled(true).maxConcurrentStreams(3), request.context.newPromise());
       encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
-      HashSet<Integer> pushed = new HashSet<Integer>();
+      Map<Integer, Http2Headers> pushed = new HashMap<Integer, Http2Headers>();
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
         public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-          pushed.add(promisedStreamId);
+          pushed.put(promisedStreamId, headers);
         }
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           int delta = super.onDataRead(ctx, streamId, data, padding, endOfStream);
           String content = data.toString(StandardCharsets.UTF_8);
           vertx.runOnContext(v -> {
-            assertEquals(Collections.singleton(streamId), pushed);
+            assertEquals(Collections.singleton(streamId), pushed.keySet());
+            Http2Headers entries = pushed.get(streamId);
+//            assertEquals("application/data", entries.get("content-type").toString());
+            assertEquals("GET", entries.method().toString());
+            assertEquals("/wibble", entries.path().toString());
             assertEquals("the_content", content);
             testComplete();
           });
           return delta;
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testResetActivePushPromise() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      req.promisePush(HttpMethod.GET, "/wibble", ar -> {
+        assertTrue(ar.succeeded());
+        HttpServerResponse response = ar.result();
+        response.resetHandler(code -> {
+          testComplete();
+        });
+        response.setChunked(true).write("some_content");
+      });
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeSettings(request.context, new Http2Settings().pushEnabled(true).maxConcurrentStreams(3), request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          request.encoder.writeRstStream(ctx, streamId, Http2Error.CANCEL.code(), ctx.newPromise());
+          request.context.flush();
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
         }
       });
     });

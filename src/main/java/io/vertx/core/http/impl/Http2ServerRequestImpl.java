@@ -62,7 +62,7 @@ import static io.netty.handler.codec.http.HttpScheme.HTTPS;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequestImpl implements HttpServerRequest {
+public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
   private static final Object END = new Object(); // Marker
@@ -437,9 +437,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
     int id = conn.local().nextStreamId();
     connection.encoder().writePushPromise(ctx, stream.id(), id, headers, 0, ctx.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
-        Http2Stream stream = connection.connection().stream(id);
-        Http2ServerResponseImpl resp = new Http2ServerResponseImpl(ctx, connection.encoder(), stream);
-        handler.handle(Future.succeededFuture(resp));
+        connection.schedulePushPromise(ctx, id, handler);
       } else {
         handler.handle(Future.failedFuture(fut.cause()));
       }
