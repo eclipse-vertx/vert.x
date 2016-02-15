@@ -87,8 +87,6 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   private boolean ended;
   private ArrayDeque<Object> pending = new ArrayDeque<>(8);
 
-  private Handler<Long> resetHandler;
-
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder decoder;
 
@@ -138,9 +136,7 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
     ended = true;
     paused = false;
     pending.clear();
-    if (resetHandler != null) {
-      resetHandler.handle(code);
-    }
+    response.reset(code);
     if (endHandler != null) {
       endHandler.handle(null);
     }
@@ -423,12 +419,6 @@ public class Http2ServerRequestImpl implements HttpServerRequest {
   @Override
   public boolean isEnded() {
     throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpServerRequest resetHandler(Handler<Long> handler) {
-    resetHandler = handler;
-    return this;
   }
 
   @Override

@@ -330,11 +330,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerRequest resetHandler(Handler<Long> handler) {
-    return this;
-  }
-
-  @Override
   public HttpConnection connection() {
     return null;
   }

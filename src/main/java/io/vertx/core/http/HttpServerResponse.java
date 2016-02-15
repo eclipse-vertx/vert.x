@@ -375,4 +375,17 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return the total number of bytes written for the body of the response.
    */
   long bytesWritten();
+
+  /**
+   * Set an reset handler. The handler will get notified if the request is reset. This handler will not be called
+   * for HTTP/1.x requests.<p/>
+   *
+   * The handler is called with the reset code.
+   *
+   * @param handler the handler to call when the stream is reset
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse resetHandler(Handler<Long> handler);
+
 }

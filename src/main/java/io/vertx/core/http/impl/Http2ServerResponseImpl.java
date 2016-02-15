@@ -30,6 +30,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -49,11 +50,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private int statusCode = 200;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
+  private Handler<Long> resetHandler;
 
   public Http2ServerResponseImpl(ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, Http2Stream stream) {
     this.ctx = ctx;
     this.encoder = encoder;
     this.stream = stream;
+  }
+
+  void reset(long code) {
+    if (resetHandler != null) {
+      resetHandler.handle(code);
+    }
   }
 
   @Override
@@ -318,6 +326,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public long bytesWritten() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public HttpServerResponse resetHandler(Handler<Long> handler) {
+    resetHandler = handler;
+    return this;
   }
 
 }

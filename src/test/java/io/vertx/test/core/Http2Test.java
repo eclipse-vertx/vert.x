@@ -466,7 +466,7 @@ public class Http2Test extends HttpTestBase {
       req.handler(buf -> {
         bufReceived.complete(null);
       });
-      req.resetHandler(code -> {
+      req.response().resetHandler(code -> {
         assertEquals((Long)10L, code);
         assertEquals(0, resetCount.getAndIncrement());
       });

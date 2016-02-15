@@ -50,6 +50,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private final Vertx vertx;
   private final String serverOrigin;
   private final IntObjectMap<Http2ServerRequestImpl> requestMap = new IntObjectHashMap<>();
+  private final IntObjectMap<Http2ServerResponseImpl> responseMap = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
   private Handler<Void> closeHandler;
 
@@ -58,8 +59,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     super(decoder, encoder, initialSettings);
 
     encoder.flowController().listener(stream -> {
-      Http2ServerRequestImpl req = requestMap.get(stream.id());
-      Http2ServerResponseImpl resp = req.response();
+      Http2ServerResponseImpl resp = responseMap.get(stream.id());
       resp.writabilityChanged();
     });
 
@@ -98,6 +98,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     Http2Stream stream = conn.stream(streamId);
     Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, this, serverOrigin, conn, stream, ctx, encoder(), headers);
     requestMap.put(streamId, req);
+    responseMap.put(streamId, req.response());
     handler.handle(req);
     if (endOfStream) {
       req.end();
@@ -131,7 +132,12 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
     Http2ServerRequestImpl req = requestMap.get(streamId);
-    req.reset(errorCode);
+    if (req != null) {
+      req.reset(errorCode);
+    } else {
+      Http2ServerResponseImpl resp = responseMap.get(streamId);
+      resp.reset(streamId);
+    }
   }
 
   @Override
