@@ -35,6 +35,7 @@ import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
@@ -65,6 +66,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -73,6 +75,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -373,20 +376,29 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testServerResponseWritability() throws Exception {
-    final int numBuffers = 32; // 32 * 1024 < 65K (initial flow-control window size)
     String content = TestUtils.randomAlphaString(1024);
+    StringBuilder expected = new StringBuilder();
     CountDownLatch latch = new CountDownLatch(1);
+    CompletableFuture<Void> whenFull = new CompletableFuture<>();
+    AtomicBoolean drain = new AtomicBoolean();
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.putHeader("content-type", "text/plain");
       resp.setChunked(true);
-      for (int i = 0;i < numBuffers;i++) {
-        vertx.runOnContext(v -> {
-          resp.write(Buffer.buffer(content));
-        });
-      }
-      vertx.runOnContext(v -> {
-        resp.end();
+      vertx.setPeriodic(1, timerID -> {
+        if (resp.writeQueueFull()) {
+          resp.drainHandler(v -> {
+            expected.append("last");
+            resp.end(Buffer.buffer("last"));
+          });
+          vertx.cancelTimer(timerID);
+          drain.set(true);
+          whenFull.complete(null);
+        } else {
+          expected.append(content);
+          Buffer buf = Buffer.buffer(content);
+          resp.write(buf);
+        }
       });
     })
         .listen(ar -> {
@@ -394,15 +406,53 @@ public class Http2Test extends HttpTestBase {
           latch.countDown();
         });
     awaitLatch(latch);
-    OkHttpClient client = createHttp2Client();
-    Request request = new Request.Builder().url("https://localhost:4043/").build();
-    Response response = client.newCall(request).execute();
-    String s = response.body().string();
-    StringBuilder expected = new StringBuilder();
-    for (int i = 0;i < numBuffers;i++) {
-      expected.append(content);
-    }
-    assertEquals(expected.toString(), s);
+
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      AtomicInteger toAck = new AtomicInteger();
+      int id = request.connection.local().nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      request.decoder.frameListener(new Http2FrameAdapter() {
+
+        StringBuilder received = new StringBuilder();
+
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          received.append(data.toString(StandardCharsets.UTF_8));
+          int delta = super.onDataRead(ctx, streamId, data, padding, endOfStream);
+          if (endOfStream) {
+            vertx.runOnContext(v -> {
+              assertEquals(expected.toString(), received.toString());
+              testComplete();
+            });
+            return delta;
+          } else {
+            if (drain.get()) {
+              return delta;
+            } else {
+              toAck.getAndAdd(delta);
+              return 0;
+            }
+          }
+        }
+      });
+      whenFull.thenAccept(v -> {
+        request.context.invoker().executor().execute(() -> {
+          try {
+            request.decoder.flowController().consumeBytes(request.connection.stream(id), toAck.intValue());
+            request.context.flush();
+          } catch (Http2Exception e) {
+            e.printStackTrace();
+            fail(e);
+          }
+        });
+      });
+    });
+
+    fut.sync();
+
+    await();
   }
 
   @Test

@@ -254,7 +254,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public boolean writeQueueFull() {
-    return encoder.flowController().isWritable(stream);
+    return !encoder.flowController().isWritable(stream);
   }
 
   @Override
