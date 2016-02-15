@@ -265,6 +265,20 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @CacheReturn
   HttpConnection connection();
 
+  /**
+   * Send immediatly a push promise to the client.<p/>
+   *
+   * The {@code handler} will be notified with a <i>success</i> when the push promise can be sent and with
+   * a <i>failure</i> when the client has disabled push or reset the push before it has been sent.<p/>
+   *
+   * The {@code handler} may be queued if the client has reduced the maximum number of streams the server can push
+   * concurrently.
+   *
+   * @param method the push promise method
+   * @param path the push promise path
+   * @param handler the notified handler
+   * @return a reference to this, so the API can be used fluently
+   */
   @Fluent
   HttpServerRequest promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
 
