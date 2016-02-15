@@ -55,7 +55,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   private final Vertx vertx;
   private final String serverOrigin;
-  private final IntObjectMap<VertxHttp2Stream> requestMap = new IntObjectHashMap<>();
+  private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
   private Handler<Void> closeHandler;
 
@@ -68,14 +68,14 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     super(decoder, encoder, initialSettings);
 
     encoder.flowController().listener(stream -> {
-      Http2ServerResponseImpl resp = requestMap.get(stream.id()).response();
+      Http2ServerResponseImpl resp = streams.get(stream.id()).response();
       resp.writabilityChanged();
     });
 
     connection().addListener(new Http2ConnectionAdapter() {
       @Override
       public void onStreamClosed(Http2Stream stream) {
-        VertxHttp2Stream removed = requestMap.remove(stream.id());
+        VertxHttp2Stream removed = streams.remove(stream.id());
         if (removed instanceof Push) {
           if (pendingPushes.remove(removed)) {
             Push push = (Push) removed;
@@ -124,7 +124,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     Http2Connection conn = connection();
     Http2Stream stream = conn.stream(streamId);
     Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, this, serverOrigin, conn, stream, ctx, encoder(), headers);
-    requestMap.put(streamId, req);
+    streams.put(streamId, req);
     handler.handle(req);
     if (endOfStream) {
       req.end();
@@ -139,7 +139,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    Http2ServerRequestImpl req = (Http2ServerRequestImpl) requestMap.get(streamId);
+    Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
     int processed = padding;
     if (req.handleData(Buffer.buffer(data.copy()))) {
       processed += data.readableBytes();
@@ -157,7 +157,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttp2Stream req = requestMap.get(streamId);
+    VertxHttp2Stream req = streams.get(streamId);
     req.reset(errorCode);
   }
 
@@ -232,7 +232,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     Http2Stream stream = connection().stream(streamId);
     Http2ServerResponseImpl resp = new Http2ServerResponseImpl(ctx, encoder(), stream);
     Push push = new Push(resp, handler);
-    requestMap.put(streamId, push);
+    streams.put(streamId, push);
     if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
       concurrentStreams++;
       handler.handle(Future.succeededFuture(resp));

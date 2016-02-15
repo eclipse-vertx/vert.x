@@ -561,9 +561,8 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeSettings(request.context, new Http2Settings().pushEnabled(true).maxConcurrentStreams(3), request.context.newPromise());
       encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
-      Map<Integer, Http2Headers> pushed = new HashMap<Integer, Http2Headers>();
+      Map<Integer, Http2Headers> pushed = new HashMap<>();
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
         public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
