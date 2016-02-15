@@ -679,4 +679,36 @@ public class Http2Test extends HttpTestBase {
     fut.sync();
     await();
   }
+
+  @Test
+  public void testResetPendingPushPromise() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      req.promisePush(HttpMethod.GET, "/wibble", ar -> {
+        assertFalse(ar.succeeded());
+        testComplete();
+      });
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    client.settings.maxConcurrentStreams(0);
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+          request.encoder.writeRstStream(request.context, promisedStreamId, Http2Error.CANCEL.code(), request.context.newPromise());
+          request.context.flush();
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
 }

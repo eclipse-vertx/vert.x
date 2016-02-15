@@ -77,8 +77,15 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       public void onStreamClosed(Http2Stream stream) {
         VertxHttp2Stream removed = requestMap.remove(stream.id());
         if (removed instanceof Push) {
-          concurrentStreams--;
-          checkPendingPushes();
+          if (pendingPushes.remove(removed)) {
+            Push push = (Push) removed;
+            vertx.runOnContext(v -> {
+              push.handler.handle(Future.failedFuture("Push reset by client"));
+            });
+          } else {
+            concurrentStreams--;
+            checkPendingPushes();
+          }
         }
       }
     });
