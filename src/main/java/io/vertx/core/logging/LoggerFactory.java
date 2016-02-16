@@ -19,6 +19,9 @@ package io.vertx.core.logging;
 import io.vertx.core.spi.logging.LogDelegate;
 import io.vertx.core.spi.logging.LogDelegateFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,6 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 public class LoggerFactory {
 
   public static final String LOGGER_DELEGATE_FACTORY_CLASS_NAME = "vertx.logger-delegate-factory-class-name";
+  public static final String LOGGER_FACTORY_PROPERTIES_FILE_NAME = "vertx-logger-factory.properties";
 
   private static volatile LogDelegateFactory delegateFactory;
 
@@ -48,6 +52,18 @@ public class LoggerFactory {
     try {
       className = System.getProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME);
     } catch (Exception e) {
+    }
+
+    // try to load properties file from classpath
+    if (className == null) {
+      try (InputStream is = LoggerFactory.class.getClassLoader().getResourceAsStream(LOGGER_FACTORY_PROPERTIES_FILE_NAME)) {
+        if (is != null) {
+          Properties prop = new Properties();
+          prop.load(is);
+          className = prop.getProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME);
+        }
+      } catch (IOException ignore) {
+      }
     }
 
     if (className != null) {
