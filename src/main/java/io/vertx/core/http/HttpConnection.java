@@ -26,11 +26,12 @@ import io.vertx.core.Handler;
  * Represents an HTTP connection.<p/>
  *
  * todo:
- * - push promise handler
- * - push promise
- * - settings handler
- * - settings update
- * - connection flow control (?)
+ *
+ * - server stream reset
+ * - check invalid headers requests
+ * - test http server response headers sent
+ * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
+ * - server synchronization + executeFromIO
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
