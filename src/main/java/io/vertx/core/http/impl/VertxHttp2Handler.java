@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
@@ -33,6 +34,7 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.AsciiString;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -53,17 +55,23 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
+  private ChannelHandlerContext context;
   private final Vertx vertx;
   private final String serverOrigin;
   private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
   private Handler<Void> closeHandler;
 
+  private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
+  private Http2Settings clientSettings = new Http2Settings();
+  private final ArrayDeque<Runnable> updateSettingsHandler = new ArrayDeque<>(4);
+  private Http2Settings serverSettings = new Http2Settings();
+
   private Long maxConcurrentStreams;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>();
 
-  VertxHttp2Handler(Vertx vertx, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
+  VertxHttp2Handler(ChannelHandlerContext context, Vertx vertx, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
 
@@ -90,6 +98,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       }
     });
 
+    this.context = context;
     this.vertx = vertx;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
@@ -163,6 +172,10 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {
+    Runnable handler = updateSettingsHandler.poll();
+    if (handler != null) {
+      handler.run();
+    }
   }
 
   @Override
@@ -170,6 +183,10 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     Long v = settings.maxConcurrentStreams();
     if (v != null) {
       maxConcurrentStreams = v;
+    }
+    clientSettings.putAll(settings);
+    if (clientSettingsHandler != null) {
+      clientSettingsHandler.handle(clientSettings());
     }
   }
 
@@ -255,5 +272,77 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   public HttpConnection closeHandler(Handler<Void> handler) {
     closeHandler = handler;
     return this;
+  }
+
+  @Override
+  public HttpConnection clientSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
+    clientSettingsHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler() {
+    return clientSettingsHandler;
+  }
+
+  @Override
+  public io.vertx.core.http.Http2Settings clientSettings() {
+    return toVertxSettings(clientSettings);
+  }
+
+  @Override
+  public io.vertx.core.http.Http2Settings settings() {
+    return toVertxSettings(serverSettings);
+  }
+
+  @Override
+  public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings) {
+    return updateSettings(settings, null);
+  }
+
+  @Override
+  public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
+    Http2Settings settingsUpdate = fromVertxSettings(settings);
+    settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
+    encoder().writeSettings(context, settingsUpdate, context.newPromise()).addListener(fut -> {
+      if (fut.isSuccess()) {
+        updateSettingsHandler.add(() -> {
+          serverSettings.putAll(settingsUpdate);
+          if (completionHandler != null) {
+            completionHandler.handle(Future.succeededFuture());
+          }
+        });
+      } else {
+        completionHandler.handle(Future.failedFuture(fut.cause()));
+      }
+    });
+    context.flush();
+    return this;
+  }
+
+  public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
+    Http2Settings converted = new Http2Settings();
+    converted.pushEnabled(settings.getEnablePush());
+    converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
+    converted.maxHeaderListSize(settings.getMaxHeaderListSize());
+    converted.maxFrameSize(settings.getMaxFrameSize());
+    converted.initialWindowSize(settings.getInitialWindowSize());
+    if (settings.getHeaderTableSize() != null) {
+      converted.headerTableSize((int)(long)settings.getHeaderTableSize());
+    }
+    return converted;
+  }
+
+  public static io.vertx.core.http.Http2Settings toVertxSettings(Http2Settings settings) {
+    io.vertx.core.http.Http2Settings converted = new io.vertx.core.http.Http2Settings();
+    converted.setEnablePush(settings.pushEnabled());
+    converted.setMaxConcurrentStreams(settings.maxConcurrentStreams());
+    converted.setMaxHeaderListSize(settings.maxHeaderListSize());
+    converted.setMaxFrameSize(settings.maxFrameSize());
+    converted.setInitialWindowSize(settings.initialWindowSize());
+    if (settings.headerTableSize() != null) {
+      converted.setHeaderTableSize((int)(long)settings.headerTableSize());
+    }
+    return converted;
   }
 }

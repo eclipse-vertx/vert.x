@@ -16,6 +16,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
@@ -29,14 +30,34 @@ import io.vertx.core.http.HttpServerRequest;
  */
 public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2Handler, VertxHttp2HandlerBuilder> {
 
+  private final ChannelHandlerContext context;
   private final Vertx vertx;
   private final String serverOrigin;
   private final Handler<HttpServerRequest> handler;
 
-  public VertxHttp2HandlerBuilder(Vertx vertx, String serverOrigin, Handler<HttpServerRequest> handler) {
+  public VertxHttp2HandlerBuilder(ChannelHandlerContext context, Vertx vertx, String serverOrigin, io.vertx.core.http.Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
     this.vertx = vertx;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
+    this.context = context;
+
+    if (initialSettings != null) {
+      if (initialSettings.getHeaderTableSize() != null) {
+        initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
+      }
+      if (initialSettings.getInitialWindowSize() != null) {
+        initialSettings().initialWindowSize(initialSettings.getInitialWindowSize());
+      }
+      if (initialSettings.getMaxConcurrentStreams() != null) {
+        initialSettings().maxConcurrentStreams(initialSettings.getMaxConcurrentStreams());
+      }
+      if (initialSettings.getMaxFrameSize() != null) {
+        initialSettings().maxFrameSize(initialSettings.getMaxFrameSize());
+      }
+      if (initialSettings.getMaxHeaderListSize() != null) {
+        initialSettings().maxHeaderListSize(initialSettings.getMaxHeaderListSize());
+      }
+    }
   }
 
   @Override
@@ -59,7 +80,9 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
 
   @Override
   protected VertxHttp2Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-    VertxHttp2Handler vertxHttp2Handler = new VertxHttp2Handler(vertx, serverOrigin, decoder, encoder, initialSettings, handler);
+    VertxHttp2Handler vertxHttp2Handler = new VertxHttp2Handler(
+        context,
+        vertx, serverOrigin, decoder, encoder, initialSettings, handler);
     frameListener(vertxHttp2Handler);
     return vertxHttp2Handler;
   }

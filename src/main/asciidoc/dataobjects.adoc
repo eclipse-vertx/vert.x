@@ -247,6 +247,26 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 +++
 |===
 
+[[Http2Settings]]
+== Http2Settings
+
+++++
+ HTTP2 settings.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[enablePush]]`enablePush`|`Boolean`|-
+|[[headerTableSize]]`headerTableSize`|`Number (Integer)`|-
+|[[initialWindowSize]]`initialWindowSize`|`Number (Integer)`|-
+|[[maxConcurrentStreams]]`maxConcurrentStreams`|`Number (Long)`|-
+|[[maxFrameSize]]`maxFrameSize`|`Number (Integer)`|-
+|[[maxHeaderListSize]]`maxHeaderListSize`|`Number (Integer)`|-
+|===
+
 [[Argument]]
 == Argument
 
@@ -923,6 +943,7 @@ Set whether 100 Continue should be handled automatically
 +++
 Set the host
 +++
+|[[http2Settings]]`http2Settings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|-
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.

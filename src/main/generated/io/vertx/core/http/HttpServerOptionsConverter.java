@@ -33,6 +33,9 @@ public class HttpServerOptionsConverter {
     if (json.getValue("handle100ContinueAutomatically") instanceof Boolean) {
       obj.setHandle100ContinueAutomatically((Boolean)json.getValue("handle100ContinueAutomatically"));
     }
+    if (json.getValue("http2Settings") instanceof JsonObject) {
+      obj.setHttp2Settings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("http2Settings")));
+    }
     if (json.getValue("maxChunkSize") instanceof Number) {
       obj.setMaxChunkSize(((Number)json.getValue("maxChunkSize")).intValue());
     }
@@ -53,6 +56,9 @@ public class HttpServerOptionsConverter {
   public static void toJson(HttpServerOptions obj, JsonObject json) {
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
+    if (obj.getHttp2Settings() != null) {
+      json.put("http2Settings", obj.getHttp2Settings().toJson());
+    }
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());

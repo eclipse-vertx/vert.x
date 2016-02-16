@@ -28,6 +28,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
@@ -48,6 +49,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.impl.VertxHttp2Handler;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.TrustOptions;
@@ -88,12 +90,13 @@ import java.util.function.Consumer;
  */
 public class Http2Test extends HttpTestBase {
 
+  private HttpServerOptions serverOptions;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
 
-    HttpServerOptions options = new HttpServerOptions()
+    serverOptions = new HttpServerOptions()
         .setPort(4043)
         .setHost("localhost")
         .setUseAlpn(true)
@@ -101,7 +104,7 @@ public class Http2Test extends HttpTestBase {
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
         .setKeyStoreOptions((JksOptions) getServerCertOptions(KeyCert.JKS));
 
-    server = vertx.createHttpServer(options);
+    server = vertx.createHttpServer(serverOptions);
 
   }
 
@@ -206,6 +209,153 @@ public class Http2Test extends HttpTestBase {
       });
       return bootstrap.connect(new InetSocketAddress(host, port));
     }
+  }
+
+  @Test
+  public void testServerInitialSettings() throws Exception {
+    Http2Settings settings = randomSettings();
+    CountDownLatch latch = new CountDownLatch(1);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setHttp2Settings(VertxHttp2Handler.toVertxSettings(settings)));
+    server.requestHandler(req -> fail()).listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    client.settings.maxConcurrentStreams(0);
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings newSettings) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(settings.headerTableSize(), newSettings.headerTableSize());
+            assertEquals(settings.maxConcurrentStreams(), newSettings.maxConcurrentStreams());
+            assertEquals(settings.initialWindowSize(), newSettings.initialWindowSize());
+            assertEquals(settings.maxFrameSize(), newSettings.maxFrameSize());
+            assertEquals(settings.maxHeaderListSize(), newSettings.maxHeaderListSize());
+            testComplete();
+          });
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testServerSettings() throws Exception {
+    waitFor(2);
+    Http2Settings expectedSettings = randomSettings();
+    CountDownLatch latch = new CountDownLatch(1);
+    server.close();
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> {
+      req.connection().updateSettings(VertxHttp2Handler.toVertxSettings(expectedSettings), ar -> {
+        io.vertx.core.http.Http2Settings ackedSettings = req.connection().settings();
+        assertEquals(expectedSettings.maxHeaderListSize(), ackedSettings.getMaxHeaderListSize());
+        assertEquals(expectedSettings.maxFrameSize(), ackedSettings.getMaxFrameSize());
+        assertEquals(expectedSettings.initialWindowSize(), ackedSettings.getInitialWindowSize());
+        assertEquals(expectedSettings.maxConcurrentStreams(), ackedSettings.getMaxConcurrentStreams());
+        assertEquals((long)expectedSettings.headerTableSize(), (long)ackedSettings.getHeaderTableSize());
+        complete();
+      });
+    }).listen(ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    client.settings.maxConcurrentStreams(0);
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        AtomicInteger count = new AtomicInteger();
+        @Override
+        public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings newSettings) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            switch (count.getAndIncrement()) {
+              case 0:
+                // Initial settings
+                break;
+              case 1:
+                // Server sent settings
+                assertEquals(expectedSettings.maxHeaderListSize(), newSettings.maxHeaderListSize());
+                assertEquals(expectedSettings.maxFrameSize(), newSettings.maxFrameSize());
+                assertEquals(expectedSettings.initialWindowSize(), newSettings.initialWindowSize());
+                assertEquals(expectedSettings.maxConcurrentStreams(), newSettings.maxConcurrentStreams());
+                assertEquals((long)expectedSettings.headerTableSize(), (long)newSettings.headerTableSize());
+                complete();
+                break;
+              default:
+                fail();
+            }
+          });
+        }
+      });
+      int id = request.connection.local().nextStreamId();
+      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testClientSettings() throws Exception {
+    Http2Settings initialSettings = randomSettings();
+    Http2Settings updatedSettings = randomSettings();
+    CountDownLatch latch = new CountDownLatch(1);
+    CompletableFuture<Void> settingsRead = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      io.vertx.core.http.Http2Settings settings = req.connection().clientSettings();
+      assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+      assertEquals(initialSettings.maxFrameSize(), settings.getMaxFrameSize());
+      assertEquals(initialSettings.initialWindowSize(), settings.getInitialWindowSize());
+      assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
+      assertEquals((long)initialSettings.headerTableSize(), (long)settings.getHeaderTableSize());
+      req.connection().clientSettingsHandler(update -> {
+        assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
+        assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
+        assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
+        assertEquals(updatedSettings.maxConcurrentStreams(), update.getMaxConcurrentStreams());
+        assertEquals((long)updatedSettings.headerTableSize(), (long)update.getHeaderTableSize());
+        testComplete();
+      });
+      settingsRead.complete(null);
+    }).listen(ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    client.settings.putAll(initialSettings);
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+      request.context.flush();
+      settingsRead.thenAccept(v -> {
+        request.encoder.writeSettings(request.context, updatedSettings, request.context.newPromise());
+        request.context.flush();
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  private Http2Settings randomSettings() {
+    int headerTableSize = 10 + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_HEADER_TABLE_SIZE - 10);
+    boolean enablePush = TestUtils.randomBoolean();
+    long maxConcurrentStreams = TestUtils.randomPositiveLong() % (Http2CodecUtil.MAX_CONCURRENT_STREAMS - 10);
+    int initialWindowSize = 10 + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE - 10);
+    int maxFrameSize = Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND - Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND);
+    int maxHeaderListSize = 10 + TestUtils.randomPositiveInt() % (int)(Http2CodecUtil.MAX_HEADER_LIST_SIZE - 10);
+    Http2Settings settings = new Http2Settings();
+    settings.headerTableSize(headerTableSize);
+    settings.pushEnabled(enablePush);
+    settings.maxConcurrentStreams(maxConcurrentStreams);
+    settings.initialWindowSize(initialWindowSize);
+    settings.maxFrameSize(maxFrameSize);
+    settings.maxHeaderListSize(maxHeaderListSize);
+    return settings;
   }
 
   @Test

@@ -71,6 +71,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
+  private Http2Settings http2Settings;
 
   /**
    * Default constructor
@@ -95,6 +96,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxChunkSize = other.getMaxChunkSize();
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
+    this.http2Settings = other.http2Settings != null ? new Http2Settings(other.http2Settings) : null;
   }
 
   /**
@@ -390,6 +392,15 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setMaxHeaderSize(int maxHeaderSize) {
     this.maxHeaderSize = maxHeaderSize;
+    return this;
+  }
+
+  public Http2Settings getHttp2Settings() {
+    return http2Settings;
+  }
+
+  public HttpServerOptions setHttp2Settings(Http2Settings http2Settings) {
+    this.http2Settings = http2Settings;
     return this;
   }
 
