@@ -58,7 +58,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     this.stream = stream;
   }
 
-  void reset(long code) {
+  void handleReset(long code) {
     if (resetHandler != null) {
       resetHandler.handle(code);
     }
@@ -334,4 +334,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     return this;
   }
 
+  @Override
+  public void reset(long code) {
+    encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
+  }
 }

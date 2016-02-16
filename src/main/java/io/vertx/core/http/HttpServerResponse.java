@@ -388,4 +388,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Fluent
   HttpServerResponse resetHandler(Handler<Long> handler);
 
+  /**
+   * Reset this stream.
+   *
+   * @param code the error code
+   */
+  void reset(long code);
+
 }

@@ -23,6 +23,6 @@ abstract class VertxHttp2Stream {
 
   abstract Http2ServerResponseImpl response();
 
-  abstract void reset(long code);
+  abstract void handleReset(long code);
 
 }

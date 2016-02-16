@@ -603,4 +603,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       return this;
     }
   }
+
+  @Override
+  public void reset(long code) {
+  }
 }

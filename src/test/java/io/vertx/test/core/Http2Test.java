@@ -145,6 +145,7 @@ public class Http2Test extends HttpTestBase {
       public final Http2Connection connection;
       public final Http2ConnectionEncoder encoder;
       public final Http2ConnectionDecoder decoder;
+
       public Request(ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
         this.context = context;
         this.connection = connection;
@@ -166,6 +167,7 @@ public class Http2Test extends HttpTestBase {
         protected TestClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
           return new TestClientHandler(decoder, encoder, initialSettings);
         }
+
         public TestClientHandler build(Http2Connection conn) {
           connection(conn);
           initialSettings(settings);
@@ -218,9 +220,9 @@ public class Http2Test extends HttpTestBase {
     server.close();
     server = vertx.createHttpServer(serverOptions.setHttp2Settings(VertxHttp2Handler.toVertxSettings(settings)));
     server.requestHandler(req -> fail()).listen(ar -> {
-          assertTrue(ar.succeeded());
-          latch.countDown();
-        });
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
     awaitLatch(latch);
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(0);
@@ -257,7 +259,7 @@ public class Http2Test extends HttpTestBase {
         assertEquals(expectedSettings.maxFrameSize(), ackedSettings.getMaxFrameSize());
         assertEquals(expectedSettings.initialWindowSize(), ackedSettings.getInitialWindowSize());
         assertEquals(expectedSettings.maxConcurrentStreams(), ackedSettings.getMaxConcurrentStreams());
-        assertEquals((long)expectedSettings.headerTableSize(), (long)ackedSettings.getHeaderTableSize());
+        assertEquals((long) expectedSettings.headerTableSize(), (long) ackedSettings.getHeaderTableSize());
         complete();
       });
     }).listen(ar -> {
@@ -270,6 +272,7 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       request.decoder.frameListener(new Http2FrameAdapter() {
         AtomicInteger count = new AtomicInteger();
+
         @Override
         public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings newSettings) throws Http2Exception {
           vertx.runOnContext(v -> {
@@ -283,7 +286,7 @@ public class Http2Test extends HttpTestBase {
                 assertEquals(expectedSettings.maxFrameSize(), newSettings.maxFrameSize());
                 assertEquals(expectedSettings.initialWindowSize(), newSettings.initialWindowSize());
                 assertEquals(expectedSettings.maxConcurrentStreams(), newSettings.maxConcurrentStreams());
-                assertEquals((long)expectedSettings.headerTableSize(), (long)newSettings.headerTableSize());
+                assertEquals((long) expectedSettings.headerTableSize(), (long) newSettings.headerTableSize());
                 complete();
                 break;
               default:
@@ -311,13 +314,13 @@ public class Http2Test extends HttpTestBase {
       assertEquals(initialSettings.maxFrameSize(), settings.getMaxFrameSize());
       assertEquals(initialSettings.initialWindowSize(), settings.getInitialWindowSize());
       assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
-      assertEquals((long)initialSettings.headerTableSize(), (long)settings.getHeaderTableSize());
+      assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
       req.connection().clientSettingsHandler(update -> {
         assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
         assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
         assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
         assertEquals(updatedSettings.maxConcurrentStreams(), update.getMaxConcurrentStreams());
-        assertEquals((long)updatedSettings.headerTableSize(), (long)update.getHeaderTableSize());
+        assertEquals((long) updatedSettings.headerTableSize(), (long) update.getHeaderTableSize());
         testComplete();
       });
       settingsRead.complete(null);
@@ -347,7 +350,7 @@ public class Http2Test extends HttpTestBase {
     long maxConcurrentStreams = TestUtils.randomPositiveLong() % (Http2CodecUtil.MAX_CONCURRENT_STREAMS - 10);
     int initialWindowSize = 10 + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE - 10);
     int maxFrameSize = Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND - Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND);
-    int maxHeaderListSize = 10 + TestUtils.randomPositiveInt() % (int)(Http2CodecUtil.MAX_HEADER_LIST_SIZE - 10);
+    int maxHeaderListSize = 10 + TestUtils.randomPositiveInt() % (int) (Http2CodecUtil.MAX_HEADER_LIST_SIZE - 10);
     Http2Settings settings = new Http2Settings();
     settings.headerTableSize(headerTableSize);
     settings.pushEnabled(enablePush);
@@ -364,11 +367,11 @@ public class Http2Test extends HttpTestBase {
     AtomicBoolean requestEnded = new AtomicBoolean();
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
-          req.endHandler(v -> {
-            requestEnded.set(true);
-          });
-          req.response().putHeader("content-type", "text/plain").end(content);
-        })
+      req.endHandler(v -> {
+        requestEnded.set(true);
+      });
+      req.response().putHeader("content-type", "text/plain").end(content);
+    })
         .listen(ar -> {
           assertTrue(ar.succeeded());
           latch.countDown();
@@ -422,7 +425,7 @@ public class Http2Test extends HttpTestBase {
       req.endHandler(v -> {
         req.response().putHeader("content-type", "text/plain").end("");
       });
-        })
+    })
         .listen(ar -> {
           assertTrue(ar.succeeded());
           latch.countDown();
@@ -514,6 +517,7 @@ public class Http2Test extends HttpTestBase {
           public MediaType contentType() {
             return MediaType.parse("text/plain");
           }
+
           @Override
           public void writeTo(BufferedSink sink) throws IOException {
             while (!done.get()) {
@@ -614,7 +618,42 @@ public class Http2Test extends HttpTestBase {
   }
 
   @Test
-  public void testResetServerStream() throws Exception {
+  public void testServerResetClientStream() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      req.handler(buf -> {
+        req.response().reset(8);
+      });
+    }).listen(ar -> {
+      assertTrue(ar.succeeded());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(8, errorCode);
+            testComplete();
+          });
+        }
+      });
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+      encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
+    });
+
+    fut.sync();
+
+    await();
+  }
+
+  @Test
+  public void testClientResetServerStream() throws Exception {
 
     CountDownLatch latch = new CountDownLatch(1);
     CompletableFuture<Void> bufReceived = new CompletableFuture<>();
@@ -624,7 +663,7 @@ public class Http2Test extends HttpTestBase {
         bufReceived.complete(null);
       });
       req.response().resetHandler(code -> {
-        assertEquals((Long)10L, code);
+        assertEquals((Long) 10L, code);
         assertEquals(0, resetCount.getAndIncrement());
       });
       req.endHandler(v -> {
@@ -718,6 +757,7 @@ public class Http2Test extends HttpTestBase {
         public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
           pushed.put(promisedStreamId, headers);
         }
+
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           int delta = super.onDataRead(ctx, streamId, data, padding, endOfStream);
@@ -782,7 +822,7 @@ public class Http2Test extends HttpTestBase {
     Set<String> pushSent = new HashSet<>();
     server.requestHandler(req -> {
       req.response().setChunked(true).write("abc");
-      for (int i = 0;i < numPushes;i++) {
+      for (int i = 0; i < numPushes; i++) {
         int val = i;
         String path = "/wibble" + val;
         req.promisePush(HttpMethod.GET, path, ar -> {
@@ -808,10 +848,12 @@ public class Http2Test extends HttpTestBase {
       request.decoder.frameListener(new Http2FrameAdapter() {
         int count = numPushes;
         Set<String> pushReceived = new HashSet<>();
+
         @Override
         public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
           pushReceived.add(headers.path().toString());
         }
+
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           if (count-- == 0) {

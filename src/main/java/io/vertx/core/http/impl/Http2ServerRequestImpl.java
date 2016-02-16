@@ -135,11 +135,11 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     return false;
   }
 
-  void reset(long code) {
+  void handleReset(long code) {
     ended = true;
     paused = false;
     pending.clear();
-    response.reset(code);
+    response.handleReset(code);
     if (endHandler != null) {
       endHandler.handle(null);
     }
