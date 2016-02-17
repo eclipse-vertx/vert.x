@@ -76,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -362,7 +363,7 @@ public class Http2Test extends HttpTestBase {
   }
 
   @Test
-  public void testGet() throws Exception {
+    public void testGet() throws Exception {
     String content = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
     CountDownLatch latch = new CountDownLatch(1);
@@ -370,7 +371,12 @@ public class Http2Test extends HttpTestBase {
       req.endHandler(v -> {
         requestEnded.set(true);
       });
-      req.response().putHeader("content-type", "text/plain").end(content);
+      HttpServerResponse resp = req.response();
+      resp.putHeader("content-type", "text/plain");
+      resp.putHeader("Foo", "foo_value");
+      resp.putHeader("bar", "bar_value");
+      resp.putHeader("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.end(content);
     })
         .listen(ar -> {
           assertTrue(ar.succeeded());
@@ -382,6 +388,11 @@ public class Http2Test extends HttpTestBase {
     Response response = client.newCall(request).execute();
     assertEquals(Protocol.HTTP_2, response.protocol());
     assertEquals(content, response.body().string());
+    assertEquals("text/plain", response.header("content-type"));
+    System.out.println(response.headers().names());
+    assertEquals("foo_value", response.header("foo"));
+    assertEquals("bar_value", response.header("bar"));
+    assertEquals(Arrays.asList("juu_value_1", "juu_value_2"), response.headers("juu"));
   }
 
   @Test

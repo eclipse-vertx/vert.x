@@ -33,6 +33,25 @@ import java.util.stream.Collectors;
  */
 public class Http2HeadersAdaptor implements MultiMap {
 
+  private static CharSequence toLowerCase(CharSequence s) {
+    StringBuilder buffer = null;
+    int len = s.length();
+    for (int index = 0; index < len; index++) {
+      char c = s.charAt(index);
+      if (c >= 'A' && c <= 'Z') {
+        if (buffer == null) {
+          buffer = new StringBuilder(s);
+        }
+        buffer.setCharAt(index, (char)(c + ('a' - 'A')));
+      }
+    }
+    if (buffer != null) {
+      return buffer.toString();
+    } else {
+      return s;
+    }
+  }
+
   private final Http2Headers headers;
   private Set<String> names;
   private List<Map.Entry<String, String>> entries;
@@ -43,13 +62,13 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public String get(String name) {
-    CharSequence val = headers.get(name);
+    CharSequence val = headers.get(toLowerCase(name));
     return val != null ? val.toString() : null;
   }
 
   @Override
   public List<String> getAll(String name) {
-    List<CharSequence> all = headers.getAll(name);
+    List<CharSequence> all = headers.getAll(toLowerCase(name));
     if (all != null) {
       return new AbstractList<String>() {
         @Override
@@ -78,7 +97,7 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public boolean contains(String name) {
-    return headers.contains(name);
+    return headers.contains(toLowerCase(name));
   }
 
   @Override
@@ -115,13 +134,13 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap add(String name, String value) {
-    headers.add(name, value);
+    headers.add(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap add(String name, Iterable<String> values) {
-    headers.add(name, values);
+    headers.add(toLowerCase(name), values);
     return this;
   }
 
@@ -143,13 +162,13 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap set(String name, String value) {
-    headers.set(name, value);
+    headers.set(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap set(String name, Iterable<String> values) {
-    headers.set(name, values);
+    headers.set(toLowerCase(name), values);
     return this;
   }
 
@@ -164,7 +183,7 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap remove(String name) {
-    headers.remove(name);
+    headers.remove(toLowerCase(name));
     return this;
   }
 
@@ -194,48 +213,48 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public String get(CharSequence name) {
-    CharSequence val = headers.get(name);
+    CharSequence val = headers.get(toLowerCase(name));
     return val != null ? val.toString() : null;
   }
 
   @Override
   public List<String> getAll(CharSequence name) {
-    List<CharSequence> all = headers.getAll(name);
+    List<CharSequence> all = headers.getAll(toLowerCase(name));
     return all != null ? all.stream().map(CharSequence::toString).collect(Collectors.toList()) : null;
   }
 
   @Override
   public boolean contains(CharSequence name) {
-    return headers.contains(name);
+    return headers.contains(toLowerCase(name));
   }
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
-    headers.add(name, value);
+    headers.add(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
-    headers.add(name, values);
+    headers.add(toLowerCase(name), values);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
-    headers.set(name, value);
+    headers.set(toLowerCase(name), value);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
-    headers.set(name, values);
+    headers.set(toLowerCase(name), values);
     return this;
   }
 
   @Override
   public MultiMap remove(CharSequence name) {
-    headers.remove(name);
+    headers.remove(toLowerCase(name));
     return this;
   }
 }

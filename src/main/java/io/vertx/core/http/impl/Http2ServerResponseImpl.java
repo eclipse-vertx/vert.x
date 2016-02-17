@@ -132,25 +132,25 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse putHeader(String name, String value) {
-    headers.add(name, value);
+    headers().add(name, value);
     return this;
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
-    headers.add(name, value);
+    headers().add(name, value);
     return this;
   }
 
   @Override
   public HttpServerResponse putHeader(String name, Iterable<String> values) {
-    headers.add(name, values);
+    headers().add(name, values);
     return this;
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
-    headers.add(name, values);
+    headers().add(name, values);
     return this;
   }
 
