@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -26,6 +27,7 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -151,6 +153,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
+  public @Nullable String host() {
+    return getHeader(HttpHeaderNames.HOST);
+  }
+
+  @Override
   public HttpServerResponse response() {
     return response;
   }
@@ -226,6 +233,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       this.endHandler = handler;
       return this;
     }
+  }
+
+  @Override
+  public String scheme() {
+    return isSSL() ? "https" : "http";
   }
 
   @Override

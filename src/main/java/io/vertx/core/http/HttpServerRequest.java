@@ -79,6 +79,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   boolean isSSL();
 
   /**
+   * @return the scheme of the request
+   */
+  @Nullable
+  String scheme();
+
+  /**
    * @return the URI of the request. This is usually a relative URI
    */
   String uri();
@@ -86,6 +92,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
    */
+  @Nullable
   String path();
 
   /**
@@ -93,6 +100,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @Nullable
   String query();
+
+  /**
+   * @return the request host. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
+   */
+  @Nullable
+  String host();
 
   /**
    * @return the response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used

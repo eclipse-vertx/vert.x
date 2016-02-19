@@ -265,21 +265,28 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public boolean isSSL() {
-    return headers.scheme().equals(HTTPS.name());
+    // Until we support h2c
+    return true;
   }
 
   @Override
   public String uri() {
     if (uri == null) {
-      uri = headers.path().toString();
+      CharSequence path = headers.path();
+      if (path != null) {
+        uri = path.toString();
+      }
     }
     return uri;
   }
 
   @Override
-  public String path() {
+  public @Nullable String path() {
     if (path == null) {
-      path = UriUtils.parsePath(uri());
+      CharSequence path = headers.path();
+      if (path != null) {
+        this.path = UriUtils.parsePath(path.toString());
+      }
     }
     return path;
   }
@@ -287,9 +294,24 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   @Override
   public @Nullable String query() {
     if (query == null) {
-      query = UriUtils.parseQuery(uri());
+      CharSequence path = headers.path();
+      if (path != null) {
+        this.query = UriUtils.parseQuery(path.toString());
+      }
     }
     return query;
+  }
+
+  @Override
+  public @Nullable String scheme() {
+    CharSequence scheme = headers.scheme();
+    return scheme != null ? scheme.toString() : null;
+  }
+
+  @Override
+  public @Nullable String host() {
+    CharSequence authority = headers.authority();
+    return authority != null ? authority.toString() : null;
   }
 
   @Override
@@ -345,6 +367,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public String absoluteURI() {
+    if (method() == HttpMethod.CONNECT) {
+      return null;
+    }
     if (absoluteURI == null) {
       try {
         absoluteURI = UriUtils.absoluteURI(serverOrigin, this);

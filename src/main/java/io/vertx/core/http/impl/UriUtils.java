@@ -83,9 +83,9 @@ final class UriUtils {
     if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
       absoluteURI = uri.toString();
     } else {
-      String host = req.headers().get(HttpHeaderNames.HOST);
+      String host = req.host();
       if (host != null) {
-        absoluteURI = (req.isSSL() ? "https://" : "http://") + host + uri;
+        absoluteURI = req.scheme() + "://" + host + uri;
       } else {
         // Fall back to the server origin
         absoluteURI = serverOrigin + uri;

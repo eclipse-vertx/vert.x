@@ -26,6 +26,8 @@ import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
+import io.netty.handler.codec.http2.Http2Error;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -44,6 +46,8 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -127,9 +131,43 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     ctx.close();
   }
 
+  private boolean isMalformedRequest(Http2Headers headers) {
+    if (headers.method() == null) {
+      return true;
+    }
+    String method = headers.method().toString();
+    if (method.equals("CONNECT")) {
+      if (headers.scheme() != null || headers.path() != null || headers.authority() == null) {
+        return true;
+      }
+    } else {
+      if (headers.method() == null || headers.scheme() == null || headers.path() == null) {
+        return true;
+      }
+    }
+    if (headers.authority() != null) {
+      URI uri;
+      try {
+        uri = new URI(null, headers.authority().toString(), null, null, null);
+      } catch (URISyntaxException e) {
+        return true;
+      }
+      if (uri.getRawUserInfo() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId,
                             Http2Headers headers, int padding, boolean endOfStream) {
+
+    if (isMalformedRequest(headers)) {
+      encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
+      return;
+    }
+
     Http2Connection conn = connection();
     Http2Stream stream = conn.stream(streamId);
     Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, this, serverOrigin, conn, stream, ctx, encoder(), headers);

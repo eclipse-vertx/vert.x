@@ -297,7 +297,7 @@ public class Http2Test extends HttpTestBase {
         }
       });
       int id = request.connection.local().nextStreamId();
-      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, false, request.context.newPromise());
     });
     fut.sync();
     await();
@@ -334,7 +334,7 @@ public class Http2Test extends HttpTestBase {
     client.settings.putAll(initialSettings);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
-      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, false, request.context.newPromise());
       request.context.flush();
       settingsRead.thenAccept(v -> {
         request.encoder.writeSettings(request.context, updatedSettings, request.context.newPromise());
@@ -372,6 +372,13 @@ public class Http2Test extends HttpTestBase {
         requestEnded.set(true);
       });
       HttpServerResponse resp = req.response();
+      assertEquals(HttpMethod.GET, req.method());
+      assertEquals("localhost:4043", req.host());
+      assertEquals("/", req.path());
+      assertEquals("localhost:4043", req.getHeader(":authority"));
+      assertEquals("https", req.getHeader(":scheme"));
+      assertEquals("/", req.getHeader(":path"));
+      assertEquals("GET", req.getHeader(":method"));
       resp.putHeader("content-type", "text/plain");
       resp.putHeader("Foo", "foo_value");
       resp.putHeader("bar", "bar_value");
@@ -389,7 +396,6 @@ public class Http2Test extends HttpTestBase {
     assertEquals(Protocol.HTTP_2, response.protocol());
     assertEquals(content, response.body().string());
     assertEquals("text/plain", response.header("content-type"));
-    System.out.println(response.headers().names());
     assertEquals("foo_value", response.header("foo"));
     assertEquals("bar_value", response.header("bar"));
     assertEquals(Arrays.asList("juu_value_1", "juu_value_2"), response.headers("juu"));
@@ -402,7 +408,9 @@ public class Http2Test extends HttpTestBase {
       assertEquals("/some/path", req.path());
       assertEquals("foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.query());
       assertEquals("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.uri());
-      assertEquals("https://localhost:4043/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.absoluteURI());
+      assertEquals("http://whatever.com/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.absoluteURI());
+      assertEquals("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.getHeader(":path"));
+      assertEquals("whatever.com", req.host());
       MultiMap params = req.params();
       Set<String> names = params.names();
       assertEquals(2, names.size());
@@ -412,18 +420,26 @@ public class Http2Test extends HttpTestBase {
       assertEquals(Collections.singletonList("foo_value"), params.getAll("foo"));
       assertEquals("bar_value_2", params.get("bar"));
       assertEquals(Arrays.asList("bar_value_1", "bar_value_2"), params.getAll("bar"));
-      req.response().putHeader("content-type", "text/plain").end("done");
+      testComplete();
     })
         .listen(ar -> {
           assertTrue(ar.succeeded());
           latch.countDown();
         });
     awaitLatch(latch);
-    OkHttpClient client = createHttp2Client();
-    Request request = new Request.Builder().url("https://localhost:4043/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2").build();
-    Response response = client.newCall(request).execute();
-    assertEquals(Protocol.HTTP_2, response.protocol());
-    assertEquals("done", response.body().string());
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2Headers headers = new DefaultHttp2Headers().
+          method("GET").
+          scheme("http").
+          authority("whatever.com").
+          path("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2");
+      request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
   }
 
   @Test
@@ -489,6 +505,35 @@ public class Http2Test extends HttpTestBase {
     assertEquals(200, response.code());
     assertEquals(Protocol.HTTP_2, response.protocol());
     assertEquals("done", response.body().string());
+  }
+
+  @Test
+  public void testConnect() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.CONNECT, req.method());
+      assertEquals("whatever.com", req.host());
+      assertNull(req.path());
+      assertNull(req.query());
+      assertNull(req.scheme());
+      assertNull(req.uri());
+      assertNull(req.absoluteURI());
+      testComplete();
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2Headers headers = new DefaultHttp2Headers().method("CONNECT").authority("whatever.com");
+      request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
   }
 
   @Test
@@ -585,7 +630,7 @@ public class Http2Test extends HttpTestBase {
       AtomicInteger toAck = new AtomicInteger();
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, true, request.context.newPromise());
       request.decoder.frameListener(new Http2FrameAdapter() {
 
         StringBuilder received = new StringBuilder();
@@ -654,7 +699,7 @@ public class Http2Test extends HttpTestBase {
         }
       });
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, false, request.context.newPromise());
       encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
     });
 
@@ -692,7 +737,7 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, false, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, false, request.context.newPromise());
       encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
       bufReceived.thenAccept(v -> {
         encoder.writeRstStream(request.context, id, 10, request.context.newPromise());
@@ -725,7 +770,7 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, true, request.context.newPromise());
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
@@ -761,7 +806,7 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, true, request.context.newPromise());
       Map<Integer, Http2Headers> pushed = new HashMap<>();
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
@@ -812,7 +857,7 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, true, request.context.newPromise());
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
@@ -855,7 +900,7 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, true, request.context.newPromise());
       request.decoder.frameListener(new Http2FrameAdapter() {
         int count = numPushes;
         Set<String> pushReceived = new HashSet<>();
@@ -901,12 +946,74 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.connection.local().nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers(), 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, true, request.context.newPromise());
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
         public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
           request.encoder.writeRstStream(request.context, promisedStreamId, Http2Error.CANCEL.code(), request.context.newPromise());
           request.context.flush();
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testMissingMethodPseudoHeader() throws Exception {
+    testMalformedRequest(new DefaultHttp2Headers().scheme("http").path("/"));
+  }
+
+  @Test
+  public void testMissingSchemePseudoHeader() throws Exception {
+    testMalformedRequest(new DefaultHttp2Headers().method("GET").path("/"));
+  }
+
+  @Test
+  public void testMissingPathPseudoHeader() throws Exception {
+    testMalformedRequest(new DefaultHttp2Headers().method("GET").scheme("http"));
+  }
+
+  @Test
+  public void testInvalidAuthority() throws Exception {
+    testMalformedRequest(new DefaultHttp2Headers().method("GET").scheme("http").authority("foo@localhost:4043").path("/"));
+  }
+
+  @Test
+  public void testConnectInvalidPath() throws Exception {
+    testMalformedRequest(new DefaultHttp2Headers().method("CONNECT").path("/").authority("localhost:4043"));
+  }
+
+  @Test
+  public void testConnectInvalidScheme() throws Exception {
+    testMalformedRequest(new DefaultHttp2Headers().method("CONNECT").scheme("http").authority("localhost:4043"));
+  }
+
+  @Test
+  public void testConnectInvalidAuthority() throws Exception {
+    testMalformedRequest(new DefaultHttp2Headers().method("CONNECT").authority("foo@localhost:4043"));
+  }
+
+  private void testMalformedRequest(Http2Headers headers) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> fail())
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    client.settings.maxConcurrentStreams(0);
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            testComplete();
+          });
         }
       });
     });
