@@ -18,6 +18,7 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoopGroup;
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
@@ -478,6 +479,20 @@ public interface Vertx extends Measured {
    */
   @GenIgnore
   EventLoopGroup nettyEventLoopGroup();
+
+  /**
+   * Set a default exception handler for {@link Context}, set on {@link Context#exceptionHandler(Handler)} at creation.
+   *
+   * @param handler the exception handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  Vertx exceptionHandler(@Nullable Handler<Throwable> handler);
+
+  /**
+   * @return the current default exception handler
+   */
+  @Nullable @GenIgnore Handler<Throwable> exceptionHandler();
 
   static final VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
 }

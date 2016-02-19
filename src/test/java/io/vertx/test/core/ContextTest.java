@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -175,6 +176,57 @@ public class ContextTest extends VertxTestBase {
         assertTrue(Context.isOnWorkerThread());
         testComplete();
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testContextExceptionHandler() {
+    RuntimeException failure = new RuntimeException();
+    Context context = vertx.getOrCreateContext();
+    context.exceptionHandler(err -> {
+      assertSame(context, Vertx.currentContext());
+      assertSame(failure, err);
+      testComplete();
+    });
+    context.runOnContext(v -> {
+      throw failure;
+    });
+    await();
+  }
+
+  @Test
+  public void testContextExceptionHandlerFailing() {
+    RuntimeException failure = new RuntimeException();
+    Context context = vertx.getOrCreateContext();
+    AtomicInteger count = new AtomicInteger();
+    context.exceptionHandler(err -> {
+      if (count.getAndIncrement() == 0) {
+        throw new RuntimeException();
+      } else {
+        assertSame(failure, err);
+        testComplete();
+      }
+    });
+    context.runOnContext(v -> {
+      throw new RuntimeException();
+    });
+    context.runOnContext(v -> {
+      throw failure;
+    });
+    await();
+  }
+
+  @Test
+  public void testDefaultContextExceptionHandler() {
+    RuntimeException failure = new RuntimeException();
+    vertx.exceptionHandler(err -> {
+      assertSame(failure, err);
+      testComplete();
+    });
+    Context context = vertx.getOrCreateContext();
+    context.runOnContext(v -> {
+      throw failure;
     });
     await();
   }

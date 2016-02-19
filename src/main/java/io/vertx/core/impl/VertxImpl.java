@@ -105,6 +105,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
+  private Handler<Throwable> exceptionHandler;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -842,5 +843,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.endHandler = endHandler;
       return this;
     }
+  }
+
+  @Override
+  public Vertx exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
   }
 }

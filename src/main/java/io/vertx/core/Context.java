@@ -16,6 +16,7 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
@@ -216,6 +217,24 @@ public interface Context {
    * to this context
    */
   int getInstanceCount();
+
+  /**
+   * Set an exception handler called when the context runs an action throwing an uncaught throwable.<p/>
+   *
+   * When this handler is called, {@link Vertx#currentContext()} will return this context.
+   *
+   * @param handler the exception handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  Context exceptionHandler(@Nullable Handler<Throwable> handler);
+
+  /**
+   * @return the current exception handler of this context
+   */
+  @Nullable
+  @GenIgnore
+  Handler<Throwable> exceptionHandler();
 
   @GenIgnore
   void addCloseHook(Closeable hook);
