@@ -41,7 +41,9 @@ public interface ContextInternal extends Context {
    * Execute the context task and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *
-   * The caller thread should be the the event loop thread of this context.
+   * The caller thread should be the the event loop thread of this context.<p/>
+   *
+   * Any exception thrown from the {@literal stack} will be reported on this context.
    *
    * @param task the task to execute
    */

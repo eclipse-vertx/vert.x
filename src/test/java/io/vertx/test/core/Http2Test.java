@@ -42,11 +42,13 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
@@ -85,6 +87,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -1018,6 +1021,81 @@ public class Http2Test extends HttpTestBase {
           });
         }
       });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testRequestHandlerFailure() throws Exception {
+    testHandlerFailure(false, (err, server) -> {
+      server.requestHandler(req -> {
+        throw err;
+      });
+    });
+  }
+
+  @Test
+  public void testRequestEndHandlerFailure() throws Exception {
+    testHandlerFailure(false, (err, server) -> {
+      server.requestHandler(req -> {
+        req.endHandler(v -> {
+          throw err;
+        });
+      });
+    });
+  }
+
+  @Test
+  public void testRequestEndHandlerFailureWithData() throws Exception {
+    testHandlerFailure(true, (err, server) -> {
+      server.requestHandler(req -> {
+        req.endHandler(v -> {
+          throw err;
+        });
+      });
+    });
+  }
+
+  @Test
+  public void testRequestDataHandlerFailure() throws Exception {
+    testHandlerFailure(true, (err, server) -> {
+      server.requestHandler(req -> {
+        req.handler(buf -> {
+          System.out.println("throwing from data");
+          throw err;
+        });
+      });
+    });
+  }
+
+  private void testHandlerFailure(boolean data, BiConsumer<RuntimeException, HttpServer> configurator) throws Exception {
+    RuntimeException failure = new RuntimeException();
+    Http2Settings settings = randomSettings();
+    CountDownLatch latch = new CountDownLatch(1);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setHttp2Settings(VertxHttp2Handler.toVertxSettings(settings)));
+    configurator.accept(failure, server);
+    Context ctx = vertx.getOrCreateContext();
+    ctx.exceptionHandler(err -> {
+      assertSame(err, failure);
+      testComplete();
+    });
+    ctx.runOnContext(v -> {
+      server.listen(ar -> {
+        assertTrue(ar.succeeded());
+        latch.countDown();
+      });
+    });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    client.settings.maxConcurrentStreams(0);
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.connection.local().nextStreamId();
+      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, !data, request.context.newPromise());
+      if (data) {
+        request.encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, true, request.context.newPromise());
+      }
     });
     fut.sync();
     await();

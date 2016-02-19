@@ -57,8 +57,6 @@ import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 
-import static io.netty.handler.codec.http.HttpScheme.HTTPS;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -120,11 +118,11 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     }
   }
 
-  boolean handleData(Buffer data) {
+  void handleData(Buffer data) {
     if (!paused) {
       if (pending.isEmpty()) {
         callHandler(data);
-        return true;
+        consume(data.length());
       } else {
         pending.add(data);
         checkNextTick(null);
@@ -132,7 +130,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     } else {
       pending.add(data);
     }
-    return false;
   }
 
   void handleReset(long code) {
@@ -192,19 +189,23 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     t.printStackTrace();
   }
 
+  private void consume(int numBytes) {
+    try {
+      boolean windowUpdateSent = conn.local().flowController().consumeBytes(stream, numBytes);
+      if (windowUpdateSent) {
+        ctx.flush();
+      }
+    } catch (Http2Exception e) {
+      e.printStackTrace();
+    }
+  }
+
   private void checkNextTick(Void v) {
     if (!paused) {
       Object msg = pending.poll();
       if (msg instanceof Buffer) {
         Buffer buf = (Buffer) msg;
-        try {
-          boolean windowUpdateSent = conn.local().flowController().consumeBytes(stream, buf.length());
-          if (windowUpdateSent) {
-            ctx.flush();
-          }
-        } catch (Http2Exception e) {
-          e.printStackTrace();
-        }
+        consume(buf.length());
         callHandler(buf);
         if (pending.size() > 0) {
           vertx.runOnContext(this::checkNextTick);

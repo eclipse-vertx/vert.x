@@ -27,7 +27,6 @@ import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -40,11 +39,11 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.impl.ContextInternal;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -60,7 +59,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
   private ChannelHandlerContext context;
-  private final Vertx vertx;
+  private final ContextInternal handlerContext;
   private final String serverOrigin;
   private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
@@ -75,7 +74,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>();
 
-  VertxHttp2Handler(ChannelHandlerContext context, Vertx vertx, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
+  VertxHttp2Handler(ChannelHandlerContext context, ContextInternal handlerContext, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
 
@@ -91,7 +90,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
         if (removed instanceof Push) {
           if (pendingPushes.remove(removed)) {
             Push push = (Push) removed;
-            vertx.runOnContext(v -> {
+            handlerContext.runOnContext(v -> {
               push.handler.handle(Future.failedFuture("Push reset by client"));
             });
           } else {
@@ -103,7 +102,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     });
 
     this.context = context;
-    this.vertx = vertx;
+    this.handlerContext = handlerContext;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
   }
@@ -170,11 +169,13 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
     Http2Connection conn = connection();
     Http2Stream stream = conn.stream(streamId);
-    Http2ServerRequestImpl req = new Http2ServerRequestImpl(vertx, this, serverOrigin, conn, stream, ctx, encoder(), headers);
+    Http2ServerRequestImpl req = new Http2ServerRequestImpl(handlerContext.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers);
     streams.put(streamId, req);
-    handler.handle(req);
+    handlerContext.executeFromIO(() -> {
+      handler.handle(req);
+    });
     if (endOfStream) {
-      req.end();
+      handlerContext.executeFromIO(req::end);
     }
   }
 
@@ -187,14 +188,13 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
     Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
-    int processed = padding;
-    if (req.handleData(Buffer.buffer(data.copy()))) {
-      processed += data.readableBytes();
-    }
+    handlerContext.executeFromIO(() -> {
+      req.handleData(Buffer.buffer(data.copy()));
+    });
     if (endOfStream) {
-      req.end();
+      handlerContext.executeFromIO(req::end);
     }
-    return processed;
+    return padding;
   }
 
   @Override
@@ -300,7 +300,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     while ((maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) && pendingPushes.size() > 0) {
       Push push = pendingPushes.pop();
       concurrentStreams++;
-      vertx.runOnContext(v -> {
+      handlerContext.runOnContext(v -> {
         push.handler.handle(Future.succeededFuture(push.response));
       });
     }
