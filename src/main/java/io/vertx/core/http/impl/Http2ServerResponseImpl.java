@@ -30,8 +30,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.StreamResetException;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
@@ -50,7 +50,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private int statusCode = 200;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
-  private Handler<Long> resetHandler;
+  private Handler<Throwable> exceptionHandler;
 
   public Http2ServerResponseImpl(ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, Http2Stream stream) {
     this.ctx = ctx;
@@ -59,14 +59,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   void handleReset(long code) {
-    if (resetHandler != null) {
-      resetHandler.handle(code);
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(new StreamResetException(code));
     }
   }
 
   @Override
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
-    throw new UnsupportedOperationException();
+    exceptionHandler = handler;
+    return this;
   }
 
   @Override
@@ -326,12 +327,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public long bytesWritten() {
     throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpServerResponse resetHandler(Handler<Long> handler) {
-    resetHandler = handler;
-    return this;
   }
 
   @Override

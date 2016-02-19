@@ -49,6 +49,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.VertxHttp2Handler;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
@@ -718,8 +719,9 @@ public class Http2Test extends HttpTestBase {
       req.handler(buf -> {
         bufReceived.complete(null);
       });
-      req.response().resetHandler(code -> {
-        assertEquals((Long) 10L, code);
+      req.response().exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        assertEquals(10L, ((StreamResetException) err).getCode());
         assertEquals(0, resetCount.getAndIncrement());
       });
       req.endHandler(v -> {
@@ -842,7 +844,7 @@ public class Http2Test extends HttpTestBase {
       req.promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
-        response.resetHandler(code -> {
+        response.exceptionHandler(err -> {
           testComplete();
         });
         response.setChunked(true).write("some_content");

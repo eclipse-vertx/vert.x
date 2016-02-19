@@ -385,11 +385,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  @Override
-  public HttpServerResponse resetHandler(Handler<Long> handler) {
-    return this;
-  }
-
   private void end0(ByteBuf data) {
     checkWritten();
     bytesWritten += data.readableBytes();
