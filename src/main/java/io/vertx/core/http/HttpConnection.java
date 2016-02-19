@@ -27,9 +27,7 @@ import io.vertx.core.Handler;
  *
  * todo:
  *
- * - server stream reset
- * - check invalid headers requests
- * - test http server response headers sent
+ * - HttpServerResponse illegal state exception in invalid state
  * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
  * - server synchronization + executeFromIO
  *
@@ -67,7 +65,7 @@ public interface HttpConnection {
    * The {@code completionHandler} will be notified when the client has acknowledged the settings.
    *
    * @param settings the new settings
-   * @param completionHandler the handler notified when the settings have been acked by the client
+   * @param completionHandler the handler notified when the settings have been acknowledged by the client
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
