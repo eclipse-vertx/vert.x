@@ -53,7 +53,7 @@
 
   <properties>
 
-    <netty.version>4.1.0.CR1</netty.version>
+    <netty.version>4.1.0.CR3</netty.version>
     <jackson.version>2.7.1</jackson.version>
     <jackson.databind.version>2.7.1-1</jackson.databind.version>
     <log4j.version>1.2.17</log4j.version>
