@@ -63,7 +63,7 @@
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>3.3.0-SNAPSHOT</stack.version>
-    <alpn-boot-version>8.1.6.v20151105</alpn-boot-version>
+    <alpn-boot-version>8.1.7.v20160121</alpn-boot-version>
 
   </properties>
 
