@@ -25,4 +25,6 @@ abstract class VertxHttp2Stream {
 
   abstract void handleReset(long code);
 
+  abstract void handleError(Throwable cause);
+
 }

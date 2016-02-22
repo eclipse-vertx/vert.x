@@ -160,12 +160,14 @@ public class Http2Test extends HttpTestBase {
     public final Http2Settings settings = new Http2Settings();
 
     public class Request {
+      public final Channel channel;
       public final ChannelHandlerContext context;
       public final Http2Connection connection;
       public final Http2ConnectionEncoder encoder;
       public final Http2ConnectionDecoder decoder;
 
-      public Request(ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
+      public Request(Channel channel, ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
+        this.channel = channel;
         this.context = context;
         this.connection = connection;
         this.encoder = encoder;
@@ -222,7 +224,7 @@ public class Http2Test extends HttpTestBase {
                 TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder();
                 TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
                 p.addLast(clientHandler);
-                Request request = new Request(ctx, connection, clientHandler.encoder(), clientHandler.decoder());
+                Request request = new Request(ch, ctx, connection, clientHandler.encoder(), clientHandler.decoder());
                 handler.accept(request);
                 return;
               }
@@ -980,40 +982,40 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testMissingMethodPseudoHeader() throws Exception {
-    testMalformedRequest(new DefaultHttp2Headers().scheme("http").path("/"));
+    testMalformedRequestHeaders(new DefaultHttp2Headers().scheme("http").path("/"));
   }
 
   @Test
   public void testMissingSchemePseudoHeader() throws Exception {
-    testMalformedRequest(new DefaultHttp2Headers().method("GET").path("/"));
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").path("/"));
   }
 
   @Test
   public void testMissingPathPseudoHeader() throws Exception {
-    testMalformedRequest(new DefaultHttp2Headers().method("GET").scheme("http"));
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http"));
   }
 
   @Test
   public void testInvalidAuthority() throws Exception {
-    testMalformedRequest(new DefaultHttp2Headers().method("GET").scheme("http").authority("foo@localhost:4043").path("/"));
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority("foo@localhost:4043").path("/"));
   }
 
   @Test
   public void testConnectInvalidPath() throws Exception {
-    testMalformedRequest(new DefaultHttp2Headers().method("CONNECT").path("/").authority("localhost:4043"));
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("CONNECT").path("/").authority("localhost:4043"));
   }
 
   @Test
   public void testConnectInvalidScheme() throws Exception {
-    testMalformedRequest(new DefaultHttp2Headers().method("CONNECT").scheme("http").authority("localhost:4043"));
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("CONNECT").scheme("http").authority("localhost:4043"));
   }
 
   @Test
   public void testConnectInvalidAuthority() throws Exception {
-    testMalformedRequest(new DefaultHttp2Headers().method("CONNECT").authority("foo@localhost:4043"));
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("CONNECT").authority("foo@localhost:4043"));
   }
 
-  private void testMalformedRequest(Http2Headers headers) throws Exception {
+  private void testMalformedRequestHeaders(Http2Headers headers) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> fail()).listen(onSuccess(s -> latch.countDown()));
     awaitLatch(latch);
@@ -1148,6 +1150,84 @@ public class Http2Test extends HttpTestBase {
       });
       int id = request.nextStreamId();
       request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testStreamError() throws Exception {
+    waitFor(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    CompletableFuture<Void> when = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      req.exceptionHandler(err -> {
+        // Todo : check we are on executeFromIO
+        complete();
+      });
+      req.response().exceptionHandler(err -> {
+        // Todo : check we are on executeFromIO
+        complete();
+      });
+      when.complete(null);
+    }).listen(onSuccess(s -> latch.countDown()));
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+      when.thenAccept(v -> {
+        // Send a corrupted frame on purpose to check we get the corresponding error in the request exception handler
+        // the error is : greater padding value 0x -> 1F
+        // ChannelFuture a = encoder.frameWriter().writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 12, false, request.context.newPromise());
+        // normal frame    : 00 00 12 00 08 00 00 00 03 0c 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
+        // corrupted frame : 00 00 12 00 08 00 00 00 03 1F 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
+        request.channel.write(Buffer.buffer(new byte[]{
+            0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, 0x03, 0x1F, 0x68, 0x65, 0x6c, 0x6c,
+            0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        }).getByteBuf());
+        request.context.flush();
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testPromiseStreamError() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    CompletableFuture<Void> when = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      req.promisePush(HttpMethod.GET, "/wibble", ar -> {
+        assertTrue(ar.succeeded());
+        when.complete(null);
+        HttpServerResponse resp = ar.result();
+        resp.exceptionHandler(err -> {
+          // Todo : check we are on executeFromIO
+          testComplete();
+        });
+        resp.setChunked(true).write("whatever"); // Transition to half-closed remote
+      });
+    }).listen(onSuccess(s -> latch.countDown()));
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+          when.thenAccept(v -> {
+            Http2ConnectionEncoder encoder = request.encoder;
+            encoder.frameWriter().writeHeaders(request.context, promisedStreamId, GET("/"), 0, false, request.context.newPromise());
+            request.context.flush();
+          });
+        }
+      });
+      int id = request.nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

@@ -27,6 +27,7 @@ import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Error;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -162,19 +163,22 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId,
                             Http2Headers headers, int padding, boolean endOfStream) {
-
-    if (isMalformedRequest(headers)) {
-      encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
-      return;
-    }
-
     Http2Connection conn = connection();
     Http2Stream stream = conn.stream(streamId);
-    Http2ServerRequestImpl req = new Http2ServerRequestImpl(handlerContext.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers);
-    streams.put(streamId, req);
-    handlerContext.executeFromIO(() -> {
-      handler.handle(req);
-    });
+    Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
+    if (req == null) {
+      Http2ServerRequestImpl newReq = req = new Http2ServerRequestImpl(handlerContext.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers);
+      if (isMalformedRequest(headers)) {
+        encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
+        return;
+      }
+      streams.put(streamId, newReq);
+      handlerContext.executeFromIO(() -> {
+        handler.handle(newReq);
+      });
+    } else {
+      // Trailer - not implemented yet
+    }
     if (endOfStream) {
       handlerContext.executeFromIO(req::end);
     }
@@ -274,6 +278,11 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     }
 
     @Override
+    void handleError(Throwable cause) {
+      response.handleError(cause);
+    }
+
+    @Override
     Http2ServerResponseImpl response() {
       return response;
     }
@@ -357,6 +366,18 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     });
     context.flush();
     return this;
+  }
+
+  @Override
+  protected void onStreamError(ChannelHandlerContext ctx, Throwable cause, Http2Exception.StreamException http2Ex) {
+    VertxHttp2Stream stream = streams.get(http2Ex.streamId());
+    if (stream != null) {
+      handlerContext.executeFromIO(() -> {
+        stream.handleError(http2Ex);
+      });
+    }
+    // Default behavior reset stream
+    super.onStreamError(ctx, cause, http2Ex);
   }
 
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {

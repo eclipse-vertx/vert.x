@@ -73,8 +73,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   void handleReset(long code) {
     ended = true;
+    handleError(new StreamResetException(code));
+  }
+
+  void handleError(Throwable cause) {
     if (exceptionHandler != null) {
-      exceptionHandler.handle(new StreamResetException(code));
+      exceptionHandler.handle(cause);
     }
   }
 

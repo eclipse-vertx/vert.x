@@ -149,6 +149,14 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     }
   }
 
+  @Override
+  void handleError(Throwable cause) {
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(cause);
+      response.handleError(cause);
+    }
+  }
+
   private void callHandler(Buffer data) {
     if (decoder != null) {
       try {
