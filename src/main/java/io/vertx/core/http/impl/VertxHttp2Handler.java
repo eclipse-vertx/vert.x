@@ -44,6 +44,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -285,7 +286,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   void schedulePush(ChannelHandlerContext ctx, int streamId, Handler<AsyncResult<HttpServerResponse>> handler) {
     Http2Stream stream = connection().stream(streamId);
-    Http2ServerResponseImpl resp = new Http2ServerResponseImpl(ctx, encoder(), stream);
+    Http2ServerResponseImpl resp = new Http2ServerResponseImpl((VertxInternal) handlerContext.owner(), ctx, encoder(), stream);
     Push push = new Push(resp, handler);
     streams.put(streamId, push);
     if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {

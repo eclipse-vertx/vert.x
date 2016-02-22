@@ -72,6 +72,8 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +81,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1096,6 +1099,60 @@ public class Http2Test extends HttpTestBase {
       if (data) {
         request.encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, true, request.context.newPromise());
       }
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testSendFile() throws Exception {
+    File f = File.createTempFile("vertx", ".stream");
+    f.deleteOnExit();
+    Buffer expected = Buffer.buffer();
+    int len = 1000 * 1000;
+    try(FileOutputStream out = new FileOutputStream(f)) {
+      byte[] bytes = TestUtils.randomByteArray(len);
+      expected.appendBytes(bytes);
+      out.write(bytes);
+    }
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      req.response().sendFile(f.getAbsolutePath());
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        Buffer buffer = Buffer.buffer();
+        Http2Headers responseHeaders;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          responseHeaders = headers;
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          buffer.appendBuffer(Buffer.buffer(data.duplicate()));
+          if (endOfStream) {
+            vertx.runOnContext(v -> {
+              assertEquals("" + len, responseHeaders.get("content-length").toString());
+              assertEquals(expected, buffer);
+              testComplete();
+            });
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      int id = request.connection.local().incrementAndGetNextStreamId();
+      Http2Headers headers = new DefaultHttp2Headers().
+          method("GET").
+          scheme("http").
+          path("/");
+      request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+      request.context.flush();
     });
     fut.sync();
     await();

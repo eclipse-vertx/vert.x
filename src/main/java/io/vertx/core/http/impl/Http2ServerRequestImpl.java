@@ -47,6 +47,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -107,7 +108,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     this.stream = stream;
     this.headers = headers;
     this.ctx = ctx;
-    this.response = new Http2ServerResponseImpl(ctx, encoder, stream);
+    this.response = new Http2ServerResponseImpl((VertxInternal) vertx, ctx, encoder, stream);
   }
 
   void end() {

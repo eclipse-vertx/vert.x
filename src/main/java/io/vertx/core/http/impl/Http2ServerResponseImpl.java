@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
@@ -27,11 +28,19 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.impl.VertxInternal;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
@@ -40,6 +49,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
  */
 public class Http2ServerResponseImpl implements HttpServerResponse {
 
+  private final VertxInternal vertx;
   private final ChannelHandlerContext ctx;
   private final Http2ConnectionEncoder encoder;
   private final Http2Stream stream;
@@ -52,7 +62,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
 
-  public Http2ServerResponseImpl(ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, Http2Stream stream) {
+  public Http2ServerResponseImpl(VertxInternal vertx, ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, Http2Stream stream) {
+    this.vertx = vertx;
     this.ctx = ctx;
     this.encoder = encoder;
     this.stream = stream;
@@ -207,7 +218,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   private Http2ServerResponseImpl write(ByteBuf chunk) {
-    return write(chunk, false);
+    write(chunk, false);
+    return this;
   }
 
   @Override
@@ -249,16 +261,16 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private Http2ServerResponseImpl write(ByteBuf chunk, boolean last) {
+  ChannelFuture write(ByteBuf chunk, boolean last) {
     checkSendHeaders();
-    encoder.writeData(ctx, stream.id(), chunk, 0, last, ctx.newPromise());
+    ChannelFuture fut = encoder.writeData(ctx, stream.id(), chunk, 0, last, ctx.newPromise());
     try {
       encoder.flowController().writePendingBytes();
     } catch (Http2Exception e) {
       e.printStackTrace();
     }
     ctx.flush();
-    return this;
+    return fut;
   }
 
   @Override
@@ -286,12 +298,47 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse sendFile(String filename, long offset, long length) {
-    throw new UnsupportedOperationException();
+    return sendFile(filename, offset, length, null);
   }
 
   @Override
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
-    throw new UnsupportedOperationException();
+
+    Context resultCtx = resultHandler != null ? vertx.getOrCreateContext() : null;
+
+    File file = vertx.resolveFile(filename);
+    if (!file.exists()) {
+      if (resultHandler != null) {
+        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
+      } else {
+        // log.error("File not found: " + filename);
+      }
+      return this;
+    }
+
+    RandomAccessFile raf;
+    try {
+      raf = new RandomAccessFile(file, "r");
+    } catch (IOException e) {
+      if (resultHandler != null) {
+        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
+      } else {
+        //log.error("Failed to send file", e);
+      }
+      return this;
+    }
+
+    long contentLength = Math.min(length, file.length() - offset);
+    if (headers.get("content-length") == null) {
+      putHeader("content-length", String.valueOf(contentLength));
+    }
+    checkSendHeaders();
+
+    FileStreamChannel channel = new FileStreamChannel(resultCtx, resultHandler, this, contentLength);
+    ctx.channel().eventLoop().register(channel);
+    channel.pipeline().fireUserEventTriggered(raf);
+
+    return this;
   }
 
   @Override
