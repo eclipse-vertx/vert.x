@@ -787,13 +787,18 @@ public class Http2Test extends HttpTestBase {
       req.handler(buf -> {
         bufReceived.complete(null);
       });
-      req.response().exceptionHandler(err -> {
+      req.exceptionHandler(err -> {
         assertTrue(err instanceof StreamResetException);
         assertEquals(10L, ((StreamResetException) err).getCode());
         assertEquals(0, resetCount.getAndIncrement());
       });
+      req.response().exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        assertEquals(10L, ((StreamResetException) err).getCode());
+        assertEquals(1, resetCount.getAndIncrement());
+      });
       req.endHandler(v -> {
-        assertEquals(1, resetCount.get());
+        assertEquals(2, resetCount.get());
         testComplete();
       });
     })

@@ -47,6 +47,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -91,6 +92,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder decoder;
+
+  private Handler<Throwable> exceptionHandler;
 
   public Http2ServerRequestImpl(
       Vertx vertx,
@@ -137,6 +140,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     ended = true;
     paused = false;
     pending.clear();
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(new StreamResetException(code));
+    }
     response.handleReset(code);
     if (endHandler != null) {
       endHandler.handle(null);
@@ -219,7 +225,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
-    throw new UnsupportedOperationException();
+    exceptionHandler = handler;
+    return this;
   }
 
   @Override
