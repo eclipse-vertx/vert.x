@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
@@ -59,6 +58,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Http2HeadersAdaptor trailedMap;
   private boolean chunked;
   private boolean headWritten;
+  private boolean ended;
   private int statusCode = 200;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
@@ -72,6 +72,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   void handleReset(long code) {
+    ended = true;
     if (exceptionHandler != null) {
       exceptionHandler.handle(new StreamResetException(code));
     }
@@ -93,6 +94,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (statusCode < 0) {
       throw new IllegalArgumentException("code: " + statusCode + " (expected: 0+)");
     }
+    checkEnded();
     this.statusCode = statusCode;
     headers.status("" + statusCode);
     return this;
@@ -127,6 +129,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse setChunked(boolean chunked) {
+    checkEnded();
     this.chunked = true;
     return this;
   }
@@ -271,6 +274,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   void write(ByteBuf chunk, boolean end) {
+    checkEnded();
     boolean empty = chunk.readableBytes() == 0;
     checkSendHeaders(empty && end);
     if (!empty) {
@@ -284,7 +288,16 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     } catch (Http2Exception e) {
       e.printStackTrace();
     }
+    if (end) {
+      ended = true;
+    }
     ctx.flush();
+  }
+
+  private void checkEnded() {
+    if (ended) {
+      throw new IllegalStateException("Response has already been written");
+    }
   }
 
   @Override
@@ -317,6 +330,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+
+    checkEnded();
 
     Context resultCtx = resultHandler != null ? vertx.getOrCreateContext() : null;
 
@@ -362,7 +377,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public boolean ended() {
-    throw new UnsupportedOperationException();
+    return ended;
   }
 
   @Override
@@ -392,6 +407,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void reset(long code) {
+    checkEnded();
+    ended = true;
     encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
   }
 }
