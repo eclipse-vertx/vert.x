@@ -53,11 +53,11 @@ class FileStreamChannel extends AbstractChannel {
   private static final SocketAddress LOCAL_ADDRESS = new StreamSocketAddress();
   private static final SocketAddress REMOTE_ADDRESS = new StreamSocketAddress();
   private static final ChannelMetadata METADATA = new ChannelMetadata(true);
-  private enum State { OPEN, ACTIVE, CLOSED }
 
   private long length;
   private final ChannelConfig config = new DefaultChannelConfig(this);
-  private State state;
+  private boolean active;
+  private boolean closed;
   private final Http2ServerResponseImpl response;
 
   FileStreamChannel(
@@ -105,7 +105,7 @@ class FileStreamChannel extends AbstractChannel {
 
   @Override
   protected void doRegister() throws Exception {
-    state = State.ACTIVE;
+    active = true;
   }
 
   @Override
@@ -139,7 +139,8 @@ class FileStreamChannel extends AbstractChannel {
 
   @Override
   protected void doClose() throws Exception {
-    state = State.CLOSED;
+    active = false;
+    closed = true;
   }
 
   @Override
@@ -164,12 +165,12 @@ class FileStreamChannel extends AbstractChannel {
 
   @Override
   public boolean isOpen() {
-    return state != State.CLOSED;
+    return !closed;
   }
 
   @Override
   public boolean isActive() {
-    return state == State.ACTIVE;
+    return active;
   }
 
   @Override
