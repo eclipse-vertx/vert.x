@@ -681,6 +681,68 @@ public class Http2Test extends HttpTestBase {
   }
 
   @Test
+  public void testTrailers() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.write("some-content");
+      resp.putTrailer("Foo", "foo_value");
+      resp.putTrailer("bar", "bar_value");
+      resp.putTrailer("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.end();
+    })
+        .listen(ar -> {
+          assertTrue(ar.succeeded());
+          latch.countDown();
+        });
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          switch (count++) {
+            case 0:
+              vertx.runOnContext(v -> {
+                assertFalse(endStream);
+              });
+              break;
+            case 1:
+              vertx.runOnContext(v -> {
+                assertEquals("foo_value", headers.get("foo").toString());
+                assertEquals(1, headers.getAll("foo").size());
+                assertEquals("foo_value", headers.getAll("foo").get(0).toString());
+                assertEquals("bar_value", headers.getAll("bar").get(0).toString());
+                assertEquals(2, headers.getAll("juu").size());
+                assertEquals("juu_value_1", headers.getAll("juu").get(0).toString());
+                assertEquals("juu_value_2", headers.getAll("juu").get(1).toString());
+                assertTrue(endStream);
+                testComplete();
+              });
+              break;
+            default:
+              vertx.runOnContext(v -> {
+                fail();
+              });
+              break;
+          }
+        }
+      });
+      int id = request.connection.local().incrementAndGetNextStreamId();
+      Http2Headers headers = new DefaultHttp2Headers().
+          method("GET").
+          scheme("http").
+          path("/");
+      request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testServerResetClientStream() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
@@ -781,9 +843,8 @@ public class Http2Test extends HttpTestBase {
       encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("GET").scheme("https").path("/"), 0, true, request.context.newPromise());
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
-        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
           request.context.close();
-          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
         }
       });
     });

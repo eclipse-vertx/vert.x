@@ -55,6 +55,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private final Http2Stream stream;
   private Http2Headers headers = new DefaultHttp2Headers().status(OK.codeAsText());
   private Http2HeadersAdaptor headersMap;
+  private Http2Headers trailers;
+  private Http2HeadersAdaptor trailedMap;
   private boolean chunked;
   private boolean headWritten;
   private int statusCode = 200;
@@ -168,27 +170,34 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public MultiMap trailers() {
-    throw new UnsupportedOperationException();
+    if (trailedMap == null) {
+      trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
+    }
+    return trailedMap;
   }
 
   @Override
   public HttpServerResponse putTrailer(String name, String value) {
-    throw new UnsupportedOperationException();
+    trailers().set(name, value);
+    return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
-    throw new UnsupportedOperationException();
+    trailers().set(name, value);
+    return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(String name, Iterable<String> values) {
-    throw new UnsupportedOperationException();
+    trailers().set(name, values);
+    return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
-    throw new UnsupportedOperationException();
+    trailers().set(name, value);
+    return this;
   }
 
   @Override
@@ -249,28 +258,33 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     write(chunk, true);
   }
 
-  private void checkSendHeaders() {
+  private void checkSendHeaders(boolean end) {
     if (!headWritten) {
       headWritten = true;
       if (!headers.contains(HttpHeaderNames.CONTENT_LENGTH) && !chunked) {
         throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not sending an HTTP chunked response.");
       }
-      encoder.writeHeaders(ctx, stream.id(), headers, 0, false, ctx.newPromise());
+      encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
       headWritten = true;
     }
   }
 
-  ChannelFuture write(ByteBuf chunk, boolean last) {
-    checkSendHeaders();
-    ChannelFuture fut = encoder.writeData(ctx, stream.id(), chunk, 0, last, ctx.newPromise());
+  void write(ByteBuf chunk, boolean end) {
+    boolean empty = chunk.readableBytes() == 0;
+    checkSendHeaders(empty && end);
+    if (!empty) {
+      encoder.writeData(ctx, stream.id(), chunk, 0, end && trailers == null, ctx.newPromise());
+    }
+    if (trailers != null && end) {
+      encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
+    }
     try {
       encoder.flowController().writePendingBytes();
     } catch (Http2Exception e) {
       e.printStackTrace();
     }
     ctx.flush();
-    return fut;
   }
 
   @Override
@@ -332,7 +346,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (headers.get("content-length") == null) {
       putHeader("content-length", String.valueOf(contentLength));
     }
-    checkSendHeaders();
+    checkSendHeaders(false);
 
     FileStreamChannel channel = new FileStreamChannel(resultCtx, resultHandler, this, contentLength);
     ctx.channel().eventLoop().register(channel);
