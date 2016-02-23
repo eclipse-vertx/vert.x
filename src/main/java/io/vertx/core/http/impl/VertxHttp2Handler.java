@@ -76,6 +76,8 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>();
 
+  private Handler<Throwable> exceptionHandler;
+
   VertxHttp2Handler(ChannelHandlerContext context, ContextInternal handlerContext, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
@@ -378,6 +380,34 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     }
     // Default behavior reset stream
     super.onStreamError(ctx, cause, http2Ex);
+  }
+
+  @Override
+  protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
+    Handler<Throwable> handler = exceptionHandler;
+    if (handler != null) {
+      handlerContext.executeFromIO(() -> {
+        handler.handle(cause);
+      });
+    }
+    for (VertxHttp2Stream stream : streams.values()) {
+      handlerContext.executeFromIO(() -> {
+        stream.handleError(cause);
+      });
+    }
+    // Default behavior send go away
+    super.onConnectionError(ctx, cause, http2Ex);
+  }
+
+  @Override
+  public HttpConnection exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
   }
 
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {

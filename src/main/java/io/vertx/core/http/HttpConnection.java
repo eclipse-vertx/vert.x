@@ -91,4 +91,18 @@ public interface HttpConnection {
   @GenIgnore
   Handler<Http2Settings> clientSettingsHandler();
 
+  /**
+   * Set an handler called when a connection error happens
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection exceptionHandler(Handler<Throwable> handler);
+
+  /**
+   * @return the handler for exceptions
+   */
+  @GenIgnore
+  Handler<Throwable> exceptionHandler();
 }

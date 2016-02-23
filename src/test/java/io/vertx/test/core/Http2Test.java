@@ -43,6 +43,7 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
@@ -1227,6 +1228,39 @@ public class Http2Test extends HttpTestBase {
       });
       int id = request.nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testConnectionDecodeError() throws Exception {
+    waitFor(3);
+    CountDownLatch latch = new CountDownLatch(1);
+    Future<Void> when = Future.future();
+    server.requestHandler(req -> {
+      req.exceptionHandler(err -> {
+        complete();
+      });
+      req.response().exceptionHandler(err -> {
+        complete();
+      });
+      req.connection().exceptionHandler(err -> {
+        complete();
+      });
+      when.complete(null);
+    }).listen(onSuccess(s -> latch.countDown()));
+    awaitLatch(latch);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      when.setHandler(v -> {
+        encoder.frameWriter().writeRstStream(request.context, 10, 0, request.context.newPromise());
+        request.context.flush();
+      });
       encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       request.context.flush();
     });
