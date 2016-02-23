@@ -85,7 +85,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,6 +125,18 @@ public class Http2Test extends HttpTestBase {
 
     server = vertx.createHttpServer(serverOptions);
 
+  }
+
+  private void startServer() throws Exception {
+    startServer(vertx.getOrCreateContext());
+  }
+
+  private void startServer(Context context) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      server.listen(onSuccess(s -> latch.countDown()));
+    });
+    awaitLatch(latch);
   }
 
   private SSLContext createSSLContext() throws Exception {
@@ -242,13 +253,10 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testServerInitialSettings() throws Exception {
     Http2Settings settings = randomSettings();
-    CountDownLatch latch = new CountDownLatch(1);
     server.close();
     server = vertx.createHttpServer(serverOptions.setHttp2Settings(VertxHttp2Handler.toVertxSettings(settings)));
-    server.requestHandler(req -> fail()).listen(onSuccess(s -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
+    server.requestHandler(req -> fail());
+    startServer();
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(0);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -274,7 +282,6 @@ public class Http2Test extends HttpTestBase {
   public void testServerSettings() throws Exception {
     waitFor(2);
     Http2Settings expectedSettings = randomSettings();
-    CountDownLatch latch = new CountDownLatch(1);
     server.close();
     server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
@@ -287,8 +294,8 @@ public class Http2Test extends HttpTestBase {
         assertEquals((long) expectedSettings.headerTableSize(), (long) ackedSettings.getHeaderTableSize());
         complete();
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(0);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -328,8 +335,7 @@ public class Http2Test extends HttpTestBase {
   public void testClientSettings() throws Exception {
     Http2Settings initialSettings = randomSettings();
     Http2Settings updatedSettings = randomSettings();
-    CountDownLatch latch = new CountDownLatch(1);
-    CompletableFuture<Void> settingsRead = new CompletableFuture<>();
+    Future<Void> settingsRead = Future.future();
     server.requestHandler(req -> {
       io.vertx.core.http.Http2Settings settings = req.connection().clientSettings();
       assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
@@ -345,16 +351,16 @@ public class Http2Test extends HttpTestBase {
         assertEquals((long) updatedSettings.headerTableSize(), (long) update.getHeaderTableSize());
         testComplete();
       });
-      settingsRead.complete(null);
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+      settingsRead.complete();
+    });
+    startServer();
     TestClient client = new TestClient();
     client.settings.putAll(initialSettings);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
       request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       request.context.flush();
-      settingsRead.thenAccept(v -> {
+      settingsRead.setHandler(ar -> {
         request.encoder.writeSettings(request.context, updatedSettings, request.context.newPromise());
         request.context.flush();
       });
@@ -384,7 +390,6 @@ public class Http2Test extends HttpTestBase {
     public void testGet() throws Exception {
     String content = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.endHandler(v -> {
         requestEnded.set(true);
@@ -402,8 +407,8 @@ public class Http2Test extends HttpTestBase {
       resp.putHeader("bar", "bar_value");
       resp.putHeader("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
       resp.end(content);
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     OkHttpClient client = createHttp2Client();
     Request request = new Request.Builder().url("https://localhost:4043/").build();
     Response response = client.newCall(request).execute();
@@ -417,7 +422,6 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testURI() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals("/some/path", req.path());
       assertEquals("foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.query());
@@ -435,8 +439,8 @@ public class Http2Test extends HttpTestBase {
       assertEquals("bar_value_2", params.get("bar"));
       assertEquals(Arrays.asList("bar_value_1", "bar_value_2"), params.getAll("bar"));
       testComplete();
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
@@ -455,15 +459,14 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testPost() throws Exception {
     String expectedContent = TestUtils.randomAlphaString(1000);
-    CountDownLatch latch = new CountDownLatch(1);
     Buffer postContent = Buffer.buffer();
     server.requestHandler(req -> {
       req.handler(postContent::appendBuffer);
       req.endHandler(v -> {
         req.response().putHeader("content-type", "text/plain").end("");
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     OkHttpClient client = createHttp2Client();
     Request request = new Request.Builder()
         .post(RequestBody.create(MediaType.parse("test/plain"), expectedContent))
@@ -476,7 +479,6 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testPostFileUpload() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       Buffer tot = Buffer.buffer();
       req.setExpectMultipart(true);
@@ -493,8 +495,8 @@ public class Http2Test extends HttpTestBase {
         assertEquals(0, req.formAttributes().size());
         req.response().putHeader("content-type", "text/plain").end("done");
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     OkHttpClient client = createHttp2Client();
     Request request = new Request.Builder()
         .post(new MultipartBody.Builder()
@@ -511,7 +513,6 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testConnect() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(HttpMethod.CONNECT, req.method());
       assertEquals("whatever.com", req.host());
@@ -521,8 +522,8 @@ public class Http2Test extends HttpTestBase {
       assertNull(req.uri());
       assertNull(req.absoluteURI());
       testComplete();
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
@@ -537,7 +538,6 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testServerRequestPause() throws Exception {
     String expectedContent = TestUtils.randomAlphaString(1000);
-    CountDownLatch latch = new CountDownLatch(1);
     Thread t = Thread.currentThread();
     AtomicBoolean done = new AtomicBoolean();
     Buffer received = Buffer.buffer();
@@ -557,8 +557,8 @@ public class Http2Test extends HttpTestBase {
         req.response().end("hello");
       });
       req.pause();
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     OkHttpClient client = createHttp2Client();
     Buffer sent = Buffer.buffer();
     Request request = new Request.Builder()
@@ -590,8 +590,7 @@ public class Http2Test extends HttpTestBase {
   public void testServerResponseWritability() throws Exception {
     String content = TestUtils.randomAlphaString(1024);
     StringBuilder expected = new StringBuilder();
-    CountDownLatch latch = new CountDownLatch(1);
-    CompletableFuture<Void> whenFull = new CompletableFuture<>();
+    Future<Void> whenFull = Future.future();
     AtomicBoolean drain = new AtomicBoolean();
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -605,15 +604,15 @@ public class Http2Test extends HttpTestBase {
           });
           vertx.cancelTimer(timerID);
           drain.set(true);
-          whenFull.complete(null);
+          whenFull.complete();
         } else {
           expected.append(content);
           Buffer buf = Buffer.buffer(content);
           resp.write(buf);
         }
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
 
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -645,7 +644,7 @@ public class Http2Test extends HttpTestBase {
           }
         }
       });
-      whenFull.thenAccept(v -> {
+      whenFull.setHandler(ar -> {
         request.context.invoker().executor().execute(() -> {
           try {
             request.decoder.flowController().consumeBytes(request.connection.stream(id), toAck.intValue());
@@ -665,7 +664,6 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testTrailers() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.setChunked(true);
@@ -674,8 +672,8 @@ public class Http2Test extends HttpTestBase {
       resp.putTrailer("bar", "bar_value");
       resp.putTrailer("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
       resp.end();
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       request.decoder.frameListener(new Http2EventAdapter() {
@@ -719,13 +717,12 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testServerResetClientStream() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.handler(buf -> {
         req.response().reset(8);
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
 
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -752,12 +749,11 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testClientResetServerStream() throws Exception {
 
-    CountDownLatch latch = new CountDownLatch(1);
-    CompletableFuture<Void> bufReceived = new CompletableFuture<>();
+    Future<Void> bufReceived = Future.future();
     AtomicInteger resetCount = new AtomicInteger();
     server.requestHandler(req -> {
       req.handler(buf -> {
-        bufReceived.complete(null);
+        bufReceived.complete();
       });
       req.exceptionHandler(err -> {
         assertTrue(err instanceof StreamResetException);
@@ -773,8 +769,8 @@ public class Http2Test extends HttpTestBase {
         assertEquals(2, resetCount.get());
         testComplete();
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
 
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -782,7 +778,7 @@ public class Http2Test extends HttpTestBase {
       Http2ConnectionEncoder encoder = request.encoder;
       encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
-      bufReceived.thenAccept(v -> {
+      bufReceived.setHandler(ar -> {
         encoder.writeRstStream(request.context, id, 10, request.context.newPromise());
         request.context.flush();
       });
@@ -795,15 +791,14 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testConnectionClose() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       HttpConnection conn = req.connection();
       conn.closeHandler(v -> {
         testComplete();
       });
       req.response().putHeader("Content-Type", "text/plain").end();
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
 
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -823,7 +818,6 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testPushPromise() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
@@ -834,8 +828,8 @@ public class Http2Test extends HttpTestBase {
           e.printStackTrace();
         }
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
@@ -871,7 +865,6 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testResetActivePushPromise() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
@@ -881,8 +874,8 @@ public class Http2Test extends HttpTestBase {
         });
         response.setChunked(true).write("some_content");
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
@@ -904,7 +897,6 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testQueuePushPromise() throws Exception {
     int numPushes = 10;
-    CountDownLatch latch = new CountDownLatch(1);
     Set<String> pushSent = new HashSet<>();
     server.requestHandler(req -> {
       req.response().setChunked(true).write("abc");
@@ -919,8 +911,8 @@ public class Http2Test extends HttpTestBase {
           });
         });
       }
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(3);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -955,14 +947,13 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testResetPendingPushPromise() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertFalse(ar.succeeded());
         testComplete();
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(0);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -1017,9 +1008,8 @@ public class Http2Test extends HttpTestBase {
   }
 
   private void testMalformedRequestHeaders(Http2Headers headers) throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    server.requestHandler(req -> fail()).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    server.requestHandler(req -> fail());
+    startServer();
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(0);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -1085,7 +1075,6 @@ public class Http2Test extends HttpTestBase {
   private void testHandlerFailure(boolean data, BiConsumer<RuntimeException, HttpServer> configurator) throws Exception {
     RuntimeException failure = new RuntimeException();
     Http2Settings settings = randomSettings();
-    CountDownLatch latch = new CountDownLatch(1);
     server.close();
     server = vertx.createHttpServer(serverOptions.setHttp2Settings(VertxHttp2Handler.toVertxSettings(settings)));
     configurator.accept(failure, server);
@@ -1094,10 +1083,7 @@ public class Http2Test extends HttpTestBase {
       assertSame(err, failure);
       testComplete();
     });
-    ctx.runOnContext(v -> {
-      server.listen(onSuccess(s -> latch.countDown()));
-    });
-    awaitLatch(latch);
+    startServer(ctx);
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(0);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -1122,11 +1108,10 @@ public class Http2Test extends HttpTestBase {
       expected.appendBytes(bytes);
       out.write(bytes);
     }
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       req.response().sendFile(f.getAbsolutePath());
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       request.decoder.frameListener(new Http2EventAdapter() {
@@ -1160,8 +1145,7 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testStreamError() throws Exception {
     waitFor(2);
-    CountDownLatch latch = new CountDownLatch(1);
-    CompletableFuture<Void> when = new CompletableFuture<>();
+    Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Todo : check we are on executeFromIO
@@ -1171,16 +1155,16 @@ public class Http2Test extends HttpTestBase {
         // Todo : check we are on executeFromIO
         complete();
       });
-      when.complete(null);
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+      when.complete();
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
       encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       request.context.flush();
-      when.thenAccept(v -> {
+      when.setHandler(ar -> {
         // Send a corrupted frame on purpose to check we get the corresponding error in the request exception handler
         // the error is : greater padding value 0x -> 1F
         // ChannelFuture a = encoder.frameWriter().writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 12, false, request.context.newPromise());
@@ -1199,12 +1183,11 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testPromiseStreamError() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    CompletableFuture<Void> when = new CompletableFuture<>();
+    Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
-        when.complete(null);
+        when.complete();
         HttpServerResponse resp = ar.result();
         resp.exceptionHandler(err -> {
           // Todo : check we are on executeFromIO
@@ -1212,14 +1195,14 @@ public class Http2Test extends HttpTestBase {
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
       });
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();;
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       request.decoder.frameListener(new Http2EventAdapter() {
         @Override
         public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-          when.thenAccept(v -> {
+          when.setHandler(ar -> {
             Http2ConnectionEncoder encoder = request.encoder;
             encoder.frameWriter().writeHeaders(request.context, promisedStreamId, GET("/"), 0, false, request.context.newPromise());
             request.context.flush();
@@ -1238,7 +1221,6 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testConnectionDecodeError() throws Exception {
     waitFor(3);
-    CountDownLatch latch = new CountDownLatch(1);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
@@ -1251,8 +1233,8 @@ public class Http2Test extends HttpTestBase {
         complete();
       });
       when.complete();
-    }).listen(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
+    });
+    startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
