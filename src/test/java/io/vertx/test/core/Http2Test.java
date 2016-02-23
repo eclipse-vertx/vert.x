@@ -1250,14 +1250,14 @@ public class Http2Test extends HttpTestBase {
       req.connection().exceptionHandler(err -> {
         complete();
       });
-      when.complete(null);
+      when.complete();
     }).listen(onSuccess(s -> latch.countDown()));
     awaitLatch(latch);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      when.setHandler(v -> {
+      when.setHandler(ar -> {
         encoder.frameWriter().writeRstStream(request.context, 10, 0, request.context.newPromise());
         request.context.flush();
       });

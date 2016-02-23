@@ -412,11 +412,21 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
     Http2Settings converted = new Http2Settings();
-    converted.pushEnabled(settings.getEnablePush());
-    converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
-    converted.maxHeaderListSize(settings.getMaxHeaderListSize());
-    converted.maxFrameSize(settings.getMaxFrameSize());
-    converted.initialWindowSize(settings.getInitialWindowSize());
+    if (settings.getEnablePush() != null) {
+      converted.pushEnabled(settings.getEnablePush());
+    }
+    if (settings.getMaxConcurrentStreams() != null) {
+      converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
+    }
+    if (settings.getMaxHeaderListSize() != null) {
+      converted.maxHeaderListSize(settings.getMaxHeaderListSize());
+    }
+    if (settings.getMaxFrameSize() != null) {
+      converted.maxFrameSize(settings.getMaxFrameSize());
+    }
+    if (settings.getInitialWindowSize() != null) {
+      converted.initialWindowSize(settings.getInitialWindowSize());
+    }
     if (settings.getHeaderTableSize() != null) {
       converted.headerTableSize((int)(long)settings.getHeaderTableSize());
     }
