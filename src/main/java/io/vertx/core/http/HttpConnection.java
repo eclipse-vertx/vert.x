@@ -28,9 +28,10 @@ import io.vertx.core.buffer.Buffer;
  *
  * todo:
  *
- * - HttpServerResponse illegal state exception in invalid state
+ * - HttpServerRequest illegal state exception in invalid state
  * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
  * - server synchronization + executeFromIO
+ * - metrics
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
