@@ -28,10 +28,17 @@ import io.vertx.core.buffer.Buffer;
  *
  * todo:
  *
- * - HttpServerRequest illegal state exception in invalid state
+ * - response writeContinue()
  * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
  * - server synchronization + executeFromIO
  * - metrics
+ * - byte distribution algorithm configurability (options ? connection ?)
+ * - h2c
+ * - http upgrade
+ * - HttpClient
+ *
+ * not yet in scope:
+ * - stream priority
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
