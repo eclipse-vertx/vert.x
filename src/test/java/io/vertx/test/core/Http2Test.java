@@ -462,6 +462,68 @@ public class Http2Test extends HttpTestBase {
   }
 
   @Test
+  public void testHeadersEndHandler() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.putHeader("some", "some-header");
+      resp.headersEndHandler(v -> {
+        assertFalse(resp.headWritten());
+        resp.putHeader("extra", "extra-header");
+      });
+      resp.write("something");
+      assertTrue(resp.headWritten());
+      resp.end();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals("some-header", headers.get("some").toString());
+            assertEquals("extra-header", headers.get("extra").toString());
+            testComplete();
+          });
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testBodyEndHandler() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      AtomicInteger count = new AtomicInteger();
+      resp.bodyEndHandler(v -> {
+        assertEquals(0, count.getAndIncrement());
+        assertTrue(resp.ended());
+      });
+      resp.write("something");
+      assertEquals(0, count.get());
+      resp.end();
+      assertEquals(1, count.get());
+      testComplete();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testPost() throws Exception {
     String expectedContent = TestUtils.randomAlphaString(1000);
     Buffer postContent = Buffer.buffer();
@@ -1104,6 +1166,7 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testSendFile() throws Exception {
+    waitFor(2);
     File f = File.createTempFile("vertx", ".stream");
     f.deleteOnExit();
     Buffer expected = Buffer.buffer();
@@ -1114,7 +1177,11 @@ public class Http2Test extends HttpTestBase {
       out.write(bytes);
     }
     server.requestHandler(req -> {
-      req.response().sendFile(f.getAbsolutePath());
+      HttpServerResponse resp = req.response();
+      resp.bodyEndHandler(v -> {
+        complete();
+      });
+      resp.sendFile(f.getAbsolutePath());
     });
     startServer();
     TestClient client = new TestClient();
@@ -1133,7 +1200,7 @@ public class Http2Test extends HttpTestBase {
             vertx.runOnContext(v -> {
               assertEquals("" + len, responseHeaders.get("content-length").toString());
               assertEquals(expected, buffer);
-              testComplete();
+              complete();
             });
           }
           return data.readableBytes() + padding;

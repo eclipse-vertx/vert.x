@@ -64,6 +64,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
+  private Handler<Void> headersEndHandler;
+  private Handler<Void> bodyEndHandler;
 
   public Http2ServerResponseImpl(VertxInternal vertx, ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, Http2Stream stream) {
     this.vertx = vertx;
@@ -296,13 +298,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private void checkSendHeaders(boolean end) {
     if (!headWritten) {
-      headWritten = true;
       if (!headers.contains(HttpHeaderNames.CONTENT_LENGTH) && !chunked) {
         throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not sending an HTTP chunked response.");
       }
-      encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
+      if (headersEndHandler != null) {
+        headersEndHandler.handle(null);
+      }
       headWritten = true;
+      encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
     }
   }
 
@@ -325,6 +329,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       ended = true;
     }
     ctx.flush();
+    if (end && bodyEndHandler != null) {
+      bodyEndHandler.handle(null);
+    }
   }
 
   private void checkEnded() {
@@ -428,12 +435,14 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse headersEndHandler(@Nullable Handler<Void> handler) {
-    throw new UnsupportedOperationException();
+    headersEndHandler = handler;
+    return this;
   }
 
   @Override
   public HttpServerResponse bodyEndHandler(@Nullable Handler<Void> handler) {
-    throw new UnsupportedOperationException();
+    bodyEndHandler = handler;
+    return this;
   }
 
   @Override
