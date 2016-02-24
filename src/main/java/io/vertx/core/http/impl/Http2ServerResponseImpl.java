@@ -62,6 +62,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private boolean ended;
   private int statusCode = 200;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
+  private long bytesWritten;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> headersEndHandler;
@@ -312,9 +313,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   void write(ByteBuf chunk, boolean end) {
     checkEnded();
-    boolean empty = chunk.readableBytes() == 0;
+    int len = chunk.readableBytes();
+    boolean empty = len == 0;
     checkSendHeaders(empty && end);
     if (!empty) {
+      bytesWritten += len;
       encoder.writeData(ctx, stream.id(), chunk, 0, end && trailers == null, ctx.newPromise());
     }
     if (trailers != null && end) {
@@ -447,7 +450,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public long bytesWritten() {
-    throw new UnsupportedOperationException();
+    return bytesWritten;
   }
 
   @Override

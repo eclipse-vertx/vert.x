@@ -668,6 +668,7 @@ public class Http2Test extends HttpTestBase {
           resp.drainHandler(v -> {
             expected.append("last");
             resp.end(Buffer.buffer("last"));
+            assertEquals(expected.toString().getBytes().length, resp.bytesWritten());
           });
           vertx.cancelTimer(timerID);
           drain.set(true);
@@ -1179,6 +1180,7 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.bodyEndHandler(v -> {
+        assertEquals(resp.bytesWritten(), len);
         complete();
       });
       resp.sendFile(f.getAbsolutePath());
