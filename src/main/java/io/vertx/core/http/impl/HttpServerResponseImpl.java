@@ -607,4 +607,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public void reset(long code) {
   }
+
+  @Override
+  public HttpServerResponse promisePush(io.vertx.core.http.HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    handler.handle(Future.failedFuture("Push promise is only supported with HTTP2"));
+    return this;
+  }
 }

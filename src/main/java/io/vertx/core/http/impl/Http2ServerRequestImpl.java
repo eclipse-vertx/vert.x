@@ -26,15 +26,12 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -44,7 +41,6 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.StreamResetException;
@@ -56,7 +52,6 @@ import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
@@ -113,7 +108,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     this.stream = stream;
     this.headers = headers;
     this.ctx = ctx;
-    this.response = new Http2ServerResponseImpl((VertxInternal) vertx, ctx, encoder, stream);
+    this.response = new Http2ServerResponseImpl((VertxInternal) vertx, ctx, connection, encoder, stream, false);
   }
 
   void end() {
@@ -494,19 +489,4 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     return connection;
   }
 
-  @Override
-  public HttpServerRequest promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    Http2Headers headers = new DefaultHttp2Headers();
-    headers.method(method.name());
-    headers.path(path);
-    int id = conn.local().incrementAndGetNextStreamId();
-    connection.encoder().writePushPromise(ctx, stream.id(), id, headers, 0, ctx.newPromise()).addListener(fut -> {
-      if (fut.isSuccess()) {
-        connection.schedulePush(ctx, id, handler);
-      } else {
-        handler.handle(Future.failedFuture(fut.cause()));
-      }
-    });
-    return this;
-  }
 }

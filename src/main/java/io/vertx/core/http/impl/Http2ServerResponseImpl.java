@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -32,6 +33,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.VertxInternal;
@@ -51,8 +54,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private final VertxInternal vertx;
   private final ChannelHandlerContext ctx;
+  private final VertxHttp2Handler connection;
   private final Http2ConnectionEncoder encoder;
   private final Http2Stream stream;
+  private final boolean push;
   private Http2Headers headers = new DefaultHttp2Headers().status(OK.codeAsText());
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
@@ -68,11 +73,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
 
-  public Http2ServerResponseImpl(VertxInternal vertx, ChannelHandlerContext ctx, Http2ConnectionEncoder encoder, Http2Stream stream) {
+  public Http2ServerResponseImpl(VertxInternal vertx, ChannelHandlerContext ctx, VertxHttp2Handler connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push) {
     this.vertx = vertx;
     this.ctx = ctx;
+    this.connection = connection;
     this.encoder = encoder;
     this.stream = stream;
+    this.push = push;
   }
 
   void handleReset(long code) {
@@ -463,5 +470,17 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     checkEnded();
     ended = true;
     encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
+  }
+
+  public HttpServerResponse promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    if (push) {
+      throw new IllegalStateException("A push response cannot promise another push");
+    }
+    checkEnded();
+    Http2Headers headers = new DefaultHttp2Headers();
+    headers.method(method.name());
+    headers.path(path);
+    connection.sendPush(stream.id(), headers, handler);
+    return this;
   }
 }

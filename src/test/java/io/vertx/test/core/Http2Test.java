@@ -887,14 +887,11 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testPushPromise() throws Exception {
     server.requestHandler(req -> {
-      req.promisePush(HttpMethod.GET, "/wibble", ar -> {
+      req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
-        try {
-          response./*putHeader("content-type", "application/plain").*/end("the_content");
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+        response./*putHeader("content-type", "application/plain").*/end("the_content");
+        assertIllegalStateException(() -> response.promisePush(HttpMethod.GET, "/wibble2"));
       });
     });
     startServer();
@@ -934,7 +931,7 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testResetActivePushPromise() throws Exception {
     server.requestHandler(req -> {
-      req.promisePush(HttpMethod.GET, "/wibble", ar -> {
+      req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response.exceptionHandler(err -> {
@@ -971,7 +968,7 @@ public class Http2Test extends HttpTestBase {
       for (int i = 0; i < numPushes; i++) {
         int val = i;
         String path = "/wibble" + val;
-        req.promisePush(HttpMethod.GET, path, ar -> {
+        req.response().promisePush(HttpMethod.GET, path, ar -> {
           assertTrue(ar.succeeded());
           pushSent.add(path);
           vertx.setTimer(10, id -> {
@@ -1016,7 +1013,7 @@ public class Http2Test extends HttpTestBase {
   @Test
   public void testResetPendingPushPromise() throws Exception {
     server.requestHandler(req -> {
-      req.promisePush(HttpMethod.GET, "/wibble", ar -> {
+      req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertFalse(ar.succeeded());
         testComplete();
       });
@@ -1262,7 +1259,7 @@ public class Http2Test extends HttpTestBase {
     waitFor(2);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
-      req.promisePush(HttpMethod.GET, "/wibble", ar -> {
+      req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         when.complete();
         HttpServerResponse resp = ar.result();
@@ -1529,6 +1526,7 @@ public class Http2Test extends HttpTestBase {
       assertIllegalStateException(() -> resp.putTrailer("a", (CharSequence) "b"));
       assertIllegalStateException(() -> resp.putTrailer("a", (Iterable<String>)Arrays.asList("a", "b")));
       assertIllegalStateException(() -> resp.putTrailer("a", (Arrays.<CharSequence>asList("a", "b"))));
+      assertIllegalStateException(() -> resp.promisePush(HttpMethod.GET, "/whatever"));
       complete();
     });
     startServer();
