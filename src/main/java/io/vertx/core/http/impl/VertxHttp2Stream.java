@@ -27,4 +27,6 @@ abstract class VertxHttp2Stream {
 
   abstract void handleError(Throwable cause);
 
+  abstract void handleClose();
+
 }

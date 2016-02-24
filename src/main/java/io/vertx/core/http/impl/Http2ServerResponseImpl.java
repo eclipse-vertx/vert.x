@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.ClosedChannelException;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
@@ -79,6 +80,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   void handleError(Throwable cause) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(cause);
+    }
+  }
+
+  void handleClose() {
+    if (!ended) {
+      ended = true;
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(new ClosedChannelException());
+      }
     }
   }
 
@@ -407,6 +417,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public long bytesWritten() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int streamId() {
+    return stream.id();
   }
 
   @Override

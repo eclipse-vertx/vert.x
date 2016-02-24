@@ -600,6 +600,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public int streamId() {
+    return -1;
+  }
+
+  @Override
   public void reset(long code) {
   }
 }

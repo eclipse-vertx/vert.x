@@ -56,7 +56,9 @@ import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 
 /**
@@ -155,6 +157,17 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
       exceptionHandler.handle(cause);
       response.handleError(cause);
     }
+  }
+
+  @Override
+  void handleClose() {
+    if (!ended) {
+      ended = true;
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(new ClosedChannelException());
+      }
+    }
+    response.handleClose();
   }
 
   private void callHandler(Buffer data) {

@@ -44,6 +44,7 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
@@ -51,6 +52,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.VertxHttp2Handler;
@@ -89,6 +91,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -1144,15 +1147,17 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testStreamError() throws Exception {
-    waitFor(2);
+    waitFor(4);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Todo : check we are on executeFromIO
+        // Called twice : reset + close
         complete();
       });
       req.response().exceptionHandler(err -> {
         // Todo : check we are on executeFromIO
+        // Called twice : reset + close
         complete();
       });
       when.complete();
@@ -1183,6 +1188,7 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testPromiseStreamError() throws Exception {
+    waitFor(2);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.promisePush(HttpMethod.GET, "/wibble", ar -> {
@@ -1191,7 +1197,7 @@ public class Http2Test extends HttpTestBase {
         HttpServerResponse resp = ar.result();
         resp.exceptionHandler(err -> {
           // Todo : check we are on executeFromIO
-          testComplete();
+          complete();
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
       });
@@ -1220,13 +1226,15 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testConnectionDecodeError() throws Exception {
-    waitFor(3);
+    waitFor(5);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
+        // Called twice : reset + close
         complete();
       });
       req.response().exceptionHandler(err -> {
+        // Called twice : reset + close
         complete();
       });
       req.connection().exceptionHandler(err -> {
@@ -1244,6 +1252,165 @@ public class Http2Test extends HttpTestBase {
         request.context.flush();
       });
       encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testGoAway() throws Exception {
+    AtomicReference<HttpServerRequest> first = new AtomicReference<>();
+    AtomicInteger status = new AtomicInteger();
+    AtomicInteger closed = new AtomicInteger();
+    AtomicBoolean done = new AtomicBoolean();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      if (first.compareAndSet(null, req)) {
+        req.exceptionHandler(err -> {
+          assertTrue(done.get());
+        });
+        req.response().exceptionHandler(err -> {
+          assertTrue(done.get());
+        });
+      } else {
+        assertEquals(0, status.getAndIncrement());
+        req.exceptionHandler(err -> {
+          closed.incrementAndGet();
+        });
+        req.response().exceptionHandler(err -> {
+          closed.incrementAndGet();
+        });
+        HttpConnection conn = req.connection();
+        conn.closeHandler(v -> {
+          assertTrue(done.get());
+        });
+        conn.goAway(0, first.get().response().streamId(), null, v -> {
+          assertTrue(done.get());
+        });
+        vertx.setTimer(300, timerID -> {
+          assertEquals(1, status.getAndIncrement());
+          done.set(true);
+          testComplete();
+        });
+      }
+    };
+    testGoAway(requestHandler);
+  }
+
+  @Test
+  public void testGoAwayClose() throws Exception {
+    AtomicReference<HttpServerRequest> first = new AtomicReference<>();
+    AtomicInteger status = new AtomicInteger();
+    AtomicInteger closed = new AtomicInteger();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      if (first.compareAndSet(null, req)) {
+        req.exceptionHandler(err -> {
+          fail();
+        });
+        req.response().exceptionHandler(err -> {
+          closed.incrementAndGet();
+        });
+      } else {
+        assertEquals(0, status.getAndIncrement());
+        req.exceptionHandler(err -> {
+          closed.incrementAndGet();
+        });
+        req.response().exceptionHandler(err -> {
+          closed.incrementAndGet();
+        });
+        HttpConnection conn = req.connection();
+        conn.closeHandler(v -> {
+          assertEquals(3, closed.get());
+          assertEquals(2, status.getAndIncrement());
+          testComplete();
+        });
+        conn.goAway(3, first.get().response().streamId(), null, v -> {
+          assertEquals(1, status.getAndIncrement());
+        });
+      }
+    };
+    testGoAway(requestHandler);
+  }
+
+  @Test
+  public void testShutdownWithTimeout() throws Exception {
+    AtomicInteger closed = new AtomicInteger();
+    AtomicReference<HttpServerRequest> first = new AtomicReference<>();
+    AtomicInteger status = new AtomicInteger();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      if (first.compareAndSet(null, req)) {
+        req.exceptionHandler(err -> {
+          fail();
+        });
+        req.response().exceptionHandler(err -> {
+          closed.incrementAndGet();
+        });
+      } else {
+        assertEquals(0, status.getAndIncrement());
+        req.exceptionHandler(err -> {
+          fail();
+        });
+        req.response().exceptionHandler(err -> {
+          closed.incrementAndGet();
+        });
+        HttpConnection conn = req.connection();
+        conn.closeHandler(v -> {
+          assertEquals(2, closed.get());
+          assertEquals(1, status.getAndIncrement());
+          testComplete();
+        });
+        conn.shutdown(300);
+      }
+    };
+    testGoAway(requestHandler);
+  }
+
+  @Test
+  public void testShutdown() throws Exception {
+    AtomicReference<HttpServerRequest> first = new AtomicReference<>();
+    AtomicInteger status = new AtomicInteger();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      if (first.compareAndSet(null, req)) {
+        req.exceptionHandler(err -> {
+          fail();
+        });
+        req.response().exceptionHandler(err -> {
+          fail();
+        });
+      } else {
+        assertEquals(0, status.getAndIncrement());
+        req.exceptionHandler(err -> {
+          fail();
+        });
+        req.response().exceptionHandler(err -> {
+          fail();
+        });
+        HttpConnection conn = req.connection();
+        conn.closeHandler(v -> {
+          assertEquals(2, status.getAndIncrement());
+          testComplete();
+        });
+        conn.shutdown();
+        vertx.setTimer(300, timerID -> {
+          assertEquals(1, status.getAndIncrement());
+          first.get().response().end();
+          req.response().end();
+        });
+      }
+    };
+    testGoAway(requestHandler);
+  }
+
+  private void testGoAway(Handler<HttpServerRequest> requestHandler) throws Exception {
+    server.requestHandler(requestHandler);
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      Http2ConnectionEncoder encoder = request.encoder;
+      int id1 = request.nextStreamId();
+      encoder.writeHeaders(request.context, id1, GET("/"), 0, true, request.context.newPromise());
+      int id2 = request.nextStreamId();
+      encoder.writeHeaders(request.context, id2, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

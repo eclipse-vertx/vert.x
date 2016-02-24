@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
@@ -66,6 +67,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
   private Handler<Void> closeHandler;
+  private boolean shuttingDown;
 
   private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
   private Http2Settings clientSettings = new Http2Settings();
@@ -91,16 +93,8 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       @Override
       public void onStreamClosed(Http2Stream stream) {
         VertxHttp2Stream removed = streams.remove(stream.id());
-        if (removed instanceof Push) {
-          if (pendingPushes.remove(removed)) {
-            Push push = (Push) removed;
-            handlerContext.runOnContext(v -> {
-              push.handler.handle(Future.failedFuture("Push reset by client"));
-            });
-          } else {
-            concurrentStreams--;
-            checkPendingPushes();
-          }
+        if (removed != null) {
+          removed.handleClose();
         }
       }
     });
@@ -293,6 +287,21 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     void handleReset(long code) {
       response.handleReset(code);
     }
+
+    @Override
+    void handleClose() {
+      if (pendingPushes.remove(this)) {
+        handlerContext.runOnContext(v -> {
+          handler.handle(Future.failedFuture("Push reset by client"));
+        });
+      } else {
+        handlerContext.runOnContext(v -> {
+          response.handleClose();
+        });
+        concurrentStreams--;
+        checkPendingPushes();
+      }
+    }
   }
 
   void schedulePush(ChannelHandlerContext ctx, int streamId, Handler<AsyncResult<HttpServerResponse>> handler) {
@@ -316,6 +325,56 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
         push.handler.handle(Future.succeededFuture(push.response));
       });
     }
+  }
+
+  @Override
+  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData, Handler<Void> completionHandler) {
+    if (errorCode < 0) {
+      throw new IllegalArgumentException();
+    }
+    if (lastStreamId < 0) {
+      throw new IllegalArgumentException();
+    }
+    if (completionHandler != null) {
+      connection().addListener(new Http2ConnectionAdapter() {
+        @Override
+        public void onStreamClosed(Http2Stream stream) {
+          if (connection().numActiveStreams() == 0) {
+            completionHandler.handle(null);
+          }
+        }
+      });
+    }
+    encoder().writeGoAway(context, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, context.newPromise());
+    return this;
+  }
+
+  @Override
+  public HttpConnection shutdown(long timeout) {
+    if (timeout <= 0) {
+      throw new IllegalArgumentException("Invalid timeout value " + timeout);
+    }
+    return shutdown((Long)timeout);
+  }
+
+  @Override
+  public HttpConnection shutdown() {
+    return shutdown(null);
+  }
+
+  private HttpConnection shutdown(Long timeout) {
+    if (!shuttingDown) {
+      shuttingDown = true;
+      goAway(0, 2^31 - 1, null, v -> {
+        context.close();
+      });
+      if (timeout != null) {
+        handlerContext.owner().setTimer(timeout, timerID -> {
+          context.close();
+        });
+      }
+    }
+    return this;
   }
 
   @Override

@@ -21,6 +21,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 
 /**
  * Represents an HTTP connection.<p/>
@@ -35,6 +36,66 @@ import io.vertx.core.Handler;
  */
 @VertxGen
 public interface HttpConnection {
+
+  /**
+   * Like {@link #goAway(long, int)} with a last stream id {@code 2^31-1}.
+   */
+  @Fluent
+  default HttpConnection goAway(long errorCode) {
+    return goAway(errorCode, 2^31 - 1);
+  }
+
+  /**
+   * Like {@link #goAway(long, int, Buffer)} with no buffer.
+   */
+  @Fluent
+  default HttpConnection goAway(long errorCode, int lastStreamId) {
+    return goAway(errorCode, lastStreamId, null);
+  }
+
+  /**
+   * Like {@link #goAway(long, int, Buffer, Handler)}.
+   */
+  @Fluent
+  default HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
+    return goAway(errorCode, lastStreamId, debugData, null);
+  }
+
+  /**
+   * Send a go away frame to the client.<p/>
+   *
+   * <ul>
+   *   <li>a {@literal GOAWAY} frame is sent to the to the client with the {@code errorCode} and {@@code debugData}</li>
+   *   <li>any stream created after the stream identified by {@code lastStreamId} will be closed</li>
+   *   <li>for an {@literal errorCode} is different than {@literal 0} when all the remaining streams are closed this connection will be closed automatically</li>
+   * </ul>
+   *
+   * @param errorCode the {@literal GOAWAY} error code
+   * @param lastStreamId the last stream id
+   * @param debugData additional debug data sent to the client
+   * @param completionHandler the handler notified when all stream have been closed
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData, Handler<Void> completionHandler);
+
+  /**
+   * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
+   * will be closed.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection shutdown();
+
+  /**
+   * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
+   * will be closed or the {@code timeout} is fired.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection shutdown(long timeout);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.
