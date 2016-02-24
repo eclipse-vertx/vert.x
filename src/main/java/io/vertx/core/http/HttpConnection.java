@@ -29,6 +29,7 @@ import io.vertx.core.buffer.Buffer;
  * todo:
  *
  * - response writeContinue()
+ * - compression
  * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
  * - server synchronization + executeFromIO
  * - metrics
