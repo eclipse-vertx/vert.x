@@ -39,6 +39,7 @@ import io.vertx.core.buffer.Buffer;
  *
  * not yet in scope:
  * - stream priority
+ * - unknown frames (send / receive)
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
