@@ -95,6 +95,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -1411,6 +1413,57 @@ public class Http2Test extends HttpTestBase {
       encoder.writeHeaders(request.context, id1, GET("/"), 0, true, request.context.newPromise());
       int id2 = request.nextStreamId();
       encoder.writeHeaders(request.context, id2, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testResponseLifecycle() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true).write(Buffer.buffer("whatever"));
+      assertTrue(resp.headWritten());
+      assertIllegalStateException(() -> resp.setChunked(false));
+      assertIllegalStateException(() -> resp.setStatusCode(100));
+      assertIllegalStateException(() -> resp.setStatusMessage("whatever"));
+      assertIllegalStateException(() -> resp.putHeader("a", "b"));
+      assertIllegalStateException(() -> resp.putHeader("a", (CharSequence) "b"));
+      assertIllegalStateException(() -> resp.putHeader("a", (Iterable<String>)Arrays.asList("a", "b")));
+      assertIllegalStateException(() -> resp.putHeader("a", (Arrays.<CharSequence>asList("a", "b"))));
+      assertIllegalStateException(resp::writeContinue);
+      resp.end();
+      assertIllegalStateException(() -> resp.write("a"));
+      assertIllegalStateException(() -> resp.write("a", "UTF-8"));
+      assertIllegalStateException(() -> resp.write(Buffer.buffer("a")));
+      assertIllegalStateException(resp::end);
+      assertIllegalStateException(() -> resp.end("a"));
+      assertIllegalStateException(() -> resp.end("a", "UTF-8"));
+      assertIllegalStateException(() -> resp.end(Buffer.buffer("a")));
+      assertIllegalStateException(() -> resp.sendFile("the-file.txt"));
+      assertIllegalStateException(() -> resp.reset(0));
+      assertIllegalStateException(() -> resp.closeHandler(v -> {}));
+      assertIllegalStateException(() -> resp.drainHandler(v -> {}));
+      assertIllegalStateException(() -> resp.exceptionHandler(err -> {}));
+      assertIllegalStateException(resp::writeQueueFull);
+      assertIllegalStateException(() -> resp.setWriteQueueMaxSize(100));
+      assertIllegalStateException(() -> resp.putTrailer("a", "b"));
+      assertIllegalStateException(() -> resp.putTrailer("a", (CharSequence) "b"));
+      assertIllegalStateException(() -> resp.putTrailer("a", (Iterable<String>)Arrays.asList("a", "b")));
+      assertIllegalStateException(() -> resp.putTrailer("a", (Arrays.<CharSequence>asList("a", "b"))));
+      testComplete();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      Http2Headers headers = new DefaultHttp2Headers().
+          method("GET").
+          scheme("http").
+          authority("whatever.com").
+          path("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2");
+      request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

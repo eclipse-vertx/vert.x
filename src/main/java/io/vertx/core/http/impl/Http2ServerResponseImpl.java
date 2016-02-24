@@ -92,8 +92,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
+  private void checkHeadWritten() {
+    if (headWritten) {
+      throw new IllegalStateException("Header already sent");
+    }
+  }
+
   @Override
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
+    checkEnded();
     exceptionHandler = handler;
     return this;
   }
@@ -108,7 +115,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (statusCode < 0) {
       throw new IllegalArgumentException("code: " + statusCode + " (expected: 0+)");
     }
-    checkEnded();
+    checkHeadWritten();
     this.statusCode = statusCode;
     headers.status("" + statusCode);
     return this;
@@ -137,13 +144,14 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
+    checkHeadWritten();
     this.statusMessage = statusMessage;
     return this;
   }
 
   @Override
   public HttpServerResponse setChunked(boolean chunked) {
-    checkEnded();
+    checkHeadWritten();
     this.chunked = true;
     return this;
   }
@@ -163,24 +171,28 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse putHeader(String name, String value) {
+    checkHeadWritten();
     headers().add(name, value);
     return this;
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
+    checkHeadWritten();
     headers().add(name, value);
     return this;
   }
 
   @Override
   public HttpServerResponse putHeader(String name, Iterable<String> values) {
+    checkHeadWritten();
     headers().add(name, values);
     return this;
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
+    checkHeadWritten();
     headers().add(name, values);
     return this;
   }
@@ -195,35 +207,42 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse putTrailer(String name, String value) {
+    checkEnded();
     trailers().set(name, value);
     return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
+    checkEnded();
     trailers().set(name, value);
     return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(String name, Iterable<String> values) {
+    checkEnded();
     trailers().set(name, values);
     return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
+    checkEnded();
     trailers().set(name, value);
     return this;
   }
 
   @Override
   public HttpServerResponse closeHandler(@Nullable Handler<Void> handler) {
-    throw new UnsupportedOperationException();
+    checkEnded();
+    // Todo : use HttpConnection for this
+    return this;
   }
 
   @Override
   public HttpServerResponse writeContinue() {
+    checkHeadWritten();
     throw new UnsupportedOperationException();
   }
 
@@ -314,27 +333,30 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
+  void writabilityChanged() {
+    if (!ended && !writeQueueFull() && drainHandler != null) {
+      drainHandler.handle(null);
+    }
+  }
+
   @Override
   public boolean writeQueueFull() {
+    checkEnded();
     return !encoder.flowController().isWritable(stream);
   }
 
   @Override
   public HttpServerResponse setWriteQueueMaxSize(int maxSize) {
+    checkEnded();
     // It does not seem to be possible to configure this at the moment
     return this;
   }
 
   @Override
   public HttpServerResponse drainHandler(Handler<Void> handler) {
+    checkEnded();
     drainHandler = handler;
     return this;
-  }
-
-  void writabilityChanged() {
-    if (!writeQueueFull() && drainHandler != null) {
-      drainHandler.handle(null);
-    }
   }
 
   @Override
