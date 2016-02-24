@@ -25,6 +25,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
@@ -75,6 +76,8 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -94,6 +97,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.zip.GZIPInputStream;
 
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 
@@ -1534,6 +1538,61 @@ public class Http2Test extends HttpTestBase {
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
       request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testResponseCompression() throws Exception {
+    waitFor(2);
+    String expected = TestUtils.randomAlphaString(1000);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setCompressionSupported(true));
+    server.requestHandler(req -> {
+      req.response().end(expected);
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals("gzip", headers.get(HttpHeaderNames.CONTENT_ENCODING).toString());
+            complete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          byte[] bytes = new byte[data.readableBytes()];
+          data.readBytes(bytes);
+          vertx.runOnContext(v -> {
+            String decoded;
+            try {
+              GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(bytes));
+              ByteArrayOutputStream baos = new ByteArrayOutputStream();
+              while (true) {
+                int i = in.read();
+                if (i == -1) {
+                  break;
+                }
+                baos.write(i);;
+              }
+              decoded = baos.toString();
+            } catch (IOException e) {
+              fail(e);
+              return;
+            }
+            assertEquals(expected, decoded);
+            complete();
+          });
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/").add("accept-encoding", "gzip"), 0, true, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

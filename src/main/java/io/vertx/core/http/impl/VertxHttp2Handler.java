@@ -308,16 +308,17 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     int promisedStreamId = connection().local().incrementAndGetNextStreamId();
     encoder().writePushPromise(context, streamId, promisedStreamId, headers, 0, context.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
-        schedulePush(context, promisedStreamId, handler);
+        String contentEncoding = UriUtils.determineContentEncoding(headers);
+        schedulePush(context, promisedStreamId, contentEncoding, handler);
       } else {
         handler.handle(Future.failedFuture(fut.cause()));
       }
     });
   }
 
-  void schedulePush(ChannelHandlerContext ctx, int streamId, Handler<AsyncResult<HttpServerResponse>> handler) {
+  private void schedulePush(ChannelHandlerContext ctx, int streamId, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> handler) {
     Http2Stream stream = connection().stream(streamId);
-    Http2ServerResponseImpl resp = new Http2ServerResponseImpl((VertxInternal) handlerContext.owner(), ctx, this, encoder(), stream, true);
+    Http2ServerResponseImpl resp = new Http2ServerResponseImpl((VertxInternal) handlerContext.owner(), ctx, this, encoder(), stream, true, contentEncoding);
     Push push = new Push(resp, handler);
     streams.put(streamId, push);
     if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {

@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
+import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -35,13 +36,22 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
   private final ChannelHandlerContext context;
   private final ContextInternal handlerContext;
   private final String serverOrigin;
+  private final boolean supportsCompression;
   private final Handler<HttpServerRequest> handler;
 
-  public VertxHttp2HandlerBuilder(ChannelHandlerContext context, ContextInternal handlerContext, String serverOrigin, io.vertx.core.http.Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
+  public VertxHttp2HandlerBuilder(
+      ChannelHandlerContext context,
+      ContextInternal handlerContext,
+      String serverOrigin,
+      io.vertx.core.http.Http2Settings initialSettings,
+      boolean supportsCompression,
+      Handler<HttpServerRequest> handler) {
+
     this.handlerContext = handlerContext;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
     this.context = context;
+    this.supportsCompression = supportsCompression;
 
     if (initialSettings != null) {
       if (initialSettings.getHeaderTableSize() != null) {
@@ -82,6 +92,9 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
 
   @Override
   protected VertxHttp2Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
+    if (supportsCompression) {
+      encoder = new CompressorHttp2ConnectionEncoder(encoder);
+    }
     VertxHttp2Handler vertxHttp2Handler = new VertxHttp2Handler(
         context,
         handlerContext, serverOrigin, decoder, encoder, initialSettings, handler);

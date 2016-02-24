@@ -73,13 +73,17 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
 
-  public Http2ServerResponseImpl(VertxInternal vertx, ChannelHandlerContext ctx, VertxHttp2Handler connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push) {
+  public Http2ServerResponseImpl(VertxInternal vertx, ChannelHandlerContext ctx, VertxHttp2Handler connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
     this.vertx = vertx;
     this.ctx = ctx;
     this.connection = connection;
     this.encoder = encoder;
     this.stream = stream;
     this.push = push;
+
+    if (contentEncoding != null) {
+      putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
+    }
   }
 
   void handleReset(long code) {

@@ -16,8 +16,11 @@
 package io.vertx.core.http.impl;
 
 
+import io.netty.handler.codec.compression.ZlibWrapper;
+import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerRequest;
@@ -104,5 +107,29 @@ final class UriUtils {
       }
     }
     return params;
+  }
+
+  private static class CustomCompressor extends HttpContentCompressor {
+    @Override
+    public ZlibWrapper determineWrapper(String acceptEncoding) {
+      return super.determineWrapper(acceptEncoding);
+    }
+  }
+  private static final CustomCompressor compressor = new CustomCompressor();
+
+  static String determineContentEncoding(Http2Headers headers) {
+    String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
+    if (acceptEncoding != null) {
+      ZlibWrapper wrapper = compressor.determineWrapper(acceptEncoding);
+      if (wrapper != null) {
+        switch (wrapper) {
+          case GZIP:
+            return "gzip";
+          case ZLIB:
+            return "deflate";
+        }
+      }
+    }
+    return null;
   }
 }
