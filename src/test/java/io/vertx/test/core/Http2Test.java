@@ -1489,8 +1489,16 @@ public class Http2Test extends HttpTestBase {
   }
 
   @Test
-  public void testResponseLifecycle() throws Exception {
+  public void testRequestResponseLifecycle() throws Exception {
+    waitFor(2);
     server.requestHandler(req -> {
+      req.endHandler(v -> {
+        assertIllegalStateException(() -> req.setExpectMultipart(false));
+        assertIllegalStateException(() -> req.handler(buf -> {}));
+        assertIllegalStateException(() -> req.uploadHandler(upload -> {}));
+        assertIllegalStateException(() -> req.endHandler(v2 -> {}));
+        complete();
+      });
       HttpServerResponse resp = req.response();
       resp.setChunked(true).write(Buffer.buffer("whatever"));
       assertTrue(resp.headWritten());
@@ -1521,18 +1529,13 @@ public class Http2Test extends HttpTestBase {
       assertIllegalStateException(() -> resp.putTrailer("a", (CharSequence) "b"));
       assertIllegalStateException(() -> resp.putTrailer("a", (Iterable<String>)Arrays.asList("a", "b")));
       assertIllegalStateException(() -> resp.putTrailer("a", (Arrays.<CharSequence>asList("a", "b"))));
-      testComplete();
+      complete();
     });
     startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
-      Http2Headers headers = new DefaultHttp2Headers().
-          method("GET").
-          scheme("http").
-          authority("whatever.com").
-          path("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2");
-      request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

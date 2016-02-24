@@ -244,6 +244,12 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     }
   }
 
+  private void checkEnded() {
+    if (ended) {
+      throw new IllegalStateException("Request has already been read");
+    }
+  }
+
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
@@ -252,6 +258,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public HttpServerRequest handler(Handler<Buffer> handler) {
+    checkEnded();
     dataHandler = handler;
     return this;
   }
@@ -271,6 +278,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
+    checkEnded();
     endHandler = handler;
     return this;
   }
@@ -417,6 +425,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public HttpServerRequest setExpectMultipart(boolean expect) {
+    checkEnded();
     if (expect) {
       if (decoder == null) {
         CharSequence contentType = headers.get(HttpHeaderNames.CONTENT_TYPE);
@@ -451,6 +460,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
+    checkEnded();
     uploadHandler = handler;
     return this;
   }
