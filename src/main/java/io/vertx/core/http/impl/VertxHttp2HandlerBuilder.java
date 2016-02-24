@@ -97,7 +97,7 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
     }
     VertxHttp2Handler vertxHttp2Handler = new VertxHttp2Handler(
         context,
-        handlerContext, serverOrigin, decoder, encoder, initialSettings, handler);
+        handlerContext, serverOrigin, decoder, encoder, initialSettings, supportsCompression, handler);
     frameListener(vertxHttp2Handler);
     return vertxHttp2Handler;
   }

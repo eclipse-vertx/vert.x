@@ -1545,7 +1545,43 @@ public class Http2Test extends HttpTestBase {
   }
 
   @Test
-  public void testResponseCompression() throws Exception {
+  public void testResponseCompressionDisabled() throws Exception {
+    waitFor(2);
+    String expected = TestUtils.randomAlphaString(1000);
+    server.requestHandler(req -> {
+      req.response().end(expected);
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(null, headers.get(HttpHeaderNames.CONTENT_ENCODING));
+            complete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          String s = data.toString(StandardCharsets.UTF_8);
+          vertx.runOnContext(v -> {
+            assertEquals(expected, s);
+            complete();
+          });
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/").add("accept-encoding", "gzip"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testResponseCompressionEnabled() throws Exception {
     waitFor(2);
     String expected = TestUtils.randomAlphaString(1000);
     server.close();

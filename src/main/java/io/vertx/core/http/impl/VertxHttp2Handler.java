@@ -43,6 +43,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextInternal;
@@ -63,6 +64,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   private ChannelHandlerContext context;
   private final ContextInternal handlerContext;
+  private final boolean supportsCompression;
   private final String serverOrigin;
   private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
@@ -81,7 +83,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private Handler<Throwable> exceptionHandler;
 
   VertxHttp2Handler(ChannelHandlerContext context, ContextInternal handlerContext, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
-                         Http2Settings initialSettings, Handler<HttpServerRequest> handler) {
+                         Http2Settings initialSettings, boolean supportsCompression, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
 
     encoder.flowController().listener(stream -> {
@@ -100,6 +102,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     });
 
     this.context = context;
+    this.supportsCompression = supportsCompression;
     this.handlerContext = handlerContext;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
@@ -163,7 +166,8 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     Http2Stream stream = conn.stream(streamId);
     Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
     if (req == null) {
-      Http2ServerRequestImpl newReq = req = new Http2ServerRequestImpl(handlerContext.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers);
+      String contentEncoding = supportsCompression ? UriUtils.determineContentEncoding(headers) : null;
+      Http2ServerRequestImpl newReq = req = new Http2ServerRequestImpl(handlerContext.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers, contentEncoding);
       if (isMalformedRequest(headers)) {
         encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
         return;

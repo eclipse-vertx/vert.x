@@ -100,9 +100,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
       Http2Stream stream,
       ChannelHandlerContext ctx,
       Http2ConnectionEncoder encoder,
-      Http2Headers headers) {
-
-    String contentEncoding = UriUtils.determineContentEncoding(headers);
+      Http2Headers headers,
+      String contentEncoding) {
 
     this.vertx = vertx;
     this.connection = connection;
