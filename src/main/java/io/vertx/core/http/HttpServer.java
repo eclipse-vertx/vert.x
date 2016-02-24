@@ -16,6 +16,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
@@ -44,6 +45,7 @@ public interface HttpServer extends Measured {
    *
    * @return the request stream
    */
+  @CacheReturn
   HttpServerRequestStream requestStream();
 
   /**
@@ -52,6 +54,7 @@ public interface HttpServer extends Measured {
    *
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpServer requestHandler(Handler<HttpServerRequest> handler);
 
   /**
@@ -66,6 +69,7 @@ public interface HttpServer extends Measured {
    *
    * @return the websocket stream
    */
+  @CacheReturn
   ServerWebSocketStream websocketStream();
 
   /**
@@ -74,6 +78,7 @@ public interface HttpServer extends Measured {
    *
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   HttpServer websocketHandler(Handler<ServerWebSocket> handler);
 
   /**
