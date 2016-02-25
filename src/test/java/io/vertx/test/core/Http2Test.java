@@ -49,6 +49,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpConnection;
@@ -269,15 +270,19 @@ public class Http2Test extends HttpTestBase {
     Http2Settings expectedSettings = randomSettings();
     server.close();
     server = vertx.createHttpServer(serverOptions);
+    Context otherContext = vertx.getOrCreateContext();
     server.requestHandler(req -> {
-      req.connection().updateSettings(VertxHttp2Handler.toVertxSettings(expectedSettings), ar -> {
-        io.vertx.core.http.Http2Settings ackedSettings = req.connection().settings();
-        assertEquals(expectedSettings.maxHeaderListSize(), ackedSettings.getMaxHeaderListSize());
-        assertEquals(expectedSettings.maxFrameSize(), ackedSettings.getMaxFrameSize());
-        assertEquals(expectedSettings.initialWindowSize(), ackedSettings.getInitialWindowSize());
-        assertEquals(expectedSettings.maxConcurrentStreams(), ackedSettings.getMaxConcurrentStreams());
-        assertEquals((long) expectedSettings.headerTableSize(), (long) ackedSettings.getHeaderTableSize());
-        complete();
+      otherContext.runOnContext(v -> {
+        req.connection().updateSettings(VertxHttp2Handler.toVertxSettings(expectedSettings), ar -> {
+          assertSame(otherContext, Vertx.currentContext());
+          io.vertx.core.http.Http2Settings ackedSettings = req.connection().settings();
+          assertEquals(expectedSettings.maxHeaderListSize(), ackedSettings.getMaxHeaderListSize());
+          assertEquals(expectedSettings.maxFrameSize(), ackedSettings.getMaxFrameSize());
+          assertEquals(expectedSettings.initialWindowSize(), ackedSettings.getInitialWindowSize());
+          assertEquals(expectedSettings.maxConcurrentStreams(), ackedSettings.getMaxConcurrentStreams());
+          assertEquals((long) expectedSettings.headerTableSize(), (long) ackedSettings.getHeaderTableSize());
+          complete();
+        });
       });
     });
     startServer();

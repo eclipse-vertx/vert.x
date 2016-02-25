@@ -41,6 +41,7 @@ import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -435,6 +436,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   @Override
   public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
+    Context completionContext = completionHandler != null ? handlerContext.owner().getOrCreateContext() : null;
     Http2Settings settingsUpdate = fromVertxSettings(settings);
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     encoder().writeSettings(context, settingsUpdate, context.newPromise()).addListener(fut -> {
@@ -442,11 +444,17 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
         updateSettingsHandler.add(() -> {
           serverSettings.putAll(settingsUpdate);
           if (completionHandler != null) {
-            completionHandler.handle(Future.succeededFuture());
+            completionContext.runOnContext(v -> {
+              completionHandler.handle(Future.succeededFuture());
+            });
           }
         });
       } else {
-        completionHandler.handle(Future.failedFuture(fut.cause()));
+        if (completionHandler != null) {
+          completionContext.runOnContext(v -> {
+            completionHandler.handle(Future.failedFuture(fut.cause()));
+          });
+        }
       }
     });
     context.flush();
