@@ -98,7 +98,7 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  */
 public class Http2Test extends HttpTestBase {
 
-  private void assertOnContext(Context context) {
+  private void assertOnIOContext(Context context) {
     assertEquals(context, Vertx.currentContext());
     for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
       if (elt.getMethodName().equals("executeFromIO")) {
@@ -344,7 +344,7 @@ public class Http2Test extends HttpTestBase {
       assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
       assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
       req.connection().clientSettingsHandler(update -> {
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
         assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
         assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
@@ -940,7 +940,7 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       HttpConnection conn = req.connection();
       conn.closeHandler(v -> {
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         testComplete();
       });
       req.response().putHeader("Content-Type", "text/plain").end();
@@ -1013,7 +1013,7 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         HttpServerResponse response = ar.result();
         response.exceptionHandler(err -> {
           testComplete();
@@ -1052,7 +1052,7 @@ public class Http2Test extends HttpTestBase {
         String path = "/wibble" + val;
         req.response().promisePush(HttpMethod.GET, path, ar -> {
           assertTrue(ar.succeeded());
-          assertOnContext(ctx);
+          assertOnIOContext(ctx);
           pushSent.add(path);
           vertx.setTimer(10, id -> {
             ar.result().end("wibble-" + val);
@@ -1099,7 +1099,7 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertFalse(ar.succeeded());
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         testComplete();
       });
     });
@@ -1306,12 +1306,12 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Called twice : reset + close
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         complete();
       });
       req.response().exceptionHandler(err -> {
         // Called twice : reset + close
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         complete();
       });
       when.complete();
@@ -1348,11 +1348,11 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         when.complete();
         HttpServerResponse resp = ar.result();
         resp.exceptionHandler(err -> {
-          assertOnContext(ctx);
+          assertOnIOContext(ctx);
           complete();
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
@@ -1388,16 +1388,16 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Called twice : reset + close
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         complete();
       });
       req.response().exceptionHandler(err -> {
         // Called twice : reset + close
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         complete();
       });
       req.connection().exceptionHandler(err -> {
-        assertOnContext(ctx);
+        assertOnIOContext(ctx);
         complete();
       });
       when.complete();
