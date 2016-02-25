@@ -28,7 +28,6 @@ import io.vertx.core.buffer.Buffer;
  *
  * todo:
  *
- * - response writeContinue()
  * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
  * - server synchronization + executeFromIO
  * - metrics
@@ -36,7 +35,6 @@ import io.vertx.core.buffer.Buffer;
  * - h2c
  * - http upgrade
  * - HttpClient
- * - remove okio tests
  *
  * not yet in scope:
  * - stream priority

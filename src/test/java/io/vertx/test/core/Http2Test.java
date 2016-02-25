@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,6 +41,7 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -62,16 +64,6 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
-import okhttp3.CertificatePinner;
-import okhttp3.ConnectionSpec;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okio.BufferedSink;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
@@ -118,6 +110,10 @@ public class Http2Test extends HttpTestBase {
     return headers("GET", "https", path);
   }
 
+  private static Http2Headers POST(String path) {
+    return headers("POST", "https", path);
+  }
+
   private HttpServerOptions serverOptions;
 
   @Override
@@ -154,26 +150,6 @@ public class Http2Test extends HttpTestBase {
     SSLContext context = SSLContext.getInstance("SSL");
     context.init(null, trustMgrs, new java.security.SecureRandom());
     return context;
-  }
-
-  private OkHttpClient createHttp2Client() throws Exception {
-    return createHttp2ClientBuilder().build();
-  }
-
-  private OkHttpClient.Builder createHttp2ClientBuilder() throws Exception {
-    CertificatePinner certificatePinner = new CertificatePinner.Builder()
-        .add("localhost", "sha1/c9qKvZ9pYojzJD4YQRfuAd0cHVA=")
-        .build();
-
-    SSLContext sc = createSSLContext();
-
-    return new OkHttpClient.Builder()
-        .readTimeout(100, TimeUnit.SECONDS)
-        .writeTimeout(100, TimeUnit.SECONDS)
-        .sslSocketFactory(sc.getSocketFactory()).hostnameVerifier((hostname, session) -> true)
-        .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
-        .certificatePinner(certificatePinner)
-        .connectionSpecs(Collections.singletonList(ConnectionSpec.MODERN_TLS));
   }
 
   class TestClient {
@@ -397,7 +373,7 @@ public class Http2Test extends HttpTestBase {
 
   @Test
     public void testGet() throws Exception {
-    String content = TestUtils.randomAlphaString(1000);
+    String expected = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
     server.requestHandler(req -> {
       req.endHandler(v -> {
@@ -415,18 +391,44 @@ public class Http2Test extends HttpTestBase {
       resp.putHeader("Foo", "foo_value");
       resp.putHeader("bar", "bar_value");
       resp.putHeader("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
-      resp.end(content);
+      resp.end(expected);
     });
     startServer();
-    OkHttpClient client = createHttp2Client();
-    Request request = new Request.Builder().url("https://localhost:4043/").build();
-    Response response = client.newCall(request).execute();
-    assertEquals(Protocol.HTTP_2, response.protocol());
-    assertEquals(content, response.body().string());
-    assertEquals("text/plain", response.header("content-type"));
-    assertEquals("foo_value", response.header("foo"));
-    assertEquals("bar_value", response.header("bar"));
-    assertEquals(Arrays.asList("juu_value_1", "juu_value_2"), response.headers("juu"));
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals("200", headers.status().toString());
+            assertEquals("text/plain", headers.get("content-type").toString());
+            assertEquals("foo_value", headers.get("foo").toString());
+            assertEquals("bar_value", headers.get("bar").toString());
+            assertEquals(2, headers.getAll("juu").size());
+            assertEquals("juu_value_1", headers.getAll("juu").get(0).toString());
+            assertEquals("juu_value_2", headers.getAll("juu").get(1).toString());
+            assertFalse(endStream);
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          String actual = data.toString(StandardCharsets.UTF_8);
+          vertx.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals(expected, actual);
+            assertTrue(endOfStream);
+            testComplete();
+          });
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/").authority("localhost:4043"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
   }
 
   @Test
@@ -529,23 +531,26 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testPost() throws Exception {
-    String expectedContent = TestUtils.randomAlphaString(1000);
+    Buffer expectedContent = TestUtils.randomBuffer(1000);
     Buffer postContent = Buffer.buffer();
     server.requestHandler(req -> {
       req.handler(postContent::appendBuffer);
       req.endHandler(v -> {
         req.response().putHeader("content-type", "text/plain").end("");
+        assertEquals(expectedContent, postContent);
+        testComplete();
       });
     });
     startServer();
-    OkHttpClient client = createHttp2Client();
-    Request request = new Request.Builder()
-        .post(RequestBody.create(MediaType.parse("test/plain"), expectedContent))
-        .url("https://localhost:4043/")
-        .build();
-    Response response = client.newCall(request).execute();
-    assertEquals(Protocol.HTTP_2, response.protocol());
-    assertEquals(expectedContent, postContent.toString());
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, POST("/").set("content-type", "text/plain"), 0, false, request.context.newPromise());
+      request.encoder.writeData(request.context, id, expectedContent.getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
   }
 
   @Test
@@ -560,6 +565,7 @@ public class Http2Test extends HttpTestBase {
         upload.handler(tot::appendBuffer);
         upload.endHandler(v -> {
           assertEquals(tot, Buffer.buffer("some-content"));
+          testComplete();
         });
       });
       req.endHandler(v -> {
@@ -568,18 +574,27 @@ public class Http2Test extends HttpTestBase {
       });
     });
     startServer();
-    OkHttpClient client = createHttp2Client();
-    Request request = new Request.Builder()
-        .post(new MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart("file", "tmp-0.txt", RequestBody.create(MediaType.parse("image/gif"), "some-content"))
-            .build())
-        .url("https://localhost:4043/form")
-        .build();
-    Response response = client.newCall(request).execute();
-    assertEquals(200, response.code());
-    assertEquals(Protocol.HTTP_2, response.protocol());
-    assertEquals("done", response.body().string());
+
+    String contentType = "multipart/form-data; boundary=a4e41223-a527-49b6-ac1c-315d76be757e";
+    String contentLength = "225";
+    String body = "--a4e41223-a527-49b6-ac1c-315d76be757e\r\n" +
+        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+        "Content-Type: image/gif; charset=utf-8\r\n" +
+        "Content-Length: 12\r\n" +
+        "\r\n" +
+        "some-content\r\n" +
+        "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
+
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, POST("/form").
+          set("content-type", contentType).set("content-length", contentLength), 0, false, request.context.newPromise());
+      request.encoder.writeData(request.context, id, Buffer.buffer(body).getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
   }
 
   @Test
@@ -608,13 +623,14 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testServerRequestPause() throws Exception {
-    String expectedContent = TestUtils.randomAlphaString(1000);
-    Thread t = Thread.currentThread();
+    Buffer expected = Buffer.buffer();
+    String chunk = TestUtils.randomAlphaString(1000);
     AtomicBoolean done = new AtomicBoolean();
+    AtomicBoolean paused = new AtomicBoolean();
     Buffer received = Buffer.buffer();
     server.requestHandler(req -> {
       vertx.setPeriodic(1, timerID -> {
-        if (t.getState() == Thread.State.WAITING) {
+        if (paused.get()) {
           vertx.cancelTimer(timerID);
           done.set(true);
           // Let some time to accumulate some more buffers
@@ -625,36 +641,40 @@ public class Http2Test extends HttpTestBase {
       });
       req.handler(received::appendBuffer);
       req.endHandler(v -> {
-        req.response().end("hello");
+        assertEquals(expected, received);
+        testComplete();
       });
       req.pause();
     });
     startServer();
-    OkHttpClient client = createHttp2Client();
-    Buffer sent = Buffer.buffer();
-    Request request = new Request.Builder()
-        .post(new RequestBody() {
-          @Override
-          public MediaType contentType() {
-            return MediaType.parse("text/plain");
-          }
 
-          @Override
-          public void writeTo(BufferedSink sink) throws IOException {
-            while (!done.get()) {
-              sent.appendString(expectedContent);
-              sink.write(expectedContent.getBytes());
-              sink.flush();
-            }
-            sink.close();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, POST("/form").
+          set("content-type", "text/plain"), 0, false, request.context.newPromise());
+      request.context.flush();
+      Http2Stream stream = request.connection.stream(id);
+      class Anonymous {
+        void send() {
+          boolean writable = request.encoder.flowController().isWritable(stream);
+          if (writable) {
+            Buffer buf = Buffer.buffer(chunk);
+            expected.appendBuffer(buf);
+            request.encoder.writeData(request.context, id, buf.getByteBuf(), 0, false, request.context.newPromise());
+            request.context.flush();
+            request.context.invoker().executor().execute(this::send);
+          } else {
+            request.encoder.writeData(request.context, id, Unpooled.EMPTY_BUFFER, 0, true, request.context.newPromise());
+            request.context.flush();
+            paused.set(true);
           }
-        })
-        .url("https://localhost:4043/")
-        .build();
-    Response response = client.newCall(request).execute();
-    assertEquals(Protocol.HTTP_2, response.protocol());
-    assertEquals("hello", response.body().string());
-    assertEquals(received, sent);
+        }
+      }
+      new Anonymous().send();
+    });
+    fut.sync();
+    await();
   }
 
   @Test

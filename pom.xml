@@ -169,12 +169,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <version>3.1.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.mortbay.jetty.alpn</groupId>
       <artifactId>alpn-boot</artifactId>
       <version>${alpn-boot-version}</version>
