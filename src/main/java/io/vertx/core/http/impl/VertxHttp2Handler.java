@@ -19,6 +19,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2CodecUtil;
@@ -62,9 +64,9 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
-  private ChannelHandlerContext context;
+  private final ChannelHandlerContext context;
+  private final HttpServerOptions options;
   private final ContextInternal handlerContext;
-  private final boolean supportsCompression;
   private final String serverOrigin;
   private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   private final Handler<HttpServerRequest> handler;
@@ -83,7 +85,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   private Handler<Throwable> exceptionHandler;
 
   VertxHttp2Handler(ChannelHandlerContext context, ContextInternal handlerContext, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
-                         Http2Settings initialSettings, boolean supportsCompression, Handler<HttpServerRequest> handler) {
+                         Http2Settings initialSettings, HttpServerOptions options, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
 
     encoder.flowController().listener(stream -> {
@@ -101,8 +103,8 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       }
     });
 
+    this.options = options;
     this.context = context;
-    this.supportsCompression = supportsCompression;
     this.handlerContext = handlerContext;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
@@ -166,11 +168,17 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     Http2Stream stream = conn.stream(streamId);
     Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
     if (req == null) {
-      String contentEncoding = supportsCompression ? UriUtils.determineContentEncoding(headers) : null;
+      String contentEncoding = options.isCompressionSupported() ? UriUtils.determineContentEncoding(headers) : null;
       Http2ServerRequestImpl newReq = req = new Http2ServerRequestImpl(handlerContext.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers, contentEncoding);
       if (isMalformedRequest(headers)) {
         encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
         return;
+      }
+      CharSequence value = headers.get(HttpHeaderNames.EXPECT);
+      if (options.isHandle100ContinueAutomatically() &&
+          ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
+              headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
+        req.response().writeContinue();
       }
       streams.put(streamId, newReq);
       handlerContext.executeFromIO(() -> {

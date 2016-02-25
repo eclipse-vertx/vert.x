@@ -25,6 +25,7 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.impl.ContextInternal;
 
@@ -36,23 +37,23 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
   private final ChannelHandlerContext context;
   private final ContextInternal handlerContext;
   private final String serverOrigin;
-  private final boolean supportsCompression;
+  private final HttpServerOptions options;
   private final Handler<HttpServerRequest> handler;
 
   public VertxHttp2HandlerBuilder(
       ChannelHandlerContext context,
       ContextInternal handlerContext,
       String serverOrigin,
-      io.vertx.core.http.Http2Settings initialSettings,
-      boolean supportsCompression,
+      HttpServerOptions option,
       Handler<HttpServerRequest> handler) {
 
     this.handlerContext = handlerContext;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
     this.context = context;
-    this.supportsCompression = supportsCompression;
+    this.options = option;
 
+    io.vertx.core.http.Http2Settings initialSettings = options.getHttp2Settings();
     if (initialSettings != null) {
       if (initialSettings.getHeaderTableSize() != null) {
         initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
@@ -92,12 +93,12 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
 
   @Override
   protected VertxHttp2Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-    if (supportsCompression) {
+    if (options.isCompressionSupported()) {
       encoder = new CompressorHttp2ConnectionEncoder(encoder);
     }
     VertxHttp2Handler vertxHttp2Handler = new VertxHttp2Handler(
         context,
-        handlerContext, serverOrigin, decoder, encoder, initialSettings, supportsCompression, handler);
+        handlerContext, serverOrigin, decoder, encoder, initialSettings, options, handler);
     frameListener(vertxHttp2Handler);
     return vertxHttp2Handler;
   }

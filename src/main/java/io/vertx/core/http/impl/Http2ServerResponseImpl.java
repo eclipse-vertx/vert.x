@@ -257,7 +257,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse writeContinue() {
     checkHeadWritten();
-    throw new UnsupportedOperationException();
+    encoder.writeHeaders(ctx, stream.id(), new DefaultHttp2Headers().status("100"), 0, false, ctx.newPromise());
+    ctx.flush();
+    return this;
   }
 
   @Override

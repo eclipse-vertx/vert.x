@@ -1634,4 +1634,109 @@ public class Http2Test extends HttpTestBase {
     fut.sync();
     await();
   }
+
+  @Test
+  public void test100ContinueHandledManually() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("100-continue", req.getHeader("expect"));
+      HttpServerResponse resp = req.response();
+      resp.writeContinue();
+      req.bodyHandler(body -> {
+        assertEquals("the-body", body.toString());
+        resp.putHeader("wibble", "wibble-value").end();
+      });
+    });
+    test100Continue();
+  }
+
+  @Test
+  public void test100ContinueHandledAutomatically() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setHandle100ContinueAutomatically(true));
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      req.bodyHandler(body -> {
+        assertEquals("the-body", body.toString());
+        resp.putHeader("wibble", "wibble-value").end();
+      });
+    });
+    test100Continue();
+  }
+
+  private void test100Continue() throws Exception {
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          switch (count++) {
+            case 0:
+              vertx.runOnContext(v -> {
+                assertEquals("100", headers.status().toString());
+              });
+              request.encoder.writeData(request.context, id, Buffer.buffer("the-body").getByteBuf(), 0, true, request.context.newPromise());
+              request.context.flush();
+              break;
+            case 1:
+              vertx.runOnContext(v -> {
+                assertEquals("200", headers.status().toString());
+                assertEquals("wibble-value", headers.get("wibble").toString());
+                testComplete();
+              });
+              break;
+            default:
+              vertx.runOnContext(v -> {
+                fail();
+              });
+          }
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/").add("expect", "100-continue"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void test100ContinueRejectedManually() throws Exception {
+    server.requestHandler(req -> {
+      req.response().setStatusCode(405).end();
+      req.handler(buf -> {
+        fail();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          switch (count++) {
+            case 0:
+              vertx.runOnContext(v -> {
+                assertEquals("405", headers.status().toString());
+                vertx.setTimer(100, v2 -> {
+                  testComplete();
+                });
+              });
+              break;
+            default:
+              vertx.runOnContext(v -> {
+                fail();
+              });
+          }
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/").add("expect", "100-continue"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
 }

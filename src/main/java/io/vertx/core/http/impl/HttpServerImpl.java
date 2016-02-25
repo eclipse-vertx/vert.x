@@ -204,7 +204,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                         configureHttp1(pipeline);
                       } else {
                         HandlerHolder<HttpServerRequest> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
-                        pipeline.addLast("handler", new VertxHttp2HandlerBuilder(ctx, holder.context, serverOrigin, options.getHttp2Settings(), options.isCompressionSupported(), holder.handler).build());
+                        pipeline.addLast("handler", new VertxHttp2HandlerBuilder(ctx, holder.context, serverOrigin, options, holder.handler).build());
                       }
                     }
                   });
