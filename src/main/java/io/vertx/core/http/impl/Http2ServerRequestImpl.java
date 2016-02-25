@@ -149,7 +149,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   }
 
   @Override
-  void handleError(Throwable cause) {
+  void handleException(Throwable cause) {
     if (exceptionHandler != null) {
       exceptionHandler.handle(cause);
       response.handleError(cause);
@@ -171,8 +171,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     if (decoder != null) {
       try {
         decoder.offer(new DefaultHttpContent(data.getByteBuf()));
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
-        e.printStackTrace();
+      } catch (Exception e) {
+        handleException(e);
       }
     }
     if (dataHandler != null) {
@@ -197,10 +197,10 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
             }
           }
         }
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
-        handleException(e);
       } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
         // ignore this as it is expected
+      } catch (Exception e) {
+        handleException(e);
       } finally {
         decoder.destroy();
       }
@@ -208,10 +208,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     if (endHandler != null) {
       endHandler.handle(null);
     }
-  }
-
-  private void handleException(Throwable t) {
-    t.printStackTrace();
   }
 
   private void consume(int numBytes) {

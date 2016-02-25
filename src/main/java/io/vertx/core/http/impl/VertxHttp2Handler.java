@@ -286,7 +286,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     }
 
     @Override
-    void handleError(Throwable cause) {
+    void handleException(Throwable cause) {
       response.handleError(cause);
     }
 
@@ -458,7 +458,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     VertxHttp2Stream stream = streams.get(http2Ex.streamId());
     if (stream != null) {
       handlerContext.executeFromIO(() -> {
-        stream.handleError(http2Ex);
+        stream.handleException(http2Ex);
       });
     }
     // Default behavior reset stream
@@ -475,7 +475,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     }
     for (VertxHttp2Stream stream : streams.values()) {
       handlerContext.executeFromIO(() -> {
-        stream.handleError(cause);
+        stream.handleException(cause);
       });
     }
     // Default behavior send go away

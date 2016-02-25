@@ -598,6 +598,43 @@ public class Http2Test extends HttpTestBase {
   }
 
   @Test
+  public void testInvalidPostFileUpload() throws Exception {
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      AtomicInteger errCount = new AtomicInteger();
+      req.exceptionHandler(err -> {
+        errCount.incrementAndGet();
+      });
+      req.endHandler(v -> {
+        assertTrue(errCount.get() > 0);
+        testComplete();
+      });
+    });
+    startServer();
+
+    String contentType = "multipart/form-data; boundary=a4e41223-a527-49b6-ac1c-315d76be757e";
+    String contentLength = "225";
+    String body = "--a4e41223-a527-49b6-ac1c-315d76be757e\r\n" +
+        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+        "Content-Type: image/gif; charset=ABCD\r\n" +
+        "Content-Length: 12\r\n" +
+        "\r\n" +
+        "some-content\r\n" +
+        "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
+
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, POST("/form").
+          set("content-type", contentType).set("content-length", contentLength), 0, false, request.context.newPromise());
+      request.encoder.writeData(request.context, id, Buffer.buffer(body).getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testConnect() throws Exception {
     server.requestHandler(req -> {
       assertEquals(HttpMethod.CONNECT, req.method());
