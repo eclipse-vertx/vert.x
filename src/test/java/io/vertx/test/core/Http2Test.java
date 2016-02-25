@@ -1283,20 +1283,21 @@ public class Http2Test extends HttpTestBase {
   public void testStreamError() throws Exception {
     waitFor(4);
     Future<Void> when = Future.future();
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
-        // Todo : check we are on executeFromIO
         // Called twice : reset + close
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       req.response().exceptionHandler(err -> {
-        // Todo : check we are on executeFromIO
         // Called twice : reset + close
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       when.complete();
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
@@ -1322,6 +1323,7 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testPromiseStreamError() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     waitFor(2);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
@@ -1330,13 +1332,13 @@ public class Http2Test extends HttpTestBase {
         when.complete();
         HttpServerResponse resp = ar.result();
         resp.exceptionHandler(err -> {
-          // Todo : check we are on executeFromIO
+          assertSame(ctx, Vertx.currentContext());
           complete();
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
       });
     });
-    startServer();;
+    startServer(ctx);;
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       request.decoder.frameListener(new Http2EventAdapter() {
@@ -1360,23 +1362,27 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testConnectionDecodeError() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     waitFor(5);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Called twice : reset + close
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       req.response().exceptionHandler(err -> {
         // Called twice : reset + close
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       req.connection().exceptionHandler(err -> {
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       when.complete();
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
