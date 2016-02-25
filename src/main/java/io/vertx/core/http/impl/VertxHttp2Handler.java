@@ -324,7 +324,9 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
         String contentEncoding = UriUtils.determineContentEncoding(headers);
         schedulePush(context, promisedStreamId, contentEncoding, handler);
       } else {
-        handler.handle(Future.failedFuture(fut.cause()));
+        handlerContext.executeFromIO(() -> {
+          handler.handle(Future.failedFuture(fut.cause()));
+        });
       }
     });
   }
@@ -336,7 +338,9 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     streams.put(streamId, push);
     if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
       concurrentStreams++;
-      handler.handle(Future.succeededFuture(resp));
+      handlerContext.executeFromIO(() -> {
+        handler.handle(Future.succeededFuture(resp));
+      });
     } else {
       pendingPushes.add(push);
     }

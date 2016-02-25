@@ -382,13 +382,6 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   int streamId();
 
   /**
-   * Like {@link #promisePush(HttpMethod, String, Handler)} without handler.
-   */
-  default HttpServerResponse promisePush(HttpMethod method, String path) {
-    return promisePush(method, path, null);
-  }
-
-  /**
    * Send immediatly a push promise to the client.<p/>
    *
    * The {@code handler} will be notified with a <i>success</i> when the push promise can be sent and with

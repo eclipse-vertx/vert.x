@@ -957,7 +957,7 @@ public class Http2Test extends HttpTestBase {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response./*putHeader("content-type", "application/plain").*/end("the_content");
-        assertIllegalStateException(() -> response.promisePush(HttpMethod.GET, "/wibble2"));
+        assertIllegalStateException(() -> response.promisePush(HttpMethod.GET, "/wibble2", resp -> {}));
       });
     });
     startServer();
@@ -996,9 +996,11 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testResetActivePushPromise() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
+        assertSame(ctx, Vertx.currentContext());
         HttpServerResponse response = ar.result();
         response.exceptionHandler(err -> {
           testComplete();
@@ -1006,7 +1008,7 @@ public class Http2Test extends HttpTestBase {
         response.setChunked(true).write("some_content");
       });
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
@@ -1027,6 +1029,7 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testQueuePushPromise() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     int numPushes = 10;
     Set<String> pushSent = new HashSet<>();
     server.requestHandler(req -> {
@@ -1036,6 +1039,7 @@ public class Http2Test extends HttpTestBase {
         String path = "/wibble" + val;
         req.response().promisePush(HttpMethod.GET, path, ar -> {
           assertTrue(ar.succeeded());
+          assertSame(ctx, Vertx.currentContext());
           pushSent.add(path);
           vertx.setTimer(10, id -> {
             ar.result().end("wibble-" + val);
@@ -1043,7 +1047,7 @@ public class Http2Test extends HttpTestBase {
         });
       }
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(3);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -1078,13 +1082,15 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testResetPendingPushPromise() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertFalse(ar.succeeded());
+        assertSame(ctx, Vertx.currentContext());
         testComplete();
       });
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     client.settings.maxConcurrentStreams(0);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
@@ -1329,6 +1335,7 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
+        assertSame(ctx, Vertx.currentContext());
         when.complete();
         HttpServerResponse resp = ar.result();
         resp.exceptionHandler(err -> {
@@ -1604,7 +1611,7 @@ public class Http2Test extends HttpTestBase {
       assertIllegalStateException(() -> resp.putTrailer("a", (CharSequence) "b"));
       assertIllegalStateException(() -> resp.putTrailer("a", (Iterable<String>)Arrays.asList("a", "b")));
       assertIllegalStateException(() -> resp.putTrailer("a", (Arrays.<CharSequence>asList("a", "b"))));
-      assertIllegalStateException(() -> resp.promisePush(HttpMethod.GET, "/whatever"));
+      assertIllegalStateException(() -> resp.promisePush(HttpMethod.GET, "/whatever", ar -> {}));
       complete();
     });
     startServer();
