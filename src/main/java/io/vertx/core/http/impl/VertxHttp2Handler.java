@@ -361,11 +361,14 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       throw new IllegalArgumentException();
     }
     if (completionHandler != null) {
+      Context completionContext = handlerContext.owner().getOrCreateContext();
       connection().addListener(new Http2ConnectionAdapter() {
         @Override
         public void onStreamClosed(Http2Stream stream) {
           if (connection().numActiveStreams() == 0) {
-            completionHandler.handle(null);
+            completionContext.runOnContext(v -> {
+              completionHandler.handle(null);
+            });
           }
         }
       });

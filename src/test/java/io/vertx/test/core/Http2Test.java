@@ -1404,6 +1404,7 @@ public class Http2Test extends HttpTestBase {
     AtomicInteger status = new AtomicInteger();
     AtomicInteger closed = new AtomicInteger();
     AtomicBoolean done = new AtomicBoolean();
+    Context ctx = vertx.getOrCreateContext();
     Handler<HttpServerRequest> requestHandler = req -> {
       if (first.compareAndSet(null, req)) {
         req.exceptionHandler(err -> {
@@ -1424,13 +1425,16 @@ public class Http2Test extends HttpTestBase {
         conn.closeHandler(v -> {
           assertTrue(done.get());
         });
-        conn.goAway(0, first.get().response().streamId(), null, v -> {
-          assertTrue(done.get());
-        });
-        vertx.setTimer(300, timerID -> {
-          assertEquals(1, status.getAndIncrement());
-          done.set(true);
-          testComplete();
+        ctx.runOnContext(v1 -> {
+          conn.goAway(0, first.get().response().streamId(), null, v2 -> {
+            assertSame(ctx, Vertx.currentContext());
+            assertTrue(done.get());
+          });
+          vertx.setTimer(300, timerID -> {
+            assertEquals(1, status.getAndIncrement());
+            done.set(true);
+            testComplete();
+          });
         });
       }
     };
@@ -1439,6 +1443,7 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testGoAwayClose() throws Exception {
+    waitFor(2);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
     AtomicInteger closed = new AtomicInteger();
@@ -1461,11 +1466,12 @@ public class Http2Test extends HttpTestBase {
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
           assertEquals(3, closed.get());
-          assertEquals(2, status.getAndIncrement());
-          testComplete();
+          assertEquals(1, status.get());
+          complete();
         });
         conn.goAway(3, first.get().response().streamId(), null, v -> {
-          assertEquals(1, status.getAndIncrement());
+          assertEquals(1, status.get());
+          complete();
         });
       }
     };
