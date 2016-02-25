@@ -84,7 +84,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -98,6 +97,16 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2Test extends HttpTestBase {
+
+  private void assertOnContext(Context context) {
+    assertEquals(context, Vertx.currentContext());
+    for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
+      if (elt.getMethodName().equals("executeFromIO")) {
+        return;
+      }
+    }
+    fail("Not from IO");
+  }
 
   private static Http2Headers headers(String method, String scheme, String path) {
     return new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
@@ -323,6 +332,7 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testClientSettings() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     Http2Settings initialSettings = randomSettings();
     Http2Settings updatedSettings = randomSettings();
     Future<Void> settingsRead = Future.future();
@@ -334,6 +344,7 @@ public class Http2Test extends HttpTestBase {
       assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
       assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
       req.connection().clientSettingsHandler(update -> {
+        assertOnContext(ctx);
         assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
         assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
         assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
@@ -343,7 +354,7 @@ public class Http2Test extends HttpTestBase {
       });
       settingsRead.complete();
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     client.settings.putAll(initialSettings);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {

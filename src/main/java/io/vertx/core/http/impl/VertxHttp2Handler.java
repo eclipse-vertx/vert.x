@@ -238,7 +238,9 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     }
     clientSettings.putAll(settings);
     if (clientSettingsHandler != null) {
-      clientSettingsHandler.handle(clientSettings());
+      handlerContext.executeFromIO(() -> {
+        clientSettingsHandler.handle(clientSettings());
+      });
     }
   }
 
