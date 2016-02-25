@@ -1011,7 +1011,7 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         HttpServerResponse response = ar.result();
         response.exceptionHandler(err -> {
           testComplete();
@@ -1050,7 +1050,7 @@ public class Http2Test extends HttpTestBase {
         String path = "/wibble" + val;
         req.response().promisePush(HttpMethod.GET, path, ar -> {
           assertTrue(ar.succeeded());
-          assertSame(ctx, Vertx.currentContext());
+          assertOnContext(ctx);
           pushSent.add(path);
           vertx.setTimer(10, id -> {
             ar.result().end("wibble-" + val);
@@ -1097,7 +1097,7 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertFalse(ar.succeeded());
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         testComplete();
       });
     });
@@ -1304,12 +1304,12 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Called twice : reset + close
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         complete();
       });
       req.response().exceptionHandler(err -> {
         // Called twice : reset + close
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         complete();
       });
       when.complete();
@@ -1346,11 +1346,11 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().promisePush(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         when.complete();
         HttpServerResponse resp = ar.result();
         resp.exceptionHandler(err -> {
-          assertSame(ctx, Vertx.currentContext());
+          assertOnContext(ctx);
           complete();
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
@@ -1386,16 +1386,16 @@ public class Http2Test extends HttpTestBase {
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Called twice : reset + close
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         complete();
       });
       req.response().exceptionHandler(err -> {
         // Called twice : reset + close
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         complete();
       });
       req.connection().exceptionHandler(err -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertOnContext(ctx);
         complete();
       });
       when.complete();

@@ -99,7 +99,9 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       public void onStreamClosed(Http2Stream stream) {
         VertxHttp2Stream removed = streams.remove(stream.id());
         if (removed != null) {
-          removed.handleClose();
+          handlerContext.executeFromIO(() -> {
+            removed.handleClose();
+          });
         }
       }
     });
@@ -306,11 +308,11 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     @Override
     void handleClose() {
       if (pendingPushes.remove(this)) {
-        handlerContext.runOnContext(v -> {
+        handlerContext.executeFromIO(() -> {
           handler.handle(Future.failedFuture("Push reset by client"));
         });
       } else {
-        handlerContext.runOnContext(v -> {
+        handlerContext.executeFromIO(() -> {
           response.handleClose();
         });
         concurrentStreams--;
@@ -352,7 +354,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     while ((maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) && pendingPushes.size() > 0) {
       Push push = pendingPushes.pop();
       concurrentStreams++;
-      handlerContext.runOnContext(v -> {
+      handlerContext.executeFromIO(() -> {
         push.handler.handle(Future.succeededFuture(push.response));
       });
     }
