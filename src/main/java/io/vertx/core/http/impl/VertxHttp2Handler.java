@@ -228,6 +228,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   public void onSettingsAckRead(ChannelHandlerContext ctx) {
     Runnable handler = updateSettingsHandler.poll();
     if (handler != null) {
+      // No need to run on a particular context it shall be done by the handler already
       handler.run();
     }
   }
