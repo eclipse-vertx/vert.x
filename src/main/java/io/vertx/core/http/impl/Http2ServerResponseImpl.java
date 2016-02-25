@@ -250,7 +250,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse closeHandler(@Nullable Handler<Void> handler) {
     checkEnded();
-    // Todo : use HttpConnection for this
+    // I think it should be used for stream reset (rather than exceptionHandler)
     return this;
   }
 

@@ -277,7 +277,9 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
     if (closeHandler != null) {
-      closeHandler.handle(null);
+      handlerContext.executeFromIO(() -> {
+        closeHandler.handle(null);
+      });
     }
   }
 

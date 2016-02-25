@@ -936,14 +936,16 @@ public class Http2Test extends HttpTestBase {
 
   @Test
   public void testConnectionClose() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       HttpConnection conn = req.connection();
       conn.closeHandler(v -> {
+        assertOnContext(ctx);
         testComplete();
       });
       req.response().putHeader("Content-Type", "text/plain").end();
     });
-    startServer();
+    startServer(ctx);
 
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
