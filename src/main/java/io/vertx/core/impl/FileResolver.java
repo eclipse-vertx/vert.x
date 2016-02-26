@@ -169,12 +169,18 @@ public class FileResolver {
       ZipFile zip;
       String path = url.getPath();
       int idx1 = path.lastIndexOf(".jar!");
+      if (idx1 == -1) {
+        idx1 = path.lastIndexOf(".zip!");
+      }
       int idx2 = path.lastIndexOf(".jar!", idx1 - 1);
+      if (idx2 == -1) {
+        idx2 = path.lastIndexOf(".zip!", idx1 - 1);
+      }
       if (idx2 == -1) {
         File file = new File(URLDecoder.decode(path.substring(5, idx1 + 4), "UTF-8"));
         zip = new ZipFile(file);
       } else {
-        String s = path.substring(idx2 + 6, idx1) + ".jar";
+        String s = path.substring(idx2 + 6, idx1 + 4);
         File file = resolveFile(s);
         zip = new ZipFile(file);
       }
