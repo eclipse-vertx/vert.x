@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -57,7 +56,7 @@ public class FileResolver {
 
   private static final String DEFAULT_CACHE_DIR_BASE = ".vertx";
   private static final String FILE_SEP = System.getProperty("file.separator");
-  private static boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
+  private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
   private static final boolean ENABLE_CACHING = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
   private static final boolean ENABLE_CP_RESOLVING = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
   private static final String CACHE_DIR_BASE = System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
