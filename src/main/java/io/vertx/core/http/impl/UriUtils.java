@@ -19,6 +19,8 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
@@ -131,5 +133,51 @@ final class UriUtils {
       }
     }
     return null;
+  }
+
+  static HttpMethod toNettyHttpMethod(io.vertx.core.http.HttpMethod method) {
+    switch (method) {
+      case CONNECT: {
+        return HttpMethod.CONNECT;
+      }
+      case GET: {
+        return HttpMethod.GET;
+      }
+      case PUT: {
+        return HttpMethod.PUT;
+      }
+      case POST: {
+        return HttpMethod.POST;
+      }
+      case DELETE: {
+        return HttpMethod.DELETE;
+      }
+      case HEAD: {
+        return HttpMethod.HEAD;
+      }
+      case OPTIONS: {
+        return HttpMethod.OPTIONS;
+      }
+      case TRACE: {
+        return HttpMethod.TRACE;
+      }
+      case PATCH: {
+        return HttpMethod.PATCH;
+      }
+      default: throw new IllegalArgumentException();
+    }
+  }
+
+  static HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
+    switch (version) {
+      case HTTP_1_0: {
+        return HttpVersion.HTTP_1_0;
+      }
+      case HTTP_1_1: {
+        return HttpVersion.HTTP_1_1;
+      }
+      default:
+        throw new IllegalArgumentException("Unsupported HTTP version: " + version);
+    }
   }
 }

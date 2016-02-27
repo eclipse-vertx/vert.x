@@ -86,6 +86,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Override
   HttpClientRequest endHandler(Handler<Void> endHandler);
 
+  HttpVersion getVersion();
+
+  @Fluent
+  HttpClientRequest setVersion(HttpVersion version);
+
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
    *

@@ -16,16 +16,18 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -43,6 +45,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
+import static io.vertx.core.http.HttpHeaders.CLOSE;
+import static io.vertx.core.http.HttpHeaders.CONNECTION;
+import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
+import static io.vertx.core.http.HttpHeaders.HOST;
+import static io.vertx.core.http.HttpHeaders.KEEP_ALIVE;
+import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
+
 /**
  *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -52,7 +62,7 @@ import java.util.Queue;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends ConnectionBase {
+class ClientConnection extends ConnectionBase implements HttpClientConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
@@ -288,18 +298,18 @@ class ClientConnection extends ConnectionBase {
 
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
-    if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
+    if (currentResponse.statusCode() != 100 && requestForResponse.getMethod() != io.vertx.core.http.HttpMethod.CONNECT) {
 
       boolean close = false;
       // See https://tools.ietf.org/html/rfc7230#section-6.3
       String responseConnectionHeader = currentResponse.getHeader(HttpHeaders.Names.CONNECTION);
-      HttpVersion protocolVersion = requestForResponse.getRequest().getProtocolVersion();
-      String requestConnectionHeader = requestForResponse.getRequest().headers().get(HttpHeaders.Names.CONNECTION);
+      io.vertx.core.http.HttpVersion protocolVersion = requestForResponse.getVersion();
+      String requestConnectionHeader = requestForResponse.headers().get(HttpHeaders.Names.CONNECTION);
       // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
       if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
         // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
         close = true;
-      } else if (protocolVersion == HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
+      } else if (protocolVersion == io.vertx.core.http.HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
         // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
         // currently Vertx forces the Connection header if keepalive is enabled for 1.0
         close = true;
@@ -332,8 +342,68 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  protected ContextImpl getContext() {
+  public ContextImpl getContext() {
     return super.getContext();
+  }
+
+  private HttpRequest createRequest(HttpVersion version, io.vertx.core.http.HttpMethod method, String uri, MultiMap headers) {
+    DefaultHttpRequest request = new DefaultHttpRequest(UriUtils.toNettyHttpVersion(version), UriUtils.toNettyHttpMethod(method), uri, false);
+    if (headers != null) {
+      for (Map.Entry<String, String> header : headers) {
+        // Todo : multi valued headers
+        request.headers().add(header.getKey(), header.getValue());
+      }
+    }
+    return request;
+  }
+
+  private void prepareHeaders(HttpRequest request, boolean chunked) {
+    HttpHeaders headers = request.headers();
+    headers.remove(TRANSFER_ENCODING);
+    if (!headers.contains(HOST)) {
+      request.headers().set(HOST, hostHeader());
+    }
+    if (chunked) {
+      HttpHeaders.setTransferEncodingChunked(request);
+    }
+    if (client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
+      // if compression should be used but nothing is specified by the user support deflate and gzip.
+      request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
+    }
+    if (!client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      request.headers().set(CONNECTION, CLOSE);
+    } else if (client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      request.headers().set(CONNECTION, KEEP_ALIVE);
+    }
+  }
+
+  public void writeHead(HttpVersion version, io.vertx.core.http.HttpMethod method, String uri, MultiMap headers, boolean chunked) {
+    HttpRequest request = createRequest(version, method, uri, headers);
+    prepareHeaders(request, chunked);
+    writeToChannel(request);
+  }
+
+  public void writeHeadWithContent(io.vertx.core.http.HttpVersion version, io.vertx.core.http.HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end) {
+    HttpRequest request = createRequest(version, method, uri, headers);
+    prepareHeaders(request, chunked);
+    if (end) {
+      writeToChannel(new AssembledFullHttpRequest(request, buf));
+    } else {
+      writeToChannel(new AssembledHttpRequest(request, buf));
+    }
+  }
+
+  @Override
+  public void writeBuffer(ByteBuf buff, boolean end) {
+    if (end) {
+      if (buff.isReadable()) {
+        writeToChannel(new DefaultLastHttpContent(buff, false));
+      } else {
+        writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+      }
+    } else {
+      writeToChannel(new DefaultHttpContent(buff));
+    }
   }
 
   @Override
@@ -354,7 +424,7 @@ class ClientConnection extends ConnectionBase {
     this.requests.add(req);
   }
 
-  synchronized void endRequest() {
+  public synchronized void endRequest() {
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
     }
@@ -378,7 +448,7 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  NetSocket createNetSocket() {
+  public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
     NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics, metric);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);

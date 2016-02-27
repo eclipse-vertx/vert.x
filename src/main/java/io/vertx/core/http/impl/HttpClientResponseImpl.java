@@ -43,7 +43,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final int statusCode;
   private final String statusMessage;
   private final HttpClientRequestImpl request;
-  private final ClientConnection conn;
+  private final HttpClientConnection conn;
   private final HttpResponse response;
 
   private Handler<Buffer> dataHandler;

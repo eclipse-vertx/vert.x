@@ -28,6 +28,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.Closeable;
@@ -67,6 +68,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
   private final ContextImpl creatingContext;
   private final ConnectionManager pool;
+  private final Http2ConnectionManager pool2;
   private final Closeable closeHook;
   private final SSLHelper sslHelper;
   private final HttpClientMetrics metrics;
@@ -93,6 +95,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         internalConnect(context, port, host, connectHandler, connectErrorHandler, listener);
       }
     };
+    pool2 = new Http2ConnectionManager();
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
@@ -669,9 +672,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     pool.getConnection(port, host, handler, connectionExceptionHandler, context, () -> false);
   }
 
-  void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+  void getConnection(HttpVersion version, int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context, BooleanSupplier canceled) {
-    pool.getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
+    if (version == HttpVersion.HTTP_2) {
+      pool2.getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
+    } else {
+      pool.getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
+    }
   }
 
   /**

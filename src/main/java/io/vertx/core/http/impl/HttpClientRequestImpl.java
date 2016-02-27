@@ -19,17 +19,12 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.impl.VertxInternal;
@@ -41,7 +36,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -61,14 +55,15 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private final String host;
   private final int port;
   private final HttpClientImpl client;
-  private final HttpRequest request;
+//  private final HttpRequest request;
   private final VertxInternal vertx;
   private final io.vertx.core.http.HttpMethod method;
+  private final String uri;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
   private Handler<Void> continueHandler;
-  private volatile ClientConnection conn;
+  private volatile HttpClientConnection conn;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
@@ -79,20 +74,22 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private boolean writeHead;
   private long written;
   private long currentTimeoutTimerId = -1;
-  private MultiMap headers;
+  private CaseInsensitiveHeaders headers;
   private boolean exceptionOccurred;
   private long lastDataReceived;
   private Object metric;
+  private io.vertx.core.http.HttpVersion version;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         String relativeURI, VertxInternal vertx) {
     this.host = host;
     this.port = port;
     this.client = client;
-    this.request = new DefaultHttpRequest(toNettyHttpVersion(client.getOptions().getProtocolVersion()), toNettyHttpMethod(method), relativeURI, false);
     this.chunked = false;
     this.method = method;
     this.vertx = vertx;
+    this.version = client.getOptions().getProtocolVersion();
+    this.uri = relativeURI;
   }
 
   @Override
@@ -115,6 +112,21 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public HttpClientRequest resume() {
+    return this;
+  }
+
+  @Override
+  public io.vertx.core.http.HttpVersion getVersion() {
+    synchronized (getLock()) {
+      return version;
+    }
+  }
+
+  @Override
+  public HttpClientRequest setVersion(io.vertx.core.http.HttpVersion version) {
+    synchronized (getLock()) {
+      this.version = version;
+    }
     return this;
   }
 
@@ -158,14 +170,15 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public String uri() {
-    return request.getUri();
+    return uri;
   }
 
   @Override
   public MultiMap headers() {
     synchronized (getLock()) {
       if (headers == null) {
-        headers = new HeadersAdaptor(request.headers());
+//        headers = new HeadersAdaptor(request.headers());
+        headers = new CaseInsensitiveHeaders();
       }
       return headers;
     }
@@ -410,8 +423,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  HttpRequest getRequest() {
-    return request;
+  io.vertx.core.http.HttpMethod getMethod() {
+    return method;
   }
 
   // After connecting we should synchronize on the client connection instance to prevent deadlock conditions
@@ -583,20 +596,27 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnection(port, host, conn -> {
-        synchronized (this) {
-          if (exceptionOccurred) {
-            // The request already timed out before it has left the pool waiter queue
-            // So return it
-            conn.close();
-          } else if (!conn.isClosed()) {
-            connected(conn);
-          } else {
-            // The connection has been closed - closed connections can be in the pool
-            // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-            // that is done asynchronously in the connection closeHandler()
-            connect();
+      client.getConnection(version, port, host, conn -> {
+        // Not awesome but will do for now
+        if (conn instanceof ClientConnection) {
+          synchronized (this) {
+            if (exceptionOccurred) {
+              // The request already timed out before it has left the pool waiter queue
+              // So return it
+              conn.close();
+            } else if (!conn.isClosed()) {
+              conn.setCurrentRequest(this);
+              this.metric = client.httpClientMetrics().requestBegin(conn.metric(), conn.localAddress(), conn.remoteAddress(), this);
+              connected(conn);
+            } else {
+              // The connection has been closed - closed connections can be in the pool
+              // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
+              // that is done asynchronously in the connection closeHandler()
+              connect();
+            }
           }
+        } else {
+          // Http2
         }
       }, exceptionHandler, vertx.getContext(), () -> {
         // No need to synchronize as the thread is the same that set exceptionOccurred to true
@@ -608,10 +628,8 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  private void connected(ClientConnection conn) {
-    conn.setCurrentRequest(this);
+  private void connected(HttpClientConnection conn) {
     this.conn = conn;
-    this.metric = client.httpClientMetrics().requestBegin(conn.metric(), conn.localAddress(), conn.remoteAddress(), this);
 
     // If anything was written or the request ended before we got the connection, then
     // we need to write it now
@@ -663,43 +681,17 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
 
   private boolean contentLengthSet() {
-    return headers != null && request.headers().contains(CONTENT_LENGTH);
+    return headers != null && headers().contains(CONTENT_LENGTH);
   }
 
   private void writeHead() {
-    prepareHeaders();
-    conn.writeToChannel(request);
+    conn.writeHead(version, method, uri, headers, chunked);
     headWritten = true;
   }
 
   private void writeHeadWithContent(ByteBuf buf, boolean end) {
-    prepareHeaders();
-    if (end) {
-      conn.writeToChannel(new AssembledFullHttpRequest(request, buf));
-    } else {
-      conn.writeToChannel(new AssembledHttpRequest(request, buf));
-    }
+    conn.writeHeadWithContent(version, method, uri, headers, chunked, buf, end);
     headWritten = true;
-  }
-
-  private void prepareHeaders() {
-    HttpHeaders headers = request.headers();
-    headers.remove(TRANSFER_ENCODING);
-    if (!headers.contains(HOST)) {
-      request.headers().set(HOST, conn.hostHeader());
-    }
-    if (chunked) {
-      HttpHeaders.setTransferEncodingChunked(request);
-    }
-    if (client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
-      // if compression should be used but nothing is specified by the user support deflate and gzip.
-      request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
-    }
-    if (!client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
-      request.headers().set(CONNECTION, CLOSE);
-    } else if (client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
-      request.headers().set(CONNECTION, KEEP_ALIVE);
-    }
   }
 
   private void write(ByteBuf buff, boolean end) {
@@ -737,15 +729,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       if (!headWritten) {
         writeHeadWithContent(buff, end);
       } else {
-        if (end) {
-          if (buff.isReadable()) {
-            conn.writeToChannel(new DefaultLastHttpContent(buff, false));
-          } else {
-            conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
-          }
-        } else {
-          conn.writeToChannel(new DefaultHttpContent(buff));
-        }
+        conn.writeBuffer(buff, end);
       }
       if (end) {
         conn.reportBytesWritten(written);
