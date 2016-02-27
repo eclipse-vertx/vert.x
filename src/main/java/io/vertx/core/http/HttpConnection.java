@@ -29,6 +29,7 @@ import io.vertx.core.buffer.Buffer;
  * todo:
  *
  * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
+ * - close connection when server closes
  * - server synchronization + executeFromIO
  * - metrics
  * - byte distribution algorithm configurability (options ? connection ?)
