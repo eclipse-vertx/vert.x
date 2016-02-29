@@ -30,7 +30,7 @@ import io.vertx.core.json.JsonObject;
  * <p>
  * <pre>
  * HttpServerOptions options = HttpServerOptions.httpServerOptions();
- * options.setKeyStore(JKSOptions.options().setPath("/mykeystore.jks").setPassword("foo"));
+ * options.setKeyStore(new JKSOptions().setPath("/mykeystore.jks").setPassword("foo"));
  * </pre>
  *
  * Or directly provided as a buffer:
@@ -38,7 +38,7 @@ import io.vertx.core.json.JsonObject;
  *
  * <pre>
  * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.jks");
- * options.setKeyStore(JKSOptions.options().setValue(store).setPassword("foo"));
+ * options.setKeyStore(new JKSOptions().setValue(store).setPassword("foo"));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -78,6 +78,12 @@ public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
   public JksOptions(JsonObject json) {
     super();
     JksOptionsConverter.fromJson(json, this);
+  }
+
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    JksOptionsConverter.toJson(this, json);
+    return json;
   }
 
   /**
