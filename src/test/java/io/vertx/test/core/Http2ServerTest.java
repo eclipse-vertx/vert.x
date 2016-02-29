@@ -96,7 +96,7 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2Test extends HttpTestBase {
+public class Http2ServerTest extends Http2TestBase {
 
   private void assertOnIOContext(Context context) {
     assertEquals(context, Vertx.currentContext());
@@ -122,44 +122,6 @@ public class Http2Test extends HttpTestBase {
 
   private static Http2Headers POST(String path) {
     return headers("POST", "https", path);
-  }
-
-  private HttpServerOptions serverOptions;
-
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-
-    serverOptions = new HttpServerOptions()
-        .setPort(4043)
-        .setHost("localhost")
-        .setUseAlpn(true)
-        .setSsl(true)
-        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setKeyStoreOptions((JksOptions) getServerCertOptions(KeyCert.JKS));
-
-    server = vertx.createHttpServer(serverOptions);
-
-  }
-
-  private void startServer() throws Exception {
-    startServer(vertx.getOrCreateContext());
-  }
-
-  private void startServer(Context context) throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    context.runOnContext(v -> {
-      server.listen(onSuccess(s -> latch.countDown()));
-    });
-    awaitLatch(latch);
-  }
-
-  private SSLContext createSSLContext() throws Exception {
-    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, (TrustOptions) getServerCertOptions(KeyCert.JKS));
-    TrustManager[] trustMgrs = helper.getTrustMgrs((VertxInternal) vertx);
-    SSLContext context = SSLContext.getInstance("SSL");
-    context.init(null, trustMgrs, new java.security.SecureRandom());
-    return context;
   }
 
   class TestClient {

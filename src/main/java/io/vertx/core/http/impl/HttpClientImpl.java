@@ -75,7 +75,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       creatingContext.addCloseHook(closeHook);
     }
     http1Manager = new Http1ConnectionManager(this);
-    http2Manager = new Http2ConnectionManager() {
+    http2Manager = new Http2ConnectionManager(this) {
     };
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
@@ -647,10 +647,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context) {
-    http1Manager.getConnection(port, host, handler, connectionExceptionHandler, context, () -> false);
+    http1Manager.getConnection(port, host, conn -> {
+      // Use some variance for this
+      handler.handle((ClientConnection) conn);
+    }, connectionExceptionHandler, context, () -> false);
   }
 
-  void getConnection(HttpVersion version, int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+  void getConnection(HttpVersion version, int port, String host, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context, BooleanSupplier canceled) {
     if (version == HttpVersion.HTTP_2) {
       http2Manager.getConnection(port, host, handler, connectionExceptionHandler, context, canceled);

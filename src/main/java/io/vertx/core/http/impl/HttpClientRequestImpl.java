@@ -599,14 +599,15 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       client.getConnection(version, port, host, conn -> {
         // Not awesome but will do for now
         if (conn instanceof ClientConnection) {
+          ClientConnection http1Conn = (ClientConnection) conn;
           synchronized (this) {
             if (exceptionOccurred) {
               // The request already timed out before it has left the pool waiter queue
               // So return it
-              conn.close();
-            } else if (!conn.isClosed()) {
-              conn.setCurrentRequest(this);
-              this.metric = client.httpClientMetrics().requestBegin(conn.metric(), conn.localAddress(), conn.remoteAddress(), this);
+              http1Conn.close();
+            } else if (!http1Conn.isClosed()) {
+              http1Conn.setCurrentRequest(this);
+              this.metric = client.httpClientMetrics().requestBegin(http1Conn.metric(), http1Conn.localAddress(), http1Conn.remoteAddress(), this);
               connected(conn);
             } else {
               // The connection has been closed - closed connections can be in the pool
