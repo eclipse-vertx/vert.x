@@ -17,8 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -44,16 +42,14 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final String statusMessage;
   private final HttpClientRequestImpl request;
   private final HttpClientConnection conn;
-  private final HttpResponse response;
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
-  private LastHttpContent trailer;
   private boolean paused;
   private Buffer pausedChunk;
   private boolean hasPausedEnd;
-  private LastHttpContent pausedTrailer;
+  private MultiMap pausedTrailers;
   private NetSocket netSocket;
 
   // Track for metrics
@@ -64,12 +60,12 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private MultiMap trailers;
   private List<String> cookies;
 
-  HttpClientResponseImpl(HttpClientRequestImpl request, ClientConnection conn, HttpResponse response) {
-    this.statusCode = response.getStatus().code();
-    this.statusMessage = response.getStatus().reasonPhrase();
+  HttpClientResponseImpl(HttpClientRequestImpl request, HttpClientConnection conn, int statusCode, String statusMessage, MultiMap headers) {
+    this.statusCode = statusCode;
+    this.statusMessage = statusMessage;
     this.request = request;
     this.conn = conn;
-    this.response = response;
+    this.headers = headers;
   }
 
   @Override
@@ -84,12 +80,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public MultiMap headers() {
-    synchronized (conn) {
-      if (headers == null) {
-        headers = new HeadersAdaptor(response.headers());
-      }
-      return headers;
-    }
+    return headers;
   }
 
   @Override
@@ -122,9 +113,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     synchronized (conn) {
       if (cookies == null) {
         cookies = new ArrayList<>();
-        cookies.addAll(response.headers().getAll(HttpHeaders.SET_COOKIE));
-        if (trailer != null) {
-          cookies.addAll(trailer.trailingHeaders().getAll(HttpHeaders.SET_COOKIE));
+        cookies.addAll(headers().getAll(HttpHeaders.SET_COOKIE));
+        if (trailers != null) {
+          cookies.addAll(trailers.getAll(HttpHeaders.SET_COOKIE));
         }
       }
       return cookies;
@@ -193,10 +184,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         conn.getContext().runOnContext(v -> handleChunk(theChunk));
         pausedChunk = null;
       }
-      final LastHttpContent theTrailer = pausedTrailer;
+      final MultiMap theTrailer = pausedTrailers;
       conn.getContext().runOnContext(v -> handleEnd(theTrailer));
       hasPausedEnd = false;
-      pausedTrailer = null;
+      pausedTrailers = null;
     }
   }
 
@@ -226,17 +217,16 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleEnd(LastHttpContent trailer) {
+  void handleEnd(MultiMap trailers) {
     synchronized (conn) {
       conn.reportBytesRead(bytesRead);
       bytesRead = 0;
       request.reportResponseEnd(this);
       if (paused) {
         hasPausedEnd = true;
-        pausedTrailer = trailer;
+        pausedTrailers = trailers;
       } else {
-        this.trailer = trailer;
-        trailers = new HeadersAdaptor(trailer.trailingHeaders());
+        this.trailers = trailers;
         if (endHandler != null) {
           try {
             endHandler.handle(null);

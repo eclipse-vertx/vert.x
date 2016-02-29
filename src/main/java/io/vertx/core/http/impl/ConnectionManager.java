@@ -31,7 +31,7 @@ import java.util.function.BooleanSupplier;
  */
 public abstract class ConnectionManager {
 
-  public abstract void getConnection(int port, String host, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+  public abstract void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                                      ContextImpl context, BooleanSupplier canceled);
 
   void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {

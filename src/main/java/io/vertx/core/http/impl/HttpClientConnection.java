@@ -30,7 +30,7 @@ import io.vertx.core.net.NetSocket;
 interface HttpClientConnection {
 
   void writeHead(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked);
-  void writeHeadWithContent(HttpVersion vertsion, HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end);
+  void writeHeadWithContent(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
   String hostHeader();
   Context getContext();

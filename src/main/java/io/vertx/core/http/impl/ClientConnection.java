@@ -286,7 +286,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection {
     if (requestForResponse == null) {
       throw new IllegalStateException("No response handler");
     }
-    HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, this, resp);
+    HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
     requestForResponse.handleResponse(nResp);
   }
@@ -296,7 +296,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection {
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    currentResponse.handleEnd(trailer);
+    currentResponse.handleEnd(new HeadersAdaptor(trailer.trailingHeaders()));
 
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT

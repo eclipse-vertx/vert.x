@@ -16,10 +16,13 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JksOptions;
 import org.junit.Test;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -37,20 +40,24 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testGet() throws Exception {
-
+    String expected = TestUtils.randomAlphaString(100);
+    AtomicInteger reqCount = new AtomicInteger();
     server.requestHandler(req -> {
-      req.response().end("hello world");
+      reqCount.incrementAndGet();
+      req.response().end(expected);
     });
-
     startServer();
-
     client.get(4043, "localhost", "/", resp -> {
-      fail();
+      assertEquals(1, reqCount.get());
+      Buffer content = Buffer.buffer();
+      resp.handler(content::appendBuffer);
+      resp.endHandler(v -> {
+        assertEquals(expected, content.toString());
+        testComplete();
+      });
     }).exceptionHandler(err -> {
       testComplete();
     }).end();
-
     await();
-
   }
 }

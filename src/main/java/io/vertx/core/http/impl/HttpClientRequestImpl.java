@@ -596,7 +596,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnection(version, port, host, conn -> {
+      client.getConnection(version, port, host, this, conn -> {
         // Not awesome but will do for now
         if (conn instanceof ClientConnection) {
           ClientConnection http1Conn = (ClientConnection) conn;
@@ -618,7 +618,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           }
         } else {
           // Http2
-          System.out.println("IMPLEMENT ME");
+          connected(conn);
         }
       }, exceptionHandler, vertx.getContext(), () -> {
         // No need to synchronize as the thread is the same that set exceptionOccurred to true

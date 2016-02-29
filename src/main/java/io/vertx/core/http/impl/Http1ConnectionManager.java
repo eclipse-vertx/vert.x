@@ -102,6 +102,11 @@ public class Http1ConnectionManager extends ConnectionManager {
     }
   }
 
+  public void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+                            ContextImpl context, BooleanSupplier canceled) {
+    getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
+  }
+
   public void close() {
     for (ConnQueue queue: connQueues.values()) {
       queue.closeAllConnections();

@@ -653,12 +653,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }, connectionExceptionHandler, context, () -> false);
   }
 
-  void getConnection(HttpVersion version, int port, String host, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+  void getConnection(HttpVersion version, int port, String host, HttpClientRequestImpl req, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context, BooleanSupplier canceled) {
     if (version == HttpVersion.HTTP_2) {
-      http2Manager.getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
+      http2Manager.getConnection(port, host, req, handler, connectionExceptionHandler, context, canceled);
     } else {
-      http1Manager.getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
+      http1Manager.getConnection(port, host, req, handler, connectionExceptionHandler, context, canceled);
     }
   }
 
