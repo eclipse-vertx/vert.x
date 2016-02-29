@@ -54,8 +54,8 @@
   <properties>
 
     <netty.version>4.0.34.Final</netty.version>
-    <jackson.version>2.7.1</jackson.version>
-    <jackson.databind.version>2.7.1-1</jackson.databind.version>
+    <jackson.version>2.7.2</jackson.version>
+    <jackson.databind.version>2.7.2</jackson.databind.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.16</slf4j.version>
     <junit.version>4.12</junit.version>
