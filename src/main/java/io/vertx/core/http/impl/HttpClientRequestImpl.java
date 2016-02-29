@@ -618,6 +618,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           }
         } else {
           // Http2
+          System.out.println("IMPLEMENT ME");
         }
       }, exceptionHandler, vertx.getContext(), () -> {
         // No need to synchronize as the thread is the same that set exceptionOccurred to true

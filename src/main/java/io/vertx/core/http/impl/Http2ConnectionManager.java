@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -41,11 +42,13 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
 
+import java.net.InetSocketAddress;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -60,8 +63,15 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
   }
 
   @Override
-  public void getConnection(int port, String host, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context, BooleanSupplier canceled) {
+  public void getConnection(int port, String host, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl clientContext, BooleanSupplier canceled) {
 
+    ContextInternal context;
+    if (clientContext == null) {
+      // Embedded
+      context = client.getVertx().getOrCreateContext();
+    } else {
+      context = clientContext;
+    }
 
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
@@ -69,14 +79,12 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
     SSLHelper sslHelper = client.getSslHelper();
     sslHelper.validate(client.getVertx());
 
-    SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port);
-
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
         SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port);
         ch.pipeline().addLast(sslHandler);
-        ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
+        ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("alpn") {
           @Override
           protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
             if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
@@ -85,8 +93,6 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
               VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder();
               VertxClientHandler clientHandler = clientHandlerBuilder.build(connection);
               p.addLast(clientHandler);
-//              Request request = new Request(ch, ctx, connection, clientHandler.encoder(), clientHandler.decoder());
-//              handler.accept(request);
               Http2ClientConnection conn = new Http2ClientConnection();
               handler.handle(conn);
               return;
@@ -97,14 +103,8 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
         });
       }
     });
-
     applyConnectionOptions(client.getOptions(), bootstrap);
-
-    System.out.println("IMPLEMENT ME");
-    connectionExceptionHandler.handle(new UnsupportedOperationException());
-
-
-
+    bootstrap.connect(new InetSocketAddress(host, port));
   }
 
   class Http2ClientConnection implements HttpClientConnection {

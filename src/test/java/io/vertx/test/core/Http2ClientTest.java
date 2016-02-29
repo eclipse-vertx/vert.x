@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.net.JksOptions;
 import org.junit.Test;
 
 /**
@@ -28,7 +29,10 @@ public class Http2ClientTest extends Http2TestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
+    client = vertx.createHttpClient(new HttpClientOptions().
+        setUseAlpn(true).
+        setTrustStoreOptions((JksOptions) getClientTrustOptions(Trust.JKS)).
+        setProtocolVersion(HttpVersion.HTTP_2));
   }
 
   @Test
