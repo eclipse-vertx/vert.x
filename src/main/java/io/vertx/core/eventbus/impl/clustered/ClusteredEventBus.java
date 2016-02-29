@@ -18,6 +18,7 @@ package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.*;
 import io.vertx.core.impl.HAManager;
@@ -25,6 +26,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
@@ -40,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * An event bus implemmentation that clusters with other Vert.x nodes
+ * An event bus implementation that clusters with other Vert.x nodes
  *
  * @author <a href="http://tfox.org">Tim Fox</a>   7                                                                                     T
  */
@@ -59,7 +61,8 @@ public class ClusteredEventBus extends EventBusImpl {
   private final HAManager haManager;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final Context sendNoContext;
-  private VertxOptions options;
+
+  private EventBusOptions options;
   private AsyncMultiMap<String, ServerID> subs;
   private ServerID serverID;
   private NetServer server;
@@ -69,11 +72,17 @@ public class ClusteredEventBus extends EventBusImpl {
                            ClusterManager clusterManager,
                            HAManager haManager) {
     super(vertx);
-    this.options = options;
+    this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
     this.haManager = haManager;
     this.sendNoContext = vertx.getOrCreateContext();
     setNodeCrashedHandler(haManager);
+  }
+
+  private NetServerOptions getServerOptions() {
+    return new NetServerOptions(options.toJson())
+        .setKeyStoreOptions(options.getKeystoreOptions())
+        .setTrustStoreOptions(options.getTrustStoreOptions());
   }
 
   @Override
@@ -81,7 +90,8 @@ public class ClusteredEventBus extends EventBusImpl {
     clusterManager.<String, ServerID>getAsyncMultiMap(SUBS_MAP_NAME, ar2 -> {
       if (ar2.succeeded()) {
         subs = ar2.result();
-        server = vertx.createNetServer(new NetServerOptions().setPort(options.getClusterPort()).setHost(options.getClusterHost()));
+        server = vertx.createNetServer(getServerOptions());
+
         server.connectHandler(getServerHandler());
         server.listen(asyncResult -> {
           if (asyncResult.succeeded()) {
@@ -223,7 +233,7 @@ public class ClusteredEventBus extends EventBusImpl {
     });
   }
 
-  private int getClusterPublicPort(VertxOptions options, int actualPort) {
+  private int getClusterPublicPort(EventBusOptions options, int actualPort) {
     // We retain the old system property for backwards compat
     int publicPort = Integer.getInteger(CLUSTER_PUBLIC_PORT_PROP_NAME, options.getClusterPublicPort());
     if (publicPort == -1) {
@@ -233,11 +243,11 @@ public class ClusteredEventBus extends EventBusImpl {
     return publicPort;
   }
 
-  private String getClusterPublicHost(VertxOptions options) {
+  private String getClusterPublicHost(EventBusOptions options) {
     // We retain the old system property for backwards compat
     String publicHost = System.getProperty(CLUSTER_PUBLIC_HOST_PROP_NAME, options.getClusterPublicHost());
     if (publicHost == null) {
-      publicHost = options.getClusterHost();
+      publicHost = options.getHost();
     }
     return publicHost;
   }
@@ -324,7 +334,7 @@ public class ClusteredEventBus extends EventBusImpl {
     if (holder == null) {
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
-      holder = new ConnectionHolder(this, theServerID);
+      holder = new ConnectionHolder(this, theServerID, options);
       ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
       if (prevHolder != null) {
         // Another one sneaked in
@@ -363,7 +373,7 @@ public class ClusteredEventBus extends EventBusImpl {
     return vertx;
   }
 
-  VertxOptions options() {
+  EventBusOptions options() {
     return options;
   }
 
