@@ -18,6 +18,7 @@ package io.vertx.test.core;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JksOptions;
 import org.junit.Test;
@@ -43,11 +44,14 @@ public class Http2ClientTest extends Http2TestBase {
     String expected = TestUtils.randomAlphaString(100);
     AtomicInteger reqCount = new AtomicInteger();
     server.requestHandler(req -> {
+      assertEquals("https", req.scheme());
+      assertEquals(HttpMethod.GET, req.method());
+      assertEquals("/somepath", req.path());
       reqCount.incrementAndGet();
       req.response().end(expected);
     });
     startServer();
-    client.get(4043, "localhost", "/", resp -> {
+    client.get(4043, "localhost", "/somepath", resp -> {
       assertEquals(1, reqCount.get());
       Buffer content = Buffer.buffer();
       resp.handler(content::appendBuffer);
