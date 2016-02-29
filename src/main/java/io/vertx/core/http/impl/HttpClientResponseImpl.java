@@ -41,7 +41,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final int statusCode;
   private final String statusMessage;
   private final HttpClientRequestImpl request;
-  private final HttpClientConnection conn;
+  private final HttpClientStream conn;
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -60,7 +60,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private MultiMap trailers;
   private List<String> cookies;
 
-  HttpClientResponseImpl(HttpClientRequestImpl request, HttpClientConnection conn, int statusCode, String statusMessage, MultiMap headers) {
+  HttpClientResponseImpl(HttpClientRequestImpl request, HttpClientStream conn, int statusCode, String statusMessage, MultiMap headers) {
     this.statusCode = statusCode;
     this.statusMessage = statusMessage;
     this.request = request;

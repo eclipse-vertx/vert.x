@@ -62,7 +62,7 @@ import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends ConnectionBase implements HttpClientConnection {
+class ClientConnection extends ConnectionBase implements HttpClientStream {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 

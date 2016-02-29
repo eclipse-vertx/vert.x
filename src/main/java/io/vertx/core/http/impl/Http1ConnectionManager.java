@@ -84,7 +84,7 @@ public class Http1ConnectionManager extends ConnectionManager {
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
   }
 
-  public void getConnection(int port, String host, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+  public void getConnection(int port, String host, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
                             ContextImpl context, BooleanSupplier canceled) {
     if (!keepAlive && pipelining) {
       connectionExceptionHandler.handle(new IllegalStateException("Cannot have pipelining with no keep alive"));
@@ -102,7 +102,7 @@ public class Http1ConnectionManager extends ConnectionManager {
     }
   }
 
-  public void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+  public void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
                             ContextImpl context, BooleanSupplier canceled) {
     getConnection(port, host, handler, connectionExceptionHandler, context, canceled);
   }
@@ -133,7 +133,7 @@ public class Http1ConnectionManager extends ConnectionManager {
       this.address = address;
     }
 
-    public synchronized void getConnection(Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
+    public synchronized void getConnection(Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
                                            ContextImpl context, BooleanSupplier canceled) {
       ClientConnection conn = availableConnections.poll();
       if (conn != null && !conn.isClosed()) {
@@ -209,7 +209,7 @@ public class Http1ConnectionManager extends ConnectionManager {
       }
     }
 
-    private void createNewConnection(Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
+    private void createNewConnection(Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context) {
       connCount++;
       internalConnect(address.host, address.port, conn -> {
         synchronized (Http1ConnectionManager.this) {
@@ -248,12 +248,12 @@ public class Http1ConnectionManager extends ConnectionManager {
   }
 
   private static class Waiter {
-    final Handler<HttpClientConnection> handler;
+    final Handler<HttpClientStream> handler;
     final Handler<Throwable> connectionExceptionHandler;
     final ContextImpl context;
     final BooleanSupplier canceled;
 
-    private Waiter(Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context,
+    private Waiter(Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context,
                    BooleanSupplier canceled) {
       this.handler = handler;
       this.connectionExceptionHandler = connectionExceptionHandler;

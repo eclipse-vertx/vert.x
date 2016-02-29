@@ -67,7 +67,7 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
   }
 
   @Override
-  public void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientConnection> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl clientContext, BooleanSupplier canceled) {
+  public void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl clientContext, BooleanSupplier canceled) {
 
     ContextInternal context;
     if (clientContext == null) {
@@ -111,7 +111,7 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
     bootstrap.connect(new InetSocketAddress(host, port));
   }
 
-  class Http2ClientStream implements HttpClientConnection {
+  class Http2ClientStream implements HttpClientStream {
 
     private final HttpClientRequestImpl req;
     private final ChannelHandlerContext context;

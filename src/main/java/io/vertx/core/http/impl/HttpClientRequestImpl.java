@@ -63,7 +63,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private Handler<Void> endHandler;
   private boolean chunked;
   private Handler<Void> continueHandler;
-  private volatile HttpClientConnection conn;
+  private volatile HttpClientStream conn;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
@@ -630,7 +630,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  private void connected(HttpClientConnection conn) {
+  private void connected(HttpClientStream conn) {
     this.conn = conn;
 
     // If anything was written or the request ended before we got the connection, then

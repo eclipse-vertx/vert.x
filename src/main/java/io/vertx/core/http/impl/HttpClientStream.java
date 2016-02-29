@@ -27,7 +27,7 @@ import io.vertx.core.net.NetSocket;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface HttpClientConnection {
+interface HttpClientStream {
 
   void writeHead(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked);
   void writeHeadWithContent(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end);
