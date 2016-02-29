@@ -24,7 +24,7 @@ import java.util.function.BooleanSupplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ConnectionManager {
+public abstract class Http2ConnectionManager extends ConnectionManager {
 
   public void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                             ContextImpl context, BooleanSupplier canceled) {

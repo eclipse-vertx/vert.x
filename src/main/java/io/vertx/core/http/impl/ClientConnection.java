@@ -66,6 +66,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
+  private final Http1ConnectionManager manager;
   private final HttpClientImpl client;
   private final String hostHeader;
   private final boolean ssl;
@@ -84,9 +85,10 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection {
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
-  ClientConnection(VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
+  ClientConnection(Http1ConnectionManager manager, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
     super(vertx, channel, context, metrics);
+    this.manager = manager;
     this.client = client;
     this.ssl = ssl;
     this.host = host;
@@ -468,14 +470,14 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        client.removeChannel(channel);
+        manager.removeChannel(channel);
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        client.removeChannel(channel);
+        manager.removeChannel(channel);
         super.channelInactive(chctx);
       }
 
