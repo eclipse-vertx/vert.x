@@ -110,7 +110,7 @@ public class NetTest extends VertxTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(-2));
     assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
@@ -127,7 +127,7 @@ public class NetTest extends VertxTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    assertIllegalArgumentException(() -> options.setSoLinger(-1));
+    assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -204,7 +204,7 @@ public class NetTest extends VertxTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(-2));
     assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
@@ -221,7 +221,7 @@ public class NetTest extends VertxTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    assertIllegalArgumentException(() -> options.setSoLinger(-1));
+    assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
