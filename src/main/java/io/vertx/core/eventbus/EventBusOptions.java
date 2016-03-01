@@ -24,6 +24,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
 /**
+ * Options to configure the event bus.
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 @DataObject(generateConverter = true, inheritConverter = true)
@@ -94,6 +96,9 @@ public class EventBusOptions extends TCPSSLOptions {
   private JksOptions keystoreOptions;
 
 
+  /**
+   * Creates a new instance of {@link EventBusOptions} using the default configuration.
+   */
   public EventBusOptions() {
     super();
 
@@ -111,6 +116,11 @@ public class EventBusOptions extends TCPSSLOptions {
     trustAll = DEFAULT_TRUST_ALL;
   }
 
+  /**
+   * Copy constructor to create an instance of {@link EventBusOptions} using the values of the given object.
+   *
+   * @param other the other {@link EventBusOptions}
+   */
   public EventBusOptions(EventBusOptions other) {
     super(other);
 
@@ -134,49 +144,108 @@ public class EventBusOptions extends TCPSSLOptions {
     setTrustStoreOptions(other.trustStoreOptions);
   }
 
+  /**
+   * Creates a new instance of {@link EventBusOptions} from the JSON object. This JSOn object has (generally)
+   * be generated using {@link #toJson()}.
+   *
+   * @param json the json object
+   */
   public EventBusOptions(JsonObject json) {
     this();
 
     EventBusOptionsConverter.fromJson(json, this);
   }
 
+  /**
+   * Builds a JSON object representing the current {@link EventBusOptions}.
+   *
+   * @return the JSON representation
+   */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     EventBusOptionsConverter.toJson(this, json);
     return json;
   }
 
+  /**
+   * @return the configure client authentication requirement
+   * @see NetServerOptions#getClientAuth()
+   */
   public ClientAuth getClientAuth() {
     return clientAuth;
   }
 
+  /**
+   * Set whether client auth is required
+   *
+   * @param clientAuth One of "NONE, REQUEST, REQUIRED". If it's set to "REQUIRED" then server will require the
+   *                   SSL cert to be presented otherwise it won't accept the request. If it's set to "REQUEST" then
+   *                   it won't mandate the certificate to be presented, basically make it optional.
+   * @return a reference to this, so the API can be used fluently
+   * @see NetServerOptions#setClientAuth(ClientAuth)
+   */
   public EventBusOptions setClientAuth(ClientAuth clientAuth) {
     this.clientAuth = clientAuth;
     return this;
   }
 
+  /**
+   * @return the value of accept backlog.
+   * @see NetServerOptions#getAcceptBacklog()
+   */
   public int getAcceptBacklog() {
     return acceptBacklog;
   }
 
+  /**
+   * Set the accept back log.
+   *
+   * @param acceptBacklog accept backlog
+   * @return a reference to this, so the API can be used fluently
+   * @see NetServerOptions#setAcceptBacklog(int)
+   */
   public EventBusOptions setAcceptBacklog(int acceptBacklog) {
     this.acceptBacklog = acceptBacklog;
     return this;
   }
 
+  /**
+   * @return the host, which can be configured from the {@link VertxOptions#getClusterHost()}, or using
+   * the {@code --cluster-host} command line option.
+   * @see NetServerOptions#getHost()
+   */
   public String getHost() {
     return host;
   }
 
+  /**
+   * Sets the host.
+   *
+   * @param host the host
+   * @return a reference to this, so the API can be used fluently
+   * @see NetServerOptions#setHost(String)
+   */
   public EventBusOptions setHost(String host) {
     this.host = host;
     return this;
   }
 
+  /**
+   * @return the post, which can be configured from the {@link VertxOptions#getClusterPort()} ()}, or
+   * using the {@code --cluster-port} command line option.
+   * @see NetServerOptions#getPort()
+   */
   public int getPort() {
     return port;
   }
 
+  /**
+   * Sets the port.
+   *
+   * @param port the port
+   * @return a reference to this, so the API can be used fluently
+   * @see NetServerOptions#setPort(int)
+   */
   public EventBusOptions setPort(int port) {
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("clusterPort p must be in range 0 <= p <= 65535");
@@ -185,81 +254,72 @@ public class EventBusOptions extends TCPSSLOptions {
     return this;
   }
 
+
+  /**
+   * @return the value of reconnect attempts
+   * @see NetClientOptions#getReconnectAttempts()
+   */
   public int getReconnectAttempts() {
     return reconnectAttempts;
   }
 
-  public EventBusOptions setReconnectAttempts(int reconnectAttempts) {
-    this.reconnectAttempts = reconnectAttempts;
-    return this;
-  }
 
-  public long getReconnectInterval() {
-    return reconnectInterval;
-  }
-
-  public EventBusOptions setReconnectInterval(long reconnectInterval) {
-    this.reconnectInterval = reconnectInterval;
+  /**
+   * Sets the value of reconnect attempts.
+   *
+   * @param attempts the maximum number of reconnect attempts
+   * @return a reference to this, so the API can be used fluently
+   * @see NetClientOptions#setReconnectAttempts(int)
+   */
+  public EventBusOptions setReconnectAttempts(int attempts) {
+    this.reconnectAttempts = attempts;
     return this;
   }
 
   /**
-   * Add a CRL path
-   *
-   * @param crlPath the path
-   * @return a reference to this, so the API can be used fluently
-   * @throws NullPointerException
+   * @return the value of reconnect interval
+   * @see NetClientOptions#getReconnectInterval()
    */
+  public long getReconnectInterval() {
+    return reconnectInterval;
+  }
+
+  /**
+   * Set the reconnect interval.
+   *
+   * @param interval the reconnect interval in ms
+   * @return a reference to this, so the API can be used fluently
+   * @see NetClientOptions#setReconnectInterval(long)
+   */
+  public EventBusOptions setReconnectInterval(long interval) {
+    this.reconnectInterval = interval;
+    return this;
+  }
+
   @Override
   public EventBusOptions addCrlPath(String crlPath) throws NullPointerException {
     super.addCrlPath(crlPath);
     return this;
   }
 
-  /**
-   * Add a CRL value
-   *
-   * @param crlValue the value
-   * @return a reference to this, so the API can be used fluently
-   * @throws NullPointerException
-   */
   @Override
   public EventBusOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     super.addCrlValue(crlValue);
     return this;
   }
 
-  /**
-   * Add an enabled cipher suite
-   *
-   * @param suite the suite
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
   }
 
-  /**
-   * Set the idle timeout, in seconds. zero means don't timeout.
-   * This determines if a connection will timeout and be closed if no data is received within the timeout.
-   *
-   * @param idleTimeout the timeout, in seconds
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
     return this;
   }
 
-  /**
-   * Set the key/cert options in jks format, aka Java keystore.
-   *
-   * @param options the key store in jks format
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
@@ -267,112 +327,61 @@ public class EventBusOptions extends TCPSSLOptions {
     return this;
   }
 
+  /**
+   * @return the key store option as a {@link JksOptions}.
+   */
   public JksOptions getKeystoreOptions() {
     return keystoreOptions;
   }
 
-  /**
-   * Set the key/cert store options in pem format.
-   *
-   * @param options the options in pem format
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     super.setPemKeyCertOptions(options);
     return this;
   }
 
-  /**
-   * Set the trust options in pem format
-   *
-   * @param options the options in pem format
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setPemTrustOptions(PemTrustOptions options) {
     super.setPemTrustOptions(options);
     return this;
   }
 
-  /**
-   * Set the key/cert options in pfx format.
-   *
-   * @param options the key cert options in pfx format
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setPfxKeyCertOptions(PfxOptions options) {
     super.setPfxKeyCertOptions(options);
     return this;
   }
 
-  /**
-   * Set the trust options in pfx format
-   *
-   * @param options the options in pfx format
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setPfxTrustOptions(PfxOptions options) {
     super.setPfxTrustOptions(options);
     return this;
   }
 
-  /**
-   * Set whether SO_linger keep alive is enabled
-   *
-   * @param soLinger true if SO_linger is enabled
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setSoLinger(int soLinger) {
     super.setSoLinger(soLinger);
     return this;
   }
 
-  /**
-   * Set whether SSL/TLS is enabled
-   *
-   * @param ssl true if enabled
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setSsl(boolean ssl) {
     super.setSsl(ssl);
     return this;
   }
 
-  /**
-   * Set whether TCP keep alive is enabled
-   *
-   * @param tcpKeepAlive true if TCP keep alive is enabled
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setTcpKeepAlive(boolean tcpKeepAlive) {
     super.setTcpKeepAlive(tcpKeepAlive);
     return this;
   }
 
-  /**
-   * Set whether TCP no delay is enabled
-   *
-   * @param tcpNoDelay true if TCP no delay is enabled (Nagle disabled)
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setTcpNoDelay(boolean tcpNoDelay) {
     super.setTcpNoDelay(tcpNoDelay);
     return this;
   }
 
-  /**
-   * Set the trust options in jks format, aka Java trustore
-   *
-   * @param options the options in jks format
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setTrustStoreOptions(JksOptions options) {
     this.trustStoreOptions = options;
@@ -380,101 +389,121 @@ public class EventBusOptions extends TCPSSLOptions {
     return this;
   }
 
+  /**
+   * @return the trust store option os a {@link JksOptions}.
+   */
   public JksOptions getTrustStoreOptions() {
     return trustStoreOptions;
   }
 
-  /**
-   * Set whether Netty pooled buffers are enabled
-   *
-   * @param usePooledBuffers true if pooled buffers enabled
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public EventBusOptions setUsePooledBuffers(boolean usePooledBuffers) {
     super.setUsePooledBuffers(usePooledBuffers);
     return this;
   }
 
-  /**
-   * Set the TCP receive buffer size
-   *
-   * @param receiveBufferSize the buffers size, in bytes
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
     super.setReceiveBufferSize(receiveBufferSize);
     return this;
   }
 
-  /**
-   * Set the value of reuse address
-   *
-   * @param reuseAddress the value of reuse address
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public NetworkOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
     return this;
   }
 
-  /**
-   * Set the TCP send buffer size
-   *
-   * @param sendBufferSize the buffers size, in bytes
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public NetworkOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;
   }
 
-  /**
-   * Set the value of traffic class
-   *
-   * @param trafficClass the value of traffic class
-   * @return a reference to this, so the API can be used fluently
-   */
   @Override
   public NetworkOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;
   }
 
+  /**
+   * @return whether or not the event bus is clustered. This can be configured from the
+   * {@link VertxOptions#setClustered(boolean)} method or from the {@code --cluster} option from the command
+   * line.
+   */
   public boolean isClustered() {
     return clustered;
   }
 
+  /**
+   * Sets whether or not the event bus is clustered.
+   *
+   * @param clustered {@code true} to start the event bus as a clustered event bus.
+   * @return a reference to this, so the API can be used fluently
+   */
   public EventBusOptions setClustered(boolean clustered) {
     this.clustered = clustered;
     return this;
   }
 
+  /**
+   * Set whether all server certificates should be trusted.
+   *
+   * @param trustAll true if all should be trusted
+   * @return a reference to this, so the API can be used fluently
+   * @see NetClientOptions#setTrustAll(boolean)
+   */
   public EventBusOptions setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }
 
+  /**
+   * @return true if all server certificates should be trusted
+   * @see NetClientOptions#isTrustAll()
+   */
   public boolean isTrustAll() {
     return trustAll;
   }
 
+  /**
+   * @return the value of connect timeout
+   * @see NetClientOptions#getConnectTimeout()
+   */
   public int getConnectTimeout() {
     return connectTimeout;
   }
 
+  /**
+   * Sets the connect timeout
+   *
+   * @param connectTimeout connect timeout, in ms
+   * @return a reference to this, so the API can be used fluently
+   * @see NetClientOptions#setConnectTimeout(int)
+   */
   public EventBusOptions setConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
     return this;
   }
 
+  /**
+   * Get the value of cluster ping reply interval, in ms.
+   * After sending a ping, if a pong is not received in this time, the node will be considered dead.
+   * <p>
+   * The value can be configured from {@link VertxOptions#setClusterPingInterval(long)}.
+   *
+   * @return the value of cluster ping reply interval
+   */
   public long getClusterPingInterval() {
     return clusterPingInterval;
   }
 
+  /**
+   * Set the value of cluster ping interval, in ms.
+   *
+   * @param clusterPingInterval The value of cluster ping interval, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
   public EventBusOptions setClusterPingInterval(long clusterPingInterval) {
     if (clusterPingInterval < 1) {
       throw new IllegalArgumentException("clusterPingInterval must be greater than 0");
@@ -483,10 +512,24 @@ public class EventBusOptions extends TCPSSLOptions {
     return this;
   }
 
+  /**
+   * Get the value of cluster ping reply interval, in ms.
+   * After sending a ping, if a pong is not received in this time, the node will be considered dead.
+   * <p>
+   * The value can be configured from {@link VertxOptions#setClusterPingReplyInterval(long)}}.
+   *
+   * @return the value of cluster ping reply interval
+   */
   public long getClusterPingReplyInterval() {
     return clusterPingReplyInterval;
   }
 
+  /**
+   * Set the value of cluster ping reply interval, in ms.
+   *
+   * @param clusterPingReplyInterval The value of cluster ping reply interval, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
   public EventBusOptions setClusterPingReplyInterval(long clusterPingReplyInterval) {
     if (clusterPingReplyInterval < 1) {
       throw new IllegalArgumentException("clusterPingReplyInterval must be greater than 0");
@@ -495,19 +538,51 @@ public class EventBusOptions extends TCPSSLOptions {
     return this;
   }
 
+  /**
+   * Get the public facing port to be used when clustering.
+   * <p>
+   * It can be configured using {@link VertxOptions#setClusterPublicHost(String)}
+   *
+   * @return the public facing port
+   */
   public String getClusterPublicHost() {
     return clusterPublicHost;
   }
 
+  /**
+   * Set the public facing hostname to be used for clustering.
+   * Sometimes, e.g. when running on certain clouds, the local address the server listens on for clustering is
+   * not the same address that other nodes connect to it at, as the OS / cloud infrastructure does some kind of
+   * proxying. If this is the case you can specify a public hostname which is different from the hostname the
+   * server listens at.
+   * <p>
+   * The default value is null which means use the same as the cluster hostname.
+   *
+   * @param clusterPublicHost the public host name to use
+   * @return a reference to this, so the API can be used fluently
+   */
   public EventBusOptions setClusterPublicHost(String clusterPublicHost) {
     this.clusterPublicHost = clusterPublicHost;
     return this;
   }
 
+  /**
+   * Gets the public facing port to be used when clustering.
+   * <p>
+   * This can be configured from {@link VertxOptions#setClusterPublicPort(int)}.
+   *
+   * @return the public facing port
+   */
   public int getClusterPublicPort() {
     return clusterPublicPort;
   }
 
+  /**
+   * See {@link #setClusterPublicHost(String)} for an explanation.
+   *
+   * @param clusterPublicPort  the public port to use
+   * @return a reference to this, so the API can be used fluently
+   */
   public EventBusOptions setClusterPublicPort(int clusterPublicPort) {
     if (clusterPublicPort < 0 || clusterPublicPort > 65535) {
       throw new IllegalArgumentException("clusterPublicPort p must be in range 0 <= p <= 65535");

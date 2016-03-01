@@ -1197,7 +1197,7 @@ Set the value of traffic class
 == EventBusOptions
 
 ++++
- @author <a href="http://escoffier.me">Clement Escoffier</a>
+ Options to configure the event bus.
 ++++
 '''
 
@@ -1205,14 +1205,44 @@ Set the value of traffic class
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[acceptBacklog]]`acceptBacklog`|`Number (int)`|-
-|[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|-
-|[[clusterPingInterval]]`clusterPingInterval`|`Number (long)`|-
-|[[clusterPingReplyInterval]]`clusterPingReplyInterval`|`Number (long)`|-
-|[[clusterPublicHost]]`clusterPublicHost`|`String`|-
-|[[clusterPublicPort]]`clusterPublicPort`|`Number (int)`|-
-|[[clustered]]`clustered`|`Boolean`|-
-|[[connectTimeout]]`connectTimeout`|`Number (int)`|-
+|[[acceptBacklog]]`acceptBacklog`|`Number (int)`|
++++
+Set the accept back log.
++++
+|[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|
++++
+Set whether client auth is required
++++
+|[[clusterPingInterval]]`clusterPingInterval`|`Number (long)`|
++++
+Set the value of cluster ping interval, in ms.
++++
+|[[clusterPingReplyInterval]]`clusterPingReplyInterval`|`Number (long)`|
++++
+Set the value of cluster ping reply interval, in ms.
++++
+|[[clusterPublicHost]]`clusterPublicHost`|`String`|
++++
+Set the public facing hostname to be used for clustering.
+ Sometimes, e.g. when running on certain clouds, the local address the server listens on for clustering is
+ not the same address that other nodes connect to it at, as the OS / cloud infrastructure does some kind of
+ proxying. If this is the case you can specify a public hostname which is different from the hostname the
+ server listens at.
+ <p>
+ The default value is null which means use the same as the cluster hostname.
++++
+|[[clusterPublicPort]]`clusterPublicPort`|`Number (int)`|
++++
+See link for an explanation.
++++
+|[[clustered]]`clustered`|`Boolean`|
++++
+Sets whether or not the event bus is clustered.
++++
+|[[connectTimeout]]`connectTimeout`|`Number (int)`|
++++
+Sets the connect timeout
++++
 |[[crlPaths]]`crlPaths`|`Array of String`|
 +++
 Add a CRL path
@@ -1225,7 +1255,10 @@ Add a CRL value
 +++
 Add an enabled cipher suite
 +++
-|[[host]]`host`|`String`|-
+|[[host]]`host`|`String`|
++++
+Sets the host.
++++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
@@ -1235,7 +1268,10 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
-|[[keystoreOptions]]`keystoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|-
+|[[keystoreOptions]]`keystoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
++++
+@return the key store option as a .
++++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
 Set the key/cert store options in pem format.
@@ -1252,13 +1288,22 @@ Set the key/cert options in pfx format.
 +++
 Set the trust options in pfx format
 +++
-|[[port]]`port`|`Number (int)`|-
+|[[port]]`port`|`Number (int)`|
++++
+Sets the port.
++++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
 Set the TCP receive buffer size
 +++
-|[[reconnectAttempts]]`reconnectAttempts`|`Number (int)`|-
-|[[reconnectInterval]]`reconnectInterval`|`Number (long)`|-
+|[[reconnectAttempts]]`reconnectAttempts`|`Number (int)`|
++++
+Sets the value of reconnect attempts.
++++
+|[[reconnectInterval]]`reconnectInterval`|`Number (long)`|
++++
+Set the reconnect interval.
++++
 |[[reuseAddress]]`reuseAddress`|`Boolean`|
 +++
 Set the value of reuse address
@@ -1287,7 +1332,10 @@ Set whether TCP no delay is enabled
 +++
 Set the value of traffic class
 +++
-|[[trustAll]]`trustAll`|`Boolean`|-
+|[[trustAll]]`trustAll`|`Boolean`|
++++
+Set whether all server certificates should be trusted.
++++
 |[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
 Set the trust options in jks format, aka Java trustore
