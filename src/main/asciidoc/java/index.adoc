@@ -1436,7 +1436,7 @@ public class HelloCommandFactory extends DefaultCommandFactory<HelloCommand> {
 }
 ----
 
-Then create the `src/main/resources/META-INF/services/io.vertx.core.spi.launcher.CommandFactory` and add a line
+Then, create the `src/main/resources/META-INF/services/io.vertx.core.spi.launcher.CommandFactory` and add a line
 indicating the fully qualified name of the factory:
 
 ----

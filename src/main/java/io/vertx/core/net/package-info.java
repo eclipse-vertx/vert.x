@@ -152,10 +152,13 @@
  * The remote address, (i.e. the address of the other end of the connection) of a {@link io.vertx.core.net.NetSocket}
  * can be retrieved using {@link io.vertx.core.net.NetSocket#remoteAddress()}.
  *
- * === Sending files
+ * === Sending files or resources from the classpath
  *
- * Files can be written to the socket directly using {@link io.vertx.core.net.NetSocket#sendFile}. This can be a very
+ * Files and classpath resources can be written to the socket directly using {@link io.vertx.core.net.NetSocket#sendFile}. This can be a very
  * efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
+ * 
+ * Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the 
+ * classpath resolution or disabling it.
  *
  * [source,$lang]
  * ----

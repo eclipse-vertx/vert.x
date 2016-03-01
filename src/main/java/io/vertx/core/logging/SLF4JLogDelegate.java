@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LocationAwareLogger;
 
+import java.util.Arrays;
+
 import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
@@ -149,31 +151,44 @@ public class SLF4JLogDelegate implements LogDelegate {
   }
 
   private void log(int level, Object message, Throwable t) {
-    log(level, message, t, null);
+    log(level, message, t, (Object[]) null);
   }
 
-  private void log(int level, Object message, Throwable t, final Object... params) {
+  private void log(int level, Object message, Throwable t, Object... params) {
     String msg = (message == null) ? "NULL" : message.toString();
+
+    // We need to compute the right parameters.
+    // If we have both parameters and an error, we need to build a new array [params, t]
+    // If we don't have parameters, we need to build a new array [t]
+    // If we don't have error, it's just params.
+    Object[] parameters = params;
+    if (params != null  && t != null) {
+      parameters = new Object[params.length + 1];
+      System.arraycopy(params, 0, parameters, 0, params.length);
+      parameters[params.length] = t;
+    } else if (params == null  && t != null) {
+      parameters = new Object[] {t};
+    }
 
     if (logger instanceof LocationAwareLogger) {
       LocationAwareLogger l = (LocationAwareLogger) logger;
-      l.log(null, FQCN, level, msg, null, t);
+      l.log(null, FQCN, level, msg, parameters, t);
     } else {
       switch (level) {
         case TRACE_INT:
-          logger.trace(msg, t, params);
+          logger.trace(msg, parameters);
           break;
         case DEBUG_INT:
-          logger.debug(msg, t, params);
+          logger.debug(msg, parameters);
           break;
         case INFO_INT:
-          logger.info(msg, t, params);
+          logger.info(msg, parameters);
           break;
         case WARN_INT:
-          logger.warn(msg, t, params);
+          logger.warn(msg, parameters);
           break;
         case ERROR_INT:
-          logger.error(msg, t, params);
+          logger.error(msg, parameters);
           break;
         default:
           throw new IllegalArgumentException("Unknown log level " + level);

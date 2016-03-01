@@ -19,21 +19,21 @@ package io.vertx.core.impl;
 import io.vertx.core.*;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
+import java.util.zip.ZipFile;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -164,25 +164,24 @@ public class FileResolver {
     return cacheFile;
   }
 
-  private static ZipInputStream toZipInputStream(URL url, ClassLoader cl) throws IOException{
-    String[] breadcrumbs = url.getPath().substring(5).split(".jar!");
-    if (breadcrumbs.length == 2){
-      // Normal case. Jar is on file system and desired path is in there
-      // Need to urldecode it too, since bug in JDK URL class which does not url decode it, so if it contains spaces we
-      // are screwed
-      File file = new File(URLDecoder.decode(breadcrumbs[0] + ".jar", "UTF-8"));
-      return new ZipInputStream(new FileInputStream(file));
-    } else{
-      // Jar of jars. Desired path is inside a jar that is itself inside another jar
-      // E.g., Spring Boot fat jar format: application.jar!/lib/dependency.jar!/webroot/hello.html
-      return new ZipInputStream(cl.getResourceAsStream(breadcrumbs[1].substring(1) + ".jar"));
-    }
-  }
+  private synchronized File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+    try {
+      ZipFile zip;
+      String path = url.getPath();
+      int idx1 = path.lastIndexOf(".jar!");
+      int idx2 = path.lastIndexOf(".jar!", idx1 - 1);
+      if (idx2 == -1) {
+        File file = new File(URLDecoder.decode(path.substring(5, idx1 + 4), "UTF-8"));
+        zip = new ZipFile(file);
+      } else {
+        String s = path.substring(idx2 + 6, idx1) + ".jar";
+        File file = resolveFile(s);
+        zip = new ZipFile(file);
+      }
 
-  private synchronized  File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
-    try (ZipInputStream zip = toZipInputStream(url, cl)){
-      ZipEntry entry = zip.getNextEntry();
-      while (entry != null) {
+      Enumeration<? extends ZipEntry> entries = zip.entries();
+      while (entries.hasMoreElements()) {
+        ZipEntry entry = entries.nextElement();
         String name = entry.getName();
         if (name.startsWith(fileName)) {
           File file = new File(cacheDir, name);
@@ -191,19 +190,16 @@ public class FileResolver {
             file.mkdirs();
           } else {
             file.getParentFile().mkdirs();
-            try {
+            try (InputStream is = zip.getInputStream(entry)) {
               if (ENABLE_CACHING) {
-                Files.copy(zip, file.toPath());
+                Files.copy(is, file.toPath());
               } else {
-                Files.copy(zip, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
               }
             } catch (FileAlreadyExistsException ignore) {
-            } finally {
-              zip.closeEntry();
             }
           }
         }
-        entry = zip.getNextEntry();
       }
     } catch (IOException e) {
       throw new VertxException(e);
@@ -213,9 +209,9 @@ public class FileResolver {
   }
 
   /**
-   * bundle:/, bundleresource:/ and bundleentry:/ urls are used by OSGi implementations to refer to a file
-   * contained in a bundle, or in a fragment. There is not much we can do to get the file from it, except
-   * reading it from the url. This method copies the files by reading it from the url.
+   * bundle:// urls are used by OSGi implementations to refer to a file contained in a bundle, or in a fragment. There
+   * is not much we can do to get the file from it, except reading it from the url. This method copies the files by
+   * reading it from the url.
    *
    * @param url      the url
    * @return the extracted file
