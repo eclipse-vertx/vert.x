@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -53,6 +54,9 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.SSLHelper;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayDeque;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -61,6 +65,7 @@ import java.util.function.BooleanSupplier;
 public abstract class Http2ConnectionManager extends ConnectionManager {
 
   private final HttpClientImpl client;
+  private final ConcurrentMap<TargetAddress, ClientConnection> connectionMap = new ConcurrentHashMap<>();
 
   public Http2ConnectionManager(HttpClientImpl client) {
     this.client = client;
@@ -68,47 +73,141 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
 
   @Override
   public void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl clientContext, BooleanSupplier canceled) {
+    TargetAddress key = new TargetAddress(host, port);
+    ClientConnection conn = connectionMap.get(key);
+    if (conn == null) {
+      ClientConnection prev = connectionMap.putIfAbsent(key, conn = new ClientConnection(key, clientContext, host, port));
+      if (prev == null) {
+        conn.connect();
+      }
+    }
+    conn.handle(req, handler, connectionExceptionHandler, canceled);
+  }
 
-    ContextInternal context;
-    if (clientContext == null) {
-      // Embedded
-      context = client.getVertx().getOrCreateContext();
-    } else {
-      context = clientContext;
+  private class ClientConnection {
+
+    private final TargetAddress key;
+    private final ContextInternal context;
+    private final String host;
+    private final int port;
+    private final ArrayDeque<Waiter> waiters = new ArrayDeque<>();
+    private VertxClientHandler clientHandler;
+
+    ClientConnection(TargetAddress key, ContextInternal clientContext, String host, int port) {
+
+      if (clientContext == null) {
+        // Embedded
+        context = client.getVertx().getOrCreateContext();
+      } else {
+        context = clientContext;
+      }
+
+      this.key = key;
+      this.host = host;
+      this.port = port;
     }
 
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.nettyEventLoop());
-    bootstrap.channelFactory(new VertxNioSocketChannelFactory());
-    SSLHelper sslHelper = client.getSslHelper();
-    sslHelper.validate(client.getVertx());
+    private class Waiter {
+      final HttpClientRequestImpl req;
+      final Handler<HttpClientStream> handler;
+      final Handler<Throwable> connectionExceptionHandler;
+      final BooleanSupplier canceled;
+      public Waiter(HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler, BooleanSupplier canceled) {
+        this.req = req;
+        this.handler = handler;
+        this.connectionExceptionHandler = connectionExceptionHandler;
+        this.canceled = canceled;
+      }
+    }
 
-    bootstrap.handler(new ChannelInitializer<Channel>() {
-      @Override
-      protected void initChannel(Channel ch) throws Exception {
-        SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port);
-        ch.pipeline().addLast(sslHandler);
-        ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("alpn") {
-          @Override
-          protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
-            if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-              ChannelPipeline p = ctx.pipeline();
-              Http2Connection connection = new DefaultHttp2Connection(false);
-              VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(ctx);
-              VertxClientHandler clientHandler = clientHandlerBuilder.build(connection);
-              p.addLast(clientHandler);
-              Http2ClientStream stream = clientHandler.createStream(req);
-              handler.handle(stream);
-              return;
-            }
-            ctx.close();
-            connectionExceptionHandler.handle(new IllegalStateException("unknown protocol: " + protocol));
-          }
+    synchronized void handle(HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler, BooleanSupplier canceled) {
+      if (clientHandler == null) {
+        waiters.add(new Waiter(req, handler, connectionExceptionHandler, canceled));
+      } else {
+        context.runOnContext(v -> {
+          // Handle case of non creation like max concurrency reaced
+          clientHandler.handle(handler, req);
         });
       }
-    });
-    applyConnectionOptions(client.getOptions(), bootstrap);
-    bootstrap.connect(new InetSocketAddress(host, port));
+    }
+
+    void connect() {
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.group(context.nettyEventLoop());
+      bootstrap.channelFactory(new VertxNioSocketChannelFactory());
+      SSLHelper sslHelper = client.getSslHelper();
+      sslHelper.validate(client.getVertx());
+      bootstrap.handler(new ChannelInitializer<Channel>() {
+        @Override
+        protected void initChannel(Channel ch) throws Exception {
+          SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port);
+          ch.pipeline().addLast(sslHandler);
+          ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("alpn") {
+            @Override
+            protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+              if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+                ChannelPipeline p = ctx.pipeline();
+                Http2Connection connection = new DefaultHttp2Connection(false);
+                VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(ClientConnection.this, ctx);
+                synchronized (ClientConnection.this) {
+                  VertxClientHandler handler = clientHandlerBuilder.build(connection);
+                  handler.decoder().frameListener(handler);
+                  clientHandler = handler;
+                  p.addLast(handler);
+                  Waiter waiter;
+                  while ((waiter = waiters.poll()) != null) {
+                    Handler<HttpClientStream> reqHandler = waiter.handler;
+                    HttpClientRequestImpl req = waiter.req;
+                    context.executeFromIO(() -> {
+                      handler.handle(reqHandler, req);
+                    });
+                  }
+                }
+              } else {
+                ctx.close();
+                connectionFailed(new Exception());
+              }
+            }
+          });
+        }
+      });
+      applyConnectionOptions(client.getOptions(), bootstrap);
+      ChannelFuture fut = bootstrap.connect(new InetSocketAddress(host, port));
+      fut.addListener(v -> {
+        if (!v.isSuccess()) {
+          connectionFailed(v.cause());
+        }
+      });
+    }
+
+    void connectionFailed(Throwable err) {
+      synchronized (this) {
+        if (waiters.size() > 0) {
+          // It failed for the first connection
+          Waiter waiter = waiters.pop();
+          Handler<Throwable> errHandler = waiter.connectionExceptionHandler;
+          if (errHandler != null) {
+            context.executeFromIO(() -> {
+              errHandler.handle(err);
+            });
+          }
+        }
+        if (waiters.size() > 0) {
+          // We retry for remaining connections
+          // this is the current behavior of HTTP/1.1 pool, need to see if we change it with a retry count
+          connect();
+        } else {
+          connectionMap.remove(key);
+        }
+      }
+    }
+
+    void close() {
+      // Handler waiters here with
+      // connectionExceptionHandler.handle(new IllegalStateException("unknown protocol: " + protocol));
+      // remove from map
+//      connectionMap.remove(key);
+    }
   }
 
   class Http2ClientStream implements HttpClientStream {
@@ -172,6 +271,7 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
       h.path(uri);
       h.scheme("https");
       encoder.writeHeaders(context, id, h, 0, end, context.newPromise());
+      context.flush();
     }
     @Override
     public void writeBuffer(ByteBuf buf, boolean end) {
@@ -223,18 +323,23 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
   class VertxClientHandler extends Http2ConnectionHandler implements Http2FrameListener {
 
     private final ChannelHandlerContext context;
+    private final ClientConnection conn;
     private final IntObjectMap<Http2ClientStream> streams = new IntObjectHashMap<>();
 
     public VertxClientHandler(
+        ClientConnection conn,
         ChannelHandlerContext context,
         Http2ConnectionDecoder decoder,
         Http2ConnectionEncoder encoder,
         Http2Settings initialSettings) {
       super(decoder, encoder, initialSettings);
-
-      decoder.frameListener(this);
-
+      this.conn = conn;
       this.context = context;
+    }
+
+    void handle(Handler<HttpClientStream> handler, HttpClientRequestImpl req) {
+      Http2ClientStream stream = createStream(req);
+      handler.handle(stream);
     }
 
     Http2ClientStream createStream(HttpClientRequestImpl req) {
@@ -304,14 +409,16 @@ public abstract class Http2ConnectionManager extends ConnectionManager {
   class VertxClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<VertxClientHandler, VertxClientHandlerBuilder> {
 
     private final ChannelHandlerContext context;
+    private final ClientConnection conn;
 
-    public VertxClientHandlerBuilder(ChannelHandlerContext context) {
+    public VertxClientHandlerBuilder(ClientConnection conn, ChannelHandlerContext context) {
       this.context = context;
+      this.conn = conn;
     }
 
     @Override
     protected VertxClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-      return new VertxClientHandler(context, decoder, encoder, initialSettings);
+      return new VertxClientHandler(conn, context, decoder, encoder, initialSettings);
     }
 
     public VertxClientHandler build(Http2Connection conn) {

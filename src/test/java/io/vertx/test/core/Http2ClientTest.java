@@ -21,8 +21,10 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.NetServerOptions;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -60,6 +62,65 @@ public class Http2ClientTest extends Http2TestBase {
         testComplete();
       });
     }).exceptionHandler(err -> {
+      fail();
+    }).end();
+    await();
+  }
+
+  @Test
+  public void testQueueRequests() throws Exception {
+    int numReq = 100;
+    waitFor(numReq);
+    String expected = TestUtils.randomAlphaString(100);
+    server.requestHandler(req -> {
+      req.response().end(expected);
+    });
+    startServer();
+    for (int i = 0;i < numReq;i++) {
+      client.get(4043, "localhost", "/somepath", resp -> {
+        Buffer content = Buffer.buffer();
+        resp.handler(content::appendBuffer);
+        resp.endHandler(v -> {
+          assertEquals(expected, content.toString());
+          complete();
+        });
+      }).exceptionHandler(err -> {
+        fail();
+      }).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testReuseConnection() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    CountDownLatch doReq = new CountDownLatch(1);
+    client.get(4043, "localhost", "/somepath", resp -> {
+      resp.endHandler(v -> {
+        doReq.countDown();
+      });
+    }).exceptionHandler(err -> {
+      fail();
+    }).end();
+    awaitLatch(doReq);
+    client.get(4043, "localhost", "/somepath", resp -> {
+      resp.endHandler(v -> {
+        testComplete();
+      });
+    }).exceptionHandler(err -> {
+      fail();
+    }).end();
+    await();
+  }
+
+  @Test
+  public void testConnectionFailed() throws Exception {
+    client.get(4044, "localhost", "/somepath", resp -> {
+    }).exceptionHandler(err -> {
+      assertEquals(err.getClass(), java.net.ConnectException.class);
       testComplete();
     }).end();
     await();
