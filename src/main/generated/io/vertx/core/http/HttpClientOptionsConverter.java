@@ -27,6 +27,14 @@ import io.vertx.core.json.JsonArray;
 public class HttpClientOptionsConverter {
 
   public static void fromJson(JsonObject json, HttpClientOptions obj) {
+    if (json.getValue("alpnProtocols") instanceof JsonArray) {
+      java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
+      json.getJsonArray("alpnProtocols").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+      });
+      obj.setAlpnProtocols(list);
+    }
     if (json.getValue("defaultHost") instanceof String) {
       obj.setDefaultHost((String)json.getValue("defaultHost"));
     }
@@ -63,6 +71,13 @@ public class HttpClientOptionsConverter {
   }
 
   public static void toJson(HttpClientOptions obj, JsonObject json) {
+    if (obj.getAlpnProtocols() != null) {
+      json.put("alpnProtocols", new JsonArray(
+          obj.getAlpnProtocols().
+              stream().
+              map(item -> item.name()).
+              collect(java.util.stream.Collectors.toList())));
+    }
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }

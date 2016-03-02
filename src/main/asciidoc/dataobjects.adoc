@@ -1254,6 +1254,7 @@ Set the value of traffic class
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[alpnProtocols]]`alpnProtocols`|`Array of link:enums.html#HttpVersion[HttpVersion]`|-
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|
 +++
 Set the connect timeout

@@ -26,6 +26,11 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TCPSSLOptions;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Options describing how an {@link HttpClient} will make connections.
  *
@@ -89,6 +94,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
 
+  /**
+   * Default alpn protocols = [HTTP2, HTTP/1.1]
+   */
+  public static final List<HttpVersion> DEFAULT_ALPN_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -100,6 +110,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxWaitQueueSize;
+  private List<HttpVersion> alpnProtocols;
 
   /**
    * Default constructor
@@ -127,6 +138,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
+    this.alpnProtocols = new ArrayList<>(other.alpnProtocols);
   }
 
   /**
@@ -152,6 +164,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
+    alpnProtocols = DEFAULT_ALPN_PROTOCOLS;
   }
 
   @Override
@@ -498,6 +511,15 @@ public class HttpClientOptions extends ClientOptionsBase {
   @Override
   public HttpClientOptions setUseAlpn(boolean useAlpn) {
     return (HttpClientOptions) super.setUseAlpn(useAlpn);
+  }
+
+  public List<HttpVersion> getAlpnProtocols() {
+    return alpnProtocols;
+  }
+
+  public HttpClientOptions setAlpnProtocols(List<HttpVersion> alpnProtocols) {
+    this.alpnProtocols = alpnProtocols;
+    return this;
   }
 
   @Override

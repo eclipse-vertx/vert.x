@@ -19,8 +19,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -55,7 +53,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private final String host;
   private final int port;
   private final HttpClientImpl client;
-//  private final HttpRequest request;
   private final VertxInternal vertx;
   private final io.vertx.core.http.HttpMethod method;
   private final String uri;
@@ -112,21 +109,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   @Override
   public HttpClientRequest resume() {
-    return this;
-  }
-
-  @Override
-  public io.vertx.core.http.HttpVersion getVersion() {
-    synchronized (getLock()) {
-      return version;
-    }
-  }
-
-  @Override
-  public HttpClientRequest setVersion(io.vertx.core.http.HttpVersion version) {
-    synchronized (getLock()) {
-      this.version = version;
-    }
     return this;
   }
 
@@ -596,7 +578,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnection(version, port, host, this, conn -> {
+      client.getConnection(port, host, this, conn -> {
         // Not awesome but will do for now
         if (conn instanceof ClientConnection) {
           ClientConnection http1Conn = (ClientConnection) conn;
@@ -752,52 +734,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private void checkResponseHandler() {
     if (respHandler == null) {
       throw new IllegalStateException("You must set an handler for the HttpClientResponse before connecting");
-    }
-  }
-
-  private HttpMethod toNettyHttpMethod(io.vertx.core.http.HttpMethod method) {
-    switch (method) {
-      case CONNECT: {
-        return HttpMethod.CONNECT;
-      }
-      case GET: {
-        return HttpMethod.GET;
-      }
-      case PUT: {
-        return HttpMethod.PUT;
-      }
-      case POST: {
-        return HttpMethod.POST;
-      }
-      case DELETE: {
-        return HttpMethod.DELETE;
-      }
-      case HEAD: {
-        return HttpMethod.HEAD;
-      }
-      case OPTIONS: {
-        return HttpMethod.OPTIONS;
-      }
-      case TRACE: {
-        return HttpMethod.TRACE;
-      }
-      case PATCH: {
-        return HttpMethod.PATCH;
-      }
-      default: throw new IllegalArgumentException();
-    }
-  }
-
-  private HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
-    switch (version) {
-      case HTTP_1_0: {
-        return HttpVersion.HTTP_1_0;
-      }
-      case HTTP_1_1: {
-        return HttpVersion.HTTP_1_1;
-      }
-      default:
-        throw new IllegalArgumentException("Unsupported HTTP version: " + version);
     }
   }
 }

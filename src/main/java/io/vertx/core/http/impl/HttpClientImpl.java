@@ -22,7 +22,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.Closeable;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -52,8 +51,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ContextImpl creatingContext;
-  private final Http1ConnectionManager http1Manager;
-  private final Http2ConnectionManager http2Manager;
+  private final ConnectionManager connectionManager;
   private final Closeable closeHook;
   private final SSLHelper sslHelper;
   final HttpClientMetrics metrics;
@@ -74,9 +72,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       }
       creatingContext.addCloseHook(closeHook);
     }
-    http1Manager = new Http1ConnectionManager(this);
-    http2Manager = new Http2ConnectionManager(this) {
-    };
+    connectionManager = new ConnectionManager(this);
     this.metrics = vertx.metricsSPI().createMetrics(this, options);
   }
 
@@ -627,7 +623,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(closeHook);
     }
-    http1Manager.close();
+    connectionManager.close();
     metrics.close();
   }
 
@@ -647,19 +643,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context) {
-    http1Manager.getConnection(port, host, conn -> {
+    connectionManager.getConnection(port, host, null, conn -> {
       // Use some variance for this
       handler.handle((ClientConnection) conn);
     }, connectionExceptionHandler, context, () -> false);
   }
 
-  void getConnection(HttpVersion version, int port, String host, HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
+  void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context, BooleanSupplier canceled) {
-    if (version == HttpVersion.HTTP_2) {
-      http2Manager.getConnection(port, host, req, handler, connectionExceptionHandler, context, canceled);
-    } else {
-      http1Manager.getConnection(port, host, req, handler, connectionExceptionHandler, context, canceled);
-    }
+    connectionManager.getConnection(port, host, req, handler, connectionExceptionHandler, context, canceled);
   }
 
   /**

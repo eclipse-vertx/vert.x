@@ -66,13 +66,13 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  private final Http1ConnectionManager manager;
+  private final ConnectionManager manager;
   private final HttpClientImpl client;
   private final String hostHeader;
   private final boolean ssl;
   private final String host;
   private final int port;
-  private final ConnectionLifeCycleListener listener;
+  private final ConnectionManager.Http1xPool listener;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
@@ -85,8 +85,8 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
-  ClientConnection(Http1ConnectionManager manager, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
-                   int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
+  ClientConnection(ConnectionManager manager, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
+                   int port, ContextImpl context, ConnectionManager.Http1xPool listener, HttpClientMetrics metrics) {
     super(vertx, channel, context, metrics);
     this.manager = manager;
     this.client = client;
@@ -305,7 +305,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
       boolean close = false;
       // See https://tools.ietf.org/html/rfc7230#section-6.3
       String responseConnectionHeader = currentResponse.getHeader(HttpHeaders.Names.CONNECTION);
-      io.vertx.core.http.HttpVersion protocolVersion = requestForResponse.getVersion();
+      io.vertx.core.http.HttpVersion protocolVersion = client.getOptions().getProtocolVersion();
       String requestConnectionHeader = requestForResponse.headers().get(HttpHeaders.Names.CONNECTION);
       // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
       if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
