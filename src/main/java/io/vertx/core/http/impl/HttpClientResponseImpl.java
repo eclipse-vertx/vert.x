@@ -22,6 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.NetSocket;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import java.util.List;
  */
 public class HttpClientResponseImpl implements HttpClientResponse  {
 
+  private final HttpVersion version;
   private final int statusCode;
   private final String statusMessage;
   private final HttpClientRequestImpl request;
@@ -60,12 +62,18 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private MultiMap trailers;
   private List<String> cookies;
 
-  HttpClientResponseImpl(HttpClientRequestImpl request, HttpClientStream conn, int statusCode, String statusMessage, MultiMap headers) {
+  HttpClientResponseImpl(HttpClientRequestImpl request, HttpVersion version, HttpClientStream conn, int statusCode, String statusMessage, MultiMap headers) {
+    this.version = version;
     this.statusCode = statusCode;
     this.statusMessage = statusMessage;
     this.request = request;
     this.conn = conn;
     this.headers = headers;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return version;
   }
 
   @Override

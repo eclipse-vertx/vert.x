@@ -54,6 +54,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.get(4043, "localhost", "/somepath", resp -> {
+      assertEquals(HttpVersion.HTTP_2, resp.version());
       assertEquals(1, reqCount.get());
       Buffer content = Buffer.buffer();
       resp.handler(content::appendBuffer);
@@ -131,6 +132,7 @@ public class Http2ClientTest extends Http2TestBase {
     server.close();
     server = vertx.createHttpServer(serverOptions.setUseAlpn(false));
     server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
     });
     startServer();

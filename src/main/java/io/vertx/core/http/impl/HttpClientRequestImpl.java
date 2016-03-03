@@ -25,6 +25,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -486,6 +487,11 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           @Override
           public List<String> cookies() {
             return resp.cookies();
+          }
+
+          @Override
+          public HttpVersion version() {
+            return resp.version();
           }
 
           @Override

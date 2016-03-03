@@ -289,7 +289,16 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     if (requestForResponse == null) {
       throw new IllegalStateException("No response handler");
     }
-    HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
+    io.netty.handler.codec.http.HttpVersion nettyVersion = resp.protocolVersion();
+    HttpVersion vertxVersion;
+    if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
+      vertxVersion = HttpVersion.HTTP_1_0;
+    } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
+      vertxVersion = HttpVersion.HTTP_1_1;
+    } else {
+      throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
+    }
+    HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
     requestForResponse.handleResponse(nResp);
   }

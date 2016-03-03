@@ -41,6 +41,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 
@@ -118,6 +119,7 @@ class Http2Pool extends ConnectionManager.Pool {
     void handleHeaders(Http2Headers headers, boolean end) {
       resp = new HttpClientResponseImpl(
           req,
+          HttpVersion.HTTP_2,
           this,
           Integer.parseInt(headers.status().toString()),
           "todo",

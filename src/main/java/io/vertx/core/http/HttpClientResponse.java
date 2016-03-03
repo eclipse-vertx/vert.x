@@ -59,6 +59,11 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   HttpClientResponse endHandler(Handler<Void> endHandler);
 
   /**
+   * @return the version of the response
+   */
+  HttpVersion version();
+
+  /**
    * @return the status code of the response
    */
   int statusCode();
