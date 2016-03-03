@@ -95,9 +95,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
 
   /**
-   * Default alpn protocols = [HTTP2, HTTP/1.1]
+   * Default alpn fallback protocol version = HTTP/1.1
    */
-  public static final List<HttpVersion> DEFAULT_ALPN_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
+  public static final HttpVersion DEFAULT_ALPN_FALLBACK_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
 
   private boolean verifyHost = true;
   private int maxPoolSize;
@@ -110,7 +110,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxWaitQueueSize;
-  private List<HttpVersion> alpnProtocols;
+  private HttpVersion alpnFallbackProtocolVersion;
 
   /**
    * Default constructor
@@ -138,7 +138,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
-    this.alpnProtocols = new ArrayList<>(other.alpnProtocols);
+    this.alpnFallbackProtocolVersion = other.alpnFallbackProtocolVersion;
   }
 
   /**
@@ -164,7 +164,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
-    alpnProtocols = DEFAULT_ALPN_PROTOCOLS;
+    alpnFallbackProtocolVersion = DEFAULT_ALPN_FALLBACK_PROTOCOL_VERSION;
   }
 
   @Override
@@ -513,12 +513,12 @@ public class HttpClientOptions extends ClientOptionsBase {
     return (HttpClientOptions) super.setUseAlpn(useAlpn);
   }
 
-  public List<HttpVersion> getAlpnProtocols() {
-    return alpnProtocols;
+  public HttpVersion getAlpnFallbackProtocolVersion() {
+    return alpnFallbackProtocolVersion;
   }
 
-  public HttpClientOptions setAlpnProtocols(List<HttpVersion> alpnProtocols) {
-    this.alpnProtocols = alpnProtocols;
+  public HttpClientOptions setAlpnFallbackProtocolVersion(HttpVersion alpnFallbackProtocolVersion) {
+    this.alpnFallbackProtocolVersion = alpnFallbackProtocolVersion;
     return this;
   }
 

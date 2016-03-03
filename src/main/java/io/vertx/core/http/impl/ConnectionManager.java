@@ -283,13 +283,33 @@ public class ConnectionManager {
 
             SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port);
             ch.pipeline().addLast(sslHandler);
-            ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("alpn") {
+            String fallback;
+            HttpVersion fallbackVersion = options.getAlpnFallbackProtocolVersion();
+            switch (fallbackVersion) {
+              case HTTP_1_1:
+                fallback = "http/1.1";
+                break;
+              case HTTP_1_0:
+                fallback = "http/1.1";
+                break;
+              default:
+                // Handle this case better
+                fallback = "oops";
+                break;
+            }
+            ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler(fallback) {
               @Override
               protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
                 if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
                   http2Connected(ctx, context, port, host, ch, req, connectHandler, connectErrorHandler);
                 } else {
-                  connectionFailed(context, ch, connectErrorHandler, new UnsupportedOperationException("Support other protocols"));
+                  // Fallback
+                  // change the pool to Http1xPool
+                  synchronized (ConnQueue.this) {
+                    pool = new Http1xPool(ConnQueue.this);
+                  }
+                  applyHttp1xConnectionOptions(pipeline, context);
+                  http1xConnected(fallbackVersion, context, port, host, ch, connectHandler, connectErrorHandler);
                 }
               }
             });
@@ -297,15 +317,7 @@ public class ConnectionManager {
             if (options.isSsl()) {
               pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, true, host, port));
             }
-
-            pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
-            if (options.isTryUseCompression()) {
-              pipeline.addLast("inflater", new HttpContentDecompressor(true));
-            }
-            if (options.getIdleTimeout() > 0) {
-              pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-            }
-            pipeline.addLast("handler", new ClientHandler(context));
+            applyHttp1xConnectionOptions(pipeline, context);
           }
         }
       });
@@ -323,7 +335,7 @@ public class ConnectionManager {
               io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
               fut.addListener(fut2 -> {
                 if (fut2.isSuccess()) {
-                  http1xConnected(context, port, host, ch, connectHandler, connectErrorHandler);
+                  http1xConnected(options.getProtocolVersion(), context, port, host, ch, connectHandler, connectErrorHandler);
                 } else {
                   SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
                   Optional.ofNullable(fut2.cause()).ifPresent(sslException::initCause);
@@ -331,7 +343,7 @@ public class ConnectionManager {
                 }
               });
             } else {
-              http1xConnected(context, port, host, ch, connectHandler, connectErrorHandler);
+              http1xConnected(options.getProtocolVersion(), context, port, host, ch, connectHandler, connectErrorHandler);
             }
           }
         } else {
@@ -340,10 +352,10 @@ public class ConnectionManager {
       });
     }
 
-    private void http1xConnected(ContextImpl context, int port, String host, Channel ch, Handler<HttpClientStream> connectHandler,
+    private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Handler<HttpClientStream> connectHandler,
                                  Handler<Throwable> exceptionHandler) {
       context.executeFromIO(() ->
-          ((Http1xPool)pool).createConn(context, port, host, ch, connectHandler, exceptionHandler)
+          ((Http1xPool)pool).createConn(version, context, port, host, ch, connectHandler, exceptionHandler)
       );
     }
 
@@ -457,9 +469,9 @@ public class ConnectionManager {
       }
     }
 
-    private void createConn(ContextImpl context, int port, String host, Channel ch, Handler<HttpClientStream> connectHandler,
+    private void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Handler<HttpClientStream> connectHandler,
                             Handler<Throwable> exceptionHandler) {
-      ClientConnection conn = new ClientConnection(ConnectionManager.this, vertx, client, exceptionHandler, ch,
+      ClientConnection conn = new ClientConnection(version, ConnectionManager.this, vertx, client, exceptionHandler, ch,
           options.isSsl(), host, port, context, this, client.metrics);
       conn.closeHandler(v -> {
         // The connection has been closed - tell the pool about it, this allows the pool to create more
@@ -671,12 +683,12 @@ public class ConnectionManager {
     }
 
     @Override
-    public void writeHead(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked) {
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, boolean chunked) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void writeHeadWithContent(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end) {
+    public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method.name());
       h.path(uri);
@@ -864,5 +876,16 @@ public class ConnectionManager {
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+  }
+
+  void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
+    pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
+    if (options.isTryUseCompression()) {
+      pipeline.addLast("inflater", new HttpContentDecompressor(true));
+    }
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+    }
+    pipeline.addLast("handler", new ClientHandler(context));
   }
 }

@@ -27,6 +27,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
@@ -78,6 +79,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
   private final HttpClientMetrics metrics;
+  private final HttpVersion version;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -85,7 +87,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
-  ClientConnection(ConnectionManager manager, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
+  ClientConnection(HttpVersion version, ConnectionManager manager, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, ConnectionManager.Http1xPool listener, HttpClientMetrics metrics) {
     super(vertx, channel, context, metrics);
     this.manager = manager;
@@ -102,6 +104,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
     this.metric = metrics.connected(remoteAddress(), remoteName());
+    this.version = version;
   }
 
   @Override
@@ -379,13 +382,13 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     }
   }
 
-  public void writeHead(HttpVersion version, io.vertx.core.http.HttpMethod method, String uri, MultiMap headers, boolean chunked) {
+  public void writeHead(HttpMethod method, String uri, MultiMap headers, boolean chunked) {
     HttpRequest request = createRequest(version, method, uri, headers);
     prepareHeaders(request, chunked);
     writeToChannel(request);
   }
 
-  public void writeHeadWithContent(io.vertx.core.http.HttpVersion version, io.vertx.core.http.HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end) {
+  public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end) {
     HttpRequest request = createRequest(version, method, uri, headers);
     prepareHeaders(request, chunked);
     if (end) {

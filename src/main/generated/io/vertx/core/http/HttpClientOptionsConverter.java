@@ -27,13 +27,8 @@ import io.vertx.core.json.JsonArray;
 public class HttpClientOptionsConverter {
 
   public static void fromJson(JsonObject json, HttpClientOptions obj) {
-    if (json.getValue("alpnProtocols") instanceof JsonArray) {
-      java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
-      json.getJsonArray("alpnProtocols").forEach( item -> {
-        if (item instanceof String)
-          list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
-      });
-      obj.setAlpnProtocols(list);
+    if (json.getValue("alpnFallbackProtocolVersion") instanceof String) {
+      obj.setAlpnFallbackProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)json.getValue("alpnFallbackProtocolVersion")));
     }
     if (json.getValue("defaultHost") instanceof String) {
       obj.setDefaultHost((String)json.getValue("defaultHost"));
@@ -71,12 +66,8 @@ public class HttpClientOptionsConverter {
   }
 
   public static void toJson(HttpClientOptions obj, JsonObject json) {
-    if (obj.getAlpnProtocols() != null) {
-      json.put("alpnProtocols", new JsonArray(
-          obj.getAlpnProtocols().
-              stream().
-              map(item -> item.name()).
-              collect(java.util.stream.Collectors.toList())));
+    if (obj.getAlpnFallbackProtocolVersion() != null) {
+      json.put("alpnFallbackProtocolVersion", obj.getAlpnFallbackProtocolVersion().name());
     }
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());

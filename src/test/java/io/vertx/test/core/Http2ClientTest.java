@@ -125,4 +125,20 @@ public class Http2ClientTest extends Http2TestBase {
     }).end();
     await();
   }
+
+  @Test
+  public void testFallbackOnHttp1() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setUseAlpn(false));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.get(4043, "localhost", "/somepath", resp -> {
+      testComplete();
+    }).exceptionHandler(err -> {
+      fail();
+    }).end();
+    await();
+  }
 }

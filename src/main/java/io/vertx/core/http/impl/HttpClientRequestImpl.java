@@ -75,7 +75,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private boolean exceptionOccurred;
   private long lastDataReceived;
   private Object metric;
-  private io.vertx.core.http.HttpVersion version;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         String relativeURI, VertxInternal vertx) {
@@ -85,7 +84,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.chunked = false;
     this.method = method;
     this.vertx = vertx;
-    this.version = client.getOptions().getProtocolVersion();
     this.uri = relativeURI;
   }
 
@@ -669,12 +667,12 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   private void writeHead() {
-    conn.writeHead(version, method, uri, headers, chunked);
+    conn.writeHead(method, uri, headers, chunked);
     headWritten = true;
   }
 
   private void writeHeadWithContent(ByteBuf buf, boolean end) {
-    conn.writeHeadWithContent(version, method, uri, headers, chunked, buf, end);
+    conn.writeHeadWithContent(method, uri, headers, chunked, buf, end);
     headWritten = true;
   }
 

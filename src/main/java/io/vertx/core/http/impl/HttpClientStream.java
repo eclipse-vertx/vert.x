@@ -17,11 +17,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -29,8 +27,8 @@ import io.vertx.core.net.NetSocket;
  */
 interface HttpClientStream {
 
-  void writeHead(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked);
-  void writeHeadWithContent(HttpVersion version, HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end);
+  void writeHead(HttpMethod method, String uri, MultiMap headers, boolean chunked);
+  void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
   String hostHeader();
   Context getContext();
