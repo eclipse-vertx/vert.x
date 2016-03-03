@@ -370,9 +370,12 @@ public class ConnectionManager {
 
   static abstract class Pool {
 
-    public final int maxSockets;
+    // Pools must locks on the queue object to keep a single lock
+    final ConnQueue queue;
+    final int maxSockets;
 
-    public Pool(int maxSockets) {
+    Pool(ConnQueue queue, int maxSockets) {
+      this.queue = queue;
       this.maxSockets = maxSockets;
     }
 
@@ -381,16 +384,13 @@ public class ConnectionManager {
     abstract void closeAllConnections();
   }
 
-  // Locks on the queue to keep a single lock
   public class Http1xPool extends Pool {
 
-    final ConnQueue queue;
     private final Set<ClientConnection> allConnections = new HashSet<>();
     private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
 
     public Http1xPool(ConnQueue queue) {
-      super(client.getOptions().getMaxPoolSize());
-      this.queue = queue;
+      super(queue, client.getOptions().getMaxPoolSize());
     }
 
     public boolean getConnection(HttpClientRequestImpl req, Handler<HttpClientStream> handler, ContextImpl context) {

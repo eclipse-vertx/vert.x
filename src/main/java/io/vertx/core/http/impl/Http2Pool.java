@@ -49,12 +49,10 @@ import io.vertx.core.net.NetSocket;
  */
 class Http2Pool extends ConnectionManager.Pool {
 
-  final ConnectionManager.ConnQueue queue;
   private VertxClientHandler clientHandler;
 
   public Http2Pool(ConnectionManager.ConnQueue queue) {
-    super(1);
-    this.queue = queue;
+    super(queue, 1);
   }
 
   public boolean getConnection(HttpClientRequestImpl req, Handler<HttpClientStream> handler, ContextImpl context) {
