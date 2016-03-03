@@ -172,9 +172,6 @@ public class EventBusOptionsConverter {
       json.put("host", obj.getHost());
     }
     json.put("idleTimeout", obj.getIdleTimeout());
-    if (obj.getKeystoreOptions() != null) {
-      json.put("keystoreOptions", obj.getKeystoreOptions().toJson());
-    }
     json.put("port", obj.getPort());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reconnectAttempts", obj.getReconnectAttempts());
@@ -187,9 +184,6 @@ public class EventBusOptionsConverter {
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("trafficClass", obj.getTrafficClass());
     json.put("trustAll", obj.isTrustAll());
-    if (obj.getTrustStoreOptions() != null) {
-      json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
-    }
     json.put("usePooledBuffers", obj.isUsePooledBuffers());
   }
 }

@@ -1268,10 +1268,6 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 Set the key/cert options in jks format, aka Java keystore.
 +++
-|[[keystoreOptions]]`keystoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
-+++
-@return the key store option as a .
-+++
 |[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
 +++
 Set the key/cert store options in pem format.
