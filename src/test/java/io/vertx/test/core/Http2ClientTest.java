@@ -69,6 +69,29 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testPost() throws Exception {
+    Buffer content = Buffer.buffer();
+    String expected = TestUtils.randomAlphaString(100);
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.POST, req.method());
+      req.handler(content::appendBuffer);
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+    startServer();
+    client.post(4043, "localhost", "/somepath", resp -> {
+      resp.endHandler(v -> {
+        assertEquals(expected, content.toString());
+        testComplete();
+      });
+    }).exceptionHandler(err -> {
+      fail();
+    }).end(expected);
+    await();
+  }
+
+  @Test
   public void testQueueRequests() throws Exception {
     int numReq = 100;
     waitFor(numReq);

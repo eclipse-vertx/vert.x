@@ -157,11 +157,15 @@ class Http2Pool extends ConnectionManager.Pool {
       h.method(method.name());
       h.path(uri);
       h.scheme("https");
-      encoder.writeHeaders(context, id, h, 0, end, context.newPromise());
+      encoder.writeHeaders(context, id, h, 0, end && buf == null, context.newPromise());
+      if (buf != null) {
+        encoder.writeData(context, id, buf, 0, end, context.newPromise());
+      }
       context.flush();
     }
     @Override
     public void writeBuffer(ByteBuf buf, boolean end) {
+      System.out.println("SHOULD WRITE BUFFER");
       throw new UnsupportedOperationException();
     }
     @Override
