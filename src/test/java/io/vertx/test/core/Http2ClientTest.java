@@ -16,15 +16,19 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetServerOptions;
 import org.junit.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -88,6 +92,57 @@ public class Http2ClientTest extends Http2TestBase {
     }).exceptionHandler(err -> {
       fail();
     }).end(expected);
+    await();
+  }
+
+  @Test
+  public void testRequestWriteability() throws Exception {
+    Buffer content = Buffer.buffer();
+    Buffer expected = Buffer.buffer();
+    String chunk = TestUtils.randomAlphaString(100);
+    CompletableFuture<Void> done = new CompletableFuture<>();
+    AtomicBoolean paused = new AtomicBoolean();
+    AtomicInteger numPause = new AtomicInteger();
+    server.requestHandler(req -> {
+      Context ctx = vertx.getOrCreateContext();
+      done.thenAccept(v1 -> {
+        paused.set(false);
+        ctx.runOnContext(v2 -> {
+          req.resume();
+        });
+      });
+      numPause.incrementAndGet();
+      req.pause();
+      paused.set(true);
+      req.handler(content::appendBuffer);
+      req.endHandler(v -> {
+        assertEquals(expected, content);
+        testComplete();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.post(4043, "localhost", "/somepath", resp -> {
+    }).setChunked(true).exceptionHandler(err -> {
+      fail();
+    });
+    AtomicInteger count = new AtomicInteger();
+    vertx.setPeriodic(1, timerID -> {
+      if (req.writeQueueFull()) {
+        assertTrue(paused.get());
+        assertEquals(1, numPause.get());
+        req.drainHandler(v -> {
+          assertEquals(1, numPause.get());
+          assertFalse(paused.get());
+          req.end();
+        });
+        vertx.cancelTimer(timerID);
+        done.complete(null);
+      } else {
+        count.incrementAndGet();
+        expected.appendString(chunk);
+        req.write(chunk);
+      }
+    });
     await();
   }
 

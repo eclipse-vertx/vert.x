@@ -33,6 +33,7 @@ import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.Context;
@@ -99,20 +100,23 @@ class Http2Pool extends ConnectionManager.Pool {
   class Http2ClientStream implements HttpClientStream {
 
     private final HttpClientRequestImpl req;
-    private final ChannelHandlerContext context;
+    private final ContextImpl context;
+    private final ChannelHandlerContext handlerCtx;
     private final Http2Connection conn;
-    private final int id;
+    private final Http2Stream stream;
     private final Http2ConnectionEncoder encoder;
     private HttpClientResponseImpl resp;
 
     public Http2ClientStream(HttpClientRequestImpl req,
-                             ChannelHandlerContext context,
+                             ContextImpl context,
+                             ChannelHandlerContext handlerCtx,
                              Http2Connection conn,
-                             Http2ConnectionEncoder encoder) {
-      this.req = req;
+                             Http2ConnectionEncoder encoder) throws Http2Exception {
       this.context = context;
+      this.req = req;
+      this.handlerCtx = handlerCtx;
       this.conn = conn;
-      this.id = conn.local().incrementAndGetNextStreamId();
+      this.stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
       this.encoder = encoder;
     }
 
@@ -157,16 +161,23 @@ class Http2Pool extends ConnectionManager.Pool {
       h.method(method.name());
       h.path(uri);
       h.scheme("https");
-      encoder.writeHeaders(context, id, h, 0, end && buf == null, context.newPromise());
+      encoder.writeHeaders(handlerCtx, stream.id(), h, 0, end && buf == null, handlerCtx.newPromise());
       if (buf != null) {
-        encoder.writeData(context, id, buf, 0, end, context.newPromise());
+        encoder.writeData(handlerCtx, stream.id(), buf, 0, end, handlerCtx.newPromise());
       }
-      context.flush();
+      handlerCtx.flush();
     }
     @Override
     public void writeBuffer(ByteBuf buf, boolean end) {
-      System.out.println("SHOULD WRITE BUFFER");
-      throw new UnsupportedOperationException();
+      encoder.writeData(handlerCtx, stream.id(), buf, 0, end, handlerCtx.newPromise());
+      if (end) {
+        try {
+          encoder.flowController().writePendingBytes();
+        } catch (Http2Exception e) {
+          e.printStackTrace();
+        }
+      }
+      handlerCtx.flush();
     }
     @Override
     public String hostHeader() {
@@ -174,7 +185,7 @@ class Http2Pool extends ConnectionManager.Pool {
     }
     @Override
     public Context getContext() {
-      throw new UnsupportedOperationException();
+      return context;
     }
     @Override
     public void doSetWriteQueueMaxSize(int size) {
@@ -182,11 +193,11 @@ class Http2Pool extends ConnectionManager.Pool {
     }
     @Override
     public boolean isNotWritable() {
-      throw new UnsupportedOperationException();
+      return !conn.remote().flowController().isWritable(stream);
     }
     @Override
     public void handleInterestedOpsChanged() {
-      throw new UnsupportedOperationException();
+      req.handleDrained();
     }
     @Override
     public void endRequest() {
@@ -224,6 +235,14 @@ class Http2Pool extends ConnectionManager.Pool {
         Http2ConnectionEncoder encoder,
         Http2Settings initialSettings) {
       super(decoder, encoder, initialSettings);
+
+      encoder.flowController().listener(stream -> {
+        Http2ClientStream clientStream = streams.get(stream.id());
+        if (clientStream != null && !clientStream.isNotWritable()) {
+          clientStream.handleInterestedOpsChanged();
+        }
+      });
+
       this.handlerCtx = handlerCtx;
       this.context = context;
     }
@@ -234,9 +253,13 @@ class Http2Pool extends ConnectionManager.Pool {
     }
 
     Http2ClientStream createStream(HttpClientRequestImpl req) {
-      Http2ClientStream stream = new Http2ClientStream(req, handlerCtx, connection(), encoder());
-      streams.put(stream.id, stream);
-      return stream;
+      try {
+        Http2ClientStream stream = new Http2ClientStream(req, context, handlerCtx, connection(), encoder());
+        streams.put(stream.stream.id(), stream);
+        return stream;
+      } catch (Http2Exception e) {
+        throw new UnsupportedOperationException("handle me gracefully", e);
+      }
     }
 
     @Override
