@@ -35,6 +35,8 @@ interface HttpClientStream {
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
   void handleInterestedOpsChanged();
+
+  // Perhaps it's possible to remove this with writeBuffer(buf, true) instead
   void endRequest();
 
   void doPause();

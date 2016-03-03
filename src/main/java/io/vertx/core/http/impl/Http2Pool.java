@@ -106,6 +106,8 @@ class Http2Pool extends ConnectionManager.Pool {
     private final Http2Stream stream;
     private final Http2ConnectionEncoder encoder;
     private HttpClientResponseImpl resp;
+    private boolean paused;
+    private int numBytes;
 
     public Http2ClientStream(HttpClientRequestImpl req,
                              ContextImpl context,
@@ -135,14 +137,21 @@ class Http2Pool extends ConnectionManager.Pool {
       }
     }
 
-    void handleData(ByteBuf chunk, boolean end) {
+    int handleData(ByteBuf chunk, boolean end) {
+      int consumed = 0;
       if (chunk.isReadable()) {
         Buffer buff = Buffer.buffer(chunk.slice());
         resp.handleChunk(buff);
+        if (paused) {
+          numBytes += chunk.readableBytes();
+        } else {
+          consumed = chunk.readableBytes();
+        }
       }
       if (end) {
         handleEnd();
       }
+      return consumed;
     }
 
     private void handleEnd() {
@@ -189,7 +198,6 @@ class Http2Pool extends ConnectionManager.Pool {
     }
     @Override
     public void doSetWriteQueueMaxSize(int size) {
-      throw new UnsupportedOperationException();
     }
     @Override
     public boolean isNotWritable() {
@@ -204,11 +212,26 @@ class Http2Pool extends ConnectionManager.Pool {
     }
     @Override
     public void doPause() {
-      throw new UnsupportedOperationException();
+      paused = true;
     }
     @Override
     public void doResume() {
-      throw new UnsupportedOperationException();
+      paused = false;
+      if (numBytes > 0) {
+        int pending = numBytes;
+        context.runOnContext(v -> {
+          // DefaultHttp2LocalFlowController requires to do this from the event loop
+          try {
+            boolean windowUpdateSent = conn.local().flowController().consumeBytes(stream, pending);
+            if (windowUpdateSent) {
+              handlerCtx.flush();
+            }
+          } catch (Http2Exception e) {
+            e.printStackTrace();
+          }
+        });
+        numBytes = 0;
+      }
     }
     @Override
     public void reportBytesWritten(long numberOfBytes) {
@@ -265,8 +288,8 @@ class Http2Pool extends ConnectionManager.Pool {
     @Override
     public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
       Http2ClientStream stream = streams.get(streamId);
-      stream.handleData(data, endOfStream);
-      return data.readableBytes() + padding;
+      int consumed = stream.handleData(data, endOfStream);
+      return consumed + padding;
     }
 
     @Override

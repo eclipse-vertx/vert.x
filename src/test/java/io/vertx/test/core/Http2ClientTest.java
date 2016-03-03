@@ -17,10 +17,12 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetServerOptions;
@@ -96,7 +98,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testRequestWriteability() throws Exception {
+  public void testClientRequestWriteability() throws Exception {
     Buffer content = Buffer.buffer();
     Buffer expected = Buffer.buffer();
     String chunk = TestUtils.randomAlphaString(100);
@@ -142,6 +144,50 @@ public class Http2ClientTest extends Http2TestBase {
         expected.appendString(chunk);
         req.write(chunk);
       }
+    });
+    await();
+  }
+
+  @Test
+  public void testClientResponsePauseResume() throws Exception {
+    String content = TestUtils.randomAlphaString(1024);
+    Buffer expected = Buffer.buffer();
+    Future<Void> whenFull = Future.future();
+    AtomicBoolean drain = new AtomicBoolean();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.putHeader("content-type", "text/plain");
+      resp.setChunked(true);
+      vertx.setPeriodic(1, timerID -> {
+        if (resp.writeQueueFull()) {
+          resp.drainHandler(v -> {
+            Buffer last = Buffer.buffer("last");
+            expected.appendBuffer(last);
+            resp.end(last);
+            assertEquals(expected.toString().getBytes().length, resp.bytesWritten());
+          });
+          vertx.cancelTimer(timerID);
+          drain.set(true);
+          whenFull.complete();
+        } else {
+          Buffer chunk = Buffer.buffer(content);
+          expected.appendBuffer(chunk);
+          resp.write(chunk);
+        }
+      });
+    });
+    startServer();
+    client.getNow(4043, "localhost", "/somepath", resp -> {
+      Buffer received = Buffer.buffer();
+      resp.pause();
+      resp.handler(received::appendBuffer);
+      resp.endHandler(v -> {
+        assertEquals(expected.toString(), received.toString());
+        testComplete();
+      });
+      whenFull.setHandler(v -> {
+        resp.resume();
+      });
     });
     await();
   }
