@@ -26,10 +26,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
@@ -80,9 +77,38 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private NetServerOptions getServerOptions() {
-    return new NetServerOptions(options.toJson())
-        .setKeyStoreOptions(options.getKeystoreOptions())
-        .setTrustStoreOptions(options.getTrustStoreOptions());
+    NetServerOptions serverOptions = new NetServerOptions(this.options.toJson());
+    setCertOptions(serverOptions, options.getKeyCertOptions());
+    setTrustOptions(serverOptions, options.getTrustOptions());
+
+    return serverOptions;
+  }
+
+  static void setCertOptions(TCPSSLOptions options, KeyCertOptions keyCertOptions) {
+    if (keyCertOptions == null) {
+      return;
+    }
+    if (keyCertOptions instanceof JksOptions) {
+      options.setKeyStoreOptions((JksOptions) keyCertOptions);
+    } else if (keyCertOptions instanceof PfxOptions) {
+      options.setPfxKeyCertOptions((PfxOptions) keyCertOptions);
+    } else {
+      options.setPemKeyCertOptions((PemKeyCertOptions) keyCertOptions);
+    }
+  }
+
+  static void setTrustOptions(TCPSSLOptions sslOptions, TrustOptions options) {
+    if (options == null) {
+      return;
+    }
+
+    if (options instanceof JksOptions) {
+      sslOptions.setTrustStoreOptions((JksOptions) options);
+    } else if (options instanceof PfxOptions) {
+      sslOptions.setPfxTrustOptions((PfxOptions) options);
+    } else {
+      sslOptions.setPemTrustOptions((PemTrustOptions) options);
+    }
   }
 
   @Override

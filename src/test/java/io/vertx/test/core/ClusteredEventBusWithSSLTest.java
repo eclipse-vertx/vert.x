@@ -19,7 +19,7 @@ package io.vertx.test.core;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -27,7 +27,8 @@ import java.util.Arrays;
 
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * Tests the clustered event bus with various SSL / TLS configuration.
+ * @author Clement Escoffier
  */
 @RunWith(value = Parameterized.class)
 public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTest {
@@ -35,46 +36,64 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTest {
   private final EventBusOptions options;
 
 
-  public ClusteredEventBusWithSSLTest(boolean clientCert, boolean clientTrust,
-                                      boolean serverCert, boolean serverTrust,
-                                      boolean requireClientAuth, boolean clientTrustAll) {
+  public ClusteredEventBusWithSSLTest(KeyCert cert, Trust trust,
+                                      boolean requireClientAuth,
+                                      boolean clientTrustAll,
+                                      boolean useCrl,
+                                      String... enabledCipherSuites) {
     options = new EventBusOptions();
     options.setSsl(true);
-    if (serverTrust) {
-      options.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
-    }
-    if (serverCert) {
-      options.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
-    }
-    if (requireClientAuth) {
-      options.setClientAuth(ClientAuth.REQUIRED);
-    }
+
     if (clientTrustAll) {
       options.setTrustAll(true);
     }
-    if (clientTrust) {
-      options.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
-    }
-    if (clientCert) {
-      options.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
+    if (useCrl) {
+      options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
     }
 
+    setOptions(options, getClientTrustOptions(trust));
+    setOptions(options, getServerCertOptions(cert));
 
+    if (enabledCipherSuites != null) {
+      for (String suite : enabledCipherSuites) {
+        options.addEnabledCipherSuite(suite);
+      }
+    }
 
+    if (requireClientAuth) {
+      options.setClientAuth(ClientAuth.REQUIRED);
+    }
   }
+
 
   @Parameterized.Parameters(name = "{index}: event bus SSL ({0} {1} {2} {3} {4} {5}")
   public static Iterable<Object[]> data() {
     // Parameters:
-    //clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll
+    //KeyCert, Trust, requireClientAuth, clientTrustAll, useCrl, enabledCipherSuites
 
     return Arrays.asList(new Object[][] {
-        { false, false, true, false, false, true }, // Start TLS with Trust All
-        { false, false, true, false, false, true }, // Client trusts all server certs
-        { false, true, true, false, false, false }, // Client trust only the server certs
-        { false, false, true, false, false, false }, // server specifies certs
-        { true, true, true, true, false, false }, // client specified certs
-        { true, true, true, true, true, false } // client specifies cert
+        { KeyCert.JKS, Trust.NONE, false, true, false, new String[0] }, // trusts all server certs
+        { KeyCert.JKS, Trust.JKS, false, false, false, new String[0] },
+        { KeyCert.JKS, Trust.JKS, false, false, true, new String[0] },
+        { KeyCert.PKCS12, Trust.JKS, false, false, false, new String[0] },
+        { KeyCert.PEM, Trust.JKS, false, false, false, new String[0] },
+        { KeyCert.JKS_CA, Trust.JKS_CA, false, false, false, new String[0] },
+        { KeyCert.JKS_CA, Trust.PKCS12_CA, false, false, false, new String[0] },
+        { KeyCert.JKS_CA, Trust.PEM_CA, false, false, false, new String[0] },
+        { KeyCert.PKCS12_CA, Trust.JKS_CA, false, false, false, new String[0] },
+        { KeyCert.PKCS12_CA, Trust.PKCS12_CA, false, false, false, new String[0] },
+        { KeyCert.PEM_CA, Trust.JKS_CA, false, false, false, new String[0] },
+        { KeyCert.PEM_CA, Trust.PKCS12_CA, false, false, false, new String[0] },
+        { KeyCert.PEM_CA, Trust.PEM_CA, false, false, false, new String[0] },
+        { KeyCert.JKS, Trust.PKCS12, false, false, false, new String[0] },
+        { KeyCert.JKS, Trust.PEM, false, false, false, new String[0] },
+        { KeyCert.JKS, Trust.JKS, true, false, false, new String[0] },
+        { KeyCert.JKS, Trust.PKCS12, true, false, false, new String[0] },
+        { KeyCert.JKS, Trust.PEM, true, false, false, new String[0] },
+        { KeyCert.PKCS12, Trust.JKS, true, false, false, new String[0] },
+        { KeyCert.PEM, Trust.JKS, true, false, false, new String[0] },
+        { KeyCert.PEM_CA, Trust.PEM_CA, true, false, false, new String[0] },
+        { KeyCert.JKS, Trust.PEM_CA, false, true, false, HttpTest.ENABLED_CIPHER_SUITES },
     });
   }
 

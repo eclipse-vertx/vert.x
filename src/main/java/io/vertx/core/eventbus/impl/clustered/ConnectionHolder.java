@@ -43,9 +43,10 @@ class ConnectionHolder {
     this.serverID = serverID;
     this.vertx = eventBus.vertx();
     this.metrics = eventBus.getMetrics();
-    client = new NetClientImpl(eventBus.vertx(), new NetClientOptions(
-        options.toJson()).setTrustStoreOptions(options.getTrustStoreOptions()).setKeyStoreOptions(options.getKeystoreOptions()),
-        false);
+    NetClientOptions clientOptions = new NetClientOptions(options.toJson());
+    ClusteredEventBus.setCertOptions(clientOptions, options.getKeyCertOptions());
+    ClusteredEventBus.setTrustOptions(clientOptions, options.getTrustOptions());
+    client = new NetClientImpl(eventBus.vertx(), clientOptions, false);
   }
 
   synchronized void connect() {

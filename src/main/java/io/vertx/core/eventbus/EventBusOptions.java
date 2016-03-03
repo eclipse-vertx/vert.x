@@ -92,10 +92,6 @@ public class EventBusOptions extends TCPSSLOptions {
   private int connectTimeout;
   private boolean trustAll;
 
-  private JksOptions trustStoreOptions;
-  private JksOptions keystoreOptions;
-
-
   /**
    * Creates a new instance of {@link EventBusOptions} using the default configuration.
    */
@@ -139,9 +135,6 @@ public class EventBusOptions extends TCPSSLOptions {
     this.reconnectAttempts = other.reconnectAttempts;
     this.connectTimeout = other.connectTimeout;
     this.trustAll = other.trustAll;
-
-    setKeyStoreOptions(other.keystoreOptions);
-    setTrustStoreOptions(other.trustStoreOptions);
   }
 
   /**
@@ -323,15 +316,7 @@ public class EventBusOptions extends TCPSSLOptions {
   @Override
   public EventBusOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
-    this.keystoreOptions = options;
     return this;
-  }
-
-  /**
-   * @return the key store option as a {@link JksOptions}.
-   */
-  public JksOptions getKeystoreOptions() {
-    return keystoreOptions;
   }
 
   @Override
@@ -384,16 +369,8 @@ public class EventBusOptions extends TCPSSLOptions {
 
   @Override
   public EventBusOptions setTrustStoreOptions(JksOptions options) {
-    this.trustStoreOptions = options;
     super.setTrustStoreOptions(options);
     return this;
-  }
-
-  /**
-   * @return the trust store option os a {@link JksOptions}.
-   */
-  public JksOptions getTrustStoreOptions() {
-    return trustStoreOptions;
   }
 
   @Override
