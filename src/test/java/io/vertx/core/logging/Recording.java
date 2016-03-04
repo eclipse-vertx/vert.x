@@ -74,7 +74,7 @@ public class Recording {
     long now = System.currentTimeMillis();
     StringBuilder acc = new StringBuilder(get());
     while (!predicate.test(acc.toString())) {
-      Assert.assertTrue("Was not expecting this output " + acc, System.currentTimeMillis() - now < 5000);
+      Assert.assertTrue(System.currentTimeMillis() - now < 5000);
       try {
         Thread.sleep(1);
       } catch (InterruptedException e) {
