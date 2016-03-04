@@ -201,7 +201,10 @@ See link for an explanation.
 +++
 Set whether or not the Vert.x instance will be clustered.
 +++
-|[[eventBusOptions]]`eventBusOptions`|`link:dataobjects.html#EventBusOptions[EventBusOptions]`|-
+|[[eventBusOptions]]`eventBusOptions`|`link:dataobjects.html#EventBusOptions[EventBusOptions]`|
++++
+Sets the event bus configuration to configure the host, port, ssl...
++++
 |[[eventLoopPoolSize]]`eventLoopPoolSize`|`Number (int)`|
 +++
 Set the number of event loop threads to be used by the Vert.x instance.

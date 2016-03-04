@@ -26,7 +26,7 @@ import java.util.Objects;
 
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
- * 
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
@@ -144,7 +144,7 @@ public class VertxOptions {
 
   /**
    * Copy constructor
-   * 
+   *
    * @param other The other {@code VertxOptions} to copy when creating this
    */
   public VertxOptions(VertxOptions other) {
@@ -165,7 +165,7 @@ public class VertxOptions {
 
   /**
    * Create an instance from a {@link io.vertx.core.json.JsonObject}
-   * 
+   *
    * @param json the JsonObject to create it from
    */
   public VertxOptions(JsonObject json) {
@@ -175,7 +175,7 @@ public class VertxOptions {
 
   /**
    * Get the number of event loop threads to be used by the Vert.x instance.
-   * 
+   *
    * @return the number of threads
    */
   public int getEventLoopPoolSize() {
@@ -184,8 +184,8 @@ public class VertxOptions {
 
   /**
    * Set the number of event loop threads to be used by the Vert.x instance.
-   * 
-   * @param eventLoopPoolSize  the number of threads
+   *
+   * @param eventLoopPoolSize the number of threads
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setEventLoopPoolSize(int eventLoopPoolSize) {
@@ -210,7 +210,7 @@ public class VertxOptions {
   /**
    * Set the maximum number of worker threads to be used by the Vert.x instance.
    *
-   * @param workerPoolSize  the number of threads
+   * @param workerPoolSize the number of threads
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setWorkerPoolSize(int workerPoolSize) {
@@ -223,6 +223,7 @@ public class VertxOptions {
 
   /**
    * Is the Vert.x instance clustered?
+   *
    * @return true if clustered, false if not
    */
   public boolean isClustered() {
@@ -231,7 +232,8 @@ public class VertxOptions {
 
   /**
    * Set whether or not the Vert.x instance will be clustered.
-   * @param clustered  if true, the Vert.x instance will be clustered, otherwise not
+   *
+   * @param clustered if true, the Vert.x instance will be clustered, otherwise not
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setClustered(boolean clustered) {
@@ -251,7 +253,7 @@ public class VertxOptions {
   /**
    * Set the hostname to be used for clustering.
    *
-   * @param clusterHost  the host name to use
+   * @param clusterHost the host name to use
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setClusterHost(String clusterHost) {
@@ -261,7 +263,8 @@ public class VertxOptions {
 
   /**
    * Get the public facing hostname to be used when clustering.
-   * @return  the public facing hostname
+   *
+   * @return the public facing hostname
    */
   public String getClusterPublicHost() {
     return getEventBusOptions().getClusterPublicHost();
@@ -274,7 +277,7 @@ public class VertxOptions {
    * If this is the case you can specify a public hostname which is different from the hostname the server listens at.
    * The default value is null which means use the same as the cluster hostname.
    *
-   * @param clusterPublicHost  the public host name to use
+   * @param clusterPublicHost the public host name to use
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setClusterPublicHost(String clusterPublicHost) {
@@ -294,7 +297,7 @@ public class VertxOptions {
   /**
    * Set the port to be used for clustering.
    *
-   * @param clusterPort  the port
+   * @param clusterPort the port
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setClusterPort(int clusterPort) {
@@ -304,7 +307,8 @@ public class VertxOptions {
 
   /**
    * Get the public facing port to be used when clustering.
-   * @return  the public facing port
+   *
+   * @return the public facing port
    */
   public int getClusterPublicPort() {
     return eventBusOptions.getClusterPublicPort();
@@ -313,7 +317,7 @@ public class VertxOptions {
   /**
    * See {@link #setClusterPublicHost(String)} for an explanation.
    *
-   * @param clusterPublicPort  the public port to use
+   * @param clusterPublicPort the public port to use
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setClusterPublicPort(int clusterPublicPort) {
@@ -379,7 +383,7 @@ public class VertxOptions {
   /**
    * Sets the value of blocked thread check period, in ms.
    *
-   * @param blockedThreadCheckInterval  the value of blocked thread check period, in ms.
+   * @param blockedThreadCheckInterval the value of blocked thread check period, in ms.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setBlockedThreadCheckInterval(long blockedThreadCheckInterval) {
@@ -407,7 +411,7 @@ public class VertxOptions {
   /**
    * Sets the value of max event loop execute time, in ns.
    *
-   * @param maxEventLoopExecuteTime  the value of max event loop execute time, in ms.
+   * @param maxEventLoopExecuteTime the value of max event loop execute time, in ms.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setMaxEventLoopExecuteTime(long maxEventLoopExecuteTime) {
@@ -435,7 +439,7 @@ public class VertxOptions {
   /**
    * Sets the value of max worker execute time, in ns.
    *
-   * @param maxWorkerExecuteTime  the value of max worker execute time, in ms.
+   * @param maxWorkerExecuteTime the value of max worker execute time, in ms.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
@@ -453,7 +457,7 @@ public class VertxOptions {
    * <p>
    * Otherwise Vert.x attempts to locate a cluster manager on the classpath.
    *
-   * @return  the cluster manager.
+   * @return the cluster manager.
    */
   public ClusterManager getClusterManager() {
     return clusterManager;
@@ -467,7 +471,7 @@ public class VertxOptions {
    * Normally Vert.x will look on the classpath for a cluster manager, but if you want to set one
    * programmatically you can use this method.
    *
-   * @param clusterManager  the cluster manager
+   * @param clusterManager the cluster manager
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setClusterManager(ClusterManager clusterManager) {
@@ -512,7 +516,7 @@ public class VertxOptions {
   /**
    * Set whether HA will be enabled on the Vert.x instance.
    *
-   * @param haEnabled  true if enabled, false if not.
+   * @param haEnabled true if enabled, false if not.
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setHAEnabled(boolean haEnabled) {
@@ -523,7 +527,7 @@ public class VertxOptions {
   /**
    * Get the quorum size to be used when HA is enabled.
    *
-   * @return  the quorum size
+   * @return the quorum size
    */
   public int getQuorumSize() {
     return quorumSize;
@@ -532,7 +536,7 @@ public class VertxOptions {
   /**
    * Set the quorum size to be used when HA is enabled.
    *
-   * @param quorumSize  the quorum size
+   * @param quorumSize the quorum size
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setQuorumSize(int quorumSize) {
@@ -605,10 +609,19 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return the event bus option to configure the event bus communication (host, port, ssl...)
+   */
   public EventBusOptions getEventBusOptions() {
     return eventBusOptions;
   }
 
+  /**
+   * Sets the event bus configuration to configure the host, port, ssl...
+   *
+   * @param options the event bus options
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setEventBusOptions(EventBusOptions options) {
     Objects.requireNonNull(options);
     this.eventBusOptions = options;
@@ -634,7 +647,8 @@ public class VertxOptions {
     if (clusterManager != null ? !clusterManager.equals(that.clusterManager) : that.clusterManager != null)
       return false;
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
-    if (eventBusOptions != null ? !eventBusOptions.equals(that.eventBusOptions) : that.eventBusOptions != null) return false;
+    if (eventBusOptions != null ? !eventBusOptions.equals(that.eventBusOptions) : that.eventBusOptions != null)
+      return false;
     return !(metrics != null ? !metrics.equals(that.metrics) : that.metrics != null);
 
   }
@@ -660,19 +674,19 @@ public class VertxOptions {
   @Override
   public String toString() {
     return "VertxOptions{" +
-      "eventLoopPoolSize=" + eventLoopPoolSize +
-      ", workerPoolSize=" + workerPoolSize +
-      ", internalBlockingPoolSize=" + internalBlockingPoolSize +
-      ", blockedThreadCheckInterval=" + blockedThreadCheckInterval +
-      ", maxEventLoopExecuteTime=" + maxEventLoopExecuteTime +
-      ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
-      ", clusterManager=" + clusterManager +
-      ", haEnabled=" + haEnabled +
-      ", quorumSize=" + quorumSize +
-      ", haGroup='" + haGroup + '\'' +
-      ", metrics=" + metrics +
-      ", eventbus=" + eventBusOptions.toJson() +
-      ", warningExceptionTime=" + warningExceptionTime +
-      '}';
+        "eventLoopPoolSize=" + eventLoopPoolSize +
+        ", workerPoolSize=" + workerPoolSize +
+        ", internalBlockingPoolSize=" + internalBlockingPoolSize +
+        ", blockedThreadCheckInterval=" + blockedThreadCheckInterval +
+        ", maxEventLoopExecuteTime=" + maxEventLoopExecuteTime +
+        ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
+        ", clusterManager=" + clusterManager +
+        ", haEnabled=" + haEnabled +
+        ", quorumSize=" + quorumSize +
+        ", haGroup='" + haGroup + '\'' +
+        ", metrics=" + metrics +
+        ", eventbus=" + eventBusOptions.toJson() +
+        ", warningExceptionTime=" + warningExceptionTime +
+        '}';
   }
 }

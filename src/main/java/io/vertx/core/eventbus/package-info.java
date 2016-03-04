@@ -283,7 +283,7 @@
  * == Configuring the event bus
  *
  * The event bus can be configured. It is particularly useful when the event bus is clustered. Under the hood
- * the event bus used TCP connections to send and receive message, so the
+ * the event bus uses TCP connections to send and receive message, so the
  * {@link io.vertx.core.eventbus.EventBusOptions} let you configure all aspects of these TCP connections. As
  * the event bus acts as a server and client, the configuration is close to
  * {@link io.vertx.core.net.NetClientOptions} and {@link io.vertx.core.net.NetServerOptions}.
