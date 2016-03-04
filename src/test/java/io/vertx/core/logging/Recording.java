@@ -71,7 +71,8 @@ public class Recording {
 
   public String execute(Runnable runnable) {
     start();
-    System.err.print("verification message");
+    System.err.print("verification message 1");
+    java.util.logging.Logger.getLogger("the-logger").info("verification message 2");
     runnable.run();
     String result = get();
     stop();
