@@ -350,7 +350,7 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-    public void testGet() throws Exception {
+  public void testGet() throws Exception {
     String expected = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
     server.requestHandler(req -> {

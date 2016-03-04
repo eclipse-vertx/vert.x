@@ -28,6 +28,8 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetServerOptions;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,12 +58,23 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals(HttpMethod.GET, req.method());
       assertEquals("/somepath", req.path());
       reqCount.incrementAndGet();
-      req.response().end(expected);
+      HttpServerResponse resp = req.response();
+      resp.putHeader("content-type", "text/plain");
+      resp.putHeader("Foo", "foo_value");
+      resp.putHeader("bar", "bar_value");
+      resp.putHeader("juu", (List<String>) Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.end(expected);
     });
     startServer();
     client.get(4043, "localhost", "/somepath", resp -> {
-      assertEquals(HttpVersion.HTTP_2, resp.version());
       assertEquals(1, reqCount.get());
+      assertEquals(HttpVersion.HTTP_2, resp.version());
+      assertEquals("text/plain", resp.getHeader("content-type"));
+      assertEquals("foo_value", resp.getHeader("foo"));
+      assertEquals("bar_value", resp.getHeader("bar"));
+      assertEquals(2, resp.headers().getAll("juu").size());
+      assertEquals("juu_value_1", resp.headers().getAll("juu").get(0));
+      assertEquals("juu_value_2", resp.headers().getAll("juu").get(1));
       Buffer content = Buffer.buffer();
       resp.handler(content::appendBuffer);
       resp.endHandler(v -> {
