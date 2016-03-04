@@ -41,11 +41,6 @@ public class JULLogDelegateTest {
     recording = new Recording();
   }
 
-  @AfterClass
-  public static void terminate() {
-    recording.terminate();
-  }
-
   @Test
   public void testInfo() {
     String result = recording.execute(() -> {

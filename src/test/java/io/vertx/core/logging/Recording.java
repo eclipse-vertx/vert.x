@@ -19,6 +19,7 @@ package io.vertx.core.logging;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.logging.Handler;
 import java.util.logging.LogManager;
 
 /**
@@ -37,45 +38,33 @@ public class Recording {
     LogManager.getLogManager().readConfiguration();
   }
 
-  public void start() {
+  private void start() {
     error.reset();
-    System.setErr(new PrintStream(error) {
-      @Override
-      public void write(byte[] buf, int off, int len) {
-        System.out.println("Logged on System.err " + new String(buf, off, len));
-        super.write(buf, off, len);
-      }
-    });
+    System.setErr(new PrintStream(error));
   }
 
-  public void stop() {
+  private void stop() {
     if (System.err != ORIGINAL_ERR) {
       System.setErr(ORIGINAL_ERR);
     }
   }
 
   public String get() {
-    try {
-      error.flush();
-    } catch (IOException e) {
-      // Ignore it.
+    for (Handler handler : LogManager.getLogManager().getLogger("").getHandlers()) {
+      handler.flush();
     }
     return error.toString();
   }
 
-  public void terminate() {
-    if (System.err != ORIGINAL_ERR) {
-      System.setErr(ORIGINAL_ERR);
-    }
-  }
-
   public String execute(Runnable runnable) {
     start();
-    System.err.print("verification message 1");
-    java.util.logging.Logger.getLogger("the-logger").info("verification message 2");
-    runnable.run();
-    String result = get();
-    stop();
+    String result;
+    try {
+      runnable.run();
+      result = get();
+    } finally {
+      stop();
+    }
     return result;
   }
 
