@@ -17,6 +17,7 @@
 package io.vertx.core.logging;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ public class JULLogDelegateTest {
     recording = new Recording();
   }
 
+  @Ignore
   @Test
   public void testInfo() {
     String result = recording.execute(() -> {
@@ -88,6 +90,7 @@ public class JULLogDelegateTest {
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
+  @Ignore
   @Test
   public void testError() {
     String result = recording.execute(() -> {
@@ -133,6 +136,7 @@ public class JULLogDelegateTest {
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
+  @Ignore
   @Test
   public void testWarning() {
     String result = recording.execute(() -> {
