@@ -20,28 +20,28 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="http://www.ernestojpg.com">Ernesto J. Perez</a>
  */
-public class NestedJarFileResolverTest extends FileResolverTestBase {
+public class NestedZipFileResolverTest extends FileResolverTestBase {
 
   private ClassLoader prevCL;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    // This folder is inside the embedded jar file called nested.jar, inside webroot4.jar
-    webRoot = "webroot4";
-
+    // This folder is inside the embedded zip file called nested.zip, inside webroot6.zip
+    webRoot = "webroot6";
+    // We will store the current classloader
     prevCL = Thread.currentThread().getContextClassLoader();
-    URL webroot4URL = prevCL.getResource("webroot4.jar");
+    URL webroot6URL = prevCL.getResource("webroot6.zip");
     ClassLoader loader = new ClassLoader(prevCL = Thread.currentThread().getContextClassLoader()) {
       @Override
       public URL getResource(String name) {
         try {
           if (name.startsWith("lib/")) {
-            return new URL("jar:" + webroot4URL + "!/" + name);
-          } else if (name.startsWith("webroot4")) {
-            return new URL("jar:" + webroot4URL + "!/lib/nested.jar!/" + name.substring(7));
+            return new URL("jar:" + webroot6URL + "!/" + name);
+          } else if (name.startsWith("webroot6")) {
+            return new URL("jar:" + webroot6URL + "!/lib/nested.zip!/" + name.substring(7));
           }
         } catch (MalformedURLException e) {
           throw new AssertionError(e);
