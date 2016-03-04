@@ -16,14 +16,9 @@
 
 package io.vertx.core.logging;
 
-import org.junit.Assert;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.LogManager;
 
 /**
@@ -68,21 +63,12 @@ public class Recording {
     }
   }
 
-  public void execute(Runnable runnable, Predicate<String> predicate) {
+  public String execute(Runnable runnable) {
     start();
     runnable.run();
-    long now = System.currentTimeMillis();
-    StringBuilder acc = new StringBuilder(get());
-    while (!predicate.test(acc.toString())) {
-      Assert.assertTrue(System.currentTimeMillis() - now < 5000);
-      try {
-        Thread.sleep(1);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new AssertionError(e);
-      }
-      acc.append(get());
-    }
+    String result = get();
     stop();
+    return result;
   }
+
 }
