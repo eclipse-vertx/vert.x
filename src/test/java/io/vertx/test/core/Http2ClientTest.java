@@ -16,6 +16,11 @@
 
 package io.vertx.test.core;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http2.Http2EventAdapter;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
@@ -93,6 +98,33 @@ public class Http2ClientTest extends Http2TestBase {
         .putHeader("juu_request", Arrays.<CharSequence>asList("juu_request_value_1", "juu_request_value_2"))
         .exceptionHandler(err -> fail())
         .end();
+    await();
+  }
+
+  @Test
+  public void testTrailers() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.write("some-content");
+      resp.putTrailer("Foo", "foo_value");
+      resp.putTrailer("bar", "bar_value");
+      resp.putTrailer("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.end();
+    });
+    startServer();
+    client.getNow(4043, "localhost", "/somepeth", resp -> {
+      assertEquals(null, resp.getTrailer("foo"));
+      resp.endHandler(v -> {
+        assertEquals("foo_value", resp.getTrailer("foo"));
+        assertEquals("foo_value", resp.getTrailer("Foo"));
+        assertEquals("bar_value", resp.getTrailer("bar"));
+        assertEquals(2, resp.trailers().getAll("juu").size());
+        assertEquals("juu_value_1", resp.trailers().getAll("juu").get(0));
+        assertEquals("juu_value_2", resp.trailers().getAll("juu").get(1));
+        testComplete();
+      });
+    });
     await();
   }
 

@@ -125,17 +125,21 @@ class Http2Pool extends ConnectionManager.Pool {
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
-      resp = new HttpClientResponseImpl(
-          req,
-          HttpVersion.HTTP_2,
-          this,
-          Integer.parseInt(headers.status().toString()),
-          "todo",
-          new Http2HeadersAdaptor(headers)
-      );
-      req.handleResponse(resp);
-      if (end) {
-        handleEnd();
+      if (resp == null) {
+        resp = new HttpClientResponseImpl(
+            req,
+            HttpVersion.HTTP_2,
+            this,
+            Integer.parseInt(headers.status().toString()),
+            "todo",
+            new Http2HeadersAdaptor(headers)
+        );
+        req.handleResponse(resp);
+        if (end) {
+          handleEnd();
+        }
+      } else if (end) {
+        resp.handleEnd(new Http2HeadersAdaptor(headers));
       }
     }
 
@@ -172,7 +176,7 @@ class Http2Pool extends ConnectionManager.Pool {
       h.method(method.name());
       h.path(uri);
       h.scheme("https");
-      if (headers.size() > 0) {
+      if (headers != null && headers.size() > 0) {
         for (Map.Entry<String, String> header : headers) {
           h.add(Http2HeadersAdaptor.toLowerCase(header.getKey()), header.getValue());
         }

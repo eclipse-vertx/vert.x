@@ -113,7 +113,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public String getTrailer(String trailerName) {
-    return trailers.get(trailerName);
+    return trailers != null ? trailers.get(trailerName) : null;
   }
 
   @Override
