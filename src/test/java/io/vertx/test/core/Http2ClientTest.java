@@ -138,7 +138,7 @@ public class Http2ClientTest extends Http2TestBase {
       resp.end(expected);
     });
     startServer();
-    client.getNow(4043, "localhost", "/somepeth", resp -> {
+    client.getNow(4043, "localhost", "/somepath", resp -> {
       resp.bodyHandler(body -> {
         assertEquals(expected, body);
         testComplete();
