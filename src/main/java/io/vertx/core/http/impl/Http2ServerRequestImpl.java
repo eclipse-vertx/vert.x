@@ -383,7 +383,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public SocketAddress remoteAddress() {
-    throw new UnsupportedOperationException();
+    return connection.remoteAddress();
   }
 
   @Override

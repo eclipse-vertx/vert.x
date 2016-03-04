@@ -31,6 +31,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -307,7 +308,11 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testReuseConnection() throws Exception {
+    List<SocketAddress> ports = new ArrayList<>();
     server.requestHandler(req -> {
+      SocketAddress address = req.remoteAddress();
+      assertNotNull(address);
+      ports.add(address);
       req.response().end();
     });
     startServer();
@@ -322,6 +327,8 @@ public class Http2ClientTest extends Http2TestBase {
     awaitLatch(doReq);
     client.get(4043, "localhost", "/somepath", resp -> {
       resp.endHandler(v -> {
+        assertEquals(2, ports.size());
+        assertEquals(ports.get(0), ports.get(1));
         testComplete();
       });
     }).exceptionHandler(err -> {

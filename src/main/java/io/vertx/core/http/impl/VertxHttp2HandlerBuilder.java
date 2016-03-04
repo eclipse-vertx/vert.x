@@ -16,6 +16,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
@@ -35,18 +36,21 @@ import io.vertx.core.impl.ContextInternal;
 public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2Handler, VertxHttp2HandlerBuilder> {
 
   private final ChannelHandlerContext context;
+  private final Channel channel;
   private final ContextInternal handlerContext;
   private final String serverOrigin;
   private final HttpServerOptions options;
   private final Handler<HttpServerRequest> handler;
 
   public VertxHttp2HandlerBuilder(
+      Channel channel,
       ChannelHandlerContext context,
       ContextInternal handlerContext,
       String serverOrigin,
       HttpServerOptions option,
       Handler<HttpServerRequest> handler) {
 
+    this.channel = channel;
     this.handlerContext = handlerContext;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
@@ -97,7 +101,7 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
       encoder = new CompressorHttp2ConnectionEncoder(encoder);
     }
     VertxHttp2Handler vertxHttp2Handler = new VertxHttp2Handler(
-        context,
+        context, channel,
         handlerContext, serverOrigin, decoder, encoder, initialSettings, options, handler);
     frameListener(vertxHttp2Handler);
     return vertxHttp2Handler;

@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -51,7 +52,10 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.SocketAddressImpl;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
@@ -66,6 +70,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
   private final ChannelHandlerContext context;
+  private final Channel channel;
   private final HttpServerOptions options;
   private final ContextInternal handlerContext;
   private final String serverOrigin;
@@ -85,7 +90,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
 
   private Handler<Throwable> exceptionHandler;
 
-  VertxHttp2Handler(ChannelHandlerContext context, ContextInternal handlerContext, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
+  VertxHttp2Handler(ChannelHandlerContext context, Channel channel, ContextInternal handlerContext, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                          Http2Settings initialSettings, HttpServerOptions options, Handler<HttpServerRequest> handler) {
     super(decoder, encoder, initialSettings);
 
@@ -106,6 +111,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
       }
     });
 
+    this.channel = channel;
     this.options = options;
     this.context = context;
     this.handlerContext = handlerContext;
@@ -513,6 +519,12 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   @Override
   public Handler<Throwable> exceptionHandler() {
     return exceptionHandler;
+  }
+
+  public SocketAddress remoteAddress() {
+    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+    if (addr == null) return null;
+    return new SocketAddressImpl(addr);
   }
 
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
