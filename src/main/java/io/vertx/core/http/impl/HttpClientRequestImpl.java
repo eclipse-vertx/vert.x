@@ -53,6 +53,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
 
   private final String host;
   private final int port;
+  private final boolean ssl;
   private final HttpClientImpl client;
   private final VertxInternal vertx;
   private final io.vertx.core.http.HttpMethod method;
@@ -60,6 +61,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
+  private String hostHeader;
   private Handler<Void> continueHandler;
   private volatile HttpClientStream conn;
   private Handler<Void> drainHandler;
@@ -78,7 +80,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private Object metric;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
-                        String relativeURI, VertxInternal vertx) {
+                        boolean ssl, String relativeURI, VertxInternal vertx) {
     this.host = host;
     this.port = port;
     this.client = client;
@@ -86,6 +88,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     this.method = method;
     this.vertx = vertx;
     this.uri = relativeURI;
+    this.ssl = ssl;
   }
 
   @Override
@@ -141,6 +144,21 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   public boolean isChunked() {
     synchronized (getLock()) {
       return chunked;
+    }
+  }
+
+  @Override
+  public HttpClientRequest setHost(String host) {
+    synchronized (getLock()) {
+      this.hostHeader = host;
+      return this;
+    }
+  }
+
+  @Override
+  public String getHost() {
+    synchronized (getLock()) {
+      return hostHeader;
     }
   }
 
@@ -671,13 +689,24 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     return headers != null && headers().contains(CONTENT_LENGTH);
   }
 
+  private String hostHeader() {
+    if (hostHeader != null) {
+      return hostHeader;
+    }
+    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
+      return host;
+    } else {
+      return host + ':' + port;
+    }
+  }
+
   private void writeHead() {
-    conn.writeHead(method, uri, headers, chunked);
+    conn.writeHead(method, uri, headers, hostHeader(), chunked);
     headWritten = true;
   }
 
   private void writeHeadWithContent(ByteBuf buf, boolean end) {
-    conn.writeHeadWithContent(method, uri, headers, chunked, buf, end);
+    conn.writeHeadWithContent(method, uri, headers, hostHeader(), chunked, buf, end);
     headWritten = true;
   }
 

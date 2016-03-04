@@ -166,16 +166,19 @@ class Http2Pool extends ConnectionManager.Pool {
     }
 
     @Override
-    public void writeHead(HttpMethod method, String uri, MultiMap headers, boolean chunked) {
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end) {
+    public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method.name());
       h.path(uri);
       h.scheme("https");
+      if (hostHeader != null) {
+        h.authority(hostHeader);
+      }
       if (headers != null && headers.size() > 0) {
         for (Map.Entry<String, String> header : headers) {
           h.add(Http2HeadersAdaptor.toLowerCase(header.getKey()), header.getValue());
@@ -199,10 +202,6 @@ class Http2Pool extends ConnectionManager.Pool {
         }
       }
       handlerCtx.flush();
-    }
-    @Override
-    public String hostHeader() {
-      throw new UnsupportedOperationException();
     }
     @Override
     public Context getContext() {

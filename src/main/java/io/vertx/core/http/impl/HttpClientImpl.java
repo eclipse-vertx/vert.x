@@ -683,7 +683,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(relativeURI, "no null relativeURI accepted");
     checkClosed();
-    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, relativeURI, vertx);
+    HttpClientRequest req = new HttpClientRequestImpl(this, method, host, port, options.isSsl(), relativeURI, vertx);
     if (headers != null) {
       req.headers().setAll(headers);
     }

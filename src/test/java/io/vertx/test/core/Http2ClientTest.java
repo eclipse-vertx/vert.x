@@ -63,6 +63,7 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals("https", req.scheme());
       assertEquals(HttpMethod.GET, req.method());
       assertEquals("/somepath", req.path());
+      assertEquals("localhost:4043", req.host());
       assertEquals("foo_request_value", req.getHeader("Foo_request"));
       assertEquals("bar_request_value", req.getHeader("bar_request"));
       assertEquals(2, req.headers().getAll("juu_request").size());
@@ -97,6 +98,21 @@ public class Http2ClientTest extends Http2TestBase {
         .putHeader("Foo_request", "foo_request_value")
         .putHeader("bar_request", "bar_request_value")
         .putHeader("juu_request", Arrays.<CharSequence>asList("juu_request_value_1", "juu_request_value_2"))
+        .exceptionHandler(err -> fail())
+        .end();
+    await();
+  }
+
+  @Test
+  public void testOverrideAuthority() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("localhost:4444", req.host());
+      testComplete();
+    });
+    startServer();
+    client.get(4043, "localhost", "/somepath", resp -> {
+    })
+        .setHost("localhost:4444")
         .exceptionHandler(err -> fail())
         .end();
     await();

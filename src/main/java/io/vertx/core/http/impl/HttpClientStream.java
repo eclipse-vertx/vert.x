@@ -27,10 +27,9 @@ import io.vertx.core.net.NetSocket;
  */
 interface HttpClientStream {
 
-  void writeHead(HttpMethod method, String uri, MultiMap headers, boolean chunked);
-  void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end);
+  void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked);
+  void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
-  String hostHeader();
   Context getContext();
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();

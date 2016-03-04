@@ -111,6 +111,19 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   String uri();
 
   /**
+   * Set the request host.<p/>
+   *
+   * For HTTP2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
+   */
+  @Fluent
+  HttpClientRequest setHost(String host);
+
+  /**
+   * @return the request host. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
+   */
+  String getHost();
+
+  /**
    * @return The HTTP headers
    */
   @CacheReturn

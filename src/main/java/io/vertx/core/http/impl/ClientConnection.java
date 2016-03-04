@@ -69,7 +69,6 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
 
   private final ConnectionManager manager;
   private final HttpClientImpl client;
-  private final String hostHeader;
   private final boolean ssl;
   private final String host;
   private final int port;
@@ -95,11 +94,6 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     this.ssl = ssl;
     this.host = host;
     this.port = port;
-    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
-      this.hostHeader = host;
-    } else {
-      this.hostHeader = host + ':' + port;
-    }
     this.listener = listener;
     this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
@@ -360,7 +354,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     return super.getContext();
   }
 
-  private HttpRequest createRequest(HttpVersion version, io.vertx.core.http.HttpMethod method, String uri, MultiMap headers) {
+  private HttpRequest createRequest(HttpVersion version, HttpMethod method, String uri, MultiMap headers) {
     DefaultHttpRequest request = new DefaultHttpRequest(UriUtils.toNettyHttpVersion(version), UriUtils.toNettyHttpMethod(method), uri, false);
     if (headers != null) {
       for (Map.Entry<String, String> header : headers) {
@@ -371,11 +365,11 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     return request;
   }
 
-  private void prepareHeaders(HttpRequest request, boolean chunked) {
+  private void prepareHeaders(HttpRequest request, String hostHeader, boolean chunked) {
     HttpHeaders headers = request.headers();
     headers.remove(TRANSFER_ENCODING);
     if (!headers.contains(HOST)) {
-      request.headers().set(HOST, hostHeader());
+      request.headers().set(HOST, hostHeader);
     }
     if (chunked) {
       HttpHeaders.setTransferEncodingChunked(request);
@@ -391,15 +385,15 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     }
   }
 
-  public void writeHead(HttpMethod method, String uri, MultiMap headers, boolean chunked) {
+  public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked) {
     HttpRequest request = createRequest(version, method, uri, headers);
-    prepareHeaders(request, chunked);
+    prepareHeaders(request, hostHeader, chunked);
     writeToChannel(request);
   }
 
-  public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, boolean chunked, ByteBuf buf, boolean end) {
+  public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
     HttpRequest request = createRequest(version, method, uri, headers);
-    prepareHeaders(request, chunked);
+    prepareHeaders(request, hostHeader, chunked);
     if (end) {
       writeToChannel(new AssembledFullHttpRequest(request, buf));
     } else {
@@ -444,10 +438,6 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     }
     currentRequest = null;
     listener.requestEnded(this);
-  }
-
-  public String hostHeader() {
-    return hostHeader;
   }
 
   @Override
