@@ -39,7 +39,13 @@ public class Recording {
 
   public void start() {
     error.reset();
-    System.setErr(new PrintStream(error));
+    System.setErr(new PrintStream(error) {
+      @Override
+      public void write(byte[] buf, int off, int len) {
+        System.out.println("FOO LOGGED " + new String(buf, off, len));
+        super.write(buf, off, len);
+      }
+    });
   }
 
   public void stop() {
