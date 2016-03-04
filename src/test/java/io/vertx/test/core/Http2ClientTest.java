@@ -33,6 +33,7 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetServerOptions;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -122,6 +123,24 @@ public class Http2ClientTest extends Http2TestBase {
         assertEquals(2, resp.trailers().getAll("juu").size());
         assertEquals("juu_value_1", resp.trailers().getAll("juu").get(0));
         assertEquals("juu_value_2", resp.trailers().getAll("juu").get(1));
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testBodyEndHandler() throws Exception {
+    // Large body so it will be fragmented in several HTTP2 data frames
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(128 * 1024));
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.end(expected);
+    });
+    startServer();
+    client.getNow(4043, "localhost", "/somepeth", resp -> {
+      resp.bodyHandler(body -> {
+        assertEquals(expected, body);
         testComplete();
       });
     });
