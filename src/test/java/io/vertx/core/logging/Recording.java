@@ -42,7 +42,7 @@ public class Recording {
     System.setErr(new PrintStream(error) {
       @Override
       public void write(byte[] buf, int off, int len) {
-        System.out.println("FOO LOGGED " + new String(buf, off, len));
+        System.out.println("Logged on System.err " + new String(buf, off, len));
         super.write(buf, off, len);
       }
     });
@@ -71,6 +71,7 @@ public class Recording {
 
   public String execute(Runnable runnable) {
     start();
+    System.err.print("verification message");
     runnable.run();
     String result = get();
     stop();
