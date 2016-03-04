@@ -172,9 +172,10 @@ class Http2Pool extends ConnectionManager.Pool {
       h.scheme("https");
       encoder.writeHeaders(handlerCtx, stream.id(), h, 0, end && buf == null, handlerCtx.newPromise());
       if (buf != null) {
-        encoder.writeData(handlerCtx, stream.id(), buf, 0, end, handlerCtx.newPromise());
+        writeBuffer(buf, end);
+      } else {
+        handlerCtx.flush();
       }
-      handlerCtx.flush();
     }
     @Override
     public void writeBuffer(ByteBuf buf, boolean end) {
