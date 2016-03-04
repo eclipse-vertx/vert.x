@@ -158,7 +158,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   public MultiMap headers() {
     synchronized (getLock()) {
       if (headers == null) {
-//        headers = new HeadersAdaptor(request.headers());
         headers = new CaseInsensitiveHeaders();
       }
       return headers;

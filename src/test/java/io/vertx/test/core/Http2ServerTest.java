@@ -365,10 +365,15 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals("https", req.getHeader(":scheme"));
       assertEquals("/", req.getHeader(":path"));
       assertEquals("GET", req.getHeader(":method"));
+      assertEquals("foo_request_value", req.getHeader("Foo_request"));
+      assertEquals("bar_request_value", req.getHeader("bar_request"));
+      assertEquals(2, req.headers().getAll("juu_request").size());
+      assertEquals("juu_request_value_1", req.headers().getAll("juu_request").get(0));
+      assertEquals("juu_request_value_2", req.headers().getAll("juu_request").get(1));
       resp.putHeader("content-type", "text/plain");
-      resp.putHeader("Foo", "foo_value");
-      resp.putHeader("bar", "bar_value");
-      resp.putHeader("juu", (List<String>)Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.putHeader("Foo_response", "foo_response_value");
+      resp.putHeader("bar_response", "bar_response_value");
+      resp.putHeader("juu_response", (List<String>)Arrays.asList("juu_response_value_1", "juu_response_value_2"));
       resp.end(expected);
     });
     startServer();
@@ -382,11 +387,11 @@ public class Http2ServerTest extends Http2TestBase {
             assertEquals(id, streamId);
             assertEquals("200", headers.status().toString());
             assertEquals("text/plain", headers.get("content-type").toString());
-            assertEquals("foo_value", headers.get("foo").toString());
-            assertEquals("bar_value", headers.get("bar").toString());
-            assertEquals(2, headers.getAll("juu").size());
-            assertEquals("juu_value_1", headers.getAll("juu").get(0).toString());
-            assertEquals("juu_value_2", headers.getAll("juu").get(1).toString());
+            assertEquals("foo_response_value", headers.get("foo_response").toString());
+            assertEquals("bar_response_value", headers.get("bar_response").toString());
+            assertEquals(2, headers.getAll("juu_response").size());
+            assertEquals("juu_response_value_1", headers.getAll("juu_response").get(0).toString());
+            assertEquals("juu_response_value_2", headers.getAll("juu_response").get(1).toString());
             assertFalse(endStream);
           });
         }
@@ -402,7 +407,11 @@ public class Http2ServerTest extends Http2TestBase {
           return super.onDataRead(ctx, streamId, data, padding, endOfStream);
         }
       });
-      request.encoder.writeHeaders(request.context, id, GET("/").authority("localhost:4043"), 0, true, request.context.newPromise());
+      Http2Headers headers = GET("/").authority("localhost:4043");
+      headers.set("foo_request", "foo_request_value");
+      headers.set("bar_request", "bar_request_value");
+      headers.set("juu_request", "juu_request_value_1", "juu_request_value_2");
+      request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

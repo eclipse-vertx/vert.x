@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public class Http2HeadersAdaptor implements MultiMap {
 
-  private static CharSequence toLowerCase(CharSequence s) {
+  static CharSequence toLowerCase(CharSequence s) {
     StringBuilder buffer = null;
     int len = s.length();
     for (int index = 0; index < len; index++) {

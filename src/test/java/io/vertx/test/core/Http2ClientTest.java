@@ -57,12 +57,17 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals("https", req.scheme());
       assertEquals(HttpMethod.GET, req.method());
       assertEquals("/somepath", req.path());
+      assertEquals("foo_request_value", req.getHeader("Foo_request"));
+      assertEquals("bar_request_value", req.getHeader("bar_request"));
+      assertEquals(2, req.headers().getAll("juu_request").size());
+      assertEquals("juu_request_value_1", req.headers().getAll("juu_request").get(0));
+      assertEquals("juu_request_value_2", req.headers().getAll("juu_request").get(1));
       reqCount.incrementAndGet();
       HttpServerResponse resp = req.response();
       resp.putHeader("content-type", "text/plain");
-      resp.putHeader("Foo", "foo_value");
-      resp.putHeader("bar", "bar_value");
-      resp.putHeader("juu", (List<String>) Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.putHeader("Foo_response", "foo_value");
+      resp.putHeader("bar_response", "bar_value");
+      resp.putHeader("juu_response", (List<String>) Arrays.asList("juu_value_1", "juu_value_2"));
       resp.end(expected);
     });
     startServer();
@@ -70,20 +75,24 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals(1, reqCount.get());
       assertEquals(HttpVersion.HTTP_2, resp.version());
       assertEquals("text/plain", resp.getHeader("content-type"));
-      assertEquals("foo_value", resp.getHeader("foo"));
-      assertEquals("bar_value", resp.getHeader("bar"));
-      assertEquals(2, resp.headers().getAll("juu").size());
-      assertEquals("juu_value_1", resp.headers().getAll("juu").get(0));
-      assertEquals("juu_value_2", resp.headers().getAll("juu").get(1));
+      assertEquals("200", resp.getHeader(":status"));
+      assertEquals("foo_value", resp.getHeader("foo_response"));
+      assertEquals("bar_value", resp.getHeader("bar_response"));
+      assertEquals(2, resp.headers().getAll("juu_response").size());
+      assertEquals("juu_value_1", resp.headers().getAll("juu_response").get(0));
+      assertEquals("juu_value_2", resp.headers().getAll("juu_response").get(1));
       Buffer content = Buffer.buffer();
       resp.handler(content::appendBuffer);
       resp.endHandler(v -> {
         assertEquals(expected, content.toString());
         testComplete();
       });
-    }).exceptionHandler(err -> {
-      fail();
-    }).end();
+    })
+        .putHeader("Foo_request", "foo_request_value")
+        .putHeader("bar_request", "bar_request_value")
+        .putHeader("juu_request", Arrays.<CharSequence>asList("juu_request_value_1", "juu_request_value_2"))
+        .exceptionHandler(err -> fail())
+        .end();
     await();
   }
 

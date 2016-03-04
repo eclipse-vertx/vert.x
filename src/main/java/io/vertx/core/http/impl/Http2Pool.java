@@ -46,6 +46,8 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -170,6 +172,11 @@ class Http2Pool extends ConnectionManager.Pool {
       h.method(method.name());
       h.path(uri);
       h.scheme("https");
+      if (headers.size() > 0) {
+        for (Map.Entry<String, String> header : headers) {
+          h.add(Http2HeadersAdaptor.toLowerCase(header.getKey()), header.getValue());
+        }
+      }
       encoder.writeHeaders(handlerCtx, stream.id(), h, 0, end && buf == null, handlerCtx.newPromise());
       if (buf != null) {
         writeBuffer(buf, end);
