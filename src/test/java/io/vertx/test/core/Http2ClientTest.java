@@ -18,17 +18,20 @@ package io.vertx.test.core;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
@@ -361,6 +364,57 @@ public class Http2ClientTest extends Http2TestBase {
     }).exceptionHandler(err -> {
       fail();
     }).end();
+    await();
+  }
+
+  @Test
+  public void testServerResetClientStreamDuringRequest() throws Exception {
+    String chunk = TestUtils.randomAlphaString(1024);
+    server.requestHandler(req -> {
+      req.handler(buf -> {
+        req.response().reset(8);
+      });
+    });
+    startServer();
+    client.post(4043, "localhost", "/somepath", resp -> {
+      fail();
+    }).exceptionHandler(err -> {
+      assertTrue(err instanceof StreamResetException);
+      StreamResetException reset = (StreamResetException) err;
+      assertEquals(8, reset.getCode());
+      testComplete();
+    }).setChunked(true).write(chunk);
+    await();
+  }
+
+  @Test
+  public void testServerResetClientStreamDuringResponse() throws Exception {
+    waitFor(2);
+    String chunk = TestUtils.randomAlphaString(1024);
+    Future<Void> doReset = Future.future();
+    server.requestHandler(req -> {
+      doReset.setHandler(onSuccess(v -> {
+        req.response().reset(8);
+      }));
+      req.response().setChunked(true).write(Buffer.buffer(chunk));
+    });
+    startServer();
+    Context ctx = vertx.getOrCreateContext();
+    Handler<Throwable> resetHandler = err -> {
+      assertOnIOContext(ctx);
+      assertTrue(err instanceof StreamResetException);
+      StreamResetException reset = (StreamResetException) err;
+      assertEquals(8, reset.getCode());
+      complete();
+    };
+    ctx.runOnContext(v -> {
+      client.post(4043, "localhost", "/somepath", resp -> {
+        resp.exceptionHandler(resetHandler);
+        resp.handler(buff -> {
+          doReset.complete();
+        });
+      }).exceptionHandler(resetHandler).setChunked(true).write(chunk);
+    });
     await();
   }
 }

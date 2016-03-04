@@ -476,6 +476,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     checkEnded();
     ended = true;
     encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
+    ctx.flush();
   }
 
   public HttpServerResponse promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {

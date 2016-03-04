@@ -28,17 +28,26 @@ import io.vertx.core.buffer.Buffer;
  *
  * todo:
  *
+ * HttpServer:
  * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
- * - close connection when server closes
  * - server synchronization + executeFromIO
  * - HttpServerRequest#remoteAddress
  * - HttpServerRequest#localAddress
  * - HttpServerRequest#peerCertificateChain
+ *
+ * HttpClient:
+ * - test executeFromIO
  * - metrics
+ * - push notifications
+ * - HttpConnection implementation
+ * - reset stream
+ *
+ * Both:
  * - byte distribution algorithm configurability (options ? connection ?)
  * - h2c
  * - http upgrade
- * - HttpClient
+ * - metrics
+ * - close connection when service closes
  *
  * not yet in scope:
  * - stream priority

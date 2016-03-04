@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
@@ -60,6 +61,16 @@ public class Http2TestBase extends HttpTestBase {
       server.listen(onSuccess(s -> latch.countDown()));
     });
     awaitLatch(latch);
+  }
+
+  protected void assertOnIOContext(Context context) {
+    assertEquals(context, Vertx.currentContext());
+    for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
+      if (elt.getMethodName().equals("executeFromIO")) {
+        return;
+      }
+    }
+    fail("Not from IO");
   }
 
   protected SSLContext createSSLContext() throws Exception {

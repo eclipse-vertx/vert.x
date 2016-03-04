@@ -98,16 +98,6 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  */
 public class Http2ServerTest extends Http2TestBase {
 
-  private void assertOnIOContext(Context context) {
-    assertEquals(context, Vertx.currentContext());
-    for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
-      if (elt.getMethodName().equals("executeFromIO")) {
-        return;
-      }
-    }
-    fail("Not from IO");
-  }
-
   private static Http2Headers headers(String method, String scheme, String path) {
     return new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
   }

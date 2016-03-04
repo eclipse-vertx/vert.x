@@ -43,6 +43,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 
@@ -158,6 +159,17 @@ class Http2Pool extends ConnectionManager.Pool {
         handleEnd();
       }
       return consumed;
+    }
+
+    void handleException(Throwable exception) {
+      context.executeFromIO(() -> {
+        req.handleException(exception);
+      });
+      if (resp != null) {
+        context.executeFromIO(() -> {
+          resp.handleException(exception);
+        });
+      }
     }
 
     private void handleEnd() {
@@ -319,6 +331,8 @@ class Http2Pool extends ConnectionManager.Pool {
 
     @Override
     public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
+      Http2ClientStream stream = streams.get(streamId);
+      stream.handleException(new StreamResetException(errorCode));
     }
 
     @Override
