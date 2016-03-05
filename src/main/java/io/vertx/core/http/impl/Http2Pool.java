@@ -102,7 +102,7 @@ class Http2Pool extends ConnectionManager.Pool {
 
   class Http2ClientStream implements HttpClientStream {
 
-    private final HttpClientRequestImpl req;
+    private final HttpClientRequestBase req;
     private final ContextImpl context;
     private final ChannelHandlerContext handlerCtx;
     private final Http2Connection conn;
@@ -228,7 +228,7 @@ class Http2Pool extends ConnectionManager.Pool {
     }
     @Override
     public void handleInterestedOpsChanged() {
-      req.handleDrained();
+      ((HttpClientRequestImpl)req).handleDrained();
     }
     @Override
     public void endRequest() {
