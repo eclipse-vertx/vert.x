@@ -23,6 +23,7 @@ import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2FrameAdapter;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -50,13 +51,57 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Http2ClientTest extends Http2TestBase {
 
+  HttpClientOptions clientOptions;
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    client = vertx.createHttpClient(new HttpClientOptions().
+    clientOptions = new HttpClientOptions().
         setUseAlpn(true).
         setTrustStoreOptions((JksOptions) getClientTrustOptions(Trust.JKS)).
-        setProtocolVersion(HttpVersion.HTTP_2));
+        setProtocolVersion(HttpVersion.HTTP_2);
+    client = vertx.createHttpClient(clientOptions);
+  }
+
+  @Test
+  public void testClientSettings() throws Exception {
+    Http2Settings initialSettings = randomSettings();
+//    Http2Settings updatedSettings = randomSettings();
+//    Future<Void> settingsRead = Future.future();
+    server.requestHandler(req -> {
+      io.vertx.core.http.Http2Settings settings = req.connection().clientSettings();
+      assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+      assertEquals(initialSettings.maxFrameSize(), settings.getMaxFrameSize());
+      assertEquals(initialSettings.initialWindowSize(), settings.getInitialWindowSize());
+      assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
+      assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
+/*
+      req.connection().clientSettingsHandler(update -> {
+        assertOnIOContext(ctx);
+        assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
+        assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
+        assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
+        assertEquals(updatedSettings.maxConcurrentStreams(), update.getMaxConcurrentStreams());
+        assertEquals((long) updatedSettings.headerTableSize(), (long) update.getHeaderTableSize());
+        testComplete();
+      });
+      settingsRead.complete();
+*/
+      testComplete();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setHttp2Settings(new io.vertx.core.http.Http2Settings().
+        setEnablePush(initialSettings.pushEnabled()).
+        setHeaderTableSize((int)(long)initialSettings.headerTableSize()).
+        setInitialWindowSize(initialSettings.initialWindowSize()).
+        setMaxConcurrentStreams(initialSettings.maxConcurrentStreams()).
+        setMaxFrameSize(initialSettings.maxFrameSize()).
+        setMaxHeaderListSize(initialSettings.maxHeaderListSize())));
+    client.getNow(4043, "localhost", "/somepath", resp -> {
+
+    });
+    await();
   }
 
   @Test

@@ -1279,6 +1279,7 @@ Set the default port to be used by this client in requests if none is provided w
 +++
 Add an enabled cipher suite
 +++
+|[[http2Settings]]`http2Settings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|-
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.

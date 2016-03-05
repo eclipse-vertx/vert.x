@@ -111,6 +111,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxChunkSize;
   private int maxWaitQueueSize;
   private HttpVersion alpnFallbackProtocolVersion;
+  private Http2Settings http2Settings;
 
   /**
    * Default constructor
@@ -139,6 +140,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxChunkSize = other.maxChunkSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
     this.alpnFallbackProtocolVersion = other.alpnFallbackProtocolVersion;
+    this.http2Settings = other.http2Settings != null ? new Http2Settings(other.http2Settings) : null;
   }
 
   /**
@@ -519,6 +521,15 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   public HttpClientOptions setAlpnFallbackProtocolVersion(HttpVersion alpnFallbackProtocolVersion) {
     this.alpnFallbackProtocolVersion = alpnFallbackProtocolVersion;
+    return this;
+  }
+
+  public Http2Settings getHttp2Settings() {
+    return http2Settings;
+  }
+
+  public HttpClientOptions setHttp2Settings(Http2Settings http2Settings) {
+    this.http2Settings = http2Settings;
     return this;
   }
 

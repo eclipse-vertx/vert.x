@@ -409,7 +409,27 @@ class Http2Pool extends ConnectionManager.Pool {
 
     public VertxClientHandler build(Http2Connection conn) {
       connection(conn);
-      initialSettings(new Http2Settings());
+      io.vertx.core.http.Http2Settings initialSettings = client.getOptions().getHttp2Settings();
+      if (initialSettings != null) {
+        if (initialSettings.getHeaderTableSize() != null) {
+          initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
+        }
+        if (initialSettings.getInitialWindowSize() != null) {
+          initialSettings().initialWindowSize(initialSettings.getInitialWindowSize());
+        }
+        if (initialSettings.getMaxConcurrentStreams() != null) {
+          initialSettings().maxConcurrentStreams(initialSettings.getMaxConcurrentStreams());
+        }
+        if (initialSettings.getMaxFrameSize() != null) {
+          initialSettings().maxFrameSize(initialSettings.getMaxFrameSize());
+        }
+        if (initialSettings.getMaxHeaderListSize() != null) {
+          initialSettings().maxHeaderListSize(initialSettings.getMaxHeaderListSize());
+        }
+        if (initialSettings.getEnablePush() != null) {
+          initialSettings().pushEnabled(initialSettings.getEnablePush());
+        }
+      }
       frameListener(new Http2EventAdapter() {
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
