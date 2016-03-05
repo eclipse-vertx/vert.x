@@ -16,6 +16,8 @@
 
 package io.vertx.test.core;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -407,6 +409,32 @@ public class Http2ClientTest extends Http2TestBase {
           doReset.complete();
         });
       }).exceptionHandler(resetHandler).setChunked(true).write(chunk);
+    });
+    await();
+  }
+
+  @Test
+  public void testClientResetServerStream() throws Exception {
+    Future<Void> bufReceived = Future.future();
+    server.requestHandler(req -> {
+      req.handler(buf -> {
+        bufReceived.complete();
+      });
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+      });
+      req.response().exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        assertEquals(10L, ((StreamResetException) err).getCode());
+        testComplete();
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.get(4043, "localhost", "/somepath", resp -> {
+      fail();
+    }).setChunked(true).write(Buffer.buffer("hello"));
+    bufReceived.setHandler(ar -> {
+      req.reset(10);
     });
     await();
   }

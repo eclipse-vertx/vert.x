@@ -342,6 +342,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return this;
   }
 
+  @Override
+  public void reset(long code) {
+    synchronized (getLock()) {
+      if (conn == null) {
+        throw new IllegalStateException("Cannot reset the request that is not yet connected");
+      }
+      conn.reset(code);
+    }
+  }
+
   void handleDrained() {
     synchronized (getLock()) {
       if (!completed && drainHandler != null) {

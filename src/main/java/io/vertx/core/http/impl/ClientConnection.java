@@ -354,6 +354,10 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     return super.getContext();
   }
 
+  public void reset(long code) {
+    throw new UnsupportedOperationException("HTTP/1.x request cannot be reset");
+  }
+
   private HttpRequest createRequest(HttpVersion version, HttpMethod method, String uri, MultiMap headers) {
     DefaultHttpRequest request = new DefaultHttpRequest(UriUtils.toNettyHttpVersion(version), UriUtils.toNettyHttpMethod(method), uri, false);
     if (headers != null) {

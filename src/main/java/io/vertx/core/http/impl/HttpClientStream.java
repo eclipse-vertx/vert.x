@@ -42,6 +42,8 @@ interface HttpClientStream {
   void doPause();
   void doResume();
 
+  void reset(long code);
+
   // Try to remove that ?
   void reportBytesWritten(long numberOfBytes);
   void reportBytesRead(long s);

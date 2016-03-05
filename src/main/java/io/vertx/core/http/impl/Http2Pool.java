@@ -264,6 +264,11 @@ class Http2Pool extends ConnectionManager.Pool {
       }
     }
     @Override
+    public void reset(long code) {
+      encoder.writeRstStream(handlerCtx, stream.id(), code, handlerCtx.newPromise());
+      handlerCtx.flush();
+    }
+    @Override
     public void reportBytesWritten(long numberOfBytes) {
     }
     @Override
@@ -365,7 +370,7 @@ class Http2Pool extends ConnectionManager.Pool {
       String uri = headers.path().toString();
       String host = headers.authority() != null ? headers.authority().toString() : null;
       MultiMap headersMap = new Http2HeadersAdaptor(headers);
-      HttpClientRequestPushPromise req = new HttpClientRequestPushPromise(client, method, uri, host, headersMap);
+      HttpClientRequestPushPromise req = new HttpClientRequestPushPromise(stream, client, method, uri, host, headersMap);
       Http2ClientStream newStream = new Http2ClientStream(req, context, handlerCtx, stream.conn, stream.encoder);
       streams.put(promisedStreamId, newStream);
       stream.handlePushPromise(req);

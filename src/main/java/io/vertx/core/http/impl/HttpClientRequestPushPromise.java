@@ -29,14 +29,22 @@ import io.vertx.core.http.HttpMethod;
  */
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
+  private final HttpClientStream conn;
   private final HttpMethod method;
   private final String uri;
   private final String host;
   private final MultiMap headers;
   private Handler<HttpClientResponse> respHandler;
 
-  public HttpClientRequestPushPromise(HttpClientImpl client, HttpMethod method, String uri, String host, MultiMap headers) {
+  public HttpClientRequestPushPromise(
+      HttpClientStream conn,
+      HttpClientImpl client,
+      HttpMethod method,
+      String uri,
+      String host,
+      MultiMap headers) {
     super(client);
+    this.conn = conn;
     this.method = method;
     this.uri = uri;
     this.host = host;
@@ -67,6 +75,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       respHandler = handler;
       return this;
     }
+  }
+
+  @Override
+  public void reset(long code) {
+    conn.reset(code);
   }
 
   @Override
