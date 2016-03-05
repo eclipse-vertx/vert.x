@@ -268,10 +268,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     synchronized (getLock()) {
       if (handler != null) {
         checkComplete();
-        this.exceptionHandler = t -> {
-          cancelOutstandingTimeoutTimer();
-          handler.handle(t);
-        };
+        this.exceptionHandler = handler;
       } else {
         this.exceptionHandler = null;
       }
@@ -392,7 +389,11 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
       exceptionOccurred = true;
-      getExceptionHandler().handle(t);
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(t);
+      } else {
+        log.error(t);
+      }
     }
   }
 
@@ -563,10 +564,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     };
   }
 
-  private Handler<Throwable> getExceptionHandler() {
-    return exceptionHandler != null ? exceptionHandler : log::error;
-  }
-
   private void cancelOutstandingTimeoutTimer() {
     if (currentTimeoutTimerId != -1) {
       client.getVertx().cancelTimer(currentTimeoutTimerId);
@@ -623,7 +620,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
           // Http2
           connected(conn);
         }
-      }, exceptionHandler, vertx.getContext(), () -> {
+      }, this::handleException, vertx.getContext(), () -> {
         // No need to synchronize as the thread is the same that set exceptionOccurred to true
         // exceptionOccurred=true getting the connection => it's a TimeoutException
         return exceptionOccurred;
