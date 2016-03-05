@@ -27,14 +27,11 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -47,9 +44,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientRequestImpl implements HttpClientRequest {
-
-  private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
+public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
   private final String host;
   private final int port;
@@ -65,7 +60,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private Handler<Void> continueHandler;
   private volatile HttpClientStream conn;
   private Handler<Void> drainHandler;
-  private Handler<Throwable> exceptionHandler;
   private boolean headWritten;
   private boolean completed;
   private ByteBuf pendingChunks;
@@ -73,14 +67,12 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   private boolean connecting;
   private boolean writeHead;
   private long written;
-  private long currentTimeoutTimerId = -1;
   private CaseInsensitiveHeaders headers;
-  private boolean exceptionOccurred;
-  private long lastDataReceived;
   private Object metric;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         boolean ssl, String relativeURI, VertxInternal vertx) {
+    super(client);
     this.host = host;
     this.port = port;
     this.client = client;
@@ -264,19 +256,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    synchronized (getLock()) {
-      if (handler != null) {
-        checkComplete();
-        this.exceptionHandler = handler;
-      } else {
-        this.exceptionHandler = null;
-      }
-      return this;
-    }
-  }
-
-  @Override
   public HttpClientRequest continueHandler(Handler<Void> handler) {
     synchronized (getLock()) {
       checkComplete();
@@ -339,15 +318,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   }
 
   @Override
-  public HttpClientRequest setTimeout(long timeoutMs) {
-    synchronized (getLock()) {
-      cancelOutstandingTimeoutTimer();
-      currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
-      return this;
-    }
-  }
-
-  @Override
   public HttpClientRequest putHeader(CharSequence name, CharSequence value) {
     synchronized (getLock()) {
       checkComplete();
@@ -365,14 +335,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  void dataReceived() {
-    synchronized (getLock()) {
-      if (currentTimeoutTimerId != -1) {
-        lastDataReceived = System.currentTimeMillis();
-      }
-    }
-  }
-
   void handleDrained() {
     synchronized (getLock()) {
       if (!completed && drainHandler != null) {
@@ -385,39 +347,17 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  void handleException(Throwable t) {
-    synchronized (getLock()) {
-      cancelOutstandingTimeoutTimer();
-      exceptionOccurred = true;
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(t);
-      } else {
-        log.error(t);
+  protected void doHandleResponse(HttpClientResponseImpl resp) {
+    if (resp.statusCode() == 100) {
+      if (continueHandler != null) {
+        continueHandler.handle(null);
       }
-    }
-  }
-
-  void handleResponse(HttpClientResponseImpl resp) {
-    synchronized (getLock()) {
-      // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-      if (!exceptionOccurred) {
-        cancelOutstandingTimeoutTimer();
-        try {
-          if (resp.statusCode() == 100) {
-            if (continueHandler != null) {
-              continueHandler.handle(null);
-            }
-          } else {
-            if (respHandler != null) {
-              respHandler.handle(resp);
-            }
-            if (endHandler != null) {
-              endHandler.handle(null);
-            }
-          }
-        } catch (Throwable t) {
-          handleException(t);
-        }
+    } else {
+      if (respHandler != null) {
+        respHandler.handle(resp);
+      }
+      if (endHandler != null) {
+        endHandler.handle(null);
       }
     }
   }
@@ -429,7 +369,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
   // After connecting we should synchronize on the client connection instance to prevent deadlock conditions
   // but there is a catch - the client connection is null before connecting so we synchronized on this before that
   // point
-  private Object getLock() {
+  protected Object getLock() {
     // We do the initial check outside the synchronized block to prevent the hit of synchronized once the conn has
     // been set
     if (conn != null) {
@@ -562,33 +502,6 @@ public class HttpClientRequestImpl implements HttpClientRequest {
       }
       responseHandler.handle(response);
     };
-  }
-
-  private void cancelOutstandingTimeoutTimer() {
-    if (currentTimeoutTimerId != -1) {
-      client.getVertx().cancelTimer(currentTimeoutTimerId);
-      currentTimeoutTimerId = -1;
-    }
-  }
-
-  private void handleTimeout(long timeoutMs) {
-    if (lastDataReceived == 0) {
-      timeout(timeoutMs);
-    } else {
-      long now = System.currentTimeMillis();
-      long timeSinceLastData = now - lastDataReceived;
-      if (timeSinceLastData >= timeoutMs) {
-        timeout(timeoutMs);
-      } else {
-        // reschedule
-        lastDataReceived = 0;
-        setTimeout(timeoutMs - timeSinceLastData);
-      }
-    }
-  }
-
-  private void timeout(long timeoutMs) {
-    handleException(new TimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded"));
   }
 
   private synchronized void connect() {
@@ -754,7 +667,7 @@ public class HttpClientRequestImpl implements HttpClientRequest {
     }
   }
 
-  private void checkComplete() {
+  protected void checkComplete() {
     if (completed) {
       throw new IllegalStateException("Request already complete");
     }
