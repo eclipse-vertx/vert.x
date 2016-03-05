@@ -16,6 +16,11 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -23,13 +28,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.impl.ContextImpl;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
-  private final HttpClientStream conn;
+  private final Http2Pool.Http2ClientStream clientStream;
   private final HttpMethod method;
   private final String uri;
   private final String host;
@@ -37,18 +43,26 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private Handler<HttpClientResponse> respHandler;
 
   public HttpClientRequestPushPromise(
-      HttpClientStream conn,
+      Http2Stream clientStream,
+      ContextImpl context,
+      ChannelHandlerContext handlerCtx,
+      Http2Connection conn,
+      Http2ConnectionEncoder encoder,
       HttpClientImpl client,
       HttpMethod method,
       String uri,
       String host,
-      MultiMap headers) {
+      MultiMap headers) throws Http2Exception {
     super(client);
-    this.conn = conn;
+    this.clientStream = new Http2Pool.Http2ClientStream(this, clientStream, context, handlerCtx, conn, encoder);
     this.method = method;
     this.uri = uri;
     this.host = host;
     this.headers = headers;
+  }
+
+  Http2Pool.Http2ClientStream getStream() {
+    return clientStream;
   }
 
   @Override
@@ -79,7 +93,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public void reset(long code) {
-    conn.reset(code);
+    clientStream.reset(code);
   }
 
   @Override

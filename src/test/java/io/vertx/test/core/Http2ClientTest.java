@@ -16,8 +16,13 @@
 
 package io.vertx.test.core;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2Error;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -464,6 +469,36 @@ public class Http2ClientTest extends Http2TestBase {
         resp.handler(content::appendBuffer);
         resp.endHandler(v -> {
           complete();
+        });
+      });
+    });
+    req.end();
+    await();
+  }
+
+  @Test
+  public void testResetActivePushPromise() throws Exception {
+    server.requestHandler(req -> {
+      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+        assertTrue(ar.succeeded());
+        HttpServerResponse response = ar.result();
+        response.exceptionHandler(err -> {
+          if (err instanceof StreamResetException) {
+            assertEquals(Http2Error.CANCEL.code(), ((StreamResetException) err).getCode());
+            testComplete();
+          }
+        });
+        response.setChunked(true).write("some_content");
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.get(4043, "localhost", "/somepath", resp -> {
+      fail();
+    });
+    req.pushPromiseHandler(pushedReq -> {
+      pushedReq.handler(pushedResp -> {
+        pushedResp.handler(buff -> {
+          pushedReq.reset(Http2Error.CANCEL.code());
         });
       });
     });

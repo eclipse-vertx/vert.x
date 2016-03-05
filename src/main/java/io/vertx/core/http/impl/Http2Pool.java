@@ -103,7 +103,7 @@ class Http2Pool extends ConnectionManager.Pool {
     // todo
   }
 
-  class Http2ClientStream implements HttpClientStream {
+  static class Http2ClientStream implements HttpClientStream {
 
     private final HttpClientRequestBase req;
     private final ContextImpl context;
@@ -116,6 +116,7 @@ class Http2Pool extends ConnectionManager.Pool {
     private int numBytes;
 
     public Http2ClientStream(HttpClientRequestBase req,
+                             Http2Stream stream,
                              ContextImpl context,
                              ChannelHandlerContext handlerCtx,
                              Http2Connection conn,
@@ -124,7 +125,7 @@ class Http2Pool extends ConnectionManager.Pool {
       this.req = req;
       this.handlerCtx = handlerCtx;
       this.conn = conn;
-      this.stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
+      this.stream = stream;
       this.encoder = encoder;
     }
 
@@ -312,9 +313,11 @@ class Http2Pool extends ConnectionManager.Pool {
 
     Http2ClientStream createStream(HttpClientRequestBase req) {
       try {
-        Http2ClientStream stream = new Http2ClientStream(req, context, handlerCtx, connection(), encoder());
-        streams.put(stream.stream.id(), stream);
-        return stream;
+        Http2Connection conn = connection();
+        Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
+        Http2ClientStream clientStream = new Http2ClientStream(req, stream, context, handlerCtx, conn, encoder());
+        streams.put(clientStream.stream.id(), clientStream);
+        return clientStream;
       } catch (Http2Exception e) {
         throw new UnsupportedOperationException("handle me gracefully", e);
       }
@@ -370,10 +373,10 @@ class Http2Pool extends ConnectionManager.Pool {
       String uri = headers.path().toString();
       String host = headers.authority() != null ? headers.authority().toString() : null;
       MultiMap headersMap = new Http2HeadersAdaptor(headers);
-      HttpClientRequestPushPromise req = new HttpClientRequestPushPromise(stream, client, method, uri, host, headersMap);
-      Http2ClientStream newStream = new Http2ClientStream(req, context, handlerCtx, stream.conn, stream.encoder);
-      streams.put(promisedStreamId, newStream);
-      stream.handlePushPromise(req);
+      Http2Stream promisedStream = connection().stream(promisedStreamId);
+      HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(promisedStream, context, handlerCtx, connection(), encoder(), client, method, uri, host, headersMap);
+      streams.put(promisedStreamId, promisedReq.getStream());
+      stream.handlePushPromise(promisedReq);
     }
 
     @Override
