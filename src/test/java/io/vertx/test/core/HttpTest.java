@@ -4157,6 +4157,32 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testResponseDataTimeout() {
+    Buffer expected = TestUtils.randomBuffer(1000);
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write(expected);
+    });
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
+      Buffer received = Buffer.buffer();
+      req.handler(resp -> {
+        req.setTimeout(500);
+        resp.handler(received::appendBuffer);
+      });
+      AtomicInteger count = new AtomicInteger();
+      req.exceptionHandler(t -> {
+        if (count.getAndIncrement() == 0) {
+          assertTrue(t instanceof TimeoutException);
+          assertEquals(expected, received);
+          testComplete();
+        }
+      });
+      req.sendHead();
+    }));
+    await();
+  }
+
+  @Test
   public void testServerOptionsCopiedBeforeUse() {
     server.close();
     HttpServerOptions options = new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT);
