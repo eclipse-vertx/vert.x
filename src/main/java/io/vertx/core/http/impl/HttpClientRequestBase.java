@@ -20,6 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.concurrent.TimeoutException;
 
@@ -35,6 +36,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private long lastDataReceived;
   protected boolean exceptionOccurred;
+  protected Object metric;
 
   HttpClientRequestBase(HttpClientImpl client) {
     this.client = client;
@@ -124,6 +126,13 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
       if (currentTimeoutTimerId != -1) {
         lastDataReceived = System.currentTimeMillis();
       }
+    }
+  }
+
+  void reportResponseEnd(HttpClientResponseImpl resp) {
+    HttpClientMetrics metrics = client.httpClientMetrics();
+    if (metrics.isEnabled()) {
+      metrics.responseEnd(metric, resp);
     }
   }
 }

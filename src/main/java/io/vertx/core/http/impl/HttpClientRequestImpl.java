@@ -28,7 +28,6 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.List;
 import java.util.Objects;
@@ -68,7 +67,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean writeHead;
   private long written;
   private CaseInsensitiveHeaders headers;
-  private Object metric;
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         boolean ssl, String relativeURI, VertxInternal vertx) {
@@ -586,14 +584,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     }
   }
-
-  void reportResponseEnd(HttpClientResponseImpl resp) {
-    HttpClientMetrics metrics = client.httpClientMetrics();
-    if (metrics.isEnabled()) {
-      metrics.responseEnd(metric, resp);
-    }
-  }
-
 
   private boolean contentLengthSet() {
     return headers != null && headers().contains(CONTENT_LENGTH);
