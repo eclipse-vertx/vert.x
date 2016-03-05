@@ -27,17 +27,18 @@ import io.vertx.core.net.NetSocket;
  */
 interface HttpClientStream {
 
+  Context getContext();
+
   void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked);
   void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
-  Context getContext();
-  void doSetWriteQueueMaxSize(int size);
-  boolean isNotWritable();
-  void handleInterestedOpsChanged();
 
   // Perhaps it's possible to remove this with writeBuffer(buf, true) instead
   void endRequest();
 
+  void doSetWriteQueueMaxSize(int size);
+  boolean isNotWritable();
+  void handleInterestedOpsChanged();
   void doPause();
   void doResume();
 
