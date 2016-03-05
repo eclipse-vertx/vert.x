@@ -59,6 +59,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> continueHandler;
   private volatile HttpClientStream conn;
   private Handler<Void> drainHandler;
+  private Handler<HttpClientRequest> pushHandler;
   private boolean headWritten;
   private boolean completed;
   private ByteBuf pendingChunks;
@@ -331,6 +332,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       headers().set(name, values);
       return this;
     }
+  }
+
+  @Override
+  public HttpClientRequest pushPromiseHandler(Handler<HttpClientRequest> handler) {
+    synchronized (getLock()) {
+      pushHandler = handler;
+    }
+    return this;
   }
 
   void handleDrained() {
@@ -666,6 +675,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private void checkResponseHandler() {
     if (respHandler == null) {
       throw new IllegalStateException("You must set an handler for the HttpClientResponse before connecting");
+    }
+  }
+
+  void handlePush(HttpClientRequest pushedRequest) {
+    synchronized (getLock()) {
+      if (pushHandler != null) {
+        pushHandler.handle(pushedRequest);
+      }
     }
   }
 }

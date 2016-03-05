@@ -175,7 +175,7 @@ public class ConnectionManager {
       this.address = address;
 
       if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-        pool = new Http2Pool(this);
+        pool = new Http2Pool(this, client);
       } else {
         pool = new Http1xPool(this);
       }

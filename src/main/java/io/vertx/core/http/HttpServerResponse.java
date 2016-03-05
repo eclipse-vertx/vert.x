@@ -398,7 +398,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+  HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
 
   /**
    * Reset this stream.

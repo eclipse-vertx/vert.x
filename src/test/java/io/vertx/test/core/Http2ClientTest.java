@@ -16,12 +16,6 @@
 
 package io.vertx.test.core;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2EventAdapter;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -33,7 +27,6 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import org.junit.Test;
 
@@ -415,6 +408,38 @@ public class Http2ClientTest extends Http2TestBase {
         });
       }).exceptionHandler(resetHandler).setChunked(true).write(chunk);
     });
+    await();
+  }
+
+  @Test
+  public void testPushPromise() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+        assertTrue(ar.succeeded());
+        HttpServerResponse response = ar.result();
+        response.end("the_content");
+      }).end();
+    });
+    startServer();
+    HttpClientRequest req = client.get(4043, "localhost", "/somepath", resp -> {
+      resp.endHandler(v -> {
+        complete();
+      });
+    });
+    req.pushPromiseHandler(pushedReq -> {
+      assertEquals(HttpMethod.GET, pushedReq.method());
+      assertEquals("/wibble", pushedReq.uri());
+      pushedReq.handler(resp -> {
+        assertEquals(200, resp.statusCode());
+        Buffer content = Buffer.buffer();
+        resp.handler(content::appendBuffer);
+        resp.endHandler(v -> {
+          complete();
+        });
+      });
+    });
+    req.end();
     await();
   }
 }

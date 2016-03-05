@@ -251,4 +251,28 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Fluent
   HttpClientRequest setTimeout(long timeoutMs);
 
+  /**
+   * Set a push promise handler for this request.<p/>
+   *
+   * The handler is called when the client receives a <i>push promise</i> from the server. The handler can be called
+   * multiple times, for each push promise.<p/>
+   *
+   * The handler is called with a <i>read-only</i> {@link HttpClientRequest}, the following methods can be called:<p/>
+   *
+   * <ul>
+   *   <li>{@link HttpClientRequest#method()}</li>
+   *   <li>{@link HttpClientRequest#uri()}</li>
+   *   <li>{@link HttpClientRequest#headers()}</li>
+   *   <li>{@link HttpClientRequest#getHost()}</li>
+   * </ul>
+   *
+   * In addition the handler should call the {@link HttpClientRequest#handler} method to set an handler for
+   * processing the response.<p/>
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest pushPromiseHandler(Handler<HttpClientRequest> handler);
+
 }

@@ -285,11 +285,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   public HttpMethod method() {
     if (method == null) {
       String sMethod = headers.method().toString();
-      try {
-        method = io.vertx.core.http.HttpMethod.valueOf(sMethod);
-      } catch (IllegalArgumentException e) {
-        method = HttpMethod.UNKNOWN;
-      }
+      method = UriUtils.toVertxMethod(sMethod);
     }
     return method;
   }

@@ -479,7 +479,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     ctx.flush();
   }
 
-  public HttpServerResponse promisePush(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+  public HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     if (push) {
       throw new IllegalStateException("A push response cannot promise another push");
     }

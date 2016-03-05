@@ -180,4 +180,12 @@ final class UriUtils {
         throw new IllegalArgumentException("Unsupported HTTP version: " + version);
     }
   }
+
+  static io.vertx.core.http.HttpMethod toVertxMethod(String method) {
+    try {
+      return io.vertx.core.http.HttpMethod.valueOf(method);
+    } catch (IllegalArgumentException e) {
+      return io.vertx.core.http.HttpMethod.UNKNOWN;
+    }
+  }
 }

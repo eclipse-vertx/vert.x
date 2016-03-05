@@ -47,6 +47,7 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 
+import java.util.ArrayDeque;
 import java.util.Map;
 
 /**
@@ -55,9 +56,11 @@ import java.util.Map;
 class Http2Pool extends ConnectionManager.Pool {
 
   private VertxClientHandler clientHandler;
+  private HttpClientImpl client;
 
-  public Http2Pool(ConnectionManager.ConnQueue queue) {
+  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client) {
     super(queue, 1);
+    this.client = client;
   }
 
   public boolean getConnection(HttpClientRequestImpl req, Handler<HttpClientStream> handler, ContextImpl context) {
@@ -112,7 +115,7 @@ class Http2Pool extends ConnectionManager.Pool {
     private boolean paused;
     private int numBytes;
 
-    public Http2ClientStream(HttpClientRequestImpl req,
+    public Http2ClientStream(HttpClientRequestBase req,
                              ContextImpl context,
                              ChannelHandlerContext handlerCtx,
                              Http2Connection conn,
@@ -175,6 +178,10 @@ class Http2Pool extends ConnectionManager.Pool {
     private void handleEnd() {
       // Should use an shared immutable object ?
       resp.handleEnd(new CaseInsensitiveHeaders());
+    }
+
+    void handlePushPromise(HttpClientRequestBase promised) throws Http2Exception {
+      ((HttpClientRequestImpl)req).handlePush(promised);
     }
 
     @Override
@@ -298,7 +305,7 @@ class Http2Pool extends ConnectionManager.Pool {
       handler.handle(stream);
     }
 
-    Http2ClientStream createStream(HttpClientRequestImpl req) {
+    Http2ClientStream createStream(HttpClientRequestBase req) {
       try {
         Http2ClientStream stream = new Http2ClientStream(req, context, handlerCtx, connection(), encoder());
         streams.put(stream.stream.id(), stream);
@@ -353,6 +360,15 @@ class Http2Pool extends ConnectionManager.Pool {
 
     @Override
     public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+      Http2ClientStream stream = streams.get(streamId);
+      HttpMethod method = UriUtils.toVertxMethod(headers.method().toString());
+      String uri = headers.path().toString();
+      String host = headers.authority() != null ? headers.authority().toString() : null;
+      MultiMap headersMap = new Http2HeadersAdaptor(headers);
+      HttpClientRequestPushPromise req = new HttpClientRequestPushPromise(client, method, uri, host, headersMap);
+      Http2ClientStream newStream = new Http2ClientStream(req, context, handlerCtx, stream.conn, stream.encoder);
+      streams.put(promisedStreamId, newStream);
+      stream.handlePushPromise(req);
     }
 
     @Override
