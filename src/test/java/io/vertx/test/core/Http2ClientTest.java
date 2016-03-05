@@ -550,4 +550,25 @@ public class Http2ClientTest extends Http2TestBase {
     req.end();
     await();
   }
+
+  @Test
+  public void testResetPendingPushPromise() throws Exception {
+    server.requestHandler(req -> {
+      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+        assertFalse(ar.succeeded());
+        testComplete();
+      });
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setHttp2Settings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(0L)));
+    HttpClientRequest req = client.get(4043, "localhost", "/somepath", resp -> {
+      fail();
+    });
+    req.pushPromiseHandler(pushedReq -> {
+      pushedReq.reset(Http2Error.CANCEL.code());
+    });
+    req.end();
+    await();
+  }
 }
