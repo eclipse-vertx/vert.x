@@ -340,6 +340,52 @@ public class FutureTest extends VertxTestBase {
     assertSucceeded(f2, 46);
   }
 
+  @Test
+  public void testDefaultCompleter() {
+    AsyncResult<Object> succeededAsyncResult = new AsyncResult<Object>() {
+      Object result = new Object();
+      public Object result() { return result; }
+      public Throwable cause() { throw new UnsupportedOperationException(); }
+      public boolean succeeded() { return true; }
+      public boolean failed() { throw new UnsupportedOperationException(); }
+    };
+
+    AsyncResult<Object> failedAsyncResult = new AsyncResult<Object>() {
+      Throwable cause = new Throwable();
+      public Object result() { throw new UnsupportedOperationException(); }
+      public Throwable cause() { return cause; }
+      public boolean succeeded() { return false; }
+      public boolean failed() { throw new UnsupportedOperationException(); }
+    };
+
+    class DefaultCompleterTestFuture<T> implements Future<T> {
+      boolean succeeded;
+      boolean failed;
+      T result;
+      Throwable cause;
+      public boolean isComplete() { throw new UnsupportedOperationException(); }
+      public Future<T> setHandler(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
+      public void complete(T result) { succeeded = true; this.result = result; }
+      public void complete() { throw new UnsupportedOperationException(); }
+      public void fail(Throwable throwable) { failed = true; cause = throwable; }
+      public void fail(String failureMessage) { throw new UnsupportedOperationException(); }
+      public T result() { throw new UnsupportedOperationException(); }
+      public Throwable cause() { throw new UnsupportedOperationException(); }
+      public boolean succeeded() { throw new UnsupportedOperationException(); }
+      public boolean failed() { throw new UnsupportedOperationException(); }
+    }
+
+    DefaultCompleterTestFuture<Object> successFuture = new DefaultCompleterTestFuture<>();
+    successFuture.completer().handle(succeededAsyncResult);
+    assertTrue(successFuture.succeeded);
+    assertEquals(succeededAsyncResult.result(), successFuture.result);
+
+    DefaultCompleterTestFuture<Object> failureFuture = new DefaultCompleterTestFuture<>();
+    failureFuture.completer().handle(failedAsyncResult);
+    assertTrue(failureFuture.failed);
+    assertEquals(failedAsyncResult.cause(), failureFuture.cause);
+  }
+
   private <T> void assertSucceeded(Future<T> future, T expected) {
     assertTrue(future.isComplete());
     assertTrue(future.succeeded());
