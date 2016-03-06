@@ -155,6 +155,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
       });
     }
     encoder().writeGoAway(context, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, context.newPromise());
+    context.flush();
     return this;
   }
 

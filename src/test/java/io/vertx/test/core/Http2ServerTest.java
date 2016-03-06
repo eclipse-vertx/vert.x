@@ -1357,6 +1357,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testGoAway() throws Exception {
+    waitFor(2);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
     AtomicInteger closed = new AtomicInteger();
@@ -1390,7 +1391,7 @@ public class Http2ServerTest extends Http2TestBase {
           vertx.setTimer(300, timerID -> {
             assertEquals(1, status.getAndIncrement());
             done.set(true);
-            testComplete();
+            complete();
           });
         });
       }
@@ -1400,7 +1401,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testGoAwayClose() throws Exception {
-    waitFor(2);
+    waitFor(3);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
     AtomicInteger closed = new AtomicInteger();
@@ -1437,6 +1438,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testShutdownWithTimeout() throws Exception {
+    waitFor(2);
     AtomicInteger closed = new AtomicInteger();
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
@@ -1460,7 +1462,7 @@ public class Http2ServerTest extends Http2TestBase {
         conn.closeHandler(v -> {
           assertEquals(2, closed.get());
           assertEquals(1, status.getAndIncrement());
-          testComplete();
+          complete();
         });
         conn.shutdown(300);
       }
@@ -1470,6 +1472,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testShutdown() throws Exception {
+    waitFor(2);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
     Handler<HttpServerRequest> requestHandler = req -> {
@@ -1491,7 +1494,7 @@ public class Http2ServerTest extends Http2TestBase {
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
           assertEquals(2, status.getAndIncrement());
-          testComplete();
+          complete();
         });
         conn.shutdown();
         vertx.setTimer(300, timerID -> {
@@ -1509,12 +1512,21 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            complete();
+          });
+        }
+      });
       Http2ConnectionEncoder encoder = request.encoder;
       int id1 = request.nextStreamId();
       encoder.writeHeaders(request.context, id1, GET("/"), 0, true, request.context.newPromise());
       int id2 = request.nextStreamId();
       encoder.writeHeaders(request.context, id2, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
+
     });
     fut.sync();
     await();
