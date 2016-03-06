@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.net.NetSocket;
 
@@ -49,4 +50,5 @@ interface HttpClientStream {
   void reportBytesRead(long s);
 
   NetSocket createNetSocket();
+  HttpConnection connection();
 }

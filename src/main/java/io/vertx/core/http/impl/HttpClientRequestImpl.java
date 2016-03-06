@@ -25,6 +25,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
@@ -349,6 +350,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         throw new IllegalStateException("Cannot reset the request that is not yet connected");
       }
       conn.reset(code);
+    }
+  }
+
+  @Override
+  public HttpConnection connection() {
+    synchronized (getLock()) {
+      if (conn == null) {
+        throw new IllegalStateException("Not yet connected");
+      }
+      return conn.connection();
     }
   }
 

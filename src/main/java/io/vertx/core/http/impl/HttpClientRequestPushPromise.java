@@ -27,6 +27,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.ContextImpl;
 
@@ -35,6 +36,7 @@ import io.vertx.core.impl.ContextImpl;
  */
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
+  private final Http2Pool.VertxClientHandler handler;
   private final Http2Pool.Http2ClientStream clientStream;
   private final HttpMethod method;
   private final String uri;
@@ -43,18 +45,16 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private Handler<HttpClientResponse> respHandler;
 
   public HttpClientRequestPushPromise(
+      Http2Pool.VertxClientHandler handler,
       Http2Stream clientStream,
-      ContextImpl context,
-      ChannelHandlerContext handlerCtx,
-      Http2Connection conn,
-      Http2ConnectionEncoder encoder,
       HttpClientImpl client,
       HttpMethod method,
       String uri,
       String host,
       MultiMap headers) throws Http2Exception {
     super(client);
-    this.clientStream = new Http2Pool.Http2ClientStream(this, clientStream, context, handlerCtx, conn, encoder);
+    this.handler = handler;
+    this.clientStream = new Http2Pool.Http2ClientStream(handler, this, clientStream);
     this.method = method;
     this.uri = uri;
     this.host = host;
@@ -89,6 +89,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       respHandler = handler;
       return this;
     }
+  }
+
+  @Override
+  public HttpConnection connection() {
+    return handler;
   }
 
   @Override

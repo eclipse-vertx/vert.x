@@ -282,4 +282,9 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    */
   void reset(long code);
 
+  /**
+   * @return the http connection associated with this request
+   */
+  @CacheReturn
+  HttpConnection connection();
 }

@@ -36,18 +36,19 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 
-import java.util.ArrayDeque;
 import java.util.Map;
 
 /**
@@ -105,6 +106,7 @@ class Http2Pool extends ConnectionManager.Pool {
 
   static class Http2ClientStream implements HttpClientStream {
 
+    private final VertxClientHandler handler;
     private final HttpClientRequestBase req;
     private final ContextImpl context;
     private final ChannelHandlerContext handlerCtx;
@@ -115,18 +117,16 @@ class Http2Pool extends ConnectionManager.Pool {
     private boolean paused;
     private int numBytes;
 
-    public Http2ClientStream(HttpClientRequestBase req,
-                             Http2Stream stream,
-                             ContextImpl context,
-                             ChannelHandlerContext handlerCtx,
-                             Http2Connection conn,
-                             Http2ConnectionEncoder encoder) throws Http2Exception {
-      this.context = context;
+    public Http2ClientStream(VertxClientHandler handler,
+                             HttpClientRequestBase req,
+                             Http2Stream stream) throws Http2Exception {
+      this.handler = handler;
+      this.context = handler.context;
       this.req = req;
-      this.handlerCtx = handlerCtx;
-      this.conn = conn;
+      this.handlerCtx = handler.handlerCtx;
+      this.conn = handler.connection();
       this.stream = stream;
-      this.encoder = encoder;
+      this.encoder = handler.encoder();
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
@@ -279,9 +279,14 @@ class Http2Pool extends ConnectionManager.Pool {
     public NetSocket createNetSocket() {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public HttpConnection connection() {
+      return handler;
+    }
   }
 
-  class VertxClientHandler extends Http2ConnectionHandler implements Http2FrameListener {
+  class VertxClientHandler extends Http2ConnectionHandler implements Http2FrameListener, HttpConnection {
 
     private final ChannelHandlerContext handlerCtx;
     private final ContextImpl context;
@@ -306,6 +311,66 @@ class Http2Pool extends ConnectionManager.Pool {
       this.context = context;
     }
 
+    @Override
+    public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData, Handler<Void> completionHandler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HttpConnection shutdown() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HttpConnection shutdown(long timeout) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HttpConnection closeHandler(Handler<Void> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public io.vertx.core.http.Http2Settings settings() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public io.vertx.core.http.Http2Settings remoteSettings() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HttpConnection exceptionHandler(Handler<Throwable> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Handler<Throwable> exceptionHandler() {
+      throw new UnsupportedOperationException();
+    }
+
     void handle(Handler<HttpClientStream> handler, HttpClientRequestImpl req) {
       Http2ClientStream stream = createStream(req);
       handler.handle(stream);
@@ -315,7 +380,7 @@ class Http2Pool extends ConnectionManager.Pool {
       try {
         Http2Connection conn = connection();
         Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
-        Http2ClientStream clientStream = new Http2ClientStream(req, stream, context, handlerCtx, conn, encoder());
+        Http2ClientStream clientStream = new Http2ClientStream(this, req, stream);
         streams.put(clientStream.stream.id(), clientStream);
         return clientStream;
       } catch (Http2Exception e) {
@@ -374,7 +439,7 @@ class Http2Pool extends ConnectionManager.Pool {
       String host = headers.authority() != null ? headers.authority().toString() : null;
       MultiMap headersMap = new Http2HeadersAdaptor(headers);
       Http2Stream promisedStream = connection().stream(promisedStreamId);
-      HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(promisedStream, context, handlerCtx, connection(), encoder(), client, method, uri, host, headersMap);
+      HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(this, promisedStream, client, method, uri, host, headersMap);
       streams.put(promisedStreamId, promisedReq.getStream());
       stream.handlePushPromise(promisedReq);
     }

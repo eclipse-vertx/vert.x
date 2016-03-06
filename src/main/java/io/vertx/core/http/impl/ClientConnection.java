@@ -498,4 +498,9 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     });
     return socket;
   }
+
+  @Override
+  public HttpConnection connection() {
+    return null;
+  }
 }
