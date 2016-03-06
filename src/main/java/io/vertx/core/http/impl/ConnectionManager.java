@@ -58,7 +58,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BooleanSupplier;
 
 /**
  *
@@ -88,10 +87,9 @@ public class ConnectionManager {
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
   }
 
-  public void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
-                            ContextImpl context, BooleanSupplier canceled) {
+  public void getConnection(int port, String host, Waiter waiter) {
     if (!keepAlive && pipelining) {
-      connectionExceptionHandler.handle(new IllegalStateException("Cannot have pipelining with no keep alive"));
+      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
       TargetAddress address = new TargetAddress(host, port);
       ConnQueue connQueue = connQueues.get(address);
@@ -102,7 +100,7 @@ public class ConnectionManager {
           connQueue = prev;
         }
       }
-      connQueue.getConnection(req, handler, connectionExceptionHandler, context, canceled);
+      connQueue.getConnection(waiter);
     }
   }
 
@@ -147,23 +145,6 @@ public class ConnectionManager {
     }
   }
 
-  static class Waiter {
-    final HttpClientRequestImpl req;
-    final Handler<HttpClientStream> handler;
-    final Handler<Throwable> connectionExceptionHandler;
-    final ContextImpl context;
-    final BooleanSupplier canceled;
-
-    private Waiter(HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler, ContextImpl context,
-                   BooleanSupplier canceled) {
-      this.req = req;
-      this.handler = handler;
-      this.connectionExceptionHandler = connectionExceptionHandler;
-      this.context = context;
-      this.canceled = canceled;
-    }
-  }
-
   public class ConnQueue {
 
     private final TargetAddress address;
@@ -182,20 +163,19 @@ public class ConnectionManager {
 
     }
 
-    public synchronized void getConnection(HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
-                                           ContextImpl context, BooleanSupplier canceled) {
-      boolean served = pool.getConnection(req, handler, context);
+    public synchronized void getConnection(Waiter waiter) {
+      boolean served = pool.getConnection(waiter);
       if (!served) {
         if (connCount == pool.maxSockets) {
           // Wait in queue
           if (maxWaitQueueSize < 0 || waiters.size() < maxWaitQueueSize) {
-            waiters.add(new Waiter(req, handler, connectionExceptionHandler, context, canceled));
+            waiters.add(waiter);
           } else {
-            connectionExceptionHandler.handle(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
+            waiter.handleFailure(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaitQueueSize));
           }
         } else {
           // Create a new connection
-          createNewConnection(req, handler, connectionExceptionHandler, context);
+          createNewConnection(waiter);
         }
       }
     }
@@ -204,26 +184,17 @@ public class ConnectionManager {
       pool.closeAllConnections();
     }
 
-    private void createNewConnection(
-        HttpClientRequestImpl req,
-        Handler<HttpClientStream> connectHandler,
-        Handler<Throwable> connectionExceptionHandler,
-        ContextImpl context) {
+    private void createNewConnection(Waiter waiter) {
       connCount++;
-      internalConnect(address.host, address.port, req, conn -> {
-        if (conn instanceof ClientConnection) {
-          // Moved in 1xPool
-        } else {
-          // Todo in the other pool ???
-        }
-        connectHandler.handle(conn);
-      }, connectionExceptionHandler, context);
+      internalConnect(address.host, address.port, waiter);
     }
 
+    /**
+     * @return the next non-canceled waiters in the queue
+     */
     Waiter getNextWaiter() {
-      // See if there are any non-canceled waiters in the queue
       Waiter waiter = waiters.poll();
-      while (waiter != null && waiter.canceled.getAsBoolean()) {
+      while (waiter != null && waiter.isCancelled()) {
         waiter = waiters.poll();
       }
       return waiter;
@@ -235,20 +206,20 @@ public class ConnectionManager {
       Waiter waiter = getNextWaiter();
       if (waiter != null) {
         // There's a waiter - so it can have a new connection
-        createNewConnection(waiter.req, waiter.handler, waiter.connectionExceptionHandler, waiter.context);
+        createNewConnection(waiter);
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         connQueues.remove(address);
       }
     }
 
-    protected void internalConnect(String host, int port, HttpClientRequestImpl req, Handler<HttpClientStream> connectHandler, Handler<Throwable> connectErrorHandler, ContextImpl clientContext) {
+    protected void internalConnect(String host, int port, Waiter waiter) {
       ContextImpl context;
-      if (clientContext == null) {
+      if (waiter.context == null) {
         // Embedded
         context = vertx.getOrCreateContext();
       } else {
-        context = clientContext;
+        context = waiter.context;
       }
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
@@ -281,7 +252,7 @@ public class ConnectionManager {
               @Override
               protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
                 if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-                  http2Connected(ctx, context, port, host, ch, req, connectHandler, connectErrorHandler);
+                  http2Connected(ctx, context, port, host, ch, waiter);
                 } else {
                   // Fallback
                   // change the pool to Http1xPool
@@ -289,7 +260,7 @@ public class ConnectionManager {
                     pool = new Http1xPool(ConnQueue.this);
                   }
                   applyHttp1xConnectionOptions(pipeline, context);
-                  http1xConnected(fallbackVersion, context, port, host, ch, connectHandler, connectErrorHandler);
+                  http1xConnected(fallbackVersion, context, port, host, ch, waiter);
                 }
               }
             });
@@ -315,34 +286,32 @@ public class ConnectionManager {
               io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
               fut.addListener(fut2 -> {
                 if (fut2.isSuccess()) {
-                  http1xConnected(options.getProtocolVersion(), context, port, host, ch, connectHandler, connectErrorHandler);
+                  http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
                 } else {
                   SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
                   Optional.ofNullable(fut2.cause()).ifPresent(sslException::initCause);
-                  connectionFailed(context, ch, connectErrorHandler, sslException);
+                  connectionFailed(context, ch, waiter::handleFailure, sslException);
                 }
               });
             } else {
-              http1xConnected(options.getProtocolVersion(), context, port, host, ch, connectHandler, connectErrorHandler);
+              http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
             }
           }
         } else {
-          connectionFailed(context, ch, connectErrorHandler, channelFuture.cause());
+          connectionFailed(context, ch, waiter::handleFailure, channelFuture.cause());
         }
       });
     }
 
-    private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Handler<HttpClientStream> connectHandler,
-                                 Handler<Throwable> exceptionHandler) {
+    private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
-          ((Http1xPool)pool).createConn(version, context, port, host, ch, connectHandler, exceptionHandler)
+          ((Http1xPool)pool).createConn(version, context, port, host, ch, waiter)
       );
     }
 
-    private void http2Connected(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, HttpClientRequestImpl req, Handler<HttpClientStream> connectHandler,
-                                Handler<Throwable> exceptionHandler) {
+    private void http2Connected(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
-          ((Http2Pool)pool).createConn(handlerCtx, context, port, host, ch, req, connectHandler, exceptionHandler)
+          ((Http2Pool)pool).createConn(handlerCtx, context, port, host, ch, waiter)
       );
     }
 
@@ -379,9 +348,29 @@ public class ConnectionManager {
       this.maxSockets = maxSockets;
     }
 
-    abstract boolean getConnection(HttpClientRequestImpl req, Handler<HttpClientStream> handler, ContextImpl context);
+    abstract boolean getConnection(Waiter waiter);
 
     abstract void closeAllConnections();
+
+    abstract void recycle(HttpClientStream stream);
+
+    /**
+     * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
+     *
+     * @param conn the connection
+     */
+    void deliverConnection(HttpClientStream conn, Waiter waiter) {
+      if (conn.isClosed()) {
+        // The connection has been closed - closed connections can be in the pool
+        // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
+        // that is done asynchronously in the connection closeHandler()
+        queue.getConnection(waiter);
+      } else if (waiter.isCancelled()) {
+        recycle(conn);
+      } else {
+        waiter.handleSuccess(conn);
+      }
+    }
   }
 
   public class Http1xPool extends Pool {
@@ -393,23 +382,28 @@ public class ConnectionManager {
       super(queue, client.getOptions().getMaxPoolSize());
     }
 
-    public boolean getConnection(HttpClientRequestImpl req, Handler<HttpClientStream> handler, ContextImpl context) {
+    public boolean getConnection(Waiter waiter) {
       ClientConnection conn = availableConnections.poll();
       if (conn != null && !conn.isClosed()) {
+        ContextImpl context = waiter.context;
         if (context == null) {
           context = conn.getContext();
         } else if (context != conn.getContext()) {
           log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
         }
-        context.runOnContext(v -> handler.handle(conn));
+        context.runOnContext(v -> deliverConnection(conn, waiter));
         return true;
       } else {
         return false;
       }
     }
 
+    void recycle(HttpClientStream stream) {
+      recycle((ClientConnection) stream);
+    }
+
     // Called when the request has ended
-    public void requestEnded(ClientConnection conn) {
+    public void recycle(ClientConnection conn) {
       synchronized (queue) {
         if (pipelining) {
           // Maybe the connection can be reused
@@ -419,7 +413,7 @@ public class ConnectionManager {
             if (context == null) {
               context = conn.getContext();
             }
-            context.runOnContext(v -> waiter.handler.handle(conn));
+            context.runOnContext(v -> deliverConnection(conn, waiter));
           }
         }
       }
@@ -436,7 +430,7 @@ public class ConnectionManager {
               if (context == null) {
                 context = conn.getContext();
               }
-              context.runOnContext(v -> waiter.handler.handle(conn));
+              context.runOnContext(v -> deliverConnection(conn, waiter));
             } else if (conn.getOutstandingRequestCount() == 0) {
               // Return to set of available from here to not return it several times
               availableConnections.add(conn);
@@ -449,9 +443,8 @@ public class ConnectionManager {
       }
     }
 
-    private void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Handler<HttpClientStream> connectHandler,
-                            Handler<Throwable> exceptionHandler) {
-      ClientConnection conn = new ClientConnection(version, ConnectionManager.this, vertx, client, exceptionHandler, ch,
+    private void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
+      ClientConnection conn = new ClientConnection(version, ConnectionManager.this, vertx, client, waiter::handleFailure, ch,
           options.isSsl(), host, port, context, this, client.metrics);
       conn.closeHandler(v -> {
         // The connection has been closed - tell the pool about it, this allows the pool to create more
@@ -463,7 +456,7 @@ public class ConnectionManager {
         allConnections.add(conn);
       }
       connectionMap.put(ch, conn);
-      connectHandler.handle(conn);
+      deliverConnection(conn, waiter);
     }
 
     // Called if the connection is actually closed, OR the connection attempt failed - in the latter case

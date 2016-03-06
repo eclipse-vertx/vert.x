@@ -34,7 +34,7 @@ interface HttpClientStream {
   void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
 
-  // Perhaps it's possible to remove this with writeBuffer(buf, true) instead
+  void beginRequest(HttpClientRequestImpl request);
   void endRequest();
 
   void doSetWriteQueueMaxSize(int size);
@@ -51,4 +51,6 @@ interface HttpClientStream {
 
   NetSocket createNetSocket();
   HttpConnection connection();
+
+  boolean isClosed();
 }

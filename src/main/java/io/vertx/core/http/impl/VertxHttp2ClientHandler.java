@@ -23,16 +23,12 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
-import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -88,9 +84,9 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
     throw new UnsupportedOperationException();
   }
 
-  void handle(Handler<HttpClientStream> handler, HttpClientRequestImpl req) {
-    Http2ClientStream stream = createStream(req);
-    handler.handle(stream);
+  void handle(Waiter waiter) {
+    Http2ClientStream stream = createStream(waiter.req);
+    waiter.handleSuccess(stream);
   }
 
   Http2ClientStream createStream(HttpClientRequestBase req) {
@@ -280,6 +276,9 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
       ((HttpClientRequestImpl)req).handleDrained();
     }
     @Override
+    public void beginRequest(HttpClientRequestImpl request) {
+    }
+    @Override
     public void endRequest() {
     }
     @Override
@@ -324,6 +323,12 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
     @Override
     public HttpConnection connection() {
       return handler;
+    }
+
+    @Override
+    public boolean isClosed() {
+      // Todo
+      return false;
     }
   }
 }

@@ -16,7 +16,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -25,10 +24,7 @@ import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2EventAdapter;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Settings;
-import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 
 /**
@@ -44,15 +40,16 @@ class Http2Pool extends ConnectionManager.Pool {
     this.client = client;
   }
 
-  public boolean getConnection(HttpClientRequestImpl req, Handler<HttpClientStream> handler, ContextImpl context) {
+  public boolean getConnection(Waiter waiter) {
     if (clientHandler != null) {
+      ContextImpl context = waiter.context;
       if (context == null) {
         context = clientHandler.context;
       } else if (context != clientHandler.context) {
         ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
       }
       context.runOnContext(v -> {
-        clientHandler.handle(handler, req);
+        clientHandler.handle(waiter);
       });
       return true;
     } else {
@@ -60,8 +57,7 @@ class Http2Pool extends ConnectionManager.Pool {
     }
   }
 
-  void createConn(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, HttpClientRequestImpl req, Handler<HttpClientStream> connectHandler,
-                          Handler<Throwable> exceptionHandler) {
+  void createConn(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
     ChannelPipeline p = ch.pipeline();
     Http2Connection connection = new DefaultHttp2Connection(false);
     VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(handlerCtx, context, ch);
@@ -70,13 +66,17 @@ class Http2Pool extends ConnectionManager.Pool {
       handler.decoder().frameListener(handler);
       clientHandler = handler;
       p.addLast(handler);
-      handler.handle(connectHandler, req);
+      handler.handle(waiter);
       // Todo :  limit according to the max concurrency of the stream
-      ConnectionManager.Waiter waiter;
       while ((waiter = queue.getNextWaiter()) != null) {
-        handler.handle(waiter.handler, waiter.req);
+        handler.handle(waiter);
       }
     }
+  }
+
+  @Override
+  void recycle(HttpClientStream stream) {
+    // todo
   }
 
   @Override

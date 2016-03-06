@@ -534,44 +534,44 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private synchronized void connect() {
     if (!connecting) {
+
+      Waiter waiter = new Waiter(this, vertx.getContext()) {
+
+        @Override
+        void handleFailure(Throwable failure) {
+          handleException(failure);
+        }
+
+        @Override
+        void handleSuccess(HttpClientStream conn) {
+          connected(conn);
+        }
+
+        @Override
+        boolean isCancelled() {
+          // No need to synchronize as the thread is the same that set exceptionOccurred to true
+          // exceptionOccurred=true getting the connection => it's a TimeoutException
+          return exceptionOccurred;
+        }
+      };
+
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnection(port, host, this, conn -> {
-        // Not awesome but will do for now
-        if (conn instanceof ClientConnection) {
-          ClientConnection http1Conn = (ClientConnection) conn;
-          synchronized (this) {
-            if (exceptionOccurred) {
-              // The request already timed out before it has left the pool waiter queue
-              // So return it
-              http1Conn.close();
-            } else if (!http1Conn.isClosed()) {
-              http1Conn.setCurrentRequest(this);
-              this.metric = client.httpClientMetrics().requestBegin(http1Conn.metric(), http1Conn.localAddress(), http1Conn.remoteAddress(), this);
-              connected(conn);
-            } else {
-              // The connection has been closed - closed connections can be in the pool
-              // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
-              // that is done asynchronously in the connection closeHandler()
-              connect();
-            }
-          }
-        } else {
-          // Http2
-          connected(conn);
-        }
-      }, this::handleException, vertx.getContext(), () -> {
-        // No need to synchronize as the thread is the same that set exceptionOccurred to true
-        // exceptionOccurred=true getting the connection => it's a TimeoutException
-        return exceptionOccurred;
-      });
-
+      client.getConnection(port, host, waiter);
       connecting = true;
     }
   }
 
-  private void connected(HttpClientStream conn) {
+  private synchronized void connected(HttpClientStream conn) {
+
+    conn.beginRequest(this);
+
+    if (conn instanceof ClientConnection) {
+      ClientConnection http1Conn = (ClientConnection) conn;
+      this.metric = client.httpClientMetrics().requestBegin(http1Conn.metric(), http1Conn.localAddress(), http1Conn.remoteAddress(), this);
+    }
+
     this.conn = conn;
 
     // If anything was written or the request ended before we got the connection, then

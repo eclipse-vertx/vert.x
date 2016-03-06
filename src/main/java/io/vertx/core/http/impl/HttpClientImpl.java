@@ -36,7 +36,6 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
-import java.util.function.BooleanSupplier;
 
 /**
  *
@@ -643,15 +642,25 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
                      ContextImpl context) {
-    connectionManager.getConnection(port, host, null, conn -> {
-      // Use some variance for this
-      handler.handle((ClientConnection) conn);
-    }, connectionExceptionHandler, context, () -> false);
+    connectionManager.getConnection(port, host, new Waiter(null, context) {
+      @Override
+      void handleSuccess(HttpClientStream conn) {
+        // Use some variance for this
+        handler.handle((ClientConnection) conn);
+      }
+      @Override
+      void handleFailure(Throwable failure) {
+        connectionExceptionHandler.handle(failure);
+      }
+      @Override
+      boolean isCancelled() {
+        return false;
+      }
+    });
   }
 
-  void getConnection(int port, String host, HttpClientRequestImpl req, Handler<HttpClientStream> handler, Handler<Throwable> connectionExceptionHandler,
-                     ContextImpl context, BooleanSupplier canceled) {
-    connectionManager.getConnection(port, host, req, handler, connectionExceptionHandler, context, canceled);
+  void getConnection(int port, String host, Waiter waiter) {
+    connectionManager.getConnection(port, host, waiter);
   }
 
   /**

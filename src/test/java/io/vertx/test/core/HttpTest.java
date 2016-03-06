@@ -24,6 +24,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HeadersAdaptor;
+import io.vertx.core.http.impl.HttpClientRequestImpl;
 import io.vertx.core.impl.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -36,6 +37,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
+import java.io.Closeable;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -5271,5 +5277,45 @@ public class HttpTest extends HttpTestBase {
     }).end();
 
     await();
+  }
+
+  @Test
+  public void testRecyclePipelinedConnection() throws Exception {
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    CountDownLatch doneLatch = new CountDownLatch(2);
+    List<String> responses = new ArrayList<>();
+    server.requestHandler(req-> {
+      responses.add(req.path());
+      req.response().end();
+      doneLatch.countDown();
+    });
+    server.listen(onSuccess(s -> {
+      listenLatch.countDown();
+    }));
+    awaitLatch(listenLatch);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
+    CountDownLatch respLatch = new CountDownLatch(2);
+    HttpClientRequestImpl req = (HttpClientRequestImpl) client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
+      fail();
+    });
+    req.handleException(new Throwable()); // Simulate the connection timed out
+    req.end(); // When connected, the connection should be recycled
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/second", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.endHandler(v -> {
+        respLatch.countDown();
+      });
+    }).exceptionHandler(this::fail).end();
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/third", resp -> {
+      assertEquals(200, resp.statusCode());
+      resp.endHandler(v -> {
+        respLatch.countDown();
+      });
+    }).exceptionHandler(this::fail).end();
+    awaitLatch(doneLatch);
+    assertEquals(Arrays.asList("/second", "/third"), responses);
+    awaitLatch(respLatch);
+    server.close();
   }
 }

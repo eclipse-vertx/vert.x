@@ -254,7 +254,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     this.closeHandler = handler;
   }
 
-  boolean isClosed() {
+  public boolean isClosed() {
     return !channel.isOpen();
   }
 
@@ -428,7 +428,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     }
   }
 
-  synchronized void setCurrentRequest(HttpClientRequestImpl req) {
+  public synchronized void beginRequest(HttpClientRequestImpl req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }
@@ -441,7 +441,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
       throw new IllegalStateException("No write in progress");
     }
     currentRequest = null;
-    listener.requestEnded(this);
+    listener.recycle(this);
   }
 
   @Override

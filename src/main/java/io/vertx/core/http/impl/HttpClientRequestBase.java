@@ -68,7 +68,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     }
   }
 
-  void handleException(Throwable t) {
+  public void handleException(Throwable t) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
       exceptionOccurred = true;
