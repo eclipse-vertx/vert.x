@@ -79,57 +79,12 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
   }
 
   @Override
-  public HttpConnection shutdown() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpConnection shutdown(long timeout) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpConnection closeHandler(Handler<Void> handler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public io.vertx.core.http.Http2Settings settings() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public io.vertx.core.http.Http2Settings remoteSettings() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler() {
+  public Handler<Throwable> exceptionHandler() {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public HttpConnection exceptionHandler(Handler<Throwable> handler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Handler<Throwable> exceptionHandler() {
     throw new UnsupportedOperationException();
   }
 
