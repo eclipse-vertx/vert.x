@@ -16,9 +16,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
@@ -29,15 +26,14 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.impl.ContextImpl;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
-  private final Http2Pool.VertxClientHandler handler;
-  private final Http2Pool.Http2ClientStream clientStream;
+  private final VertxHttp2ClientHandler handler;
+  private final VertxHttp2ClientHandler.Http2ClientStream clientStream;
   private final HttpMethod method;
   private final String uri;
   private final String host;
@@ -45,7 +41,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private Handler<HttpClientResponse> respHandler;
 
   public HttpClientRequestPushPromise(
-      Http2Pool.VertxClientHandler handler,
+      VertxHttp2ClientHandler handler,
       Http2Stream clientStream,
       HttpClientImpl client,
       HttpMethod method,
@@ -54,14 +50,14 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       MultiMap headers) throws Http2Exception {
     super(client);
     this.handler = handler;
-    this.clientStream = new Http2Pool.Http2ClientStream(handler, this, clientStream);
+    this.clientStream = new VertxHttp2ClientHandler.Http2ClientStream(handler, this, clientStream);
     this.method = method;
     this.uri = uri;
     this.host = host;
     this.headers = headers;
   }
 
-  Http2Pool.Http2ClientStream getStream() {
+  VertxHttp2ClientHandler.Http2ClientStream getStream() {
     return clientStream;
   }
 
