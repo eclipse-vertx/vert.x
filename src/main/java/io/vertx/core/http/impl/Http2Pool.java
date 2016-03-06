@@ -64,7 +64,7 @@ class Http2Pool extends ConnectionManager.Pool {
                           Handler<Throwable> exceptionHandler) {
     ChannelPipeline p = ch.pipeline();
     Http2Connection connection = new DefaultHttp2Connection(false);
-    VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(handlerCtx, context);
+    VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(handlerCtx, context, ch);
     synchronized (queue) {
       VertxHttp2ClientHandler handler = clientHandlerBuilder.build(connection);
       handler.decoder().frameListener(handler);
@@ -88,15 +88,17 @@ class Http2Pool extends ConnectionManager.Pool {
 
     private final ChannelHandlerContext handlerCtx;
     private final ContextImpl context;
+    private final Channel channel;
 
-    public VertxClientHandlerBuilder(ChannelHandlerContext handlerCtx, ContextImpl context) {
+    public VertxClientHandlerBuilder(ChannelHandlerContext handlerCtx, ContextImpl context, Channel channel) {
       this.handlerCtx = handlerCtx;
       this.context = context;
+      this.channel = channel;
     }
 
     @Override
     protected VertxHttp2ClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-      return new VertxHttp2ClientHandler(Http2Pool.this, handlerCtx, context, decoder, encoder, initialSettings);
+      return new VertxHttp2ClientHandler(Http2Pool.this, handlerCtx, context, channel, decoder, encoder, initialSettings);
     }
 
     public VertxHttp2ClientHandler build(Http2Connection conn) {

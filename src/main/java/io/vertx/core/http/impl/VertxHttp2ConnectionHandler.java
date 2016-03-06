@@ -25,6 +25,7 @@ import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -106,7 +107,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
   @Override
   public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId,
-                                Http2Headers headers, int padding) {
+                                Http2Headers headers, int padding) throws Http2Exception {
   }
 
   @Override

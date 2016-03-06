@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
@@ -49,7 +50,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ClientHandler extends Http2ConnectionHandler implements Http2FrameListener, HttpConnection {
+class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
 
   final Http2Pool http2Pool;
   final ChannelHandlerContext handlerCtx;
@@ -59,10 +60,11 @@ class VertxHttp2ClientHandler extends Http2ConnectionHandler implements Http2Fra
   public VertxHttp2ClientHandler(Http2Pool http2Pool,
                                  ChannelHandlerContext handlerCtx,
                                  ContextImpl context,
+                                 Channel channel,
                                  Http2ConnectionDecoder decoder,
                                  Http2ConnectionEncoder encoder,
                                  Http2Settings initialSettings) {
-    super(decoder, encoder, initialSettings);
+    super(handlerCtx, channel, context, decoder, encoder, initialSettings);
     this.http2Pool = http2Pool;
 
     encoder.flowController().listener(stream -> {
@@ -181,22 +183,6 @@ class VertxHttp2ClientHandler extends Http2ConnectionHandler implements Http2Fra
   }
 
   @Override
-  public void onSettingsAckRead(ChannelHandlerContext ctx) throws Http2Exception {
-  }
-
-  @Override
-  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
-  }
-
-  @Override
-  public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
-  }
-
-  @Override
-  public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
-  }
-
-  @Override
   public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
     Http2ClientStream stream = streams.get(streamId);
     HttpMethod method = UriUtils.toVertxMethod(headers.method().toString());
@@ -207,18 +193,6 @@ class VertxHttp2ClientHandler extends Http2ConnectionHandler implements Http2Fra
     HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, method, uri, host, headersMap);
     streams.put(promisedStreamId, promisedReq.getStream());
     stream.handlePushPromise(promisedReq);
-  }
-
-  @Override
-  public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
-  }
-
-  @Override
-  public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
-  }
-
-  @Override
-  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) throws Http2Exception {
   }
 
   static class Http2ClientStream implements HttpClientStream {
