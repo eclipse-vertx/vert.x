@@ -18,6 +18,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -76,14 +77,6 @@ public interface HttpConnection {
   }
 
   /**
-   * Like {@link #goAway(long, int, Buffer, Handler)}.
-   */
-  @Fluent
-  default HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
-    return goAway(errorCode, lastStreamId, debugData, null);
-  }
-
-  /**
    * Send a go away frame to the remote endpoint of the connection.<p/>
    *
    * <ul>
@@ -95,11 +88,28 @@ public interface HttpConnection {
    * @param errorCode the {@literal GOAWAY} error code
    * @param lastStreamId the last stream id
    * @param debugData additional debug data sent to the remote endpoint
-   * @param completionHandler the handler notified when all stream have been closed
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData, Handler<Void> completionHandler);
+  HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData);
+
+  /**
+   * Set an handler called when a {@literal GOAWAY} frame is received.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler);
+
+  /**
+   * Set an handler called when a {@literal GOAWAY} frame has been sent or received and all connections are closed.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
    * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
@@ -127,6 +137,11 @@ public interface HttpConnection {
    */
   @Fluent
   HttpConnection closeHandler(Handler<Void> handler);
+
+  /**
+   * Close the connection. A {@literal GOAWAY} frame will be sent.<p/>
+   */
+  void close();
 
   /**
    * @return the latest server settings acknowledged by the remote endpoint

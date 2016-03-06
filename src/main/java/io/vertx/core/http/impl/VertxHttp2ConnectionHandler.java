@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
@@ -31,14 +32,13 @@ import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.util.collection.IntObjectHashMap;
-import io.netty.util.collection.IntObjectMap;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextImpl;
 
@@ -52,19 +52,52 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   private final ChannelHandlerContext context;
   private final Channel channel;
   private final ContextImpl handlerContext;
-  private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   private Handler<Void> closeHandler;
-  private boolean shuttingDown;
+  private boolean shuttingdown;
+  private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
   private Http2Settings clientSettings = new Http2Settings();
   private final ArrayDeque<Runnable> updateSettingsHandler = new ArrayDeque<>(4);
   private Http2Settings serverSettings = new Http2Settings();
-//  private Handler<Throwable> exceptionHandler;
+  private Handler<GoAway> goAwayHandler;
+  private Handler<Void> shutdownHandler;
 
   public VertxHttp2ConnectionHandler(
       ChannelHandlerContext context, Channel channel, ContextImpl handlerContext,
       Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
+
+    connection().addListener(new Http2ConnectionAdapter() {
+      @Override
+      public void onStreamClosed(Http2Stream stream) {
+        checkShutdownHandler();
+      }
+      @Override
+      public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+        Handler<GoAway> handler = goAwayHandler;
+        if (handler != null) {
+          Buffer buffer = Buffer.buffer(debugData);
+          handlerContext.executeFromIO(() -> {
+            handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
+          });
+        }
+        checkShutdownHandler();
+      }
+      void checkShutdownHandler() {
+        if (!shutdown) {
+          Http2Connection conn = connection();
+          if ((conn.goAwayReceived() || conn.goAwaySent()) && conn.numActiveStreams() == 0) {
+            shutdown  = true;
+            Handler<Void> handler = shutdownHandler;
+            if (handler != null) {
+              handlerContext.executeFromIO(() -> {
+                shutdownHandler.handle(null);
+              });
+            }
+          }
+        }
+      }
+    });
 
     this.channel = channel;
     this.context = context;
@@ -134,28 +167,27 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   }
 
   @Override
-  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData, Handler<Void> completionHandler) {
+  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
     if (errorCode < 0) {
       throw new IllegalArgumentException();
     }
     if (lastStreamId < 0) {
       throw new IllegalArgumentException();
     }
-    if (completionHandler != null) {
-      Context completionContext = handlerContext.owner().getOrCreateContext();
-      connection().addListener(new Http2ConnectionAdapter() {
-        @Override
-        public void onStreamClosed(Http2Stream stream) {
-          if (connection().numActiveStreams() == 0) {
-            completionContext.runOnContext(v -> {
-              completionHandler.handle(null);
-            });
-          }
-        }
-      });
-    }
     encoder().writeGoAway(context, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, context.newPromise());
     context.flush();
+    return this;
+  }
+
+  @Override
+  public HttpConnection goAwayHandler(Handler<GoAway> handler) {
+    goAwayHandler = handler;
+    return this;
+  }
+
+  @Override
+  public HttpConnection shutdownHandler(Handler<Void> handler) {
+    shutdownHandler = handler;
     return this;
   }
 
@@ -173,16 +205,12 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   }
 
   private HttpConnection shutdown(Long timeout) {
-    if (!shuttingDown) {
-      shuttingDown = true;
-      goAway(0, 2^31 - 1, null, v -> {
-        context.close();
-      });
+    if (!shuttingdown) {
+      shuttingdown = true;
       if (timeout != null) {
-        handlerContext.owner().setTimer(timeout, timerID -> {
-          context.close();
-        });
+        gracefulShutdownTimeoutMillis(timeout);
       }
+      channel.close();
     }
     return this;
   }
@@ -191,6 +219,11 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   public HttpConnection closeHandler(Handler<Void> handler) {
     closeHandler = handler;
     return this;
+  }
+
+  @Override
+  public void close() {
+    shutdown((Long)0L);
   }
 
   @Override

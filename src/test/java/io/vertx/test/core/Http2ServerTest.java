@@ -1356,7 +1356,7 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testGoAway() throws Exception {
+  public void testServerSendGoAwayNoError() throws Exception {
     waitFor(2);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
@@ -1380,14 +1380,14 @@ public class Http2ServerTest extends Http2TestBase {
           closed.incrementAndGet();
         });
         HttpConnection conn = req.connection();
+        conn.shutdownHandler(v -> {
+          assertTrue(done.get());
+        });
         conn.closeHandler(v -> {
           assertTrue(done.get());
         });
         ctx.runOnContext(v1 -> {
-          conn.goAway(0, first.get().response().streamId(), null, v2 -> {
-            assertSame(ctx, Vertx.currentContext());
-            assertTrue(done.get());
-          });
+          conn.goAway(0, first.get().response().streamId());
           vertx.setTimer(300, timerID -> {
             assertEquals(1, status.getAndIncrement());
             done.set(true);
@@ -1396,11 +1396,11 @@ public class Http2ServerTest extends Http2TestBase {
         });
       }
     };
-    testGoAway(requestHandler);
+    testServerSendGoAway(requestHandler, 0);
   }
 
   @Test
-  public void testGoAwayClose() throws Exception {
+  public void testServerSendGoAwayInteralError() throws Exception {
     waitFor(3);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
@@ -1427,13 +1427,14 @@ public class Http2ServerTest extends Http2TestBase {
           assertEquals(1, status.get());
           complete();
         });
-        conn.goAway(3, first.get().response().streamId(), null, v -> {
+        conn.shutdownHandler(v -> {
           assertEquals(1, status.get());
           complete();
         });
+        conn.goAway(2, first.get().response().streamId());
       }
     };
-    testGoAway(requestHandler);
+    testServerSendGoAway(requestHandler, 2);
   }
 
   @Test
@@ -1467,7 +1468,7 @@ public class Http2ServerTest extends Http2TestBase {
         conn.shutdown(300);
       }
     };
-    testGoAway(requestHandler);
+    testServerSendGoAway(requestHandler, 0);
   }
 
   @Test
@@ -1504,10 +1505,10 @@ public class Http2ServerTest extends Http2TestBase {
         });
       }
     };
-    testGoAway(requestHandler);
+    testServerSendGoAway(requestHandler, 0);
   }
 
-  private void testGoAway(Handler<HttpServerRequest> requestHandler) throws Exception {
+  private void testServerSendGoAway(Handler<HttpServerRequest> requestHandler, int expectedError) throws Exception {
     server.requestHandler(requestHandler);
     startServer();
     TestClient client = new TestClient();
@@ -1516,6 +1517,7 @@ public class Http2ServerTest extends Http2TestBase {
         @Override
         public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
           vertx.runOnContext(v -> {
+            assertEquals(expectedError, errorCode);
             complete();
           });
         }
@@ -1527,6 +1529,131 @@ public class Http2ServerTest extends Http2TestBase {
       encoder.writeHeaders(request.context, id2, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
 
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testServerClose() throws Exception {
+    waitFor(2);
+    AtomicInteger status = new AtomicInteger();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      HttpConnection conn = req.connection();
+      conn.shutdownHandler(v -> {
+        assertEquals(0, status.getAndIncrement());
+      });
+      conn.closeHandler(v -> {
+        assertEquals(1, status.getAndIncrement());
+        complete();
+      });
+      conn.close();
+    };
+    server.requestHandler(requestHandler);
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      request.channel.closeFuture().addListener(v1 -> {
+        vertx.runOnContext(v2 -> {
+          complete();
+        });
+      });
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(0, errorCode);
+          });
+        }
+      });
+      Http2ConnectionEncoder encoder = request.encoder;
+      int id = request.nextStreamId();
+      encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testClientSendGoAwayNoError() throws Exception {
+    Future<Void> abc = Future.future();
+    Context ctx = vertx.getOrCreateContext();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      HttpConnection conn = req.connection();
+      AtomicInteger numShutdown = new AtomicInteger();
+      AtomicBoolean completed = new AtomicBoolean();
+      conn.shutdownHandler(v -> {
+        assertOnIOContext(ctx);
+        numShutdown.getAndIncrement();
+        vertx.setTimer(100, timerID -> {
+          // Delay so we can check the connection is not closed
+          completed.set(true);
+          testComplete();
+        });
+      });
+      conn.goAwayHandler(ga -> {
+        assertOnIOContext(ctx);
+        assertEquals(0, numShutdown.get());
+        req.response().end();
+      });
+      conn.closeHandler(v -> {
+        assertTrue(completed.get());
+      });
+      abc.complete();
+    };
+    server.requestHandler(requestHandler);
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      Http2ConnectionEncoder encoder = request.encoder;
+      int id = request.nextStreamId();
+      encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+      abc.setHandler(ar -> {
+        encoder.writeGoAway(request.context, id, 0, Unpooled.EMPTY_BUFFER, request.context.newPromise());
+        request.context.flush();
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testClientSendGoAwayInternalError() throws Exception {
+    Future<Void> abc = Future.future();
+    Context ctx = vertx.getOrCreateContext();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      HttpConnection conn = req.connection();
+      AtomicInteger status = new AtomicInteger();
+      conn.goAwayHandler(ga -> {
+        assertOnIOContext(ctx);
+        assertEquals(0, status.getAndIncrement());
+        req.response().end();
+      });
+      conn.shutdownHandler(v -> {
+        assertOnIOContext(ctx);
+        assertEquals(1, status.getAndIncrement());
+      });
+      conn.closeHandler(v -> {
+        assertEquals(2, status.getAndIncrement());
+        testComplete();
+      });
+      abc.complete();
+    };
+    server.requestHandler(requestHandler);
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      Http2ConnectionEncoder encoder = request.encoder;
+      int id = request.nextStreamId();
+      encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+      abc.setHandler(ar -> {
+        encoder.writeGoAway(request.context, id, 3, Unpooled.EMPTY_BUFFER, request.context.newPromise());
+        request.context.flush();
+      });
     });
     fut.sync();
     await();

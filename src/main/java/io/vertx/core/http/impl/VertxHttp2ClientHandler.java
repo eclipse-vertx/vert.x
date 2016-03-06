@@ -79,11 +79,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
   }
 
   @Override
-  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData, Handler<Void> completionHandler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public HttpConnection shutdown() {
     throw new UnsupportedOperationException();
   }
