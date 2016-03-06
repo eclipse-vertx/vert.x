@@ -65,7 +65,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   private static final Object END = new Object(); // Marker
 
   private final Vertx vertx;
-  private final VertxHttp2Handler connection;
+  private final VertxHttp2ServerHandler connection;
   private final String serverOrigin;
   private final ChannelHandlerContext ctx;
   private final Http2Connection conn;
@@ -94,7 +94,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   public Http2ServerRequestImpl(
       Vertx vertx,
-      VertxHttp2Handler connection,
+      VertxHttp2ServerHandler connection,
       String serverOrigin,
       Http2Connection conn,
       Http2Stream stream,
