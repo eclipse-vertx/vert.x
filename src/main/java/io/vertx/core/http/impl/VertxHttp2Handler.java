@@ -248,7 +248,7 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
     clientSettings.putAll(settings);
     if (clientSettingsHandler != null) {
       handlerContext.executeFromIO(() -> {
-        clientSettingsHandler.handle(clientSettings());
+        clientSettingsHandler.handle(remoteSettings());
       });
     }
   }
@@ -429,18 +429,18 @@ public class VertxHttp2Handler extends Http2ConnectionHandler implements Http2Fr
   }
 
   @Override
-  public HttpConnection clientSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
+  public HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
     clientSettingsHandler = handler;
     return this;
   }
 
   @Override
-  public Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler() {
+  public Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler() {
     return clientSettingsHandler;
   }
 
   @Override
-  public io.vertx.core.http.Http2Settings clientSettings() {
+  public io.vertx.core.http.Http2Settings remoteSettings() {
     return toVertxSettings(clientSettings);
   }
 

@@ -83,17 +83,17 @@ public interface HttpConnection {
   }
 
   /**
-   * Send a go away frame to the client.<p/>
+   * Send a go away frame to the remote endpoint of the connection.<p/>
    *
    * <ul>
-   *   <li>a {@literal GOAWAY} frame is sent to the to the client with the {@code errorCode} and {@@code debugData}</li>
+   *   <li>a {@literal GOAWAY} frame is sent to the to the remote endpoint with the {@code errorCode} and {@@code debugData}</li>
    *   <li>any stream created after the stream identified by {@code lastStreamId} will be closed</li>
    *   <li>for an {@literal errorCode} is different than {@literal 0} when all the remaining streams are closed this connection will be closed automatically</li>
    * </ul>
    *
    * @param errorCode the {@literal GOAWAY} error code
    * @param lastStreamId the last stream id
-   * @param debugData additional debug data sent to the client
+   * @param debugData additional debug data sent to the remote endpoint
    * @param completionHandler the handler notified when all stream have been closed
    * @return a reference to this, so the API can be used fluently
    */
@@ -128,12 +128,12 @@ public interface HttpConnection {
   HttpConnection closeHandler(Handler<Void> handler);
 
   /**
-   * @return the latest server settings acknowledged by the client
+   * @return the latest server settings acknowledged by the remote endpoint
    */
   Http2Settings settings();
 
   /**
-   * Send to the client an update of the server settings.
+   * Send to the remote endpoint an update of the server settings.
    *
    * @param settings the new settings
    * @return a reference to this, so the API can be used fluently
@@ -142,36 +142,36 @@ public interface HttpConnection {
   HttpConnection updateSettings(Http2Settings settings);
 
   /**
-   * Send to the client an update of the server settings.<p/>
+   * Send to the remote endpoint an update of this endpoint settings.<p/>
    *
-   * The {@code completionHandler} will be notified when the client has acknowledged the settings.
+   * The {@code completionHandler} will be notified when the remote endpoint has acknowledged the settings.
    *
    * @param settings the new settings
-   * @param completionHandler the handler notified when the settings have been acknowledged by the client
+   * @param completionHandler the handler notified when the settings have been acknowledged by the remote endpoint
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler);
 
   /**
-   * @return the current client settings for this connection
+   * @return the current remote endpoint settings for this connection
    */
-  Http2Settings clientSettings();
+  Http2Settings remoteSettings();
 
   /**
-   * Set an handler that is called when client {@link Http2Settings} are updated.
+   * Set an handler that is called when remote endpoint {@link Http2Settings} are updated.
    *
-   * @param handler the handler for client settings
+   * @param handler the handler for remote endpoint settings
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpConnection clientSettingsHandler(Handler<Http2Settings> handler);
+  HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler);
 
   /**
-   * @return the handler for client settings
+   * @return the handler for remote endpoint settings
    */
   @GenIgnore
-  Handler<Http2Settings> clientSettingsHandler();
+  Handler<Http2Settings> remoteSettingsHandler();
 
   /**
    * Set an handler called when a connection error happens

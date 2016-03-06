@@ -30,7 +30,6 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
@@ -283,13 +282,13 @@ public class Http2ServerTest extends Http2TestBase {
     Http2Settings updatedSettings = randomSettings();
     Future<Void> settingsRead = Future.future();
     server.requestHandler(req -> {
-      io.vertx.core.http.Http2Settings settings = req.connection().clientSettings();
+      io.vertx.core.http.Http2Settings settings = req.connection().remoteSettings();
       assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
       assertEquals(initialSettings.maxFrameSize(), settings.getMaxFrameSize());
       assertEquals(initialSettings.initialWindowSize(), settings.getInitialWindowSize());
       assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
       assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
-      req.connection().clientSettingsHandler(update -> {
+      req.connection().remoteSettingsHandler(update -> {
         assertOnIOContext(ctx);
         assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
         assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());

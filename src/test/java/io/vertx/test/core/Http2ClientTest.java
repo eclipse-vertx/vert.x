@@ -16,13 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -69,7 +63,7 @@ public class Http2ClientTest extends Http2TestBase {
 //    Http2Settings updatedSettings = randomSettings();
 //    Future<Void> settingsRead = Future.future();
     server.requestHandler(req -> {
-      io.vertx.core.http.Http2Settings settings = req.connection().clientSettings();
+      io.vertx.core.http.Http2Settings settings = req.connection().remoteSettings();
       assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
       assertEquals(initialSettings.maxFrameSize(), settings.getMaxFrameSize());
       assertEquals(initialSettings.initialWindowSize(), settings.getInitialWindowSize());
