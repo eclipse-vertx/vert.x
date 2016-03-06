@@ -41,6 +41,7 @@ import io.vertx.core.buffer.Buffer;
  * - push notifications
  * - HttpConnection implementation
  * - reset stream
+ * - compression
  *
  * Both:
  * - byte distribution algorithm configurability (options ? connection ?)
