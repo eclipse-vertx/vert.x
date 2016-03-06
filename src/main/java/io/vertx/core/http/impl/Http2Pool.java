@@ -98,7 +98,9 @@ class Http2Pool extends ConnectionManager.Pool {
 
     @Override
     protected VertxHttp2ClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-      return new VertxHttp2ClientHandler(Http2Pool.this, handlerCtx, context, channel, decoder, encoder, initialSettings);
+      VertxHttp2ClientHandler handler = new VertxHttp2ClientHandler(Http2Pool.this, handlerCtx, context, channel, decoder, encoder, initialSettings);
+      frameListener(handler);
+      return handler;
     }
 
     public VertxHttp2ClientHandler build(Http2Connection conn) {
@@ -124,12 +126,6 @@ class Http2Pool extends ConnectionManager.Pool {
           initialSettings().pushEnabled(initialSettings.getEnablePush());
         }
       }
-      frameListener(new Http2EventAdapter() {
-        @Override
-        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
-        }
-      });
       return super.build();
     }
   }
