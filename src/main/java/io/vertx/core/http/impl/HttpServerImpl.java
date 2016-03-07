@@ -133,6 +133,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public synchronized HttpServer connectionHandler(Handler<HttpConnection> handler) {
+    if (listening) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
     connectionHandler = handler;
     return this;
   }
