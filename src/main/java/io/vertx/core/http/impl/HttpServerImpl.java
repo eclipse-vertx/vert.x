@@ -79,10 +79,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
-  private final HandlerManager<HttpServerRequest> reqHandlerManager = new HandlerManager<>(availableWorkers);
-  private final HandlerManager<ServerWebSocket> wsHandlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<HttpHandler> reqHandlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<Handler<ServerWebSocket>> wsHandlerManager = new HandlerManager<>(availableWorkers);
   private final ServerWebSocketStreamImpl wsStream = new ServerWebSocketStreamImpl();
   private final HttpServerRequestStreamImpl requestStream = new HttpServerRequestStreamImpl();
+  private Handler<HttpConnection> connectionHandler;
   private final String subProtocols;
   private String serverOrigin;
 
@@ -131,6 +132,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
+  public synchronized HttpServer connectionHandler(Handler<HttpConnection> handler) {
+    connectionHandler = handler;
+    return this;
+  }
+
+  @Override
   public Handler<ServerWebSocket> websocketHandler() {
     return wsStream.handler();
   }
@@ -164,7 +171,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
     return listen(port, "0.0.0.0", listenHandler);
   }
-
 
   public synchronized HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
@@ -203,8 +209,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                       if (protocol.equals("http/1.1")) {
                         configureHttp1(pipeline);
                       } else {
-                        HandlerHolder<HttpServerRequest> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
-                        pipeline.addLast("handler", new VertxHttp2HandlerBuilder(ch, ctx, holder.context, serverOrigin, options, holder.handler).build());
+                        HandlerHolder<HttpHandler> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
+                        VertxHttp2ServerHandler handler = new VertxHttp2HandlerBuilder(ch, ctx, holder.context, serverOrigin, options, holder.handler.requesthHandler).build();
+                        pipeline.addLast("handler", handler);
+                        if (holder.handler.connectionHandler != null) {
+                          holder.context.executeFromIO(() -> {
+                            holder.handler.connectionHandler.handle(handler);
+                          });
+                        }
                       }
                     }
                   });
@@ -331,7 +343,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (actualServer != null) {
 
         if (requestStream.handler() != null) {
-          actualServer.reqHandlerManager.removeHandler(requestStream.handler(), listenContext);
+          actualServer.reqHandlerManager.removeHandler(new HttpHandler(requestStream.handler(), connectionHandler), listenContext);
         }
         if (wsStream.handler() != null) {
           actualServer.wsHandlerManager.removeHandler(wsStream.handler(), listenContext);
@@ -402,7 +414,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private void addHandlers(HttpServerImpl server, ContextImpl context) {
     if (requestStream.handler() != null) {
-      server.reqHandlerManager.addHandler(requestStream.handler(), context);
+      server.reqHandlerManager.addHandler(new HttpHandler(requestStream.handler(), connectionHandler), context);
     }
     if (wsStream.handler() != null) {
       server.wsHandlerManager.addHandler(wsStream.handler(), context);
@@ -549,10 +561,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     private void createConnAndHandle(Channel ch, Object msg,
                                      WebSocketServerHandshaker shake) {
-      HandlerHolder<HttpServerRequest> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
+      HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
       if (reqHandler != null) {
         ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
-        conn.requestHandler(reqHandler.handler);
+        conn.requestHandler(reqHandler.handler.requesthHandler);
         connectionMap.put(ch, conn);
         reqHandler.context.executeFromIO(() -> {
           conn.setMetric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
@@ -567,7 +579,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       if (shake == null) {
         return;
       }
-      HandlerHolder<ServerWebSocket> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
+      HandlerHolder<Handler<ServerWebSocket>> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
 
       if (wsHandler == null) {
         createConnAndHandle(ch, request, shake);
@@ -779,5 +791,36 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   class ServerWebSocketStreamImpl extends HttpStreamHandler<ServerWebSocketStream, ServerWebSocket> implements ServerWebSocketStream {
+  }
+
+  class HttpHandler {
+    final Handler<HttpServerRequest> requesthHandler;
+    final Handler<HttpConnection> connectionHandler;
+    public HttpHandler(Handler<HttpServerRequest> requesthHandler, Handler<HttpConnection> connectionHandler) {
+      this.requesthHandler = requesthHandler;
+      this.connectionHandler = connectionHandler;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      HttpHandler that = (HttpHandler) o;
+
+      if (!requesthHandler.equals(that.requesthHandler)) return false;
+      if (connectionHandler != null ? !connectionHandler.equals(that.connectionHandler) : that.connectionHandler != null) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = reqHandlerManager.hashCode();
+      if (connectionHandler != null) {
+        result = 31 * result + connectionHandler.hashCode();
+      }
+      return result;
+    }
   }
 }

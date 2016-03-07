@@ -64,6 +64,15 @@ public interface HttpServer extends Measured {
   Handler<HttpServerRequest> requestHandler();
 
   /**
+   * Set a connection handler for the server. The connection handler is called after an HTTP2 connection has
+   * been negociated.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServer connectionHandler(Handler<HttpConnection> handler);
+
+  /**
    * Return the websocket stream for the server. If a websocket connect handshake is successful a
    * new {@link ServerWebSocket} instance will be created and passed to the stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
    *

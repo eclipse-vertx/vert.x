@@ -289,7 +289,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpConnection connection();
 
   /**
-   * Set a connection handler called when the connection has been established.
+   * Set a connection handler called when an HTTP2 connection has been established.
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently

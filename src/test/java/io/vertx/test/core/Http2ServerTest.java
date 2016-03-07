@@ -191,6 +191,27 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testConnectionHandler() throws Exception {
+    waitFor(2);
+    Context ctx = vertx.getOrCreateContext();
+    server.close();
+    server.connectionHandler(conn -> {
+      assertOnIOContext(ctx);
+      complete();
+    });
+    server.requestHandler(req -> fail());
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      vertx.runOnContext(v -> {
+        complete();
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testServerInitialSettings() throws Exception {
     Http2Settings settings = randomSettings();
     server.close();
@@ -225,11 +246,11 @@ public class Http2ServerTest extends Http2TestBase {
     server.close();
     server = vertx.createHttpServer(serverOptions);
     Context otherContext = vertx.getOrCreateContext();
-    server.requestHandler(req -> {
+    server.connectionHandler(conn -> {
       otherContext.runOnContext(v -> {
-        req.connection().updateSettings(VertxHttp2ServerHandler.toVertxSettings(expectedSettings), ar -> {
+        conn.updateSettings(VertxHttp2ServerHandler.toVertxSettings(expectedSettings), ar -> {
           assertSame(otherContext, Vertx.currentContext());
-          io.vertx.core.http.Http2Settings ackedSettings = req.connection().settings();
+          io.vertx.core.http.Http2Settings ackedSettings = conn.settings();
           assertEquals(expectedSettings.maxHeaderListSize(), ackedSettings.getMaxHeaderListSize());
           assertEquals(expectedSettings.maxFrameSize(), ackedSettings.getMaxFrameSize());
           assertEquals(expectedSettings.initialWindowSize(), ackedSettings.getInitialWindowSize());
@@ -238,6 +259,9 @@ public class Http2ServerTest extends Http2TestBase {
           complete();
         });
       });
+    });
+    server.requestHandler(req -> {
+      fail();
     });
     startServer();
     TestClient client = new TestClient();
@@ -268,8 +292,6 @@ public class Http2ServerTest extends Http2TestBase {
           });
         }
       });
-      int id = request.nextStreamId();
-      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
     });
     fut.sync();
     await();
@@ -281,31 +303,43 @@ public class Http2ServerTest extends Http2TestBase {
     Http2Settings initialSettings = randomSettings();
     Http2Settings updatedSettings = randomSettings();
     Future<Void> settingsRead = Future.future();
-    server.requestHandler(req -> {
-      io.vertx.core.http.Http2Settings settings = req.connection().remoteSettings();
-      assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
-      assertEquals(initialSettings.maxFrameSize(), settings.getMaxFrameSize());
-      assertEquals(initialSettings.initialWindowSize(), settings.getInitialWindowSize());
-      assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
-      assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
-      req.connection().remoteSettingsHandler(update -> {
+    AtomicInteger count = new AtomicInteger();
+    server.connectionHandler(conn -> {
+      io.vertx.core.http.Http2Settings settings = conn.remoteSettings();
+      assertEquals(null, settings.getMaxHeaderListSize());
+      assertEquals(null, settings.getMaxFrameSize());
+      assertEquals(null, settings.getInitialWindowSize());
+      assertEquals(null, settings.getMaxConcurrentStreams());
+      assertEquals(null, settings.getHeaderTableSize());
+      conn.remoteSettingsHandler(update -> {
         assertOnIOContext(ctx);
-        assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
-        assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
-        assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
-        assertEquals(updatedSettings.maxConcurrentStreams(), update.getMaxConcurrentStreams());
-        assertEquals((long) updatedSettings.headerTableSize(), (long) update.getHeaderTableSize());
-        testComplete();
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals(initialSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
+            assertEquals(initialSettings.maxFrameSize(), update.getMaxFrameSize());
+            assertEquals(initialSettings.initialWindowSize(), update.getInitialWindowSize());
+            assertEquals(initialSettings.maxConcurrentStreams(), update.getMaxConcurrentStreams());
+            assertEquals((long) initialSettings.headerTableSize(), (long) update.getHeaderTableSize());
+            settingsRead.complete();
+            break;
+          case 1:
+            assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
+            assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
+            assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
+            assertEquals(updatedSettings.maxConcurrentStreams(), update.getMaxConcurrentStreams());
+            assertEquals((long) updatedSettings.headerTableSize(), (long) update.getHeaderTableSize());
+            testComplete();
+            break;
+        }
       });
-      settingsRead.complete();
+    });
+    server.requestHandler(req -> {
+      fail();
     });
     startServer(ctx);
     TestClient client = new TestClient();
     client.settings.putAll(initialSettings);
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
-      int id = request.nextStreamId();
-      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
-      request.context.flush();
       settingsRead.setHandler(ar -> {
         request.encoder.writeSettings(request.context, updatedSettings, request.context.newPromise());
         request.context.flush();

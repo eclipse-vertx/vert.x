@@ -73,7 +73,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   private final SSLHelper sslHelper;
   private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
-  private final HandlerManager<NetSocket> handlerManager = new HandlerManager<>(availableWorkers);
+  private final HandlerManager<Handler<NetSocket>> handlerManager = new HandlerManager<>(availableWorkers);
   private final Queue<Runnable> bindListeners = new LinkedList<>();
   private final NetSocketStreamImpl connectStream = new NetSocketStreamImpl();
   private ChannelGroup serverChannelGroup;
@@ -413,7 +413,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       EventLoop worker = ch.eventLoop();
 
       //Choose a handler
-      HandlerHolder<NetSocket> handler = handlerManager.chooseHandler(worker);
+      HandlerHolder<Handler<NetSocket>> handler = handlerManager.chooseHandler(worker);
       if (handler == null) {
         //Ignore
         return;
@@ -435,7 +435,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       }
     }
 
-    private void connected(Channel ch, HandlerHolder<NetSocket> handler) {
+    private void connected(Channel ch, HandlerHolder<Handler<NetSocket>> handler) {
       // Need to set context before constructor is called as writehandler registration needs this
       ContextImpl.setContext(handler.context);
       NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics, null);
