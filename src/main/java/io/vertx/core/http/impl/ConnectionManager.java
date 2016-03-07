@@ -359,7 +359,7 @@ public class ConnectionManager {
      *
      * @param conn the connection
      */
-    void deliverConnection(HttpClientConnection conn, Waiter waiter) {
+    void deliverConnection(HttpClientConnection conn, Waiter waiter, boolean connected) {
       if (conn.isClosed()) {
         // The connection has been closed - closed connections can be in the pool
         // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
@@ -368,7 +368,7 @@ public class ConnectionManager {
       } else if (waiter.isCancelled()) {
         recycle(conn);
       } else {
-        waiter.handleSuccess(conn);
+        waiter.handleSuccess(conn, connected);
       }
     }
   }
@@ -391,7 +391,7 @@ public class ConnectionManager {
         } else if (context != conn.getContext()) {
           log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
         }
-        context.runOnContext(v -> deliverConnection(conn, waiter));
+        context.runOnContext(v -> deliverConnection(conn, waiter, false));
         return true;
       } else {
         return false;
@@ -413,7 +413,7 @@ public class ConnectionManager {
             if (context == null) {
               context = conn.getContext();
             }
-            context.runOnContext(v -> deliverConnection(conn, waiter));
+            context.runOnContext(v -> deliverConnection(conn, waiter, false));
           }
         }
       }
@@ -430,7 +430,7 @@ public class ConnectionManager {
               if (context == null) {
                 context = conn.getContext();
               }
-              context.runOnContext(v -> deliverConnection(conn, waiter));
+              context.runOnContext(v -> deliverConnection(conn, waiter, false));
             } else if (conn.getOutstandingRequestCount() == 0) {
               // Return to set of available from here to not return it several times
               availableConnections.add(conn);
@@ -456,7 +456,7 @@ public class ConnectionManager {
         allConnections.add(conn);
       }
       connectionMap.put(ch, conn);
-      deliverConnection(conn, waiter);
+      deliverConnection(conn, waiter, true);
     }
 
     // Called if the connection is actually closed, OR the connection attempt failed - in the latter case

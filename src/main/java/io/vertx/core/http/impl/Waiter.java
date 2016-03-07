@@ -42,8 +42,9 @@ abstract class Waiter {
    * Handle connection success.
    *
    * @param conn the connection
+   * @param connected if the connection was just done and the connection is used for the first time
    */
-  abstract void handleSuccess(HttpClientConnection conn);
+  abstract void handleSuccess(HttpClientConnection conn, boolean connected);
 
   /**
    * @return true if the waiter has been cancelled

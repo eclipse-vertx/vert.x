@@ -93,6 +93,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) {
+    return this;
+  }
+
+  @Override
   public void reset(long code) {
     clientStream.reset(code);
   }

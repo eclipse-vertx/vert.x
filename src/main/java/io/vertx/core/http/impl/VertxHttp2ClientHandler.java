@@ -84,8 +84,8 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     throw new UnsupportedOperationException();
   }
 
-  void handle(Waiter waiter) {
-    waiter.handleSuccess(this);
+  void handle(Waiter waiter, boolean connected) {
+    waiter.handleSuccess(this, connected);
   }
 
   @Override

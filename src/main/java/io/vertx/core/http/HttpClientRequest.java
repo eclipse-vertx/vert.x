@@ -287,4 +287,13 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    */
   @CacheReturn
   HttpConnection connection();
+
+  /**
+   * Set a connection handler called when the connection has been established.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler);
 }

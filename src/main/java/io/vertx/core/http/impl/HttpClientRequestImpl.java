@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -61,6 +62,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private volatile HttpClientStream conn;
   private Handler<Void> drainHandler;
   private Handler<HttpClientRequest> pushHandler;
+  private Handler<HttpConnection> connectionHandler;
   private boolean headWritten;
   private boolean completed;
   private ByteBuf pendingChunks;
@@ -363,6 +365,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
+  @Override
+  public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) {
+    synchronized (getLock()) {
+      connectionHandler = handler;
+      return this;
+    }
+  }
+
   void handleDrained() {
     synchronized (getLock()) {
       if (!completed && drainHandler != null) {
@@ -543,8 +553,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        void handleSuccess(HttpClientConnection conn) {
-          connected(conn);
+        void handleSuccess(HttpClientConnection conn, boolean connected) {
+          synchronized (HttpClientRequestImpl.this) {
+            if (connected && connectionHandler != null && conn instanceof HttpConnection) {
+              connectionHandler.handle((HttpConnection) conn);
+            }
+            connected(conn);
+          }
         }
 
         @Override
@@ -563,7 +578,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private synchronized void connected(HttpClientConnection s) {
+  private void connected(HttpClientConnection s) {
 
     conn = s.beginRequest(this);
 

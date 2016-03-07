@@ -49,7 +49,7 @@ class Http2Pool extends ConnectionManager.Pool {
         ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
       }
       context.runOnContext(v -> {
-        clientHandler.handle(waiter);
+        clientHandler.handle(waiter, false);
       });
       return true;
     } else {
@@ -66,10 +66,10 @@ class Http2Pool extends ConnectionManager.Pool {
       handler.decoder().frameListener(handler);
       clientHandler = handler;
       p.addLast(handler);
-      handler.handle(waiter);
+      handler.handle(waiter, true);
       // Todo :  limit according to the max concurrency of the stream
       while ((waiter = queue.getNextWaiter()) != null) {
-        handler.handle(waiter);
+        handler.handle(waiter, false);
       }
     }
   }

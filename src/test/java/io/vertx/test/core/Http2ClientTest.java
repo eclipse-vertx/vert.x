@@ -24,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
@@ -39,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -563,6 +565,35 @@ public class Http2ClientTest extends Http2TestBase {
       pushedReq.reset(Http2Error.CANCEL.code());
     });
     req.end();
+    await();
+  }
+
+  @Test
+  public void testConnectionHandler() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    AtomicReference<HttpConnection> connection = new AtomicReference<>();
+    HttpClientRequest req1 = client.get(4043, "localhost", "/somepath");
+    req1.connectionHandler(conn -> {
+      assertTrue(connection.compareAndSet(null, conn));
+    });
+    req1.handler(resp -> {
+      assertSame(connection.get(), req1.connection());
+      complete();
+    });
+    HttpClientRequest req2 = client.get(4043, "localhost", "/somepath");
+    req2.connectionHandler(conn -> {
+      fail();
+    });
+    req2.handler(resp -> {
+      assertSame(connection.get(), req1.connection());
+      complete();
+    });
+    req1.end();
+    req2.end();
     await();
   }
 }
