@@ -63,7 +63,7 @@ import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends ConnectionBase implements HttpClientStream {
+class ClientConnection extends ConnectionBase implements HttpClientConnection, HttpClientStream {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
@@ -428,12 +428,13 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
     }
   }
 
-  public synchronized void beginRequest(HttpClientRequestImpl req) {
+  public synchronized HttpClientStream beginRequest(HttpClientRequestImpl req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }
     this.currentRequest = req;
     this.requests.add(req);
+    return this;
   }
 
   public synchronized void endRequest() {
@@ -500,7 +501,7 @@ class ClientConnection extends ConnectionBase implements HttpClientStream {
   }
 
   @Override
-  public HttpConnection connection() {
-    return null;
+  public HttpClientConnection connection() {
+    return this;
   }
 }

@@ -20,7 +20,6 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
@@ -228,7 +227,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   void handleEnd(MultiMap trailers) {
     synchronized (conn) {
-      conn.reportBytesRead(bytesRead);
+      conn.connection().reportBytesRead(bytesRead);
       bytesRead = 0;
       request.reportResponseEnd(this);
       if (paused) {
@@ -259,7 +258,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   public NetSocket netSocket() {
     synchronized (conn) {
       if (netSocket == null) {
-        netSocket = conn.createNetSocket();
+        netSocket = conn.connection().createNetSocket();
       }
       return netSocket;
     }

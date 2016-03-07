@@ -16,38 +16,23 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.Context;
+import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Waiter {
+interface HttpClientConnection {
 
-  final HttpClientRequestImpl req;
-  final ContextImpl context;
+  Context getContext();
 
-  public Waiter(HttpClientRequestImpl req, ContextImpl context) {
-    this.req = req;
-    this.context = context;
-  }
+  HttpClientStream beginRequest(HttpClientRequestImpl request);
 
-  /**
-   * Handle connection failure.
-   *
-   * @param failure the failure
-   */
-  abstract void handleFailure(Throwable failure);
+  // Try to remove that ?
+  void reportBytesWritten(long numberOfBytes);
+  void reportBytesRead(long s);
 
-  /**
-   * Handle connection success.
-   *
-   * @param conn the connection
-   */
-  abstract void handleSuccess(HttpClientConnection conn);
+  NetSocket createNetSocket();
 
-  /**
-   * @return true if the waiter has been cancelled
-   */
-  abstract boolean isCancelled();
-  
+  boolean isClosed();
 }

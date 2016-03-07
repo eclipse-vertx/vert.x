@@ -352,14 +352,14 @@ public class ConnectionManager {
 
     abstract void closeAllConnections();
 
-    abstract void recycle(HttpClientStream stream);
+    abstract void recycle(HttpClientConnection stream);
 
     /**
      * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
      *
      * @param conn the connection
      */
-    void deliverConnection(HttpClientStream conn, Waiter waiter) {
+    void deliverConnection(HttpClientConnection conn, Waiter waiter) {
       if (conn.isClosed()) {
         // The connection has been closed - closed connections can be in the pool
         // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
@@ -398,7 +398,7 @@ public class ConnectionManager {
       }
     }
 
-    void recycle(HttpClientStream stream) {
+    void recycle(HttpClientConnection stream) {
       recycle((ClientConnection) stream);
     }
 

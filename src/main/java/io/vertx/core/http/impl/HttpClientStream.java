@@ -19,23 +19,19 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 interface HttpClientStream {
 
+  HttpClientConnection connection();
   Context getContext();
 
   void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked);
   void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
-
-  void beginRequest(HttpClientRequestImpl request);
-  void endRequest();
 
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
@@ -45,12 +41,5 @@ interface HttpClientStream {
 
   void reset(long code);
 
-  // Try to remove that ?
-  void reportBytesWritten(long numberOfBytes);
-  void reportBytesRead(long s);
-
-  NetSocket createNetSocket();
-  HttpConnection connection();
-
-  boolean isClosed();
+  void endRequest();
 }

@@ -359,7 +359,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (conn == null) {
         throw new IllegalStateException("Not yet connected");
       }
-      return conn.connection();
+      return (HttpConnection) conn.connection();
     }
   }
 
@@ -543,7 +543,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        void handleSuccess(HttpClientStream conn) {
+        void handleSuccess(HttpClientConnection conn) {
           connected(conn);
         }
 
@@ -563,22 +563,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private synchronized void connected(HttpClientStream conn) {
+  private synchronized void connected(HttpClientConnection s) {
 
-    conn.beginRequest(this);
+    conn = s.beginRequest(this);
 
-    if (conn instanceof ClientConnection) {
-      ClientConnection http1Conn = (ClientConnection) conn;
+    if (this.conn instanceof ClientConnection) {
+      ClientConnection http1Conn = (ClientConnection) this.conn;
       this.metric = client.httpClientMetrics().requestBegin(http1Conn.metric(), http1Conn.localAddress(), http1Conn.remoteAddress(), this);
     }
-
-    this.conn = conn;
 
     // If anything was written or the request ended before we got the connection, then
     // we need to write it now
 
     if (pendingMaxSize != -1) {
-      conn.doSetWriteQueueMaxSize(pendingMaxSize);
+      this.conn.doSetWriteQueueMaxSize(pendingMaxSize);
     }
 
     if (pendingChunks != null) {
@@ -589,10 +587,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(pending, true);
 
-        conn.reportBytesWritten(written);
+        s.reportBytesWritten(written);
 
         if (respHandler != null) {
-          conn.endRequest();
+          this.conn.endRequest();
         }
       } else {
         writeHeadWithContent(pending, false);
@@ -602,10 +600,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
 
-        conn.reportBytesWritten(written);
+        s.reportBytesWritten(written);
 
         if (respHandler != null) {
-          conn.endRequest();
+          this.conn.endRequest();
         }
       } else {
         if (writeHead) {
@@ -678,7 +676,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         conn.writeBuffer(buff, end);
       }
       if (end) {
-        conn.reportBytesWritten(written);
+        conn.connection().reportBytesWritten(written);
 
         if (respHandler != null) {
           conn.endRequest();

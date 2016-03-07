@@ -46,7 +46,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
+class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements HttpClientConnection {
 
   final Http2Pool http2Pool;
   final ChannelHandlerContext handlerCtx;
@@ -85,20 +85,44 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
   }
 
   void handle(Waiter waiter) {
-    Http2ClientStream stream = createStream(waiter.req);
-    waiter.handleSuccess(stream);
+    waiter.handleSuccess(this);
   }
 
-  Http2ClientStream createStream(HttpClientRequestBase req) {
+  @Override
+  public Context getContext() {
+    return context;
+  }
+
+  @Override
+  public HttpClientStream beginRequest(HttpClientRequestImpl request) {
     try {
       Http2Connection conn = connection();
       Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
-      Http2ClientStream clientStream = new Http2ClientStream(this, req, stream);
+      Http2ClientStream clientStream = new Http2ClientStream(this, request, stream);
       streams.put(clientStream.stream.id(), clientStream);
       return clientStream;
     } catch (Http2Exception e) {
       throw new UnsupportedOperationException("handle me gracefully", e);
     }
+  }
+
+  @Override
+  public void reportBytesWritten(long numberOfBytes) {
+  }
+
+  @Override
+  public void reportBytesRead(long s) {
+  }
+
+  @Override
+  public NetSocket createNetSocket() {
+    return null;
+  }
+
+  @Override
+  public boolean isClosed() {
+    // Todo
+    return false;
   }
 
   @Override
@@ -276,9 +300,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
       ((HttpClientRequestImpl)req).handleDrained();
     }
     @Override
-    public void beginRequest(HttpClientRequestImpl request) {
-    }
-    @Override
     public void endRequest() {
     }
     @Override
@@ -309,26 +330,11 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler {
       encoder.writeRstStream(handlerCtx, stream.id(), code, handlerCtx.newPromise());
       handlerCtx.flush();
     }
-    @Override
-    public void reportBytesWritten(long numberOfBytes) {
-    }
-    @Override
-    public void reportBytesRead(long s) {
-    }
-    @Override
-    public NetSocket createNetSocket() {
-      throw new UnsupportedOperationException();
-    }
 
     @Override
-    public HttpConnection connection() {
+    public HttpClientConnection connection() {
       return handler;
     }
 
-    @Override
-    public boolean isClosed() {
-      // Todo
-      return false;
-    }
   }
 }

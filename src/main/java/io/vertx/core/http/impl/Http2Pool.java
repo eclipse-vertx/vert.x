@@ -75,7 +75,7 @@ class Http2Pool extends ConnectionManager.Pool {
   }
 
   @Override
-  void recycle(HttpClientStream stream) {
+  void recycle(HttpClientConnection stream) {
     // todo
   }
 
