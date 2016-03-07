@@ -26,8 +26,6 @@ interface HttpClientConnection {
 
   Context getContext();
 
-  HttpClientStream beginRequest(HttpClientRequestImpl request);
-
   // Try to remove that ?
   void reportBytesWritten(long numberOfBytes);
   void reportBytesRead(long s);

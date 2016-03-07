@@ -327,14 +327,37 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testQueueRequests() throws Exception {
-    int numReq = 100;
+  public void testQueueingRequests() throws Exception {
+    testQueueingRequests(100, null);
+  }
+
+  @Test
+  public void testQueueingRequestsMaxConcurrentStream() throws Exception {
+    testQueueingRequests(100, 10L);
+  }
+
+  private void testQueueingRequests(int numReq, Long max) throws Exception {
     waitFor(numReq);
     String expected = TestUtils.randomAlphaString(100);
+    if (max != null) {
+      server.close();
+      server = vertx.createHttpServer(serverOptions.setHttp2Settings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10L)));
+    }
     server.requestHandler(req -> {
       req.response().end(expected);
     });
     startServer();
+    CountDownLatch latch = new CountDownLatch(1);
+    client.get(4043, "localhost", "/somepath", resp -> {
+    }).connectionHandler(conn -> {
+      conn.remoteSettingsHandler(settings -> {
+        assertEquals(max, settings.getMaxConcurrentStreams());
+        latch.countDown();
+      });
+    }).exceptionHandler(err -> {
+      fail();
+    }).end();
+    awaitLatch(latch);
     for (int i = 0;i < numReq;i++) {
       client.get(4043, "localhost", "/somepath", resp -> {
         Buffer content = Buffer.buffer();

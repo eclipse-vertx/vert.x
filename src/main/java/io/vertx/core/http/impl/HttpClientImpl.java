@@ -644,9 +644,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                      ContextImpl context) {
     connectionManager.getConnection(port, host, new Waiter(null, context) {
       @Override
-      void handleSuccess(HttpClientConnection conn, boolean connected) {
+      void handleConnection(HttpClientConnection conn) {
+      }
+      @Override
+      void handleStream(HttpClientStream stream) {
         // Use some variance for this
-        handler.handle((ClientConnection) conn);
+        handler.handle((ClientConnection) stream);
       }
       @Override
       void handleFailure(Throwable failure) {

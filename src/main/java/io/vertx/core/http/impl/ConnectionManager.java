@@ -311,7 +311,7 @@ public class ConnectionManager {
 
     private void http2Connected(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
-          ((Http2Pool)pool).createConn(handlerCtx, context, port, host, ch, waiter)
+          ((Http2Pool)pool).createConn(handlerCtx, context, ch, waiter)
       );
     }
 
@@ -354,12 +354,14 @@ public class ConnectionManager {
 
     abstract void recycle(HttpClientConnection stream);
 
+    abstract HttpClientStream createStream(HttpClientConnection conn);
+
     /**
      * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
      *
      * @param conn the connection
      */
-    void deliverConnection(HttpClientConnection conn, Waiter waiter, boolean connected) {
+    void deliverStream(HttpClientConnection conn, Waiter waiter) {
       if (conn.isClosed()) {
         // The connection has been closed - closed connections can be in the pool
         // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
@@ -368,7 +370,7 @@ public class ConnectionManager {
       } else if (waiter.isCancelled()) {
         recycle(conn);
       } else {
-        waiter.handleSuccess(conn, connected);
+        waiter.handleStream(createStream(conn));
       }
     }
   }
@@ -391,11 +393,16 @@ public class ConnectionManager {
         } else if (context != conn.getContext()) {
           log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
         }
-        context.runOnContext(v -> deliverConnection(conn, waiter, false));
+        context.runOnContext(v -> deliverStream(conn, waiter));
         return true;
       } else {
         return false;
       }
+    }
+
+    @Override
+    HttpClientStream createStream(HttpClientConnection conn) {
+      return (HttpClientStream) conn;
     }
 
     void recycle(HttpClientConnection stream) {
@@ -413,7 +420,7 @@ public class ConnectionManager {
             if (context == null) {
               context = conn.getContext();
             }
-            context.runOnContext(v -> deliverConnection(conn, waiter, false));
+            context.runOnContext(v -> deliverStream(conn, waiter));
           }
         }
       }
@@ -430,7 +437,7 @@ public class ConnectionManager {
               if (context == null) {
                 context = conn.getContext();
               }
-              context.runOnContext(v -> deliverConnection(conn, waiter, false));
+              context.runOnContext(v -> deliverStream(conn, waiter));
             } else if (conn.getOutstandingRequestCount() == 0) {
               // Return to set of available from here to not return it several times
               availableConnections.add(conn);
@@ -456,7 +463,7 @@ public class ConnectionManager {
         allConnections.add(conn);
       }
       connectionMap.put(ch, conn);
-      deliverConnection(conn, waiter, true);
+      deliverStream(conn, waiter);
     }
 
     // Called if the connection is actually closed, OR the connection attempt failed - in the latter case

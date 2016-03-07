@@ -428,13 +428,12 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
   }
 
-  public synchronized HttpClientStream beginRequest(HttpClientRequestImpl req) {
+  public synchronized void beginRequest(HttpClientRequestImpl req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
     }
     this.currentRequest = req;
     this.requests.add(req);
-    return this;
   }
 
   public synchronized void endRequest() {

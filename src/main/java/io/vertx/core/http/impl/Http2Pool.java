@@ -40,16 +40,19 @@ class Http2Pool extends ConnectionManager.Pool {
     this.client = client;
   }
 
+  // Under sync when called
   public boolean getConnection(Waiter waiter) {
-    if (clientHandler != null) {
+    VertxHttp2ClientHandler conn = this.clientHandler;
+    if (conn != null && canReserveStream(conn)) {
+      conn.streamCount++;
       ContextImpl context = waiter.context;
       if (context == null) {
-        context = clientHandler.context;
-      } else if (context != clientHandler.context) {
+        context = conn.context;
+      } else if (context != conn.context) {
         ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
       }
       context.runOnContext(v -> {
-        clientHandler.handle(waiter, false);
+        deliverStream(conn, waiter);
       });
       return true;
     } else {
@@ -57,7 +60,7 @@ class Http2Pool extends ConnectionManager.Pool {
     }
   }
 
-  void createConn(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
+  void createConn(ChannelHandlerContext handlerCtx, ContextImpl context, Channel ch, Waiter waiter) {
     ChannelPipeline p = ch.pipeline();
     Http2Connection connection = new DefaultHttp2Connection(false);
     VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(handlerCtx, context, ch);
@@ -66,17 +69,40 @@ class Http2Pool extends ConnectionManager.Pool {
       handler.decoder().frameListener(handler);
       clientHandler = handler;
       p.addLast(handler);
-      handler.handle(waiter, true);
-      // Todo :  limit according to the max concurrency of the stream
-      while ((waiter = queue.getNextWaiter()) != null) {
-        handler.handle(waiter, false);
+      handler.streamCount++;
+      waiter.handleConnection(handler); // Should make same tests than in deliverRequest
+      deliverStream(handler, waiter);
+      checkPending(handler);
+    }
+  }
+
+  private boolean canReserveStream(VertxHttp2ClientHandler handler) {
+    int maxConcurrentStreams = handler.connection().local().maxActiveStreams();
+    return handler.streamCount < maxConcurrentStreams;
+  }
+
+  void checkPending(VertxHttp2ClientHandler handler) {
+    synchronized (queue) {
+      Waiter waiter;
+      while (canReserveStream(handler) && (waiter = queue.getNextWaiter()) != null) {
+        handler.streamCount++;
+        deliverStream(handler, waiter);
       }
     }
   }
 
   @Override
-  void recycle(HttpClientConnection stream) {
-    // todo
+  void recycle(HttpClientConnection conn) {
+    synchronized (queue) {
+      VertxHttp2ClientHandler handler = (VertxHttp2ClientHandler) conn;
+      handler.streamCount--;
+      checkPending(handler);
+    }
+  }
+
+  @Override
+  HttpClientStream createStream(HttpClientConnection conn) {
+    return ((VertxHttp2ClientHandler)conn).createStream();
   }
 
   @Override

@@ -23,6 +23,7 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -52,6 +53,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   final ChannelHandlerContext handlerCtx;
   final ContextImpl context;
   private final IntObjectMap<Http2ClientStream> streams = new IntObjectHashMap<>();
+  long streamCount;
 
   public VertxHttp2ClientHandler(Http2Pool http2Pool,
                                  ChannelHandlerContext handlerCtx,
@@ -62,6 +64,14 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
                                  Http2Settings initialSettings) {
     super(handlerCtx, channel, context, decoder, encoder, initialSettings);
     this.http2Pool = http2Pool;
+
+    connection().addListener(new Http2EventAdapter() {
+      @Override
+      public void onStreamClosed(Http2Stream stream) {
+        streams.remove(stream.id());
+        http2Pool.recycle(VertxHttp2ClientHandler.this);
+      }
+    });
 
     encoder.flowController().listener(stream -> {
       Http2ClientStream clientStream = streams.get(stream.id());
@@ -84,21 +94,16 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     throw new UnsupportedOperationException();
   }
 
-  void handle(Waiter waiter, boolean connected) {
-    waiter.handleSuccess(this, connected);
-  }
-
   @Override
   public Context getContext() {
     return context;
   }
 
-  @Override
-  public HttpClientStream beginRequest(HttpClientRequestImpl request) {
+  HttpClientStream createStream() {
     try {
       Http2Connection conn = connection();
       Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
-      Http2ClientStream clientStream = new Http2ClientStream(this, request, stream);
+      Http2ClientStream clientStream = new Http2ClientStream(this, stream);
       streams.put(clientStream.stream.id(), clientStream);
       return clientStream;
     } catch (Http2Exception e) {
@@ -168,26 +173,28 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   static class Http2ClientStream implements HttpClientStream {
 
     private final VertxHttp2ClientHandler handler;
-    private final HttpClientRequestBase req;
     private final ContextImpl context;
     private final ChannelHandlerContext handlerCtx;
     private final Http2Connection conn;
     private final Http2Stream stream;
     private final Http2ConnectionEncoder encoder;
+    private HttpClientRequestBase req;
     private HttpClientResponseImpl resp;
     private boolean paused;
     private int numBytes;
 
-    public Http2ClientStream(VertxHttp2ClientHandler handler,
-                             HttpClientRequestBase req,
-                             Http2Stream stream) throws Http2Exception {
+    public Http2ClientStream(VertxHttp2ClientHandler handler, Http2Stream stream) throws Http2Exception {
+      this(handler, null, stream);
+    }
+
+    public Http2ClientStream(VertxHttp2ClientHandler handler, HttpClientRequestBase req, Http2Stream stream) throws Http2Exception {
       this.handler = handler;
       this.context = handler.context;
-      this.req = req;
       this.handlerCtx = handler.handlerCtx;
       this.conn = handler.connection();
       this.stream = stream;
       this.encoder = handler.encoder();
+      this.req = req;
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
@@ -298,6 +305,10 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     @Override
     public void handleInterestedOpsChanged() {
       ((HttpClientRequestImpl)req).handleDrained();
+    }
+    @Override
+    public void beginRequest(HttpClientRequestImpl request) {
+      req = request;
     }
     @Override
     public void endRequest() {

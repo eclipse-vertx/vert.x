@@ -553,12 +553,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
 
         @Override
-        void handleSuccess(HttpClientConnection conn, boolean connected) {
+        void handleConnection(HttpClientConnection conn) {
           synchronized (HttpClientRequestImpl.this) {
-            if (connected && connectionHandler != null && conn instanceof HttpConnection) {
+            if (connectionHandler != null && conn instanceof HttpConnection) {
               connectionHandler.handle((HttpConnection) conn);
             }
-            connected(conn);
+          }
+        }
+
+        @Override
+        void handleStream(HttpClientStream stream) {
+          synchronized (HttpClientRequestImpl.this) {
+            connected(stream);
           }
         }
 
@@ -578,9 +584,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private void connected(HttpClientConnection s) {
+  private void connected(HttpClientStream s) {
 
-    conn = s.beginRequest(this);
+    conn = s;
+    s.beginRequest(this);
 
     if (this.conn instanceof ClientConnection) {
       ClientConnection http1Conn = (ClientConnection) this.conn;
@@ -602,7 +609,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(pending, true);
 
-        s.reportBytesWritten(written);
+        s.connection().reportBytesWritten(written);
 
         if (respHandler != null) {
           this.conn.endRequest();
@@ -615,7 +622,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         // we also need to write the head so optimize this and write all out in once
         writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
 
-        s.reportBytesWritten(written);
+        s.connection().reportBytesWritten(written);
 
         if (respHandler != null) {
           this.conn.endRequest();
