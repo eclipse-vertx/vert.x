@@ -30,7 +30,6 @@ import io.vertx.core.buffer.Buffer;
  * todo:
  *
  * HttpServer:
- * - add a HttpServer.connectionHandler(Handler<HttpServerConnection>) to allow to set the connection initial settings
  * - server synchronization + executeFromIO
  * - HttpServerRequest#remoteAddress
  * - HttpServerRequest#localAddress
@@ -40,7 +39,7 @@ import io.vertx.core.buffer.Buffer;
  * - test executeFromIO
  * - metrics
  * - push notifications
- * - HttpConnection implementation
+ * - HttpConnection test
  * - reset stream
  * - compression
  *
