@@ -1091,9 +1091,7 @@ public class NetTest extends VertxTestBase {
       options.addEnabledCipherSuite(suite);
     }
 
-    options.setPort(4043);
-    server = vertx.createNetServer(options);
-    Handler<NetSocket> serverHandler = socket -> {
+    Consumer<NetSocket> certificateChainChecker = socket -> {
       try {
         X509Certificate[] certs = socket.peerCertificateChain();
         if (clientCert) {
@@ -1105,7 +1103,14 @@ public class NetTest extends VertxTestBase {
       } catch (SSLPeerUnverifiedException e) {
         assertTrue(clientTrust || clientTrustAll);
       }
+    };
 
+    options.setPort(4043);
+    server = vertx.createNetServer(options);
+    Handler<NetSocket> serverHandler = socket -> {
+      if (socket.isSsl()) {
+        certificateChainChecker.accept(socket);
+      }
       AtomicBoolean upgradedServer = new AtomicBoolean();
       AtomicInteger upgradedServerCount = new AtomicInteger();
       socket.handler(buff -> {
@@ -1114,10 +1119,12 @@ public class NetTest extends VertxTestBase {
           if (upgradedServer.compareAndSet(false, true)) {
             assertFalse(socket.isSsl());
             socket.upgradeToSsl(v -> {
+              certificateChainChecker.accept(socket);
               upgradedServerCount.incrementAndGet();
               assertTrue(socket.isSsl());
             });
           } else {
+            assertTrue(socket.isSsl());
             assertEquals(1, upgradedServerCount.get());
           }
         } else {
