@@ -21,7 +21,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -66,25 +65,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     super(handlerCtx, channel, context, decoder, encoder, initialSettings);
     this.http2Pool = http2Pool;
 
-    connection().addListener(new Http2ConnectionAdapter() {
-      @Override
-      public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-        http2Pool.discard(VertxHttp2ClientHandler.this);
-      }
-      @Override
-      public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-        http2Pool.discard(VertxHttp2ClientHandler.this);
-      }
-      @Override
-      public void onStreamClosed(Http2Stream nettyStream) {
-        Http2ClientStream stream = streams.remove(nettyStream.id());
-        if (!stream.ended) {
-          stream.handleException(new VertxException("Connection was closed")); // Put that in utility class
-        }
-        http2Pool.recycle(VertxHttp2ClientHandler.this);
-      }
-    });
-
     encoder.flowController().listener(stream -> {
       Http2ClientStream clientStream = streams.get(stream.id());
       if (clientStream != null && !clientStream.isNotWritable()) {
@@ -94,6 +74,27 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
     this.handlerCtx = handlerCtx;
     this.context = context;
+  }
+
+  @Override
+  public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+    http2Pool.discard(VertxHttp2ClientHandler.this);
+  }
+
+  @Override
+  public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+    super.onGoAwayReceived(lastStreamId, errorCode, debugData);
+    http2Pool.discard(VertxHttp2ClientHandler.this);
+  }
+
+  @Override
+  public void onStreamClosed(Http2Stream nettyStream) {
+    super.onStreamClosed(nettyStream);
+    Http2ClientStream stream = streams.remove(nettyStream.id());
+    if (!stream.ended) {
+      stream.handleException(new VertxException("Connection was closed")); // Put that in utility class
+    }
+    http2Pool.recycle(VertxHttp2ClientHandler.this);
   }
 
   @Override

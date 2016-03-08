@@ -47,7 +47,7 @@ import java.util.ArrayDeque;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implements Http2FrameListener, HttpConnection {
+abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implements Http2FrameListener, HttpConnection, Http2Connection.Listener {
 
   private final ChannelHandlerContext context;
   private final Channel channel;
@@ -67,49 +67,65 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
       Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
 
-    connection().addListener(new Http2ConnectionAdapter() {
-      @Override
-      public void onStreamClosed(Http2Stream stream) {
-        checkShutdownHandler();
-      }
-      @Override
-      public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-        Handler<GoAway> handler = goAwayHandler;
-        if (handler != null) {
-          Buffer buffer = Buffer.buffer(debugData);
-          handlerContext.executeFromIO(() -> {
-            handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
-          });
-        }
-        checkShutdownHandler();
-      }
-      void checkShutdownHandler() {
-        if (!shutdown) {
-          Http2Connection conn = connection();
-          if ((conn.goAwayReceived() || conn.goAwaySent()) && conn.numActiveStreams() == 0) {
-            shutdown  = true;
-            Handler<Void> handler = shutdownHandler;
-            if (handler != null) {
-              handlerContext.executeFromIO(() -> {
-                shutdownHandler.handle(null);
-              });
-            }
-          }
-        }
-      }
-    });
+    connection().addListener(this);
 
     this.channel = channel;
     this.context = context;
     this.handlerContext = handlerContext;
   }
 
+  // Http2Connection.Listener
+
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    super.exceptionCaught(ctx, cause);
-    cause.printStackTrace();
-    ctx.close();
+  public void onStreamClosed(Http2Stream stream) {
+    checkShutdownHandler();
   }
+
+  @Override
+  public void onStreamAdded(Http2Stream stream) {
+  }
+
+  @Override
+  public void onStreamActive(Http2Stream stream) {
+  }
+
+  @Override
+  public void onStreamHalfClosed(Http2Stream stream) {
+  }
+
+  @Override
+  public void onStreamRemoved(Http2Stream stream) {
+  }
+
+  @Override
+  public void onPriorityTreeParentChanged(Http2Stream stream, Http2Stream oldParent) {
+  }
+
+  @Override
+  public void onPriorityTreeParentChanging(Http2Stream stream, Http2Stream newParent) {
+  }
+
+  @Override
+  public void onWeightChanged(Http2Stream stream, short oldWeight) {
+  }
+
+  @Override
+  public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+  }
+
+  @Override
+  public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+    Handler<GoAway> handler = goAwayHandler;
+    if (handler != null) {
+      Buffer buffer = Buffer.buffer(debugData);
+      handlerContext.executeFromIO(() -> {
+        handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
+      });
+    }
+    checkShutdownHandler();
+  }
+
+  // Http2FrameListener
 
   @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {
@@ -156,6 +172,16 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
                              Http2Flags flags, ByteBuf payload) {
   }
 
+  // Http2Connection overrides
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    super.exceptionCaught(ctx, cause);
+    cause.printStackTrace();
+    ctx.close();
+  }
+
+
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
@@ -165,6 +191,8 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
       });
     }
   }
+
+  // HttpConnection implementation
 
   @Override
   public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
@@ -279,6 +307,22 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
     return this;
   }
 
+  // Private
+
+  private void checkShutdownHandler() {
+    if (!shutdown) {
+      Http2Connection conn = connection();
+      if ((conn.goAwayReceived() || conn.goAwaySent()) && conn.numActiveStreams() == 0) {
+        shutdown  = true;
+        Handler<Void> handler = shutdownHandler;
+        if (handler != null) {
+          handlerContext.executeFromIO(() -> {
+            shutdownHandler.handle(null);
+          });
+        }
+      }
+    }
+  }
 
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
     Http2Settings converted = new Http2Settings();

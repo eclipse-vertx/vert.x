@@ -86,24 +86,23 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
       resp.writabilityChanged();
     });
 
-    connection().addListener(new Http2ConnectionAdapter() {
-      @Override
-      public void onStreamClosed(Http2Stream stream) {
-        VertxHttp2Stream removed = streams.remove(stream.id());
-        if (removed != null) {
-          handlerContext.executeFromIO(() -> {
-            removed.handleClose();
-          });
-        }
-      }
-    });
-
     this.channel = channel;
     this.options = options;
     this.context = context;
     this.handlerContext = handlerContext;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
+  }
+
+  @Override
+  public void onStreamClosed(Http2Stream stream) {
+    super.onStreamClosed(stream);
+    VertxHttp2Stream removed = streams.remove(stream.id());
+    if (removed != null) {
+      handlerContext.executeFromIO(() -> {
+        removed.handleClose();
+      });
+    }
   }
 
   /**
