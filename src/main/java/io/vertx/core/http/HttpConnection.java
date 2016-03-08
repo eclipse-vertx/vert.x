@@ -38,9 +38,7 @@ import io.vertx.core.buffer.Buffer;
  * HttpClient:
  * - test executeFromIO
  * - metrics
- * - push notifications
  * - HttpConnection test
- * - reset stream
  * - compression
  *
  * Both:
