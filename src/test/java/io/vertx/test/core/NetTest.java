@@ -1107,14 +1107,19 @@ public class NetTest extends VertxTestBase {
       }
 
       AtomicBoolean upgradedServer = new AtomicBoolean();
+      AtomicInteger upgradedServerCount = new AtomicInteger();
       socket.handler(buff -> {
         socket.write(buff); // echo the data
-        if (startTLS && !upgradedServer.get()) {
-          assertFalse(socket.isSsl());
-          socket.upgradeToSsl(v -> {
-            assertTrue(socket.isSsl());
-          });
-          upgradedServer.set(true);
+        if (startTLS) {
+          if (upgradedServer.compareAndSet(false, true)) {
+            assertFalse(socket.isSsl());
+            socket.upgradeToSsl(v -> {
+              upgradedServerCount.incrementAndGet();
+              assertTrue(socket.isSsl());
+            });
+          } else {
+            assertEquals(1, upgradedServerCount.get());
+          }
         } else {
           assertTrue(socket.isSsl());
         }
@@ -1159,7 +1164,6 @@ public class NetTest extends VertxTestBase {
 
           final AtomicBoolean upgradedClient = new AtomicBoolean();
           socket.handler(buffer -> {
-            System.out.println("got echo " + buffer.length());
             received.appendBuffer(buffer);
             if (received.length() == expected.length()) {
               assertEquals(expected, received);
