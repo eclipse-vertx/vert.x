@@ -83,7 +83,7 @@ public class Http2ClientTest extends Http2TestBase {
       });
       settingsRead.complete();
 */
-      testComplete();
+      req.response().end();
     });
     startServer();
     client.close();
@@ -95,7 +95,7 @@ public class Http2ClientTest extends Http2TestBase {
         setMaxFrameSize(initialSettings.maxFrameSize()).
         setMaxHeaderListSize(initialSettings.maxHeaderListSize())));
     client.getNow(4043, "localhost", "/somepath", resp -> {
-
+      testComplete();
     });
     await();
   }
@@ -152,10 +152,11 @@ public class Http2ClientTest extends Http2TestBase {
   public void testOverrideAuthority() throws Exception {
     server.requestHandler(req -> {
       assertEquals("localhost:4444", req.host());
-      testComplete();
+      req.response().end();
     });
     startServer();
     client.get(4043, "localhost", "/somepath", resp -> {
+      testComplete();
     })
         .setHost("localhost:4444")
         .exceptionHandler(err -> fail())
@@ -253,11 +254,12 @@ public class Http2ClientTest extends Http2TestBase {
       req.handler(content::appendBuffer);
       req.endHandler(v -> {
         assertEquals(expected, content);
-        testComplete();
+        req.response().end();
       });
     });
     startServer();
     HttpClientRequest req = client.post(4043, "localhost", "/somepath", resp -> {
+      testComplete();
     }).setChunked(true).exceptionHandler(err -> {
       fail();
     });
@@ -660,6 +662,28 @@ public class Http2ClientTest extends Http2TestBase {
       resp.endHandler(v -> {
         testComplete();
       });
+    });
+    req1.end();
+    await();
+  }
+
+  @Test
+  public void testServerShutdownConnection() throws Exception {
+    waitFor(2);
+    server.connectionHandler(HttpConnection::shutdown);
+    server.requestHandler(req -> fail());
+    startServer();
+    HttpClientRequest req1 = client.get(4043, "localhost", "/somepath");
+    req1.connectionHandler(conn -> {
+      conn.goAwayHandler(ga -> {
+        complete();
+      });
+    });
+    req1.exceptionHandler(err -> {
+      complete();
+    });
+    req1.handler(resp -> {
+      fail();
     });
     req1.end();
     await();

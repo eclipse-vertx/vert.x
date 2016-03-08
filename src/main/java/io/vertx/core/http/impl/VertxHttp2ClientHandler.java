@@ -21,9 +21,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -33,6 +33,7 @@ import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpConnection;
@@ -65,14 +66,21 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     super(handlerCtx, channel, context, decoder, encoder, initialSettings);
     this.http2Pool = http2Pool;
 
-    connection().addListener(new Http2EventAdapter() {
+    connection().addListener(new Http2ConnectionAdapter() {
       @Override
       public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
         http2Pool.discard(VertxHttp2ClientHandler.this);
       }
       @Override
-      public void onStreamClosed(Http2Stream stream) {
-        streams.remove(stream.id());
+      public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+        http2Pool.discard(VertxHttp2ClientHandler.this);
+      }
+      @Override
+      public void onStreamClosed(Http2Stream nettyStream) {
+        Http2ClientStream stream = streams.remove(nettyStream.id());
+        if (!stream.ended) {
+          stream.handleException(new VertxException("Connection was closed")); // Put that in utility class
+        }
         http2Pool.recycle(VertxHttp2ClientHandler.this);
       }
     });
@@ -143,6 +151,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
+    throw new UnsupportedOperationException("todo");
   }
 
   @Override
@@ -158,7 +167,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
     Http2ClientStream stream = streams.get(streamId);
-    stream.handleException(new StreamResetException(errorCode));
+    stream.handleReset(errorCode);
   }
 
   @Override
@@ -186,6 +195,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     private HttpClientResponseImpl resp;
     private boolean paused;
     private int numBytes;
+    private boolean ended;
 
     public Http2ClientStream(VertxHttp2ClientHandler handler, Http2Stream stream) throws Http2Exception {
       this(handler, null, stream);
@@ -237,6 +247,11 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
       return consumed;
     }
 
+    void handleReset(long errorCode) {
+      ended = true;
+      handleException(new StreamResetException(errorCode));
+    }
+
     void handleException(Throwable exception) {
       context.executeFromIO(() -> {
         req.handleException(exception);
@@ -250,6 +265,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
     private void handleEnd() {
       // Should use an shared immutable object ?
+      ended = true;
       resp.handleEnd(new CaseInsensitiveHeaders());
     }
 
