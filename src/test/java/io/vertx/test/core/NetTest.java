@@ -1111,7 +1111,9 @@ public class NetTest extends VertxTestBase {
         socket.write(buff); // echo the data
         if (startTLS && !upgradedServer.get()) {
           assertFalse(socket.isSsl());
-          socket.upgradeToSsl(v -> assertTrue(socket.isSsl()));
+          socket.upgradeToSsl(v -> {
+            assertTrue(socket.isSsl());
+          });
           upgradedServer.set(true);
         } else {
           assertTrue(socket.isSsl());
@@ -1123,18 +1125,18 @@ public class NetTest extends VertxTestBase {
       NetClientOptions clientOptions = new NetClientOptions();
       if (!startTLS) {
         clientOptions.setSsl(true);
-        if (clientTrustAll) {
-          clientOptions.setTrustAll(true);
-        }
-        if (clientTrust) {
-          clientOptions.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
-        }
-        if (clientCert) {
-          clientOptions.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
-        }
-        for (String suite: enabledCipherSuites) {
-          clientOptions.addEnabledCipherSuite(suite);
-        }
+      }
+      if (clientTrustAll) {
+        clientOptions.setTrustAll(true);
+      }
+      if (clientTrust) {
+        clientOptions.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
+      }
+      if (clientCert) {
+        clientOptions.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
+      }
+      for (String suite: enabledCipherSuites) {
+        clientOptions.addEnabledCipherSuite(suite);
       }
       client = vertx.createNetClient(clientOptions);
       client.connect(4043, "localhost", ar2 -> {
@@ -1145,24 +1147,32 @@ public class NetTest extends VertxTestBase {
           }
           final int numChunks = 100;
           final int chunkSize = 100;
+          final List<Buffer> toSend = new ArrayList<>();
+          final Buffer expected = Buffer.buffer();
+          for (int i = 0; i< numChunks;i++) {
+            Buffer chunk = TestUtils.randomBuffer(chunkSize);
+            toSend.add(chunk);
+            expected.appendBuffer(chunk);
+          }
           final Buffer received = Buffer.buffer();
-          final Buffer sent = Buffer.buffer();
           final NetSocket socket = ar2.result();
 
           final AtomicBoolean upgradedClient = new AtomicBoolean();
           socket.handler(buffer -> {
+            System.out.println("got echo " + buffer.length());
             received.appendBuffer(buffer);
-            if (received.length() == sent.length()) {
-              assertEquals(sent, received);
+            if (received.length() == expected.length()) {
+              assertEquals(expected, received);
               testComplete();
             }
             if (startTLS && !upgradedClient.get()) {
+              upgradedClient.set(true);
               assertFalse(socket.isSsl());
               socket.upgradeToSsl(v -> {
                 assertTrue(socket.isSsl());
                 // Now send the rest
                 for (int i = 1; i < numChunks; i++) {
-                  sendBuffer(socket, sent, chunkSize);
+                  socket.write(toSend.get(i));
                 }
               });
             } else {
@@ -1173,7 +1183,7 @@ public class NetTest extends VertxTestBase {
           //Now send some data
           int numToSend = startTLS ? 1 : numChunks;
           for (int i = 0; i < numToSend; i++) {
-            sendBuffer(socket, sent, chunkSize);
+            socket.write(toSend.get(i));
           }
         } else {
           if (shouldPass) {
@@ -1185,12 +1195,6 @@ public class NetTest extends VertxTestBase {
       });
     });
     await();
-  }
-
-  void sendBuffer(NetSocket socket, Buffer sent, int chunkSize) {
-    Buffer buff = TestUtils.randomBuffer(chunkSize);
-    sent.appendBuffer(buff);
-    socket.write(buff);
   }
 
   @Test
