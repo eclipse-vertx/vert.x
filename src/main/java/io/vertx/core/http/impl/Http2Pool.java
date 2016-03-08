@@ -91,6 +91,15 @@ class Http2Pool extends ConnectionManager.Pool {
     }
   }
 
+  void discard(VertxHttp2ClientHandler conn) {
+    synchronized (queue) {
+      if (clientHandler == conn) {
+        clientHandler = null;
+        queue.connectionClosed();
+      }
+    }
+  }
+
   @Override
   void recycle(HttpClientConnection conn) {
     synchronized (queue) {

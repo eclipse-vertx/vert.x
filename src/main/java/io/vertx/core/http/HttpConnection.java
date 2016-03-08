@@ -64,7 +64,7 @@ public interface HttpConnection {
    */
   @Fluent
   default HttpConnection goAway(long errorCode) {
-    return goAway(errorCode, 2^31 - 1);
+    return goAway(errorCode, Integer.MAX_VALUE);
   }
 
   /**

@@ -619,4 +619,49 @@ public class Http2ClientTest extends Http2TestBase {
     req2.end();
     await();
   }
+
+  @Test
+  public void testConnectionShutdownInConnectionHandler() throws Exception {
+    AtomicInteger serverStatus = new AtomicInteger();
+    server.connectionHandler(conn -> {
+      if (serverStatus.getAndIncrement() == 0) {
+        conn.goAwayHandler(ga -> {
+          assertEquals(0, ga.getErrorCode());
+          assertEquals(1, serverStatus.getAndIncrement());
+        });
+        conn.shutdownHandler(v -> {
+          assertEquals(2, serverStatus.getAndIncrement());
+        });
+        conn.closeHandler(v -> {
+          assertEquals(3, serverStatus.getAndIncrement());
+        });
+      }
+    });
+    server.requestHandler(req -> {
+      assertEquals(5, serverStatus.getAndIncrement());
+      req.response().end();
+    });
+    startServer();
+    AtomicInteger clientStatus = new AtomicInteger();
+    HttpClientRequest req1 = client.get(4043, "localhost", "/somepath");
+    req1.connectionHandler(conn -> {
+      conn.shutdownHandler(v -> {
+        clientStatus.compareAndSet(1, 2);
+      });
+      if (clientStatus.getAndIncrement() == 0) {
+        conn.shutdown();
+      }
+    });
+    req1.exceptionHandler(err -> {
+      fail();
+    });
+    req1.handler(resp -> {
+      assertEquals(2, clientStatus.getAndIncrement());
+      resp.endHandler(v -> {
+        testComplete();
+      });
+    });
+    req1.end();
+    await();
+  }
 }

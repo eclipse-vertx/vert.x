@@ -254,8 +254,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     this.closeHandler = handler;
   }
 
-  public boolean isClosed() {
-    return !channel.isOpen();
+  public boolean isValid() {
+    return channel.isOpen();
   }
 
   int getOutstandingRequestCount() {

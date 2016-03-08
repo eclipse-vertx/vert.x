@@ -756,7 +756,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           wsConnect = handler;
         }
         getConnection(port, host, conn -> {
-          if (!conn.isClosed()) {
+          if (conn.isValid()) {
             conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
           } else {
             websocket(port, host, requestURI, headers, version, subProtocols, wsConnect);

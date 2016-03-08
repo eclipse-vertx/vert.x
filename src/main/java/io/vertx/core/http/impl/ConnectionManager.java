@@ -362,7 +362,7 @@ public class ConnectionManager {
      * @param conn the connection
      */
     void deliverStream(HttpClientConnection conn, Waiter waiter) {
-      if (conn.isClosed()) {
+      if (!conn.isValid()) {
         // The connection has been closed - closed connections can be in the pool
         // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
         // that is done asynchronously in the connection closeHandler()
@@ -386,7 +386,7 @@ public class ConnectionManager {
 
     public boolean getConnection(Waiter waiter) {
       ClientConnection conn = availableConnections.poll();
-      if (conn != null && !conn.isClosed()) {
+      if (conn != null && conn.isValid()) {
         ContextImpl context = waiter.context;
         if (context == null) {
           context = conn.getContext();

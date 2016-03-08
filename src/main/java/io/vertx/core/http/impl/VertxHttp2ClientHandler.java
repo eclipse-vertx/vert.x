@@ -67,6 +67,10 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
     connection().addListener(new Http2EventAdapter() {
       @Override
+      public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+        http2Pool.discard(VertxHttp2ClientHandler.this);
+      }
+      @Override
       public void onStreamClosed(Http2Stream stream) {
         streams.remove(stream.id());
         http2Pool.recycle(VertxHttp2ClientHandler.this);
@@ -125,9 +129,9 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   }
 
   @Override
-  public boolean isClosed() {
-    // Todo
-    return false;
+  public boolean isValid() {
+    Http2Connection conn = connection();
+    return !conn.goAwaySent() && !conn.goAwayReceived();
   }
 
   @Override
