@@ -36,6 +36,7 @@ import io.vertx.core.buffer.Buffer;
  * - HttpServerRequest#peerCertificateChain
  *
  * HttpClient:
+ * - stream error handling
  * - test executeFromIO
  * - metrics
  * - HttpConnection test

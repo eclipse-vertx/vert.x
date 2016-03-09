@@ -22,7 +22,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionAdapter;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
@@ -61,6 +60,8 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   private Http2Settings serverSettings = new Http2Settings();
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
+  private Handler<Throwable> exceptionHandler;
+
 
   public VertxHttp2ConnectionHandler(
       ChannelHandlerContext context, Channel channel, ContextImpl handlerContext,
@@ -192,6 +193,18 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
     }
   }
 
+  @Override
+  protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
+    Handler<Throwable> handler = exceptionHandler;
+    if (handler != null) {
+      handlerContext.executeFromIO(() -> {
+        handler.handle(cause);
+      });
+    }
+    // Default behavior send go away
+    super.onConnectionError(ctx, cause, http2Ex);
+  }
+
   // HttpConnection implementation
 
   @Override
@@ -305,6 +318,17 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
     });
     context.flush();
     return this;
+  }
+
+  @Override
+  public HttpConnection exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
   }
 
   // Private

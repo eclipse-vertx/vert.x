@@ -98,16 +98,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   }
 
   @Override
-  public Handler<Throwable> exceptionHandler() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public HttpConnection exceptionHandler(Handler<Throwable> handler) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Context getContext() {
     return context;
   }
@@ -182,6 +172,28 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, method, uri, host, headersMap);
     streams.put(promisedStreamId, promisedReq.getStream());
     stream.handlePushPromise(promisedReq);
+  }
+
+  @Override
+  protected void onStreamError(ChannelHandlerContext ctx, Throwable cause, Http2Exception.StreamException http2Ex) {
+    Http2ClientStream stream = streams.get(http2Ex.streamId());
+    if (stream != null) {
+      context.executeFromIO(() -> {
+        stream.handleException(http2Ex);
+      });
+    }
+    // Default behavior reset stream
+    super.onStreamError(ctx, cause, http2Ex);
+  }
+
+  @Override
+  protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
+    for (Http2ClientStream stream : streams.values()) {
+      context.executeFromIO(() -> {
+        stream.handleException(cause);
+      });
+    }
+    super.onConnectionError(ctx, cause, http2Ex);
   }
 
   static class Http2ClientStream implements HttpClientStream {

@@ -1296,12 +1296,12 @@ public class Http2ServerTest extends Http2TestBase {
       request.context.flush();
       when.setHandler(ar -> {
         // Send a corrupted frame on purpose to check we get the corresponding error in the request exception handler
-        // the error is : greater padding value 0x -> 1F
+        // the error is : greater padding value 0c -> 1F
         // ChannelFuture a = encoder.frameWriter().writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 12, false, request.context.newPromise());
         // normal frame    : 00 00 12 00 08 00 00 00 03 0c 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
         // corrupted frame : 00 00 12 00 08 00 00 00 03 1F 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
         request.channel.write(Buffer.buffer(new byte[]{
-            0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, 0x03, 0x1F, 0x68, 0x65, 0x6c, 0x6c,
+            0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, (byte)(id & 0xFF), 0x1F, 0x68, 0x65, 0x6c, 0x6c,
             0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         }).getByteBuf());
         request.context.flush();
@@ -1329,7 +1329,7 @@ public class Http2ServerTest extends Http2TestBase {
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
       });
     });
-    startServer(ctx);;
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       request.decoder.frameListener(new Http2EventAdapter() {

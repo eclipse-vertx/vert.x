@@ -16,8 +16,33 @@
 
 package io.vertx.test.core;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
+import io.netty.handler.codec.http2.DefaultHttp2Connection;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2ConnectionDecoder;
+import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Error;
+import io.netty.handler.codec.http2.Http2EventAdapter;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2FrameListener;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.ssl.ApplicationProtocolNames;
+import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
+import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -29,8 +54,11 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -41,6 +69,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -687,5 +716,139 @@ public class Http2ClientTest extends Http2TestBase {
     });
     req1.end();
     await();
+  }
+
+  private ServerBootstrap createServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
+    class Handler extends Http2ConnectionHandler {
+      public Handler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
+        super(decoder, encoder, initialSettings);
+        decoder.frameListener(handler.apply(decoder, encoder));
+      }
+    }
+    class Builder extends AbstractHttp2ConnectionHandlerBuilder<Handler, Builder> {
+      @Override
+      protected Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
+        return new Handler(decoder, encoder, initialSettings);
+      }
+      @Override
+      public Handler build() {
+        return super.build();
+      }
+    }
+    ServerBootstrap bootstrap = new ServerBootstrap();
+    bootstrap.channel(NioServerSocketChannel.class);
+    bootstrap.group(new NioEventLoopGroup());
+    bootstrap.childHandler(new ChannelInitializer<Channel>() {
+      @Override
+      protected void initChannel(Channel ch) throws Exception {
+        SSLHelper sslHelper = new SSLHelper(serverOptions, KeyStoreHelper.create((VertxInternal) vertx, getServerCertOptions(KeyCert.JKS)), null);
+        SslHandler sslHandler = sslHelper.createSslHandler((VertxInternal) vertx, false, "localhost", 4043);
+        ch.pipeline().addLast(sslHandler);
+        ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
+          @Override
+          protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
+            if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
+              ChannelPipeline p = ctx.pipeline();
+              Builder builder = new Builder();
+              Handler clientHandler = builder.build();
+              p.addLast("handler", clientHandler);
+              return;
+            }
+            ctx.close();
+            throw new IllegalStateException("unknown protocol: " + protocol);
+          }
+        });
+      }
+    });
+    return bootstrap;
+  }
+
+  @Test
+  public void testStreamError() throws Exception {
+    waitFor(2);
+    ServerBootstrap bootstrap = createServer((dec, enc) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, false, ctx.newPromise());
+        // Send a corrupted frame on purpose to check we get the corresponding error in the request exception handler
+        // the error is : greater padding value 0c -> 1F
+        // ChannelFuture a = encoder.frameWriter().writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 12, false, request.context.newPromise());
+        // normal frame    : 00 00 12 00 08 00 00 00 03 0c 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
+        // corrupted frame : 00 00 12 00 08 00 00 00 03 1F 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
+        ctx.channel().write(Buffer.buffer(new byte[]{
+            0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, (byte)(streamId & 0xFF), 0x1F, 0x68, 0x65, 0x6c, 0x6c,
+            0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        }).getByteBuf());
+        ctx.flush();
+      }
+    });
+    ChannelFuture s = bootstrap.bind("localhost", 4043).sync();
+    try {
+      Context ctx = vertx.getOrCreateContext();
+      ctx.runOnContext(v -> {
+        client.get(4043, "localhost", "/somepath", resp -> {
+          resp.exceptionHandler(err -> {
+            assertOnIOContext(ctx);
+            if (err instanceof Http2Exception.StreamException) {
+              complete();
+            }
+          });
+        }).connectionHandler(conn -> {
+          conn.exceptionHandler(err -> {
+            fail();
+          });
+        }).exceptionHandler(err -> {
+          assertOnIOContext(ctx);
+          if (err instanceof Http2Exception.StreamException) {
+            complete();
+          }
+        }).end();
+      });
+      await();
+    } finally {
+      s.channel().close().sync();
+    }
+  }
+
+  @Test
+  public void testConnectionDecodeError() throws Exception {
+    waitFor(3);
+    ServerBootstrap bootstrap = createServer((dec, enc) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, false, ctx.newPromise());
+        enc.frameWriter().writeRstStream(ctx, 10, 0, ctx.newPromise());
+        ctx.flush();
+      }
+    });
+    ChannelFuture s = bootstrap.bind("localhost", 4043).sync();
+    try {
+      Context ctx = vertx.getOrCreateContext();
+      ctx.runOnContext(v -> {
+        client.get(4043, "localhost", "/somepath", resp -> {
+          resp.exceptionHandler(err -> {
+            assertOnIOContext(ctx);
+            if (err instanceof Http2Exception) {
+              complete();
+            }
+          });
+        }).connectionHandler(conn -> {
+          conn.exceptionHandler(err -> {
+            assertOnIOContext(ctx);
+            if (err instanceof Http2Exception) {
+              complete();
+            }
+          });
+        }).exceptionHandler(err -> {
+          assertOnIOContext(ctx);
+          if (err instanceof Http2Exception) {
+            complete();
+          }
+        }).end();
+      });
+      await();
+    } finally {
+      s.channel().close().sync();
+    }
   }
 }
