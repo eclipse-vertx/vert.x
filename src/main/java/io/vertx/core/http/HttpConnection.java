@@ -42,7 +42,6 @@ import io.vertx.core.buffer.Buffer;
  * - HttpConnection test
  * - compression
  * - handle 100 continue automatically
- * - invalid server response headers (like status = XYZ instead of number)
  *
  * Both:
  * - byte distribution algorithm configurability (options ? connection ?)

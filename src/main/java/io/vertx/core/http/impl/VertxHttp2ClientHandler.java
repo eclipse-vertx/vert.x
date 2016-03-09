@@ -221,11 +221,20 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
     void handleHeaders(Http2Headers headers, boolean end) {
       if (resp == null) {
+        int status;
+        try {
+          status = Integer.parseInt(headers.status().toString());
+        } catch (NumberFormatException e) {
+          handleException(e);
+          encoder.writeRstStream(handlerCtx, stream.id(), 0x01 /* PROTOCOL_ERROR */, handlerCtx.newPromise());
+          handlerCtx.flush();
+          return;
+        }
         resp = new HttpClientResponseImpl(
             req,
             HttpVersion.HTTP_2,
             this,
-            Integer.parseInt(headers.status().toString()),
+            status,
             "todo",
             new Http2HeadersAdaptor(headers)
         );

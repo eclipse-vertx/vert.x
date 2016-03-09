@@ -851,4 +851,36 @@ public class Http2ClientTest extends Http2TestBase {
       s.channel().close().sync();
     }
   }
+
+  @Test
+  public void testInvalidServerResponse() throws Exception {
+    ServerBootstrap bootstrap = createServer((dec, enc) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("xyz"), 0, false, ctx.newPromise());
+        ctx.flush();
+      }
+    });
+    ChannelFuture s = bootstrap.bind("localhost", 4043).sync();
+    try {
+      Context ctx = vertx.getOrCreateContext();
+      ctx.runOnContext(v -> {
+        client.get(4043, "localhost", "/somepath", resp -> {
+          fail();
+        }).connectionHandler(conn -> {
+          conn.exceptionHandler(err -> {
+            fail();
+          });
+        }).exceptionHandler(err -> {
+          assertOnIOContext(ctx);
+          if (err instanceof NumberFormatException) {
+            testComplete();
+          }
+        }).end();
+      });
+      await();
+    } finally {
+      s.channel().close().sync();
+    }
+  }
 }
