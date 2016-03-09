@@ -155,6 +155,8 @@ public class Http2ClientTest extends Http2TestBase {
     client.get(4043, "localhost", "/somepath", resp -> {
       assertEquals(1, reqCount.get());
       assertEquals(HttpVersion.HTTP_2, resp.version());
+      assertEquals(200, resp.statusCode());
+      assertEquals("OK", resp.statusMessage());
       assertEquals("text/plain", resp.getHeader("content-type"));
       assertEquals("200", resp.getHeader(":status"));
       assertEquals("foo_value", resp.getHeader("foo_response"));

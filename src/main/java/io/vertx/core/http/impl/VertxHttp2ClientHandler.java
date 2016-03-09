@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
@@ -222,9 +223,11 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     void handleHeaders(Http2Headers headers, boolean end) {
       if (resp == null) {
         int status;
+        String statusMessage;
         try {
           status = Integer.parseInt(headers.status().toString());
-        } catch (NumberFormatException e) {
+          statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
+        } catch (Exception e) {
           handleException(e);
           encoder.writeRstStream(handlerCtx, stream.id(), 0x01 /* PROTOCOL_ERROR */, handlerCtx.newPromise());
           handlerCtx.flush();
@@ -235,7 +238,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
             HttpVersion.HTTP_2,
             this,
             status,
-            "todo",
+            statusMessage,
             new Http2HeadersAdaptor(headers)
         );
         req.handleResponse(resp);
