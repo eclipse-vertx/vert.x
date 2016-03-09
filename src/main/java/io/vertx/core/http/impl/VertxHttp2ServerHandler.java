@@ -60,9 +60,6 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
 
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
-  private final ChannelHandlerContext handlerCtx;
-  private final Channel channel;
-  private final ContextImpl context;
   private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
 
   private final HttpServerOptions options;
@@ -82,10 +79,7 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
       resp.writabilityChanged();
     });
 
-    this.channel = channel;
     this.options = options;
-    this.handlerCtx = handlerCtx;
-    this.context = context;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
   }

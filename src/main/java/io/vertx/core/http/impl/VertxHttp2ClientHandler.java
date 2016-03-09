@@ -50,8 +50,6 @@ import java.util.Map;
 class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements HttpClientConnection {
 
   final Http2Pool http2Pool;
-  final ChannelHandlerContext handlerCtx;
-  final ContextImpl context;
   private final IntObjectMap<Http2ClientStream> streams = new IntObjectHashMap<>();
   long streamCount;
 
@@ -71,9 +69,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
         clientStream.handleInterestedOpsChanged();
       }
     });
-
-    this.handlerCtx = handlerCtx;
-    this.context = context;
   }
 
   @Override

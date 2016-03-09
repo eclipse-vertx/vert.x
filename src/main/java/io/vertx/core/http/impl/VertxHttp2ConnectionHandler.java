@@ -48,9 +48,9 @@ import java.util.ArrayDeque;
  */
 abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implements Http2FrameListener, HttpConnection, Http2Connection.Listener {
 
-  private final ChannelHandlerContext context;
-  private final Channel channel;
-  private final ContextImpl handlerContext;
+  protected final ChannelHandlerContext handlerCtx;
+  protected final Channel channel;
+  protected final ContextImpl context;
   private Handler<Void> closeHandler;
   private boolean shuttingdown;
   private boolean shutdown;
@@ -64,15 +64,15 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
 
   public VertxHttp2ConnectionHandler(
-      ChannelHandlerContext context, Channel channel, ContextImpl handlerContext,
+      ChannelHandlerContext handlerCtx, Channel channel, ContextImpl context,
       Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
 
     connection().addListener(this);
 
     this.channel = channel;
+    this.handlerCtx = handlerCtx;
     this.context = context;
-    this.handlerContext = handlerContext;
   }
 
   // Http2Connection.Listener
@@ -119,7 +119,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
     Handler<GoAway> handler = goAwayHandler;
     if (handler != null) {
       Buffer buffer = Buffer.buffer(debugData);
-      handlerContext.executeFromIO(() -> {
+      context.executeFromIO(() -> {
         handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer));
       });
     }
@@ -141,7 +141,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     clientSettings.putAll(settings);
     if (clientSettingsHandler != null) {
-      handlerContext.executeFromIO(() -> {
+      context.executeFromIO(() -> {
         clientSettingsHandler.handle(remoteSettings());
       });
     }
@@ -187,7 +187,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
     if (closeHandler != null) {
-      handlerContext.executeFromIO(() -> {
+      context.executeFromIO(() -> {
         closeHandler.handle(null);
       });
     }
@@ -197,7 +197,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
-      handlerContext.executeFromIO(() -> {
+      context.executeFromIO(() -> {
         handler.handle(cause);
       });
     }
@@ -215,8 +215,8 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
     if (lastStreamId < 0) {
       throw new IllegalArgumentException();
     }
-    encoder().writeGoAway(context, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, context.newPromise());
-    context.flush();
+    encoder().writeGoAway(handlerCtx, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, handlerCtx.newPromise());
+    handlerCtx.flush();
     return this;
   }
 
@@ -295,10 +295,10 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
   @Override
   public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
-    Context completionContext = completionHandler != null ? handlerContext.owner().getOrCreateContext() : null;
+    Context completionContext = completionHandler != null ? context.owner().getOrCreateContext() : null;
     Http2Settings settingsUpdate = fromVertxSettings(settings);
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
-    encoder().writeSettings(context, settingsUpdate, context.newPromise()).addListener(fut -> {
+    encoder().writeSettings(handlerCtx, settingsUpdate, handlerCtx.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
         updateSettingsHandler.add(() -> {
           serverSettings.putAll(settingsUpdate);
@@ -316,7 +316,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
         }
       }
     });
-    context.flush();
+    handlerCtx.flush();
     return this;
   }
 
@@ -340,7 +340,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
         shutdown  = true;
         Handler<Void> handler = shutdownHandler;
         if (handler != null) {
-          handlerContext.executeFromIO(() -> {
+          context.executeFromIO(() -> {
             shutdownHandler.handle(null);
           });
         }
