@@ -23,6 +23,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerRequest;
@@ -33,13 +34,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Various uri utils.
+ * Various http utils.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class UriUtils {
+public final class HttpUtils {
 
-  private UriUtils() {
+  private HttpUtils() {
   }
 
   /**
@@ -109,6 +110,42 @@ final class UriUtils {
       }
     }
     return params;
+  }
+
+  public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
+    Http2Settings converted = new Http2Settings();
+    if (settings.getEnablePush() != null) {
+      converted.pushEnabled(settings.getEnablePush());
+    }
+    if (settings.getMaxConcurrentStreams() != null) {
+      converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
+    }
+    if (settings.getMaxHeaderListSize() != null) {
+      converted.maxHeaderListSize(settings.getMaxHeaderListSize());
+    }
+    if (settings.getMaxFrameSize() != null) {
+      converted.maxFrameSize(settings.getMaxFrameSize());
+    }
+    if (settings.getInitialWindowSize() != null) {
+      converted.initialWindowSize(settings.getInitialWindowSize());
+    }
+    if (settings.getHeaderTableSize() != null) {
+      converted.headerTableSize((int)(long)settings.getHeaderTableSize());
+    }
+    return converted;
+  }
+
+  public static io.vertx.core.http.Http2Settings toVertxSettings(Http2Settings settings) {
+    io.vertx.core.http.Http2Settings converted = new io.vertx.core.http.Http2Settings();
+    converted.setEnablePush(settings.pushEnabled());
+    converted.setMaxConcurrentStreams(settings.maxConcurrentStreams());
+    converted.setMaxHeaderListSize(settings.maxHeaderListSize());
+    converted.setMaxFrameSize(settings.maxFrameSize());
+    converted.setInitialWindowSize(settings.initialWindowSize());
+    if (settings.headerTableSize() != null) {
+      converted.setHeaderTableSize((int)(long)settings.headerTableSize());
+    }
+    return converted;
   }
 
   private static class CustomCompressor extends HttpContentCompressor {

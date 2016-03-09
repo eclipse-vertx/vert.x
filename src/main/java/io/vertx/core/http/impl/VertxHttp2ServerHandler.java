@@ -146,7 +146,7 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
     Http2Stream stream = conn.stream(streamId);
     Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
     if (req == null) {
-      String contentEncoding = options.isCompressionSupported() ? UriUtils.determineContentEncoding(headers) : null;
+      String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
       Http2ServerRequestImpl newReq = req = new Http2ServerRequestImpl(context.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers, contentEncoding);
       if (isMalformedRequest(headers)) {
         encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
@@ -253,7 +253,7 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
     int promisedStreamId = connection().local().incrementAndGetNextStreamId();
     encoder().writePushPromise(handlerCtx, streamId, promisedStreamId, headers, 0, handlerCtx.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
-        String contentEncoding = UriUtils.determineContentEncoding(headers);
+        String contentEncoding = HttpUtils.determineContentEncoding(headers);
         schedulePush(handlerCtx, promisedStreamId, contentEncoding, handler);
       } else {
         context.executeFromIO(() -> {

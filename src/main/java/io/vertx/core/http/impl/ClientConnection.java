@@ -359,7 +359,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   private HttpRequest createRequest(HttpVersion version, HttpMethod method, String uri, MultiMap headers) {
-    DefaultHttpRequest request = new DefaultHttpRequest(UriUtils.toNettyHttpVersion(version), UriUtils.toNettyHttpMethod(method), uri, false);
+    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method), uri, false);
     if (headers != null) {
       for (Map.Entry<String, String> header : headers) {
         // Todo : multi valued headers

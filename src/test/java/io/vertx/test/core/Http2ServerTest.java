@@ -57,7 +57,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.http.impl.VertxHttp2ServerHandler;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
@@ -215,7 +215,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void testServerInitialSettings() throws Exception {
     Http2Settings settings = randomSettings();
     server.close();
-    server = vertx.createHttpServer(serverOptions.setHttp2Settings(VertxHttp2ServerHandler.toVertxSettings(settings)));
+    server = vertx.createHttpServer(serverOptions.setHttp2Settings(HttpUtils.toVertxSettings(settings)));
     server.requestHandler(req -> fail());
     startServer();
     TestClient client = new TestClient();
@@ -248,7 +248,7 @@ public class Http2ServerTest extends Http2TestBase {
     Context otherContext = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
       otherContext.runOnContext(v -> {
-        conn.updateSettings(VertxHttp2ServerHandler.toVertxSettings(expectedSettings), ar -> {
+        conn.updateSettings(HttpUtils.toVertxSettings(expectedSettings), ar -> {
           assertSame(otherContext, Vertx.currentContext());
           io.vertx.core.http.Http2Settings ackedSettings = conn.settings();
           assertEquals(expectedSettings.maxHeaderListSize(), ackedSettings.getMaxHeaderListSize());
@@ -1197,7 +1197,7 @@ public class Http2ServerTest extends Http2TestBase {
     RuntimeException failure = new RuntimeException();
     Http2Settings settings = randomSettings();
     server.close();
-    server = vertx.createHttpServer(serverOptions.setHttp2Settings(VertxHttp2ServerHandler.toVertxSettings(settings)));
+    server = vertx.createHttpServer(serverOptions.setHttp2Settings(HttpUtils.toVertxSettings(settings)));
     configurator.accept(failure, server);
     Context ctx = vertx.getOrCreateContext();
     ctx.exceptionHandler(err -> {

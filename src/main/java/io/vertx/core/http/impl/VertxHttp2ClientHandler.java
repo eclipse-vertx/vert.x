@@ -31,12 +31,10 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.Context;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
@@ -160,7 +158,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   @Override
   public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
     Http2ClientStream stream = streams.get(streamId);
-    HttpMethod method = UriUtils.toVertxMethod(headers.method().toString());
+    HttpMethod method = HttpUtils.toVertxMethod(headers.method().toString());
     String uri = headers.path().toString();
     String host = headers.authority() != null ? headers.authority().toString() : null;
     MultiMap headersMap = new Http2HeadersAdaptor(headers);

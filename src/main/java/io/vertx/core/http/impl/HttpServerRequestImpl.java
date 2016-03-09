@@ -28,8 +28,6 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -139,7 +137,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public String path() {
     if (path == null) {
-      path = UriUtils.parsePath(uri());
+      path = HttpUtils.parsePath(uri());
     }
     return path;
   }
@@ -147,7 +145,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public String query() {
     if (query == null) {
-      query = UriUtils.parseQuery(uri());
+      query = HttpUtils.parseQuery(uri());
     }
     return query;
   }
@@ -183,7 +181,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public MultiMap params() {
     if (params == null) {
-      params = UriUtils.params(uri());
+      params = HttpUtils.params(uri());
     }
     return params;
   }
@@ -254,7 +252,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   public String absoluteURI() {
     if (absoluteURI == null) {
       try {
-        absoluteURI = UriUtils.absoluteURI(conn.getServerOrigin(), this);
+        absoluteURI = HttpUtils.absoluteURI(conn.getServerOrigin(), this);
       } catch (URISyntaxException e) {
         log.error("Failed to create abs uri", e);
       }

@@ -285,7 +285,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   public HttpMethod method() {
     if (method == null) {
       String sMethod = headers.method().toString();
-      method = UriUtils.toVertxMethod(sMethod);
+      method = HttpUtils.toVertxMethod(sMethod);
     }
     return method;
   }
@@ -312,7 +312,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     if (path == null) {
       CharSequence path = headers.path();
       if (path != null) {
-        this.path = UriUtils.parsePath(path.toString());
+        this.path = HttpUtils.parsePath(path.toString());
       }
     }
     return path;
@@ -323,7 +323,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     if (query == null) {
       CharSequence path = headers.path();
       if (path != null) {
-        this.query = UriUtils.parseQuery(path.toString());
+        this.query = HttpUtils.parseQuery(path.toString());
       }
     }
     return query;
@@ -367,7 +367,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   @Override
   public MultiMap params() {
     if (params == null) {
-      params = UriUtils.params(uri());
+      params = HttpUtils.params(uri());
     }
     return params;
   }
@@ -399,7 +399,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     }
     if (absoluteURI == null) {
       try {
-        absoluteURI = UriUtils.absoluteURI(serverOrigin, this);
+        absoluteURI = HttpUtils.absoluteURI(serverOrigin, this);
       } catch (URISyntaxException e) {
         log.error("Failed to create abs uri", e);
       }

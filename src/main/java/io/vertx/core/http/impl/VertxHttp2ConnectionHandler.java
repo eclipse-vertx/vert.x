@@ -280,12 +280,12 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
   @Override
   public io.vertx.core.http.Http2Settings remoteSettings() {
-    return toVertxSettings(clientSettings);
+    return HttpUtils.toVertxSettings(clientSettings);
   }
 
   @Override
   public io.vertx.core.http.Http2Settings settings() {
-    return toVertxSettings(serverSettings);
+    return HttpUtils.toVertxSettings(serverSettings);
   }
 
   @Override
@@ -296,7 +296,7 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   @Override
   public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
     Context completionContext = completionHandler != null ? context.owner().getOrCreateContext() : null;
-    Http2Settings settingsUpdate = fromVertxSettings(settings);
+    Http2Settings settingsUpdate = HttpUtils.fromVertxSettings(settings);
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     encoder().writeSettings(handlerCtx, settingsUpdate, handlerCtx.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
@@ -348,39 +348,4 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
     }
   }
 
-  public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
-    Http2Settings converted = new Http2Settings();
-    if (settings.getEnablePush() != null) {
-      converted.pushEnabled(settings.getEnablePush());
-    }
-    if (settings.getMaxConcurrentStreams() != null) {
-      converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
-    }
-    if (settings.getMaxHeaderListSize() != null) {
-      converted.maxHeaderListSize(settings.getMaxHeaderListSize());
-    }
-    if (settings.getMaxFrameSize() != null) {
-      converted.maxFrameSize(settings.getMaxFrameSize());
-    }
-    if (settings.getInitialWindowSize() != null) {
-      converted.initialWindowSize(settings.getInitialWindowSize());
-    }
-    if (settings.getHeaderTableSize() != null) {
-      converted.headerTableSize((int)(long)settings.getHeaderTableSize());
-    }
-    return converted;
-  }
-
-  public static io.vertx.core.http.Http2Settings toVertxSettings(Http2Settings settings) {
-    io.vertx.core.http.Http2Settings converted = new io.vertx.core.http.Http2Settings();
-    converted.setEnablePush(settings.pushEnabled());
-    converted.setMaxConcurrentStreams(settings.maxConcurrentStreams());
-    converted.setMaxHeaderListSize(settings.maxHeaderListSize());
-    converted.setMaxFrameSize(settings.maxFrameSize());
-    converted.setInitialWindowSize(settings.initialWindowSize());
-    if (settings.headerTableSize() != null) {
-      converted.setHeaderTableSize((int)(long)settings.headerTableSize());
-    }
-    return converted;
-  }
 }

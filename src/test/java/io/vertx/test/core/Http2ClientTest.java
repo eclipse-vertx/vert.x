@@ -16,9 +16,7 @@
 
 package io.vertx.test.core;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,11 +24,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
-import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
@@ -54,6 +49,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.SocketAddress;
@@ -116,13 +112,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(clientOptions.setHttp2Settings(new io.vertx.core.http.Http2Settings().
-        setEnablePush(initialSettings.pushEnabled()).
-        setHeaderTableSize((int)(long)initialSettings.headerTableSize()).
-        setInitialWindowSize(initialSettings.initialWindowSize()).
-        setMaxConcurrentStreams(initialSettings.maxConcurrentStreams()).
-        setMaxFrameSize(initialSettings.maxFrameSize()).
-        setMaxHeaderListSize(initialSettings.maxHeaderListSize())));
+    client = vertx.createHttpClient(clientOptions.setHttp2Settings(HttpUtils.toVertxSettings(initialSettings)));
     client.getNow(4043, "localhost", "/somepath", resp -> {
       testComplete();
     });
