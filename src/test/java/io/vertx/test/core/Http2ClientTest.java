@@ -24,6 +24,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
@@ -57,8 +58,10 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -66,6 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -874,5 +878,42 @@ public class Http2ClientTest extends Http2TestBase {
     } finally {
       s.channel().close().sync();
     }
+  }
+
+  @Test
+  public void testResponseCompressionEnabled() throws Exception {
+    testResponseCompression(true);
+  }
+
+  @Test
+  public void testResponseCompressionDisabled() throws Exception {
+    testResponseCompression(false);
+  }
+
+  private void testResponseCompression(boolean enabled) throws Exception {
+    byte[] expected = TestUtils.randomAlphaString(1000).getBytes();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    GZIPOutputStream in = new GZIPOutputStream(baos);
+    in.write(expected);
+    in.close();
+    byte[] compressed = baos.toByteArray();
+    server.close();
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> {
+      assertEquals(enabled ? "deflate, gzip" : null, req.getHeader(HttpHeaderNames.ACCEPT_ENCODING));
+      req.response().putHeader(HttpHeaderNames.CONTENT_ENCODING.toLowerCase(), "gzip").end(Buffer.buffer(compressed));
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setTryUseCompression(enabled));
+    client.get(4043, "localhost", "/somepath", resp -> {
+      String encoding = resp.getHeader(HttpHeaderNames.CONTENT_ENCODING);
+      assertEquals(enabled ? null : "gzip", encoding);
+      resp.bodyHandler(buff -> {
+        assertEquals(Buffer.buffer(enabled ? expected : compressed), buff);
+        testComplete();
+      });
+    }).end();
+    await();
   }
 }

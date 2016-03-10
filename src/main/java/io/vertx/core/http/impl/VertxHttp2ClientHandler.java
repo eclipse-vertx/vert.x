@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
@@ -42,6 +43,9 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 
 import java.util.Map;
+
+import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
+import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -309,6 +313,9 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
         for (Map.Entry<String, String> header : headers) {
           h.add(Http2HeadersAdaptor.toLowerCase(header.getKey()), header.getValue());
         }
+      }
+      if (handler.http2Pool.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
+        h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
       encoder.writeHeaders(handlerCtx, stream.id(), h, 0, end && buf == null, handlerCtx.newPromise());
       if (buf != null) {

@@ -20,7 +20,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
+import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
+import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
@@ -66,7 +68,6 @@ class Http2Pool extends ConnectionManager.Pool {
     VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(handlerCtx, context, ch);
     synchronized (queue) {
       VertxHttp2ClientHandler handler = clientHandlerBuilder.build(connection);
-      handler.decoder().frameListener(handler);
       clientHandler = handler;
       p.addLast(handler);
       handler.streamCount++;
@@ -134,7 +135,11 @@ class Http2Pool extends ConnectionManager.Pool {
     @Override
     protected VertxHttp2ClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
       VertxHttp2ClientHandler handler = new VertxHttp2ClientHandler(Http2Pool.this, handlerCtx, context, channel, decoder, encoder, initialSettings);
-      frameListener(handler);
+      if (client.getOptions().isTryUseCompression()) {
+        frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler));
+      } else {
+        frameListener(handler);
+      }
       return handler;
     }
 
