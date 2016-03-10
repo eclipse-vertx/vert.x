@@ -41,15 +41,15 @@ import io.vertx.core.buffer.Buffer;
  * - HttpConnection test
  *
  * Both:
+ * - CONNECT support / check
  * - byte distribution algorithm configurability (options ? connection ?)
- * - h2c
- * - http upgrade
+ * - h2c / http upgrade
  * - metrics
  * - close connection when service closes
  *
  * not yet in scope:
  * - stream priority
- * - unknown frames (send / receive)
+ * - unknown frames (send / receive) / could be as it is interesting for building extension on top of HTTP2 and it seems quite easy to do
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
