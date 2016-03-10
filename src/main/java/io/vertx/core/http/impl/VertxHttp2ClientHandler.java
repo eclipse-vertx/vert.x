@@ -223,7 +223,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
-      if (resp == null) {
+      if (resp == null || resp.statusCode() == 100) {
         int status;
         String statusMessage;
         try {
@@ -297,11 +297,11 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
     @Override
     public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked) {
-      throw new UnsupportedOperationException();
+      writeHeadWithContent(method, uri, headers, hostHeader, chunked, null, false);
     }
 
     @Override
-    public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
+    public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method.name());
       h.path(uri);
@@ -317,9 +317,9 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
       if (handler.http2Pool.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
-      encoder.writeHeaders(handlerCtx, stream.id(), h, 0, end && buf == null, handlerCtx.newPromise());
-      if (buf != null) {
-        writeBuffer(buf, end);
+      encoder.writeHeaders(handlerCtx, stream.id(), h, 0, end && content == null, handlerCtx.newPromise());
+      if (content != null) {
+        writeBuffer(content, end);
       } else {
         handlerCtx.flush();
       }

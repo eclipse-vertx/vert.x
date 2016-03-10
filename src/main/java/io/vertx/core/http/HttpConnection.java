@@ -39,7 +39,6 @@ import io.vertx.core.buffer.Buffer;
  * - test executeFromIO
  * - metrics
  * - HttpConnection test
- * - test continue handler
  *
  * Both:
  * - byte distribution algorithm configurability (options ? connection ?)
