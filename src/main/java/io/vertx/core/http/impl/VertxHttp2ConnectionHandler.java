@@ -42,6 +42,8 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextImpl;
 
 import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -280,7 +282,14 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
   @Override
   public io.vertx.core.http.Http2Settings remoteSettings() {
-    return HttpUtils.toVertxSettings(clientSettings);
+    io.vertx.core.http.Http2Settings a = new io.vertx.core.http.Http2Settings();
+    a.setEnablePush(connection().remote().allowPushTo());
+    a.setMaxConcurrentStreams((long)connection().local().maxActiveStreams());
+    a.setMaxHeaderListSize(encoder().configuration().headerTable().maxHeaderListSize());
+    a.setHeaderTableSize(encoder().configuration().headerTable().maxHeaderTableSize());
+    a.setMaxFrameSize(encoder().configuration().frameSizePolicy().maxFrameSize());
+    a.setInitialWindowSize(encoder().flowController().initialWindowSize());
+    return a;
   }
 
   @Override
@@ -295,9 +304,21 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
   @Override
   public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
-    Context completionContext = completionHandler != null ? context.owner().getOrCreateContext() : null;
     Http2Settings settingsUpdate = HttpUtils.fromVertxSettings(settings);
-    settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
+    updateSettings(settingsUpdate, completionHandler);
+    return this;
+  }
+
+  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
+    Context completionContext = completionHandler != null ? context.owner().getOrCreateContext() : null;
+    Http2Settings current = decoder().localSettings();
+    for (Map.Entry<Character, Long> entry : current.entrySet()) {
+      Character key = entry.getKey();
+      if (Objects.equals(settingsUpdate.get(key), entry.getValue())) {
+        settingsUpdate.remove(key);
+      }
+    }
+
     encoder().writeSettings(handlerCtx, settingsUpdate, handlerCtx.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
         updateSettingsHandler.add(() -> {
@@ -317,7 +338,6 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
       }
     });
     handlerCtx.flush();
-    return this;
   }
 
   @Override

@@ -20,7 +20,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
-import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
 import io.netty.handler.codec.http2.Http2Connection;
@@ -28,6 +27,15 @@ import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.impl.ContextImpl;
+
+import java.util.Objects;
+
+import static io.vertx.core.http.Http2Settings.DEFAULT_ENABLE_PUSH;
+import static io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE;
+import static io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE;
+import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
+import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_FRAME_SIZE;
+import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -130,6 +138,28 @@ class Http2Pool extends ConnectionManager.Pool {
       this.handlerCtx = handlerCtx;
       this.context = context;
       this.channel = channel;
+
+      io.vertx.core.http.Http2Settings initialSettings = client.getOptions().getHttp2Settings();
+      if (initialSettings != null) {
+        if (initialSettings.getEnablePush() != DEFAULT_ENABLE_PUSH) {
+          initialSettings().pushEnabled(initialSettings.getEnablePush());
+        }
+        if (initialSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
+          initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
+        }
+        if (initialSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
+          initialSettings().initialWindowSize(initialSettings.getInitialWindowSize());
+        }
+        if (!Objects.equals(initialSettings.getMaxConcurrentStreams(), DEFAULT_MAX_CONCURRENT_STREAMS)) {
+          initialSettings().maxConcurrentStreams(initialSettings.getMaxConcurrentStreams());
+        }
+        if (initialSettings.getMaxFrameSize() != DEFAULT_MAX_FRAME_SIZE) {
+          initialSettings().maxFrameSize(initialSettings.getMaxFrameSize());
+        }
+        if (!Objects.equals(initialSettings.getMaxHeaderListSize(), DEFAULT_MAX_HEADER_LIST_SIZE)) {
+          initialSettings().maxHeaderListSize(initialSettings.getMaxHeaderListSize());
+        }
+      }
     }
 
     @Override
@@ -145,27 +175,6 @@ class Http2Pool extends ConnectionManager.Pool {
 
     public VertxHttp2ClientHandler build(Http2Connection conn) {
       connection(conn);
-      io.vertx.core.http.Http2Settings initialSettings = client.getOptions().getHttp2Settings();
-      if (initialSettings != null) {
-        if (initialSettings.getHeaderTableSize() != null) {
-          initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
-        }
-        if (initialSettings.getInitialWindowSize() != null) {
-          initialSettings().initialWindowSize(initialSettings.getInitialWindowSize());
-        }
-        if (initialSettings.getMaxConcurrentStreams() != null) {
-          initialSettings().maxConcurrentStreams(initialSettings.getMaxConcurrentStreams());
-        }
-        if (initialSettings.getMaxFrameSize() != null) {
-          initialSettings().maxFrameSize(initialSettings.getMaxFrameSize());
-        }
-        if (initialSettings.getMaxHeaderListSize() != null) {
-          initialSettings().maxHeaderListSize(initialSettings.getMaxHeaderListSize());
-        }
-        if (initialSettings.getEnablePush() != null) {
-          initialSettings().pushEnabled(initialSettings.getEnablePush());
-        }
-      }
       return super.build();
     }
   }

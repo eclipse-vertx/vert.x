@@ -33,6 +33,7 @@ import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -42,6 +43,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -90,36 +92,89 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testClientSettings() throws Exception {
+    waitFor(2);
     Http2Settings initialSettings = randomSettings();
-//    Http2Settings updatedSettings = randomSettings();
-//    Future<Void> settingsRead = Future.future();
+    Http2Settings updatedSettings = randomSettings();
+    updatedSettings.headerTableSize((int)(long)initialSettings.headerTableSize()); // Otherwise it raise "invalid max dynamic table size" in Netty
+    AtomicInteger count = new AtomicInteger();
+    Future<Void> end = Future.future();
     server.requestHandler(req -> {
-      io.vertx.core.http.Http2Settings settings = req.connection().remoteSettings();
-      assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
-      assertEquals(initialSettings.maxFrameSize(), settings.getMaxFrameSize());
-      assertEquals(initialSettings.initialWindowSize(), settings.getInitialWindowSize());
-      assertEquals(initialSettings.maxConcurrentStreams(), settings.getMaxConcurrentStreams());
-      assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
-/*
-      req.connection().clientSettingsHandler(update -> {
-        assertOnIOContext(ctx);
-        assertEquals(updatedSettings.maxHeaderListSize(), update.getMaxHeaderListSize());
-        assertEquals(updatedSettings.maxFrameSize(), update.getMaxFrameSize());
-        assertEquals(updatedSettings.initialWindowSize(), update.getInitialWindowSize());
-        assertEquals(updatedSettings.maxConcurrentStreams(), update.getMaxConcurrentStreams());
-        assertEquals((long) updatedSettings.headerTableSize(), (long) update.getHeaderTableSize());
-        testComplete();
+      end.setHandler(v -> {
+        req.response().end();
       });
-      settingsRead.complete();
-*/
-      req.response().end();
+    }).connectionHandler(conn -> {
+      conn.remoteSettingsHandler(settings -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals(initialSettings.pushEnabled(), settings.getEnablePush());
+            assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals((int)initialSettings.maxFrameSize(), settings.getMaxFrameSize());
+            assertEquals((int)initialSettings.initialWindowSize(), settings.getInitialWindowSize());
+            assertEquals(Math.min(initialSettings.maxConcurrentStreams(), Integer.MAX_VALUE), (long)settings.getMaxConcurrentStreams());
+            assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
+            break;
+          case 1:
+            assertEquals(updatedSettings.pushEnabled(), settings.getEnablePush());
+            assertEquals(updatedSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals((int)updatedSettings.maxFrameSize(), settings.getMaxFrameSize());
+            assertEquals((int)updatedSettings.initialWindowSize(), settings.getInitialWindowSize());
+            assertEquals(Math.min(updatedSettings.maxConcurrentStreams(), Integer.MAX_VALUE), (long)settings.getMaxConcurrentStreams());
+            assertEquals((long) updatedSettings.headerTableSize(), (long) settings.getHeaderTableSize());
+            complete();
+            break;
+        }
+      });
     });
     startServer();
     client.close();
     client = vertx.createHttpClient(clientOptions.setHttp2Settings(HttpUtils.toVertxSettings(initialSettings)));
-    client.getNow(4043, "localhost", "/somepath", resp -> {
-      testComplete();
+    client.get(4043, "localhost", "/somepath", resp -> {
+      complete();
+    }).connectionHandler(conn -> {
+      conn.updateSettings(HttpUtils.toVertxSettings(updatedSettings), ar -> {
+        end.complete();
+      });
+    }).end();
+    await();
+  }
+
+  @Test
+  public void testServerSettings() throws Exception {
+    waitFor(2);
+    Http2Settings expectedSettings = randomSettings();
+    expectedSettings.headerTableSize(io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
+    server.close();
+    server = vertx.createHttpServer(serverOptions);
+    Context otherContext = vertx.getOrCreateContext();
+    server.connectionHandler(conn -> {
+      otherContext.runOnContext(v -> {
+        conn.updateSettings(HttpUtils.toVertxSettings(expectedSettings));
+      });
     });
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    AtomicInteger count = new AtomicInteger();
+    client.get(4043, "localhost", "/somepath", resp -> {
+      complete();
+    }).connectionHandler(conn -> {
+      conn.remoteSettingsHandler(settings -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            // Initial settings
+            break;
+          case 1:
+            assertEquals(expectedSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals((int)expectedSettings.maxFrameSize(), settings.getMaxFrameSize());
+            assertEquals((int)expectedSettings.initialWindowSize(), settings.getInitialWindowSize());
+            assertEquals(Math.min(Integer.MAX_VALUE, expectedSettings.maxConcurrentStreams()), (long)settings.getMaxConcurrentStreams());
+            assertEquals((long)expectedSettings.headerTableSize(), settings.getHeaderTableSize());
+            complete();
+            break;
+        }
+      });
+    }).end();
     await();
   }
 
@@ -378,7 +433,7 @@ public class Http2ClientTest extends Http2TestBase {
     client.get(4043, "localhost", "/somepath", resp -> {
     }).connectionHandler(conn -> {
       conn.remoteSettingsHandler(settings -> {
-        assertEquals(max, settings.getMaxConcurrentStreams());
+        assertEquals(max == null ? Integer.MAX_VALUE : max, (long)settings.getMaxConcurrentStreams());
         latch.countDown();
       });
     }).exceptionHandler(err -> {

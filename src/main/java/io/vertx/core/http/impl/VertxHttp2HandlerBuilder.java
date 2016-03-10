@@ -30,6 +30,10 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.ContextInternal;
 
+import static io.vertx.core.http.Http2Settings.*;
+
+import java.util.Objects;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -59,19 +63,19 @@ public class VertxHttp2HandlerBuilder extends AbstractHttp2ConnectionHandlerBuil
 
     io.vertx.core.http.Http2Settings initialSettings = options.getHttp2Settings();
     if (initialSettings != null) {
-      if (initialSettings.getHeaderTableSize() != null) {
+      if (initialSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
         initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
       }
-      if (initialSettings.getInitialWindowSize() != null) {
+      if (initialSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
         initialSettings().initialWindowSize(initialSettings.getInitialWindowSize());
       }
-      if (initialSettings.getMaxConcurrentStreams() != null) {
+      if (!Objects.equals(initialSettings.getMaxConcurrentStreams(), DEFAULT_MAX_CONCURRENT_STREAMS)) {
         initialSettings().maxConcurrentStreams(initialSettings.getMaxConcurrentStreams());
       }
-      if (initialSettings.getMaxFrameSize() != null) {
+      if (initialSettings.getMaxFrameSize() != DEFAULT_MAX_FRAME_SIZE) {
         initialSettings().maxFrameSize(initialSettings.getMaxFrameSize());
       }
-      if (initialSettings.getMaxHeaderListSize() != null) {
+      if (!Objects.equals(initialSettings.getMaxHeaderListSize(), DEFAULT_MAX_HEADER_LIST_SIZE)) {
         initialSettings().maxHeaderListSize(initialSettings.getMaxHeaderListSize());
       }
     }

@@ -23,6 +23,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
@@ -308,6 +309,11 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
       });
     }
     super.onConnectionError(ctx, cause, http2Ex);
+  }
+
+  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
+    settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
+    super.updateSettings(settingsUpdate, completionHandler);
   }
 
   public SocketAddress remoteAddress() {

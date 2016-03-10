@@ -277,10 +277,10 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 |===
 ^|Name | Type ^| Description
 |[[enablePush]]`enablePush`|`Boolean`|-
-|[[headerTableSize]]`headerTableSize`|`Number (Integer)`|-
-|[[initialWindowSize]]`initialWindowSize`|`Number (Integer)`|-
+|[[headerTableSize]]`headerTableSize`|`Number (int)`|-
+|[[initialWindowSize]]`initialWindowSize`|`Number (int)`|-
 |[[maxConcurrentStreams]]`maxConcurrentStreams`|`Number (Long)`|-
-|[[maxFrameSize]]`maxFrameSize`|`Number (Integer)`|-
+|[[maxFrameSize]]`maxFrameSize`|`Number (int)`|-
 |[[maxHeaderListSize]]`maxHeaderListSize`|`Number (Integer)`|-
 |===
 

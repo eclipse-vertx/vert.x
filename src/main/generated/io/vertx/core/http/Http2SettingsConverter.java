@@ -48,21 +48,13 @@ public class Http2SettingsConverter {
   }
 
   public static void toJson(Http2Settings obj, JsonObject json) {
-    if (obj.getEnablePush() != null) {
-      json.put("enablePush", obj.getEnablePush());
-    }
-    if (obj.getHeaderTableSize() != null) {
-      json.put("headerTableSize", obj.getHeaderTableSize());
-    }
-    if (obj.getInitialWindowSize() != null) {
-      json.put("initialWindowSize", obj.getInitialWindowSize());
-    }
+    json.put("enablePush", obj.getEnablePush());
+    json.put("headerTableSize", obj.getHeaderTableSize());
+    json.put("initialWindowSize", obj.getInitialWindowSize());
     if (obj.getMaxConcurrentStreams() != null) {
       json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
     }
-    if (obj.getMaxFrameSize() != null) {
-      json.put("maxFrameSize", obj.getMaxFrameSize());
-    }
+    json.put("maxFrameSize", obj.getMaxFrameSize());
     if (obj.getMaxHeaderListSize() != null) {
       json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
     }

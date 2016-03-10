@@ -114,30 +114,22 @@ public final class HttpUtils {
 
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
     Http2Settings converted = new Http2Settings();
-    if (settings.getEnablePush() != null) {
-      converted.pushEnabled(settings.getEnablePush());
-    }
+    converted.pushEnabled(settings.getEnablePush());
+    converted.maxFrameSize(settings.getMaxFrameSize());
+    converted.initialWindowSize(settings.getInitialWindowSize());
+    converted.headerTableSize((int)(long)settings.getHeaderTableSize());
     if (settings.getMaxConcurrentStreams() != null) {
       converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
     }
     if (settings.getMaxHeaderListSize() != null) {
       converted.maxHeaderListSize(settings.getMaxHeaderListSize());
     }
-    if (settings.getMaxFrameSize() != null) {
-      converted.maxFrameSize(settings.getMaxFrameSize());
-    }
-    if (settings.getInitialWindowSize() != null) {
-      converted.initialWindowSize(settings.getInitialWindowSize());
-    }
-    if (settings.getHeaderTableSize() != null) {
-      converted.headerTableSize((int)(long)settings.getHeaderTableSize());
-    }
     return converted;
   }
 
   public static io.vertx.core.http.Http2Settings toVertxSettings(Http2Settings settings) {
     io.vertx.core.http.Http2Settings converted = new io.vertx.core.http.Http2Settings();
-    converted.setEnablePush(settings.pushEnabled());
+    converted.setEnablePush(Boolean.TRUE.equals(settings.pushEnabled()));
     converted.setMaxConcurrentStreams(settings.maxConcurrentStreams());
     converted.setMaxHeaderListSize(settings.maxHeaderListSize());
     converted.setMaxFrameSize(settings.maxFrameSize());

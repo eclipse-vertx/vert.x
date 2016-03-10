@@ -29,17 +29,31 @@ import io.vertx.core.json.JsonObject;
 @DataObject(generateConverter = true)
 public class Http2Settings {
 
-  private Integer headerTableSize;
-  private Boolean enablePush;
+  public static final int DEFAULT_HEADER_TABLE_SIZE = 4096;
+  public static final boolean DEFAULT_ENABLE_PUSH = true;
+  public static final Long DEFAULT_MAX_CONCURRENT_STREAMS = null;
+  public static final int DEFAULT_INITIAL_WINDOW_SIZE = 65535;
+  public static final int DEFAULT_MAX_FRAME_SIZE = 16384;
+  public static final Integer DEFAULT_MAX_HEADER_LIST_SIZE = null;
+
+  private int headerTableSize;
+  private boolean enablePush;
   private Long maxConcurrentStreams;
-  private Integer initialWindowSize;
-  private Integer maxFrameSize;
+  private int initialWindowSize;
+  private int maxFrameSize;
   private Integer maxHeaderListSize;
 
   public Http2Settings() {
+    headerTableSize = DEFAULT_HEADER_TABLE_SIZE;
+    enablePush = DEFAULT_ENABLE_PUSH;
+    maxConcurrentStreams = DEFAULT_MAX_CONCURRENT_STREAMS;
+    initialWindowSize = DEFAULT_INITIAL_WINDOW_SIZE;
+    maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
+    maxHeaderListSize = DEFAULT_MAX_HEADER_LIST_SIZE;
   }
 
   public Http2Settings(JsonObject json) {
+    this();
     Http2SettingsConverter.fromJson(json, this);
   }
 
@@ -52,24 +66,24 @@ public class Http2Settings {
     maxHeaderListSize = that.maxHeaderListSize;
   }
 
-  public Integer getHeaderTableSize() {
+  public int getHeaderTableSize() {
     return headerTableSize;
   }
 
-  public Http2Settings setHeaderTableSize(Integer headerTableSize) {
-    Arguments.require(headerTableSize == null || headerTableSize >= Http2CodecUtil.MIN_HEADER_TABLE_SIZE,
+  public Http2Settings setHeaderTableSize(int headerTableSize) {
+    Arguments.require(headerTableSize >= Http2CodecUtil.MIN_HEADER_TABLE_SIZE,
         "headerTableSize must be >= " + Http2CodecUtil.MIN_HEADER_TABLE_SIZE);
-    Arguments.require(headerTableSize == null || headerTableSize < Http2CodecUtil.MAX_HEADER_TABLE_SIZE,
+    Arguments.require(headerTableSize < Http2CodecUtil.MAX_HEADER_TABLE_SIZE,
         "headerTableSize must be <= " + Http2CodecUtil.MAX_HEADER_TABLE_SIZE);
     this.headerTableSize = headerTableSize;
     return this;
   }
 
-  public Boolean getEnablePush() {
+  public boolean getEnablePush() {
     return enablePush;
   }
 
-  public Http2Settings setEnablePush(Boolean enablePush) {
+  public Http2Settings setEnablePush(boolean enablePush) {
     this.enablePush = enablePush;
     return this;
   }
@@ -87,27 +101,27 @@ public class Http2Settings {
     return this;
   }
 
-  public Integer getInitialWindowSize() {
+  public int getInitialWindowSize() {
     return initialWindowSize;
   }
 
-  public Http2Settings setInitialWindowSize(Integer initialWindowSize) {
-    Arguments.require(initialWindowSize == null || initialWindowSize >= Http2CodecUtil.MIN_INITIAL_WINDOW_SIZE,
+  public Http2Settings setInitialWindowSize(int initialWindowSize) {
+    Arguments.require(initialWindowSize >= Http2CodecUtil.MIN_INITIAL_WINDOW_SIZE,
         "initialWindowSize must be >= " + Http2CodecUtil.MIN_INITIAL_WINDOW_SIZE);
-    Arguments.require(initialWindowSize == null || initialWindowSize < Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE,
+    Arguments.require(initialWindowSize < Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE,
         "initialWindowSize must be < " + Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE);
     this.initialWindowSize = initialWindowSize;
     return this;
   }
 
-  public Integer getMaxFrameSize() {
+  public int getMaxFrameSize() {
     return maxFrameSize;
   }
 
-  public Http2Settings setMaxFrameSize(Integer maxFrameSize) {
-    Arguments.require(maxFrameSize == null || maxFrameSize >= Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND,
+  public Http2Settings setMaxFrameSize(int maxFrameSize) {
+    Arguments.require(maxFrameSize >= Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND,
         "maxFrameSize must be >= " + Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND);
-    Arguments.require(maxFrameSize == null || maxFrameSize <= Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND,
+    Arguments.require(maxFrameSize <= Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND,
         "maxFrameSize must be <= " + Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND);
     this.maxFrameSize = maxFrameSize;
     return this;
