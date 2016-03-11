@@ -347,8 +347,10 @@ Vertx.clusteredVertx(options, res -> {
 ----
 
 The previous snippet depicts how you can use SSL connections for the event bus, instead of plain TCP
-connections. Be aware that to enforce the security in clustered mode, you would need to configure the
-cluster manager to use encryption (especially for shared data). Refer to the documentation of the cluster
+connections.
+
+**WARNING**: to enforce the security in clustered mode, you **must** configure the
+cluster manager to use encryption or enforce security. Refer to the documentation of the cluster
 manager for further details.
 
 The event bus configuration needs to be consistent in all the cluster nodes.

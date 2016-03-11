@@ -16,8 +16,8 @@
 
 package io.vertx.core.logging;
 
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -39,11 +39,6 @@ public class JULLogDelegateTest {
     // Clear value.
     System.clearProperty("vertx.logger-delegate-factory-class-name");
     recording = new Recording();
-  }
-
-  @AfterClass
-  public static void terminate() {
-    recording.terminate();
   }
 
   @Test
