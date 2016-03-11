@@ -41,6 +41,7 @@ import io.vertx.core.buffer.Buffer;
  * - HttpConnection test
  *
  * Both:
+ * - add rawMethod 
  * - CONNECT support / check
  * - byte distribution algorithm configurability (options ? connection ?)
  * - h2c / http upgrade
