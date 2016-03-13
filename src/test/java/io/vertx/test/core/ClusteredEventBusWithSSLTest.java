@@ -73,19 +73,11 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
 
     return Arrays.asList(new Object[][]{
         {KeyCert.JKS, Trust.NONE, false, true, false, Collections.emptyList()}, // trusts all server certs
-        {KeyCert.JKS, Trust.JKS, false, false, false, Collections.emptyList()},
         {KeyCert.JKS, Trust.JKS, false, false, true, Collections.emptyList()},
         {KeyCert.PKCS12, Trust.JKS, false, false, false, Collections.emptyList()},
         {KeyCert.PEM, Trust.JKS, false, false, false, Collections.emptyList()},
-        {KeyCert.JKS_CA, Trust.JKS_CA, false, false, false, Collections.emptyList()},
         {KeyCert.PKCS12_CA, Trust.JKS_CA, false, false, false, Collections.emptyList()},
         {KeyCert.PEM_CA, Trust.PKCS12_CA, false, false, false, Collections.emptyList()},
-        {KeyCert.JKS, Trust.PKCS12, false, false, false, Collections.emptyList()},
-        {KeyCert.JKS, Trust.PEM, false, false, false, Collections.emptyList()},
-        {KeyCert.JKS, Trust.PKCS12, true, false, false, Collections.emptyList()},
-        {KeyCert.JKS, Trust.PEM, true, false, false, Collections.emptyList()},
-        {KeyCert.PKCS12, Trust.JKS, true, false, false, Collections.emptyList()},
-        {KeyCert.PEM_CA, Trust.PEM_CA, true, false, false, Collections.emptyList()},
         {KeyCert.JKS, Trust.PEM_CA, false, true, false, Arrays.asList(HttpTest.ENABLED_CIPHER_SUITES)},
     });
   }
