@@ -50,7 +50,7 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
       options.setTrustAll(true);
     }
     if (useCrl) {
-      options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
+      options.addCrlPath("tls/ca/crl.pem");
     }
 
     setOptions(options, getClientTrustOptions(trust));

@@ -318,7 +318,7 @@ public class WebsocketTest extends VertxTestBase {
       options.setTrustAll(true);
     }
     if (clientUsesCrl) {
-      options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
+      options.addCrlPath("tls/ca/crl.pem");
     }
     setOptions(options, getClientTrustOptions(clientTrust));
     setOptions(options, getClientCertOptions(clientCert));
@@ -334,7 +334,7 @@ public class WebsocketTest extends VertxTestBase {
       serverOptions.setClientAuth(ClientAuth.REQUIRED);
     }
     if (serverUsesCrl) {
-      serverOptions.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
+      serverOptions.addCrlPath("tls/ca/crl.pem");
     }
     for (String suite: enabledCipherSuites) {
       serverOptions.addEnabledCipherSuite(suite);

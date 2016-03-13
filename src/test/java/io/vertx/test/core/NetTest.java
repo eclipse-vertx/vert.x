@@ -1079,10 +1079,10 @@ public class NetTest extends VertxTestBase {
       options.setSsl(true);
     }
     if (serverTrust) {
-      options.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble"));
+      options.setTrustStoreOptions(new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble"));
     }
     if (serverCert) {
-      options.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble"));
+      options.setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
     }
     if (requireClientAuth) {
       options.setClientAuth(ClientAuth.REQUIRED);
@@ -1142,10 +1142,10 @@ public class NetTest extends VertxTestBase {
         clientOptions.setTrustAll(true);
       }
       if (clientTrust) {
-        clientOptions.setTrustStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble"));
+        clientOptions.setTrustStoreOptions(new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble"));
       }
       if (clientCert) {
-        clientOptions.setKeyStoreOptions(new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble"));
+        clientOptions.setKeyStoreOptions(new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble"));
       }
       for (String suite: enabledCipherSuites) {
         clientOptions.addEnabledCipherSuite(suite);
