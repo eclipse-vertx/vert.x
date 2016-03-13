@@ -122,7 +122,7 @@ Set whether the file is to be opened for writing
  <p>
  <pre>
  HttpServerOptions options = HttpServerOptions.httpServerOptions();
- options.setKeyStore(JKSOptions.options().setPath("/mykeystore.jks").setPassword("foo"));
+ options.setKeyStore(new JKSOptions().setPath("/mykeystore.jks").setPassword("foo"));
  </pre>
 
  Or directly provided as a buffer:
@@ -130,7 +130,7 @@ Set whether the file is to be opened for writing
 
  <pre>
  Buffer store = vertx.fileSystem().readFileSync("/mykeystore.jks");
- options.setKeyStore(JKSOptions.options().setValue(store).setPassword("foo"));
+ options.setKeyStore(new JKSOptions().setValue(store).setPassword("foo"));
  </pre>
 ++++
 '''
@@ -200,6 +200,10 @@ See link for an explanation.
 |[[clustered]]`clustered`|`Boolean`|
 +++
 Set whether or not the Vert.x instance will be clustered.
++++
+|[[eventBusOptions]]`eventBusOptions`|`link:dataobjects.html#EventBusOptions[EventBusOptions]`|
++++
+Sets the event bus configuration to configure the host, port, ssl...
 +++
 |[[eventLoopPoolSize]]`eventLoopPoolSize`|`Number (int)`|
 +++
@@ -622,25 +626,6 @@ Set whether Netty pooled buffers are enabled
 +++
 |===
 
-[[MetricsOptions]]
-== MetricsOptions
-
-++++
- Vert.x metrics base configuration, this class can be extended by provider implementations to configure
- those specific implementations.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[enabled]]`enabled`|`Boolean`|
-+++
-Set whether metrics will be enabled on the Vert.x instance.
-+++
-|===
-
 [[ClientOptionsBase]]
 == ClientOptionsBase
 
@@ -737,6 +722,25 @@ Set the trust options in jks format, aka Java trustore
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
++++
+|===
+
+[[MetricsOptions]]
+== MetricsOptions
+
+++++
+ Vert.x metrics base configuration, this class can be extended by provider implementations to configure
+ those specific implementations.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[enabled]]`enabled`|`Boolean`|
++++
+Set whether metrics will be enabled on the Vert.x instance.
 +++
 |===
 
@@ -998,56 +1002,6 @@ Set the websocket subprotocols supported by the server.
 +++
 |===
 
-[[DatagramSocketOptions]]
-== DatagramSocketOptions
-
-++++
- Options used to configure a datagram socket.
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[broadcast]]`broadcast`|`Boolean`|
-+++
-Set if the socket can receive broadcast packets
-+++
-|[[ipV6]]`ipV6`|`Boolean`|
-+++
-Set if IP v6 should be used
-+++
-|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
-+++
-Set if loopback mode is disabled
-+++
-|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
-+++
-Set the multicast network interface address
-+++
-|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
-+++
-Set the multicast ttl value
-+++
-|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
-+++
-Set the TCP receive buffer size
-+++
-|[[reuseAddress]]`reuseAddress`|`Boolean`|
-+++
-Set the value of reuse address
-+++
-|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
-+++
-Set the TCP send buffer size
-+++
-|[[trafficClass]]`trafficClass`|`Number (int)`|
-+++
-Set the value of traffic class
-+++
-|===
-
 [[HttpClientOptions]]
 == HttpClientOptions
 
@@ -1189,6 +1143,205 @@ Set whether Netty pooled buffers are enabled
 |[[verifyHost]]`verifyHost`|`Boolean`|
 +++
 Set whether hostname verification is enabled
++++
+|===
+
+[[DatagramSocketOptions]]
+== DatagramSocketOptions
+
+++++
+ Options used to configure a datagram socket.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[broadcast]]`broadcast`|`Boolean`|
++++
+Set if the socket can receive broadcast packets
++++
+|[[ipV6]]`ipV6`|`Boolean`|
++++
+Set if IP v6 should be used
++++
+|[[loopbackModeDisabled]]`loopbackModeDisabled`|`Boolean`|
++++
+Set if loopback mode is disabled
++++
+|[[multicastNetworkInterface]]`multicastNetworkInterface`|`String`|
++++
+Set the multicast network interface address
++++
+|[[multicastTimeToLive]]`multicastTimeToLive`|`Number (int)`|
++++
+Set the multicast ttl value
++++
+|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
++++
+Set the TCP receive buffer size
++++
+|[[reuseAddress]]`reuseAddress`|`Boolean`|
++++
+Set the value of reuse address
++++
+|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
++++
+Set the TCP send buffer size
++++
+|[[trafficClass]]`trafficClass`|`Number (int)`|
++++
+Set the value of traffic class
++++
+|===
+
+[[EventBusOptions]]
+== EventBusOptions
+
+++++
+ Options to configure the event bus.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[acceptBacklog]]`acceptBacklog`|`Number (int)`|
++++
+Set the accept back log.
++++
+|[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|
++++
+Set whether client auth is required
++++
+|[[clusterPingInterval]]`clusterPingInterval`|`Number (long)`|
++++
+Set the value of cluster ping interval, in ms.
++++
+|[[clusterPingReplyInterval]]`clusterPingReplyInterval`|`Number (long)`|
++++
+Set the value of cluster ping reply interval, in ms.
++++
+|[[clusterPublicHost]]`clusterPublicHost`|`String`|
++++
+Set the public facing hostname to be used for clustering.
+ Sometimes, e.g. when running on certain clouds, the local address the server listens on for clustering is
+ not the same address that other nodes connect to it at, as the OS / cloud infrastructure does some kind of
+ proxying. If this is the case you can specify a public hostname which is different from the hostname the
+ server listens at.
+ <p>
+ The default value is null which means use the same as the cluster hostname.
++++
+|[[clusterPublicPort]]`clusterPublicPort`|`Number (int)`|
++++
+See link for an explanation.
++++
+|[[clustered]]`clustered`|`Boolean`|
++++
+Sets whether or not the event bus is clustered.
++++
+|[[connectTimeout]]`connectTimeout`|`Number (int)`|
++++
+Sets the connect timeout
++++
+|[[crlPaths]]`crlPaths`|`Array of String`|
++++
+Add a CRL path
++++
+|[[crlValues]]`crlValues`|`Array of Buffer`|
++++
+Add a CRL value
++++
+|[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
++++
+Add an enabled cipher suite
++++
+|[[host]]`host`|`String`|
++++
+Sets the host.
++++
+|[[idleTimeout]]`idleTimeout`|`Number (int)`|
++++
+Set the idle timeout, in seconds. zero means don't timeout.
+ This determines if a connection will timeout and be closed if no data is received within the timeout.
++++
+|[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
++++
+Set the key/cert options in jks format, aka Java keystore.
++++
+|[[pemKeyCertOptions]]`pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|
++++
+Set the key/cert store options in pem format.
++++
+|[[pemTrustOptions]]`pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|
++++
+Set the trust options in pem format
++++
+|[[pfxKeyCertOptions]]`pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|
++++
+Set the key/cert options in pfx format.
++++
+|[[pfxTrustOptions]]`pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|
++++
+Set the trust options in pfx format
++++
+|[[port]]`port`|`Number (int)`|
++++
+Sets the port.
++++
+|[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
++++
+Set the TCP receive buffer size
++++
+|[[reconnectAttempts]]`reconnectAttempts`|`Number (int)`|
++++
+Sets the value of reconnect attempts.
++++
+|[[reconnectInterval]]`reconnectInterval`|`Number (long)`|
++++
+Set the reconnect interval.
++++
+|[[reuseAddress]]`reuseAddress`|`Boolean`|
++++
+Set the value of reuse address
++++
+|[[sendBufferSize]]`sendBufferSize`|`Number (int)`|
++++
+Set the TCP send buffer size
++++
+|[[soLinger]]`soLinger`|`Number (int)`|
++++
+Set whether SO_linger keep alive is enabled
++++
+|[[ssl]]`ssl`|`Boolean`|
++++
+Set whether SSL/TLS is enabled
++++
+|[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
++++
+Set whether TCP keep alive is enabled
++++
+|[[tcpNoDelay]]`tcpNoDelay`|`Boolean`|
++++
+Set whether TCP no delay is enabled
++++
+|[[trafficClass]]`trafficClass`|`Number (int)`|
++++
+Set the value of traffic class
++++
+|[[trustAll]]`trustAll`|`Boolean`|
++++
+Set whether all server certificates should be trusted.
++++
+|[[trustStoreOptions]]`trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
++++
+Set the trust options in jks format, aka Java trustore
++++
+|[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
++++
+Set whether Netty pooled buffers are enabled
 +++
 |===
 

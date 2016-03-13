@@ -316,3 +316,66 @@ You can run Vert.x clustered on the command line with
 
 If you're registering event bus handlers from inside verticles, those handlers will be automatically unregistered
 when the verticle is undeployed.
+
+== Configuring the event bus
+
+The event bus can be configured. It is particularly useful when the event bus is clustered. Under the hood
+the event bus uses TCP connections to send and receive message, so the
+`link:../../apidocs/io/vertx/core/eventbus/EventBusOptions.html[EventBusOptions]` let you configure all aspects of these TCP connections. As
+the event bus acts as a server and client, the configuration is close to
+`link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` and `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]`.
+
+[source,java]
+----
+VertxOptions options = new VertxOptions()
+    .setEventBusOptions(new EventBusOptions()
+        .setSsl(true)
+        .setKeyStoreOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
+        .setTrustStoreOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
+        .setClientAuth(ClientAuth.REQUIRED)
+    );
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+    EventBus eventBus = vertx.eventBus();
+    System.out.println("We now have a clustered event bus: " + eventBus);
+  } else {
+    System.out.println("Failed: " + res.cause());
+  }
+});
+----
+
+The previous snippet depicts how you can use SSL connections for the event bus, instead of plain TCP
+connections.
+
+**WARNING**: to enforce the security in clustered mode, you **must** configure the
+cluster manager to use encryption or enforce security. Refer to the documentation of the cluster
+manager for further details.
+
+The event bus configuration needs to be consistent in all the cluster nodes.
+
+The `link:../../apidocs/io/vertx/core/eventbus/EventBusOptions.html[EventBusOptions]` also lets you specify whether or not the event bus is
+clustered, the port and host, as you would do with `link:../../apidocs/io/vertx/core/VertxOptions.html#setClustered-boolean-[setClustered]`,
+ `link:../../apidocs/io/vertx/core/VertxOptions.html#getClusterHost--[getClusterHost]` and `link:../../apidocs/io/vertx/core/VertxOptions.html#getClusterPort--[getClusterPort]`.
+
+When used in containers, you can also configure the public host and port:
+
+[source,java]
+----
+VertxOptions options = new VertxOptions()
+    .setEventBusOptions(new EventBusOptions()
+        .setClusterPublicHost("whatever")
+        .setClusterPublicPort(1234)
+    );
+
+Vertx.clusteredVertx(options, res -> {
+  if (res.succeeded()) {
+    Vertx vertx = res.result();
+    EventBus eventBus = vertx.eventBus();
+    System.out.println("We now have a clustered event bus: " + eventBus);
+  } else {
+    System.out.println("Failed: " + res.cause());
+  }
+});
+----
