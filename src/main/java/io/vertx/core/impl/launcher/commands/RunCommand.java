@@ -235,11 +235,13 @@ public class RunCommand extends BareCommand {
   @Override
   public void run() {
     if (redeploy == null || redeploy.isEmpty()) {
+      JsonObject conf = getConfiguration();
+      afterConfigParsed(conf);
+
       super.run();
       if (vertx == null) {
         return; // Already logged.
       }
-      JsonObject conf = getConfiguration();
       deploymentOptions = new DeploymentOptions();
       configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
       deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
@@ -413,6 +415,13 @@ public class RunCommand extends BareCommand {
     final Object main = executionContext.main();
     if (main instanceof VertxLifecycleHooks) {
       ((VertxLifecycleHooks) main).beforeDeployingVerticle(deploymentOptions);
+    }
+  }
+
+  protected void afterConfigParsed(JsonObject config) {
+    final Object main = executionContext.main();
+    if (main instanceof VertxLifecycleHooks) {
+      ((VertxLifecycleHooks) main).afterConfigParsed(config);
     }
   }
 }
