@@ -23,6 +23,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 
 /**
@@ -40,7 +42,7 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
                                       boolean requireClientAuth,
                                       boolean clientTrustAll,
                                       boolean useCrl,
-                                      String... enabledCipherSuites) {
+                                      List<String> enabledCipherSuites) {
     options = new EventBusOptions();
     options.setSsl(true);
 
@@ -55,9 +57,7 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
     setOptions(options, getServerCertOptions(cert));
 
     if (enabledCipherSuites != null) {
-      for (String suite : enabledCipherSuites) {
-        options.addEnabledCipherSuite(suite);
-      }
+      enabledCipherSuites.forEach(options::addEnabledCipherSuite);
     }
 
     if (requireClientAuth) {
@@ -72,21 +72,21 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
     //KeyCert, Trust, requireClientAuth, clientTrustAll, useCrl, enabledCipherSuites
 
     return Arrays.asList(new Object[][]{
-        {KeyCert.JKS, Trust.NONE, false, true, false, new String[0]}, // trusts all server certs
-        {KeyCert.JKS, Trust.JKS, false, false, false, new String[0]},
-        {KeyCert.JKS, Trust.JKS, false, false, true, new String[0]},
-        {KeyCert.PKCS12, Trust.JKS, false, false, false, new String[0]},
-        {KeyCert.PEM, Trust.JKS, false, false, false, new String[0]},
-        {KeyCert.JKS_CA, Trust.JKS_CA, false, false, false, new String[0]},
-        {KeyCert.PKCS12_CA, Trust.JKS_CA, false, false, false, new String[0]},
-        {KeyCert.PEM_CA, Trust.PKCS12_CA, false, false, false, new String[0]},
-        {KeyCert.JKS, Trust.PKCS12, false, false, false, new String[0]},
-        {KeyCert.JKS, Trust.PEM, false, false, false, new String[0]},
-        {KeyCert.JKS, Trust.PKCS12, true, false, false, new String[0]},
-        {KeyCert.JKS, Trust.PEM, true, false, false, new String[0]},
-        {KeyCert.PKCS12, Trust.JKS, true, false, false, new String[0]},
-        {KeyCert.PEM_CA, Trust.PEM_CA, true, false, false, new String[0]},
-        {KeyCert.JKS, Trust.PEM_CA, false, true, false, HttpTest.ENABLED_CIPHER_SUITES},
+        {KeyCert.JKS, Trust.NONE, false, true, false, Collections.emptyList()}, // trusts all server certs
+        {KeyCert.JKS, Trust.JKS, false, false, false, Collections.emptyList()},
+        {KeyCert.JKS, Trust.JKS, false, false, true, Collections.emptyList()},
+        {KeyCert.PKCS12, Trust.JKS, false, false, false, Collections.emptyList()},
+        {KeyCert.PEM, Trust.JKS, false, false, false, Collections.emptyList()},
+        {KeyCert.JKS_CA, Trust.JKS_CA, false, false, false, Collections.emptyList()},
+        {KeyCert.PKCS12_CA, Trust.JKS_CA, false, false, false, Collections.emptyList()},
+        {KeyCert.PEM_CA, Trust.PKCS12_CA, false, false, false, Collections.emptyList()},
+        {KeyCert.JKS, Trust.PKCS12, false, false, false, Collections.emptyList()},
+        {KeyCert.JKS, Trust.PEM, false, false, false, Collections.emptyList()},
+        {KeyCert.JKS, Trust.PKCS12, true, false, false, Collections.emptyList()},
+        {KeyCert.JKS, Trust.PEM, true, false, false, Collections.emptyList()},
+        {KeyCert.PKCS12, Trust.JKS, true, false, false, Collections.emptyList()},
+        {KeyCert.PEM_CA, Trust.PEM_CA, true, false, false, Collections.emptyList()},
+        {KeyCert.JKS, Trust.PEM_CA, false, true, false, Arrays.asList(HttpTest.ENABLED_CIPHER_SUITES)},
     });
   }
 
