@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -55,12 +56,14 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -1009,6 +1012,120 @@ public class Http2ClientTest extends Http2TestBase {
       req.end(Buffer.buffer("request-body"));
     });
     req.sendHead();
+    await();
+  }
+
+  @Test
+  public void testConnectNetSocket() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      NetSocket socket = req.netSocket();
+      AtomicInteger status = new AtomicInteger();
+      socket.handler(buff -> {
+        switch (status.getAndIncrement()) {
+          case 0:
+            assertEquals(Buffer.buffer("some-data"), buff);
+            socket.write(buff);
+            break;
+          case 1:
+            assertEquals(Buffer.buffer("last-data"), buff);
+            break;
+          default:
+            fail();
+            break;
+        }
+      });
+      socket.endHandler(v -> {
+        assertEquals(2, status.getAndIncrement());
+        socket.write(Buffer.buffer("last-data"));
+      });
+      socket.closeHandler(v -> {
+        assertEquals(3, status.getAndIncrement());
+        complete();
+      });
+    });
+    startServer();
+    client.request(HttpMethod.CONNECT, 4043, "localhost", "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      NetSocket socket = resp.netSocket();
+      AtomicInteger count = new AtomicInteger();
+      socket.handler(buff -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals("some-data", buff.toString());
+            socket.end(Buffer.buffer("last-data"));
+            break;
+          case 1:
+            assertEquals("last-data", buff.toString());
+            break;
+        }
+      });
+      socket.endHandler(v -> {
+        assertEquals(2, count.getAndIncrement());
+      });
+      socket.closeHandler(v -> {
+        assertEquals(3, count.getAndIncrement());
+        complete();
+      });
+      socket.write(Buffer.buffer("some-data"));
+    }).setHost("whatever.com").sendHead();
+    await();
+  }
+
+  @Test
+  public void testServerCloseNetSocket() throws Exception {
+    waitFor(2);
+    AtomicInteger status = new AtomicInteger();
+    server.requestHandler(req -> {
+      NetSocket socket = req.netSocket();
+      socket.handler(buff -> {
+        switch (status.getAndIncrement()) {
+          case 0:
+            assertEquals(Buffer.buffer("some-data"), buff);
+            socket.end(buff);
+            break;
+          case 1:
+            assertEquals(Buffer.buffer("last-data"), buff);
+            break;
+          default:
+            fail();
+            break;
+        }
+      });
+      socket.endHandler(v -> {
+        assertEquals(2, status.getAndIncrement());
+      });
+      socket.closeHandler(v -> {
+        assertEquals(3, status.getAndIncrement());
+        complete();
+      });
+    });
+
+    startServer();
+    client.request(HttpMethod.CONNECT, 4043, "localhost", "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      NetSocket socket = resp.netSocket();
+      AtomicInteger count = new AtomicInteger();
+      socket.handler(buff -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals("some-data", buff.toString());
+            break;
+          default:
+            fail();
+            break;
+        }
+      });
+      socket.endHandler(v -> {
+        assertEquals(1, count.getAndIncrement());
+        socket.end(Buffer.buffer("last-data"));
+      });
+      socket.closeHandler(v -> {
+        assertEquals(2, count.getAndIncrement());
+        complete();
+      });
+      socket.write(Buffer.buffer("some-data"));
+    }).setHost("whatever.com").sendHead();
     await();
   }
 }

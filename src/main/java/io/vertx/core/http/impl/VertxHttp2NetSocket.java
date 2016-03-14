@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -33,6 +34,7 @@ import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
+import java.nio.charset.Charset;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -158,11 +160,17 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   @Override
   public NetSocket write(String str) {
+    writeData(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8), false);
     return this;
   }
 
   @Override
   public NetSocket write(String str, String enc) {
+    if (enc == null) {
+      write(str);
+    } else {
+      writeData(Unpooled.copiedBuffer(str, Charset.forName(enc)), false);
+    }
     return this;
   }
 
@@ -189,6 +197,11 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
   @Override
   public void end() {
     writeData(Unpooled.EMPTY_BUFFER, true);
+  }
+
+  @Override
+  public void end(Buffer buffer) {
+    writeData(buffer.getByteBuf(), true);
   }
 
   @Override

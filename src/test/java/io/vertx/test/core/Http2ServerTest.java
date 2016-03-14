@@ -2048,7 +2048,6 @@ public class Http2ServerTest extends Http2TestBase {
           case 0:
             assertEquals(Buffer.buffer("some-data"), buff);
             socket.write(buff);
-            System.out.println("closing");
             socket.close();
             break;
           case 1:

@@ -41,8 +41,9 @@ import io.vertx.core.buffer.Buffer;
  * - HttpConnection test
  *
  * Both:
+ * - how to reset a netsocket stream ?
+ * - test netsocket client reset
  * - add rawMethod 
- * - CONNECT support / check
  * - byte distribution algorithm configurability (options ? connection ?)
  * - h2c / http upgrade
  * - metrics

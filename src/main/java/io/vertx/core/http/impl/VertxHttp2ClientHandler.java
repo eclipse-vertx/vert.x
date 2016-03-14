@@ -106,11 +106,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   }
 
   @Override
-  public NetSocket createNetSocket() {
-    return null;
-  }
-
-  @Override
   public boolean isValid() {
     Http2Connection conn = connection();
     return !conn.goAwaySent() && !conn.goAwayReceived();
@@ -207,7 +202,9 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     @Override
     public void handleInterestedOpsChanged() {
       if (req instanceof HttpClientRequestImpl && !isNotWritable()) {
-        ((HttpClientRequestImpl)req).handleDrained();
+        if (!isNotWritable()) {
+          ((HttpClientRequestImpl)req).handleDrained();
+        }
       }
     }
 
@@ -263,12 +260,22 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
     @Override
     public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end) {
+      if (content != null && content.readableBytes() == 0) {
+        content = null;
+      }
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method.name());
-      h.path(uri);
-      h.scheme("https");
-      if (hostHeader != null) {
+      if (method == HttpMethod.CONNECT) {
+        if (hostHeader == null) {
+          throw new IllegalArgumentException("Missing :authority / host header");
+        }
         h.authority(hostHeader);
+      } else {
+        h.path(uri);
+        h.scheme("https");
+        if (hostHeader != null) {
+          h.authority(hostHeader);
+        }
       }
       if (headers != null && headers.size() > 0) {
         for (Map.Entry<String, String> header : headers) {
@@ -321,5 +328,11 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
       return handler;
     }
 
+    @Override
+    public NetSocket createNetSocket() {
+      VertxHttp2NetSocket socket = new VertxHttp2NetSocket(vertx, context, handlerContext, encoder, decoder, stream);
+      handler.streams.put(stream.id(), socket);
+      return socket;
+    }
   }
 }

@@ -27,6 +27,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 
 /**

@@ -247,7 +247,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   public NetSocket netSocket() {
     synchronized (conn) {
       if (netSocket == null) {
-        netSocket = conn.connection().createNetSocket();
+        netSocket = conn.createNetSocket();
       }
       return netSocket;
     }

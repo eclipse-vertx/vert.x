@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -43,4 +44,6 @@ interface HttpClientStream {
 
   void beginRequest(HttpClientRequestImpl request);
   void endRequest();
+
+  NetSocket createNetSocket();
 }

@@ -30,8 +30,6 @@ interface HttpClientConnection {
   void reportBytesWritten(long numberOfBytes);
   void reportBytesRead(long s);
 
-  NetSocket createNetSocket();
-
   /**
    * Check if the connection is valid for creating streams. The connection might be closed or a {@literal GOAWAY}
    * frame could have been sent or received.
