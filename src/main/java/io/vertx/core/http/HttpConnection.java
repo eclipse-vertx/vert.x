@@ -41,6 +41,7 @@ import io.vertx.core.buffer.Buffer;
  * - HttpConnection test
  *
  * Both:
+ * - investigate flow control configuration ratio / setWriteQueueMaxSize
  * - how to reset a netsocket stream ?
  * - test netsocket client reset
  * - add rawMethod 
@@ -48,6 +49,7 @@ import io.vertx.core.buffer.Buffer;
  * - h2c / http upgrade
  * - metrics
  * - close connection when service closes
+ * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
  *
  * not yet in scope:
  * - stream priority
