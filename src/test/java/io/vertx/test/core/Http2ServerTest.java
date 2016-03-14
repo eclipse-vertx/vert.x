@@ -62,6 +62,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -83,6 +85,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
@@ -649,29 +652,34 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testServerRequestPause() throws Exception {
+  public void testServerRequestPauseResume() throws Exception {
+    testStreamPauseResume(req -> req);
+  }
+
+  private void testStreamPauseResume(Function<HttpServerRequest, ReadStream<Buffer>> streamProvider) throws Exception {
     Buffer expected = Buffer.buffer();
     String chunk = TestUtils.randomAlphaString(1000);
     AtomicBoolean done = new AtomicBoolean();
     AtomicBoolean paused = new AtomicBoolean();
     Buffer received = Buffer.buffer();
     server.requestHandler(req -> {
+      ReadStream<Buffer> stream = streamProvider.apply(req);
       vertx.setPeriodic(1, timerID -> {
         if (paused.get()) {
           vertx.cancelTimer(timerID);
           done.set(true);
           // Let some time to accumulate some more buffers
           vertx.setTimer(100, id -> {
-            req.resume();
+            stream.resume();
           });
         }
       });
-      req.handler(received::appendBuffer);
-      req.endHandler(v -> {
+      stream.handler(received::appendBuffer);
+      stream.endHandler(v -> {
         assertEquals(expected, received);
         testComplete();
       });
-      req.pause();
+      stream.pause();
     });
     startServer();
 
@@ -703,23 +711,28 @@ public class Http2ServerTest extends Http2TestBase {
     fut.sync();
     await();
   }
-
   @Test
   public void testServerResponseWritability() throws Exception {
+    testStreamWritability(req -> {
+      HttpServerResponse resp = req.response();
+      resp.putHeader("content-type", "text/plain");
+      resp.setChunked(true);
+      return resp;
+    });
+  }
+
+  private void testStreamWritability(Function<HttpServerRequest, WriteStream<Buffer>> streamProvider) throws Exception {
     String content = TestUtils.randomAlphaString(1024);
     StringBuilder expected = new StringBuilder();
     Future<Void> whenFull = Future.future();
     AtomicBoolean drain = new AtomicBoolean();
     server.requestHandler(req -> {
-      HttpServerResponse resp = req.response();
-      resp.putHeader("content-type", "text/plain");
-      resp.setChunked(true);
+      WriteStream<Buffer> stream = streamProvider.apply(req);
       vertx.setPeriodic(1, timerID -> {
-        if (resp.writeQueueFull()) {
-          resp.drainHandler(v -> {
+        if (stream.writeQueueFull()) {
+          stream.drainHandler(v -> {
             expected.append("last");
-            resp.end(Buffer.buffer("last"));
-            assertEquals(expected.toString().getBytes().length, resp.bytesWritten());
+            stream.end(Buffer.buffer("last"));
           });
           vertx.cancelTimer(timerID);
           drain.set(true);
@@ -727,7 +740,7 @@ public class Http2ServerTest extends Http2TestBase {
         } else {
           expected.append(content);
           Buffer buf = Buffer.buffer(content);
-          resp.write(buf);
+          stream.write(buf);
         }
       });
     });
@@ -1950,9 +1963,9 @@ public class Http2ServerTest extends Http2TestBase {
     waitFor(2);
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
-      AtomicInteger count = new AtomicInteger();
+      AtomicInteger status = new AtomicInteger();
       socket.handler(buff -> {
-        switch (count.getAndIncrement()) {
+        switch (status.getAndIncrement()) {
           case 0:
             assertEquals(Buffer.buffer("some-data"), buff);
             socket.write(buff);
@@ -1966,11 +1979,11 @@ public class Http2ServerTest extends Http2TestBase {
         }
       });
       socket.endHandler(v -> {
-        assertEquals(2, count.getAndIncrement());
+        assertEquals(2, status.getAndIncrement());
         socket.write(Buffer.buffer("last-data"));
       });
       socket.closeHandler(v -> {
-        assertEquals(3, count.getAndIncrement());
+        assertEquals(3, status.getAndIncrement());
         complete();
       });
     });
@@ -2022,5 +2035,130 @@ public class Http2ServerTest extends Http2TestBase {
     });
     fut.sync();
     await();
+  }
+
+  @Test
+  public void testServerCloseNetSocket() throws Exception {
+    waitFor(2);
+    AtomicInteger status = new AtomicInteger();
+    server.requestHandler(req -> {
+      NetSocket socket = req.netSocket();
+      socket.handler(buff -> {
+        switch (status.getAndIncrement()) {
+          case 0:
+            assertEquals(Buffer.buffer("some-data"), buff);
+            socket.write(buff);
+            System.out.println("closing");
+            socket.close();
+            break;
+          case 1:
+            assertEquals(Buffer.buffer("last-data"), buff);
+            break;
+          default:
+            fail();
+            break;
+        }
+      });
+      socket.endHandler(v -> {
+        assertEquals(2, status.getAndIncrement());
+      });
+      socket.closeHandler(v -> {
+        assertEquals(3, status.getAndIncrement());
+        complete();
+      });
+    });
+
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int c = count++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, c);
+          });
+          request.encoder.writeData(request.context, id, Buffer.buffer("some-data").getByteBuf(), 0, false, request.context.newPromise());
+          request.context.flush();
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          String s = data.toString(StandardCharsets.UTF_8);
+          switch (count++) {
+            case 1:
+              vertx.runOnContext(v -> {
+                assertEquals("some-data", s);
+                assertTrue(endOfStream);
+                complete();
+              });
+              request.encoder.writeData(request.context, id, Buffer.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
+              break;
+            default:
+              fail();
+              break;
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testNetSocketHandleReset() throws Exception {
+    server.requestHandler(req -> {
+      NetSocket socket = req.netSocket();
+      AtomicInteger status = new AtomicInteger();
+      socket.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        StreamResetException ex = (StreamResetException) err;
+        assertEquals(0, ex.getCode());
+        assertEquals(0, status.getAndIncrement());
+      });
+      socket.endHandler(v -> {
+        fail();
+        System.out.println("ended");
+      });
+      socket.closeHandler(v  -> {
+        assertEquals(1, status.getAndIncrement());
+        testComplete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int c = count++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, c);
+          });
+          request.encoder.writeRstStream(ctx, streamId, 0, ctx.newPromise());
+          request.context.flush();
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testNetSocketPauseResume() throws Exception {
+    testStreamPauseResume(HttpServerRequest::netSocket);
+  }
+
+  @Test
+  public void testNetSocketWritability() throws Exception {
+    testStreamWritability(HttpServerRequest::netSocket);
   }
 }

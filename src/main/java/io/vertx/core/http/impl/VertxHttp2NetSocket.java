@@ -26,6 +26,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -42,6 +43,7 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   private Handler<Buffer> dataHandler;
+  private Handler<Void> drainHandler;
 
   public VertxHttp2NetSocket(Vertx vertx, ContextImpl context, ChannelHandlerContext handlerContext, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder, Http2Stream stream) {
     super(vertx, context, handlerContext, encoder, decoder, stream);
@@ -70,7 +72,7 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   @Override
   void callReset(long errorCode) {
-    //
+    handleException(new StreamResetException(errorCode));
   }
 
   @Override
@@ -89,7 +91,12 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   @Override
   void handleInterestedOpsChanged() {
-    // Todo
+    Handler<Void> handler = this.drainHandler;
+    if (handler != null && !writeQueueFull()) {
+      vertx.runOnContext(v -> {
+        handler.handle(null);
+      });
+    }
   }
 
   // NetSocket impl
@@ -135,6 +142,7 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   @Override
   public NetSocket drainHandler(Handler<Void> handler) {
+    drainHandler = handler;
     return this;
   }
 
