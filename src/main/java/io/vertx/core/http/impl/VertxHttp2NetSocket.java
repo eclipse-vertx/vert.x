@@ -89,7 +89,7 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   @Override
   void handleInterestedOpsChanged() {
-
+    // Todo
   }
 
   // NetSocket impl

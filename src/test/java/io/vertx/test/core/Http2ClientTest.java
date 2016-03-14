@@ -344,12 +344,15 @@ public class Http2ClientTest extends Http2TestBase {
     }).setChunked(true).exceptionHandler(err -> {
       fail();
     });
+    AtomicInteger sent = new AtomicInteger();
     AtomicInteger count = new AtomicInteger();
+    AtomicInteger drained = new AtomicInteger();
     vertx.setPeriodic(1, timerID -> {
       if (req.writeQueueFull()) {
         assertTrue(paused.get());
         assertEquals(1, numPause.get());
         req.drainHandler(v -> {
+          assertEquals(0, drained.getAndIncrement());
           assertEquals(1, numPause.get());
           assertFalse(paused.get());
           req.end();
@@ -360,6 +363,7 @@ public class Http2ClientTest extends Http2TestBase {
         count.incrementAndGet();
         expected.appendString(chunk);
         req.write(chunk);
+        sent.addAndGet(chunk.length());
       }
     });
     await();
@@ -760,8 +764,11 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
     });
+    AtomicInteger count = new AtomicInteger();
     req1.exceptionHandler(err -> {
-      complete();
+      if (count.getAndIncrement() == 0) {
+        complete();
+      }
     });
     req1.handler(resp -> {
       fail();

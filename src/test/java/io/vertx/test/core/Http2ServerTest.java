@@ -2006,12 +2006,6 @@ public class Http2ServerTest extends Http2TestBase {
             case 2:
               vertx.runOnContext(v -> {
                 assertEquals("last-data", s);
-                assertFalse(endOfStream);
-              });
-              break;
-            case 3:
-              vertx.runOnContext(v -> {
-                assertEquals("", s);
                 assertTrue(endOfStream);
                 complete();
               });

@@ -328,11 +328,17 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       headWritten = true;
       encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
+      if (end) {
+        ctx.flush();
+      }
     }
   }
 
   void write(ByteBuf chunk, boolean end) {
     checkEnded();
+    if (end) {
+      ended = true;
+    }
     int len = chunk.readableBytes();
     boolean empty = len == 0;
     checkSendHeaders(empty && end);
@@ -342,10 +348,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (trailers != null && end) {
       encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
     }
-    if (end) {
-      ended = true;
-    }
-    ctx.flush();
     if (end && bodyEndHandler != null) {
       bodyEndHandler.handle(null);
     }

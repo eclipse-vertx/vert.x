@@ -206,7 +206,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
     @Override
     public void handleInterestedOpsChanged() {
-      if (req instanceof HttpClientRequestImpl) {
+      if (req instanceof HttpClientRequestImpl && !isNotWritable()) {
         ((HttpClientRequestImpl)req).handleDrained();
       }
     }

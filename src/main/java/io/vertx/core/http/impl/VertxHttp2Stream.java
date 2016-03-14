@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2RemoteFlowController;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -140,10 +141,14 @@ abstract class VertxHttp2Stream {
     int len = chunk.readableBytes();
     bytesWritten += len;
     encoder.writeData(handlerContext, stream.id(), chunk, 0, end, handlerContext.newPromise());
-    try {
-      encoder.flowController().writePendingBytes();
-    } catch (Http2Exception e) {
-      e.printStackTrace();
+    Http2RemoteFlowController controller = encoder.flowController();
+    if (!controller.isWritable(stream) || end) {
+      try {
+        encoder.flowController().writePendingBytes();
+      } catch (Http2Exception e) {
+        e.printStackTrace();
+      }
+      handlerContext.flush();
     }
   }
 
