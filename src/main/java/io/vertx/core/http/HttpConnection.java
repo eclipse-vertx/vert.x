@@ -50,6 +50,7 @@ import io.vertx.core.buffer.Buffer;
  * - metrics
  * - close connection when service closes
  * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
+ * - netSocket() sendFile
  *
  * not yet in scope:
  * - stream priority
