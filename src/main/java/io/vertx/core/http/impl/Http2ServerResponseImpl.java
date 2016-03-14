@@ -22,7 +22,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
@@ -36,6 +35,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.NetSocket;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,6 +50,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
  */
 public class Http2ServerResponseImpl implements HttpServerResponse {
 
+  private final VertxHttp2Stream stream_;
   private final VertxInternal vertx;
   private final ChannelHandlerContext ctx;
   private final VertxHttp2ServerHandler connection;
@@ -65,13 +66,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private boolean ended;
   private int statusCode = 200;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
-  private long bytesWritten;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
 
-  public Http2ServerResponseImpl(VertxInternal vertx, ChannelHandlerContext ctx, VertxHttp2ServerHandler connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
+  public Http2ServerResponseImpl(VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, VertxHttp2ServerHandler connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
+    this.stream_ = stream_;
     this.vertx = vertx;
     this.ctx = ctx;
     this.connection = connection;
@@ -84,7 +85,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  void handleReset(long code) {
+  void callReset(long code) {
     ended = true;
     handleError(new StreamResetException(code));
   }
@@ -301,6 +302,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     end(Unpooled.EMPTY_BUFFER);
   }
 
+  void toNetSocket() {
+    checkEnded();
+    checkSendHeaders(false);
+    ended = true;
+  }
+
   private void end(ByteBuf chunk) {
     if (!chunked && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
       headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
@@ -310,10 +317,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private void checkSendHeaders(boolean end) {
     if (!headWritten) {
+/*
       if (!headers.contains(HttpHeaderNames.CONTENT_LENGTH) && !chunked) {
         throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not sending an HTTP chunked response.");
       }
+*/
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
       }
@@ -328,16 +337,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     boolean empty = len == 0;
     checkSendHeaders(empty && end);
     if (!empty) {
-      bytesWritten += len;
-      encoder.writeData(ctx, stream.id(), chunk, 0, end && trailers == null, ctx.newPromise());
+      stream_.writeData(chunk, end && trailers == null);
     }
     if (trailers != null && end) {
       encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
-    }
-    try {
-      encoder.flowController().writePendingBytes();
-    } catch (Http2Exception e) {
-      e.printStackTrace();
     }
     if (end) {
       ended = true;
@@ -363,7 +366,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean writeQueueFull() {
     checkEnded();
-    return !encoder.flowController().isWritable(stream);
+    return stream_.isNotWritable();
   }
 
   @Override
@@ -420,7 +423,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     checkSendHeaders(false);
 
-    FileStreamChannel channel = new FileStreamChannel(resultCtx, resultHandler, this, contentLength);
+    FileStreamChannel channel = new FileStreamChannel(resultCtx, resultHandler, stream_, bodyEndHandler, contentLength);
+    drainHandler(channel.drainHandler);
     ctx.channel().eventLoop().register(channel);
     channel.pipeline().fireUserEventTriggered(raf);
 
@@ -461,7 +465,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public long bytesWritten() {
-    return bytesWritten;
+    return stream_.bytesWritten();
   }
 
   @Override

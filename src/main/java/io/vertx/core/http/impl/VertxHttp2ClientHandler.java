@@ -29,8 +29,6 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.util.collection.IntObjectHashMap;
-import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
@@ -44,7 +42,6 @@ import io.vertx.core.net.NetSocket;
 
 import java.util.Map;
 
-import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
 import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
 
 /**
@@ -53,7 +50,6 @@ import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
 class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements HttpClientConnection {
 
   final Http2Pool http2Pool;
-  private final IntObjectMap<Http2ClientStream> streams = new IntObjectHashMap<>();
   long streamCount;
 
   public VertxHttp2ClientHandler(Http2Pool http2Pool,
@@ -65,13 +61,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
                                  Http2Settings initialSettings) {
     super(handlerCtx, channel, context, decoder, encoder, initialSettings);
     this.http2Pool = http2Pool;
-
-    encoder.flowController().listener(stream -> {
-      Http2ClientStream clientStream = streams.get(stream.id());
-      if (clientStream != null && !clientStream.isNotWritable()) {
-        clientStream.handleInterestedOpsChanged();
-      }
-    });
   }
 
   @Override
@@ -88,10 +77,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   @Override
   public void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    Http2ClientStream stream = streams.remove(nettyStream.id());
-    if (!stream.ended) {
-      stream.handleException(new VertxException("Connection was closed")); // Put that in utility class
-    }
     http2Pool.recycle(VertxHttp2ClientHandler.this);
   }
 
@@ -132,10 +117,13 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   }
 
   @Override
-  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-    Http2ClientStream stream = streams.get(streamId);
-    int consumed = stream.handleData(data, endOfStream);
-    return consumed + padding;
+  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
+    VertxHttp2Stream stream = streams.get(streamId);
+    stream.handleData(Buffer.buffer(data.copy()));
+    if (endOfStream) {
+      stream.handleEnd();
+    }
+    return 0;
   }
 
   @Override
@@ -145,7 +133,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    Http2ClientStream stream = streams.get(streamId);
+    Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     stream.handleHeaders(headers, endOfStream);
   }
 
@@ -154,14 +142,8 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
   }
 
   @Override
-  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
-    Http2ClientStream stream = streams.get(streamId);
-    stream.handleReset(errorCode);
-  }
-
-  @Override
   public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-    Http2ClientStream stream = streams.get(streamId);
+    Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     HttpMethod method = HttpUtils.toVertxMethod(headers.method().toString());
     String uri = headers.path().toString();
     String host = headers.authority() != null ? headers.authority().toString() : null;
@@ -172,40 +154,15 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     stream.handlePushPromise(promisedReq);
   }
 
-  @Override
-  protected void onStreamError(ChannelHandlerContext ctx, Throwable cause, Http2Exception.StreamException http2Ex) {
-    Http2ClientStream stream = streams.get(http2Ex.streamId());
-    if (stream != null) {
-      context.executeFromIO(() -> {
-        stream.handleException(http2Ex);
-      });
-    }
-    // Default behavior reset stream
-    super.onStreamError(ctx, cause, http2Ex);
-  }
-
-  @Override
-  protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
-    for (Http2ClientStream stream : streams.values()) {
-      context.executeFromIO(() -> {
-        stream.handleException(cause);
-      });
-    }
-    super.onConnectionError(ctx, cause, http2Ex);
-  }
-
-  static class Http2ClientStream implements HttpClientStream {
+  static class Http2ClientStream extends VertxHttp2Stream implements HttpClientStream {
 
     private final VertxHttp2ClientHandler handler;
     private final ContextImpl context;
     private final ChannelHandlerContext handlerCtx;
     private final Http2Connection conn;
     private final Http2Stream stream;
-    private final Http2ConnectionEncoder encoder;
     private HttpClientRequestBase req;
     private HttpClientResponseImpl resp;
-    private boolean paused;
-    private int numBytes;
     private boolean ended;
 
     public Http2ClientStream(VertxHttp2ClientHandler handler, Http2Stream stream) throws Http2Exception {
@@ -213,13 +170,45 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     }
 
     public Http2ClientStream(VertxHttp2ClientHandler handler, HttpClientRequestBase req, Http2Stream stream) throws Http2Exception {
+      super(handler.http2Pool.client.getVertx(), handler.context, handler.handlerCtx, handler.encoder(), handler.decoder(), stream);
       this.handler = handler;
       this.context = handler.context;
       this.handlerCtx = handler.handlerCtx;
       this.conn = handler.connection();
       this.stream = stream;
-      this.encoder = handler.encoder();
       this.req = req;
+    }
+
+    @Override
+    void callEnd() {
+      // Should use an shared immutable object ?
+      ended = true;
+      resp.handleEnd(null, new CaseInsensitiveHeaders());
+    }
+
+    @Override
+    void callHandler(Buffer buf) {
+      resp.handleChunk(buf);
+    }
+
+    @Override
+    void callReset(long errorCode) {
+      ended = true;
+      handleException(new StreamResetException(errorCode));
+    }
+
+    @Override
+    void handleClose() {
+      if (!ended) {
+        handleException(new VertxException("Connection was closed")); // Put that in utility class
+      }
+    }
+
+    @Override
+    public void handleInterestedOpsChanged() {
+      if (req instanceof HttpClientRequestImpl) {
+        ((HttpClientRequestImpl)req).handleDrained();
+      }
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
@@ -248,30 +237,8 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
           handleEnd();
         }
       } else if (end) {
-        resp.handleEnd(new Http2HeadersAdaptor(headers));
+        resp.handleEnd(null, new Http2HeadersAdaptor(headers));
       }
-    }
-
-    int handleData(ByteBuf chunk, boolean end) {
-      int consumed = 0;
-      if (chunk.isReadable()) {
-        Buffer buff = Buffer.buffer(chunk.slice());
-        resp.handleChunk(buff);
-        if (paused) {
-          numBytes += chunk.readableBytes();
-        } else {
-          consumed = chunk.readableBytes();
-        }
-      }
-      if (end) {
-        handleEnd();
-      }
-      return consumed;
-    }
-
-    void handleReset(long errorCode) {
-      ended = true;
-      handleException(new StreamResetException(errorCode));
     }
 
     void handleException(Throwable exception) {
@@ -283,12 +250,6 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
           resp.handleException(exception);
         });
       }
-    }
-
-    private void handleEnd() {
-      // Should use an shared immutable object ?
-      ended = true;
-      resp.handleEnd(new CaseInsensitiveHeaders());
     }
 
     void handlePushPromise(HttpClientRequestBase promised) throws Http2Exception {
@@ -326,15 +287,10 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     }
     @Override
     public void writeBuffer(ByteBuf buf, boolean end) {
-      encoder.writeData(handlerCtx, stream.id(), buf, 0, end, handlerCtx.newPromise());
+      writeData(buf, end);
       if (end) {
-        try {
-          encoder.flowController().writePendingBytes();
-        } catch (Http2Exception e) {
-          e.printStackTrace();
-        }
+        handlerContext.flush();
       }
-      handlerCtx.flush();
     }
     @Override
     public Context getContext() {
@@ -348,38 +304,11 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
       return !conn.remote().flowController().isWritable(stream);
     }
     @Override
-    public void handleInterestedOpsChanged() {
-      ((HttpClientRequestImpl)req).handleDrained();
-    }
-    @Override
     public void beginRequest(HttpClientRequestImpl request) {
       req = request;
     }
     @Override
     public void endRequest() {
-    }
-    @Override
-    public void doPause() {
-      paused = true;
-    }
-    @Override
-    public void doResume() {
-      paused = false;
-      if (numBytes > 0) {
-        int pending = numBytes;
-        context.runOnContext(v -> {
-          // DefaultHttp2LocalFlowController requires to do this from the event loop
-          try {
-            boolean windowUpdateSent = conn.local().flowController().consumeBytes(stream, pending);
-            if (windowUpdateSent) {
-              handlerCtx.flush();
-            }
-          } catch (Http2Exception e) {
-            e.printStackTrace();
-          }
-        });
-        numBytes = 0;
-      }
     }
     @Override
     public void reset(long code) {

@@ -61,7 +61,6 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
 
   static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
 
-  private final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
 
   private final HttpServerOptions options;
   private final String serverOrigin;
@@ -75,25 +74,9 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
                           Http2Settings initialSettings, HttpServerOptions options, Handler<HttpServerRequest> handler) {
     super(handlerCtx, channel, context, decoder, encoder, initialSettings);
 
-    encoder.flowController().listener(stream -> {
-      Http2ServerResponseImpl resp = streams.get(stream.id()).response();
-      resp.writabilityChanged();
-    });
-
     this.options = options;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
-  }
-
-  @Override
-  public void onStreamClosed(Http2Stream stream) {
-    super.onStreamClosed(stream);
-    VertxHttp2Stream removed = streams.remove(stream.id());
-    if (removed != null) {
-      context.executeFromIO(() -> {
-        removed.handleClose();
-      });
-    }
   }
 
   /**
@@ -144,30 +127,30 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId,
                             Http2Headers headers, int padding, boolean endOfStream) {
     Http2Connection conn = connection();
-    Http2Stream stream = conn.stream(streamId);
-    Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
-    if (req == null) {
-      String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2ServerRequestImpl newReq = req = new Http2ServerRequestImpl(context.owner(), this, serverOrigin, conn, stream, ctx, encoder(), headers, contentEncoding);
+    VertxHttp2Stream stream = streams.get(streamId);
+    if (stream == null) {
       if (isMalformedRequest(headers)) {
         encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
         return;
       }
+      String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
+      Http2ServerRequestImpl req = new Http2ServerRequestImpl(context.owner(), context, this, serverOrigin, conn, conn.stream(streamId), ctx, encoder(), decoder(), headers, contentEncoding);
+      stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
           ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
               headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
         req.response().writeContinue();
       }
-      streams.put(streamId, newReq);
+      streams.put(streamId, req);
       context.executeFromIO(() -> {
-        handler.handle(newReq);
+        handler.handle(req);
       });
     } else {
       // Trailer - not implemented yet
     }
     if (endOfStream) {
-      context.executeFromIO(req::end);
+      context.executeFromIO(stream::handleEnd);
     }
   }
 
@@ -178,26 +161,8 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
   }
 
   @Override
-  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    Http2ServerRequestImpl req = (Http2ServerRequestImpl) streams.get(streamId);
-    context.executeFromIO(() -> {
-      req.handleData(Buffer.buffer(data.copy()));
-    });
-    if (endOfStream) {
-      context.executeFromIO(req::end);
-    }
-    return padding;
-  }
-
-  @Override
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency,
                              short weight, boolean exclusive) {
-  }
-
-  @Override
-  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttp2Stream req = streams.get(streamId);
-    req.handleReset(errorCode);
   }
 
   @Override
@@ -214,24 +179,35 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
     final Http2ServerResponseImpl response;
     final Handler<AsyncResult<HttpServerResponse>> handler;
 
-    public Push(Http2ServerResponseImpl response, Handler<AsyncResult<HttpServerResponse>> handler) {
-      this.response = response;
+    public Push(Http2Stream stream, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> handler) {
+      super(VertxHttp2ServerHandler.this.context.owner(), VertxHttp2ServerHandler.this.context, VertxHttp2ServerHandler.this.handlerCtx, encoder(), decoder(), stream);
+      this.response = new Http2ServerResponseImpl(this, (VertxInternal) context.owner(), handlerContext, VertxHttp2ServerHandler.this, encoder(), stream, true, contentEncoding);
       this.handler = handler;
+    }
+
+    @Override
+    void callEnd() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    void callHandler(Buffer buf) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    void callReset(long errorCode) {
+      response.callReset(errorCode);
+    }
+
+    @Override
+    void handleInterestedOpsChanged() {
+      response.writabilityChanged();
     }
 
     @Override
     void handleException(Throwable cause) {
       response.handleError(cause);
-    }
-
-    @Override
-    Http2ServerResponseImpl response() {
-      return response;
-    }
-
-    @Override
-    void handleReset(long code) {
-      response.handleReset(code);
     }
 
     @Override
@@ -266,13 +242,12 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
 
   private void schedulePush(ChannelHandlerContext ctx, int streamId, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> handler) {
     Http2Stream stream = connection().stream(streamId);
-    Http2ServerResponseImpl resp = new Http2ServerResponseImpl((VertxInternal) context.owner(), ctx, this, encoder(), stream, true, contentEncoding);
-    Push push = new Push(resp, handler);
+    Push push = new Push(stream, contentEncoding, handler);
     streams.put(streamId, push);
     if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
       concurrentStreams++;
       context.executeFromIO(() -> {
-        handler.handle(Future.succeededFuture(resp));
+        handler.handle(Future.succeededFuture(push.response));
       });
     } else {
       pendingPushes.add(push);
@@ -289,28 +264,6 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
     }
   }
 
-  @Override
-  protected void onStreamError(ChannelHandlerContext ctx, Throwable cause, Http2Exception.StreamException http2Ex) {
-    VertxHttp2Stream stream = streams.get(http2Ex.streamId());
-    if (stream != null) {
-      context.executeFromIO(() -> {
-        stream.handleException(http2Ex);
-      });
-    }
-    // Default behavior reset stream
-    super.onStreamError(ctx, cause, http2Ex);
-  }
-
-  @Override
-  protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
-    for (VertxHttp2Stream stream : streams.values()) {
-      context.executeFromIO(() -> {
-        stream.handleException(cause);
-      });
-    }
-    super.onConnectionError(ctx, cause, http2Ex);
-  }
-
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     super.updateSettings(settingsUpdate, completionHandler);
@@ -321,5 +274,4 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
   }
-
 }

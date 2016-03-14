@@ -27,8 +27,8 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
@@ -44,6 +44,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -54,7 +55,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
-import java.util.ArrayDeque;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -62,14 +62,10 @@ import java.util.ArrayDeque;
 public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
-  private static final Object END = new Object(); // Marker
 
   private final Vertx vertx;
   private final VertxHttp2ServerHandler connection;
   private final String serverOrigin;
-  private final ChannelHandlerContext ctx;
-  private final Http2Connection conn;
-  private final Http2Stream stream;
   private final Http2ServerResponseImpl response;
   private final Http2Headers headers;
   private MultiMap headersMap;
@@ -83,9 +79,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private boolean paused;
   private boolean ended;
-  private ArrayDeque<Object> pending = new ArrayDeque<>(8);
 
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder decoder;
@@ -94,58 +88,28 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   public Http2ServerRequestImpl(
       Vertx vertx,
+      ContextImpl context,
       VertxHttp2ServerHandler connection,
       String serverOrigin,
       Http2Connection conn,
       Http2Stream stream,
-      ChannelHandlerContext ctx,
+      ChannelHandlerContext handlerContext,
       Http2ConnectionEncoder encoder,
+      Http2ConnectionDecoder decoder,
       Http2Headers headers,
       String contentEncoding) {
+    super(vertx, context, handlerContext, encoder, decoder, stream);
 
     this.vertx = vertx;
     this.connection = connection;
     this.serverOrigin = serverOrigin;
-    this.conn = conn;
-    this.stream = stream;
     this.headers = headers;
-    this.ctx = ctx;
-    this.response = new Http2ServerResponseImpl((VertxInternal) vertx, ctx, connection, encoder, stream, false, contentEncoding);
+    this.response = new Http2ServerResponseImpl(this, (VertxInternal) vertx, handlerContext, connection, encoder, stream, false, contentEncoding);
   }
 
-  void end() {
-    if (paused || pending.size() > 0) {
-      pending.add(END);
-    } else {
-      callEnd();
-    }
-  }
-
-  void handleData(Buffer data) {
-    if (!paused) {
-      if (pending.isEmpty()) {
-        callHandler(data);
-        consume(data.length());
-      } else {
-        pending.add(data);
-        checkNextTick(null);
-      }
-    } else {
-      pending.add(data);
-    }
-  }
-
-  void handleReset(long code) {
-    ended = true;
-    paused = false;
-    pending.clear();
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(new StreamResetException(code));
-    }
-    response.handleReset(code);
-    if (endHandler != null) {
-      endHandler.handle(null);
-    }
+  @Override
+  void handleInterestedOpsChanged() {
+    response.writabilityChanged();
   }
 
   @Override
@@ -167,7 +131,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     response.handleClose();
   }
 
-  private void callHandler(Buffer data) {
+  void callHandler(Buffer data) {
     if (decoder != null) {
       try {
         decoder.offer(new DefaultHttpContent(data.getByteBuf()));
@@ -180,7 +144,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     }
   }
 
-  private void callEnd() {
+  void callEnd() {
     ended = true;
     if (decoder != null) {
       try {
@@ -210,30 +174,15 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
     }
   }
 
-  private void consume(int numBytes) {
-    try {
-      boolean windowUpdateSent = conn.local().flowController().consumeBytes(stream, numBytes);
-      if (windowUpdateSent) {
-        ctx.flush();
-      }
-    } catch (Http2Exception e) {
-      e.printStackTrace();
+  @Override
+  void callReset(long errorCode) {
+    ended = true;
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(new StreamResetException(errorCode));
     }
-  }
-
-  private void checkNextTick(Void v) {
-    if (!paused) {
-      Object msg = pending.poll();
-      if (msg instanceof Buffer) {
-        Buffer buf = (Buffer) msg;
-        consume(buf.length());
-        callHandler(buf);
-        if (pending.size() > 0) {
-          vertx.runOnContext(this::checkNextTick);
-        }
-      } if (msg == END) {
-        callEnd();
-      }
+    response.callReset(errorCode);
+    if (endHandler != null) {
+      endHandler.handle(null);
     }
   }
 
@@ -258,14 +207,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public HttpServerRequest pause() {
-    paused = true;
+    doPause();
     return this;
   }
 
   @Override
   public HttpServerRequest resume() {
-    paused = false;
-    checkNextTick(null);
+    doResume();
     return this;
   }
 
@@ -409,7 +357,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public NetSocket netSocket() {
-    throw new UnsupportedOperationException();
+    checkEnded();
+    response.toNetSocket();
+    return connection.toNetSocket(this);
   }
 
   @Override

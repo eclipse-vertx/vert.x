@@ -58,12 +58,14 @@ class FileStreamChannel extends AbstractChannel {
   private final ChannelConfig config = new DefaultChannelConfig(this);
   private boolean active;
   private boolean closed;
-  private final Http2ServerResponseImpl response;
+  private final VertxHttp2Stream stream;
+  private final Handler<Void> endHandler;
 
   FileStreamChannel(
       Context resultCtx,
       Handler<AsyncResult<Void>> resultHandler,
-      Http2ServerResponseImpl response,
+      VertxHttp2Stream stream,
+      Handler<Void> endHandler,
       long length) {
     super(null, Id.INSTANCE);
 
@@ -95,13 +97,14 @@ class FileStreamChannel extends AbstractChannel {
       }
     });
 
-    response.drainHandler(v -> {
-      flush();
-    });
-
     this.length = length;
-    this.response = response;
+    this.stream = stream;
+    this.endHandler = endHandler;
   }
+
+  final Handler<Void> drainHandler = v -> {
+    flush();
+  };
 
   @Override
   protected void doRegister() throws Exception {
@@ -151,10 +154,15 @@ class FileStreamChannel extends AbstractChannel {
   protected void doWrite(ChannelOutboundBuffer in) throws Exception {
     // To do : try to gather the chunks in a single write operation ?
     ByteBuf chunk;
-    while (!response.writeQueueFull() && (chunk = (ByteBuf) in.current()) != null && length > 0) {
+    while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null && length > 0) {
       length -= chunk.readableBytes();
-      response.write(chunk.retain(), length == 0);
+      boolean end = length == 0;
+      stream.writeData(chunk.retain(), end);
+      stream.handlerContext.flush();
       in.remove();
+      if (end) {
+        endHandler.handle(null);
+      }
     }
   }
 

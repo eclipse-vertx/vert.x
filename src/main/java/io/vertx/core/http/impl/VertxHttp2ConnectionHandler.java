@@ -31,6 +31,8 @@ import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.util.collection.IntObjectHashMap;
+import io.netty.util.collection.IntObjectMap;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -40,6 +42,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.net.NetSocket;
 
 import java.util.ArrayDeque;
 import java.util.Map;
@@ -50,6 +53,7 @@ import java.util.Objects;
  */
 abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implements Http2FrameListener, HttpConnection, Http2Connection.Listener {
 
+  protected final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   protected final ChannelHandlerContext handlerCtx;
   protected final Channel channel;
   protected final ContextImpl context;
@@ -64,7 +68,6 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   private Handler<Void> shutdownHandler;
   private Handler<Throwable> exceptionHandler;
 
-
   public VertxHttp2ConnectionHandler(
       ChannelHandlerContext handlerCtx, Channel channel, ContextImpl context,
       Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
@@ -72,9 +75,20 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
     connection().addListener(this);
 
+    encoder.flowController().listener(stream -> {
+      VertxHttp2Stream resp = streams.get(stream.id());
+      resp.handleInterestedOpsChanged();
+    });
+
     this.channel = channel;
     this.handlerCtx = handlerCtx;
     this.context = context;
+  }
+
+  NetSocket toNetSocket(VertxHttp2Stream stream) {
+    VertxHttp2NetSocket rempl = new VertxHttp2NetSocket(stream.vertx, stream.context, stream.handlerContext, stream.encoder, stream.decoder, stream.stream);
+    streams.put(stream.stream.id(), rempl);
+    return rempl;
   }
 
   // Http2Connection.Listener
@@ -82,6 +96,12 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
   @Override
   public void onStreamClosed(Http2Stream stream) {
     checkShutdownHandler();
+    VertxHttp2Stream removed = streams.remove(stream.id());
+    if (removed != null) {
+      context.executeFromIO(() -> {
+        removed.handleClose();
+      });
+    }
   }
 
   @Override
@@ -175,6 +195,24 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
                              Http2Flags flags, ByteBuf payload) {
   }
 
+  @Override
+  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+    VertxHttp2Stream req = streams.get(streamId);
+    req.handleReset(errorCode);
+  }
+
+  @Override
+  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
+    VertxHttp2Stream req = streams.get(streamId);
+    context.executeFromIO(() -> {
+      req.handleData(Buffer.buffer(data.copy()));
+    });
+    if (endOfStream) {
+      context.executeFromIO(req::handleEnd);
+    }
+    return padding;
+  }
+
   // Http2Connection overrides
 
   @Override
@@ -197,6 +235,11 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
 
   @Override
   protected void onConnectionError(ChannelHandlerContext ctx, Throwable cause, Http2Exception http2Ex) {
+    for (VertxHttp2Stream stream : streams.values()) {
+      context.executeFromIO(() -> {
+        stream.handleException(cause);
+      });
+    }
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
       context.executeFromIO(() -> {
@@ -205,6 +248,18 @@ abstract class VertxHttp2ConnectionHandler extends Http2ConnectionHandler implem
     }
     // Default behavior send go away
     super.onConnectionError(ctx, cause, http2Ex);
+  }
+
+  @Override
+  protected void onStreamError(ChannelHandlerContext ctx, Throwable cause, Http2Exception.StreamException http2Ex) {
+    VertxHttp2Stream stream = streams.get(http2Ex.streamId());
+    if (stream != null) {
+      context.executeFromIO(() -> {
+        stream.handleException(http2Ex);
+      });
+    }
+    // Default behavior reset stream
+    super.onStreamError(ctx, cause, http2Ex);
   }
 
   // HttpConnection implementation

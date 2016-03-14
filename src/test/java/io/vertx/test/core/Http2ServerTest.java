@@ -59,6 +59,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
@@ -1938,6 +1939,91 @@ public class Http2ServerTest extends Http2TestBase {
         }
       });
       request.encoder.writeHeaders(request.context, id, GET("/").add("expect", "100-continue"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testConnectNetSocket() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      NetSocket socket = req.netSocket();
+      AtomicInteger count = new AtomicInteger();
+      socket.handler(buff -> {
+        switch (count.getAndIncrement()) {
+          case 0:
+            assertEquals(Buffer.buffer("some-data"), buff);
+            socket.write(buff);
+            break;
+          case 1:
+            assertEquals(Buffer.buffer("last-data"), buff);
+            break;
+          default:
+            fail();
+            break;
+        }
+      });
+      socket.endHandler(v -> {
+        assertEquals(2, count.getAndIncrement());
+        socket.write(Buffer.buffer("last-data"));
+      });
+      socket.closeHandler(v -> {
+        assertEquals(3, count.getAndIncrement());
+        complete();
+      });
+    });
+
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int c = count++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, c);
+            assertEquals("200", headers.status().toString());
+            assertFalse(endStream);
+          });
+          request.encoder.writeData(request.context, id, Buffer.buffer("some-data").getByteBuf(), 0, false, request.context.newPromise());
+          request.context.flush();
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          String s = data.toString(StandardCharsets.UTF_8);
+          switch (count++) {
+            case 1:
+              vertx.runOnContext(v -> {
+                assertEquals("some-data", s);
+                assertFalse(endOfStream);
+              });
+              request.encoder.writeData(request.context, id, Buffer.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
+              break;
+            case 2:
+              vertx.runOnContext(v -> {
+                assertEquals("last-data", s);
+                assertFalse(endOfStream);
+              });
+              break;
+            case 3:
+              vertx.runOnContext(v -> {
+                assertEquals("", s);
+                assertTrue(endOfStream);
+                complete();
+              });
+              break;
+            default:
+              fail();
+              break;
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

@@ -48,9 +48,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
-  private boolean paused;
-  private Buffer pausedChunk;
   private boolean hasPausedEnd;
+  private boolean paused;
+  private Buffer pausedLastChunk;
   private MultiMap pausedTrailers;
   private NetSocket netSocket;
 
@@ -187,53 +187,42 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   private void doResume() {
     if (hasPausedEnd) {
-      if (pausedChunk != null) {
-        final Buffer theChunk = pausedChunk;
-        conn.getContext().runOnContext(v -> handleChunk(theChunk));
-        pausedChunk = null;
-      }
+      final Buffer theChunk = pausedLastChunk;
       final MultiMap theTrailer = pausedTrailers;
-      conn.getContext().runOnContext(v -> handleEnd(theTrailer));
+      conn.getContext().runOnContext(v -> handleEnd(theChunk, theTrailer));
       hasPausedEnd = false;
       pausedTrailers = null;
+      pausedLastChunk = null;
     }
   }
 
   void handleChunk(Buffer data) {
     synchronized (conn) {
-      if (paused) {
-        if (pausedChunk == null) {
-          pausedChunk = data.copy();
-        } else {
-          pausedChunk.appendBuffer(data);
-        }
-      } else {
-        request.dataReceived();
-        if (pausedChunk != null) {
-          data = pausedChunk.appendBuffer(data);
-          pausedChunk = null;
-        }
-        bytesRead += data.length();
-        if (dataHandler != null) {
-          try {
-            dataHandler.handle(data);
-          } catch (Throwable t) {
-            handleException(t);
-          }
+      request.dataReceived();
+      bytesRead += data.length();
+      if (dataHandler != null) {
+        try {
+          dataHandler.handle(data);
+        } catch (Throwable t) {
+          handleException(t);
         }
       }
     }
   }
 
-  void handleEnd(MultiMap trailers) {
+  void handleEnd(Buffer lastChunk, MultiMap trailers) {
     synchronized (conn) {
       conn.connection().reportBytesRead(bytesRead);
       bytesRead = 0;
       request.reportResponseEnd(this);
       if (paused) {
+        pausedLastChunk = lastChunk;
         hasPausedEnd = true;
         pausedTrailers = trailers;
       } else {
+        if (lastChunk != null) {
+          handleChunk(lastChunk);
+        }
         this.trailers = trailers;
         if (endHandler != null) {
           try {

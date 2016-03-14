@@ -86,6 +86,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
+  private boolean paused;
+  private Buffer pausedChunk;
+
   ClientConnection(HttpVersion version, ConnectionManager manager, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
                    int port, ContextImpl context, ConnectionManager.Http1xPool listener, HttpClientMetrics metrics) {
     super(vertx, channel, context, metrics);
@@ -297,12 +300,34 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     requestForResponse.handleResponse(nResp);
   }
 
+  public void doPause() {
+    super.doPause();
+    paused = true;
+  }
+
+  public void doResume() {
+    super.doResume();
+    paused = false;
+  }
+
   void handleResponseChunk(Buffer buff) {
-    currentResponse.handleChunk(buff);
+    if (paused) {
+      if (pausedChunk == null) {
+        pausedChunk = buff.copy();
+      } else {
+        pausedChunk.appendBuffer(buff);
+      }
+    } else {
+      if (pausedChunk != null) {
+        buff = pausedChunk.appendBuffer(buff);
+        pausedChunk = null;
+      }
+      currentResponse.handleChunk(buff);
+    }
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    currentResponse.handleEnd(new HeadersAdaptor(trailer.trailingHeaders()));
+    currentResponse.handleEnd(pausedChunk, new HeadersAdaptor(trailer.trailingHeaders()));
 
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
