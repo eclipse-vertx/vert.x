@@ -56,8 +56,14 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>();
 
-  Http2ServerConnection(ChannelHandlerContext handlerCtx, Channel channel, ContextImpl context, String serverOrigin, VertxHttp2ConnectionHandler connHandler, HttpServerOptions options, Handler<HttpServerRequest> handler) {
-    super(handlerCtx, channel, context, connHandler);
+  Http2ServerConnection(
+      Channel channel,
+      ContextImpl context,
+      String serverOrigin,
+      VertxHttp2ConnectionHandler connHandler,
+      HttpServerOptions options,
+      Handler<HttpServerRequest> handler) {
+    super(channel, context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
@@ -123,7 +129,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2ServerRequestImpl req = new Http2ServerRequestImpl(context.owner(), context, this, serverOrigin, conn, conn.stream(streamId), ctx, connHandler.encoder(), connHandler.decoder(), headers, contentEncoding);
+      Http2ServerRequestImpl req = new Http2ServerRequestImpl(context.owner(), context, this, serverOrigin, conn.stream(streamId), ctx, connHandler.encoder(), connHandler.decoder(), headers, contentEncoding);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -169,7 +175,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     final Handler<AsyncResult<HttpServerResponse>> handler;
 
     public Push(Http2Stream stream, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> handler) {
-      super(Http2ServerConnection.this.context.owner(), Http2ServerConnection.this.context, Http2ServerConnection.this.handlerCtx, connHandler.encoder(), connHandler.decoder(), stream);
+      super(Http2ServerConnection.this.context.owner(), Http2ServerConnection.this.context, Http2ServerConnection.this.handlerContext, connHandler.encoder(), connHandler.decoder(), stream);
       this.response = new Http2ServerResponseImpl(this, (VertxInternal) context.owner(), handlerContext, Http2ServerConnection.this, connHandler.encoder(), stream, true, contentEncoding);
       this.handler = handler;
     }
@@ -217,10 +223,10 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
   void sendPush(int streamId, Http2Headers headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     int promisedStreamId = connHandler.connection().local().incrementAndGetNextStreamId();
-    connHandler.encoder().writePushPromise(handlerCtx, streamId, promisedStreamId, headers, 0, handlerCtx.newPromise()).addListener(fut -> {
+    connHandler.encoder().writePushPromise(handlerContext, streamId, promisedStreamId, headers, 0, handlerContext.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
         String contentEncoding = HttpUtils.determineContentEncoding(headers);
-        schedulePush(handlerCtx, promisedStreamId, contentEncoding, handler);
+        schedulePush(handlerContext, promisedStreamId, contentEncoding, handler);
       } else {
         context.executeFromIO(() -> {
           handler.handle(Future.failedFuture(fut.cause()));

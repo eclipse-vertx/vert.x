@@ -50,11 +50,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   long streamCount;
 
   public Http2ClientConnection(Http2Pool http2Pool,
-                               ChannelHandlerContext handlerCtx,
                                ContextImpl context,
                                Channel channel,
                                VertxHttp2ConnectionHandler connHandler) {
-    super(handlerCtx, channel, context, connHandler);
+    super(channel, context, connHandler);
     this.http2Pool = http2Pool;
   }
 
@@ -143,7 +142,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     private final Http2ClientConnection handler;
     private final ContextImpl context;
-    private final ChannelHandlerContext handlerCtx;
+    private final Channel channel;
+    private final ChannelHandlerContext handlerContext;
     private final Http2Connection conn;
     private final Http2Stream stream;
     private HttpClientRequestBase req;
@@ -155,13 +155,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     public Http2ClientStream(Http2ClientConnection handler, HttpClientRequestBase req, Http2Stream stream) throws Http2Exception {
-      super(handler.http2Pool.client.getVertx(), handler.context, handler.handlerCtx, handler.connHandler.encoder(), handler.connHandler.decoder(), stream);
+      super(handler.http2Pool.client.getVertx(), handler.context, handler.handlerContext, handler.connHandler.encoder(), handler.connHandler.decoder(), stream);
       this.handler = handler;
       this.context = handler.context;
-      this.handlerCtx = handler.handlerCtx;
+      this.handlerContext = handler.handlerContext;
       this.conn = handler.connHandler.connection();
       this.stream = stream;
       this.req = req;
+      this.channel = handler.channel;
     }
 
     @Override
@@ -207,8 +208,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
         } catch (Exception e) {
           handleException(e);
-          encoder.writeRstStream(handlerCtx, stream.id(), 0x01 /* PROTOCOL_ERROR */, handlerCtx.newPromise());
-          handlerCtx.flush();
+          encoder.writeRstStream(handlerContext, stream.id(), 0x01 /* PROTOCOL_ERROR */, handlerContext.newPromise());
+          channel.flush();
           return;
         }
         resp = new HttpClientResponseImpl(
@@ -275,18 +276,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (handler.http2Pool.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
-      encoder.writeHeaders(handlerCtx, stream.id(), h, 0, end && content == null, handlerCtx.newPromise());
+      encoder.writeHeaders(handlerContext, stream.id(), h, 0, end && content == null, handlerContext.newPromise());
       if (content != null) {
         writeBuffer(content, end);
       } else {
-        handlerCtx.flush();
+        channel.flush();
       }
     }
     @Override
     public void writeBuffer(ByteBuf buf, boolean end) {
       writeData(buf, end);
       if (end) {
-        handlerContext.flush();
+        channel.flush();
       }
     }
     @Override
@@ -310,8 +311,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
     @Override
     public void reset(long code) {
-      encoder.writeRstStream(handlerCtx, stream.id(), code, handlerCtx.newPromise());
-      handlerCtx.flush();
+      encoder.writeRstStream(handlerContext, stream.id(), code, handlerContext.newPromise());
+      channel.flush();
     }
 
     @Override

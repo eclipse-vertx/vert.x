@@ -61,7 +61,7 @@ class Http2Pool extends ConnectionManager.Pool {
           .server(false)
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getHttp2Settings())
-          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, handlerCtx, context, ch, connHandler))
+          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler))
           .build();
       Http2ClientConnection conn = (Http2ClientConnection) handler.connection;
       clientHandler = conn;

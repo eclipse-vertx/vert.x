@@ -26,7 +26,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -91,7 +90,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
       ContextImpl context,
       Http2ServerConnection connection,
       String serverOrigin,
-      Http2Connection conn,
       Http2Stream stream,
       ChannelHandlerContext handlerContext,
       Http2ConnectionEncoder encoder,

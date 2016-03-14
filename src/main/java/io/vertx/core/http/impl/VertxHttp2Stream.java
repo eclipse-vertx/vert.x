@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
@@ -39,6 +40,7 @@ abstract class VertxHttp2Stream {
 
   protected final Vertx vertx;
   protected final ContextImpl context;
+  protected final Channel channel;
   protected final ChannelHandlerContext handlerContext;
   protected final Http2ConnectionEncoder encoder;
   protected final Http2ConnectionDecoder decoder;
@@ -54,6 +56,7 @@ abstract class VertxHttp2Stream {
     this.decoder = decoder;
     this.stream = stream;
     this.context = context;
+    this.channel = handlerContext.channel();
   }
 
   public void doPause() {
@@ -70,7 +73,7 @@ abstract class VertxHttp2Stream {
       try {
         boolean windowUpdateSent = decoder.flowController().consumeBytes(stream, numBytes);
         if (windowUpdateSent) {
-          handlerContext.flush();
+          channel.flush();
         }
       } catch (Http2Exception e) {
         e.printStackTrace();
@@ -149,7 +152,7 @@ abstract class VertxHttp2Stream {
       } catch (Http2Exception e) {
         e.printStackTrace();
       }
-      handlerContext.flush();
+      channel.flush();
     }
   }
 

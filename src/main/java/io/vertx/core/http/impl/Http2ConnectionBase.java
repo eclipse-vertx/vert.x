@@ -53,22 +53,19 @@ import java.util.Objects;
 abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameListener, HttpConnection, Http2Connection.Listener {
 
   protected final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
-  protected final ChannelHandlerContext handlerCtx;
+  protected ChannelHandlerContext handlerContext;
   protected final Channel channel;
   protected final VertxHttp2ConnectionHandler connHandler;
   private boolean shuttingdown;
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
-  private Http2Settings clientSettings = new Http2Settings();
   private final ArrayDeque<Runnable> updateSettingsHandler = new ArrayDeque<>(4);
   private Http2Settings serverSettings = new Http2Settings();
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Throwable> exceptionHandler;
 
-  public Http2ConnectionBase(
-      ChannelHandlerContext handlerCtx, Channel channel, ContextImpl context,
-      VertxHttp2ConnectionHandler connHandler) {
+  public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler connHandler) {
     super((VertxInternal) context.owner(), channel, context, (NetworkMetrics) null);
 
     connHandler.connection().addListener(this);
@@ -79,8 +76,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     });
 
     this.channel = channel;
-    this.handlerCtx = handlerCtx;
+    this.handlerContext = channel.pipeline().context(connHandler);
     this.connHandler = connHandler;
+  }
+
+  void setHandlerContext(ChannelHandlerContext handlerContext) {
+    this.handlerContext = handlerContext;
   }
 
   NetSocket toNetSocket(VertxHttp2Stream stream) {
@@ -199,7 +200,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
-    clientSettings.putAll(settings);
     if (clientSettingsHandler != null) {
       context.executeFromIO(() -> {
         clientSettingsHandler.handle(remoteSettings());
@@ -263,8 +263,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (lastStreamId < 0) {
       throw new IllegalArgumentException();
     }
-    connHandler.encoder().writeGoAway(handlerCtx, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, handlerCtx.newPromise());
-    handlerCtx.flush();
+    connHandler.encoder().writeGoAway(handlerContext, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, handlerContext.newPromise());
+    channel.flush();
     return this;
   }
 
@@ -365,7 +365,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
     }
 
-    connHandler.encoder().writeSettings(handlerCtx, settingsUpdate, handlerCtx.newPromise()).addListener(fut -> {
+    connHandler.encoder().writeSettings(handlerContext, settingsUpdate, handlerContext.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
         updateSettingsHandler.add(() -> {
           serverSettings.putAll(settingsUpdate);
@@ -383,7 +383,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         }
       }
     });
-    handlerCtx.flush();
+    channel.flush();
   }
 
   @Override

@@ -30,15 +30,21 @@ import java.util.function.Function;
  */
 class VertxHttp2ConnectionHandler extends Http2ConnectionHandler {
 
-  final Http2ConnectionBase connection;
+  Http2ConnectionBase connection;
 
   public VertxHttp2ConnectionHandler(
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
       Http2Settings initialSettings,
-      Function<VertxHttp2ConnectionHandler, Http2ConnectionBase> a) {
+      Function<VertxHttp2ConnectionHandler, Http2ConnectionBase> connectionFactory) {
     super(decoder, encoder, initialSettings);
-    connection = a.apply(this);
+    connection = connectionFactory.apply(this);
+  }
+
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    super.handlerAdded(ctx);
+    connection.setHandlerContext(ctx);
   }
 
   @Override
@@ -47,7 +53,6 @@ class VertxHttp2ConnectionHandler extends Http2ConnectionHandler {
     cause.printStackTrace();
     ctx.close();
   }
-
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {

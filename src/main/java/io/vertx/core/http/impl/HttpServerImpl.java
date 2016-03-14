@@ -217,7 +217,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                             .server(true)
                             .useCompression(options.isCompressionSupported())
                             .initialSettings(options.getHttp2Settings())
-                            .connectionFactory(connHandler -> new Http2ServerConnection(ctx, ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler))
+                            .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler))
                             .build();
                         pipeline.addLast("handler", handler);
                         if (holder.handler.connectionHandler != null) {
