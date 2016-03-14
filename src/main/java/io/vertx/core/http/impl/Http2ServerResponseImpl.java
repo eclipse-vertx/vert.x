@@ -35,7 +35,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetSocket;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,7 +52,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private final VertxHttp2Stream stream_;
   private final VertxInternal vertx;
   private final ChannelHandlerContext ctx;
-  private final VertxHttp2ServerHandler connection;
+  private final Http2ServerConnection connection;
   private final Http2ConnectionEncoder encoder;
   private final Http2Stream stream;
   private final boolean push;
@@ -71,7 +70,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
 
-  public Http2ServerResponseImpl(VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, VertxHttp2ServerHandler connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
+  public Http2ServerResponseImpl(VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
     this.stream_ = stream_;
     this.vertx = vertx;
     this.ctx = ctx;

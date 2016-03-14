@@ -16,25 +16,16 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpServerUpgradeHandler;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.util.AsciiString;
-import io.netty.util.collection.IntObjectHashMap;
-import io.netty.util.collection.IntObjectMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -52,15 +43,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
-
-  static final String UPGRADE_RESPONSE_HEADER = "http-to-http2-upgrade";
-
+public class Http2ServerConnection extends Http2ConnectionBase {
 
   private final HttpServerOptions options;
   private final String serverOrigin;
@@ -70,19 +56,21 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>();
 
-  VertxHttp2ServerHandler(ChannelHandlerContext handlerCtx, Channel channel, ContextImpl context, String serverOrigin, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
-                          Http2Settings initialSettings, HttpServerOptions options, Handler<HttpServerRequest> handler) {
-    super(handlerCtx, channel, context, decoder, encoder, initialSettings);
+  Http2ServerConnection(ChannelHandlerContext handlerCtx, Channel channel, ContextImpl context, String serverOrigin, VertxHttp2ConnectionHandler connHandler, HttpServerOptions options, Handler<HttpServerRequest> handler) {
+    super(handlerCtx, channel, context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
     this.handler = handler;
   }
 
-  /**
+  /*
+  */
+/**
    * Handles the cleartext HTTP upgrade event. If an upgrade occurred, sends a simple response via HTTP/2
    * on stream 1 (the stream specifically reserved for cleartext HTTP upgrade).
-   */
+   *//*
+
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
     if (evt instanceof HttpServerUpgradeHandler.UpgradeEvent) {
@@ -94,6 +82,7 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
     }
     super.userEventTriggered(ctx, evt);
   }
+*/
 
   private boolean isMalformedRequest(Http2Headers headers) {
     if (headers.method() == null) {
@@ -126,15 +115,15 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId,
                             Http2Headers headers, int padding, boolean endOfStream) {
-    Http2Connection conn = connection();
+    Http2Connection conn = connHandler.connection();
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
-        encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
+        connHandler.encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
         return;
       }
       String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2ServerRequestImpl req = new Http2ServerRequestImpl(context.owner(), context, this, serverOrigin, conn, conn.stream(streamId), ctx, encoder(), decoder(), headers, contentEncoding);
+      Http2ServerRequestImpl req = new Http2ServerRequestImpl(context.owner(), context, this, serverOrigin, conn, conn.stream(streamId), ctx, connHandler.encoder(), connHandler.decoder(), headers, contentEncoding);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -180,8 +169,8 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
     final Handler<AsyncResult<HttpServerResponse>> handler;
 
     public Push(Http2Stream stream, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> handler) {
-      super(VertxHttp2ServerHandler.this.context.owner(), VertxHttp2ServerHandler.this.context, VertxHttp2ServerHandler.this.handlerCtx, encoder(), decoder(), stream);
-      this.response = new Http2ServerResponseImpl(this, (VertxInternal) context.owner(), handlerContext, VertxHttp2ServerHandler.this, encoder(), stream, true, contentEncoding);
+      super(Http2ServerConnection.this.context.owner(), Http2ServerConnection.this.context, Http2ServerConnection.this.handlerCtx, connHandler.encoder(), connHandler.decoder(), stream);
+      this.response = new Http2ServerResponseImpl(this, (VertxInternal) context.owner(), handlerContext, Http2ServerConnection.this, connHandler.encoder(), stream, true, contentEncoding);
       this.handler = handler;
     }
 
@@ -227,8 +216,8 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
   }
 
   void sendPush(int streamId, Http2Headers headers, Handler<AsyncResult<HttpServerResponse>> handler) {
-    int promisedStreamId = connection().local().incrementAndGetNextStreamId();
-    encoder().writePushPromise(handlerCtx, streamId, promisedStreamId, headers, 0, handlerCtx.newPromise()).addListener(fut -> {
+    int promisedStreamId = connHandler.connection().local().incrementAndGetNextStreamId();
+    connHandler.encoder().writePushPromise(handlerCtx, streamId, promisedStreamId, headers, 0, handlerCtx.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
         String contentEncoding = HttpUtils.determineContentEncoding(headers);
         schedulePush(handlerCtx, promisedStreamId, contentEncoding, handler);
@@ -241,7 +230,7 @@ public class VertxHttp2ServerHandler extends VertxHttp2ConnectionHandler {
   }
 
   private void schedulePush(ChannelHandlerContext ctx, int streamId, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> handler) {
-    Http2Stream stream = connection().stream(streamId);
+    Http2Stream stream = connHandler.connection().stream(streamId);
     Push push = new Push(stream, contentEncoding, handler);
     streams.put(streamId, push);
     if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {

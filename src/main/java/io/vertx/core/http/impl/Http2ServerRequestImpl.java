@@ -64,7 +64,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final Vertx vertx;
-  private final VertxHttp2ServerHandler connection;
+  private final Http2ServerConnection connection;
   private final String serverOrigin;
   private final Http2ServerResponseImpl response;
   private final Http2Headers headers;
@@ -89,7 +89,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   public Http2ServerRequestImpl(
       Vertx vertx,
       ContextImpl context,
-      VertxHttp2ServerHandler connection,
+      Http2ServerConnection connection,
       String serverOrigin,
       Http2Connection conn,
       Http2Stream stream,

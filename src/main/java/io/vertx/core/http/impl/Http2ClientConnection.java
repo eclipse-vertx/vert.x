@@ -23,11 +23,8 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
@@ -47,47 +44,40 @@ import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements HttpClientConnection {
+class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
   final Http2Pool http2Pool;
   long streamCount;
 
-  public VertxHttp2ClientHandler(Http2Pool http2Pool,
-                                 ChannelHandlerContext handlerCtx,
-                                 ContextImpl context,
-                                 Channel channel,
-                                 Http2ConnectionDecoder decoder,
-                                 Http2ConnectionEncoder encoder,
-                                 Http2Settings initialSettings) {
-    super(handlerCtx, channel, context, decoder, encoder, initialSettings);
+  public Http2ClientConnection(Http2Pool http2Pool,
+                               ChannelHandlerContext handlerCtx,
+                               ContextImpl context,
+                               Channel channel,
+                               VertxHttp2ConnectionHandler connHandler) {
+    super(handlerCtx, channel, context, connHandler);
     this.http2Pool = http2Pool;
   }
 
   @Override
   public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    http2Pool.discard(VertxHttp2ClientHandler.this);
+    http2Pool.discard(Http2ClientConnection.this);
   }
 
   @Override
   public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
     super.onGoAwayReceived(lastStreamId, errorCode, debugData);
-    http2Pool.discard(VertxHttp2ClientHandler.this);
+    http2Pool.discard(Http2ClientConnection.this);
   }
 
   @Override
   public void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
-    http2Pool.recycle(VertxHttp2ClientHandler.this);
-  }
-
-  @Override
-  public Context getContext() {
-    return context;
+    http2Pool.recycle(Http2ClientConnection.this);
   }
 
   HttpClientStream createStream() {
     try {
-      Http2Connection conn = connection();
+      Http2Connection conn = connHandler.connection();
       Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
       Http2ClientStream clientStream = new Http2ClientStream(this, stream);
       streams.put(clientStream.stream.id(), clientStream);
@@ -107,7 +97,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
   @Override
   public boolean isValid() {
-    Http2Connection conn = connection();
+    Http2Connection conn = connHandler.connection();
     return !conn.goAwaySent() && !conn.goAwayReceived();
   }
 
@@ -143,7 +133,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     String uri = headers.path().toString();
     String host = headers.authority() != null ? headers.authority().toString() : null;
     MultiMap headersMap = new Http2HeadersAdaptor(headers);
-    Http2Stream promisedStream = connection().stream(promisedStreamId);
+    Http2Stream promisedStream = connHandler.connection().stream(promisedStreamId);
     HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, method, uri, host, headersMap);
     streams.put(promisedStreamId, promisedReq.getStream());
     stream.handlePushPromise(promisedReq);
@@ -151,7 +141,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
 
   static class Http2ClientStream extends VertxHttp2Stream implements HttpClientStream {
 
-    private final VertxHttp2ClientHandler handler;
+    private final Http2ClientConnection handler;
     private final ContextImpl context;
     private final ChannelHandlerContext handlerCtx;
     private final Http2Connection conn;
@@ -160,16 +150,16 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     private HttpClientResponseImpl resp;
     private boolean ended;
 
-    public Http2ClientStream(VertxHttp2ClientHandler handler, Http2Stream stream) throws Http2Exception {
+    public Http2ClientStream(Http2ClientConnection handler, Http2Stream stream) throws Http2Exception {
       this(handler, null, stream);
     }
 
-    public Http2ClientStream(VertxHttp2ClientHandler handler, HttpClientRequestBase req, Http2Stream stream) throws Http2Exception {
-      super(handler.http2Pool.client.getVertx(), handler.context, handler.handlerCtx, handler.encoder(), handler.decoder(), stream);
+    public Http2ClientStream(Http2ClientConnection handler, HttpClientRequestBase req, Http2Stream stream) throws Http2Exception {
+      super(handler.http2Pool.client.getVertx(), handler.context, handler.handlerCtx, handler.connHandler.encoder(), handler.connHandler.decoder(), stream);
       this.handler = handler;
       this.context = handler.context;
       this.handlerCtx = handler.handlerCtx;
-      this.conn = handler.connection();
+      this.conn = handler.connHandler.connection();
       this.stream = stream;
       this.req = req;
     }
@@ -303,6 +293,7 @@ class VertxHttp2ClientHandler extends VertxHttp2ConnectionHandler implements Htt
     public Context getContext() {
       return context;
     }
+
     @Override
     public void doSetWriteQueueMaxSize(int size) {
     }

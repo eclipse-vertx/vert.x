@@ -32,8 +32,8 @@ import io.vertx.core.http.HttpMethod;
  */
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
-  private final VertxHttp2ClientHandler handler;
-  private final VertxHttp2ClientHandler.Http2ClientStream clientStream;
+  private final Http2ClientConnection handler;
+  private final Http2ClientConnection.Http2ClientStream clientStream;
   private final HttpMethod method;
   private final String uri;
   private final String host;
@@ -41,7 +41,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private Handler<HttpClientResponse> respHandler;
 
   public HttpClientRequestPushPromise(
-      VertxHttp2ClientHandler handler,
+      Http2ClientConnection handler,
       Http2Stream clientStream,
       HttpClientImpl client,
       HttpMethod method,
@@ -50,14 +50,14 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       MultiMap headers) throws Http2Exception {
     super(client);
     this.handler = handler;
-    this.clientStream = new VertxHttp2ClientHandler.Http2ClientStream(handler, this, clientStream);
+    this.clientStream = new Http2ClientConnection.Http2ClientStream(handler, this, clientStream);
     this.method = method;
     this.uri = uri;
     this.host = host;
     this.headers = headers;
   }
 
-  VertxHttp2ClientHandler.Http2ClientStream getStream() {
+  Http2ClientConnection.Http2ClientStream getStream() {
     return clientStream;
   }
 

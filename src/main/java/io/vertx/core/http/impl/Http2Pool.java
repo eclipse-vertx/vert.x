@@ -19,30 +19,14 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
-import io.netty.handler.codec.http2.DefaultHttp2Connection;
-import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
-import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.impl.ContextImpl;
-
-import java.util.Objects;
-
-import static io.vertx.core.http.Http2Settings.DEFAULT_ENABLE_PUSH;
-import static io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_FRAME_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class Http2Pool extends ConnectionManager.Pool {
 
-  private VertxHttp2ClientHandler clientHandler;
+  private Http2ClientConnection clientHandler;
   final HttpClientImpl client;
 
   public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client) {
@@ -52,13 +36,13 @@ class Http2Pool extends ConnectionManager.Pool {
 
   // Under sync when called
   public boolean getConnection(Waiter waiter) {
-    VertxHttp2ClientHandler conn = this.clientHandler;
+    Http2ClientConnection conn = this.clientHandler;
     if (conn != null && canReserveStream(conn)) {
       conn.streamCount++;
       ContextImpl context = waiter.context;
       if (context == null) {
-        context = conn.context;
-      } else if (context != conn.context) {
+        context = conn.getContext();
+      } else if (context != conn.getContext()) {
         ConnectionManager.log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
       }
       context.runOnContext(v -> {
@@ -72,25 +56,29 @@ class Http2Pool extends ConnectionManager.Pool {
 
   void createConn(ChannelHandlerContext handlerCtx, ContextImpl context, Channel ch, Waiter waiter) {
     ChannelPipeline p = ch.pipeline();
-    Http2Connection connection = new DefaultHttp2Connection(false);
-    VertxClientHandlerBuilder clientHandlerBuilder = new VertxClientHandlerBuilder(handlerCtx, context, ch);
     synchronized (queue) {
-      VertxHttp2ClientHandler handler = clientHandlerBuilder.build(connection);
-      clientHandler = handler;
+      VertxHttp2ConnectionHandler handler = new VertxHttp2ConnectionHandlerBuilder()
+          .server(false)
+          .useCompression(client.getOptions().isTryUseCompression())
+          .initialSettings(client.getOptions().getHttp2Settings())
+          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, handlerCtx, context, ch, connHandler))
+          .build();
+      Http2ClientConnection conn = (Http2ClientConnection) handler.connection;
+      clientHandler = conn;
       p.addLast(handler);
-      handler.streamCount++;
-      waiter.handleConnection(handler); // Should make same tests than in deliverRequest
-      deliverStream(handler, waiter);
-      checkPending(handler);
+      conn.streamCount++;
+      waiter.handleConnection(conn); // Should make same tests than in deliverRequest
+      deliverStream(conn, waiter);
+      checkPending(conn);
     }
   }
 
-  private boolean canReserveStream(VertxHttp2ClientHandler handler) {
-    int maxConcurrentStreams = handler.connection().local().maxActiveStreams();
+  private boolean canReserveStream(Http2ClientConnection handler) {
+    int maxConcurrentStreams = handler.connHandler.connection().local().maxActiveStreams();
     return handler.streamCount < maxConcurrentStreams;
   }
 
-  void checkPending(VertxHttp2ClientHandler handler) {
+  void checkPending(Http2ClientConnection handler) {
     synchronized (queue) {
       Waiter waiter;
       while (canReserveStream(handler) && (waiter = queue.getNextWaiter()) != null) {
@@ -100,7 +88,7 @@ class Http2Pool extends ConnectionManager.Pool {
     }
   }
 
-  void discard(VertxHttp2ClientHandler conn) {
+  void discard(Http2ClientConnection conn) {
     synchronized (queue) {
       if (clientHandler == conn) {
         clientHandler = null;
@@ -112,7 +100,7 @@ class Http2Pool extends ConnectionManager.Pool {
   @Override
   void recycle(HttpClientConnection conn) {
     synchronized (queue) {
-      VertxHttp2ClientHandler handler = (VertxHttp2ClientHandler) conn;
+      Http2ClientConnection handler = (Http2ClientConnection) conn;
       handler.streamCount--;
       checkPending(handler);
     }
@@ -120,62 +108,11 @@ class Http2Pool extends ConnectionManager.Pool {
 
   @Override
   HttpClientStream createStream(HttpClientConnection conn) {
-    return ((VertxHttp2ClientHandler)conn).createStream();
+    return ((Http2ClientConnection)conn).createStream();
   }
 
   @Override
   void closeAllConnections() {
     // todo
-  }
-
-  class VertxClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ClientHandler, VertxClientHandlerBuilder> {
-
-    private final ChannelHandlerContext handlerCtx;
-    private final ContextImpl context;
-    private final Channel channel;
-
-    public VertxClientHandlerBuilder(ChannelHandlerContext handlerCtx, ContextImpl context, Channel channel) {
-      this.handlerCtx = handlerCtx;
-      this.context = context;
-      this.channel = channel;
-
-      io.vertx.core.http.Http2Settings initialSettings = client.getOptions().getHttp2Settings();
-      if (initialSettings != null) {
-        if (initialSettings.getEnablePush() != DEFAULT_ENABLE_PUSH) {
-          initialSettings().pushEnabled(initialSettings.getEnablePush());
-        }
-        if (initialSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
-          initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
-        }
-        if (initialSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
-          initialSettings().initialWindowSize(initialSettings.getInitialWindowSize());
-        }
-        if (!Objects.equals(initialSettings.getMaxConcurrentStreams(), DEFAULT_MAX_CONCURRENT_STREAMS)) {
-          initialSettings().maxConcurrentStreams(initialSettings.getMaxConcurrentStreams());
-        }
-        if (initialSettings.getMaxFrameSize() != DEFAULT_MAX_FRAME_SIZE) {
-          initialSettings().maxFrameSize(initialSettings.getMaxFrameSize());
-        }
-        if (!Objects.equals(initialSettings.getMaxHeaderListSize(), DEFAULT_MAX_HEADER_LIST_SIZE)) {
-          initialSettings().maxHeaderListSize(initialSettings.getMaxHeaderListSize());
-        }
-      }
-    }
-
-    @Override
-    protected VertxHttp2ClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-      VertxHttp2ClientHandler handler = new VertxHttp2ClientHandler(Http2Pool.this, handlerCtx, context, channel, decoder, encoder, initialSettings);
-      if (client.getOptions().isTryUseCompression()) {
-        frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler));
-      } else {
-        frameListener(handler);
-      }
-      return handler;
-    }
-
-    public VertxHttp2ClientHandler build(Http2Connection conn) {
-      connection(conn);
-      return super.build();
-    }
   }
 }
