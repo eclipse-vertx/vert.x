@@ -206,6 +206,13 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpClientRequest sendHead();
 
   /**
+   * Like {@link #sendHead()} but with an handler after headers have been sent. The handler will be called with
+   * the {@link HttpVersion} if it can be determined or null otherwise.<p>
+   */
+  @Fluent
+  HttpClientRequest sendHead(Handler<HttpVersion> completionHandler);
+
+  /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding
    *
    * @throws java.lang.IllegalStateException when no response handler is set
@@ -296,4 +303,30 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    */
   @Fluent
   HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler);
+
+  /**
+   * Write an HTTP/2 frame to the request, allowing to extend the HTTP/2 protocol.<p>
+   *
+   * The frame is sent immediatly and is not subject to flow control.<p>
+   *
+   * This method must be called after the request headers have been sent and only for the protocol HTTP/2.
+   * The {@link #sendHead(Handler)} should be used for this purpose.
+   *
+   * @param type the 8-bit frame type
+   * @param flags the 8-bit frame flags
+   * @param payload the frame payload
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest writeFrame(int type, int flags, Buffer payload);
+
+  /**
+   * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
+   *
+   * @param frame the frame to write
+   */
+  @Fluent
+  default HttpClientRequest writeFrame(HttpFrame frame) {
+    return writeFrame(frame.type(), frame.flags(), frame.payload());
+  }
 }

@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.NetSocket;
@@ -46,6 +47,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final HttpClientStream conn;
 
   private Handler<Buffer> dataHandler;
+  private Handler<HttpFrame> unknownFrameHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean hasPausedEnd;
@@ -185,6 +187,14 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     return this;
   }
 
+  @Override
+  public HttpClientResponse unknownFrameHandler(Handler<HttpFrame> handler) {
+    synchronized (conn) {
+      unknownFrameHandler = handler;
+      return this;
+    }
+  }
+
   private void doResume() {
     if (hasPausedEnd) {
       final Buffer theChunk = pausedLastChunk;
@@ -193,6 +203,18 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       hasPausedEnd = false;
       pausedTrailers = null;
       pausedLastChunk = null;
+    }
+  }
+
+  void handleUnknowFrame(HttpFrame frame) {
+    synchronized (conn) {
+      if (unknownFrameHandler != null) {
+        try {
+          unknownFrameHandler.handle(frame);
+        } catch (Throwable t) {
+          handleException(t);
+        }
+      }
     }
   }
 

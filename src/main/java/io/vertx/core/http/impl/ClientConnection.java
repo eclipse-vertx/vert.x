@@ -444,6 +444,11 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   @Override
+  public void writeFrame(int type, int flags, ByteBuf payload) {
+    throw new IllegalStateException("Cannot write an HTTP/2 frame over an HTTP/1.x connection");
+  }
+
+  @Override
   protected synchronized void handleException(Throwable e) {
     super.handleException(e);
     if (currentRequest != null) {
@@ -527,5 +532,10 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   @Override
   public HttpClientConnection connection() {
     return this;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return null;
   }
 }

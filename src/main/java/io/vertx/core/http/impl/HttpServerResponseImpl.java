@@ -25,6 +25,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextImpl;
@@ -611,6 +612,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse pushPromise(io.vertx.core.http.HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     handler.handle(Future.failedFuture("Push promise is only supported with HTTP2"));
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
     return this;
   }
 }

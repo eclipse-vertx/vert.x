@@ -38,6 +38,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -339,6 +340,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     synchronized (conn) {
       return ended;
     }
+  }
+
+  @Override
+  public HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler) {
+    return this;
   }
 
   @Override

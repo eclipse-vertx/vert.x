@@ -137,6 +137,9 @@ abstract class VertxHttp2Stream {
 
   abstract void handleInterestedOpsChanged();
 
+  void handleUnknownFrame(int type, int flags, Buffer buff) {
+  }
+
   long bytesWritten() {
     return bytesWritten;
   }

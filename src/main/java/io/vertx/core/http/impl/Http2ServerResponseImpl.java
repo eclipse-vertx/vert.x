@@ -22,6 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
@@ -31,6 +32,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
@@ -314,7 +316,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     write(chunk, true);
   }
 
-  private void checkSendHeaders(boolean end) {
+  private boolean checkSendHeaders(boolean end) {
     if (!headWritten) {
 /*
       if (!headers.contains(HttpHeaderNames.CONTENT_LENGTH) && !chunked) {
@@ -330,6 +332,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       if (end) {
         ctx.flush();
       }
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -340,8 +345,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     int len = chunk.readableBytes();
     boolean empty = len == 0;
-    checkSendHeaders(empty && end);
-    if (!empty) {
+    boolean sent = checkSendHeaders(empty && end);
+    if (!empty || (!sent && end)) {
       stream_.writeData(chunk, end && trailers == null);
     }
     if (trailers != null && end) {
@@ -350,6 +355,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (end && bodyEndHandler != null) {
       bodyEndHandler.handle(null);
     }
+  }
+
+  @Override
+  public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
+    checkEnded();
+    checkSendHeaders(false);
+    encoder.writeFrame(ctx, (byte) type, stream.id(), new Http2Flags((short) flags), payload.getByteBuf(), ctx.newPromise());
+    ctx.flush();
+    return this;
   }
 
   private void checkEnded() {

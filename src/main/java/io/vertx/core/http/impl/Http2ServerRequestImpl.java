@@ -43,6 +43,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -84,6 +85,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   private HttpPostRequestDecoder decoder;
 
   private Handler<Throwable> exceptionHandler;
+  private Handler<HttpFrame> unknownFrameHandler;
 
   public Http2ServerRequestImpl(
       Vertx vertx,
@@ -127,6 +129,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
       }
     }
     response.handleClose();
+  }
+
+  @Override
+  void handleUnknownFrame(int type, int flags, Buffer buff) {
+    if (unknownFrameHandler != null) {
+      unknownFrameHandler.handle(new HttpFrameImpl(type, flags, buff));
+    }
   }
 
   void callHandler(Buffer data) {
@@ -424,6 +433,12 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   @Override
   public boolean isEnded() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler) {
+    unknownFrameHandler = handler;
+    return this;
   }
 
   @Override

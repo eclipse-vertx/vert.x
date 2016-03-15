@@ -407,4 +407,26 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   void reset(long code);
 
+  /**
+   * Write an HTTP/2 frame to the response, allowing to extend the HTTP/2 protocol.<p>
+   *
+   * The frame is sent immediatly and is not subject to flow control.
+   *
+   * @param type the 8-bit frame type
+   * @param flags the 8-bit frame flags
+   * @param payload the frame payload
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse writeFrame(int type, int flags, Buffer payload);
+
+  /**
+   * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
+   *
+   * @param frame the frame to write
+   */
+  @Fluent
+  default HttpServerResponse writeFrame(HttpFrame frame) {
+    return writeFrame(frame.type(), frame.flags(), frame.payload());
+  }
 }

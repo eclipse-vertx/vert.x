@@ -37,6 +37,7 @@ import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -2163,5 +2164,62 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testNetSocketWritability() throws Exception {
     testStreamWritability(HttpServerRequest::netSocket);
+  }
+
+  @Test
+  public void testUnknownFrame() throws Exception {
+    Buffer expectedSend = TestUtils.randomBuffer(500);
+    Buffer expectedRecv = TestUtils.randomBuffer(500);
+    server.requestHandler(req -> {
+      req.unknownFrameHandler(frame -> {
+        assertEquals(10, frame.type());
+        assertEquals(253, frame.flags());
+        assertEquals(expectedSend, frame.payload());
+        req.response().writeFrame(12, 134, expectedRecv).end();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int status = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int s = status++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, s);
+          });
+        }
+        @Override
+        public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) {
+          int s = status++;
+          Buffer recv = Buffer.buffer(payload.copy());
+          vertx.runOnContext(v -> {
+            assertEquals(1, s);
+            assertEquals(12, frameType);
+            assertEquals(134, flags.value());
+            assertEquals(expectedRecv, recv);
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          int len = data.readableBytes();
+          int s = status++;
+          vertx.runOnContext(v -> {
+            assertEquals(2, s);
+            assertEquals(0, len);
+            assertTrue(endOfStream);
+            testComplete();
+          });
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.encoder.writeFrame(request.context, (byte)10, id, new Http2Flags((short) 253), expectedSend.getByteBuf(), request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
   }
 }

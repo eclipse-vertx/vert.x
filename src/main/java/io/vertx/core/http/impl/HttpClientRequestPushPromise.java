@@ -26,6 +26,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -208,6 +209,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public HttpClientRequest sendHead(Handler<HttpVersion> completionHandler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public void end(String chunk) {
     throw new IllegalStateException();
   }
@@ -235,5 +241,10 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   @Override
   public boolean writeQueueFull() {
     throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest writeFrame(int type, int flags, Buffer payload) {
+    throw new UnsupportedOperationException();
   }
 }

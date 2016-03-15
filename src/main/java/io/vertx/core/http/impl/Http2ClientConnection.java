@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.Context;
@@ -166,6 +167,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
+    public HttpVersion version() {
+      return HttpVersion.HTTP_2;
+    }
+
+    @Override
     void callEnd() {
       // Should use an shared immutable object ?
       ended = true;
@@ -197,6 +203,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           ((HttpClientRequestImpl)req).handleDrained();
         }
       }
+    }
+
+    @Override
+    void handleUnknownFrame(int type, int flags, Buffer buff) {
+      resp.handleUnknowFrame(new HttpFrameImpl(type, flags, buff));
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
@@ -290,6 +301,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         channel.flush();
       }
     }
+
+    @Override
+    public void writeFrame(int type, int flags, ByteBuf payload) {
+      encoder.writeFrame(handlerContext, (byte) type, stream.id(), new Http2Flags((short) flags), payload, handlerContext.newPromise());
+      handlerContext.flush();
+    }
+
     @Override
     public Context getContext() {
       return context;

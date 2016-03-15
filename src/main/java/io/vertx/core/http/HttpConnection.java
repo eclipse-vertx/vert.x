@@ -41,6 +41,7 @@ import io.vertx.core.buffer.Buffer;
  * - handle idle connection
  * - OpenSSL integration
  * - run HttpTest with HTTP2
+ * - handle data frame padding
  *
  * HttpServer:
  * - server synchronization + executeFromIO
@@ -52,7 +53,6 @@ import io.vertx.core.buffer.Buffer;
  *
  * not yet in scope:
  * - stream priority
- * - unknown frames (send / receive) / could be as it is interesting for building extension on top of HTTP2 and it seems quite easy to do
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

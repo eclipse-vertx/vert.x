@@ -27,6 +27,8 @@ import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
@@ -267,16 +269,24 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequestImpl sendHead() {
+  public HttpClientRequest sendHead() {
+    return sendHead(null);
+  }
+
+  @Override
+  public HttpClientRequest sendHead(Handler<HttpVersion> completionHandler) {
     synchronized (getLock()) {
       checkComplete();
       checkResponseHandler();
       if (conn != null) {
         if (!headWritten) {
           writeHead();
+          if (completionHandler != null) {
+            completionHandler.handle(conn.version());
+          }
         }
       } else {
-        connect();
+        connect(completionHandler);
         writeHead = true;
       }
       return this;
@@ -371,6 +381,17 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       connectionHandler = handler;
       return this;
     }
+  }
+
+  @Override
+  public HttpClientRequest writeFrame(int type, int flags, Buffer payload) {
+    synchronized (getLock()) {
+      if (conn == null) {
+        throw new IllegalStateException("Not yet connected");
+      }
+      conn.writeFrame(type, flags, payload.getByteBuf());
+    }
+    return this;
   }
 
   void handleDrained() {
@@ -497,6 +518,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
 
           @Override
+          public HttpClientResponse unknownFrameHandler(Handler<HttpFrame> handler) {
+            resp.unknownFrameHandler(handler);
+            return this;
+          }
+
+          @Override
           public synchronized NetSocket netSocket() {
             if (!resumed) {
               resumed = true;
@@ -542,7 +569,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     };
   }
 
-  private synchronized void connect() {
+  private synchronized void connect(Handler<HttpVersion> headersCompletionHandler) {
     if (!connecting) {
 
       Waiter waiter = new Waiter(this, vertx.getContext()) {
@@ -564,7 +591,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         @Override
         void handleStream(HttpClientStream stream) {
           synchronized (HttpClientRequestImpl.this) {
-            connected(stream);
+            connected(stream, headersCompletionHandler);
           }
         }
 
@@ -584,7 +611,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private void connected(HttpClientStream s) {
+  private void connected(HttpClientStream s, Handler<HttpVersion> headersCompletionHandler) {
 
     conn = s;
     s.beginRequest(this);
@@ -616,6 +643,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       } else {
         writeHeadWithContent(pending, false);
+        if (headersCompletionHandler != null) {
+          headersCompletionHandler.handle(s.version());
+        }
       }
     } else {
       if (completed) {
@@ -630,6 +660,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         if (writeHead) {
           writeHead();
+          if (headersCompletionHandler != null) {
+            headersCompletionHandler.handle(s.version());
+          }
         }
       }
     }
@@ -690,7 +723,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
         pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
       }
-      connect();
+      connect(null);
     } else {
       if (!headWritten) {
         writeHeadWithContent(buff, end);

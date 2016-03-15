@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -27,12 +28,18 @@ import io.vertx.core.net.NetSocket;
  */
 interface HttpClientStream {
 
+  /**
+   * @return the stream version or null if it's not yet determined
+   */
+  HttpVersion version();
+
   HttpClientConnection connection();
   Context getContext();
 
   void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked);
   void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end);
   void writeBuffer(ByteBuf buf, boolean end);
+  void writeFrame(int type, int flags, ByteBuf payload);
 
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();

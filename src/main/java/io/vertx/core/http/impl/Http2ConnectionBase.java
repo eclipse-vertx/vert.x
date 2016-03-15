@@ -232,6 +232,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
+    VertxHttp2Stream req = streams.get(streamId);
+    req.handleUnknownFrame(frameType, flags.value(), Buffer.buffer(payload.copy()));
   }
 
   @Override
