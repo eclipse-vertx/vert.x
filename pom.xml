@@ -63,7 +63,8 @@
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>3.3.0-SNAPSHOT</stack.version>
-    <alpn-boot-version>8.1.7.v20160121</alpn-boot-version>
+    <jetty.alpnAgent.version>2.0.0</jetty.alpnAgent.version>
+    <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
 
   </properties>
 
@@ -170,8 +171,8 @@
     </dependency>
     <dependency>
       <groupId>org.mortbay.jetty.alpn</groupId>
-      <artifactId>alpn-boot</artifactId>
-      <version>${alpn-boot-version}</version>
+      <artifactId>jetty-alpn-agent</artifactId>
+      <version>${jetty.alpnAgent.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -231,7 +232,7 @@
               <vertx.handle100Continue>true</vertx.handle100Continue>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
-            <argLine>-Xmx1200M -Xbootclasspath/p:${settings.localRepository}/org/mortbay/jetty/alpn/alpn-boot/${alpn-boot-version}/alpn-boot-${alpn-boot-version}.jar</argLine>
+            <argLine>-Xmx1200M -javaagent:${jetty.alpnAgent.path}</argLine>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
           </configuration>
