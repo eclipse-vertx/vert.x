@@ -35,10 +35,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.SocketAddressImpl;
 
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
@@ -262,11 +259,5 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     super.updateSettings(settingsUpdate, completionHandler);
-  }
-
-  public SocketAddress remoteAddress() {
-    InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
-    if (addr == null) return null;
-    return new SocketAddressImpl(addr);
   }
 }

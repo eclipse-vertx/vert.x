@@ -322,9 +322,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public NetSocket createNetSocket() {
-      VertxHttp2NetSocket socket = new VertxHttp2NetSocket(vertx, context, handlerContext, encoder, decoder, stream);
-      handler.streams.put(stream.id(), socket);
-      return socket;
+      return handler.toNetSocket(this);
     }
   }
 }

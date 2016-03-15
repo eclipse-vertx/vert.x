@@ -29,29 +29,25 @@ import io.vertx.core.buffer.Buffer;
  *
  * todo:
  *
+ * - investigate flow control configuration ratio / setWriteQueueMaxSize
+ * - how to reset a netsocket stream ?
+ * - test netsocket client reset
+ * - add rawMethod
+ * - byte distribution algorithm configurability (options ? connection ?)
+ * - h2c / http upgrade
+ * - metrics
+ * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
+ * - netSocket() sendFile
+ * - handle idle connection
+ * - OpenSSL integration
+ *
  * HttpServer:
  * - server synchronization + executeFromIO
- * - HttpServerRequest#remoteAddress
- * - HttpServerRequest#localAddress
- * - HttpServerRequest#peerCertificateChain
  *
  * HttpClient:
  * - test executeFromIO
  * - metrics
  * - HttpConnection test
- *
- * Both:
- * - investigate flow control configuration ratio / setWriteQueueMaxSize
- * - how to reset a netsocket stream ?
- * - test netsocket client reset
- * - add rawMethod 
- * - byte distribution algorithm configurability (options ? connection ?)
- * - h2c / http upgrade
- * - metrics
- * - close connection when service closes
- * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
- * - netSocket() sendFile
- * - handle idle connection
  *
  * not yet in scope:
  * - stream priority

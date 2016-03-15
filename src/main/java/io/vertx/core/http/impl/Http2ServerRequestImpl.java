@@ -330,12 +330,12 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public SocketAddress localAddress() {
-    throw new UnsupportedOperationException();
+    return connection.localAddress();
   }
 
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    throw new UnsupportedOperationException();
+    return connection.getPeerCertificateChain();
   }
 
   @Override
