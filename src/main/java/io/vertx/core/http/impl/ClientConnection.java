@@ -276,7 +276,11 @@ class ClientConnection extends ConnectionBase {
     }
     HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, this, resp);
     currentResponse = nResp;
-    requestForResponse.handleResponse(nResp);
+    if(resp.getDecoderResult().isFailure()) {
+      handleException(resp.getDecoderResult().cause());
+    } else {
+      requestForResponse.handleResponse(nResp);
+    }
   }
 
   void handleResponseChunk(Buffer buff) {
