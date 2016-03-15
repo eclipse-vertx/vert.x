@@ -16,35 +16,42 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Settings;
 
+import java.util.Map;
 import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ConnectionHandler extends Http2ConnectionHandler {
+class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler {
 
-  Http2ConnectionBase connection;
+  private final Map<Channel, C> connectionMap;
+  C connection;
 
   public VertxHttp2ConnectionHandler(
+      Map<Channel, C> connectionMap,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
       Http2Settings initialSettings,
-      Function<VertxHttp2ConnectionHandler, Http2ConnectionBase> connectionFactory) {
+      Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
     super(decoder, encoder, initialSettings);
-    connection = connectionFactory.apply(this);
+    this.connectionMap = connectionMap;
+    this.connection = connectionFactory.apply(this);
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
     connection.setHandlerContext(ctx);
+    connectionMap.put(ctx.channel(), connection);
   }
 
   @Override
@@ -57,6 +64,7 @@ class VertxHttp2ConnectionHandler extends Http2ConnectionHandler {
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
+    connectionMap.remove(ctx.channel());
     connection.getContext().executeFromIO(connection::handleClosed);
   }
 

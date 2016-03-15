@@ -78,6 +78,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private final SSLHelper sslHelper;
   private final ContextImpl creatingContext;
   private final Map<Channel, ServerConnection> connectionMap = new ConcurrentHashMap<>();
+  private final Map<Channel, Http2ServerConnection> connectionMap2 = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<HttpHandler> reqHandlerManager = new HandlerManager<>(availableWorkers);
   private final HandlerManager<Handler<ServerWebSocket>> wsHandlerManager = new HandlerManager<>(availableWorkers);
@@ -213,7 +214,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                         configureHttp1(pipeline);
                       } else {
                         HandlerHolder<HttpHandler> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
-                        VertxHttp2ConnectionHandler handler = new VertxHttp2ConnectionHandlerBuilder()
+                        VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
+                            .connectionMap(connectionMap2)
                             .server(true)
                             .useCompression(options.isCompressionSupported())
                             .initialSettings(options.getHttp2Settings())
@@ -437,6 +439,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     ContextImpl currCon = vertx.getContext();
 
     for (ServerConnection conn : connectionMap.values()) {
+      conn.close();
+    }
+    for (Http2ServerConnection conn : connectionMap2.values()) {
       conn.close();
     }
 

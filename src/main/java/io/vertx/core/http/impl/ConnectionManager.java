@@ -68,6 +68,7 @@ public class ConnectionManager {
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
   private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
+  private final Map<Channel, Http2ClientConnection> connectionMap2 = new ConcurrentHashMap<>();
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
   private final HttpClientOptions options;
@@ -110,6 +111,9 @@ public class ConnectionManager {
     }
     connQueues.clear();
     for (ClientConnection conn : connectionMap.values()) {
+      conn.close();
+    }
+    for (Http2ClientConnection conn : connectionMap2.values()) {
       conn.close();
     }
   }
@@ -156,7 +160,7 @@ public class ConnectionManager {
       this.address = address;
 
       if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-        pool = new Http2Pool(this, client);
+        pool = new Http2Pool(this, client, connectionMap2);
       } else {
         pool = new Http1xPool(this);
       }
@@ -311,7 +315,7 @@ public class ConnectionManager {
 
     private void http2Connected(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
-          ((Http2Pool)pool).createConn(handlerCtx, context, ch, waiter)
+          ((Http2Pool)pool).createConn(context, ch, waiter)
       );
     }
 

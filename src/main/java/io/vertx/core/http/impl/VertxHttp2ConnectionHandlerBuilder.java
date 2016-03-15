@@ -16,13 +16,16 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
 import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
+import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Settings;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -36,36 +39,42 @@ import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ConnectionHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ConnectionHandler, VertxHttp2ConnectionHandlerBuilder> {
+class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ConnectionHandler<C>, VertxHttp2ConnectionHandlerBuilder<C>> {
 
+  private Map<Channel, C> connectionMap;
   private boolean useCompression;
   private io.vertx.core.http.Http2Settings initialSettings;
-  private Function<VertxHttp2ConnectionHandler, Http2ConnectionBase> connectionFactory;
+  private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
 
   VertxHttp2ConnectionHandlerBuilder() {
   }
 
-  protected VertxHttp2ConnectionHandlerBuilder server(boolean isServer) {
+  protected VertxHttp2ConnectionHandlerBuilder<C> server(boolean isServer) {
     return super.server(isServer);
   }
 
-  VertxHttp2ConnectionHandlerBuilder initialSettings(io.vertx.core.http.Http2Settings settings) {
+  VertxHttp2ConnectionHandlerBuilder<C> connectionMap(Map<Channel, C> connectionMap) {
+    this.connectionMap = connectionMap;
+    return this;
+  }
+
+  VertxHttp2ConnectionHandlerBuilder<C> initialSettings(io.vertx.core.http.Http2Settings settings) {
     this.initialSettings = settings;
     return this;
   }
 
-  VertxHttp2ConnectionHandlerBuilder useCompression(boolean useCompression) {
+  VertxHttp2ConnectionHandlerBuilder<C> useCompression(boolean useCompression) {
     this.useCompression = useCompression;
     return this;
   }
 
-  VertxHttp2ConnectionHandlerBuilder connectionFactory(Function<VertxHttp2ConnectionHandler, Http2ConnectionBase> connectionFactory) {
+  VertxHttp2ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
     return this;
   }
 
   @Override
-  protected VertxHttp2ConnectionHandler build() {
+  protected VertxHttp2ConnectionHandler<C> build() {
 
     if (initialSettings != null) {
       if (!isServer() && initialSettings.getEnablePush() != DEFAULT_ENABLE_PUSH) {
@@ -92,16 +101,16 @@ class VertxHttp2ConnectionHandlerBuilder extends AbstractHttp2ConnectionHandlerB
   }
 
   @Override
-  protected VertxHttp2ConnectionHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
+  protected VertxHttp2ConnectionHandler<C> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
     if (isServer()) {
       if (useCompression) {
         encoder = new CompressorHttp2ConnectionEncoder(encoder);
       }
-      VertxHttp2ConnectionHandler handler = new VertxHttp2ConnectionHandler(decoder, encoder, initialSettings, connectionFactory);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
       frameListener(handler.connection);
       return handler;
     } else {
-      VertxHttp2ConnectionHandler handler = new VertxHttp2ConnectionHandler(decoder, encoder, initialSettings, connectionFactory);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionMap, decoder, encoder, initialSettings, connectionFactory);
       if (useCompression) {
         frameListener(new DelegatingDecompressorFrameListener(decoder.connection(), handler.connection));
       } else {
