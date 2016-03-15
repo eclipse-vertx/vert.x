@@ -40,6 +40,7 @@ import io.vertx.core.buffer.Buffer;
  * - netSocket() sendFile
  * - handle idle connection
  * - OpenSSL integration
+ * - run HttpTest with HTTP2
  *
  * HttpServer:
  * - server synchronization + executeFromIO
