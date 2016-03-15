@@ -97,6 +97,7 @@ public class Http2TestBase extends HttpTestBase {
     settings.initialWindowSize(initialWindowSize);
     settings.maxFrameSize(maxFrameSize);
     settings.maxHeaderListSize(maxHeaderListSize);
+    settings.put('\u0007', (Long)(TestUtils.randomPositiveLong() & 0xFFFFFFFFL));
     return settings;
   }
 }

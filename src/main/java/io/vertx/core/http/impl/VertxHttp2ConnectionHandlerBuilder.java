@@ -20,7 +20,6 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
 import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
-import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -75,28 +74,32 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   @Override
   protected VertxHttp2ConnectionHandler<C> build() {
-
     if (initialSettings != null) {
       if (!isServer() && initialSettings.getEnablePush() != DEFAULT_ENABLE_PUSH) {
         initialSettings().pushEnabled(initialSettings.getEnablePush());
       }
       if (initialSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
-        initialSettings().headerTableSize(initialSettings.getHeaderTableSize());
+        initialSettings().put('\u0001', (Long)initialSettings.getHeaderTableSize());
       }
       if (initialSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
         initialSettings().initialWindowSize(initialSettings.getInitialWindowSize());
       }
-      if (!Objects.equals(initialSettings.getMaxConcurrentStreams(), DEFAULT_MAX_CONCURRENT_STREAMS)) {
+      if (initialSettings.getMaxConcurrentStreams() != DEFAULT_MAX_CONCURRENT_STREAMS) {
         initialSettings().maxConcurrentStreams(initialSettings.getMaxConcurrentStreams());
       }
       if (initialSettings.getMaxFrameSize() != DEFAULT_MAX_FRAME_SIZE) {
         initialSettings().maxFrameSize(initialSettings.getMaxFrameSize());
       }
-      if (!Objects.equals(initialSettings.getMaxHeaderListSize(), DEFAULT_MAX_HEADER_LIST_SIZE)) {
-        initialSettings().maxHeaderListSize(initialSettings.getMaxHeaderListSize());
+      if (initialSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
+        initialSettings().maxHeaderListSize((int)(long) initialSettings.getMaxHeaderListSize());
+      }
+      Map<Integer, Long> extraSettings = initialSettings.getExtraSettings();
+      if (extraSettings != null) {
+        extraSettings.forEach((code, setting) -> {
+          initialSettings().put((char)(int)code, setting);
+        });
       }
     }
-
     return super.build();
   }
 

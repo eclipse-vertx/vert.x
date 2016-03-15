@@ -31,7 +31,7 @@ public class Http2SettingsConverter {
       obj.setEnablePush((Boolean)json.getValue("enablePush"));
     }
     if (json.getValue("headerTableSize") instanceof Number) {
-      obj.setHeaderTableSize(((Number)json.getValue("headerTableSize")).intValue());
+      obj.setHeaderTableSize(((Number)json.getValue("headerTableSize")).longValue());
     }
     if (json.getValue("initialWindowSize") instanceof Number) {
       obj.setInitialWindowSize(((Number)json.getValue("initialWindowSize")).intValue());
@@ -51,12 +51,8 @@ public class Http2SettingsConverter {
     json.put("enablePush", obj.getEnablePush());
     json.put("headerTableSize", obj.getHeaderTableSize());
     json.put("initialWindowSize", obj.getInitialWindowSize());
-    if (obj.getMaxConcurrentStreams() != null) {
-      json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
-    }
+    json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
     json.put("maxFrameSize", obj.getMaxFrameSize());
-    if (obj.getMaxHeaderListSize() != null) {
-      json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
-    }
+    json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
   }
 }

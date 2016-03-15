@@ -118,25 +118,47 @@ public final class HttpUtils {
     converted.maxFrameSize(settings.getMaxFrameSize());
     converted.initialWindowSize(settings.getInitialWindowSize());
     converted.headerTableSize((int)(long)settings.getHeaderTableSize());
-    if (settings.getMaxConcurrentStreams() != null) {
-      converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
-    }
-    if (settings.getMaxHeaderListSize() != null) {
-      converted.maxHeaderListSize(settings.getMaxHeaderListSize());
+    converted.maxConcurrentStreams(settings.getMaxConcurrentStreams());
+    converted.maxHeaderListSize(settings.getMaxHeaderListSize());
+    if (settings.getExtraSettings() != null) {
+      settings.getExtraSettings().forEach((key, value) -> {
+        converted.put((char)(int)key, value);
+      });
     }
     return converted;
   }
 
   public static io.vertx.core.http.Http2Settings toVertxSettings(Http2Settings settings) {
     io.vertx.core.http.Http2Settings converted = new io.vertx.core.http.Http2Settings();
-    converted.setEnablePush(Boolean.TRUE.equals(settings.pushEnabled()));
-    converted.setMaxConcurrentStreams(settings.maxConcurrentStreams());
-    converted.setMaxHeaderListSize(settings.maxHeaderListSize());
-    converted.setMaxFrameSize(settings.maxFrameSize());
-    converted.setInitialWindowSize(settings.initialWindowSize());
-    if (settings.headerTableSize() != null) {
-      converted.setHeaderTableSize((int)(long)settings.headerTableSize());
+    Boolean pushEnabled = settings.pushEnabled();
+    if (pushEnabled != null) {
+      converted.setEnablePush(pushEnabled);
     }
+    Long maxConcurrentStreams = settings.maxConcurrentStreams();
+    if (maxConcurrentStreams != null) {
+      converted.setMaxConcurrentStreams(maxConcurrentStreams);
+    }
+    Integer maxHeaderListSize = settings.maxHeaderListSize();
+    if (maxHeaderListSize != null) {
+      converted.setMaxHeaderListSize(maxHeaderListSize);
+    }
+    Integer maxFrameSize = settings.maxFrameSize();
+    if (maxFrameSize != null) {
+      converted.setMaxFrameSize(maxFrameSize);
+    }
+    Integer initialWindowSize = settings.initialWindowSize();
+    if (initialWindowSize != null) {
+      converted.setInitialWindowSize(initialWindowSize);
+    }
+    Long headerTableSize = settings.headerTableSize();
+    if (headerTableSize != null) {
+      converted.setHeaderTableSize((int)(long) headerTableSize);
+    }
+    settings.forEach((key, value) -> {
+      if (key > 6) {
+        converted.put(key, value);
+      }
+    });
     return converted;
   }
 

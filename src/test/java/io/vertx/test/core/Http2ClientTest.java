@@ -110,20 +110,22 @@ public class Http2ClientTest extends Http2TestBase {
         switch (count.getAndIncrement()) {
           case 0:
             assertEquals(initialSettings.pushEnabled(), settings.getEnablePush());
-            assertEquals(initialSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals(initialSettings.maxHeaderListSize(), (Integer)(int)settings.getMaxHeaderListSize());
             assertEquals((int)initialSettings.maxFrameSize(), settings.getMaxFrameSize());
             assertEquals((int)initialSettings.initialWindowSize(), settings.getInitialWindowSize());
             assertEquals(Math.min(initialSettings.maxConcurrentStreams(), Integer.MAX_VALUE), (long)settings.getMaxConcurrentStreams());
-            assertEquals((long) initialSettings.headerTableSize(), (long) settings.getHeaderTableSize());
+            assertEquals((long) initialSettings.headerTableSize(), settings.getHeaderTableSize());
+            assertEquals(initialSettings.get('\u0007'), settings.get(7));
             break;
           case 1:
             // find out why it fails sometimes ...
             // assertEquals(updatedSettings.pushEnabled(), settings.getEnablePush());
-            assertEquals(updatedSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals(updatedSettings.maxHeaderListSize(), (Integer)(int)settings.getMaxHeaderListSize());
             assertEquals((int)updatedSettings.maxFrameSize(), settings.getMaxFrameSize());
             assertEquals((int)updatedSettings.initialWindowSize(), settings.getInitialWindowSize());
             assertEquals(Math.min(updatedSettings.maxConcurrentStreams(), Integer.MAX_VALUE), (long)settings.getMaxConcurrentStreams());
-            assertEquals((long) updatedSettings.headerTableSize(), (long) settings.getHeaderTableSize());
+            assertEquals((long) updatedSettings.headerTableSize(), settings.getHeaderTableSize());
+            assertEquals(updatedSettings.get('\u0007'), settings.get(7));
             complete();
             break;
         }
@@ -146,7 +148,7 @@ public class Http2ClientTest extends Http2TestBase {
   public void testServerSettings() throws Exception {
     waitFor(2);
     Http2Settings expectedSettings = randomSettings();
-    expectedSettings.headerTableSize(io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
+    expectedSettings.headerTableSize((int)io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
     server.close();
     server = vertx.createHttpServer(serverOptions);
     Context otherContext = vertx.getOrCreateContext();
@@ -169,11 +171,12 @@ public class Http2ClientTest extends Http2TestBase {
             // Initial settings
             break;
           case 1:
-            assertEquals(expectedSettings.maxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals(expectedSettings.maxHeaderListSize(), (Integer)(int)settings.getMaxHeaderListSize());
             assertEquals((int)expectedSettings.maxFrameSize(), settings.getMaxFrameSize());
             assertEquals((int)expectedSettings.initialWindowSize(), settings.getInitialWindowSize());
-            assertEquals(Math.min(Integer.MAX_VALUE, expectedSettings.maxConcurrentStreams()), (long)settings.getMaxConcurrentStreams());
+            assertEquals(expectedSettings.maxConcurrentStreams(), (Long)(long)settings.getMaxConcurrentStreams());
             assertEquals((long)expectedSettings.headerTableSize(), settings.getHeaderTableSize());
+            assertEquals(expectedSettings.get('\u0007'), settings.get(7));
             complete();
             break;
         }
@@ -441,7 +444,7 @@ public class Http2ClientTest extends Http2TestBase {
     client.get(4043, "localhost", "/somepath", resp -> {
     }).connectionHandler(conn -> {
       conn.remoteSettingsHandler(settings -> {
-        assertEquals(max == null ? Integer.MAX_VALUE : max, (long)settings.getMaxConcurrentStreams());
+        assertEquals(max == null ? 0xFFFFFFFFL : max, settings.getMaxConcurrentStreams());
         latch.countDown();
       });
     }).exceptionHandler(err -> {

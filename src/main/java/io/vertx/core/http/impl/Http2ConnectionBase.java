@@ -200,9 +200,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
-    if (clientSettingsHandler != null) {
+    Handler<io.vertx.core.http.Http2Settings> handler = clientSettingsHandler;
+    if (handler != null) {
       context.executeFromIO(() -> {
-        clientSettingsHandler.handle(remoteSettings());
+        handler.handle(HttpUtils.toVertxSettings(settings));
       });
     }
   }
