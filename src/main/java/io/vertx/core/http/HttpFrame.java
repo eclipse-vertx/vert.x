@@ -21,7 +21,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 
 /**
- * An HTTP2 frame.
+ * An HTTP/2 frame.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
