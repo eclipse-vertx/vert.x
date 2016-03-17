@@ -30,6 +30,14 @@ public class HttpServerOptionsConverter {
     if (json.getValue("compressionSupported") instanceof Boolean) {
       obj.setCompressionSupported((Boolean)json.getValue("compressionSupported"));
     }
+    if (json.getValue("enabledProtocols") instanceof JsonArray) {
+      java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
+      json.getJsonArray("enabledProtocols").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+      });
+      obj.setEnabledProtocols(list);
+    }
     if (json.getValue("handle100ContinueAutomatically") instanceof Boolean) {
       obj.setHandle100ContinueAutomatically((Boolean)json.getValue("handle100ContinueAutomatically"));
     }
@@ -55,6 +63,13 @@ public class HttpServerOptionsConverter {
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
     json.put("compressionSupported", obj.isCompressionSupported());
+    if (obj.getEnabledProtocols() != null) {
+      json.put("enabledProtocols", new JsonArray(
+          obj.getEnabledProtocols().
+              stream().
+              map(item -> item.name()).
+              collect(java.util.stream.Collectors.toList())));
+    }
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     if (obj.getHttp2Settings() != null) {
       json.put("http2Settings", obj.getHttp2Settings().toJson());

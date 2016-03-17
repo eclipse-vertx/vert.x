@@ -17,34 +17,39 @@
 package io.vertx.test.core;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpMessage;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.AsciiString;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -63,10 +68,9 @@ import io.vertx.core.net.impl.SSLHelper;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -80,8 +84,6 @@ import java.util.zip.GZIPOutputStream;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ClientTest extends Http2TestBase {
-
-  HttpClientOptions clientOptions;
 
   @Override
   public void setUp() throws Exception {
@@ -784,13 +786,15 @@ public class Http2ClientTest extends Http2TestBase {
     await();
   }
 
-  private ServerBootstrap createServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
+  private Http2ConnectionHandler createHttpConnectionHandler(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
+
     class Handler extends Http2ConnectionHandler {
       public Handler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
         super(decoder, encoder, initialSettings);
         decoder.frameListener(handler.apply(decoder, encoder));
       }
     }
+
     class Builder extends AbstractHttp2ConnectionHandlerBuilder<Handler, Builder> {
       @Override
       protected Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
@@ -801,6 +805,12 @@ public class Http2ClientTest extends Http2TestBase {
         return super.build();
       }
     }
+
+    Builder builder = new Builder();
+    return builder.build();
+  }
+
+  private ServerBootstrap createServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
     bootstrap.group(new NioEventLoopGroup());
@@ -815,8 +825,8 @@ public class Http2ClientTest extends Http2TestBase {
           protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
             if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
               ChannelPipeline p = ctx.pipeline();
-              Builder builder = new Builder();
-              Handler clientHandler = builder.build();
+              createHttpConnectionHandler(handler);
+              Http2ConnectionHandler clientHandler = createHttpConnectionHandler(handler);
               p.addLast("handler", clientHandler);
               return;
             }
@@ -824,6 +834,28 @@ public class Http2ClientTest extends Http2TestBase {
             throw new IllegalStateException("unknown protocol: " + protocol);
           }
         });
+      }
+    });
+    return bootstrap;
+  }
+
+  private ServerBootstrap createClearTextServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
+    ServerBootstrap bootstrap = new ServerBootstrap();
+    bootstrap.channel(NioServerSocketChannel.class);
+    bootstrap.group(new NioEventLoopGroup());
+    bootstrap.childHandler(new ChannelInitializer<Channel>() {
+      @Override
+      protected void initChannel(Channel ch) throws Exception {
+        HttpServerCodec sourceCodec = new HttpServerCodec();
+        HttpServerUpgradeHandler.UpgradeCodecFactory upgradeCodecFactory = protocol -> {
+          if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
+            return new Http2ServerUpgradeCodec(createHttpConnectionHandler(handler));
+          } else {
+            return null;
+          }
+        };
+        ch.pipeline().addLast(sourceCodec);
+        ch.pipeline().addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory));
       }
     });
     return bootstrap;
@@ -1190,6 +1222,47 @@ public class Http2ClientTest extends Http2TestBase {
       req.writeFrame(10, 253, expectedSend);
       req.end();
     });
+    await();
+  }
+
+  @Test
+  public void testUpgradeToClearText() throws Exception {
+    ServerBootstrap bootstrap = createClearTextServer((dec, enc) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, true, ctx.newPromise());
+        ctx.flush();
+      }
+    });
+    ChannelFuture s = bootstrap.bind("localhost", 4043).sync();
+    try {
+      client.close();
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
+      client.get(4043, "localhost", "/somepath", resp -> {
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+        testComplete();
+      }).exceptionHandler(this::fail).end();
+      await();
+    } finally {
+      s.channel().close().sync();
+    }
+  }
+
+  @Test
+  public void testRejectUpgradeToClearText() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false).setEnabledProtocols(Collections.singletonList(HttpVersion.HTTP_1_1)));
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
+    client.get(4043, "localhost", "/somepath", resp -> {
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      testComplete();
+    }).exceptionHandler(this::fail).end();
     await();
   }
 }

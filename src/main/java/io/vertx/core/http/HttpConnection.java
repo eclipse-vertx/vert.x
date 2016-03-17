@@ -29,12 +29,12 @@ import io.vertx.core.buffer.Buffer;
  *
  * todo:
  *
+ * - test and handle fully the http client enabled protocoles
  * - investigate flow control configuration ratio / setWriteQueueMaxSize
  * - how to reset a netsocket stream ?
  * - test netsocket client reset
  * - add rawMethod
  * - byte distribution algorithm configurability (options ? connection ?)
- * - h2c / http upgrade
  * - metrics
  * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
  * - netSocket() sendFile

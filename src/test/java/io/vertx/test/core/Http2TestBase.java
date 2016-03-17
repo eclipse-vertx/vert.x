@@ -20,7 +20,9 @@ import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.TrustOptions;
@@ -36,11 +38,11 @@ import java.util.concurrent.CountDownLatch;
 public class Http2TestBase extends HttpTestBase {
 
   protected HttpServerOptions serverOptions;
+  protected HttpClientOptions clientOptions;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-
     serverOptions = new HttpServerOptions()
         .setPort(4043)
         .setHost("localhost")
@@ -48,9 +50,11 @@ public class Http2TestBase extends HttpTestBase {
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
         .setKeyStoreOptions((JksOptions) getServerCertOptions(KeyCert.JKS));
-
+    clientOptions = new HttpClientOptions().
+        setUseAlpn(true).
+        setTrustStoreOptions((JksOptions) getClientTrustOptions(Trust.JKS)).
+        setProtocolVersion(HttpVersion.HTTP_2);
     server = vertx.createHttpServer(serverOptions);
-
   }
 
   protected void startServer() throws Exception {

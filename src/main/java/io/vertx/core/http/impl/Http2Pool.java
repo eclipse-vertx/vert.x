@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.core.impl.ContextImpl;
 
 import java.util.Map;
@@ -57,7 +58,7 @@ class Http2Pool extends ConnectionManager.Pool {
     }
   }
 
-  void createConn(ContextImpl context, Channel ch, Waiter waiter) {
+  void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
     ChannelPipeline p = ch.pipeline();
     synchronized (queue) {
       VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
@@ -67,6 +68,13 @@ class Http2Pool extends ConnectionManager.Pool {
           .initialSettings(client.getOptions().getHttp2Settings())
           .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler))
           .build();
+      if (upgrade) {
+        try {
+          handler.onHttpClientUpgrade();
+        } catch (Http2Exception e) {
+          e.printStackTrace();
+        }
+      }
       Http2ClientConnection conn = handler.connection;
       connection = conn;
       p.addLast(handler);

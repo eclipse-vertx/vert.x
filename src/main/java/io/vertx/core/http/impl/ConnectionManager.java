@@ -21,13 +21,17 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.ApplicationProtocolNames;
@@ -256,15 +260,9 @@ public class ConnectionManager {
               @Override
               protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
                 if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-                  http2Connected(ctx, context, port, host, ch, waiter);
+                  http2Connected(ctx, context, port, host, ch, waiter, false);
                 } else {
-                  // Fallback
-                  // change the pool to Http1xPool
-                  synchronized (ConnQueue.this) {
-                    pool = new Http1xPool(ConnQueue.this);
-                  }
-                  applyHttp1xConnectionOptions(pipeline, context);
-                  http1xConnected(fallbackVersion, context, port, host, ch, waiter);
+                  fallbackToHttp1x(ch, context, fallbackVersion, port, host, waiter);
                 }
               }
             });
@@ -272,7 +270,38 @@ public class ConnectionManager {
             if (options.isSsl()) {
               pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, true, host, port));
             }
-            applyHttp1xConnectionOptions(pipeline, context);
+            if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+              HttpClientCodec httpCodec = new HttpClientCodec();
+              class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
+                @Override
+                public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                  DefaultFullHttpRequest upgradeRequest =
+                      new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
+                  ctx.writeAndFlush(upgradeRequest);
+                  ctx.fireChannelActive();
+                }
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                  super.userEventTriggered(ctx, evt);
+                  ChannelPipeline p = ctx.pipeline();
+                  if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
+                    p.remove(this);
+                    // Upgrade handler will remove itself
+                    http2Connected(ctx, context, port, host, ch, waiter, true);
+                  } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
+                    p.remove(httpCodec);
+                    p.remove(this);
+                    // Upgrade handler will remove itself
+                    fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+                  }
+                }
+              }
+              VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getHttp2Settings());
+              HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
+              ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
+            } else {
+              applyHttp1xConnectionOptions(pipeline, context);
+            }
           }
         }
       });
@@ -284,9 +313,7 @@ public class ConnectionManager {
           if (!options.isUseAlpn()) {
             if (options.isSsl()) {
               // TCP connected, so now we must do the SSL handshake
-
               SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
-
               io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
               fut.addListener(fut2 -> {
                 if (fut2.isSuccess()) {
@@ -298,7 +325,11 @@ public class ConnectionManager {
                 }
               });
             } else {
-              http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
+              if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
+                // Upgrade handler do nothing
+              } else {
+                http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
+              }
             }
           }
         } else {
@@ -307,15 +338,25 @@ public class ConnectionManager {
       });
     }
 
+    private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
+      // Fallback
+      // change the pool to Http1xPool
+      synchronized (ConnQueue.this) {
+        pool = new Http1xPool(ConnQueue.this);
+      }
+      applyHttp1xConnectionOptions(ch.pipeline(), context);
+      http1xConnected(fallbackVersion, context, port, host, ch, waiter);
+    }
+
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
       context.executeFromIO(() ->
           ((Http1xPool)pool).createConn(version, context, port, host, ch, waiter)
       );
     }
 
-    private void http2Connected(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
+    private void http2Connected(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter, boolean upgrade) {
       context.executeFromIO(() ->
-          ((Http2Pool)pool).createConn(context, ch, waiter)
+          ((Http2Pool)pool).createConn(context, ch, waiter, upgrade)
       );
     }
 

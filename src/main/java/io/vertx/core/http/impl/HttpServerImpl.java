@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -28,6 +29,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http2.*;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -35,7 +38,9 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -54,6 +59,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -87,6 +94,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private Handler<HttpConnection> connectionHandler;
   private final String subProtocols;
   private String serverOrigin;
+  private final boolean http2Enabled;
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
@@ -108,6 +116,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.subProtocols = options.getWebsocketSubProtocols();
+    this.http2Enabled = options.getEnabledProtocols() == null || options.getEnabledProtocols().contains(HttpVersion.HTTP_2);
   }
 
   @Override
@@ -214,13 +223,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                         configureHttp1(pipeline);
                       } else {
                         HandlerHolder<HttpHandler> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
-                        VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
-                            .connectionMap(connectionMap2)
-                            .server(true)
-                            .useCompression(options.isCompressionSupported())
-                            .initialSettings(options.getHttp2Settings())
-                            .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler))
-                            .build();
+                        VertxHttp2ConnectionHandler<Http2ServerConnection> handler = createHttp2Handler(holder, ch);
                         pipeline.addLast("handler", handler);
                         if (holder.handler.connectionHandler != null) {
                           holder.context.executeFromIO(() -> {
@@ -308,6 +311,16 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       });
     }
     return this;
+  }
+
+  private VertxHttp2ConnectionHandler createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
+    return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
+        .connectionMap(connectionMap2)
+        .server(true)
+        .useCompression(options.isCompressionSupported())
+        .initialSettings(options.getHttp2Settings())
+        .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler))
+        .build();
   }
 
   @Override
@@ -513,7 +526,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           } else {
             //HTTP request
             if (conn == null) {
-              createConnAndHandle(ch, msg, null);
+              createConnAndHandle(ctx, ch, msg, null);
             } else {
               conn.handleMessage(msg);
             }
@@ -565,17 +578,76 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       } else {
         if (conn == null) {
-          createConnAndHandle(ch, msg, null);
+
+
+
+          createConnAndHandle(ctx, ch, msg, null);
         } else {
           conn.handleMessage(msg);
         }
       }
     }
 
-    private void createConnAndHandle(Channel ch, Object msg,
-                                     WebSocketServerHandshaker shake) {
+    private void createConnAndHandle(ChannelHandlerContext ctx, Channel ch, Object msg, WebSocketServerHandshaker shake) {
       HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
       if (reqHandler != null) {
+        if (http2Enabled && msg instanceof HttpRequest) {
+          HttpRequest request = (HttpRequest) msg;
+          if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, true)) {
+            String connection = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+            int found = 0;
+            if (connection != null && connection.length() > 0) {
+              StringBuilder buff = new StringBuilder();
+              int pos = 0;
+              int len = connection.length();
+              while (pos < len) {
+                char c = connection.charAt(pos++);
+                if (c != ' ' && c != ',') {
+                  buff.append(Character.toLowerCase(c));
+                }
+                if (c == ',' || pos == len) {
+                  if (buff.indexOf("upgrade") == 0 && buff.length() == 7) {
+                    found |= 1;
+                  } else if (buff.indexOf("http2-settings") == 0 && buff.length() == 14) {
+                    found |= 2;
+                  }
+                  buff.setLength(0);
+                }
+              }
+            }
+            if (found == 3) {
+              Http2Settings settings = null;
+              String settingsHeader = request.headers().get(Http2CodecUtil.HTTP_UPGRADE_SETTINGS_HEADER);
+              if (settingsHeader != null) {
+                settings = HttpUtils.decodeSettings(settingsHeader);
+              }
+              if (settings != null) {
+                ChannelPipeline pipeline = ch.pipeline();
+                DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
+                res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
+                res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
+                res.headers().add(HttpHeaderNames.CONTENT_LENGTH, HttpHeaderValues.ZERO);
+                ctx.writeAndFlush(res).addListener(v -> {
+                  // Clean more pipeline ?
+                  pipeline.remove(this);
+                  pipeline.remove("httpDecoder");
+                  pipeline.remove("httpEncoder");
+                });
+                try {
+                  VertxHttp2ConnectionHandler handler = createHttp2Handler(reqHandler, ch);
+                  handler.onHttpServerUpgrade(settings);
+                  pipeline.addLast(handler);
+                  return;
+                } catch (Http2Exception ignore) {
+                }
+              }
+            }
+            DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
+            res.setStatus(BAD_REQUEST);
+            ctx.writeAndFlush(res);
+            return;
+          }
+        }
         ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
         conn.requestHandler(reqHandler.handler.requesthHandler);
         connectionMap.put(ch, conn);
@@ -595,7 +667,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       HandlerHolder<Handler<ServerWebSocket>> wsHandler = wsHandlerManager.chooseHandler(ch.eventLoop());
 
       if (wsHandler == null) {
-        createConnAndHandle(ch, request, shake);
+        createConnAndHandle(ctx, ch, request, shake);
       } else {
 
         wsHandler.context.executeFromIO(() -> {

@@ -26,6 +26,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.base64.Base64Encoder;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
@@ -51,12 +52,15 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
@@ -75,6 +79,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2220,6 +2225,81 @@ public class Http2ServerTest extends Http2TestBase {
       request.context.flush();
     });
     fut.sync();
+    await();
+  }
+
+  @Test
+  public void testUpgradeToClearText() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.
+        setUseAlpn(false).
+        setSsl(false).
+        setHttp2Settings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)));
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_2, req.version());
+      assertEquals(10000, req.connection().remoteSettings().getMaxConcurrentStreams());
+      req.response().end();
+    });
+    startServer();
+    client = vertx.createHttpClient(clientOptions.
+        setUseAlpn(false).
+        setHttp2Settings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
+    HttpClientRequest req = client.get(4043, "localhost", "/somepath");
+    req.handler(resp -> {
+      assertEquals(HttpVersion.HTTP_2, resp.version());
+      assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
+      testComplete();
+    }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
+    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+        .putHeader("Upgrade", "h2c")
+        .putHeader("Connection", "Upgrade")
+        .putHeader("HTTP2-Settings", ""));
+  }
+
+  @Test
+  public void testUpgradeToClearTextMalformedSettings() throws Exception {
+    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+        .putHeader("Upgrade", "h2c")
+        .putHeader("Connection", "Upgrade,HTTP2-Settings")
+        .putHeader("HTTP2-Settings", "incorrect-settings"));
+  }
+
+  @Test
+  public void testUpgradeToClearTextInvalidSettings() throws Exception {
+    Buffer buffer = Buffer.buffer();
+    buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
+    String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
+    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+        .putHeader("Upgrade", "h2c")
+        .putHeader("Connection", "Upgrade,HTTP2-Settings")
+        .putHeader("HTTP2-Settings", s));
+  }
+
+  @Test
+  public void testUpgradeToClearTextMissingSettings() throws Exception {
+    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+        .putHeader("Upgrade", "h2c")
+        .putHeader("Connection", "Upgrade,HTTP2-Settings"));
+  }
+
+  private void testUpgradeFailure(Function<HttpClient, HttpClientRequest> abc) throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false));
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer();
+    client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
+    abc.apply(client).handler(resp -> {
+      assertEquals(400, resp.statusCode());
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      testComplete();
+    }).exceptionHandler(this::fail).end();
     await();
   }
 }

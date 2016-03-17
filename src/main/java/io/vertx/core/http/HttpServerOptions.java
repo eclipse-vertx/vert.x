@@ -21,6 +21,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
  *
@@ -64,6 +69,8 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
 
+  public static final List<HttpVersion> DEFAULT_ENABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(HttpVersion.values()));
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -71,6 +78,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
+  private List<HttpVersion> enabledProtocols;
   private Http2Settings http2Settings;
 
   /**
@@ -97,6 +105,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.http2Settings = other.http2Settings != null ? new Http2Settings(other.http2Settings) : null;
+    this.enabledProtocols = other.enabledProtocols != null ? new ArrayList<>(other.enabledProtocols) : null;
   }
 
   /**
@@ -118,6 +127,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
+    enabledProtocols = new ArrayList<>(DEFAULT_ENABLED_PROTOCOLS);
   }
 
   @Override
@@ -401,6 +411,15 @@ public class HttpServerOptions extends NetServerOptions {
 
   public HttpServerOptions setHttp2Settings(Http2Settings http2Settings) {
     this.http2Settings = http2Settings;
+    return this;
+  }
+
+  public List<HttpVersion> getEnabledProtocols() {
+    return enabledProtocols;
+  }
+
+  public HttpServerOptions setEnabledProtocols(List<HttpVersion> enabledProtocols) {
+    this.enabledProtocols = enabledProtocols;
     return this;
   }
 

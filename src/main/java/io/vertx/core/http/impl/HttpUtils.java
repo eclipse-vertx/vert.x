@@ -25,13 +25,22 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+
+import static io.vertx.core.http.Http2Settings.DEFAULT_ENABLE_PUSH;
+import static io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE;
+import static io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE;
+import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
+import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_FRAME_SIZE;
+import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE;
 
 /**
  * Various http utils.
@@ -112,6 +121,35 @@ public final class HttpUtils {
     return params;
   }
 
+  public static void fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings, Http2Settings nettySettings) {
+    if (vertxSettings != null) {
+      if (!server && vertxSettings.getEnablePush() != DEFAULT_ENABLE_PUSH) {
+        nettySettings.pushEnabled(vertxSettings.getEnablePush());
+      }
+      if (vertxSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
+        nettySettings.put('\u0001', (Long)vertxSettings.getHeaderTableSize());
+      }
+      if (vertxSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
+        nettySettings.initialWindowSize(vertxSettings.getInitialWindowSize());
+      }
+      if (vertxSettings.getMaxConcurrentStreams() != DEFAULT_MAX_CONCURRENT_STREAMS) {
+        nettySettings.maxConcurrentStreams(vertxSettings.getMaxConcurrentStreams());
+      }
+      if (vertxSettings.getMaxFrameSize() != DEFAULT_MAX_FRAME_SIZE) {
+        nettySettings.maxFrameSize(vertxSettings.getMaxFrameSize());
+      }
+      if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
+        nettySettings.maxHeaderListSize((int)(long) vertxSettings.getMaxHeaderListSize());
+      }
+      Map<Integer, Long> extraSettings = vertxSettings.getExtraSettings();
+      if (extraSettings != null) {
+        extraSettings.forEach((code, setting) -> {
+          nettySettings.put((char)(int)code, setting);
+        });
+      }
+    }
+  }
+
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
     Http2Settings converted = new Http2Settings();
     converted.pushEnabled(settings.getEnablePush());
@@ -160,6 +198,25 @@ public final class HttpUtils {
       }
     });
     return converted;
+  }
+
+  static Http2Settings decodeSettings(String base64Settings) {
+    try {
+      Http2Settings settings = new Http2Settings();
+      Buffer buffer = Buffer.buffer(Base64.getDecoder().decode(base64Settings));
+      int pos = 0;
+      int len = buffer.length();
+      while (pos < len) {
+        int i = buffer.getUnsignedShort(pos);
+        pos += 2;
+        long j = buffer.getUnsignedInt(pos);
+        pos += 4;
+        settings.put((char)i, (Long)j);
+      }
+      return settings;
+    } catch (Exception ignore) {
+    }
+    return null;
   }
 
   private static class CustomCompressor extends HttpContentCompressor {

@@ -952,6 +952,7 @@ Add a CRL value
 +++
 Add an enabled cipher suite
 +++
+|[[enabledProtocols]]`enabledProtocols`|`Array of link:enums.html#HttpVersion[HttpVersion]`|-
 |[[handle100ContinueAutomatically]]`handle100ContinueAutomatically`|`Boolean`|
 +++
 Set whether 100 Continue should be handled automatically
