@@ -34,7 +34,6 @@ import io.vertx.core.buffer.Buffer;
  * - test netsocket client reset
  * - add rawMethod
  * - byte distribution algorithm configurability (options ? connection ?)
- * - metrics
  * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
  * - netSocket() sendFile
  * - OpenSSL integration
@@ -44,11 +43,10 @@ import io.vertx.core.buffer.Buffer;
  * - examples
  *
  * HttpServer:
- * - server synchronization + executeFromIO
+ * - server synchronization + executeFromIO + test worker server
  *
  * HttpClient:
  * - test executeFromIO
- * - metrics
  * - HttpConnection test
  *
  * not yet in scope:

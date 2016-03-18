@@ -43,7 +43,8 @@ import io.vertx.core.net.SocketAddress;
 public interface HttpClientMetrics<R, W, S> extends TCPMetrics<S> {
 
   /**
-   * Called when an http client request begins
+   * Called when an http client request begins. Vert.x will invoke {@link #responseEnd} when the response has ended
+   * or {@link #requestReset} if the request/response has failed before.
    *
    * @param socketMetric the socket metric
    * @param localAddress the local address
@@ -52,6 +53,25 @@ public interface HttpClientMetrics<R, W, S> extends TCPMetrics<S> {
    * @return the request metric
    */
   R requestBegin(S socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request);
+
+  /**
+   * Called when an http client response is pushed.
+   *
+   * @param socketMetric the socket metric
+   * @param localAddress the local address
+   * @param remoteAddress the remote address
+   * @param request the http server request
+   * @return the request metric
+   */
+  R responsePushed(S socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request);
+
+  /**
+   * Called when the http client request couldn't complete successfully, for instance the connection
+   * was closed before the response was received.
+   *
+   * @param requestMetric the request metric
+   */
+  void requestReset(R requestMetric);
 
   /**
    * Called when an http client response has ended

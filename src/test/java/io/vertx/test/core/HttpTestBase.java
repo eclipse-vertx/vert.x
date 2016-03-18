@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClient;
@@ -45,7 +46,11 @@ public class HttpTestBase extends VertxTestBase {
 
   protected void tearDown() throws Exception {
     if (client != null) {
-      client.close();
+      try {
+        client.close();
+      } catch (IllegalStateException ignore) {
+        // Client was already closed by the test
+      }
     }
     if (server != null) {
       CountDownLatch latch = new CountDownLatch(1);
@@ -66,4 +71,15 @@ public class HttpTestBase extends VertxTestBase {
   private static final Handler noOp = e -> {
   };
 
+  protected void startServer() throws Exception {
+    startServer(vertx.getOrCreateContext());
+  }
+
+  protected void startServer(Context context) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      server.listen(onSuccess(s -> latch.countDown()));
+    });
+    awaitLatch(latch);
+  }
 }

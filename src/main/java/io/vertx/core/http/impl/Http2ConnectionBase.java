@@ -42,6 +42,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Map;
@@ -55,7 +56,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   protected ChannelHandlerContext handlerContext;
   protected final Channel channel;
-  protected final VertxHttp2ConnectionHandler connHandler;
+  protected final VertxHttp2ConnectionHandler handler;
   private boolean shuttingdown;
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
@@ -65,12 +66,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<Void> shutdownHandler;
   private Handler<Throwable> exceptionHandler;
 
-  public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler connHandler) {
-    super((VertxInternal) context.owner(), channel, context, (NetworkMetrics) null);
+  public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler handler, TCPMetrics metrics) {
+    super((VertxInternal) context.owner(), channel, context, metrics);
 
-    connHandler.connection().addListener(this);
+    handler.connection().addListener(this);
 
-    connHandler.encoder().flowController().listener(stream -> {
+    handler.encoder().flowController().listener(stream -> {
       VertxHttp2Stream resp = streams.get(stream.id());
       if (resp != null) {
         resp.handleInterestedOpsChanged();
@@ -78,12 +79,16 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     });
 
     this.channel = channel;
-    this.handlerContext = channel.pipeline().context(connHandler);
-    this.connHandler = connHandler;
+    this.handlerContext = channel.pipeline().context(handler);
+    this.handler = handler;
   }
 
   void setHandlerContext(ChannelHandlerContext handlerContext) {
     this.handlerContext = handlerContext;
+  }
+
+  VertxInternal vertx() {
+    return vertx;
   }
 
   NetSocket toNetSocket(VertxHttp2Stream stream) {
@@ -100,11 +105,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public ContextImpl getContext() {
     return super.getContext();
-  }
-
-  @Override
-  protected Object metric() {
-    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -268,7 +268,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (lastStreamId < 0) {
       throw new IllegalArgumentException();
     }
-    connHandler.encoder().writeGoAway(handlerContext, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, handlerContext.newPromise());
+    handler.encoder().writeGoAway(handlerContext, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, handlerContext.newPromise());
     channel.flush();
     return this;
   }
@@ -302,7 +302,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (!shuttingdown) {
       shuttingdown = true;
       if (timeout != null) {
-        connHandler.gracefulShutdownTimeoutMillis(timeout);
+        handler.gracefulShutdownTimeoutMillis(timeout);
       }
       channel.close();
     }
@@ -334,12 +334,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public io.vertx.core.http.Http2Settings remoteSettings() {
     io.vertx.core.http.Http2Settings a = new io.vertx.core.http.Http2Settings();
-    a.setPushEnabled(connHandler.connection().remote().allowPushTo());
-    a.setMaxConcurrentStreams((long)connHandler.connection().local().maxActiveStreams());
-    a.setMaxHeaderListSize(connHandler.encoder().configuration().headerTable().maxHeaderListSize());
-    a.setHeaderTableSize(connHandler.encoder().configuration().headerTable().maxHeaderTableSize());
-    a.setMaxFrameSize(connHandler.encoder().configuration().frameSizePolicy().maxFrameSize());
-    a.setInitialWindowSize(connHandler.encoder().flowController().initialWindowSize());
+    a.setPushEnabled(handler.connection().remote().allowPushTo());
+    a.setMaxConcurrentStreams((long) handler.connection().local().maxActiveStreams());
+    a.setMaxHeaderListSize(handler.encoder().configuration().headerTable().maxHeaderListSize());
+    a.setHeaderTableSize(handler.encoder().configuration().headerTable().maxHeaderTableSize());
+    a.setMaxFrameSize(handler.encoder().configuration().frameSizePolicy().maxFrameSize());
+    a.setInitialWindowSize(handler.encoder().flowController().initialWindowSize());
     return a;
   }
 
@@ -362,7 +362,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     Context completionContext = completionHandler != null ? context.owner().getOrCreateContext() : null;
-    Http2Settings current = connHandler.decoder().localSettings();
+    Http2Settings current = handler.decoder().localSettings();
     for (Map.Entry<Character, Long> entry : current.entrySet()) {
       Character key = entry.getKey();
       if (Objects.equals(settingsUpdate.get(key), entry.getValue())) {
@@ -370,7 +370,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
     }
 
-    connHandler.encoder().writeSettings(handlerContext, settingsUpdate, handlerContext.newPromise()).addListener(fut -> {
+    handler.encoder().writeSettings(handlerContext, settingsUpdate, handlerContext.newPromise()).addListener(fut -> {
       if (fut.isSuccess()) {
         updateSettingsHandler.add(() -> {
           serverSettings.putAll(settingsUpdate);
@@ -406,7 +406,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   private void checkShutdownHandler() {
     if (!shutdown) {
-      Http2Connection conn = connHandler.connection();
+      Http2Connection conn = handler.connection();
       if ((conn.goAwayReceived() || conn.goAwaySent()) && conn.numActiveStreams() == 0) {
         shutdown  = true;
         Handler<Void> handler = shutdownHandler;

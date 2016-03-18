@@ -327,6 +327,15 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
+    if (metrics.isEnabled()) {
+      HttpClientRequestBase req = currentResponse.request();
+      Object reqMetric = req.metric();
+      if (req.exceptionOccurred) {
+        metrics.requestReset(reqMetric);
+      } else {
+        metrics.responseEnd(reqMetric, currentResponse);
+      }
+    }
     currentResponse.handleEnd(pausedChunk, new HeadersAdaptor(trailer.trailingHeaders()));
 
     // We don't signal response end for a 100-continue response as a real response will follow
@@ -363,8 +372,19 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     if (ws != null) {
       ws.handleClosed();
     }
-    // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     Exception e = new VertxException("Connection was closed");
+
+    // Signal requests failed
+    if (metrics.isEnabled()) {
+      for (HttpClientRequestImpl req: requests) {
+        metrics.requestReset(req.metric());
+      }
+      if (requestForResponse != null) {
+        metrics.requestReset(requestForResponse.metric());
+      }
+    }
+
+    // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     for (HttpClientRequestImpl req: requests) {
       req.handleException(e);
     }
@@ -461,6 +481,10 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   public synchronized void beginRequest(HttpClientRequestImpl req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
+    }
+    if (metrics.isEnabled()) {
+      Object reqMetric = client.httpClientMetrics().requestBegin(metric, localAddress(), remoteAddress(), req);
+      req.metric(reqMetric);
     }
     this.currentRequest = req;
     this.requests.add(req);

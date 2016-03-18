@@ -28,7 +28,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 
 /**
@@ -38,6 +37,7 @@ abstract class VertxHttp2Stream {
 
   private static final Object END = new Object(); // Marker
 
+  protected final Http2ConnectionBase conn;
   protected final Vertx vertx;
   protected final ContextImpl context;
   protected final Channel channel;
@@ -46,17 +46,17 @@ abstract class VertxHttp2Stream {
   protected final Http2ConnectionDecoder decoder;
   protected final Http2Stream stream;
   private boolean paused;
-  private long bytesWritten;
   private ArrayDeque<Object> pending = new ArrayDeque<>(8);
 
-  VertxHttp2Stream(Vertx vertx, ContextImpl context, ChannelHandlerContext handlerContext, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder, Http2Stream stream) {
-    this.vertx = vertx;
-    this.handlerContext = handlerContext;
-    this.encoder = encoder;
-    this.decoder = decoder;
+  VertxHttp2Stream(Http2ConnectionBase conn, Http2Stream stream) {
+    this.conn = conn;
+    this.vertx = conn.vertx();
+    this.handlerContext = conn.handlerContext;
+    this.encoder = conn.handler.encoder();
+    this.decoder = conn.handler.decoder();
     this.stream = stream;
-    this.context = context;
-    this.channel = handlerContext.channel();
+    this.context = conn.getContext();
+    this.channel = conn.channel;
   }
 
   public void doPause() {
@@ -140,13 +140,7 @@ abstract class VertxHttp2Stream {
   void handleUnknownFrame(int type, int flags, Buffer buff) {
   }
 
-  long bytesWritten() {
-    return bytesWritten;
-  }
-
   void writeData(ByteBuf chunk, boolean end) {
-    int len = chunk.readableBytes();
-    bytesWritten += len;
     encoder.writeData(handlerContext, stream.id(), chunk, 0, end, handlerContext.newPromise());
     Http2RemoteFlowController controller = encoder.flowController();
     if (!controller.isWritable(stream) || end) {

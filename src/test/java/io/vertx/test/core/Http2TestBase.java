@@ -57,18 +57,6 @@ public class Http2TestBase extends HttpTestBase {
     server = vertx.createHttpServer(serverOptions);
   }
 
-  protected void startServer() throws Exception {
-    startServer(vertx.getOrCreateContext());
-  }
-
-  protected void startServer(Context context) throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    context.runOnContext(v -> {
-      server.listen(onSuccess(s -> latch.countDown()));
-    });
-    awaitLatch(latch);
-  }
-
   protected void assertOnIOContext(Context context) {
     assertEquals(context, Vertx.currentContext());
     for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
@@ -77,13 +65,5 @@ public class Http2TestBase extends HttpTestBase {
       }
     }
     fail("Not from IO");
-  }
-
-  protected SSLContext createSSLContext() throws Exception {
-    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, (TrustOptions) getServerCertOptions(KeyCert.JKS));
-    TrustManager[] trustMgrs = helper.getTrustMgrs((VertxInternal) vertx);
-    SSLContext context = SSLContext.getInstance("SSL");
-    context.init(null, trustMgrs, new java.security.SecureRandom());
-    return context;
   }
 }

@@ -50,6 +50,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -63,8 +64,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
-  private final Vertx vertx;
-  private final Http2ServerConnection connection;
   private final String serverOrigin;
   private final Http2ServerResponseImpl response;
   private final Http2Headers headers;
@@ -80,6 +79,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private boolean ended;
+  private long bytesRead;
 
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder decoder;
@@ -88,9 +88,10 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   private Handler<HttpFrame> unknownFrameHandler;
 
   public Http2ServerRequestImpl(
+      HttpServerMetrics metrics,
       Vertx vertx,
       ContextImpl context,
-      Http2ServerConnection connection,
+      Http2ServerConnection conn,
       String serverOrigin,
       Http2Stream stream,
       ChannelHandlerContext handlerContext,
@@ -98,13 +99,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
       Http2ConnectionDecoder decoder,
       Http2Headers headers,
       String contentEncoding) {
-    super(vertx, context, handlerContext, encoder, decoder, stream);
+    super(conn, stream);
 
-    this.vertx = vertx;
-    this.connection = connection;
     this.serverOrigin = serverOrigin;
     this.headers = headers;
-    this.response = new Http2ServerResponseImpl(this, (VertxInternal) vertx, handlerContext, connection, encoder, stream, false, contentEncoding);
+
+    Object metric = metrics.isEnabled() ? metrics.requestBegin(conn.metric(), this) : null;
+    this.response = new Http2ServerResponseImpl(metrics, metric, this, (VertxInternal) vertx, handlerContext, conn, encoder, stream, false, contentEncoding);
   }
 
   @Override
@@ -139,6 +140,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   }
 
   void callHandler(Buffer data) {
+    bytesRead += data.length();
     if (decoder != null) {
       try {
         decoder.offer(new DefaultHttpContent(data.getByteBuf()));
@@ -153,6 +155,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   void callEnd() {
     ended = true;
+    conn.reportBytesRead(bytesRead);
     if (decoder != null) {
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -334,17 +337,17 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public SocketAddress remoteAddress() {
-    return connection.remoteAddress();
+    return conn.remoteAddress();
   }
 
   @Override
   public SocketAddress localAddress() {
-    return connection.localAddress();
+    return conn.localAddress();
   }
 
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return connection.getPeerCertificateChain();
+    return conn.getPeerCertificateChain();
   }
 
   @Override
@@ -366,7 +369,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   public NetSocket netSocket() {
     checkEnded();
     response.toNetSocket();
-    return connection.toNetSocket(this);
+    return conn.toNetSocket(this);
   }
 
   @Override
@@ -443,7 +446,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
 
   @Override
   public HttpConnection connection() {
-    return connection;
+    return conn;
   }
 
 }

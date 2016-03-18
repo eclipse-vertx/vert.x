@@ -41,7 +41,6 @@ import java.nio.charset.Charset;
  */
 class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
-  private final Http2ConnectionBase connection;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
@@ -50,9 +49,7 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   public VertxHttp2NetSocket(Vertx vertx, ContextImpl context, ChannelHandlerContext handlerContext, Http2ConnectionBase connection,
                              Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder, Http2Stream stream) {
-    super(vertx, context, handlerContext, encoder, decoder, stream);
-
-    this.connection = connection;
+    super(connection, stream);
   }
 
   // Stream impl
@@ -190,12 +187,12 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   @Override
   public SocketAddress remoteAddress() {
-    return connection.remoteAddress();
+    return conn.remoteAddress();
   }
 
   @Override
   public SocketAddress localAddress() {
-    return connection.localAddress();
+    return conn.localAddress();
   }
 
   @Override
@@ -231,6 +228,6 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
 
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return connection.getPeerCertificateChain();
+    return conn.getPeerCertificateChain();
   }
 }

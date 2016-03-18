@@ -42,19 +42,37 @@ import io.vertx.core.http.ServerWebSocket;
 public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
 
   /**
-   * Called when an http server request begins
+   * Called when an http server request begins. Vert.x will invoke {@link #responseEnd} when the response has ended
+   * or {@link #requestReset} if the request/response has failed before.
    *
    * @param socketMetric the socket metric
-   * @param request the {@link io.vertx.core.http.HttpServerRequest}
+   * @param request the http server reuqest
    * @return the request metric
    */
   R requestBegin(S socketMetric, HttpServerRequest request);
 
   /**
+   * Called when the http server request couldn't complete successfully, for instance the connection
+   * was closed before the response was sent.
+   *
+   * @param requestMetric the request metric
+   */
+  void requestReset(R requestMetric);
+
+  /**
+   * Called when an http server response is pushed.
+   *
+   * @param socketMetric the socket metric
+   * @param response the http server response
+   * @return the request metric
+   */
+  R responsePushed(S socketMetric, HttpServerResponse response);
+
+  /**
    * Called when an http server response has ended.
    *
    * @param requestMetric the request metric
-   * @param response the {@link io.vertx.core.http.HttpServerResponse}
+   * @param response the http server request
    */
   void responseEnd(R requestMetric, HttpServerResponse response);
 

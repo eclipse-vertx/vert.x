@@ -58,14 +58,15 @@ class FileStreamChannel extends AbstractChannel {
   private final ChannelConfig config = new DefaultChannelConfig(this);
   private boolean active;
   private boolean closed;
+  private long bytesWritten;
   private final VertxHttp2Stream stream;
-  private final Handler<Void> endHandler;
+  private final Handler<Long> endHandler;
 
   FileStreamChannel(
       Context resultCtx,
       Handler<AsyncResult<Void>> resultHandler,
       VertxHttp2Stream stream,
-      Handler<Void> endHandler,
+      Handler<Long> endHandler,
       long length) {
     super(null, Id.INSTANCE);
 
@@ -156,12 +157,13 @@ class FileStreamChannel extends AbstractChannel {
     ByteBuf chunk;
     while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null && length > 0) {
       length -= chunk.readableBytes();
+      bytesWritten += chunk.readableBytes();
       boolean end = length == 0;
-      stream.writeData(chunk.retain(), end);
+      stream.writeData(chunk.retain(), false);
       stream.handlerContext.flush();
       in.remove();
       if (end) {
-        endHandler.handle(null);
+        endHandler.handle(bytesWritten);
       }
     }
   }

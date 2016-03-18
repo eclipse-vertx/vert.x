@@ -73,6 +73,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     this.headers = headers;
   }
 
+  HttpClientRequestBase request() {
+    return request;
+  }
+
   @Override
   public HttpVersion version() {
     return version;
@@ -236,7 +240,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     synchronized (conn) {
       conn.connection().reportBytesRead(bytesRead);
       bytesRead = 0;
-      request.reportResponseEnd(this);
       if (paused) {
         pausedLastChunk = lastChunk;
         hasPausedEnd = true;

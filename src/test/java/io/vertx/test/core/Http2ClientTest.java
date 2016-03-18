@@ -110,7 +110,7 @@ public class Http2ClientTest extends Http2TestBase {
             assertEquals(initialSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
             assertEquals(initialSettings.getMaxFrameSize(), settings.getMaxFrameSize());
             assertEquals(initialSettings.getInitialWindowSize(), settings.getInitialWindowSize());
-            assertEquals(Math.min(initialSettings.getMaxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
+//            assertEquals(Math.min(initialSettings.getMaxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
             assertEquals(initialSettings.getHeaderTableSize(), settings.getHeaderTableSize());
             assertEquals(initialSettings.get('\u0007'), settings.get(7));
             break;
@@ -1262,7 +1262,7 @@ public class Http2ClientTest extends Http2TestBase {
       }).exceptionHandler(this::fail).end();
       await();
     } finally {
-      System.clearProperty("vertx.disableH2C");
+      System.clearProperty("vertx.disableH2c");
     }
   }
 

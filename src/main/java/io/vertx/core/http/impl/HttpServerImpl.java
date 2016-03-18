@@ -57,6 +57,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -77,6 +78,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
   private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
   private final boolean DISABLE_HC2 = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
+  private static final String[] H2C_HANDLERS_TO_REMOVE = { "idle", "flashpolicy", "deflater", "chunkwriter" };
 
   private final HttpServerOptions options;
   private final VertxInternal vertx;
@@ -295,7 +297,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .server(true)
         .useCompression(options.isCompressionSupported())
         .initialSettings(options.getInitialSettings())
-        .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler))
+        .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler, metrics))
         .build();
   }
 
@@ -591,6 +593,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
     }
 
+
     private void createConnAndHandle(ChannelHandlerContext ctx, Channel ch, Object msg, WebSocketServerHandshaker shake) {
       HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
       if (reqHandler != null) {
@@ -632,10 +635,15 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 res.headers().add(HttpHeaderNames.CONTENT_LENGTH, HttpHeaderValues.ZERO);
                 ctx.writeAndFlush(res).addListener(v -> {
                   // Clean more pipeline ?
-                  pipeline.remove(this);
+                  pipeline.remove("handler");
                   pipeline.remove("httpDecoder");
                   pipeline.remove("httpEncoder");
                 });
+                for (String name : H2C_HANDLERS_TO_REMOVE) {
+                  if (pipeline.get(name) != null) {
+                    pipeline.remove(name);
+                  }
+                }
                 try {
                   VertxHttp2ConnectionHandler<Http2ServerConnection> handler = createHttp2Handler(reqHandler, ch);
                   handler.onHttpServerUpgrade(settings);
@@ -651,11 +659,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             return;
           }
         }
+
+        // Put in the connection map before executeFromIO
         ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
         conn.requestHandler(reqHandler.handler.requesthHandler);
         connectionMap.put(ch, conn);
         reqHandler.context.executeFromIO(() -> {
-          conn.setMetric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
           conn.handleMessage(msg);
         });
       }
@@ -683,7 +693,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
           ServerConnection wsConn = new ServerConnection(vertx, HttpServerImpl.this, ch, wsHandler.context,
             serverOrigin, shake, metrics);
-          wsConn.setMetric(metrics.connected(wsConn.remoteAddress(), wsConn.remoteName()));
+          wsConn.metric(metrics.connected(wsConn.remoteAddress(), wsConn.remoteName()));
           wsConn.wsHandler(wsHandler.handler);
 
           Runnable connectRunnable = () -> {

@@ -32,11 +32,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,6 +51,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
  */
 public class Http2ServerResponseImpl implements HttpServerResponse {
 
+  private final HttpServerMetrics metrics;
   private final VertxHttp2Stream stream_;
   private final VertxInternal vertx;
   private final ChannelHandlerContext ctx;
@@ -58,6 +59,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private final Http2ConnectionEncoder encoder;
   private final Http2Stream stream;
   private final boolean push;
+  private final Object metric;
   private Http2Headers headers = new DefaultHttp2Headers().status(OK.codeAsText());
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
@@ -71,8 +73,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
+  private Handler<Void> closeHandler;
+  private long bytesWritten;
 
-  public Http2ServerResponseImpl(VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
+  public Http2ServerResponseImpl(HttpServerMetrics metrics, Object metric, VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
+    this.metrics = metrics;
+    this.metric = metric;
     this.stream_ = stream_;
     this.vertx = vertx;
     this.ctx = ctx;
@@ -86,8 +92,25 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
+  public Http2ServerResponseImpl(HttpServerMetrics metrics, VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
+    this.metrics = metrics;
+    this.stream_ = stream_;
+    this.vertx = vertx;
+    this.ctx = ctx;
+    this.connection = connection;
+    this.encoder = encoder;
+    this.stream = stream;
+    this.push = push;
+
+    if (contentEncoding != null) {
+      putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
+    }
+
+    this.metric = metrics.responsePushed(connection.metric(), this);
+  }
+
   void callReset(long code) {
-    ended = true;
+    handleEnded(true);
     handleError(new StreamResetException(code));
   }
 
@@ -98,11 +121,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   void handleClose() {
-    if (!ended) {
-      ended = true;
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(new ClosedChannelException());
-      }
+    if (handleEnded(true)) {
+      handleError(new ClosedChannelException());
+    }
+    if (closeHandler != null) {
+      closeHandler.handle(null);
     }
   }
 
@@ -250,7 +273,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse closeHandler(@Nullable Handler<Void> handler) {
     checkEnded();
-    // I think it should be used for stream reset (rather than exceptionHandler)
+    closeHandler = handler;
     return this;
   }
 
@@ -306,7 +329,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   void toNetSocket() {
     checkEnded();
     checkSendHeaders(false);
-    ended = true;
+    handleEnded(false);
   }
 
   private void end(ByteBuf chunk) {
@@ -341,13 +364,14 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   void write(ByteBuf chunk, boolean end) {
     checkEnded();
     if (end) {
-      ended = true;
+      handleEnded(false);
     }
     int len = chunk.readableBytes();
     boolean empty = len == 0;
     boolean sent = checkSendHeaders(empty && end);
     if (!empty || (!sent && end)) {
       stream_.writeData(chunk, end && trailers == null);
+      bytesWritten += len;
     }
     if (trailers != null && end) {
       encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
@@ -370,6 +394,23 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (ended) {
       throw new IllegalStateException("Response has already been written");
     }
+  }
+
+  private boolean handleEnded(boolean failed) {
+    if (!ended) {
+      ended = true;
+      if (metric != null) {
+        // Null in case of push response : handle this case
+        if (failed) {
+          metrics.requestReset(metric);
+        } else {
+          connection.reportBytesWritten(bytesWritten);
+          metrics.responseEnd(metric, this);
+        }
+      }
+      return true;
+    }
+    return false;
   }
 
   void writabilityChanged() {
@@ -438,7 +479,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     checkSendHeaders(false);
 
-    FileStreamChannel channel = new FileStreamChannel(resultCtx, resultHandler, stream_, bodyEndHandler, contentLength);
+    FileStreamChannel channel = new FileStreamChannel(resultCtx, resultHandler, stream_, numOfBytes -> {
+      bytesWritten += numOfBytes;
+      end();
+    }, contentLength);
     drainHandler(channel.drainHandler);
     ctx.channel().eventLoop().register(channel);
     channel.pipeline().fireUserEventTriggered(raf);
@@ -480,7 +524,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public long bytesWritten() {
-    return stream_.bytesWritten();
+    return bytesWritten;
   }
 
   @Override
@@ -491,7 +535,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public void reset(long code) {
     checkEnded();
-    ended = true;
+    handleEnded(true);
     encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
     ctx.flush();
   }

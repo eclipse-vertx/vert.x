@@ -2305,7 +2305,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testIdleTimeout() throws Exception {
-    waitFor(4);
+    waitFor(5);
     server.close();
     server = vertx.createHttpServer(serverOptions.setIdleTimeout(2));
     server.requestHandler(req -> {
@@ -2315,6 +2315,9 @@ public class Http2ServerTest extends Http2TestBase {
       });
       req.response().exceptionHandler(err -> {
         assertTrue(err instanceof ClosedChannelException);
+        complete();
+      });
+      req.response().closeHandler(v -> {
         complete();
       });
       req.connection().closeHandler(v -> {

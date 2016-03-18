@@ -28,7 +28,6 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
@@ -615,11 +614,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
     conn = s;
     s.beginRequest(this);
-
-    if (this.conn instanceof ClientConnection) {
-      ClientConnection http1Conn = (ClientConnection) this.conn;
-      this.metric = client.httpClientMetrics().requestBegin(http1Conn.metric(), http1Conn.localAddress(), http1Conn.remoteAddress(), this);
-    }
 
     // If anything was written or the request ended before we got the connection, then
     // we need to write it now

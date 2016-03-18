@@ -67,7 +67,7 @@ class Http2Pool extends ConnectionManager.Pool {
           .server(false)
           .useCompression(client.getOptions().isTryUseCompression())
           .initialSettings(client.getOptions().getInitialSettings())
-          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler))
+          .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, client.metrics))
           .build();
       if (upgrade) {
         try {
@@ -91,7 +91,7 @@ class Http2Pool extends ConnectionManager.Pool {
   }
 
   private boolean canReserveStream(Http2ClientConnection handler) {
-    int maxConcurrentStreams = handler.connHandler.connection().local().maxActiveStreams();
+    int maxConcurrentStreams = handler.handler.connection().local().maxActiveStreams();
     return handler.streamCount < maxConcurrentStreams;
   }
 
