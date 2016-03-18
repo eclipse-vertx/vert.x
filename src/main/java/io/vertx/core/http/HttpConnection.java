@@ -29,7 +29,6 @@ import io.vertx.core.buffer.Buffer;
  *
  * todo:
  *
- * - test and handle fully the http client enabled protocoles
  * - investigate flow control configuration ratio / setWriteQueueMaxSize
  * - how to reset a netsocket stream ?
  * - test netsocket client reset
@@ -42,6 +41,8 @@ import io.vertx.core.buffer.Buffer;
  * - OpenSSL integration
  * - run HttpTest with HTTP2
  * - handle data frame padding
+ * - documentation
+ * - examples
  *
  * HttpServer:
  * - server synchronization + executeFromIO

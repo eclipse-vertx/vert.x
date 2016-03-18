@@ -27,9 +27,6 @@ import io.vertx.core.json.JsonArray;
 public class Http2SettingsConverter {
 
   public static void fromJson(JsonObject json, Http2Settings obj) {
-    if (json.getValue("enablePush") instanceof Boolean) {
-      obj.setEnablePush((Boolean)json.getValue("enablePush"));
-    }
     if (json.getValue("headerTableSize") instanceof Number) {
       obj.setHeaderTableSize(((Number)json.getValue("headerTableSize")).longValue());
     }
@@ -45,14 +42,17 @@ public class Http2SettingsConverter {
     if (json.getValue("maxHeaderListSize") instanceof Number) {
       obj.setMaxHeaderListSize(((Number)json.getValue("maxHeaderListSize")).intValue());
     }
+    if (json.getValue("pushEnabled") instanceof Boolean) {
+      obj.setPushEnabled((Boolean)json.getValue("pushEnabled"));
+    }
   }
 
   public static void toJson(Http2Settings obj, JsonObject json) {
-    json.put("enablePush", obj.getEnablePush());
     json.put("headerTableSize", obj.getHeaderTableSize());
     json.put("initialWindowSize", obj.getInitialWindowSize());
     json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
     json.put("maxFrameSize", obj.getMaxFrameSize());
     json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
+    json.put("pushEnabled", obj.isPushEnabled());
   }
 }

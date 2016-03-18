@@ -38,9 +38,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -59,8 +57,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Base64;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -79,6 +75,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
   private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
   private static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
+  private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
+  private final boolean DISABLE_HC2 = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
 
   private final HttpServerOptions options;
   private final VertxInternal vertx;
@@ -94,7 +92,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private Handler<HttpConnection> connectionHandler;
   private final String subProtocols;
   private String serverOrigin;
-  private final boolean http2Enabled;
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
@@ -116,7 +113,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
     this.subProtocols = options.getWebsocketSubProtocols();
-    this.http2Enabled = options.getEnabledProtocols() == null || options.getEnabledProtocols().contains(HttpVersion.HTTP_2);
   }
 
   @Override
@@ -318,7 +314,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .connectionMap(connectionMap2)
         .server(true)
         .useCompression(options.isCompressionSupported())
-        .initialSettings(options.getHttp2Settings())
+        .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler))
         .build();
   }
@@ -591,7 +587,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     private void createConnAndHandle(ChannelHandlerContext ctx, Channel ch, Object msg, WebSocketServerHandshaker shake) {
       HandlerHolder<HttpHandler> reqHandler = reqHandlerManager.chooseHandler(ch.eventLoop());
       if (reqHandler != null) {
-        if (http2Enabled && msg instanceof HttpRequest) {
+        if (!DISABLE_HC2 && msg instanceof HttpRequest) {
           HttpRequest request = (HttpRequest) msg;
           if (request.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, true)) {
             String connection = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);

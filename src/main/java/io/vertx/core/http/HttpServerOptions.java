@@ -21,10 +21,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -69,8 +70,6 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
 
-  public static final List<HttpVersion> DEFAULT_ENABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(HttpVersion.values()));
-
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -78,8 +77,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
-  private List<HttpVersion> enabledProtocols;
-  private Http2Settings http2Settings;
+  private Http2Settings initialSettings;
 
   /**
    * Default constructor
@@ -104,8 +102,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxChunkSize = other.getMaxChunkSize();
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
-    this.http2Settings = other.http2Settings != null ? new Http2Settings(other.http2Settings) : null;
-    this.enabledProtocols = other.enabledProtocols != null ? new ArrayList<>(other.enabledProtocols) : null;
+    this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
   }
 
   /**
@@ -127,7 +124,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    enabledProtocols = new ArrayList<>(DEFAULT_ENABLED_PROTOCOLS);
+    initialSettings = new Http2Settings();
   }
 
   @Override
@@ -366,18 +363,16 @@ public class HttpServerOptions extends NetServerOptions {
 
   
   /**
-   * Returns the maximum length of the initial line (e.g. {@code "GET / HTTP/1.0"})
-   * 
-   * @return
+   * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
   public int getMaxInitialLineLength() {
     return maxInitialLineLength;
   }
 	
   /**
-   * Set the maximum length of the initial line (e.g. {@code "GET / HTTP/1.0"})
+   * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    * 
-   * @param maxInitialLineLength
+   * @param maxInitialLineLength the new maximum initial length
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxInitialLineLength(int maxInitialLineLength) {
@@ -386,18 +381,16 @@ public class HttpServerOptions extends NetServerOptions {
   }
 	
   /**
-   * Returns the maximum length of all headers
-   * 
-   * @return
+   * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
     return maxHeaderSize;
   }
 	
   /**
-   * Set the maximum length of all headers
-   * 
-   * @param maxHeaderSize
+   * Set the maximum length of all headers for HTTP/1.x .
+   *
+   * @param maxHeaderSize the new maximum length
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxHeaderSize(int maxHeaderSize) {
@@ -405,21 +398,21 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
-  public Http2Settings getHttp2Settings() {
-    return http2Settings;
+  /**
+   * @return the initial HTTP/2 connection settings
+   */
+  public Http2Settings getInitialSettings() {
+    return initialSettings;
   }
 
-  public HttpServerOptions setHttp2Settings(Http2Settings http2Settings) {
-    this.http2Settings = http2Settings;
-    return this;
-  }
-
-  public List<HttpVersion> getEnabledProtocols() {
-    return enabledProtocols;
-  }
-
-  public HttpServerOptions setEnabledProtocols(List<HttpVersion> enabledProtocols) {
-    this.enabledProtocols = enabledProtocols;
+  /**
+   * Set the HTTP/2 connection settings immediatly sent by the server when a client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setInitialSettings(Http2Settings settings) {
+    this.initialSettings = settings;
     return this;
   }
 
@@ -437,8 +430,8 @@ public class HttpServerOptions extends NetServerOptions {
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxInitialLineLength != that.maxInitialLineLength) return false;
     if (maxHeaderSize != that.maxHeaderSize) return false;
+    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
-
   }
 
   @Override
@@ -447,6 +440,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (compressionSupported ? 1 : 0);
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + (websocketSubProtocols != null ? websocketSubProtocols.hashCode() : 0);
+    result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (handle100ContinueAutomatically ? 1 : 0);
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxInitialLineLength;

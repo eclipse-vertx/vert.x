@@ -24,12 +24,6 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TCPSSLOptions;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -111,7 +105,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxChunkSize;
   private int maxWaitQueueSize;
   private HttpVersion alpnFallbackProtocolVersion;
-  private Http2Settings http2Settings;
+  private Http2Settings initialSettings;
 
   /**
    * Default constructor
@@ -140,7 +134,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxChunkSize = other.maxChunkSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
     this.alpnFallbackProtocolVersion = other.alpnFallbackProtocolVersion;
-    this.http2Settings = other.http2Settings != null ? new Http2Settings(other.http2Settings) : null;
+    this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
   }
 
   /**
@@ -167,6 +161,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
     alpnFallbackProtocolVersion = DEFAULT_ALPN_FALLBACK_PROTOCOL_VERSION;
+    initialSettings = new Http2Settings();
   }
 
   @Override
@@ -515,21 +510,42 @@ public class HttpClientOptions extends ClientOptionsBase {
     return (HttpClientOptions) super.setUseAlpn(useAlpn);
   }
 
+  /**
+   * @return the ALPN fallback protocol version
+   */
   public HttpVersion getAlpnFallbackProtocolVersion() {
     return alpnFallbackProtocolVersion;
   }
 
+  /**
+   * Set the ALPN fallback protocol version, must be either {@link HttpVersion#HTTP_1_1} or {@link HttpVersion#HTTP_1_0}.
+   *
+   * @param alpnFallbackProtocolVersion the ALPN fallback protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
   public HttpClientOptions setAlpnFallbackProtocolVersion(HttpVersion alpnFallbackProtocolVersion) {
+    if (alpnFallbackProtocolVersion != HttpVersion.HTTP_1_0 && alpnFallbackProtocolVersion != HttpVersion.HTTP_1_1) {
+      throw new IllegalArgumentException("ALPN fallback protocol must be HTTP/1.1 or HTTP/1.0");
+    }
     this.alpnFallbackProtocolVersion = alpnFallbackProtocolVersion;
     return this;
   }
 
-  public Http2Settings getHttp2Settings() {
-    return http2Settings;
+  /**
+   * @return the initial HTTP/2 connection settings
+   */
+  public Http2Settings getInitialSettings() {
+    return initialSettings;
   }
 
-  public HttpClientOptions setHttp2Settings(Http2Settings http2Settings) {
-    this.http2Settings = http2Settings;
+  /**
+   * Set the HTTP/2 connection settings immediatly sent by to the server when the client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setInitialSettings(Http2Settings settings) {
+    this.initialSettings = settings;
     return this;
   }
 
@@ -552,6 +568,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (protocolVersion != that.protocolVersion) return false;
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxWaitQueueSize != that.maxWaitQueueSize) return false;
+    if (alpnFallbackProtocolVersion != that.alpnFallbackProtocolVersion) return false;
+    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
 
     return true;
   }
@@ -570,6 +588,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + protocolVersion.hashCode();
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxWaitQueueSize;
+    result = 31 * result + alpnFallbackProtocolVersion.hashCode();
+    result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     return result;
   }
 }

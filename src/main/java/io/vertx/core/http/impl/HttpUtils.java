@@ -123,8 +123,8 @@ public final class HttpUtils {
 
   public static void fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings, Http2Settings nettySettings) {
     if (vertxSettings != null) {
-      if (!server && vertxSettings.getEnablePush() != DEFAULT_ENABLE_PUSH) {
-        nettySettings.pushEnabled(vertxSettings.getEnablePush());
+      if (!server && vertxSettings.isPushEnabled() != DEFAULT_ENABLE_PUSH) {
+        nettySettings.pushEnabled(vertxSettings.isPushEnabled());
       }
       if (vertxSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
         nettySettings.put('\u0001', (Long)vertxSettings.getHeaderTableSize());
@@ -152,7 +152,7 @@ public final class HttpUtils {
 
   public static Http2Settings fromVertxSettings(io.vertx.core.http.Http2Settings settings) {
     Http2Settings converted = new Http2Settings();
-    converted.pushEnabled(settings.getEnablePush());
+    converted.pushEnabled(settings.isPushEnabled());
     converted.maxFrameSize(settings.getMaxFrameSize());
     converted.initialWindowSize(settings.getInitialWindowSize());
     converted.headerTableSize((int)(long)settings.getHeaderTableSize());
@@ -170,7 +170,7 @@ public final class HttpUtils {
     io.vertx.core.http.Http2Settings converted = new io.vertx.core.http.Http2Settings();
     Boolean pushEnabled = settings.pushEnabled();
     if (pushEnabled != null) {
-      converted.setEnablePush(pushEnabled);
+      converted.setPushEnabled(pushEnabled);
     }
     Long maxConcurrentStreams = settings.maxConcurrentStreams();
     if (maxConcurrentStreams != null) {
@@ -194,7 +194,7 @@ public final class HttpUtils {
     }
     settings.forEach((key, value) -> {
       if (key > 6) {
-        converted.put(key, value);
+        converted.set(key, value);
       }
     });
     return converted;

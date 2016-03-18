@@ -37,11 +37,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
-import java.io.Closeable;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -197,7 +192,14 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setMaxWaitQueueSize(100));
     assertEquals(100, options.getMaxWaitQueueSize());
 
-    testComplete();
+    assertEquals(HttpClientOptions.DEFAULT_ALPN_FALLBACK_PROTOCOL_VERSION, options.getAlpnFallbackProtocolVersion());
+    assertEquals(options, options.setAlpnFallbackProtocolVersion(HttpVersion.HTTP_1_0));
+    assertEquals(HttpVersion.HTTP_1_0, options.getAlpnFallbackProtocolVersion());
+
+    Http2Settings initialSettings = randomHttp2Settings();
+    assertEquals(new Http2Settings(), options.getInitialSettings());
+    assertEquals(options, options.setInitialSettings(initialSettings));
+    assertEquals(initialSettings, options.getInitialSettings());
   }
 
 
@@ -312,7 +314,14 @@ public class HttpTest extends HttpTestBase {
     assertEquals(options, options.setHandle100ContinueAutomatically(true));
     assertTrue(options.isHandle100ContinueAutomatically());
 
-    testComplete();
+    assertEquals(false, options.isUseAlpn());
+    assertEquals(options, options.setUseAlpn(true));
+    assertEquals(true, options.isUseAlpn());
+
+    Http2Settings initialSettings = randomHttp2Settings();
+    assertEquals(new Http2Settings(), options.getInitialSettings());
+    assertEquals(options, options.setInitialSettings(initialSettings));
+    assertEquals(initialSettings, options.getInitialSettings());
   }
 
   @Test
@@ -348,6 +357,8 @@ public class HttpTest extends HttpTestBase {
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
+    HttpVersion alpnFallbackProtocolVersion = TestUtils.randomBoolean() ? HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
+    Http2Settings initialSettings = randomHttp2Settings();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -373,6 +384,8 @@ public class HttpTest extends HttpTestBase {
     options.setTryUseCompression(tryUseCompression);
     options.setProtocolVersion(protocolVersion);
     options.setMaxWaitQueueSize(maxWaitQueueSize);
+    options.setAlpnFallbackProtocolVersion(alpnFallbackProtocolVersion);
+    options.setInitialSettings(initialSettings);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -403,6 +416,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tryUseCompression, copy.isTryUseCompression());
     assertEquals(protocolVersion, copy.getProtocolVersion());
     assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
+    assertEquals(alpnFallbackProtocolVersion, copy.getAlpnFallbackProtocolVersion());
+    assertEquals(initialSettings, copy.getInitialSettings());
   }
 
   @Test
@@ -425,6 +440,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
     assertEquals(def.getMaxWaitQueueSize(), json.getMaxWaitQueueSize());
+    assertEquals(def.getAlpnFallbackProtocolVersion(), json.getAlpnFallbackProtocolVersion());
+    assertEquals(def.getInitialSettings(), json.getInitialSettings());
   }
 
   @Test
@@ -461,6 +478,8 @@ public class HttpTest extends HttpTestBase {
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
+    HttpVersion alpnFallbackProtocolVersion = TestUtils.randomBoolean() ? HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
+    Http2Settings initialSettings = randomHttp2Settings();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -485,7 +504,15 @@ public class HttpTest extends HttpTestBase {
       .put("pipelining", pipelining)
       .put("tryUseCompression", tryUseCompression)
       .put("protocolVersion", protocolVersion.name())
-      .put("maxWaitQueueSize", maxWaitQueueSize);
+      .put("maxWaitQueueSize", maxWaitQueueSize)
+      .put("alpnFallbackProtocolVersion", alpnFallbackProtocolVersion)
+      .put("initialSettings", new JsonObject()
+          .put("pushEnabled", initialSettings.isPushEnabled())
+          .put("headerTableSize", initialSettings.getHeaderTableSize())
+          .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
+          .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
+          .put("initialWindowSize", initialSettings.getInitialWindowSize())
+          .put("maxFrameSize", initialSettings.getMaxFrameSize()));
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -517,6 +544,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(tryUseCompression, options.isTryUseCompression());
     assertEquals(protocolVersion, options.getProtocolVersion());
     assertEquals(maxWaitQueueSize, options.getMaxWaitQueueSize());
+    assertEquals(alpnFallbackProtocolVersion, options.getAlpnFallbackProtocolVersion());
+    assertEquals(initialSettings, options.getInitialSettings());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -571,6 +600,8 @@ public class HttpTest extends HttpTestBase {
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
+    boolean useAlpn = rand.nextBoolean();
+    Http2Settings initialSettings = randomHttp2Settings();
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
     options.setReuseAddress(reuseAddress);
@@ -594,6 +625,8 @@ public class HttpTest extends HttpTestBase {
     options.setWebsocketSubProtocols(wsSubProtocol);
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
     options.setMaxChunkSize(maxChunkSize);
+    options.setUseAlpn(useAlpn);
+    options.setInitialSettings(initialSettings);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -623,6 +656,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(wsSubProtocol, copy.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, copy.isHandle100ContinueAutomatically());
     assertEquals(maxChunkSize, copy.getMaxChunkSize());
+    assertEquals(useAlpn, copy.isUseAlpn());
+    assertEquals(initialSettings, copy.getInitialSettings());
   }
 
   @Test
@@ -647,6 +682,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(def.getMaxChunkSize(), json.getMaxChunkSize());
     assertEquals(def.getMaxInitialLineLength(), json.getMaxInitialLineLength());
     assertEquals(def.getMaxHeaderSize(), json.getMaxHeaderSize());
+    assertEquals(def.isUseAlpn(), json.isUseAlpn());
+    assertEquals(def.getInitialSettings(), json.getInitialSettings());
   }
 
   @Test
@@ -684,6 +721,9 @@ public class HttpTest extends HttpTestBase {
     int maxChunkSize = rand.nextInt(10000);
     int maxInitialLineLength = rand.nextInt(10000);
     int maxHeaderSize = rand.nextInt(10000);
+    boolean useAlpn = rand.nextBoolean();
+    HttpVersion enabledProtocol = HttpVersion.values()[rand.nextInt(HttpVersion.values().length)];
+    Http2Settings initialSettings = TestUtils.randomHttp2Settings();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -709,8 +749,16 @@ public class HttpTest extends HttpTestBase {
       .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
       .put("maxChunkSize", maxChunkSize)
       .put("maxInitialLineLength", maxInitialLineLength)
-      .put("maxHeaderSize", maxHeaderSize);
-    
+      .put("maxHeaderSize", maxHeaderSize)
+      .put("useAlpn", useAlpn)
+      .put("enabledProtocols", new JsonArray().add(enabledProtocol.name()))
+      .put("initialSettings", new JsonObject()
+          .put("pushEnabled", initialSettings.isPushEnabled())
+          .put("headerTableSize", initialSettings.getHeaderTableSize())
+          .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
+          .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
+          .put("initialWindowSize", initialSettings.getInitialWindowSize())
+          .put("maxFrameSize", initialSettings.getMaxFrameSize()));
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -743,6 +791,8 @@ public class HttpTest extends HttpTestBase {
     assertEquals(maxChunkSize, options.getMaxChunkSize());
     assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
     assertEquals(maxHeaderSize, options.getMaxHeaderSize());
+    assertEquals(useAlpn, options.isUseAlpn());
+    assertEquals(initialSettings, options.getInitialSettings());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

@@ -242,20 +242,8 @@ public class ConnectionManager {
 
             SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port);
             ch.pipeline().addLast(sslHandler);
-            String fallback;
             HttpVersion fallbackVersion = options.getAlpnFallbackProtocolVersion();
-            switch (fallbackVersion) {
-              case HTTP_1_1:
-                fallback = "http/1.1";
-                break;
-              case HTTP_1_0:
-                fallback = "http/1.1";
-                break;
-              default:
-                // Handle this case better
-                fallback = "oops";
-                break;
-            }
+            String fallback = fallbackVersion == HttpVersion.HTTP_1_0 ? "http/1.0" : "http/1.1";
             ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler(fallback) {
               @Override
               protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
@@ -296,7 +284,7 @@ public class ConnectionManager {
                   }
                 }
               }
-              VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getHttp2Settings());
+              VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings());
               HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
               ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
             } else {

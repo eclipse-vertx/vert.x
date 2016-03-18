@@ -20,35 +20,38 @@ import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.HttpUtils;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2Test extends VertxTestBase {
+public class Http2Test extends HttpTestBase {
 
   long[] min = { 0, 0, 0, 0, 0x4000, 0 };
   long[] max = { Integer.MAX_VALUE, 1, 0xFFFFFFFFL, Integer.MAX_VALUE, 0xFFFFFF, Integer.MAX_VALUE };
 
   @Test
-  public void testMin() {
+  public void testSettingsMin() {
     for (int i = 1;i <= 6;i++) {
       try {
-        new Http2Settings().put(i, min[i - 1] - 1);
+        new Http2Settings().set(i, min[i - 1] - 1);
         fail();
       } catch (IllegalArgumentException ignore) {
       }
     }
     Http2Settings settings = new Http2Settings();
     for (int i = 1;i <= 6;i++) {
-      settings.put(i, min[i - 1]);
+      settings.set(i, min[i - 1]);
     }
     HttpUtils.fromVertxSettings(settings);
   }
 
   @Test
-  public void testMax() {
+  public void testSettinsMax() {
     for (int i = 1;i <= 6;i++) {
       try {
-        new Http2Settings().put(i, max[i - 1] + 1);
+        new Http2Settings().set(i, max[i - 1] + 1);
         System.out.println("i = " + i);
         fail();
       } catch (IllegalArgumentException ignore) {
@@ -56,7 +59,7 @@ public class Http2Test extends VertxTestBase {
     }
     Http2Settings settings = new Http2Settings();
     for (int i = 1;i <= 6;i++) {
-      settings.put(i, max[i - 1]);
+      settings.set(i, max[i - 1]);
     }
     HttpUtils.fromVertxSettings(settings);
   }
@@ -65,7 +68,7 @@ public class Http2Test extends VertxTestBase {
   public void toNettySettings() {
     Http2Settings settings = new Http2Settings();
     for (int i = 7;i <= 0xFFFF;i += 1) {
-      settings.put(0xFFFF, TestUtils.randomPositiveLong());
+      settings.set(0xFFFF, TestUtils.randomPositiveLong());
     }
     io.netty.handler.codec.http2.Http2Settings conv = HttpUtils.fromVertxSettings(settings);
     for (int i = 1;i <= 0xFFFF;i += 1) {
@@ -75,5 +78,49 @@ public class Http2Test extends VertxTestBase {
     for (int i = 1;i <= 0xFFFF;i += 1) {
       assertEquals(settings.get(i), conv.get((char)i));
     }
+  }
+
+  @Test
+  public void testSettings() {
+    Http2Settings settings = new Http2Settings();
+
+    assertEquals(true, settings.isPushEnabled());
+    assertEquals(Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE, settings.getMaxHeaderListSize());
+    assertEquals(Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS, settings.getMaxConcurrentStreams());
+    assertEquals(Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE, settings.getInitialWindowSize());
+    assertEquals(Http2Settings.DEFAULT_MAX_FRAME_SIZE, settings.getMaxFrameSize());
+    assertEquals(null, settings.getExtraSettings());
+
+    Http2Settings update = TestUtils.randomHttp2Settings();
+    assertFalse(settings.equals(update));
+    assertNotSame(settings.hashCode(), settings.hashCode());
+    assertSame(settings, settings.setHeaderTableSize(update.getHeaderTableSize()));
+    assertEquals(settings.getHeaderTableSize(), update.getHeaderTableSize());
+    assertSame(settings, settings.setPushEnabled(update.isPushEnabled()));
+    assertEquals(settings.isPushEnabled(), update.isPushEnabled());
+    assertSame(settings, settings.setMaxHeaderListSize(update.getMaxHeaderListSize()));
+    assertEquals(settings.getMaxHeaderListSize(), update.getMaxHeaderListSize());
+    assertSame(settings, settings.setMaxConcurrentStreams(update.getMaxConcurrentStreams()));
+    assertEquals(settings.getMaxConcurrentStreams(), update.getMaxConcurrentStreams());
+    assertSame(settings, settings.setInitialWindowSize(update.getInitialWindowSize()));
+    assertEquals(settings.getInitialWindowSize(), update.getInitialWindowSize());
+    assertSame(settings, settings.setMaxFrameSize(update.getMaxFrameSize()));
+    assertEquals(settings.getMaxFrameSize(), update.getMaxFrameSize());
+    assertSame(settings, settings.setExtraSettings(update.getExtraSettings()));
+    Map<Integer, Long> extraSettings = new HashMap<>(update.getExtraSettings());
+    assertEquals(update.getExtraSettings(), extraSettings);
+    extraSettings.clear();
+    assertEquals(update.getExtraSettings(), settings.getExtraSettings());
+    assertTrue(settings.equals(update));
+    assertEquals(settings.hashCode(), settings.hashCode());
+
+    settings = new Http2Settings(update);
+    assertEquals(settings.getHeaderTableSize(), update.getHeaderTableSize());
+    assertEquals(settings.isPushEnabled(), update.isPushEnabled());
+    assertEquals(settings.getMaxHeaderListSize(), update.getMaxHeaderListSize());
+    assertEquals(settings.getMaxConcurrentStreams(), update.getMaxConcurrentStreams());
+    assertEquals(settings.getInitialWindowSize(), update.getInitialWindowSize());
+    assertEquals(settings.getMaxFrameSize(), update.getMaxFrameSize());
+    assertEquals(update.getExtraSettings(), settings.getExtraSettings());
   }
 }

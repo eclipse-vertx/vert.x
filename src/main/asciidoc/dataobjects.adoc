@@ -268,7 +268,10 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 == Http2Settings
 
 ++++
- HTTP2 settings.
+ HTTP2 settings, the settings is initialized with the default HTTP/2 values.<p>
+
+ The settings expose the parameters defined by the HTTP/2 specification, as well as extra settings for
+ protocol extensions.
 ++++
 '''
 
@@ -276,12 +279,30 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[enablePush]]`enablePush`|`Boolean`|-
-|[[headerTableSize]]`headerTableSize`|`Number (long)`|-
-|[[initialWindowSize]]`initialWindowSize`|`Number (int)`|-
-|[[maxConcurrentStreams]]`maxConcurrentStreams`|`Number (long)`|-
-|[[maxFrameSize]]`maxFrameSize`|`Number (int)`|-
-|[[maxHeaderListSize]]`maxHeaderListSize`|`Number (int)`|-
+|[[headerTableSize]]`headerTableSize`|`Number (long)`|
++++
+Set  HTTP/2 setting.
++++
+|[[initialWindowSize]]`initialWindowSize`|`Number (int)`|
++++
+Set the  HTTP/2 setting
++++
+|[[maxConcurrentStreams]]`maxConcurrentStreams`|`Number (long)`|
++++
+Set the  HTTP/2 setting
++++
+|[[maxFrameSize]]`maxFrameSize`|`Number (int)`|
++++
+Set the  HTTP/2 setting
++++
+|[[maxHeaderListSize]]`maxHeaderListSize`|`Number (int)`|
++++
+Set the  HTTP/2 setting
++++
+|[[pushEnabled]]`pushEnabled`|`Boolean`|
++++
+Set the  HTTP/2 setting
++++
 |===
 
 [[Argument]]
@@ -952,7 +973,6 @@ Add a CRL value
 +++
 Add an enabled cipher suite
 +++
-|[[enabledProtocols]]`enabledProtocols`|`Array of link:enums.html#HttpVersion[HttpVersion]`|-
 |[[handle100ContinueAutomatically]]`handle100ContinueAutomatically`|`Boolean`|
 +++
 Set whether 100 Continue should be handled automatically
@@ -961,11 +981,14 @@ Set whether 100 Continue should be handled automatically
 +++
 Set the host
 +++
-|[[http2Settings]]`http2Settings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|-
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
  This determines if a connection will timeout and be closed if no data is received within the timeout.
++++
+|[[initialSettings]]`initialSettings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|
++++
+Set the HTTP/2 connection settings immediatly sent by the server when a client connects.
 +++
 |[[keyStoreOptions]]`keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|
 +++
@@ -977,11 +1000,11 @@ Set the maximum HTTP chunk size
 +++
 |[[maxHeaderSize]]`maxHeaderSize`|`Number (int)`|
 +++
-Set the maximum length of all headers
+Set the maximum length of all headers for HTTP/1.x .
 +++
 |[[maxInitialLineLength]]`maxInitialLineLength`|`Number (int)`|
 +++
-Set the maximum length of the initial line (e.g. <code>"GET / HTTP/1.0"</code>)
+Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"GET / HTTP/1.0"</code>)
 +++
 |[[maxWebsocketFrameSize]]`maxWebsocketFrameSize`|`Number (int)`|
 +++
@@ -1272,7 +1295,10 @@ Set the value of traffic class
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[alpnFallbackProtocolVersion]]`alpnFallbackProtocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|-
+|[[alpnFallbackProtocolVersion]]`alpnFallbackProtocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|
++++
+Set the ALPN fallback protocol version, must be either  or .
++++
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|
 +++
 Set the connect timeout
@@ -1297,11 +1323,14 @@ Set the default port to be used by this client in requests if none is provided w
 +++
 Add an enabled cipher suite
 +++
-|[[http2Settings]]`http2Settings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|-
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
  This determines if a connection will timeout and be closed if no data is received within the timeout.
++++
+|[[initialSettings]]`initialSettings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|
++++
+Set the HTTP/2 connection settings immediatly sent by to the server when the client connects.
 +++
 |[[keepAlive]]`keepAlive`|`Boolean`|
 +++

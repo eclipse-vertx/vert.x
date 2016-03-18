@@ -86,22 +86,4 @@ public class Http2TestBase extends HttpTestBase {
     context.init(null, trustMgrs, new java.security.SecureRandom());
     return context;
   }
-
-  protected Http2Settings randomSettings() {
-    int headerTableSize = 10 + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_HEADER_TABLE_SIZE - 10);
-    boolean enablePush = TestUtils.randomBoolean();
-    long maxConcurrentStreams = TestUtils.randomPositiveLong() % (Http2CodecUtil.MAX_CONCURRENT_STREAMS - 10);
-    int initialWindowSize = 10 + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE - 10);
-    int maxFrameSize = Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND + TestUtils.randomPositiveInt() % (Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND - Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND);
-    int maxHeaderListSize = 10 + TestUtils.randomPositiveInt() % (int) (Http2CodecUtil.MAX_HEADER_LIST_SIZE - 10);
-    Http2Settings settings = new Http2Settings();
-    settings.headerTableSize(headerTableSize);
-    settings.pushEnabled(enablePush);
-    settings.maxConcurrentStreams(maxConcurrentStreams);
-    settings.initialWindowSize(initialWindowSize);
-    settings.maxFrameSize(maxFrameSize);
-    settings.maxHeaderListSize(maxHeaderListSize);
-    settings.put('\u0007', (Long)(TestUtils.randomPositiveLong() & 0xFFFFFFFFL));
-    return settings;
-  }
 }

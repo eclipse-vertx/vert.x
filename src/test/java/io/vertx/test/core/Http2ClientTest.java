@@ -22,12 +22,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpMessage;
-import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
@@ -58,7 +55,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetSocket;
@@ -70,7 +66,6 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -98,9 +93,9 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testClientSettings() throws Exception {
     waitFor(2);
-    Http2Settings initialSettings = randomSettings();
-    Http2Settings updatedSettings = randomSettings();
-    updatedSettings.headerTableSize((int)(long)initialSettings.headerTableSize()); // Otherwise it raise "invalid max dynamic table size" in Netty
+    io.vertx.core.http.Http2Settings initialSettings = TestUtils.randomHttp2Settings();
+    io.vertx.core.http.Http2Settings updatedSettings = TestUtils.randomHttp2Settings();
+    updatedSettings.setHeaderTableSize(initialSettings.getHeaderTableSize()); // Otherwise it raise "invalid max dynamic table size" in Netty
     AtomicInteger count = new AtomicInteger();
     Future<Void> end = Future.future();
     server.requestHandler(req -> {
@@ -111,23 +106,23 @@ public class Http2ClientTest extends Http2TestBase {
       conn.remoteSettingsHandler(settings -> {
         switch (count.getAndIncrement()) {
           case 0:
-            assertEquals(initialSettings.pushEnabled(), settings.getEnablePush());
-            assertEquals(initialSettings.maxHeaderListSize(), (Integer)(int)settings.getMaxHeaderListSize());
-            assertEquals((int)initialSettings.maxFrameSize(), settings.getMaxFrameSize());
-            assertEquals((int)initialSettings.initialWindowSize(), settings.getInitialWindowSize());
-            assertEquals(Math.min(initialSettings.maxConcurrentStreams(), Integer.MAX_VALUE), (long)settings.getMaxConcurrentStreams());
-            assertEquals((long) initialSettings.headerTableSize(), settings.getHeaderTableSize());
+            assertEquals(initialSettings.isPushEnabled(), settings.isPushEnabled());
+            assertEquals(initialSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals(initialSettings.getMaxFrameSize(), settings.getMaxFrameSize());
+            assertEquals(initialSettings.getInitialWindowSize(), settings.getInitialWindowSize());
+            assertEquals(Math.min(initialSettings.getMaxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
+            assertEquals(initialSettings.getHeaderTableSize(), settings.getHeaderTableSize());
             assertEquals(initialSettings.get('\u0007'), settings.get(7));
             break;
           case 1:
             // find out why it fails sometimes ...
             // assertEquals(updatedSettings.pushEnabled(), settings.getEnablePush());
-            assertEquals(updatedSettings.maxHeaderListSize(), (Integer)(int)settings.getMaxHeaderListSize());
-            assertEquals((int)updatedSettings.maxFrameSize(), settings.getMaxFrameSize());
-            assertEquals((int)updatedSettings.initialWindowSize(), settings.getInitialWindowSize());
+            assertEquals(updatedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals(updatedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
+            assertEquals(updatedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
             // find out why it fails sometimes ...
             // assertEquals(Math.min(updatedSettings.maxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
-            assertEquals((long) updatedSettings.headerTableSize(), settings.getHeaderTableSize());
+            assertEquals(updatedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
             assertEquals(updatedSettings.get('\u0007'), settings.get(7));
             complete();
             break;
@@ -136,11 +131,11 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(clientOptions.setHttp2Settings(HttpUtils.toVertxSettings(initialSettings)));
+    client = vertx.createHttpClient(clientOptions.setInitialSettings(initialSettings));
     client.get(4043, "localhost", "/somepath", resp -> {
       complete();
     }).connectionHandler(conn -> {
-      conn.updateSettings(HttpUtils.toVertxSettings(updatedSettings), ar -> {
+      conn.updateSettings(updatedSettings, ar -> {
         end.complete();
       });
     }).end();
@@ -150,14 +145,14 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testServerSettings() throws Exception {
     waitFor(2);
-    Http2Settings expectedSettings = randomSettings();
-    expectedSettings.headerTableSize((int)io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
+    io.vertx.core.http.Http2Settings expectedSettings = TestUtils.randomHttp2Settings();
+    expectedSettings.setHeaderTableSize((int)io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE);
     server.close();
     server = vertx.createHttpServer(serverOptions);
     Context otherContext = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
       otherContext.runOnContext(v -> {
-        conn.updateSettings(HttpUtils.toVertxSettings(expectedSettings));
+        conn.updateSettings(expectedSettings);
       });
     });
     server.requestHandler(req -> {
@@ -174,11 +169,11 @@ public class Http2ClientTest extends Http2TestBase {
             // Initial settings
             break;
           case 1:
-            assertEquals(expectedSettings.maxHeaderListSize(), (Integer)(int)settings.getMaxHeaderListSize());
-            assertEquals((int)expectedSettings.maxFrameSize(), settings.getMaxFrameSize());
-            assertEquals((int)expectedSettings.initialWindowSize(), settings.getInitialWindowSize());
-            assertEquals(expectedSettings.maxConcurrentStreams(), (Long)(long)settings.getMaxConcurrentStreams());
-            assertEquals((long)expectedSettings.headerTableSize(), settings.getHeaderTableSize());
+            assertEquals(expectedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
+            assertEquals(expectedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
+            assertEquals(expectedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
+            assertEquals(expectedSettings.getMaxConcurrentStreams(), settings.getMaxConcurrentStreams());
+            assertEquals(expectedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
             assertEquals(expectedSettings.get('\u0007'), settings.get(7));
             complete();
             break;
@@ -437,7 +432,7 @@ public class Http2ClientTest extends Http2TestBase {
     String expected = TestUtils.randomAlphaString(100);
     if (max != null) {
       server.close();
-      server = vertx.createHttpServer(serverOptions.setHttp2Settings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10L)));
+      server = vertx.createHttpServer(serverOptions.setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10L)));
     }
     server.requestHandler(req -> {
       req.response().end(expected);
@@ -676,7 +671,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(clientOptions.setHttp2Settings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(0L)));
+    client = vertx.createHttpClient(clientOptions.setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(0L)));
     HttpClientRequest req = client.get(4043, "localhost", "/somepath", resp -> {
       fail();
     });
@@ -1250,19 +1245,24 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testRejectUpgradeToClearText() throws Exception {
-    server.close();
-    server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false).setEnabledProtocols(Collections.singletonList(HttpVersion.HTTP_1_1)));
-    server.requestHandler(req -> {
-      assertEquals(HttpVersion.HTTP_1_1, req.version());
-      req.response().end();
-    });
-    startServer();
-    client.close();
-    client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
-    client.get(4043, "localhost", "/somepath", resp -> {
-      assertEquals(HttpVersion.HTTP_1_1, resp.version());
-      testComplete();
-    }).exceptionHandler(this::fail).end();
-    await();
+    System.setProperty("vertx.disableH2c", "true");
+    try {
+      server.close();
+      server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false));
+      server.requestHandler(req -> {
+        assertEquals(HttpVersion.HTTP_1_1, req.version());
+        req.response().end();
+      });
+      startServer();
+      client.close();
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
+      client.get(4043, "localhost", "/somepath", resp -> {
+        assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        testComplete();
+      }).exceptionHandler(this::fail).end();
+      await();
+    } finally {
+      System.clearProperty("vertx.disableH2C");
+    }
   }
 }

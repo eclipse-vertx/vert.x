@@ -16,7 +16,9 @@
 
 package io.vertx.test.core;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Handler;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -63,4 +65,5 @@ public class HttpTestBase extends VertxTestBase {
 
   private static final Handler noOp = e -> {
   };
+
 }

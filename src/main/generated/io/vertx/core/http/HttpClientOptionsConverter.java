@@ -36,8 +36,8 @@ public class HttpClientOptionsConverter {
     if (json.getValue("defaultPort") instanceof Number) {
       obj.setDefaultPort(((Number)json.getValue("defaultPort")).intValue());
     }
-    if (json.getValue("http2Settings") instanceof JsonObject) {
-      obj.setHttp2Settings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("http2Settings")));
+    if (json.getValue("initialSettings") instanceof JsonObject) {
+      obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
     }
     if (json.getValue("keepAlive") instanceof Boolean) {
       obj.setKeepAlive((Boolean)json.getValue("keepAlive"));
@@ -76,8 +76,8 @@ public class HttpClientOptionsConverter {
       json.put("defaultHost", obj.getDefaultHost());
     }
     json.put("defaultPort", obj.getDefaultPort());
-    if (obj.getHttp2Settings() != null) {
-      json.put("http2Settings", obj.getHttp2Settings().toJson());
+    if (obj.getInitialSettings() != null) {
+      json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("keepAlive", obj.isKeepAlive());
     json.put("maxChunkSize", obj.getMaxChunkSize());
