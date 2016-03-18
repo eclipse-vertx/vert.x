@@ -102,16 +102,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    VertxHttp2Stream stream = streams.get(streamId);
-    stream.handleData(Buffer.buffer(data.copy()));
-    if (endOfStream) {
-      stream.handleEnd();
-    }
-    return 0;
-  }
-
-  @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     throw new UnsupportedOperationException("todo");
   }
