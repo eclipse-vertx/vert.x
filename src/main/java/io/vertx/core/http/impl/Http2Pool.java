@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.impl.ContextImpl;
 
 import java.util.Map;
@@ -77,6 +78,10 @@ class Http2Pool extends ConnectionManager.Pool {
       }
       Http2ClientConnection conn = handler.connection;
       connection = conn;
+      int idleTimeout = client.getOptions().getIdleTimeout();
+      if (idleTimeout > 0) {
+        p.addLast("idle", new IdleStateHandler(0, 0, idleTimeout));
+      }
       p.addLast(handler);
       conn.streamCount++;
       waiter.handleConnection(conn); // Should make same tests than in deliverRequest

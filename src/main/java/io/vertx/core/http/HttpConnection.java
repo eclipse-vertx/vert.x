@@ -37,7 +37,6 @@ import io.vertx.core.buffer.Buffer;
  * - metrics
  * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
  * - netSocket() sendFile
- * - handle idle connection
  * - OpenSSL integration
  * - run HttpTest with HTTP2
  * - handle data frame padding

@@ -1265,4 +1265,33 @@ public class Http2ClientTest extends Http2TestBase {
       System.clearProperty("vertx.disableH2C");
     }
   }
+
+  @Test
+  public void testIdleTimeout() throws Exception {
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.connection().closeHandler(v -> {
+        complete();
+      });
+      req.response().setChunked(true).write("somedata");
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
+    HttpClientRequest req = client.get(4043, "localhost", "/somepath", resp -> {
+      resp.exceptionHandler(err -> {
+        complete();
+      });
+    });
+    req.exceptionHandler(err -> {
+      complete();
+    });
+    req.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        complete();
+      });
+    });
+    req.end();
+    await();
+  }
 }

@@ -24,6 +24,8 @@ import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -84,5 +86,16 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     });
     // Default behavior reset stream
     super.onStreamError(ctx, cause, http2Ex);
+  }
+
+  @Override
+  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    try {
+      super.userEventTriggered(ctx, evt);
+    } finally {
+      if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
+        ctx.close();
+      }
+    }
   }
 }

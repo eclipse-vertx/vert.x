@@ -220,7 +220,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                       } else {
                         HandlerHolder<HttpHandler> holder = reqHandlerManager.chooseHandler(ch.eventLoop());
                         VertxHttp2ConnectionHandler<Http2ServerConnection> handler = createHttp2Handler(holder, ch);
-                        pipeline.addLast("handler", handler);
+                        configureHttp2(pipeline, handler);
                         if (holder.handler.connectionHandler != null) {
                           holder.context.executeFromIO(() -> {
                             holder.handler.connectionHandler.handle(handler.connection);
@@ -235,26 +235,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               } else {
                 configureHttp1(pipeline);
               }
-            }
-
-            public void configureHttp1(ChannelPipeline pipeline) {
-              if (USE_FLASH_POLICY_HANDLER) {
-                pipeline.addLast("flashpolicy", new FlashPolicyHandler());
-              }
-              pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
-                  , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
-              pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
-              if (options.isCompressionSupported()) {
-                pipeline.addLast("deflater", new HttpChunkContentCompressor());
-              }
-              if (sslHelper.isSSL() || options.isCompressionSupported()) {
-                // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
-                pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-              }
-              if (options.getIdleTimeout() > 0) {
-                pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-              }
-              pipeline.addLast("handler", new ServerHandler());
             }
         });
 
@@ -309,7 +289,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return this;
   }
 
-  private VertxHttp2ConnectionHandler createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
+  private VertxHttp2ConnectionHandler<Http2ServerConnection> createHttp2Handler(HandlerHolder<HttpHandler> holder, Channel ch) {
     return new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
         .connectionMap(connectionMap2)
         .server(true)
@@ -317,6 +297,33 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         .initialSettings(options.getInitialSettings())
         .connectionFactory(connHandler -> new Http2ServerConnection(ch, holder.context, serverOrigin, connHandler, options, holder.handler.requesthHandler))
         .build();
+  }
+
+  private void configureHttp1(ChannelPipeline pipeline) {
+    if (USE_FLASH_POLICY_HANDLER) {
+      pipeline.addLast("flashpolicy", new FlashPolicyHandler());
+    }
+    pipeline.addLast("httpDecoder", new HttpRequestDecoder(options.getMaxInitialLineLength()
+        , options.getMaxHeaderSize(), options.getMaxChunkSize(), false));
+    pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
+    if (options.isCompressionSupported()) {
+      pipeline.addLast("deflater", new HttpChunkContentCompressor());
+    }
+    if (sslHelper.isSSL() || options.isCompressionSupported()) {
+      // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
+      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+    }
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+    }
+    pipeline.addLast("handler", new ServerHandler());
+  }
+
+  public void configureHttp2(ChannelPipeline pipeline, VertxHttp2ConnectionHandler<Http2ServerConnection> handler) {
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+    }
+    pipeline.addLast("handler", handler);
   }
 
   @Override
@@ -630,9 +637,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                   pipeline.remove("httpEncoder");
                 });
                 try {
-                  VertxHttp2ConnectionHandler handler = createHttp2Handler(reqHandler, ch);
+                  VertxHttp2ConnectionHandler<Http2ServerConnection> handler = createHttp2Handler(reqHandler, ch);
                   handler.onHttpServerUpgrade(settings);
-                  pipeline.addLast(handler);
+                  configureHttp2(pipeline, handler);
                   return;
                 } catch (Http2Exception ignore) {
                 }

@@ -76,6 +76,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
@@ -2299,6 +2300,42 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       testComplete();
     }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testIdleTimeout() throws Exception {
+    waitFor(4);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setIdleTimeout(2));
+    server.requestHandler(req -> {
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof ClosedChannelException);
+        complete();
+      });
+      req.response().exceptionHandler(err -> {
+        assertTrue(err instanceof ClosedChannelException);
+        complete();
+      });
+      req.connection().closeHandler(v -> {
+        complete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    fut.channel().closeFuture().addListener(v1 -> {
+      vertx.runOnContext(v2 -> {
+        complete();
+      });
+    });
     await();
   }
 }
