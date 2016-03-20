@@ -41,7 +41,6 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.util.ArrayDeque;
@@ -92,7 +91,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   NetSocket toNetSocket(VertxHttp2Stream stream) {
-    VertxHttp2NetSocket rempl = new VertxHttp2NetSocket(stream.vertx, stream.context, stream.handlerContext, this, stream.encoder, stream.decoder, stream.stream);
+    VertxHttp2NetSocket<Http2ConnectionBase> rempl = new VertxHttp2NetSocket<>(this, stream.stream);
     streams.put(stream.stream.id(), rempl);
     return rempl;
   }

@@ -26,7 +26,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
@@ -44,7 +43,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -60,7 +58,7 @@ import java.nio.channels.ClosedChannelException;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServerRequest {
+public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnection> implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
@@ -90,13 +88,11 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream implements HttpServ
   public Http2ServerRequestImpl(
       HttpServerMetrics metrics,
       Vertx vertx,
-      ContextImpl context,
       Http2ServerConnection conn,
       String serverOrigin,
       Http2Stream stream,
       ChannelHandlerContext handlerContext,
       Http2ConnectionEncoder encoder,
-      Http2ConnectionDecoder decoder,
       Http2Headers headers,
       String contentEncoding) {
     super(conn, stream);

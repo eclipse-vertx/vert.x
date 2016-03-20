@@ -17,18 +17,13 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -39,7 +34,7 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
+class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Stream<C> implements NetSocket {
 
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
@@ -47,8 +42,7 @@ class VertxHttp2NetSocket extends VertxHttp2Stream implements NetSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
 
-  public VertxHttp2NetSocket(Vertx vertx, ContextImpl context, ChannelHandlerContext handlerContext, Http2ConnectionBase connection,
-                             Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder, Http2Stream stream) {
+  public VertxHttp2NetSocket(C connection, Http2Stream stream) {
     super(connection, stream);
   }
 

@@ -33,11 +33,11 @@ import java.util.ArrayDeque;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class VertxHttp2Stream {
+abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   private static final Object END = new Object(); // Marker
 
-  protected final Http2ConnectionBase conn;
+  protected final C conn;
   protected final Vertx vertx;
   protected final ContextImpl context;
   protected final Channel channel;
@@ -48,7 +48,7 @@ abstract class VertxHttp2Stream {
   private boolean paused;
   private ArrayDeque<Object> pending = new ArrayDeque<>(8);
 
-  VertxHttp2Stream(Http2ConnectionBase conn, Http2Stream stream) {
+  VertxHttp2Stream(C conn, Http2Stream stream) {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.handlerContext = conn.handlerContext;

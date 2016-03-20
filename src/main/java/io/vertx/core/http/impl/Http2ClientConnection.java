@@ -135,10 +135,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     stream.handlePushPromise(promisedReq);
   }
 
-  static class Http2ClientStream extends VertxHttp2Stream implements HttpClientStream {
+  static class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> implements HttpClientStream {
 
-    private final Http2ClientConnection conn;
-    private final Http2Connection connection;
     private HttpClientRequestBase req;
     private HttpClientResponseImpl resp;
     private boolean ended;
@@ -149,8 +147,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase req, Http2Stream stream) throws Http2Exception {
       super(conn, stream);
-      this.conn = conn;
-      this.connection = conn.handler.connection();
       this.req = req;
     }
 
@@ -329,7 +325,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
     @Override
     public boolean isNotWritable() {
-      return !connection.remote().flowController().isWritable(stream);
+      return !conn.handler.connection().remote().flowController().isWritable(stream);
     }
     @Override
     public void beginRequest(HttpClientRequestImpl request) {

@@ -132,7 +132,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2ServerRequestImpl req = new Http2ServerRequestImpl(metrics, context.owner(), context, this, serverOrigin, conn.stream(streamId), ctx, handler.encoder(), handler.decoder(), headers, contentEncoding);
+      Http2ServerRequestImpl req = new Http2ServerRequestImpl(metrics, context.owner(), this, serverOrigin, conn.stream(streamId), ctx, handler.encoder(), headers, contentEncoding);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -172,7 +172,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     super.onSettingsRead(ctx, settings);
   }
 
-  private class Push extends VertxHttp2Stream {
+  private class Push extends VertxHttp2Stream<Http2ServerConnection> {
 
     private final String contentEncoding;
     private Http2ServerResponseImpl response;
