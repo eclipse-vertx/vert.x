@@ -78,7 +78,7 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
         {KeyCert.PEM, Trust.JKS, false, false, false, Collections.emptyList()},
         {KeyCert.PKCS12_CA, Trust.JKS_CA, false, false, false, Collections.emptyList()},
         {KeyCert.PEM_CA, Trust.PKCS12_CA, false, false, false, Collections.emptyList()},
-        {KeyCert.JKS, Trust.PEM_CA, false, true, false, Arrays.asList(HttpTest.ENABLED_CIPHER_SUITES)},
+        {KeyCert.JKS, Trust.PEM_CA, false, true, false, Arrays.asList(Http1xTest.ENABLED_CIPHER_SUITES)},
     });
   }
 

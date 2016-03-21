@@ -61,7 +61,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private final boolean push;
   private final Object metric;
   private final String host;
-  private Http2Headers headers = new DefaultHttp2Headers().status(OK.codeAsText());
+  private Http2Headers headers = new DefaultHttp2Headers();
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
   private Http2HeadersAdaptor trailedMap;
@@ -162,7 +162,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     checkHeadWritten();
     this.statusCode = statusCode;
-    headers.status("" + statusCode);
     return this;
   }
 
@@ -359,6 +358,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         headersEndHandler.handle(null);
       }
       headWritten = true;
+      headers.status(Integer.toString(statusCode));
       encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
       if (end) {
         ctx.flush();
@@ -376,12 +376,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     int len = chunk.readableBytes();
     boolean empty = len == 0;
-    boolean sent = checkSendHeaders(empty && end);
+    boolean sent = checkSendHeaders(end && empty && trailers == null);
     if (!empty || (!sent && end)) {
       stream_.writeData(chunk, end && trailers == null);
       bytesWritten += len;
     }
-    if (trailers != null && end) {
+    if (end && trailers != null) {
       encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
     }
     if (end && bodyEndHandler != null) {
@@ -482,8 +482,14 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
 
     long contentLength = Math.min(length, file.length() - offset);
-    if (headers.get("content-length") == null) {
-      putHeader("content-length", String.valueOf(contentLength));
+    if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+      putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+    }
+    if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+      String contentType = MimeMapping.getMimeTypeForFilename(filename);
+      if (contentType != null) {
+        putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
+      }
     }
     checkSendHeaders(false);
 
@@ -507,7 +513,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void close() {
-    throw new UnsupportedOperationException();
+    connection.close();
   }
 
   @Override

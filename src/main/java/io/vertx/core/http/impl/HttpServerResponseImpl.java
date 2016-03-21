@@ -454,13 +454,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
       }
       if (!contentTypeSet()) {
-        int li = filename.lastIndexOf('.');
-        if (li != -1 && li != filename.length() - 1) {
-          String ext = filename.substring(li + 1, filename.length());
-          String contentType = MimeMapping.getMimeTypeForExtension(ext);
-          if (contentType != null) {
-            putHeader(HttpHeaders.CONTENT_TYPE, contentType);
-          }
+        String contentType = MimeMapping.getMimeTypeForFilename(filename);
+        if (contentType != null) {
+          putHeader(HttpHeaders.CONTENT_TYPE, contentType);
         }
       }
       prepareHeaders();

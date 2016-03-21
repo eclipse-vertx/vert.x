@@ -28,23 +28,31 @@ import io.vertx.core.net.JksOptions;
  */
 public class Http2TestBase extends HttpTestBase {
 
+  static HttpServerOptions createHttp2ServerOptions(int port, String host) {
+    return new HttpServerOptions()
+        .setPort(port)
+        .setHost(host)
+        .setUseAlpn(true)
+        .setSsl(true)
+        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
+        .setKeyStoreOptions((JksOptions) getServerCertOptions(KeyCert.JKS));
+  };
+
+  static HttpClientOptions createHttp2ClientOptions() {
+    return new HttpClientOptions().
+        setUseAlpn(true).
+        setTrustStoreOptions((JksOptions) getClientTrustOptions(Trust.JKS)).
+        setProtocolVersion(HttpVersion.HTTP_2);
+  }
+
   protected HttpServerOptions serverOptions;
   protected HttpClientOptions clientOptions;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    serverOptions = new HttpServerOptions()
-        .setPort(DEFAULT_HTTPS_PORT)
-        .setHost(DEFAULT_HTTP_HOST)
-        .setUseAlpn(true)
-        .setSsl(true)
-        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setKeyStoreOptions((JksOptions) getServerCertOptions(KeyCert.JKS));
-    clientOptions = new HttpClientOptions().
-        setUseAlpn(true).
-        setTrustStoreOptions((JksOptions) getClientTrustOptions(Trust.JKS)).
-        setProtocolVersion(HttpVersion.HTTP_2);
+    serverOptions =  createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    clientOptions = createHttp2ClientOptions();
     server = vertx.createHttpServer(serverOptions);
   }
 

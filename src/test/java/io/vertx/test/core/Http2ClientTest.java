@@ -895,7 +895,7 @@ public class Http2ClientTest extends Http2TestBase {
           if (err instanceof Http2Exception.StreamException) {
             complete();
           }
-        }).end();
+        }).sendHead();
       });
       await();
     } finally {
@@ -937,7 +937,7 @@ public class Http2ClientTest extends Http2TestBase {
           if (err instanceof Http2Exception) {
             complete();
           }
-        }).end();
+        }).sendHead();
       });
       await();
     } finally {
@@ -1280,18 +1280,21 @@ public class Http2ClientTest extends Http2TestBase {
     client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       resp.exceptionHandler(err -> {
+        System.out.println("got resp timeout");
         complete();
       });
     });
     req.exceptionHandler(err -> {
+      System.out.println("got req timeout");
       complete();
     });
     req.connectionHandler(conn -> {
       conn.closeHandler(v -> {
+        System.out.println("got close");
         complete();
       });
     });
-    req.end();
+    req.sendHead();
     await();
   }
 }

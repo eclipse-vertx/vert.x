@@ -431,12 +431,12 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public ServerWebSocket upgrade() {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException("HTTP/2 request cannot be upgraded to a websocket");
   }
 
   @Override
   public boolean isEnded() {
-    throw new UnsupportedOperationException();
+    return ended;
   }
 
   @Override

@@ -35,7 +35,6 @@ import io.vertx.core.buffer.Buffer;
  * - add rawMethod
  * - byte distribution algorithm configurability (options ? connection ?)
  * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
- * - run HttpTest with HTTP2
  * - handle data frame padding
  * - documentation
  * - examples

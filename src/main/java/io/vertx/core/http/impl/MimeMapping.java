@@ -1015,4 +1015,12 @@ public class MimeMapping {
   public static String getMimeTypeForExtension(String ext) {
     return m.get(ext);
   }
+  public static String getMimeTypeForFilename(String filename) {
+    int li = filename.lastIndexOf('.');
+    if (li != -1 && li != filename.length() - 1) {
+      String ext = filename.substring(li + 1, filename.length());
+      return MimeMapping.getMimeTypeForExtension(ext);
+    }
+    return null;
+  }
 }

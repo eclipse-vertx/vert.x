@@ -137,17 +137,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   static class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> implements HttpClientStream {
 
-    private HttpClientRequestBase req;
-    private HttpClientResponseImpl resp;
-    private boolean ended;
+    private HttpClientRequestBase request;
+    private HttpClientResponseImpl response;
+    private boolean requestEnded;
+    private boolean responseEnded;
 
     public Http2ClientStream(Http2ClientConnection conn, Http2Stream stream) throws Http2Exception {
       this(conn, null, stream);
     }
 
-    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase req, Http2Stream stream) throws Http2Exception {
+    public Http2ClientStream(Http2ClientConnection conn, HttpClientRequestBase request, Http2Stream stream) throws Http2Exception {
       super(conn, stream);
-      this.req = req;
+      this.request = request;
     }
 
     @Override
@@ -158,30 +159,28 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void callEnd() {
       if (conn.metrics.isEnabled()) {
-        HttpClientRequestBase req = this.req;
-        if (req.exceptionOccurred) {
-          conn.metrics.requestReset(req.metric());
+        if (request.exceptionOccurred) {
+          conn.metrics.requestReset(request.metric());
         } else {
-          conn.metrics.responseEnd(req.metric(), resp);
+          conn.metrics.responseEnd(request.metric(), response);
         }
       }
-      ended = true;
+      responseEnded = true;
       // Should use a shared immutable object for CaseInsensitiveHeaders ?
-      resp.handleEnd(null, new CaseInsensitiveHeaders());
+      response.handleEnd(null, new CaseInsensitiveHeaders());
     }
 
     @Override
     void callHandler(Buffer buf) {
-      resp.handleChunk(buf);
+      response.handleChunk(buf);
     }
 
     @Override
     void callReset(long errorCode) {
-      if (!ended) {
-        ended = true;
+      if (!responseEnded) {
+        responseEnded = true;
         if (conn.metrics.isEnabled()) {
-          HttpClientRequestBase req = this.req;
-          conn.metrics.requestReset(req.metric());
+          conn.metrics.requestReset(request.metric());
         }
         handleException(new StreamResetException(errorCode));
       }
@@ -189,11 +188,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleClose() {
-      if (!ended) {
-        ended = true;
+      if (!responseEnded) {
+        responseEnded = true;
         if (conn.metrics.isEnabled()) {
-          HttpClientRequestBase req = this.req;
-          conn.metrics.requestReset(req.metric());
+          conn.metrics.requestReset(request.metric());
         }
         handleException(new VertxException("Connection was closed")); // Put that in utility class
       }
@@ -201,61 +199,64 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void handleInterestedOpsChanged() {
-      if (req instanceof HttpClientRequestImpl && !isNotWritable()) {
+      if (request instanceof HttpClientRequestImpl && !isNotWritable()) {
         if (!isNotWritable()) {
-          ((HttpClientRequestImpl)req).handleDrained();
+          ((HttpClientRequestImpl) request).handleDrained();
         }
       }
     }
 
     @Override
     void handleUnknownFrame(int type, int flags, Buffer buff) {
-      resp.handleUnknowFrame(new HttpFrameImpl(type, flags, buff));
+      response.handleUnknowFrame(new HttpFrameImpl(type, flags, buff));
     }
 
     void handleHeaders(Http2Headers headers, boolean end) {
-      if (resp == null || resp.statusCode() == 100) {
+      if (response == null || response.statusCode() == 100) {
         int status;
         String statusMessage;
         try {
           status = Integer.parseInt(headers.status().toString());
           statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
         } catch (Exception e) {
+          e.printStackTrace();
           handleException(e);
           encoder.writeRstStream(handlerContext, stream.id(), 0x01 /* PROTOCOL_ERROR */, handlerContext.newPromise());
           channel.flush();
           return;
         }
-        resp = new HttpClientResponseImpl(
-            req,
+        response = new HttpClientResponseImpl(
+            request,
             HttpVersion.HTTP_2,
             this,
             status,
             statusMessage,
             new Http2HeadersAdaptor(headers)
         );
-        req.handleResponse(resp);
+        request.handleResponse(response);
         if (end) {
           handleEnd();
         }
       } else if (end) {
-        resp.handleEnd(null, new Http2HeadersAdaptor(headers));
+        response.handleEnd(null, new Http2HeadersAdaptor(headers));
       }
     }
 
     void handleException(Throwable exception) {
-      context.executeFromIO(() -> {
-        req.handleException(exception);
-      });
-      if (resp != null) {
+      if (!requestEnded || response == null) {
         context.executeFromIO(() -> {
-          resp.handleException(exception);
+          request.handleException(exception);
+        });
+      }
+      if (response != null) {
+        context.executeFromIO(() -> {
+          response.handleException(exception);
         });
       }
     }
 
     void handlePushPromise(HttpClientRequestBase promised) throws Http2Exception {
-      ((HttpClientRequestImpl)req).handlePush(promised);
+      ((HttpClientRequestImpl) request).handlePush(promised);
     }
 
     @Override
@@ -291,7 +292,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
       if (conn.metrics.isEnabled()) {
-        ((HttpClientRequestImpl)req).metric(conn.metrics.requestBegin(conn.metric, conn.localAddress(), conn.remoteAddress(), req));
+        request.metric(conn.metrics.requestBegin(conn.metric, conn.localAddress(), conn.remoteAddress(), request));
       }
       encoder.writeHeaders(handlerContext, stream.id(), h, 0, end && content == null, handlerContext.newPromise());
       if (content != null) {
@@ -323,17 +324,22 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public void doSetWriteQueueMaxSize(int size) {
     }
+
     @Override
     public boolean isNotWritable() {
       return !conn.handler.connection().remote().flowController().isWritable(stream);
     }
+
     @Override
     public void beginRequest(HttpClientRequestImpl request) {
-      req = request;
+      this.request = request;
     }
+
     @Override
     public void endRequest() {
+      requestEnded = true;
     }
+
     @Override
     public void reset(long code) {
       encoder.writeRstStream(handlerContext, stream.id(), code, handlerContext.newPromise());
