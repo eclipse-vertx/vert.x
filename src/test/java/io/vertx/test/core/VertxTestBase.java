@@ -132,7 +132,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
 
-  protected void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
+  protected static void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
     if (options instanceof JksOptions) {
       sslOptions.setKeyStoreOptions((JksOptions) options);
     } else if (options instanceof PfxOptions) {
@@ -142,7 +142,7 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected void setOptions(TCPSSLOptions sslOptions, TrustOptions options) {
+  protected static void setOptions(TCPSSLOptions sslOptions, TrustOptions options) {
     if (options instanceof JksOptions) {
       sslOptions.setTrustStoreOptions((JksOptions) options);
     } else if (options instanceof PfxOptions) {
@@ -152,7 +152,7 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected TrustOptions getClientTrustOptions(Trust trust) {
+  protected static TrustOptions getClientTrustOptions(Trust trust) {
     switch (trust) {
       case JKS:
         return new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble");
@@ -171,7 +171,7 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected KeyCertOptions getClientCertOptions(KeyCert cert) {
+  protected static KeyCertOptions getClientCertOptions(KeyCert cert) {
     switch (cert) {
       case JKS:
         return new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble");
@@ -190,7 +190,7 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected TrustOptions getServerTrustOptions(Trust trust) {
+  protected static TrustOptions getServerTrustOptions(Trust trust) {
     switch (trust) {
       case JKS:
         return new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble");
@@ -209,7 +209,7 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected KeyCertOptions getServerCertOptions(KeyCert cert) {
+  protected static KeyCertOptions getServerCertOptions(KeyCert cert) {
     switch (cert) {
       case JKS:
         return new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble");

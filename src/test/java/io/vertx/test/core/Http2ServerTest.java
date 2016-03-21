@@ -45,10 +45,8 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -2397,15 +2395,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextWorkerContext() throws Exception {
-    AtomicReference<Context> contextRef = new AtomicReference<>();
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        contextRef.set(context);
-      }
-    }, new DeploymentOptions().setWorker(true));
-    waitUntil(() -> contextRef.get() != null);
-    testUpgradeFailure(contextRef.get(), client -> client.get(4043, "localhost", "/somepath")
+    testUpgradeFailure(createWorker(), client -> client.get(4043, "localhost", "/somepath")
         .putHeader("Upgrade", "h2c")
         .putHeader("Connection", "Upgrade,HTTP2-Settings")
         .putHeader("HTTP2-Settings", ""));
@@ -2468,19 +2458,11 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testFallbackOnHttp1ForWorkerContext() throws Exception {
-    AtomicReference<Context> contextRef = new AtomicReference<>();
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        contextRef.set(context);
-      }
-    }, new DeploymentOptions().setWorker(true));
-    waitUntil(() -> contextRef.get() != null);
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
     });
-    startServer(contextRef.get());
+    startServer(createWorker());
     client = vertx.createHttpClient(clientOptions);
     client.get(4043, "localhost", "/somepath", resp -> {
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
