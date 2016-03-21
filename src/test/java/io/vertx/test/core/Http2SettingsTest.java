@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2Test extends HttpTestBase {
+public class Http2SettingsTest extends HttpTestBase {
 
   long[] min = { 0, 0, 0, 0, 0x4000, 0 };
   long[] max = { Integer.MAX_VALUE, 1, 0xFFFFFFFFL, Integer.MAX_VALUE, 0xFFFFFF, Integer.MAX_VALUE };
