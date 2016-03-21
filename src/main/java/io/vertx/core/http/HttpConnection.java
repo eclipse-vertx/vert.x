@@ -36,7 +36,6 @@ import io.vertx.core.buffer.Buffer;
  * - byte distribution algorithm configurability (options ? connection ?)
  * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
  * - netSocket() sendFile
- * - OpenSSL integration
  * - run HttpTest with HTTP2
  * - handle data frame padding
  * - documentation
@@ -48,6 +47,9 @@ import io.vertx.core.buffer.Buffer;
  * HttpClient:
  * - test executeFromIO
  * - HttpConnection test
+ *
+ * todo later for 3.3:
+ * - OpenSSL integration
  *
  * not yet in scope:
  * - stream priority
