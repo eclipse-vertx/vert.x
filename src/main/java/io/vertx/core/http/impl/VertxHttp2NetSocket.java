@@ -215,7 +215,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
           resultHandler.handle(Future.succeededFuture());
         });
       }
-    }, this, contentLength);
+    }, this, offset, contentLength);
     drainHandler(fileChannel.drainHandler);
     channel.eventLoop().register(fileChannel);
     fileChannel.pipeline().fireUserEventTriggered(raf);

@@ -497,7 +497,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           resultHandler.handle(Future.succeededFuture());
         });
       }
-    }, stream_, contentLength);
+    }, stream_, offset, contentLength);
     drainHandler(fileChannel.drainHandler);
     ctx.channel().eventLoop().register(fileChannel);
     fileChannel.pipeline().fireUserEventTriggered(raf);

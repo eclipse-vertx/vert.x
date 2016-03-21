@@ -34,6 +34,7 @@ import io.netty.channel.DefaultChannelConfig;
 import io.netty.channel.EventLoop;
 import io.netty.channel.nio.NioEventLoop;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedStream;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -63,6 +64,7 @@ class FileStreamChannel extends AbstractChannel {
   FileStreamChannel(
       Handler<AsyncResult<Long>> resultHandler,
       VertxHttp2Stream stream,
+      long offset,
       long length) {
     super(null, Id.INSTANCE);
 
@@ -75,7 +77,7 @@ class FileStreamChannel extends AbstractChannel {
           @Override
           public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof RandomAccessFile) {
-              ChannelFuture fut = ctx.writeAndFlush(new ChunkedFile((RandomAccessFile) evt));
+              ChannelFuture fut = ctx.writeAndFlush(new ChunkedFile((RandomAccessFile) evt, offset, length, 8192 /* default chunk size */ ));
               fut.addListener(f -> {
                 if (resultHandler != null) {
                   if (f.isSuccess()) {

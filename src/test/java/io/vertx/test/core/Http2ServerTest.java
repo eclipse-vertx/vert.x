@@ -1288,17 +1288,29 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testSendFile() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
+    File tmp = createTempFile(expected);
+    testSendFile(expected, tmp.getAbsolutePath(), 0, expected.length());
+  }
+
+  @Test
+  public void testSendFileRange() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
+    File tmp = createTempFile(expected);
+    int from = 200 * 1000;
+    int to = 700 * 1000;
+    testSendFile(expected.slice(from, to), tmp.getAbsolutePath(), from, to - from);
+  }
+
+  private void testSendFile(Buffer expected, String path, long offset, long length) throws Exception {
     waitFor(2);
-    int len = 1000 * 1000;
-    Buffer expected = TestUtils.randomBuffer(len);
-    File f = createTempFile(expected);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.bodyEndHandler(v -> {
-        assertEquals(resp.bytesWritten(), len);
+        assertEquals(resp.bytesWritten(), length);
         complete();
       });
-      resp.sendFile(f.getAbsolutePath());
+      resp.sendFile(path, offset, length);
     });
     startServer();
     TestClient client = new TestClient();
@@ -1315,7 +1327,7 @@ public class Http2ServerTest extends Http2TestBase {
           buffer.appendBuffer(Buffer.buffer(data.duplicate()));
           if (endOfStream) {
             vertx.runOnContext(v -> {
-              assertEquals("" + len, responseHeaders.get("content-length").toString());
+              assertEquals("" + length, responseHeaders.get("content-length").toString());
               assertEquals(expected, buffer);
               complete();
             });
@@ -2087,11 +2099,24 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testNetSocketSendFile() throws Exception {
-    Buffer expected = TestUtils.randomBuffer(1000 * 1000);
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
     File tmp = createTempFile(expected);
+    testNetSocketSendFile(expected, tmp.getAbsolutePath(), 0, expected.length());
+  }
+
+  @Test
+  public void testNetSocketSendFileRange() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
+    File tmp = createTempFile(expected);
+    int from = 200 * 1000;
+    int to = 700 * 1000;
+    testNetSocketSendFile(expected.slice(from, to), tmp.getAbsolutePath(), from, to - from);
+  }
+
+  private void testNetSocketSendFile(Buffer expected, String path, long offset, long length) throws Exception {
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
-      socket.sendFile(tmp.getAbsolutePath(), ar -> {
+      socket.sendFile(path, offset, length, ar -> {
         assertTrue(ar.succeeded());
         socket.end();
       });
