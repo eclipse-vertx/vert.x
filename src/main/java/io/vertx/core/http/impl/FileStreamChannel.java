@@ -36,7 +36,6 @@ import io.netty.channel.nio.NioEventLoop;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
@@ -60,13 +59,10 @@ class FileStreamChannel extends AbstractChannel {
   private boolean closed;
   private long bytesWritten;
   private final VertxHttp2Stream stream;
-  private final Handler<Long> endHandler;
 
   FileStreamChannel(
-      Context resultCtx,
-      Handler<AsyncResult<Void>> resultHandler,
+      Handler<AsyncResult<Long>> resultHandler,
       VertxHttp2Stream stream,
-      Handler<Long> endHandler,
       long length) {
     super(null, Id.INSTANCE);
 
@@ -82,13 +78,11 @@ class FileStreamChannel extends AbstractChannel {
               ChannelFuture fut = ctx.writeAndFlush(new ChunkedFile((RandomAccessFile) evt));
               fut.addListener(f -> {
                 if (resultHandler != null) {
-                  resultCtx.runOnContext(v -> {
-                    if (f.isSuccess()) {
-                      resultHandler.handle(Future.succeededFuture());
-                    } else {
-                      resultHandler.handle(Future.failedFuture(f.cause()));
-                    }
-                  });
+                  if (f.isSuccess()) {
+                    resultHandler.handle(Future.succeededFuture(bytesWritten));
+                  } else {
+                    resultHandler.handle(Future.failedFuture(f.cause()));
+                  }
                 }
                 fut.addListener(ChannelFutureListener.CLOSE);
               });
@@ -100,7 +94,6 @@ class FileStreamChannel extends AbstractChannel {
 
     this.length = length;
     this.stream = stream;
-    this.endHandler = endHandler;
   }
 
   final Handler<Void> drainHandler = v -> {
@@ -153,18 +146,13 @@ class FileStreamChannel extends AbstractChannel {
 
   @Override
   protected void doWrite(ChannelOutboundBuffer in) throws Exception {
-    // To do : try to gather the chunks in a single write operation ?
     ByteBuf chunk;
     while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null && length > 0) {
       length -= chunk.readableBytes();
       bytesWritten += chunk.readableBytes();
-      boolean end = length == 0;
       stream.writeData(chunk.retain(), false);
       stream.handlerContext.flush();
       in.remove();
-      if (end) {
-        endHandler.handle(bytesWritten);
-      }
     }
   }
 

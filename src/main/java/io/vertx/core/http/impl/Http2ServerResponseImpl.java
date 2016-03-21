@@ -487,10 +487,17 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     checkSendHeaders(false);
 
-    FileStreamChannel channel = new FileStreamChannel(resultCtx, resultHandler, stream_, numOfBytes -> {
-      bytesWritten += numOfBytes;
-      end();
-    }, contentLength);
+    FileStreamChannel channel = new FileStreamChannel(ar -> {
+      if (ar.succeeded()) {
+        bytesWritten += ar.result();
+        end();
+      }
+      if (resultHandler != null) {
+        resultCtx.runOnContext(v -> {
+          resultHandler.handle(Future.succeededFuture());
+        });
+      }
+    }, stream_, contentLength);
     drainHandler(channel.drainHandler);
     ctx.channel().eventLoop().register(channel);
     channel.pipeline().fireUserEventTriggered(raf);
