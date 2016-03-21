@@ -21,6 +21,8 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamResetException;
@@ -29,6 +31,10 @@ import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 
 /**
@@ -171,11 +177,49 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket sendFile(String filename, long offset, long length) {
-    return this;
+    return sendFile(filename, offset, length, null);
   }
 
   @Override
   public NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+
+    Context resultCtx = resultHandler != null ? vertx.getOrCreateContext() : null;
+
+    File file = vertx.resolveFile(filename);
+    if (!file.exists()) {
+      if (resultHandler != null) {
+        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
+      } else {
+        // log.error("File not found: " + filename);
+      }
+      return this;
+    }
+
+    RandomAccessFile raf;
+    try {
+      raf = new RandomAccessFile(file, "r");
+    } catch (IOException e) {
+      if (resultHandler != null) {
+        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
+      } else {
+        //log.error("Failed to send file", e);
+      }
+      return this;
+    }
+
+    long contentLength = Math.min(length, file.length() - offset);
+
+    FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
+      if (resultHandler != null) {
+        resultCtx.runOnContext(v -> {
+          resultHandler.handle(Future.succeededFuture());
+        });
+      }
+    }, this, contentLength);
+    drainHandler(fileChannel.drainHandler);
+    channel.eventLoop().register(fileChannel);
+    fileChannel.pipeline().fireUserEventTriggered(raf);
+
     return this;
   }
 

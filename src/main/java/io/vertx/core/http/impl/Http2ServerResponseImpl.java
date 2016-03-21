@@ -487,7 +487,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
     checkSendHeaders(false);
 
-    FileStreamChannel channel = new FileStreamChannel(ar -> {
+    FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
       if (ar.succeeded()) {
         bytesWritten += ar.result();
         end();
@@ -498,9 +498,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         });
       }
     }, stream_, contentLength);
-    drainHandler(channel.drainHandler);
-    ctx.channel().eventLoop().register(channel);
-    channel.pipeline().fireUserEventTriggered(raf);
+    drainHandler(fileChannel.drainHandler);
+    ctx.channel().eventLoop().register(fileChannel);
+    fileChannel.pipeline().fireUserEventTriggered(raf);
 
     return this;
   }

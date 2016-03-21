@@ -1047,7 +1047,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testConnectNetSocket() throws Exception {
+  public void testNetSocketConnect() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();

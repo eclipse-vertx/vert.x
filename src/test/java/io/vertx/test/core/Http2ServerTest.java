@@ -1277,18 +1277,21 @@ public class Http2ServerTest extends Http2TestBase {
     await();
   }
 
+  private static File createTempFile(Buffer buffer) throws Exception {
+    File f = File.createTempFile("vertx", ".bin");
+    f.deleteOnExit();
+    try(FileOutputStream out = new FileOutputStream(f)) {
+      out.write(buffer.getBytes());
+    }
+    return f;
+  }
+
   @Test
   public void testSendFile() throws Exception {
     waitFor(2);
-    File f = File.createTempFile("vertx", ".stream");
-    f.deleteOnExit();
-    Buffer expected = Buffer.buffer();
     int len = 1000 * 1000;
-    try(FileOutputStream out = new FileOutputStream(f)) {
-      byte[] bytes = TestUtils.randomByteArray(len);
-      expected.appendBytes(bytes);
-      out.write(bytes);
-    }
+    Buffer expected = TestUtils.randomBuffer(len);
+    File f = createTempFile(expected);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.bodyEndHandler(v -> {
@@ -2004,7 +2007,7 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testConnectNetSocket() throws Exception {
+  public void testNetSocketConnect() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
@@ -2076,6 +2079,52 @@ public class Http2ServerTest extends Http2TestBase {
         }
       });
       request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testNetSocketSendFile() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(1000 * 1000);
+    File tmp = createTempFile(expected);
+    server.requestHandler(req -> {
+      NetSocket socket = req.netSocket();
+      socket.sendFile(tmp.getAbsolutePath(), ar -> {
+        assertTrue(ar.succeeded());
+        socket.end();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(4043, "localhost", request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int c = count++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, c);
+            assertEquals("200", headers.status().toString());
+            assertFalse(endStream);
+          });
+        }
+        Buffer received = Buffer.buffer();
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          received.appendBuffer(Buffer.buffer(data.copy()));
+          if (endOfStream) {
+            vertx.runOnContext(v -> {
+              assertEquals(received, expected);
+              testComplete();
+            });
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
     });
     fut.sync();

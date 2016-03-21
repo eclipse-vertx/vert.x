@@ -27,6 +27,7 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxInternal;
 
 import java.util.ArrayDeque;
 
@@ -38,7 +39,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private static final Object END = new Object(); // Marker
 
   protected final C conn;
-  protected final Vertx vertx;
+  protected final VertxInternal vertx;
   protected final ContextImpl context;
   protected final Channel channel;
   protected final ChannelHandlerContext handlerContext;
