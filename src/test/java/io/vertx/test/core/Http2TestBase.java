@@ -16,21 +16,12 @@
 
 package io.vertx.test.core;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.TrustOptions;
-import io.vertx.core.net.impl.KeyStoreHelper;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -44,8 +35,8 @@ public class Http2TestBase extends HttpTestBase {
   public void setUp() throws Exception {
     super.setUp();
     serverOptions = new HttpServerOptions()
-        .setPort(4043)
-        .setHost("localhost")
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
         .setUseAlpn(true)
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark

@@ -16,10 +16,8 @@
 
 package io.vertx.test.core;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -34,6 +32,9 @@ public class HttpTestBase extends VertxTestBase {
 
   public static final String DEFAULT_HTTP_HOST = "localhost";
   public static final int DEFAULT_HTTP_PORT = 8080;
+  public static final String DEFAULT_HTTPS_HOST = "localhost";
+  public static final int DEFAULT_HTTPS_PORT = 4043;
+  public static final String DEFAULT_HTTPS_HOST_AND_PORT = "localhost:4043";
   public static final String DEFAULT_TEST_URI = "some-uri";
 
   protected HttpServer server;
