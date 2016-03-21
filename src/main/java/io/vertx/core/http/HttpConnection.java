@@ -43,7 +43,7 @@ import io.vertx.core.buffer.Buffer;
  * - examples
  *
  * HttpServer:
- * - server synchronization + executeFromIO + test worker server
+ * - server synchronization + executeFromIO
  *
  * HttpClient:
  * - test executeFromIO

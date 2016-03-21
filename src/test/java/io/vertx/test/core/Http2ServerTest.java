@@ -45,7 +45,9 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -175,7 +177,7 @@ public class Http2ServerTest extends Http2TestBase {
         @Override
         protected void initChannel(Channel ch) throws Exception {
           SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true), null, KeyStoreHelper.create((VertxInternal) vertx, getClientTrustOptions(Trust.JKS)));
-          SslHandler sslHandler = sslHelper.createSslHandler((VertxInternal) vertx, true, host, port);
+          SslHandler sslHandler = sslHelper.createSslHandler((VertxInternal) vertx, true, host, port, true);
           ch.pipeline().addLast(sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
             @Override
@@ -2255,7 +2257,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
-    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+    testUpgradeFailure(vertx.getOrCreateContext(), client -> client.get(4043, "localhost", "/somepath")
         .putHeader("Upgrade", "h2c")
         .putHeader("Connection", "Upgrade")
         .putHeader("HTTP2-Settings", ""));
@@ -2263,7 +2265,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextMalformedSettings() throws Exception {
-    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+    testUpgradeFailure(vertx.getOrCreateContext(), client -> client.get(4043, "localhost", "/somepath")
         .putHeader("Upgrade", "h2c")
         .putHeader("Connection", "Upgrade,HTTP2-Settings")
         .putHeader("HTTP2-Settings", "incorrect-settings"));
@@ -2274,7 +2276,7 @@ public class Http2ServerTest extends Http2TestBase {
     Buffer buffer = Buffer.buffer();
     buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
     String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
-    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+    testUpgradeFailure(vertx.getOrCreateContext(), client -> client.get(4043, "localhost", "/somepath")
         .putHeader("Upgrade", "h2c")
         .putHeader("Connection", "Upgrade,HTTP2-Settings")
         .putHeader("HTTP2-Settings", s));
@@ -2282,20 +2284,36 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextMissingSettings() throws Exception {
-    testUpgradeFailure(client -> client.get(4043, "localhost", "/somepath")
+    testUpgradeFailure(vertx.getOrCreateContext(), client -> client.get(4043, "localhost", "/somepath")
         .putHeader("Upgrade", "h2c")
         .putHeader("Connection", "Upgrade,HTTP2-Settings"));
   }
 
-  private void testUpgradeFailure(Function<HttpClient, HttpClientRequest> abc) throws Exception {
+  @Test
+  public void testUpgradeToClearTextWorkerContext() throws Exception {
+    AtomicReference<Context> contextRef = new AtomicReference<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        contextRef.set(context);
+      }
+    }, new DeploymentOptions().setWorker(true));
+    waitUntil(() -> contextRef.get() != null);
+    testUpgradeFailure(contextRef.get(), client -> client.get(4043, "localhost", "/somepath")
+        .putHeader("Upgrade", "h2c")
+        .putHeader("Connection", "Upgrade,HTTP2-Settings")
+        .putHeader("HTTP2-Settings", ""));
+  }
+
+  private void testUpgradeFailure(Context context, Function<HttpClient, HttpClientRequest> doRequest) throws Exception {
     server.close();
     server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false));
     server.requestHandler(req -> {
       fail();
     });
-    startServer();
+    startServer(context);
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
-    abc.apply(client).handler(resp -> {
+    doRequest.apply(client).handler(resp -> {
       assertEquals(400, resp.statusCode());
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       testComplete();
@@ -2339,6 +2357,29 @@ public class Http2ServerTest extends Http2TestBase {
         complete();
       });
     });
+    await();
+  }
+
+  @Test
+  public void testFallbackOnHttp1ForWorkerContext() throws Exception {
+    AtomicReference<Context> contextRef = new AtomicReference<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        contextRef.set(context);
+      }
+    }, new DeploymentOptions().setWorker(true));
+    waitUntil(() -> contextRef.get() != null);
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+    });
+    startServer(contextRef.get());
+    client = vertx.createHttpClient(clientOptions);
+    client.get(4043, "localhost", "/somepath", resp -> {
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      testComplete();
+    }).end();
     await();
   }
 }

@@ -237,10 +237,10 @@ public class ConnectionManager {
         @Override
         protected void initChannel(Channel ch) throws Exception {
           ChannelPipeline pipeline = ch.pipeline();
+          boolean useAlpn = options.isUseAlpn();
+          if (useAlpn) {
 
-          if (options.isUseAlpn()) {
-
-            SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port);
+            SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port, useAlpn);
             ch.pipeline().addLast(sslHandler);
             HttpVersion fallbackVersion = options.getAlpnFallbackProtocolVersion();
             String fallback = fallbackVersion == HttpVersion.HTTP_1_0 ? "http/1.0" : "http/1.1";
@@ -256,7 +256,7 @@ public class ConnectionManager {
             });
           } else {
             if (options.isSsl()) {
-              pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, true, host, port));
+              pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, true, host, port, useAlpn));
             }
             if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
               HttpClientCodec httpCodec = new HttpClientCodec();

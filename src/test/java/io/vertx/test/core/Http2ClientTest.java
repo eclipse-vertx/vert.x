@@ -813,7 +813,7 @@ public class Http2ClientTest extends Http2TestBase {
       @Override
       protected void initChannel(Channel ch) throws Exception {
         SSLHelper sslHelper = new SSLHelper(serverOptions, KeyStoreHelper.create((VertxInternal) vertx, getServerCertOptions(KeyCert.JKS)), null);
-        SslHandler sslHandler = sslHelper.createSslHandler((VertxInternal) vertx, false, "localhost", 4043);
+        SslHandler sslHandler = sslHelper.createSslHandler((VertxInternal) vertx, false, "localhost", 4043, true);
         ch.pipeline().addLast(sslHandler);
         ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
           @Override

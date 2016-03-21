@@ -62,7 +62,6 @@ public class SSLHelper {
   private static final String[] ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
 
   private boolean ssl;
-  private boolean useALPN;
   private KeyStoreHelper keyStoreHelper;
   private KeyStoreHelper trustStoreHelper;
   private boolean trustAll;
@@ -76,7 +75,6 @@ public class SSLHelper {
 
   public SSLHelper(HttpClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
-    this.useALPN = options.isUseAlpn();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.trustAll = options.isTrustAll();
@@ -88,7 +86,6 @@ public class SSLHelper {
 
   public SSLHelper(HttpServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
-    this.useALPN = options.isUseAlpn();
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.clientAuth = options.getClientAuth();
@@ -99,7 +96,6 @@ public class SSLHelper {
 
   public SSLHelper(NetClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
-    this.useALPN = false;
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.trustAll = options.isTrustAll();
@@ -110,7 +106,6 @@ public class SSLHelper {
 
   public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
-    this.useALPN = false;
     this.keyStoreHelper = keyStoreHelper;
     this.trustStoreHelper = trustStoreHelper;
     this.clientAuth = options.getClientAuth();
@@ -121,10 +116,6 @@ public class SSLHelper {
 
   public boolean isSSL() {
     return ssl;
-  }
-
-  public boolean isUseALPN() {
-    return useALPN;
   }
 
   public ClientAuth getClientAuth() {
@@ -274,6 +265,10 @@ public class SSLHelper {
   }
 
   public SslHandler createSslHandler(VertxInternal vertx, boolean client, String host, int port) {
+    return createSslHandler(vertx, client, host, port, false);
+  }
+
+  public SslHandler createSslHandler(VertxInternal vertx, boolean client, String host, int port, boolean useALPN) {
     SSLEngine engine = getContext(vertx).createSSLEngine(host, port);
     if (useALPN) {
       JdkAlpnApplicationProtocolNegotiator apn = new JdkAlpnApplicationProtocolNegotiator(true, "h2", "http/1.1");
@@ -283,6 +278,10 @@ public class SSLHelper {
   }
 
   public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
+    return createSslHandler(vertx, client, false);
+  }
+
+  public SslHandler createSslHandler(VertxInternal vertx, boolean client, boolean useALPN) {
     SSLEngine engine = getContext(vertx).createSSLEngine();
     if (useALPN) {
       JdkAlpnApplicationProtocolNegotiator apn = new JdkAlpnApplicationProtocolNegotiator(true, "h2", "http/1.1");
@@ -290,5 +289,4 @@ public class SSLHelper {
     }
     return createHandler(engine, client);
   }
-
 }
