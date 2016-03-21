@@ -60,6 +60,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private final Http2Stream stream;
   private final boolean push;
   private final Object metric;
+  private final String host;
   private Http2Headers headers = new DefaultHttp2Headers().status(OK.codeAsText());
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
@@ -76,7 +77,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> closeHandler;
   private long bytesWritten;
 
-  public Http2ServerResponseImpl(HttpServerMetrics metrics, Object metric, VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
+  public Http2ServerResponseImpl(HttpServerMetrics metrics, Object metric, VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding, String host) {
+
+    if (host == null) {
+
+    }
+
     this.metrics = metrics;
     this.metric = metric;
     this.stream_ = stream_;
@@ -86,6 +92,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     this.encoder = encoder;
     this.stream = stream;
     this.push = push;
+    this.host = host;
 
     if (contentEncoding != null) {
       putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
@@ -101,6 +108,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     this.encoder = encoder;
     this.stream = stream;
     this.push = push;
+    this.host = null;
 
     if (contentEncoding != null) {
       putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
@@ -540,7 +548,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     ctx.flush();
   }
 
-  public HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+  public HttpServerResponse pushPromise(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     if (push) {
       throw new IllegalStateException("A push response cannot promise another push");
     }
@@ -548,7 +556,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     Http2Headers headers = new DefaultHttp2Headers();
     headers.method(method.name());
     headers.path(path);
+    if (host != null) {
+      headers.authority(host);
+    }
     connection.sendPush(stream.id(), headers, handler);
     return this;
+  }
+
+  @Override
+  public HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return pushPromise(method, host, path, handler);
   }
 }

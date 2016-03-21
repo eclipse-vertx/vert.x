@@ -20,14 +20,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -610,7 +611,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse pushPromise(io.vertx.core.http.HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+  public HttpServerResponse pushPromise(io.vertx.core.http.HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return pushPromise(method, path, handler);
+  }
+
+  @Override
+  public HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     handler.handle(Future.failedFuture("Push promise is only supported with HTTP2"));
     return this;
   }

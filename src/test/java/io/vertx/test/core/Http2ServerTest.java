@@ -46,6 +46,7 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -964,20 +965,47 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPushPromise() throws Exception {
+    testPushPromise(GET("/").authority("whatever.com"), "whatever.com", false);
+  }
+
+  @Test
+  public void testPushPromiseNoAuthority() throws Exception {
+    Http2Headers get = GET("/");
+    get.remove("authority");
+    testPushPromise(get, "localhost:4043", false);
+  }
+
+  @Test
+  public void testPushPromiseOverrideAuthority() throws Exception {
+    testPushPromise(GET("/").authority("whatever.com"), "override.com", true);
+  }
+
+  @Test
+  public void testPushPromiseOverrideAuthorityWithNull() throws Exception {
+    testPushPromise(GET("/").authority("whatever.com"), null, true);
+  }
+
+  private void testPushPromise(Http2Headers headers, String authority, boolean provide) throws Exception {
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      Handler<AsyncResult<HttpServerResponse>> handler = ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response./*putHeader("content-type", "application/plain").*/end("the_content");
-        assertIllegalStateException(() -> response.pushPromise(HttpMethod.GET, "/wibble2", resp -> {}));
-      });
+        assertIllegalStateException(() -> response.pushPromise(HttpMethod.GET, "/wibble2", resp -> {
+        }));
+      };
+      if (provide) {
+        req.response().pushPromise(HttpMethod.GET, authority, "/wibble", handler);
+      } else {
+        req.response().pushPromise(HttpMethod.GET, "/wibble", handler);
+      }
     });
     startServer();
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(4043, "localhost", request -> {
       int id = request.nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       Map<Integer, Http2Headers> pushed = new HashMap<>();
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
@@ -996,6 +1024,11 @@ public class Http2ServerTest extends Http2TestBase {
             assertEquals("GET", entries.method().toString());
             assertEquals("/wibble", entries.path().toString());
             assertEquals("the_content", content);
+            if (authority != null) {
+              assertEquals(authority, entries.authority().toString());
+            } else {
+              assertNull(entries.authority());
+            }
             testComplete();
           });
           return delta;
@@ -2133,7 +2166,6 @@ public class Http2ServerTest extends Http2TestBase {
       });
       socket.endHandler(v -> {
         fail();
-        System.out.println("ended");
       });
       socket.closeHandler(v  -> {
         assertEquals(1, status.getAndIncrement());

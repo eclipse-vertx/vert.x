@@ -32,7 +32,6 @@ import io.vertx.test.fakemetrics.FakeMetricsBase;
 import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.HttpClientMetric;
 import io.vertx.test.fakemetrics.HttpServerMetric;
-import io.vertx.test.fakemetrics.SocketMetric;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

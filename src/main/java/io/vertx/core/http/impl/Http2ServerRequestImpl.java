@@ -100,8 +100,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     this.serverOrigin = serverOrigin;
     this.headers = headers;
 
+    String host = host();
+    if (host == null) {
+      int idx = serverOrigin.indexOf("://");
+      host = serverOrigin.substring(idx + 3);
+    }
     Object metric = metrics.isEnabled() ? metrics.requestBegin(conn.metric(), this) : null;
-    this.response = new Http2ServerResponseImpl(metrics, metric, this, (VertxInternal) vertx, handlerContext, conn, encoder, stream, false, contentEncoding);
+    this.response = new Http2ServerResponseImpl(metrics, metric, this, (VertxInternal) vertx, handlerContext, conn, encoder, stream, false, contentEncoding, host);
   }
 
   @Override

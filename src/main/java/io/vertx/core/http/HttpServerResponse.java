@@ -393,9 +393,15 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Push can be promised only for peer initiated streams and if the response is not ended.
    *
    * @param method the push promise method
+   * @param host the push promise host
    * @param path the push promise path
-   * @param handler the notified handler
-   * @return a reference to this, so the API can be used fluently
+   * @param handler the notified handler   @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse pushPromise(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Like {@link #pushPromise(HttpMethod, String, String, Handler)} with the host copied from the current request.
    */
   @Fluent
   HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
