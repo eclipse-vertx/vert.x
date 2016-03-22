@@ -108,7 +108,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   protected void handleInterestedOpsChanged() {
-    throw new UnsupportedOperationException();
   }
 
   void handleConnectionError(Throwable cause) {
