@@ -33,6 +33,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -159,12 +160,12 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     private final String contentEncoding;
     private Http2ServerResponseImpl response;
-    private final Handler<AsyncResult<HttpServerResponse>> completionHandler;
+    private final Future<HttpServerResponse> completionHandler;
 
     public Push(Http2Stream stream, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
       super(Http2ServerConnection.this, stream);
       this.contentEncoding = contentEncoding;
-      this.completionHandler = completionHandler;
+      this.completionHandler = Future.<HttpServerResponse>future().setHandler(completionHandler);
     }
 
     @Override
@@ -188,6 +189,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     void callReset(long errorCode) {
       if (response != null) {
         response.callReset(errorCode);
+      } else {
+        completionHandler.fail(new StreamResetException(errorCode));
       }
     }
 
@@ -202,7 +205,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     void handleClose() {
       if (pendingPushes.remove(this)) {
         context.executeFromIO(() -> {
-          completionHandler.handle(Future.failedFuture("Push reset by client"));
+          completionHandler.fail("Push reset by client");
         });
       } else {
         context.executeFromIO(() -> {
@@ -215,7 +218,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     void complete() {
       response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, true, contentEncoding);
-      completionHandler.handle(Future.succeededFuture(response));
+      completionHandler.complete(response);
     }
   }
 

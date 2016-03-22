@@ -239,7 +239,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
     VertxHttp2Stream req = streams.get(streamId);
-    req.handleReset(errorCode);
+    context.executeFromIO(() -> {
+      req.handleReset(errorCode);
+    });
   }
 
   @Override
