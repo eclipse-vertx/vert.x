@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
@@ -256,12 +257,12 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket upgradeToSsl(Handler<Void> handler) {
-    throw new UnsupportedOperationException("todo");
+    throw new UnsupportedOperationException("Cannot upgrade HTTP/2 stream to SSL");
   }
 
   @Override
   public boolean isSsl() {
-    throw new UnsupportedOperationException("todo");
+    return conn.channel.pipeline().get(SslHandler.class) != null;
   }
 
   @Override
