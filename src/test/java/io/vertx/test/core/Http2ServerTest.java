@@ -2281,15 +2281,17 @@ public class Http2ServerTest extends Http2TestBase {
   public void testUnknownFrame() throws Exception {
     Buffer expectedSend = TestUtils.randomBuffer(500);
     Buffer expectedRecv = TestUtils.randomBuffer(500);
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       req.unknownFrameHandler(frame -> {
+        assertOnIOContext(ctx);
         assertEquals(10, frame.type());
         assertEquals(253, frame.flags());
         assertEquals(expectedSend, frame.payload());
         req.response().writeFrame(12, 134, expectedRecv).end();
       });
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
