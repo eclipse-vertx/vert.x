@@ -27,27 +27,20 @@ import io.vertx.core.buffer.Buffer;
 /**
  * Represents an HTTP connection.<p/>
  *
- * todo:
+ * todo for http2 implementation :
+ * - synchronization + executeFromIO
+ * - documentation
+ * - examples
+ * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
  *
+ * todo later for 3.3
  * - investigate flow control configuration ratio / setWriteQueueMaxSize
  * - how to reset a netsocket stream ?
  * - test netsocket client reset
- * - add rawMethod
  * - byte distribution algorithm configurability (options ? connection ?)
- * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
- * - handle data frame padding
- * - documentation
- * - examples
- *
- * HttpServer:
- * - server synchronization + executeFromIO
- *
- * HttpClient:
- * - test executeFromIO
- * - HttpConnection test
- *
- * todo later for 3.3:
  * - OpenSSL integration
+ * - make data frame padding configurable like setting a padding value in http options
+ * - allow non standard http methods
  *
  * not yet in scope:
  * - stream priority
