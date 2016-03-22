@@ -21,10 +21,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -35,8 +33,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,20 +40,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.ClosedChannelException;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ServerResponseImpl implements HttpServerResponse {
 
-  private final HttpServerMetrics metrics;
-  private final VertxHttp2Stream stream_;
-  private final VertxInternal vertx;
+  private final VertxHttp2Stream stream;
   private final ChannelHandlerContext ctx;
   private final Http2ServerConnection connection;
-  private final Http2ConnectionEncoder encoder;
-  private final Http2Stream stream;
   private final boolean push;
   private final Object metric;
   private final String host;
@@ -77,20 +67,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> closeHandler;
   private long bytesWritten;
 
-  public Http2ServerResponseImpl(HttpServerMetrics metrics, Object metric, VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding, String host) {
+  public Http2ServerResponseImpl(Http2ServerConnection connection, VertxHttp2Stream stream, Object metric, boolean push, String contentEncoding, String host) {
 
-    if (host == null) {
-
-    }
-
-    this.metrics = metrics;
     this.metric = metric;
-    this.stream_ = stream_;
-    this.vertx = vertx;
-    this.ctx = ctx;
-    this.connection = connection;
-    this.encoder = encoder;
     this.stream = stream;
+    this.ctx = connection.handlerContext;
+    this.connection = connection;
     this.push = push;
     this.host = host;
 
@@ -99,14 +81,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  public Http2ServerResponseImpl(HttpServerMetrics metrics, VertxHttp2Stream stream_, VertxInternal vertx, ChannelHandlerContext ctx, Http2ServerConnection connection, Http2ConnectionEncoder encoder, Http2Stream stream, boolean push, String contentEncoding) {
-    this.metrics = metrics;
-    this.stream_ = stream_;
-    this.vertx = vertx;
-    this.ctx = ctx;
-    this.connection = connection;
-    this.encoder = encoder;
+  public Http2ServerResponseImpl(Http2ServerConnection connection, VertxHttp2Stream stream, boolean push, String contentEncoding) {
     this.stream = stream;
+    this.ctx = connection.handlerContext;
+    this.connection = connection;
     this.push = push;
     this.host = null;
 
@@ -114,7 +92,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
     }
 
-    this.metric = metrics.responsePushed(connection.metric(), this);
+    this.metric = connection.metrics().responsePushed(connection.metric(), this);
   }
 
   void callReset(long code) {
@@ -287,7 +265,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse writeContinue() {
     checkHeadWritten();
-    encoder.writeHeaders(ctx, stream.id(), new DefaultHttp2Headers().status("100"), 0, false, ctx.newPromise());
+    stream.encoder.writeHeaders(ctx, stream.id(), new DefaultHttp2Headers().status("100"), 0, false, ctx.newPromise());
     ctx.flush();
     return this;
   }
@@ -359,7 +337,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       headWritten = true;
       headers.status(Integer.toString(statusCode));
-      encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
+      stream.encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
       if (end) {
         ctx.flush();
       }
@@ -378,11 +356,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     boolean empty = len == 0;
     boolean sent = checkSendHeaders(end && empty && trailers == null);
     if (!empty || (!sent && end)) {
-      stream_.writeData(chunk, end && trailers == null);
+      stream.writeData(chunk, end && trailers == null);
       bytesWritten += len;
     }
     if (end && trailers != null) {
-      encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
+      stream.encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
     }
     if (end && bodyEndHandler != null) {
       bodyEndHandler.handle(null);
@@ -393,7 +371,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
     checkEnded();
     checkSendHeaders(false);
-    encoder.writeFrame(ctx, (byte) type, stream.id(), new Http2Flags((short) flags), payload.getByteBuf(), ctx.newPromise());
+    stream.encoder.writeFrame(ctx, (byte) type, stream.id(), new Http2Flags((short) flags), payload.getByteBuf(), ctx.newPromise());
     ctx.flush();
     return this;
   }
@@ -410,10 +388,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       if (metric != null) {
         // Null in case of push response : handle this case
         if (failed) {
-          metrics.requestReset(metric);
+          connection.metrics().requestReset(metric);
         } else {
           connection.reportBytesWritten(bytesWritten);
-          metrics.responseEnd(metric, this);
+          connection.metrics().responseEnd(metric, this);
         }
       }
       return true;
@@ -430,7 +408,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean writeQueueFull() {
     checkEnded();
-    return stream_.isNotWritable();
+    return stream.isNotWritable();
   }
 
   @Override
@@ -457,9 +435,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
     checkEnded();
 
-    Context resultCtx = resultHandler != null ? vertx.getOrCreateContext() : null;
+    Context resultCtx = resultHandler != null ? stream.vertx.getOrCreateContext() : null;
 
-    File file = vertx.resolveFile(filename);
+    File file = stream.vertx.resolveFile(filename);
     if (!file.exists()) {
       if (resultHandler != null) {
         resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
@@ -503,7 +481,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           resultHandler.handle(Future.succeededFuture());
         });
       }
-    }, stream_, offset, contentLength);
+    }, stream, offset, contentLength);
     drainHandler(fileChannel.drainHandler);
     ctx.channel().eventLoop().register(fileChannel);
     fileChannel.pipeline().fireUserEventTriggered(raf);
@@ -557,7 +535,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public void reset(long code) {
     checkEnded();
     handleEnded(true);
-    encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
+    stream.encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
     ctx.flush();
   }
 

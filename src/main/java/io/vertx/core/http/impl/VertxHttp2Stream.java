@@ -46,8 +46,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final Http2ConnectionEncoder encoder;
   protected final Http2ConnectionDecoder decoder;
   protected final Http2Stream stream;
+
+  private final ArrayDeque<Object> pending = new ArrayDeque<>(8);
   private boolean paused;
-  private ArrayDeque<Object> pending = new ArrayDeque<>(8);
 
   VertxHttp2Stream(C conn, Http2Stream stream) {
     this.conn = conn;
@@ -58,6 +59,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.stream = stream;
     this.context = conn.getContext();
     this.channel = conn.channel;
+  }
+
+  int id() {
+    return stream.id();
   }
 
   public void doPause() {

@@ -34,7 +34,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.net.URI;
@@ -54,7 +53,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
   private Long maxConcurrentStreams;
   private int concurrentStreams;
-  private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>();
+  private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
 
   Http2ServerConnection(
       Channel channel,
@@ -73,25 +72,9 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     this.metrics = metrics;
   }
 
-/*
-  */
-/**
-   * Handles the cleartext HTTP upgrade event. If an upgrade occurred, sends a simple response via HTTP/2
-   * on stream 1 (the stream specifically reserved for cleartext HTTP upgrade).
-   *//*
-
-  @Override
-  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-    if (evt instanceof HttpServerUpgradeHandler.UpgradeEvent) {
-      // Write an HTTP/2 response to the upgrade request
-      Http2Headers headers =
-          new DefaultHttp2Headers().status(OK.codeAsText())
-              .set(new AsciiString(UPGRADE_RESPONSE_HEADER), new AsciiString("true"));
-      encoder().writeHeaders(ctx, 1, headers, 0, true, ctx.newPromise());
-    }
-    super.userEventTriggered(ctx, evt);
+  HttpServerMetrics metrics() {
+    return metrics;
   }
-*/
 
   private boolean isMalformedRequest(Http2Headers headers) {
     if (headers.method() == null) {
@@ -132,7 +115,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2ServerRequestImpl req = new Http2ServerRequestImpl(metrics, context.owner(), this, serverOrigin, conn.stream(streamId), ctx, handler.encoder(), headers, contentEncoding);
+      Http2ServerRequestImpl req = new Http2ServerRequestImpl(this, conn.stream(streamId), metrics, serverOrigin, headers, contentEncoding);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -145,7 +128,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         requestHandler.handle(req);
       });
     } else {
-      // Trailer - not implemented yet
+      // Http server request trailer - not implemented yet (in api)
     }
     if (endOfStream) {
       context.executeFromIO(stream::handleEnd);
@@ -231,7 +214,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     }
 
     void complete() {
-      response = new Http2ServerResponseImpl(metrics, this, (VertxInternal) context.owner(), handlerContext, Http2ServerConnection.this, Http2ServerConnection.this.handler.encoder(), stream, true, contentEncoding);
+      response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, true, contentEncoding);
       completionHandler.handle(Future.succeededFuture(response));
     }
   }

@@ -16,7 +16,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -26,13 +25,11 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpConnection;
@@ -43,7 +40,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -80,21 +76,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private long bytesRead;
 
   private Handler<HttpServerFileUpload> uploadHandler;
-  private HttpPostRequestDecoder decoder;
+  private HttpPostRequestDecoder postRequestDecoder;
 
   private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> unknownFrameHandler;
 
-  public Http2ServerRequestImpl(
-      HttpServerMetrics metrics,
-      Vertx vertx,
-      Http2ServerConnection conn,
-      String serverOrigin,
-      Http2Stream stream,
-      ChannelHandlerContext handlerContext,
-      Http2ConnectionEncoder encoder,
-      Http2Headers headers,
-      String contentEncoding) {
+  public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
+      String serverOrigin, Http2Headers headers, String contentEncoding) {
     super(conn, stream);
 
     this.serverOrigin = serverOrigin;
@@ -106,7 +94,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       host = serverOrigin.substring(idx + 3);
     }
     Object metric = metrics.isEnabled() ? metrics.requestBegin(conn.metric(), this) : null;
-    this.response = new Http2ServerResponseImpl(metrics, metric, this, (VertxInternal) vertx, handlerContext, conn, encoder, stream, false, contentEncoding, host);
+    this.response = new Http2ServerResponseImpl(conn, this, metric, false, contentEncoding, host);
   }
 
   @Override
@@ -142,9 +130,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   void callHandler(Buffer data) {
     bytesRead += data.length();
-    if (decoder != null) {
+    if (postRequestDecoder != null) {
       try {
-        decoder.offer(new DefaultHttpContent(data.getByteBuf()));
+        postRequestDecoder.offer(new DefaultHttpContent(data.getByteBuf()));
       } catch (Exception e) {
         handleException(e);
       }
@@ -157,11 +145,11 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   void callEnd() {
     ended = true;
     conn.reportBytesRead(bytesRead);
-    if (decoder != null) {
+    if (postRequestDecoder != null) {
       try {
-        decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-        while (decoder.hasNext()) {
-          InterfaceHttpData data = decoder.next();
+        postRequestDecoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+        while (postRequestDecoder.hasNext()) {
+          InterfaceHttpData data = postRequestDecoder.next();
           if (data instanceof Attribute) {
             Attribute attr = (Attribute) data;
             try {
@@ -177,7 +165,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       } catch (Exception e) {
         handleException(e);
       } finally {
-        decoder.destroy();
+        postRequestDecoder.destroy();
       }
     }
     if (endHandler != null) {
@@ -377,7 +365,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public HttpServerRequest setExpectMultipart(boolean expect) {
     checkEnded();
     if (expect) {
-      if (decoder == null) {
+      if (postRequestDecoder == null) {
         CharSequence contentType = headers.get(HttpHeaderNames.CONTENT_TYPE);
         if (contentType != null) {
           io.netty.handler.codec.http.HttpMethod method = io.netty.handler.codec.http.HttpMethod.valueOf(headers.method().toString());
@@ -393,19 +381,19 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
                 method,
                 headers.path().toString());
             req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-            decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(vertx, this, () -> uploadHandler), req);
+            postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(vertx, this, () -> uploadHandler), req);
           }
         }
       }
     } else {
-      decoder = null;
+      postRequestDecoder = null;
     }
     return this;
   }
 
   @Override
   public boolean isExpectMultipart() {
-    return decoder != null;
+    return postRequestDecoder != null;
   }
 
   @Override
