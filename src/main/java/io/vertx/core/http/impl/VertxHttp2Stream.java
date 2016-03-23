@@ -49,6 +49,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   private final ArrayDeque<Object> pending = new ArrayDeque<>(8);
   private boolean paused;
+  private boolean writable = true;
 
   VertxHttp2Stream(C conn, Http2Stream stream) {
     this.conn = conn;
@@ -131,6 +132,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     callReset(code);
   }
 
+  void handleWritabilityChanged() {
+    writable = !writable;
+    handleInterestedOpsChanged();
+  }
+
   abstract void callEnd();
 
   abstract void callHandler(Buffer buf);
@@ -160,6 +166,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   boolean isNotWritable() {
-    return !encoder.flowController().isWritable(stream);
+    return !writable;
   }
 }

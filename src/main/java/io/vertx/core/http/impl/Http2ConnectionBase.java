@@ -74,7 +74,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     handler.encoder().flowController().listener(s -> {
       VertxHttp2Stream stream = streams.get(s.id());
       if (stream != null) {
-        context.executeFromIO(stream::handleInterestedOpsChanged);
+        context.executeFromIO(stream::handleWritabilityChanged);
       }
     });
 
