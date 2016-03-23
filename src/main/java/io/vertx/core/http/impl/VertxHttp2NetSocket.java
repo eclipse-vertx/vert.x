@@ -260,7 +260,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public boolean isSsl() {
-    return conn.channel.pipeline().get(SslHandler.class) != null;
+    return conn.isSsl();
   }
 
   @Override

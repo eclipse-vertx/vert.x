@@ -27,6 +27,7 @@ import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import io.vertx.codegen.annotations.Nullable;
@@ -108,6 +109,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   protected void handleInterestedOpsChanged() {
+  }
+
+  boolean isSsl() {
+    return channel.pipeline().get(SslHandler.class) != null;
   }
 
   void handleConnectionError(Throwable cause) {

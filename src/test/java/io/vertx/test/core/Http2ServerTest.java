@@ -382,6 +382,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, req.host());
       assertEquals("/", req.path());
       assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, req.getHeader(":authority"));
+      assertTrue(req.isSSL());
       assertEquals("https", req.getHeader(":scheme"));
       assertEquals("/", req.getHeader(":path"));
       assertEquals("GET", req.getHeader(":method"));
@@ -2368,6 +2369,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_2, req.version());
       assertEquals(10000, req.connection().remoteSettings().getMaxConcurrentStreams());
+      assertFalse(req.isSSL());
       req.response().end();
     });
     startServer();

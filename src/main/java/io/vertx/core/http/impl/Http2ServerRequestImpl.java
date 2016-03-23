@@ -239,8 +239,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public boolean isSSL() {
-    // Until we support h2c
-    return true;
+    return conn.isSsl();
   }
 
   @Override
