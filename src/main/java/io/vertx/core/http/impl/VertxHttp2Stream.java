@@ -22,9 +22,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Flags;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2RemoteFlowController;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -41,11 +42,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextImpl context;
-  protected final Channel channel;
   protected final ChannelHandlerContext handlerContext;
-  protected final Http2ConnectionEncoder encoder;
-  protected final Http2ConnectionDecoder decoder;
   protected final Http2Stream stream;
+  private final Http2ConnectionEncoder encoder;
+  private final Http2ConnectionDecoder decoder;
 
   private final ArrayDeque<Object> pending = new ArrayDeque<>(8);
   private boolean paused;
@@ -59,7 +59,68 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.decoder = conn.handler.decoder();
     this.stream = stream;
     this.context = conn.getContext();
-    this.channel = conn.channel;
+  }
+
+  void onResetRead(long code) {
+    paused = false;
+    pending.clear();
+    handleReset(code);
+  }
+
+  void onDataRead(Buffer data) {
+    if (!paused) {
+      if (pending.isEmpty()) {
+        handleData(data);
+        consume(data.length());
+      } else {
+        pending.add(data);
+        checkNextTick(null);
+      }
+    } else {
+      pending.add(data);
+    }
+  }
+
+  void onWritabilityChanged() {
+    writable = !writable;
+    handleInterestedOpsChanged();
+  }
+
+  void onEnd() {
+    if (paused || pending.size() > 0) {
+      pending.add(END);
+    } else {
+      handleEnd();
+    }
+  }
+
+  private void consume(int numBytes) {
+    context.runOnContext(v -> {
+      try {
+        boolean windowUpdateSent = decoder.flowController().consumeBytes(stream, numBytes);
+        if (windowUpdateSent) {
+          handlerContext.channel().flush();
+        }
+      } catch (Http2Exception e) {
+        e.printStackTrace();
+      }
+    });
+  }
+
+  private void checkNextTick(Void v) {
+    if (!paused) {
+      Object msg = pending.poll();
+      if (msg instanceof Buffer) {
+        Buffer buf = (Buffer) msg;
+        consume(buf.length());
+        handleData(buf);
+        if (pending.size() > 0) {
+          vertx.runOnContext(this::checkNextTick);
+        }
+      } if (msg == END) {
+        handleEnd();
+      }
+    }
   }
 
   int id() {
@@ -75,81 +136,17 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     context.runOnContext(this::checkNextTick);
   }
 
-  private void consume(int numBytes) {
-    context.runOnContext(v -> {
-      try {
-        boolean windowUpdateSent = decoder.flowController().consumeBytes(stream, numBytes);
-        if (windowUpdateSent) {
-          channel.flush();
-        }
-      } catch (Http2Exception e) {
-        e.printStackTrace();
-      }
-    });
+  boolean isNotWritable() {
+    return !writable;
   }
 
-  void handleEnd() {
-    if (paused || pending.size() > 0) {
-      pending.add(END);
-    } else {
-      callEnd();
-    }
+  void writeFrame(int type, int flags, ByteBuf payload) {
+    encoder.writeFrame(handlerContext, (byte) type, stream.id(), new Http2Flags((short) flags), payload, handlerContext.newPromise());
+    handlerContext.flush();
   }
 
-  void handleData(Buffer data) {
-    if (!paused) {
-      if (pending.isEmpty()) {
-        callHandler(data);
-        consume(data.length());
-      } else {
-        pending.add(data);
-        checkNextTick(null);
-      }
-    } else {
-      pending.add(data);
-    }
-  }
-
-  private void checkNextTick(Void v) {
-    if (!paused) {
-      Object msg = pending.poll();
-      if (msg instanceof Buffer) {
-        Buffer buf = (Buffer) msg;
-        consume(buf.length());
-        callHandler(buf);
-        if (pending.size() > 0) {
-          vertx.runOnContext(this::checkNextTick);
-        }
-      } if (msg == END) {
-        callEnd();
-      }
-    }
-  }
-
-  void handleReset(long code) {
-    paused = false;
-    pending.clear();
-    callReset(code);
-  }
-
-  void handleWritabilityChanged() {
-    writable = !writable;
-    handleInterestedOpsChanged();
-  }
-
-  abstract void callEnd();
-
-  abstract void callHandler(Buffer buf);
-
-  abstract void callReset(long errorCode);
-
-  abstract void handleException(Throwable cause);
-
-  abstract void handleClose();
-
-  abstract void handleInterestedOpsChanged();
-
-  void handleUnknownFrame(int type, int flags, Buffer buff) {
+  void writeHeaders(Http2Headers headers, boolean end) {
+    encoder.writeHeaders(handlerContext, stream.id(), headers, 0, end, handlerContext.newPromise());;
   }
 
   void writeData(ByteBuf chunk, boolean end) {
@@ -161,11 +158,33 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       } catch (Http2Exception e) {
         e.printStackTrace();
       }
-      channel.flush();
+      handlerContext.channel().flush();
     }
   }
 
-  boolean isNotWritable() {
-    return !writable;
+  void writeReset(long code) {
+    encoder.writeRstStream(handlerContext, stream.id(), code, handlerContext.newPromise());
+    handlerContext.flush();
+  }
+
+  void handleInterestedOpsChanged() {
+  }
+
+  void handleData(Buffer buf) {
+  }
+
+  void handleUnknownFrame(int type, int flags, Buffer buff) {
+  }
+
+  void handleEnd() {
+  }
+
+  void handleReset(long errorCode) {
+  }
+
+  void handleException(Throwable cause) {
+  }
+
+  void handleClose() {
   }
 }

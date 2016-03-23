@@ -56,7 +56,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   // Stream impl
 
   @Override
-  void callEnd() {
+  void handleEnd() {
     try {
       if (endHandler != null) {
         // Give opportunity to send a last chunk
@@ -68,14 +68,14 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
-  void callHandler(Buffer buf) {
+  void handleData(Buffer buf) {
     if (dataHandler != null) {
       dataHandler.handle(buf);
     }
   }
 
   @Override
-  void callReset(long errorCode) {
+  void handleReset(long errorCode) {
     handleException(new StreamResetException(errorCode));
   }
 
@@ -216,7 +216,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
       }
     }, this, offset, contentLength);
     drainHandler(fileChannel.drainHandler);
-    channel.eventLoop().register(fileChannel);
+    handlerContext.channel().eventLoop().register(fileChannel);
     fileChannel.pipeline().fireUserEventTriggered(raf);
 
     return this;

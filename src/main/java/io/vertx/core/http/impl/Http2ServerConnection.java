@@ -21,7 +21,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -131,7 +130,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       // Http server request trailer - not implemented yet (in api)
     }
     if (endOfStream) {
-      context.executeFromIO(stream::handleEnd);
+      context.executeFromIO(stream::onEnd);
     }
   }
 
@@ -157,12 +156,12 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     }
 
     @Override
-    void callEnd() {
+    void handleEnd() {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    void callHandler(Buffer buf) {
+    void handleData(Buffer buf) {
       throw new UnsupportedOperationException();
     }
 
@@ -174,7 +173,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     }
 
     @Override
-    void callReset(long errorCode) {
+    void handleReset(long errorCode) {
       if (response != null) {
         response.callReset(errorCode);
       } else {

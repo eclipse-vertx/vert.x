@@ -74,7 +74,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     handler.encoder().flowController().listener(s -> {
       VertxHttp2Stream stream = streams.get(s.id());
       if (stream != null) {
-        context.executeFromIO(stream::handleWritabilityChanged);
+        context.executeFromIO(stream::onWritabilityChanged);
       }
     });
 
@@ -261,7 +261,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
       context.executeFromIO(() -> {
-        req.handleReset(errorCode);
+        req.onResetRead(errorCode);
       });
     }
   }
@@ -272,10 +272,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (req != null) {
       Buffer buff = Buffer.buffer(data.copy());
       context.executeFromIO(() -> {
-        req.handleData(buff);
+        req.onDataRead(buff);
       });
       if (endOfStream) {
-        context.executeFromIO(req::handleEnd);
+        context.executeFromIO(req::onEnd);
       }
     }
     return padding;

@@ -128,7 +128,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     }
   }
 
-  void callHandler(Buffer data) {
+  void handleData(Buffer data) {
     bytesRead += data.length();
     if (postRequestDecoder != null) {
       try {
@@ -142,7 +142,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     }
   }
 
-  void callEnd() {
+  void handleEnd() {
     ended = true;
     conn.reportBytesRead(bytesRead);
     if (postRequestDecoder != null) {
@@ -174,7 +174,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
-  void callReset(long errorCode) {
+  void handleReset(long errorCode) {
     ended = true;
     if (exceptionHandler != null) {
       exceptionHandler.handle(new StreamResetException(errorCode));

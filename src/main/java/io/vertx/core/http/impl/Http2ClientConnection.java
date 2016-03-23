@@ -24,7 +24,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.Context;
@@ -156,7 +155,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void callEnd() {
+    void handleEnd() {
       if (conn.metrics.isEnabled()) {
         if (request.exceptionOccurred) {
           conn.metrics.requestReset(request.metric());
@@ -170,12 +169,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void callHandler(Buffer buf) {
+    void handleData(Buffer buf) {
       response.handleChunk(buf);
     }
 
     @Override
-    void callReset(long errorCode) {
+    void handleReset(long errorCode) {
       if (!responseEnded) {
         responseEnded = true;
         if (conn.metrics.isEnabled()) {
@@ -220,8 +219,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         } catch (Exception e) {
           e.printStackTrace();
           handleException(e);
-          encoder.writeRstStream(handlerContext, stream.id(), 0x01 /* PROTOCOL_ERROR */, handlerContext.newPromise());
-          channel.flush();
+          writeReset(0x01 /* PROTOCOL_ERROR */);
           return;
         }
         response = new HttpClientResponseImpl(
@@ -234,7 +232,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         );
         request.handleResponse(response);
         if (end) {
-          handleEnd();
+          onEnd();
         }
       } else if (end) {
         response.handleEnd(null, new Http2HeadersAdaptor(headers));
@@ -293,11 +291,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.metrics.isEnabled()) {
         request.metric(conn.metrics.requestBegin(conn.metric, conn.localAddress(), conn.remoteAddress(), request));
       }
-      encoder.writeHeaders(handlerContext, stream.id(), h, 0, end && content == null, handlerContext.newPromise());
+      writeHeaders(h, end && content == null);
       if (content != null) {
         writeBuffer(content, end);
       } else {
-        channel.flush();
+        handlerContext.flush();
       }
     }
 
@@ -305,14 +303,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     public void writeBuffer(ByteBuf buf, boolean end) {
       writeData(buf, end);
       if (end) {
-        channel.flush();
+        handlerContext.flush();
       }
     }
 
     @Override
     public void writeFrame(int type, int flags, ByteBuf payload) {
-      encoder.writeFrame(handlerContext, (byte) type, stream.id(), new Http2Flags((short) flags), payload, handlerContext.newPromise());
-      handlerContext.flush();
+      super.writeFrame(type, flags, payload);
     }
 
     @Override
@@ -326,7 +323,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public boolean isNotWritable() {
-      return !conn.handler.connection().remote().flowController().isWritable(stream);
+      return super.isNotWritable();
     }
 
     @Override
@@ -341,8 +338,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void reset(long code) {
-      encoder.writeRstStream(handlerContext, stream.id(), code, handlerContext.newPromise());
-      channel.flush();
+      writeReset(code);
     }
 
     @Override

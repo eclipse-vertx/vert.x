@@ -21,7 +21,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
@@ -265,7 +264,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse writeContinue() {
     checkHeadWritten();
-    stream.encoder.writeHeaders(ctx, stream.id(), new DefaultHttp2Headers().status("100"), 0, false, ctx.newPromise());
+    stream.writeHeaders(new DefaultHttp2Headers().status("100"), false);
     ctx.flush();
     return this;
   }
@@ -337,7 +336,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       headWritten = true;
       headers.status(Integer.toString(statusCode));
-      stream.encoder.writeHeaders(ctx, stream.id(), headers, 0, end, ctx.newPromise());
+      stream.writeHeaders(headers, end);
       if (end) {
         ctx.flush();
       }
@@ -360,7 +359,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       bytesWritten += len;
     }
     if (end && trailers != null) {
-      stream.encoder.writeHeaders(ctx, stream.id(), trailers, 0, true, ctx.newPromise());
+      stream.writeHeaders(trailers, true);
     }
     if (end && bodyEndHandler != null) {
       bodyEndHandler.handle(null);
@@ -371,7 +370,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
     checkEnded();
     checkSendHeaders(false);
-    stream.encoder.writeFrame(ctx, (byte) type, stream.id(), new Http2Flags((short) flags), payload.getByteBuf(), ctx.newPromise());
+    stream.writeFrame(type, flags, payload.getByteBuf());
     ctx.flush();
     return this;
   }
@@ -535,7 +534,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public void reset(long code) {
     checkEnded();
     handleEnded(true);
-    stream.encoder.writeRstStream(ctx, stream.id(), code, ctx.newPromise());
+    stream.writeReset(code);
     ctx.flush();
   }
 
