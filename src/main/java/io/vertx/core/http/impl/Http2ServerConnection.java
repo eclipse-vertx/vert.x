@@ -108,7 +108,6 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId,
                             Http2Headers headers, int padding, boolean endOfStream) {
-    Http2Connection conn = handler.connection();
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
@@ -116,7 +115,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-      Http2ServerRequestImpl req = new Http2ServerRequestImpl(this, conn.stream(streamId), metrics, serverOrigin, headers, contentEncoding);
+      Http2ServerRequestImpl req = new Http2ServerRequestImpl(this, handler.connection().stream(streamId), metrics, serverOrigin, headers, contentEncoding);
       stream = req;
       CharSequence value = headers.get(HttpHeaderNames.EXPECT);
       if (options.isHandle100ContinueAutomatically() &&
@@ -134,17 +133,6 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     if (endOfStream) {
       context.executeFromIO(stream::handleEnd);
     }
-  }
-
-  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency,
-                            short weight, boolean exclusive, int padding, boolean endOfStream) {
-    onHeadersRead(ctx, streamId, headers, padding, endOfStream);
-  }
-
-  @Override
-  public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency,
-                             short weight, boolean exclusive) {
   }
 
   @Override

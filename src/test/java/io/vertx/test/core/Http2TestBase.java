@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientOptions;
@@ -57,7 +58,9 @@ public class Http2TestBase extends HttpTestBase {
   }
 
   protected void assertOnIOContext(Context context) {
-    assertEquals(context, Vertx.currentContext());
+    Context current = Vertx.currentContext();
+    assertNotNull(current);
+    assertEquals(context, current);
     for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
       if (elt.getMethodName().equals("executeFromIO")) {
         return;

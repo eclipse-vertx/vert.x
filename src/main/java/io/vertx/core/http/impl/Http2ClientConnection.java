@@ -106,33 +106,32 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
-    throw new UnsupportedOperationException("todo");
-  }
-
-  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
-    stream.handleHeaders(headers, endOfStream);
-  }
-
-  @Override
-  public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+    if (stream != null) {
+      context.executeFromIO(() -> {
+        stream.handleHeaders(headers, endOfStream);
+      });
+    }
   }
 
   @Override
   public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
-    HttpMethod method = HttpUtils.toVertxMethod(headers.method().toString());
-    String uri = headers.path().toString();
-    String host = headers.authority() != null ? headers.authority().toString() : null;
-    MultiMap headersMap = new Http2HeadersAdaptor(headers);
-    Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-    HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, method, uri, host, headersMap);
-    if (metrics.isEnabled()) {
-      promisedReq.metric(metrics.responsePushed(metric, localAddress(), remoteAddress(), promisedReq));
+    if (stream != null) {
+      context.executeFromIO(() -> {
+        HttpMethod method = HttpUtils.toVertxMethod(headers.method().toString());
+        String uri = headers.path().toString();
+        String host = headers.authority() != null ? headers.authority().toString() : null;
+        MultiMap headersMap = new Http2HeadersAdaptor(headers);
+        Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
+        HttpClientRequestPushPromise promisedReq = new HttpClientRequestPushPromise(this, promisedStream, http2Pool.client, method, uri, host, headersMap);
+        if (metrics.isEnabled()) {
+          promisedReq.metric(metrics.responsePushed(metric, localAddress(), remoteAddress(), promisedReq));
+        }
+        streams.put(promisedStreamId, promisedReq.getStream());
+        stream.handlePushPromise(promisedReq);
+      });
     }
-    streams.put(promisedStreamId, promisedReq.getStream());
-    stream.handlePushPromise(promisedReq);
   }
 
   static class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> implements HttpClientStream {

@@ -71,7 +71,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   public void doResume() {
     paused = false;
-    checkNextTick(null);
+    context.runOnContext(this::checkNextTick);
   }
 
   private void consume(int numBytes) {

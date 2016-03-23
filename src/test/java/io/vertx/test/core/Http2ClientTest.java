@@ -47,6 +47,7 @@ import io.netty.util.AsciiString;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -103,7 +104,9 @@ public class Http2ClientTest extends Http2TestBase {
         req.response().end();
       });
     }).connectionHandler(conn -> {
+      Context ctx = Vertx.currentContext();
       conn.remoteSettingsHandler(settings -> {
+        assertOnIOContext(ctx);
         switch (count.getAndIncrement()) {
           case 0:
             assertEquals(initialSettings.isPushEnabled(), settings.isPushEnabled());
@@ -207,6 +210,8 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      Context ctx = vertx.getOrCreateContext();
+      assertOnIOContext(ctx);
       assertEquals(1, reqCount.get());
       assertEquals(HttpVersion.HTTP_2, resp.version());
       assertEquals(200, resp.statusCode());
@@ -219,8 +224,12 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals("juu_value_1", resp.headers().getAll("juu_response").get(0));
       assertEquals("juu_value_2", resp.headers().getAll("juu_response").get(1));
       Buffer content = Buffer.buffer();
-      resp.handler(content::appendBuffer);
+      resp.handler(buff -> {
+        assertOnIOContext(ctx);
+        content.appendBuffer(buff);
+      });
       resp.endHandler(v -> {
+        assertOnIOContext(ctx);
         assertEquals(expected, content.toString());
         testComplete();
       });
@@ -286,7 +295,9 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      Context ctx = vertx.getOrCreateContext();
       resp.bodyHandler(body -> {
+        assertOnIOContext(ctx);
         assertEquals(expected, body);
         testComplete();
       });
@@ -352,10 +363,12 @@ public class Http2ClientTest extends Http2TestBase {
     AtomicInteger count = new AtomicInteger();
     AtomicInteger drained = new AtomicInteger();
     vertx.setPeriodic(1, timerID -> {
+      Context ctx = vertx.getOrCreateContext();
       if (req.writeQueueFull()) {
         assertTrue(paused.get());
         assertEquals(1, numPause.get());
         req.drainHandler(v -> {
+          assertOnIOContext(ctx);
           assertEquals(0, drained.getAndIncrement());
           assertEquals(1, numPause.get());
           assertFalse(paused.get());
@@ -403,9 +416,17 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      Context ctx = vertx.getOrCreateContext();
       Buffer received = Buffer.buffer();
       resp.pause();
-      resp.handler(received::appendBuffer);
+      resp.handler(buff -> {
+        if (whenFull.isComplete()) {
+          assertSame(ctx, Vertx.currentContext());
+        } else {
+          assertOnIOContext(ctx);
+        }
+        received.appendBuffer(buff);
+      });
       resp.endHandler(v -> {
         assertEquals(expected.toString().length(), received.toString().length());
         testComplete();
@@ -499,6 +520,8 @@ public class Http2ClientTest extends Http2TestBase {
   public void testConnectionFailed() throws Exception {
     client.get(4044, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
     }).exceptionHandler(err -> {
+      Context ctx = Vertx.currentContext();
+      assertOnIOContext(ctx);
       assertEquals(err.getClass(), java.net.ConnectException.class);
       testComplete();
     }).end();
@@ -534,6 +557,8 @@ public class Http2ClientTest extends Http2TestBase {
     client.post(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       fail();
     }).exceptionHandler(err -> {
+      Context ctx = Vertx.currentContext();
+      assertOnIOContext(ctx);
       assertTrue(err instanceof StreamResetException);
       StreamResetException reset = (StreamResetException) err;
       assertEquals(8, reset.getCode());
@@ -610,12 +635,26 @@ public class Http2ClientTest extends Http2TestBase {
       }).end();
     });
     startServer();
+    AtomicReference<Context> ctx = new AtomicReference<>();
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      Context current = Vertx.currentContext();
+      if (ctx.get() == null) {
+        ctx.set(current);
+      } else {
+        assertEquals(ctx.get(), current);
+      }
       resp.endHandler(v -> {
         complete();
       });
     });
     req.pushPromiseHandler(pushedReq -> {
+      Context current = Vertx.currentContext();
+      if (ctx.get() == null) {
+        ctx.set(current);
+      } else {
+        assertEquals(ctx.get(), current);
+      }
+      assertOnIOContext(current);
       assertEquals(HttpMethod.GET, pushedReq.method());
       assertEquals("/wibble", pushedReq.uri());
       pushedReq.handler(resp -> {
@@ -692,6 +731,8 @@ public class Http2ClientTest extends Http2TestBase {
     AtomicReference<HttpConnection> connection = new AtomicReference<>();
     HttpClientRequest req1 = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
     req1.connectionHandler(conn -> {
+      Context ctx = Vertx.currentContext();
+      assertOnIOContext(ctx);
       assertTrue(connection.compareAndSet(null, conn));
     });
     req1.handler(resp -> {
@@ -736,7 +777,9 @@ public class Http2ClientTest extends Http2TestBase {
     AtomicInteger clientStatus = new AtomicInteger();
     HttpClientRequest req1 = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
     req1.connectionHandler(conn -> {
+      Context ctx = Vertx.currentContext();
       conn.shutdownHandler(v -> {
+        assertOnIOContext(ctx);
         clientStatus.compareAndSet(1, 2);
       });
       if (clientStatus.getAndIncrement() == 0) {
@@ -764,7 +807,9 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     HttpClientRequest req1 = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
     req1.connectionHandler(conn -> {
+      Context ctx = Vertx.currentContext();
       conn.goAwayHandler(ga -> {
+        assertOnIOContext(ctx);
         complete();
       });
     });
@@ -1039,6 +1084,8 @@ public class Http2ClientTest extends Http2TestBase {
     });
     req.putHeader("expect", "100-continue");
     req.continueHandler(v -> {
+      Context ctx = Vertx.currentContext();
+      assertOnIOContext(ctx);
       assertEquals(1, status.getAndIncrement());
       req.end(Buffer.buffer("request-body"));
     });
@@ -1200,8 +1247,10 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     AtomicInteger status = new AtomicInteger();
     HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      Context ctx = Vertx.currentContext();
       assertEquals(0, status.getAndIncrement());
       resp.unknownFrameHandler(frame -> {
+        assertOnIOContext(ctx);
         assertEquals(1, status.getAndIncrement());
         assertEquals(12, frame.type());
         assertEquals(134, frame.flags());
@@ -1279,18 +1328,19 @@ public class Http2ClientTest extends Http2TestBase {
     client.close();
     client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      Context ctx = Vertx.currentContext();
       resp.exceptionHandler(err -> {
-        System.out.println("got resp timeout");
+        assertOnIOContext(ctx);
         complete();
       });
     });
     req.exceptionHandler(err -> {
-      System.out.println("got req timeout");
       complete();
     });
     req.connectionHandler(conn -> {
       conn.closeHandler(v -> {
-        System.out.println("got close");
+        Context ctx = Vertx.currentContext();
+        assertOnIOContext(ctx);
         complete();
       });
     });

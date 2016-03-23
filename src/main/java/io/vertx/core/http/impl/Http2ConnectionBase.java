@@ -70,10 +70,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
     handler.connection().addListener(this);
 
-    handler.encoder().flowController().listener(stream -> {
-      VertxHttp2Stream resp = streams.get(stream.id());
-      if (resp != null) {
-        resp.handleInterestedOpsChanged();
+    handler.encoder().flowController().listener(s -> {
+      VertxHttp2Stream stream = streams.get(s.id());
+      if (stream != null) {
+        context.executeFromIO(stream::handleInterestedOpsChanged);
       }
     });
 
@@ -188,6 +188,16 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   // Http2FrameListener
+
+  @Override
+  public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency,
+                             short weight, boolean exclusive) {
+  }
+
+  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    onHeadersRead(ctx, streamId, headers, padding, endOfStream);
+  }
 
   @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {

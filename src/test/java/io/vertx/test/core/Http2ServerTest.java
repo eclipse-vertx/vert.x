@@ -370,8 +370,11 @@ public class Http2ServerTest extends Http2TestBase {
   public void testGet() throws Exception {
     String expected = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
+      assertOnIOContext(ctx);
       req.endHandler(v -> {
+        assertOnIOContext(ctx);
         requestEnded.set(true);
       });
       HttpServerResponse resp = req.response();
@@ -393,7 +396,7 @@ public class Http2ServerTest extends Http2TestBase {
       resp.putHeader("juu_response", (List<String>)Arrays.asList("juu_response_value_1", "juu_response_value_2"));
       resp.end(expected);
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
@@ -473,11 +476,13 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testHeadersEndHandler() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.setChunked(true);
       resp.putHeader("some", "some-header");
       resp.headersEndHandler(v -> {
+        assertOnIOContext(ctx);
         assertFalse(resp.headWritten());
         resp.putHeader("extra", "extra-header");
       });
@@ -485,7 +490,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertTrue(resp.headWritten());
       resp.end();
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       request.decoder.frameListener(new Http2EventAdapter() {
@@ -535,17 +540,23 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPost() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     Buffer expectedContent = TestUtils.randomBuffer(1000);
     Buffer postContent = Buffer.buffer();
     server.requestHandler(req -> {
-      req.handler(postContent::appendBuffer);
+      assertOnIOContext(ctx);
+      req.handler(buff -> {
+        assertOnIOContext(ctx);
+        postContent.appendBuffer(buff);
+      });
       req.endHandler(v -> {
+        assertOnIOContext(ctx);
         req.response().putHeader("content-type", "text/plain").end("");
         assertEquals(expectedContent, postContent);
         testComplete();
       });
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
@@ -559,10 +570,12 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPostFileUpload() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       Buffer tot = Buffer.buffer();
       req.setExpectMultipart(true);
       req.uploadHandler(upload -> {
+        assertOnIOContext(ctx);
         assertEquals("file", upload.name());
         assertEquals("tmp-0.txt", upload.filename());
         assertEquals("image/gif", upload.contentType());
@@ -577,7 +590,7 @@ public class Http2ServerTest extends Http2TestBase {
         req.response().putHeader("content-type", "text/plain").end("done");
       });
     });
-    startServer();
+    startServer(ctx);
 
     String contentType = "multipart/form-data; boundary=a4e41223-a527-49b6-ac1c-315d76be757e";
     String contentLength = "225";
@@ -733,6 +746,7 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   private void testStreamWritability(Function<HttpServerRequest, WriteStream<Buffer>> streamProvider) throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     String content = TestUtils.randomAlphaString(1024);
     StringBuilder expected = new StringBuilder();
     Future<Void> whenFull = Future.future();
@@ -742,6 +756,7 @@ public class Http2ServerTest extends Http2TestBase {
       vertx.setPeriodic(1, timerID -> {
         if (stream.writeQueueFull()) {
           stream.drainHandler(v -> {
+            assertOnIOContext(ctx);
             expected.append("last");
             stream.end(Buffer.buffer("last"));
           });
@@ -755,7 +770,7 @@ public class Http2ServerTest extends Http2TestBase {
         }
       });
     });
-    startServer();
+    startServer(ctx);
 
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
@@ -891,7 +906,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testClientResetServerStream() throws Exception {
-
+    Context ctx = vertx.getOrCreateContext();
     Future<Void> bufReceived = Future.future();
     AtomicInteger resetCount = new AtomicInteger();
     server.requestHandler(req -> {
@@ -899,21 +914,24 @@ public class Http2ServerTest extends Http2TestBase {
         bufReceived.complete();
       });
       req.exceptionHandler(err -> {
+        assertOnIOContext(ctx);
         assertTrue(err instanceof StreamResetException);
         assertEquals(10L, ((StreamResetException) err).getCode());
         assertEquals(0, resetCount.getAndIncrement());
       });
       req.response().exceptionHandler(err -> {
+        assertOnIOContext(ctx);
         assertTrue(err instanceof StreamResetException);
         assertEquals(10L, ((StreamResetException) err).getCode());
         assertEquals(1, resetCount.getAndIncrement());
       });
       req.endHandler(v -> {
+        assertOnIOContext(ctx);
         assertEquals(2, resetCount.get());
         testComplete();
       });
     });
-    startServer();
+    startServer(ctx);
 
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
@@ -984,8 +1002,10 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   private void testPushPromise(Http2Headers headers, String authority, boolean provide) throws Exception {
+    Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       Handler<AsyncResult<HttpServerResponse>> handler = ar -> {
+        assertSame(ctx, Vertx.currentContext());
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response./*putHeader("content-type", "application/plain").*/end("the_content");
@@ -998,7 +1018,7 @@ public class Http2ServerTest extends Http2TestBase {
         req.response().pushPromise(HttpMethod.GET, "/wibble", handler);
       }
     });
-    startServer();
+    startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
