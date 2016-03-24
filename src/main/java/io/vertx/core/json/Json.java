@@ -18,10 +18,15 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.UntypedObjectDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.IOException;
@@ -49,6 +54,7 @@ public class Json {
     prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 
     SimpleModule module = new SimpleModule();
+    module.addDeserializer(Object.class, new ObjectDeserializer());
     module.addSerializer(JsonObject.class, new JsonObjectSerializer());
     module.addSerializer(JsonArray.class, new JsonArraySerializer());
     mapper.registerModule(module);
@@ -125,6 +131,24 @@ public class Json {
   static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
     Iterable<T> iterable = () -> sourceIterator;
     return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
+  private static class ObjectDeserializer extends UntypedObjectDeserializer {
+    @Override
+    public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+      Object value;
+
+      if(jsonParser.getCurrentToken() == JsonToken.START_OBJECT) {
+        // convert untyped object to JsonObject
+        JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+        value = new JsonObject(node.toString());
+      } else {
+        // pass through to default deserializer
+        value = super.deserialize(jsonParser, deserializationContext);
+      }
+
+      return value;
+    }
   }
 
   private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
