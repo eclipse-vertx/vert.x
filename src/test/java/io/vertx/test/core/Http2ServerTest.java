@@ -1103,7 +1103,7 @@ public class Http2ServerTest extends Http2TestBase {
         String path = "/wibble" + val;
         req.response().pushPromise(HttpMethod.GET, path, ar -> {
           assertTrue(ar.succeeded());
-          assertOnIOContext(ctx);
+          assertSame(ctx, Vertx.currentContext());
           pushSent.add(path);
           vertx.setTimer(10, id -> {
             ar.result().end("wibble-" + val);

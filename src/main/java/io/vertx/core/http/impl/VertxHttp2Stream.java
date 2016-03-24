@@ -17,14 +17,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2RemoteFlowController;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
@@ -44,8 +38,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final ContextImpl context;
   protected final ChannelHandlerContext handlerContext;
   protected final Http2Stream stream;
-  private final Http2ConnectionEncoder encoder;
-  private final Http2ConnectionDecoder decoder;
 
   private final ArrayDeque<Object> pending = new ArrayDeque<>(8);
   private boolean paused;
@@ -55,8 +47,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.handlerContext = conn.handlerContext;
-    this.encoder = conn.handler.encoder();
-    this.decoder = conn.handler.decoder();
     this.stream = stream;
     this.context = conn.getContext();
   }
@@ -67,11 +57,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     handleReset(code);
   }
 
-  void onDataRead(Buffer data) {
+  boolean onDataRead(Buffer data) {
     if (!paused) {
       if (pending.isEmpty()) {
         handleData(data);
-        consume(data.length());
+        return true;
       } else {
         pending.add(data);
         checkNextTick(null);
@@ -79,6 +69,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     } else {
       pending.add(data);
     }
+    return false;
   }
 
   void onWritabilityChanged() {
@@ -94,25 +85,15 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  private void consume(int numBytes) {
-    context.runOnContext(v -> {
-      try {
-        boolean windowUpdateSent = decoder.flowController().consumeBytes(stream, numBytes);
-        if (windowUpdateSent) {
-          handlerContext.channel().flush();
-        }
-      } catch (Http2Exception e) {
-        e.printStackTrace();
-      }
-    });
-  }
-
+  /**
+   * Check if paused buffers must be handled to the reader, this must be called from event loop.
+   */
   private void checkNextTick(Void v) {
     if (!paused) {
       Object msg = pending.poll();
       if (msg instanceof Buffer) {
         Buffer buf = (Buffer) msg;
-        consume(buf.length());
+        conn.handler.consume(stream, buf.length());
         handleData(buf);
         if (pending.size() > 0) {
           vertx.runOnContext(this::checkNextTick);
@@ -141,30 +122,19 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void writeFrame(int type, int flags, ByteBuf payload) {
-    encoder.writeFrame(handlerContext, (byte) type, stream.id(), new Http2Flags((short) flags), payload, handlerContext.newPromise());
-    handlerContext.flush();
+    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
   }
 
   void writeHeaders(Http2Headers headers, boolean end) {
-    encoder.writeHeaders(handlerContext, stream.id(), headers, 0, end, handlerContext.newPromise());;
+    conn.handler.writeHeaders(stream, headers, end);
   }
 
   void writeData(ByteBuf chunk, boolean end) {
-    encoder.writeData(handlerContext, stream.id(), chunk, 0, end, handlerContext.newPromise());
-    Http2RemoteFlowController controller = encoder.flowController();
-    if (!controller.isWritable(stream) || end) {
-      try {
-        encoder.flowController().writePendingBytes();
-      } catch (Http2Exception e) {
-        e.printStackTrace();
-      }
-      handlerContext.channel().flush();
-    }
+    conn.handler.writeData(stream, chunk, end);
   }
 
   void writeReset(long code) {
-    encoder.writeRstStream(handlerContext, stream.id(), code, handlerContext.newPromise());
-    handlerContext.flush();
+    conn.handler.writeReset(stream.id(), code);
   }
 
   void handleInterestedOpsChanged() {

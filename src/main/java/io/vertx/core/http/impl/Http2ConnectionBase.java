@@ -51,7 +51,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameListener, HttpConnection, Http2Connection.Listener {
+abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameListener, HttpConnection {
 
   protected final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();
   protected ChannelHandlerContext handlerContext;
@@ -68,16 +68,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler handler, TCPMetrics metrics) {
     super((VertxInternal) context.owner(), channel, context, metrics);
-
-    handler.connection().addListener(this);
-
-    handler.encoder().flowController().listener(s -> {
-      VertxHttp2Stream stream = streams.get(s.id());
-      if (stream != null) {
-        context.executeFromIO(stream::onWritabilityChanged);
-      }
-    });
-
     this.channel = channel;
     this.handlerContext = channel.pipeline().context(handler);
     this.handler = handler;
@@ -115,7 +105,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
-  void handleConnectionError(Throwable cause) {
+  void onConnectionError(Throwable cause) {
     for (VertxHttp2Stream stream : streams.values()) {
       context.executeFromIO(() -> {
         stream.handleException(cause);
@@ -129,16 +119,21 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
   }
 
-  void handleStreamError(int streamId, Throwable cause) {
+  void onStreamError(int streamId, Throwable cause) {
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream != null) {
       stream.handleException(cause);
     }
   }
-  // Http2Connection.Listener
 
-  @Override
-  public void onStreamClosed(Http2Stream stream) {
+  void onStreamwritabilityChanged(Http2Stream s) {
+    VertxHttp2Stream stream = streams.get(s.id());
+    if (stream != null) {
+      context.executeFromIO(stream::onWritabilityChanged);
+    }
+  }
+
+  void onStreamClosed(Http2Stream stream) {
     checkShutdownHandler();
     VertxHttp2Stream removed = streams.remove(stream.id());
     if (removed != null) {
@@ -148,40 +143,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
   }
 
-  @Override
-  public void onStreamAdded(Http2Stream stream) {
+  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
   }
 
-  @Override
-  public void onStreamActive(Http2Stream stream) {
-  }
-
-  @Override
-  public void onStreamHalfClosed(Http2Stream stream) {
-  }
-
-  @Override
-  public void onStreamRemoved(Http2Stream stream) {
-  }
-
-  @Override
-  public void onPriorityTreeParentChanged(Http2Stream stream, Http2Stream oldParent) {
-  }
-
-  @Override
-  public void onPriorityTreeParentChanging(Http2Stream stream, Http2Stream newParent) {
-  }
-
-  @Override
-  public void onWeightChanged(Http2Stream stream, short oldWeight) {
-  }
-
-  @Override
-  public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-  }
-
-  @Override
-  public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+  void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
     Handler<GoAway> handler = goAwayHandler;
     if (handler != null) {
       Buffer buffer = Buffer.buffer(debugData);
@@ -268,22 +233,22 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
+    int[] consumed = { padding };
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
       Buffer buff = Buffer.buffer(data.copy());
       context.executeFromIO(() -> {
-        req.onDataRead(buff);
+        int len = data.readableBytes();
+        if (req.onDataRead(buff)) {
+          consumed[0] += len;
+        }
       });
       if (endOfStream) {
         context.executeFromIO(req::onEnd);
       }
     }
-    return padding;
+    return consumed[0];
   }
-
-  // Http2Connection overrides
-
-  // HttpConnection implementation
 
   @Override
   public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
@@ -293,8 +258,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (lastStreamId < 0) {
       throw new IllegalArgumentException();
     }
-    handler.encoder().writeGoAway(handlerContext, lastStreamId, errorCode, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER, handlerContext.newPromise());
-    channel.flush();
+    handler.writeGoAway(errorCode, lastStreamId, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER);
     return this;
   }
 
@@ -394,8 +358,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         settingsUpdate.remove(key);
       }
     }
-
-    handler.encoder().writeSettings(handlerContext, settingsUpdate, handlerContext.newPromise()).addListener(fut -> {
+    handler.writeSettings(settingsUpdate).addListener(fut -> {
       if (fut.isSuccess()) {
         updateSettingsHandler.add(() -> {
           serverSettings.putAll(settingsUpdate);
@@ -413,7 +376,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         }
       }
     });
-    channel.flush();
   }
 
   @Override

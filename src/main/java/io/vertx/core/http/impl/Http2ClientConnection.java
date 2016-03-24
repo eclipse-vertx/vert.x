@@ -64,18 +64,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
     http2Pool.discard(Http2ClientConnection.this);
   }
 
   @Override
-  public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+  void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
     super.onGoAwayReceived(lastStreamId, errorCode, debugData);
     http2Pool.discard(Http2ClientConnection.this);
   }
 
   @Override
-  public void onStreamClosed(Http2Stream nettyStream) {
+  void onStreamClosed(Http2Stream nettyStream) {
     super.onStreamClosed(nettyStream);
     http2Pool.recycle(Http2ClientConnection.this);
   }

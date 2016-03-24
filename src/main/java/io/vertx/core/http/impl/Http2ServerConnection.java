@@ -25,6 +25,7 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -110,7 +111,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
-        handler.encoder().writeRstStream(ctx, streamId, Http2Error.PROTOCOL_ERROR.code(), ctx.newPromise());
+        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
         return;
       }
       String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
@@ -191,15 +192,17 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     @Override
     void handleClose() {
       if (pendingPushes.remove(this)) {
-        context.executeFromIO(() -> {
-          completionHandler.fail("Push reset by client");
-        });
+        completionHandler.fail("Push reset by client");
       } else {
-        context.executeFromIO(() -> {
-          response.handleClose();
-        });
         concurrentStreams--;
-        checkPendingPushes();
+        while ((maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) && pendingPushes.size() > 0) {
+          Push push = pendingPushes.pop();
+          concurrentStreams++;
+          context.runOnContext(v -> {
+            push.complete();
+          });
+        }
+        response.handleClose();
       }
     }
 
@@ -210,33 +213,28 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   }
 
   void sendPush(int streamId, Http2Headers headers, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
-    int promisedStreamId = handler.connection().local().incrementAndGetNextStreamId();
-    handler.encoder().writePushPromise(handlerContext, streamId, promisedStreamId, headers, 0, handlerContext.newPromise()).addListener(fut -> {
-      if (fut.isSuccess()) {
-        String contentEncoding = HttpUtils.determineContentEncoding(headers);
-        Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-        Push push = new Push(promisedStream, contentEncoding, completionHandler);
-        streams.put(promisedStreamId, push);
-        if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
-          concurrentStreams++;
-          context.executeFromIO(push::complete);
+    handler.writePushPromise(streamId, headers, new Handler<AsyncResult<Integer>>() {
+      @Override
+      public void handle(AsyncResult<Integer> ar) {
+        if (ar.succeeded()) {
+          int promisedStreamId = ar.result();
+          String contentEncoding = HttpUtils.determineContentEncoding(headers);
+          Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
+          Push push = new Push(promisedStream, contentEncoding, completionHandler);
+          streams.put(promisedStreamId, push);
+          if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
+            concurrentStreams++;
+            context.executeFromIO(push::complete);
+          } else {
+            pendingPushes.add(push);
+          }
         } else {
-          pendingPushes.add(push);
+          context.executeFromIO(() -> {
+            completionHandler.handle(Future.failedFuture(ar.cause()));
+          });
         }
-      } else {
-        context.executeFromIO(() -> {
-          completionHandler.handle(Future.failedFuture(fut.cause()));
-        });
       }
     });
-  }
-
-  void checkPendingPushes() {
-    while ((maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) && pendingPushes.size() > 0) {
-      Push push = pendingPushes.pop();
-      concurrentStreams++;
-      context.executeFromIO(push::complete);
-    }
   }
 
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
