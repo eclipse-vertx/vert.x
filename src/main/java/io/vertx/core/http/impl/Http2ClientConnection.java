@@ -80,7 +80,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     http2Pool.recycle(Http2ClientConnection.this);
   }
 
-  HttpClientStream createStream() {
+  synchronized HttpClientStream createStream() {
     try {
       Http2Connection conn = handler.connection();
       Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
@@ -104,7 +104,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
+  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
       context.executeFromIO(() -> {
@@ -114,7 +114,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+  public synchronized void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
       context.executeFromIO(() -> {
@@ -175,13 +175,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleReset(long errorCode) {
-      if (!responseEnded) {
-        responseEnded = true;
-        if (conn.metrics.isEnabled()) {
-          conn.metrics.requestReset(request.metric());
-        }
-        handleException(new StreamResetException(errorCode));
+      if (responseEnded) {
+        return;
       }
+      responseEnded = true;
+      if (conn.metrics.isEnabled()) {
+        conn.metrics.requestReset(request.metric());
+      }
+      handleException(new StreamResetException(errorCode));
     }
 
     @Override
@@ -196,7 +197,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void handleInterestedOpsChanged() {
+    public void checkDrained() {
+      synchronized (conn) {
+        handleInterestedOpsChanged();
+      }
+    }
+
+    @Override
+    void handleInterestedOpsChanged() {
       if (request instanceof HttpClientRequestImpl && !isNotWritable()) {
         if (!isNotWritable()) {
           ((HttpClientRequestImpl) request).handleDrained();

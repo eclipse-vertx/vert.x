@@ -1416,7 +1416,7 @@ public class Http2ServerTest extends Http2TestBase {
         when.complete();
         HttpServerResponse resp = ar.result();
         resp.exceptionHandler(err -> {
-          assertOnIOContext(ctx);
+          assertSame(ctx, Vertx.currentContext());
           complete();
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
@@ -1452,16 +1452,16 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         // Called twice : reset + close
-        assertOnIOContext(ctx);
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       req.response().exceptionHandler(err -> {
         // Called twice : reset + close
-        assertOnIOContext(ctx);
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       req.connection().exceptionHandler(err -> {
-        assertOnIOContext(ctx);
+        assertSame(ctx, Vertx.currentContext());
         complete();
       });
       when.complete();

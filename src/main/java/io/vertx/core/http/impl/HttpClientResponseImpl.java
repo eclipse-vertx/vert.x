@@ -44,7 +44,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final int statusCode;
   private final String statusMessage;
   private final HttpClientRequestBase request;
-  private final HttpClientStream conn;
+  private final HttpClientConnection conn;
+  private final HttpClientStream stream;
 
   private Handler<Buffer> dataHandler;
   private Handler<HttpFrame> unknownFrameHandler;
@@ -64,12 +65,13 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private MultiMap trailers;
   private List<String> cookies;
 
-  HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream conn, int statusCode, String statusMessage, MultiMap headers) {
+  HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream stream, int statusCode, String statusMessage, MultiMap headers) {
     this.version = version;
     this.statusCode = statusCode;
     this.statusMessage = statusMessage;
     this.request = request;
-    this.conn = conn;
+    this.stream = stream;
+    this.conn = stream.connection();
     this.headers = headers;
   }
 
@@ -165,7 +167,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     synchronized (conn) {
       if (!paused) {
         paused = true;
-        conn.doPause();
+        stream.doPause();
       }
       return this;
     }
@@ -177,7 +179,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       if (paused) {
         paused = false;
         doResume();
-        conn.doResume();
+        stream.doResume();
       }
       return this;
     }
@@ -203,7 +205,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     if (hasPausedEnd) {
       final Buffer theChunk = pausedLastChunk;
       final MultiMap theTrailer = pausedTrailers;
-      conn.getContext().runOnContext(v -> handleEnd(theChunk, theTrailer));
+      stream.getContext().runOnContext(v -> handleEnd(theChunk, theTrailer));
       hasPausedEnd = false;
       pausedTrailers = null;
       pausedLastChunk = null;
@@ -238,7 +240,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   void handleEnd(Buffer lastChunk, MultiMap trailers) {
     synchronized (conn) {
-      conn.connection().reportBytesRead(bytesRead);
+      conn.reportBytesRead(bytesRead);
       bytesRead = 0;
       if (paused) {
         pausedLastChunk = lastChunk;
@@ -272,7 +274,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   public NetSocket netSocket() {
     synchronized (conn) {
       if (netSocket == null) {
-        netSocket = conn.createNetSocket();
+        netSocket = stream.createNetSocket();
       }
       return netSocket;
     }

@@ -99,41 +99,44 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   protected void handleInterestedOpsChanged() {
+    // Handled by HTTP/2
   }
 
   boolean isSsl() {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
-  void onConnectionError(Throwable cause) {
-    for (VertxHttp2Stream stream : streams.values()) {
-      context.executeFromIO(() -> {
-        stream.handleException(cause);
-      });
-    }
-    Handler<Throwable> handler = exceptionHandler;
-    if (handler != null) {
-      context.executeFromIO(() -> {
+  synchronized void onConnectionError(Throwable cause) {
+    synchronized (this) {
+      for (VertxHttp2Stream stream : streams.values()) {
+        context.runOnContext(v -> {
+          synchronized (Http2ConnectionBase.this) {
+            stream.handleException(cause);
+          }
+        });
+      }
+      Handler<Throwable> handler = exceptionHandler;
+      if (handler != null) {
         handler.handle(cause);
-      });
+      }
     }
   }
 
-  void onStreamError(int streamId, Throwable cause) {
+  synchronized void onStreamError(int streamId, Throwable cause) {
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream != null) {
       stream.handleException(cause);
     }
   }
 
-  void onStreamwritabilityChanged(Http2Stream s) {
+  synchronized void onStreamwritabilityChanged(Http2Stream s) {
     VertxHttp2Stream stream = streams.get(s.id());
     if (stream != null) {
       context.executeFromIO(stream::onWritabilityChanged);
     }
   }
 
-  void onStreamClosed(Http2Stream stream) {
+  synchronized void onStreamClosed(Http2Stream stream) {
     checkShutdownHandler();
     VertxHttp2Stream removed = streams.remove(stream.id());
     if (removed != null) {
@@ -146,7 +149,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
   }
 
-  void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+  synchronized void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
     Handler<GoAway> handler = goAwayHandler;
     if (handler != null) {
       Buffer buffer = Buffer.buffer(debugData);
@@ -170,16 +173,16 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void onSettingsAckRead(ChannelHandlerContext ctx) {
+  public synchronized void onSettingsAckRead(ChannelHandlerContext ctx) {
     Runnable handler = updateSettingsHandler.poll();
     if (handler != null) {
-      // No need to run on a particular context it shall be done by the handler already
+      // No need to run on a particular context it shall be done by the handler instead
       handler.run();
     }
   }
 
   @Override
-  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
+  public synchronized void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     Handler<io.vertx.core.http.Http2Settings> handler = clientSettingsHandler;
     if (handler != null) {
       context.executeFromIO(() -> {
@@ -210,7 +213,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
+  public synchronized void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
@@ -222,7 +225,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+  public synchronized void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
       context.executeFromIO(() -> {
@@ -232,13 +235,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
+  public synchronized int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
     int[] consumed = { padding };
     VertxHttp2Stream req = streams.get(streamId);
     if (req != null) {
       Buffer buff = Buffer.buffer(data.copy());
       context.executeFromIO(() -> {
-        int len = data.readableBytes();
+        int len = buff.length();
         if (req.onDataRead(buff)) {
           consumed[0] += len;
         }
@@ -251,7 +254,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
+  public synchronized HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
     if (errorCode < 0) {
       throw new IllegalArgumentException();
     }
@@ -263,13 +266,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection goAwayHandler(Handler<GoAway> handler) {
+  public synchronized HttpConnection goAwayHandler(Handler<GoAway> handler) {
     goAwayHandler = handler;
     return this;
   }
 
   @Override
-  public HttpConnection shutdownHandler(Handler<Void> handler) {
+  public synchronized HttpConnection shutdownHandler(Handler<Void> handler) {
     shutdownHandler = handler;
     return this;
   }
@@ -287,7 +290,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return shutdown(null);
   }
 
-  private HttpConnection shutdown(Long timeout) {
+  private synchronized HttpConnection shutdown(Long timeout) {
     if (!shuttingdown) {
       shuttingdown = true;
       if (timeout != null) {
@@ -299,7 +302,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection closeHandler(Handler<Void> handler) {
+  public synchronized HttpConnection closeHandler(Handler<Void> handler) {
     closeHandler = handler;
     return this;
   }
@@ -310,18 +313,18 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
+  public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
     clientSettingsHandler = handler;
     return this;
   }
 
   @Override
-  public Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler() {
+  public synchronized Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler() {
     return clientSettingsHandler;
   }
 
   @Override
-  public io.vertx.core.http.Http2Settings remoteSettings() {
+  public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
     io.vertx.core.http.Http2Settings a = new io.vertx.core.http.Http2Settings();
     a.setPushEnabled(handler.connection().remote().allowPushTo());
     a.setMaxConcurrentStreams((long) handler.connection().local().maxActiveStreams());
@@ -333,7 +336,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public io.vertx.core.http.Http2Settings settings() {
+  public synchronized io.vertx.core.http.Http2Settings settings() {
     return HttpUtils.toVertxSettings(serverSettings);
   }
 
@@ -349,7 +352,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return this;
   }
 
-  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
+  protected synchronized void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     Context completionContext = completionHandler != null ? context.owner().getOrCreateContext() : null;
     Http2Settings current = handler.decoder().localSettings();
     for (Map.Entry<Character, Long> entry : current.entrySet()) {
@@ -360,14 +363,16 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     handler.writeSettings(settingsUpdate).addListener(fut -> {
       if (fut.isSuccess()) {
-        updateSettingsHandler.add(() -> {
-          serverSettings.putAll(settingsUpdate);
-          if (completionHandler != null) {
-            completionContext.runOnContext(v -> {
-              completionHandler.handle(Future.succeededFuture());
-            });
-          }
-        });
+        synchronized (Http2ConnectionBase.this) {
+          updateSettingsHandler.add(() -> {
+            serverSettings.putAll(settingsUpdate);
+            if (completionHandler != null) {
+              completionContext.runOnContext(v -> {
+                completionHandler.handle(Future.succeededFuture());
+              });
+            }
+          });
+        }
       } else {
         if (completionHandler != null) {
           completionContext.runOnContext(v -> {
@@ -379,13 +384,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection exceptionHandler(Handler<Throwable> handler) {
+  public synchronized HttpConnection exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
   }
 
   @Override
-  public Handler<Throwable> exceptionHandler() {
+  public synchronized Handler<Throwable> exceptionHandler() {
     return exceptionHandler;
   }
 

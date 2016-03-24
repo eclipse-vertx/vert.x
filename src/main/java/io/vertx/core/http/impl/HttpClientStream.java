@@ -28,6 +28,7 @@ import io.vertx.core.net.NetSocket;
  */
 interface HttpClientStream {
 
+  
   /**
    * @return the stream version or null if it's not yet determined
    */
@@ -43,7 +44,7 @@ interface HttpClientStream {
 
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
-  void handleInterestedOpsChanged();
+  void checkDrained();
   void doPause();
   void doResume();
 

@@ -52,36 +52,44 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onResetRead(long code) {
-    paused = false;
-    pending.clear();
-    handleReset(code);
+    synchronized (conn) {
+      paused = false;
+      pending.clear();
+      handleReset(code);
+    }
   }
 
   boolean onDataRead(Buffer data) {
-    if (!paused) {
-      if (pending.isEmpty()) {
-        handleData(data);
-        return true;
+    synchronized (conn) {
+      if (!paused) {
+        if (pending.isEmpty()) {
+          handleData(data);
+          return true;
+        } else {
+          pending.add(data);
+          checkNextTick(null);
+        }
       } else {
         pending.add(data);
-        checkNextTick(null);
       }
-    } else {
-      pending.add(data);
+      return false;
     }
-    return false;
   }
 
   void onWritabilityChanged() {
-    writable = !writable;
-    handleInterestedOpsChanged();
+    synchronized (conn) {
+      writable = !writable;
+      handleInterestedOpsChanged();
+    }
   }
 
   void onEnd() {
-    if (paused || pending.size() > 0) {
-      pending.add(END);
-    } else {
-      handleEnd();
+    synchronized (conn) {
+      if (paused || pending.size() > 0) {
+        pending.add(END);
+      } else {
+        handleEnd();
+      }
     }
   }
 
@@ -89,17 +97,19 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
    * Check if paused buffers must be handled to the reader, this must be called from event loop.
    */
   private void checkNextTick(Void v) {
-    if (!paused) {
-      Object msg = pending.poll();
-      if (msg instanceof Buffer) {
-        Buffer buf = (Buffer) msg;
-        conn.handler.consume(stream, buf.length());
-        handleData(buf);
-        if (pending.size() > 0) {
-          vertx.runOnContext(this::checkNextTick);
+    synchronized (conn) {
+      if (!paused) {
+        Object msg = pending.poll();
+        if (msg instanceof Buffer) {
+          Buffer buf = (Buffer) msg;
+          conn.handler.consume(stream, buf.length());
+          handleData(buf);
+          if (pending.size() > 0) {
+            vertx.runOnContext(this::checkNextTick);
+          }
+        } if (msg == END) {
+          handleEnd();
         }
-      } if (msg == END) {
-        handleEnd();
       }
     }
   }
@@ -118,7 +128,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   boolean isNotWritable() {
-    return !writable;
+    synchronized (conn) {
+      return !writable;
+    }
   }
 
   void writeFrame(int type, int flags, ByteBuf payload) {

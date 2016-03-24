@@ -77,7 +77,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     return metrics;
   }
 
-  private boolean isMalformedRequest(Http2Headers headers) {
+  private static boolean isMalformedRequest(Http2Headers headers) {
     if (headers.method() == null) {
       return true;
     }
@@ -106,7 +106,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   }
 
   @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId,
+  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
                             Http2Headers headers, int padding, boolean endOfStream) {
     VertxHttp2Stream stream = streams.get(streamId);
     if (stream == null) {
@@ -136,12 +136,49 @@ public class Http2ServerConnection extends Http2ConnectionBase {
   }
 
   @Override
-  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
+  public synchronized void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     Long v = settings.maxConcurrentStreams();
     if (v != null) {
       maxConcurrentStreams = v;
     }
     super.onSettingsRead(ctx, settings);
+  }
+
+  synchronized void sendPush(int streamId, Http2Headers headers, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+    handler.writePushPromise(streamId, headers, new Handler<AsyncResult<Integer>>() {
+      @Override
+      public void handle(AsyncResult<Integer> ar) {
+        if (ar.succeeded()) {
+          synchronized (Http2ServerConnection.this) {
+            int promisedStreamId = ar.result();
+            String contentEncoding = HttpUtils.determineContentEncoding(headers);
+            Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
+            Push push = new Push(promisedStream, contentEncoding, completionHandler);
+            streams.put(promisedStreamId, push);
+            if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
+              concurrentStreams++;
+              context.executeFromIO(push::complete);
+            } else {
+              pendingPushes.add(push);
+            }
+          }
+        } else {
+          context.executeFromIO(() -> {
+            completionHandler.handle(Future.failedFuture(ar.cause()));
+          });
+        }
+      }
+    });
+  }
+
+  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
+    settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
+    super.updateSettings(settingsUpdate, completionHandler);
+  }
+
+  @Override
+  protected Object metric() {
+    return metric;
   }
 
   private class Push extends VertxHttp2Stream<Http2ServerConnection> {
@@ -207,43 +244,10 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     }
 
     void complete() {
-      response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, true, contentEncoding);
-      completionHandler.complete(response);
-    }
-  }
-
-  void sendPush(int streamId, Http2Headers headers, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
-    handler.writePushPromise(streamId, headers, new Handler<AsyncResult<Integer>>() {
-      @Override
-      public void handle(AsyncResult<Integer> ar) {
-        if (ar.succeeded()) {
-          int promisedStreamId = ar.result();
-          String contentEncoding = HttpUtils.determineContentEncoding(headers);
-          Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Push push = new Push(promisedStream, contentEncoding, completionHandler);
-          streams.put(promisedStreamId, push);
-          if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
-            concurrentStreams++;
-            context.executeFromIO(push::complete);
-          } else {
-            pendingPushes.add(push);
-          }
-        } else {
-          context.executeFromIO(() -> {
-            completionHandler.handle(Future.failedFuture(ar.cause()));
-          });
-        }
+      synchronized (Http2ServerConnection.this) {
+        response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, true, contentEncoding);
+        completionHandler.complete(response);
       }
-    });
-  }
-
-  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
-    settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
-    super.updateSettings(settingsUpdate, completionHandler);
-  }
-
-  @Override
-  protected Object metric() {
-    return metric;
+    }
   }
 }

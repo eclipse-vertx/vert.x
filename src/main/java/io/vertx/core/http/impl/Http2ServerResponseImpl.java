@@ -46,7 +46,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private final VertxHttp2Stream stream;
   private final ChannelHandlerContext ctx;
-  private final Http2ServerConnection connection;
+  private final Http2ServerConnection conn;
   private final boolean push;
   private final Object metric;
   private final String host;
@@ -66,12 +66,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> closeHandler;
   private long bytesWritten;
 
-  public Http2ServerResponseImpl(Http2ServerConnection connection, VertxHttp2Stream stream, Object metric, boolean push, String contentEncoding, String host) {
+  public Http2ServerResponseImpl(Http2ServerConnection conn, VertxHttp2Stream stream, Object metric, boolean push, String contentEncoding, String host) {
 
     this.metric = metric;
     this.stream = stream;
-    this.ctx = connection.handlerContext;
-    this.connection = connection;
+    this.ctx = conn.handlerContext;
+    this.conn = conn;
     this.push = push;
     this.host = host;
 
@@ -80,10 +80,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  public Http2ServerResponseImpl(Http2ServerConnection connection, VertxHttp2Stream stream, boolean push, String contentEncoding) {
+  public Http2ServerResponseImpl(Http2ServerConnection conn, VertxHttp2Stream stream, boolean push, String contentEncoding) {
     this.stream = stream;
-    this.ctx = connection.handlerContext;
-    this.connection = connection;
+    this.ctx = conn.handlerContext;
+    this.conn = conn;
     this.push = push;
     this.host = null;
 
@@ -91,7 +91,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
     }
 
-    this.metric = connection.metrics().responsePushed(connection.metric(), this);
+    this.metric = conn.metrics().responsePushed(conn.metric(), this);
   }
 
   void callReset(long code) {
@@ -122,14 +122,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
-    checkEnded();
-    exceptionHandler = handler;
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      exceptionHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public int getStatusCode() {
-    return statusCode;
+    synchronized (conn) {
+      return statusCode;
+    }
   }
 
   @Override
@@ -137,136 +141,170 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (statusCode < 0) {
       throw new IllegalArgumentException("code: " + statusCode + " (expected: 0+)");
     }
-    checkHeadWritten();
-    this.statusCode = statusCode;
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      this.statusCode = statusCode;
+      return this;
+    }
   }
 
   @Override
   public String getStatusMessage() {
-    if (statusMessage == null) {
-      switch (statusCode / 100) {
-        case 1:
-          return "Informational";
-        case 2:
-          return "Success";
-        case 3:
-          return "Redirection";
-        case 4:
-          return "Client Error";
-        case 5:
-          return "Server Error";
-        default:
-          return "Unknown Status";
+    synchronized (conn) {
+      if (statusMessage == null) {
+        switch (statusCode / 100) {
+          case 1:
+            return "Informational";
+          case 2:
+            return "Success";
+          case 3:
+            return "Redirection";
+          case 4:
+            return "Client Error";
+          case 5:
+            return "Server Error";
+          default:
+            return "Unknown Status";
+        }
       }
+      return statusMessage;
     }
-    return statusMessage;
   }
 
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
-    checkHeadWritten();
-    this.statusMessage = statusMessage;
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      this.statusMessage = statusMessage;
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse setChunked(boolean chunked) {
-    checkHeadWritten();
-    this.chunked = true;
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      this.chunked = true;
+      return this;
+    }
   }
 
   @Override
   public boolean isChunked() {
-    return chunked;
+    synchronized (conn) {
+      return chunked;
+    }
   }
 
   @Override
   public MultiMap headers() {
-    if (headersMap == null) {
-      headersMap = new Http2HeadersAdaptor(headers);
+    synchronized (conn) {
+      if (headersMap == null) {
+        headersMap = new Http2HeadersAdaptor(headers);
+      }
+      return headersMap;
     }
-    return headersMap;
   }
 
   @Override
   public HttpServerResponse putHeader(String name, String value) {
-    checkHeadWritten();
-    headers().add(name, value);
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      headers().add(name, value);
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
-    checkHeadWritten();
-    headers().add(name, value);
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      headers().add(name, value);
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse putHeader(String name, Iterable<String> values) {
-    checkHeadWritten();
-    headers().add(name, values);
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      headers().add(name, values);
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
-    checkHeadWritten();
-    headers().add(name, values);
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      headers().add(name, values);
+      return this;
+    }
   }
 
   @Override
   public MultiMap trailers() {
-    if (trailedMap == null) {
-      trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
+    synchronized (conn) {
+      if (trailedMap == null) {
+        trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
+      }
+      return trailedMap;
     }
-    return trailedMap;
   }
 
   @Override
   public HttpServerResponse putTrailer(String name, String value) {
-    checkEnded();
-    trailers().set(name, value);
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      trailers().set(name, value);
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
-    checkEnded();
-    trailers().set(name, value);
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      trailers().set(name, value);
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse putTrailer(String name, Iterable<String> values) {
-    checkEnded();
-    trailers().set(name, values);
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      trailers().set(name, values);
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
-    checkEnded();
-    trailers().set(name, value);
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      trailers().set(name, value);
+      return this;
+    }
   }
 
   @Override
-  public HttpServerResponse closeHandler(@Nullable Handler<Void> handler) {
-    checkEnded();
-    closeHandler = handler;
-    return this;
+  public HttpServerResponse closeHandler(Handler<Void> handler) {
+    synchronized (conn) {
+      checkEnded();
+      closeHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse writeContinue() {
-    checkHeadWritten();
-    stream.writeHeaders(new DefaultHttp2Headers().status("100"), false);
-    ctx.flush();
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false);
+      ctx.flush();
+      return this;
+    }
   }
 
   @Override
@@ -317,10 +355,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   private void end(ByteBuf chunk) {
-    if (!chunked && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
-      headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
+    synchronized (conn) {
+      if (!chunked && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+        headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
+      }
+      write(chunk, true);
     }
-    write(chunk, true);
   }
 
   private boolean checkSendHeaders(boolean end) {
@@ -347,32 +387,36 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   void write(ByteBuf chunk, boolean end) {
-    checkEnded();
-    if (end) {
-      handleEnded(false);
-    }
-    int len = chunk.readableBytes();
-    boolean empty = len == 0;
-    boolean sent = checkSendHeaders(end && empty && trailers == null);
-    if (!empty || (!sent && end)) {
-      stream.writeData(chunk, end && trailers == null);
-      bytesWritten += len;
-    }
-    if (end && trailers != null) {
-      stream.writeHeaders(trailers, true);
-    }
-    if (end && bodyEndHandler != null) {
-      bodyEndHandler.handle(null);
+    synchronized (conn) {
+      checkEnded();
+      if (end) {
+        handleEnded(false);
+      }
+      int len = chunk.readableBytes();
+      boolean empty = len == 0;
+      boolean sent = checkSendHeaders(end && empty && trailers == null);
+      if (!empty || (!sent && end)) {
+        stream.writeData(chunk, end && trailers == null);
+        bytesWritten += len;
+      }
+      if (end && trailers != null) {
+        stream.writeHeaders(trailers, true);
+      }
+      if (end && bodyEndHandler != null) {
+        bodyEndHandler.handle(null);
+      }
     }
   }
 
   @Override
   public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
-    checkEnded();
-    checkSendHeaders(false);
-    stream.writeFrame(type, flags, payload.getByteBuf());
-    ctx.flush();
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      checkSendHeaders(false);
+      stream.writeFrame(type, flags, payload.getByteBuf());
+      ctx.flush();
+      return this;
+    }
   }
 
   private void checkEnded() {
@@ -387,10 +431,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       if (metric != null) {
         // Null in case of push response : handle this case
         if (failed) {
-          connection.metrics().requestReset(metric);
+          conn.metrics().requestReset(metric);
         } else {
-          connection.reportBytesWritten(bytesWritten);
-          connection.metrics().responseEnd(metric, this);
+          conn.reportBytesWritten(bytesWritten);
+          conn.metrics().responseEnd(metric, this);
         }
       }
       return true;
@@ -406,22 +450,28 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public boolean writeQueueFull() {
-    checkEnded();
-    return stream.isNotWritable();
+    synchronized (conn) {
+      checkEnded();
+      return stream.isNotWritable();
+    }
   }
 
   @Override
   public HttpServerResponse setWriteQueueMaxSize(int maxSize) {
-    checkEnded();
-    // It does not seem to be possible to configure this at the moment
+    synchronized (conn) {
+      checkEnded();
+      // It does not seem to be possible to configure this at the moment
+    }
     return this;
   }
 
   @Override
   public HttpServerResponse drainHandler(Handler<Void> handler) {
-    checkEnded();
-    drainHandler = handler;
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      drainHandler = handler;
+      return this;
+    }
   }
 
   @Override
@@ -431,98 +481,109 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+    synchronized (conn) {
+      checkEnded();
 
-    checkEnded();
+      Context resultCtx = resultHandler != null ? stream.vertx.getOrCreateContext() : null;
 
-    Context resultCtx = resultHandler != null ? stream.vertx.getOrCreateContext() : null;
-
-    File file = stream.vertx.resolveFile(filename);
-    if (!file.exists()) {
-      if (resultHandler != null) {
-        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
-      } else {
-        // log.error("File not found: " + filename);
+      File file = stream.vertx.resolveFile(filename);
+      if (!file.exists()) {
+        if (resultHandler != null) {
+          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
+        } else {
+          // log.error("File not found: " + filename);
+        }
+        return this;
       }
-      return this;
+
+      RandomAccessFile raf;
+      try {
+        raf = new RandomAccessFile(file, "r");
+      } catch (IOException e) {
+        if (resultHandler != null) {
+          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
+        } else {
+          //log.error("Failed to send file", e);
+        }
+        return this;
+      }
+
+      long contentLength = Math.min(length, file.length() - offset);
+      if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+        putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+      }
+      if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+        String contentType = MimeMapping.getMimeTypeForFilename(filename);
+        if (contentType != null) {
+          putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
+        }
+      }
+      checkSendHeaders(false);
+
+      FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
+        if (ar.succeeded()) {
+          bytesWritten += ar.result();
+          end();
+        }
+        if (resultHandler != null) {
+          resultCtx.runOnContext(v -> {
+            resultHandler.handle(Future.succeededFuture());
+          });
+        }
+      }, stream, offset, contentLength);
+      drainHandler(fileChannel.drainHandler);
+      ctx.channel().eventLoop().register(fileChannel);
+      fileChannel.pipeline().fireUserEventTriggered(raf);
     }
-
-    RandomAccessFile raf;
-    try {
-      raf = new RandomAccessFile(file, "r");
-    } catch (IOException e) {
-      if (resultHandler != null) {
-        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
-      } else {
-        //log.error("Failed to send file", e);
-      }
-      return this;
-    }
-
-    long contentLength = Math.min(length, file.length() - offset);
-    if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
-      putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
-    }
-    if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
-      String contentType = MimeMapping.getMimeTypeForFilename(filename);
-      if (contentType != null) {
-        putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
-      }
-    }
-    checkSendHeaders(false);
-
-    FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
-      if (ar.succeeded()) {
-        bytesWritten += ar.result();
-        end();
-      }
-      if (resultHandler != null) {
-        resultCtx.runOnContext(v -> {
-          resultHandler.handle(Future.succeededFuture());
-        });
-      }
-    }, stream, offset, contentLength);
-    drainHandler(fileChannel.drainHandler);
-    ctx.channel().eventLoop().register(fileChannel);
-    fileChannel.pipeline().fireUserEventTriggered(raf);
-
     return this;
   }
 
   @Override
   public void close() {
-    connection.close();
+    conn.close();
   }
 
   @Override
   public boolean ended() {
-    return ended;
+    synchronized (conn) {
+      return ended;
+    }
   }
 
   @Override
   public boolean closed() {
+    // Todo
     throw new UnsupportedOperationException();
   }
 
   @Override
   public boolean headWritten() {
-    return headWritten;
+    synchronized (conn) {
+      return headWritten;
+    }
   }
 
   @Override
   public HttpServerResponse headersEndHandler(@Nullable Handler<Void> handler) {
-    headersEndHandler = handler;
-    return this;
+    synchronized (conn) {
+      headersEndHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public HttpServerResponse bodyEndHandler(@Nullable Handler<Void> handler) {
-    bodyEndHandler = handler;
-    return this;
+    synchronized (conn) {
+      bodyEndHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public long bytesWritten() {
-    return bytesWritten;
+    synchronized (conn) {
+      return bytesWritten;
+    }
   }
 
   @Override
@@ -532,25 +593,29 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void reset(long code) {
-    checkEnded();
-    handleEnded(true);
-    stream.writeReset(code);
-    ctx.flush();
+    synchronized (conn) {
+      checkEnded();
+      handleEnded(true);
+      stream.writeReset(code);
+      ctx.flush();
+    }
   }
 
   public HttpServerResponse pushPromise(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    if (push) {
-      throw new IllegalStateException("A push response cannot promise another push");
+    synchronized (conn) {
+      if (push) {
+        throw new IllegalStateException("A push response cannot promise another push");
+      }
+      checkEnded();
+      Http2Headers headers = new DefaultHttp2Headers();
+      headers.method(method.name());
+      headers.path(path);
+      if (host != null) {
+        headers.authority(host);
+      }
+      conn.sendPush(stream.id(), headers, handler);
+      return this;
     }
-    checkEnded();
-    Http2Headers headers = new DefaultHttp2Headers();
-    headers.method(method.name());
-    headers.path(path);
-    if (host != null) {
-      headers.authority(host);
-    }
-    connection.sendPush(stream.id(), headers, handler);
-    return this;
   }
 
   @Override

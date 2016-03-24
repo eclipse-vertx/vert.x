@@ -266,6 +266,11 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   }
 
   @Override
+  public void checkDrained() {
+    handleInterestedOpsChanged();
+  }
+
+  @Override
   public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
       if (currentRequest != null) {

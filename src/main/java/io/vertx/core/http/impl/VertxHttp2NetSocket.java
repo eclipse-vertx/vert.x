@@ -49,8 +49,8 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
 
-  public VertxHttp2NetSocket(C connection, Http2Stream stream) {
-    super(connection, stream);
+  public VertxHttp2NetSocket(C conn, Http2Stream stream) {
+    super(conn, stream);
   }
 
   // Stream impl
@@ -105,14 +105,18 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
-    return this;
+    synchronized (conn) {
+      exceptionHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public NetSocket handler(Handler<Buffer> handler) {
-    dataHandler = handler;
-    return this;
+    synchronized (conn) {
+      dataHandler = handler;
+      return this;
+    }
   }
 
   @Override
@@ -127,14 +131,18 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket endHandler(Handler<Void> handler) {
-    endHandler = handler;
-    return this;
+    synchronized (conn) {
+      endHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public NetSocket write(Buffer data) {
-    writeData(data.getByteBuf(), false);
-    return this;
+    synchronized (conn) {
+      writeData(data.getByteBuf(), false);
+      return this;
+    }
   }
 
   @Override
@@ -144,8 +152,10 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket drainHandler(Handler<Void> handler) {
-    drainHandler = handler;
-    return this;
+    synchronized (conn) {
+      drainHandler = handler;
+      return this;
+    }
   }
 
   @Override
@@ -155,23 +165,22 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public String writeHandlerID() {
+    // TODO
     return null;
   }
 
   @Override
   public NetSocket write(String str) {
-    writeData(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8), false);
-    return this;
+    return write(str, null);
   }
 
   @Override
   public NetSocket write(String str, String enc) {
-    if (enc == null) {
-      write(str);
-    } else {
-      writeData(Unpooled.copiedBuffer(str, Charset.forName(enc)), false);
+    synchronized (conn) {
+      Charset cs = enc != null ? Charset.forName(enc) : CharsetUtil.UTF_8;
+      writeData(Unpooled.copiedBuffer(str, cs), false);
+      return this;
     }
-    return this;
   }
 
   @Override
@@ -181,44 +190,44 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+    synchronized (conn) {
+      Context resultCtx = resultHandler != null ? vertx.getOrCreateContext() : null;
 
-    Context resultCtx = resultHandler != null ? vertx.getOrCreateContext() : null;
-
-    File file = vertx.resolveFile(filename);
-    if (!file.exists()) {
-      if (resultHandler != null) {
-        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
-      } else {
-        // log.error("File not found: " + filename);
+      File file = vertx.resolveFile(filename);
+      if (!file.exists()) {
+        if (resultHandler != null) {
+          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
+        } else {
+          // log.error("File not found: " + filename);
+        }
+        return this;
       }
-      return this;
+
+      RandomAccessFile raf;
+      try {
+        raf = new RandomAccessFile(file, "r");
+      } catch (IOException e) {
+        if (resultHandler != null) {
+          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
+        } else {
+          //log.error("Failed to send file", e);
+        }
+        return this;
+      }
+
+      long contentLength = Math.min(length, file.length() - offset);
+
+      FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
+        if (resultHandler != null) {
+          resultCtx.runOnContext(v -> {
+            resultHandler.handle(Future.succeededFuture());
+          });
+        }
+      }, this, offset, contentLength);
+      drainHandler(fileChannel.drainHandler);
+      handlerContext.channel().eventLoop().register(fileChannel);
+      fileChannel.pipeline().fireUserEventTriggered(raf);
     }
-
-    RandomAccessFile raf;
-    try {
-      raf = new RandomAccessFile(file, "r");
-    } catch (IOException e) {
-      if (resultHandler != null) {
-        resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
-      } else {
-        //log.error("Failed to send file", e);
-      }
-      return this;
-    }
-
-    long contentLength = Math.min(length, file.length() - offset);
-
-    FileStreamChannel fileChannel = new FileStreamChannel(ar -> {
-      if (resultHandler != null) {
-        resultCtx.runOnContext(v -> {
-          resultHandler.handle(Future.succeededFuture());
-        });
-      }
-    }, this, offset, contentLength);
-    drainHandler(fileChannel.drainHandler);
-    handlerContext.channel().eventLoop().register(fileChannel);
-    fileChannel.pipeline().fireUserEventTriggered(raf);
-
     return this;
   }
 
@@ -234,12 +243,16 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public void end() {
-    writeData(Unpooled.EMPTY_BUFFER, true);
+    synchronized (conn) {
+      writeData(Unpooled.EMPTY_BUFFER, true);
+    }
   }
 
   @Override
   public void end(Buffer buffer) {
-    writeData(buffer.getByteBuf(), true);
+    synchronized (conn) {
+      writeData(buffer.getByteBuf(), true);
+    }
   }
 
   @Override
@@ -249,8 +262,10 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket closeHandler(@Nullable Handler<Void> handler) {
-    closeHandler = handler;
-    return this;
+    synchronized (conn) {
+      closeHandler = handler;
+      return this;
+    }
   }
 
   @Override

@@ -972,7 +972,7 @@ public class Http2ClientTest extends Http2TestBase {
           });
         }).connectionHandler(conn -> {
           conn.exceptionHandler(err -> {
-            assertOnIOContext(ctx);
+            assertSame(ctx, Vertx.currentContext());
             if (err instanceof Http2Exception) {
               complete();
             }

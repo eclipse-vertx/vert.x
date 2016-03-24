@@ -81,6 +81,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> unknownFrameHandler;
 
+  private NetSocket netSocket;
+
   public Http2ServerRequestImpl(Http2ServerConnection conn, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding) {
     super(conn, stream);
@@ -193,33 +195,43 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
+    synchronized (conn) {
+      exceptionHandler = handler;
+    }
     return this;
   }
 
   @Override
   public HttpServerRequest handler(Handler<Buffer> handler) {
-    checkEnded();
-    dataHandler = handler;
+    synchronized (conn) {
+      checkEnded();
+      dataHandler = handler;
+    }
     return this;
   }
 
   @Override
   public HttpServerRequest pause() {
-    doPause();
+    synchronized (conn) {
+      doPause();
+    }
     return this;
   }
 
   @Override
   public HttpServerRequest resume() {
-    doResume();
+    synchronized (conn) {
+      doResume();
+    }
     return this;
   }
 
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
-    checkEnded();
-    endHandler = handler;
+    synchronized (conn) {
+      checkEnded();
+      endHandler = handler;
+    }
     return this;
   }
 
@@ -230,11 +242,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public HttpMethod method() {
-    if (method == null) {
-      String sMethod = headers.method().toString();
-      method = HttpUtils.toVertxMethod(sMethod);
+    synchronized (conn) {
+      if (method == null) {
+        String sMethod = headers.method().toString();
+        method = HttpUtils.toVertxMethod(sMethod);
+      }
+      return method;
     }
-    return method;
   }
 
   @Override
@@ -244,45 +258,51 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public String uri() {
-    if (uri == null) {
-      CharSequence path = headers.path();
-      if (path != null) {
-        uri = path.toString();
+    synchronized (conn) {
+      if (uri == null) {
+        CharSequence path = headers.path();
+        if (path != null) {
+          uri = path.toString();
+        }
       }
+      return uri;
     }
-    return uri;
   }
 
   @Override
-  public @Nullable String path() {
-    if (path == null) {
-      CharSequence path = headers.path();
-      if (path != null) {
-        this.path = HttpUtils.parsePath(path.toString());
+  public String path() {
+    synchronized (conn) {
+      if (path == null) {
+        CharSequence path = headers.path();
+        if (path != null) {
+          this.path = HttpUtils.parsePath(path.toString());
+        }
       }
+      return path;
     }
-    return path;
   }
 
   @Override
-  public @Nullable String query() {
-    if (query == null) {
-      CharSequence path = headers.path();
-      if (path != null) {
-        this.query = HttpUtils.parseQuery(path.toString());
+  public String query() {
+    synchronized (conn) {
+      if (query == null) {
+        CharSequence path = headers.path();
+        if (path != null) {
+          this.query = HttpUtils.parseQuery(path.toString());
+        }
       }
+      return query;
     }
-    return query;
   }
 
   @Override
-  public @Nullable String scheme() {
+  public String scheme() {
     CharSequence scheme = headers.scheme();
     return scheme != null ? scheme.toString() : null;
   }
 
   @Override
-  public @Nullable String host() {
+  public String host() {
     CharSequence authority = headers.authority();
     return authority != null ? authority.toString() : null;
   }
@@ -294,14 +314,16 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public MultiMap headers() {
-    if (headersMap == null) {
-      headersMap = new Http2HeadersAdaptor(headers);
+    synchronized (conn) {
+      if (headersMap == null) {
+        headersMap = new Http2HeadersAdaptor(headers);
+      }
+      return headersMap;
     }
-    return headersMap;
   }
 
   @Override
-  public @Nullable String getHeader(String headerName) {
+  public String getHeader(String headerName) {
     return headers().get(headerName);
   }
 
@@ -312,14 +334,16 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public MultiMap params() {
-    if (params == null) {
-      params = HttpUtils.params(uri());
+    synchronized (conn) {
+      if (params == null) {
+        params = HttpUtils.params(uri());
+      }
+      return params;
     }
-    return params;
   }
 
   @Override
-  public @Nullable String getParam(String paramName) {
+  public String getParam(String paramName) {
     return params().get(paramName);
   }
 
@@ -343,76 +367,91 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     if (method() == HttpMethod.CONNECT) {
       return null;
     }
-    if (absoluteURI == null) {
-      try {
-        absoluteURI = HttpUtils.absoluteURI(serverOrigin, this);
-      } catch (URISyntaxException e) {
-        log.error("Failed to create abs uri", e);
+    synchronized (conn) {
+      if (absoluteURI == null) {
+        try {
+          absoluteURI = HttpUtils.absoluteURI(serverOrigin, this);
+        } catch (URISyntaxException e) {
+          log.error("Failed to create abs uri", e);
+        }
       }
+      return absoluteURI;
     }
-    return absoluteURI;
   }
 
   @Override
   public NetSocket netSocket() {
-    checkEnded();
-    response.toNetSocket();
-    return conn.toNetSocket(this);
+    synchronized (conn) {
+      checkEnded();
+      if (netSocket == null) {
+        response.toNetSocket();
+        netSocket = conn.toNetSocket(this);
+      }
+      return netSocket;
+    }
   }
 
   @Override
   public HttpServerRequest setExpectMultipart(boolean expect) {
-    checkEnded();
-    if (expect) {
-      if (postRequestDecoder == null) {
-        CharSequence contentType = headers.get(HttpHeaderNames.CONTENT_TYPE);
-        if (contentType != null) {
-          io.netty.handler.codec.http.HttpMethod method = io.netty.handler.codec.http.HttpMethod.valueOf(headers.method().toString());
-          String lowerCaseContentType = contentType.toString().toLowerCase();
-          boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString());
-          if ((lowerCaseContentType.startsWith(HttpHeaderValues.MULTIPART_FORM_DATA.toString()) || isURLEncoded) &&
-              (method == io.netty.handler.codec.http.HttpMethod.POST ||
-                  method == io.netty.handler.codec.http.HttpMethod.PUT ||
-                  method == io.netty.handler.codec.http.HttpMethod.PATCH ||
-                  method == io.netty.handler.codec.http.HttpMethod.DELETE)) {
-            HttpRequest req = new DefaultHttpRequest(
-                io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
-                method,
-                headers.path().toString());
-            req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-            postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(vertx, this, () -> uploadHandler), req);
+    synchronized (conn) {
+      checkEnded();
+      if (expect) {
+        if (postRequestDecoder == null) {
+          CharSequence contentType = headers.get(HttpHeaderNames.CONTENT_TYPE);
+          if (contentType != null) {
+            io.netty.handler.codec.http.HttpMethod method = io.netty.handler.codec.http.HttpMethod.valueOf(headers.method().toString());
+            String lowerCaseContentType = contentType.toString().toLowerCase();
+            boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString());
+            if ((lowerCaseContentType.startsWith(HttpHeaderValues.MULTIPART_FORM_DATA.toString()) || isURLEncoded) &&
+                (method == io.netty.handler.codec.http.HttpMethod.POST ||
+                    method == io.netty.handler.codec.http.HttpMethod.PUT ||
+                    method == io.netty.handler.codec.http.HttpMethod.PATCH ||
+                    method == io.netty.handler.codec.http.HttpMethod.DELETE)) {
+              HttpRequest req = new DefaultHttpRequest(
+                  io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
+                  method,
+                  headers.path().toString());
+              req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
+              postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(vertx, this, () -> uploadHandler), req);
+            }
           }
         }
+      } else {
+        postRequestDecoder = null;
       }
-    } else {
-      postRequestDecoder = null;
     }
     return this;
   }
 
   @Override
   public boolean isExpectMultipart() {
-    return postRequestDecoder != null;
+    synchronized (conn) {
+      return postRequestDecoder != null;
+    }
   }
 
   @Override
   public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
-    checkEnded();
-    uploadHandler = handler;
-    return this;
+    synchronized (conn) {
+      checkEnded();
+      uploadHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public MultiMap formAttributes() {
-    // Create it lazily
-    if (attributes == null) {
-      attributes = new CaseInsensitiveHeaders();
+    synchronized (conn) {
+      // Create it lazily
+      if (attributes == null) {
+        attributes = new CaseInsensitiveHeaders();
+      }
+      return attributes;
     }
-    return attributes;
   }
 
   @Override
-  public @Nullable String getFormAttribute(String attributeName) {
+  public String getFormAttribute(String attributeName) {
     return formAttributes().get(attributeName);
   }
 
@@ -423,18 +462,21 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public boolean isEnded() {
-    return ended;
+    synchronized (conn) {
+      return ended;
+    }
   }
 
   @Override
   public HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler) {
-    unknownFrameHandler = handler;
-    return this;
+    synchronized (conn) {
+      unknownFrameHandler = handler;
+      return this;
+    }
   }
 
   @Override
   public HttpConnection connection() {
     return conn;
   }
-
 }
