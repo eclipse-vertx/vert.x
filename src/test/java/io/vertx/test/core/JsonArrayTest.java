@@ -1029,12 +1029,14 @@ public class JsonArrayTest {
 
   @Test
   public void testClusterSerializable() {
-    jsonArray.add("foo").add(123);
+    JsonObject obj = new JsonObject().put("quux", "wibble");
+    jsonArray.add("foo").add(123).add(obj);
     Buffer buff = Buffer.buffer();
     jsonArray.writeToBuffer(buff);
     JsonArray deserialized = new JsonArray();
     deserialized.readFromBuffer(0, buff);
     assertEquals(jsonArray, deserialized);
+    assertEquals(obj, deserialized.getList().get(2));
   }
 
   @Test
