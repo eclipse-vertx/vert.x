@@ -28,7 +28,6 @@ import io.vertx.core.buffer.Buffer;
  * Represents an HTTP connection.<p/>
  *
  * todo for http2 implementation :
- * - synchronization
  * - documentation
  * - examples
  * - netSocket() interaction are not exactly the same than with http/1.x : see if we can make is the same
