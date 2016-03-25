@@ -725,6 +725,27 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testResetPushPromiseNoHandler() throws Exception {
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
+        assertTrue(ar.succeeded());
+        HttpServerResponse resp = ar.result();
+        resp.setChunked(true).write("content");
+        resp.exceptionHandler(err -> {
+          assertTrue(err instanceof StreamResetException);
+          assertEquals(0, ((StreamResetException) err).getCode());
+          testComplete();
+        });
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+    });
+    req.end();
+    await();
+  }
+
+  @Test
   public void testConnectionHandler() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {

@@ -728,11 +728,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  void handlePush(HttpClientRequest pushedRequest) {
+  Handler<HttpClientRequest> pushHandler() {
     synchronized (getLock()) {
-      if (pushHandler != null) {
-        pushHandler.handle(pushedRequest);
-      }
+      return pushHandler;
     }
   }
 }
