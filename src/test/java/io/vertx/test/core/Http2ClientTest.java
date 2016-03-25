@@ -72,6 +72,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.zip.GZIPOutputStream;
@@ -1345,6 +1346,42 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     req.sendHead();
+    await();
+  }
+
+  @Test
+  public void testIdleTimoutNoConnections() throws Exception {
+    waitFor(4);
+    AtomicLong time = new AtomicLong();
+    server.requestHandler(req -> {
+      req.connection().closeHandler(v -> {
+        complete();
+      });
+      req.response().end("somedata");
+      complete();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      resp.exceptionHandler(err -> {
+        fail();
+      });
+      resp.endHandler(v -> {
+        time.set(System.currentTimeMillis());
+        complete();
+      });
+    });
+    req.exceptionHandler(err -> {
+      fail();
+    });
+    req.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        assertTrue(System.currentTimeMillis() - time.get() > 1000);
+        complete();
+      });
+    });
+    req.end();
     await();
   }
 }
