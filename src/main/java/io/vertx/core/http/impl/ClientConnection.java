@@ -345,7 +345,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
-    if (currentResponse.statusCode() != 100 && requestForResponse.getMethod() != io.vertx.core.http.HttpMethod.CONNECT) {
+    if (currentResponse.statusCode() != 100 && requestForResponse.method() != io.vertx.core.http.HttpMethod.CONNECT) {
 
       boolean close = false;
       // See https://tools.ietf.org/html/rfc7230#section-6.3

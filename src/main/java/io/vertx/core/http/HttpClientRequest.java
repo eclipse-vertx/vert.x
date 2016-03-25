@@ -111,6 +111,16 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   String uri();
 
   /**
+   * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
+   */
+  String path();
+
+  /**
+   * @return the query part of the uri. For example someparam=32&amp;someotherparam=x
+   */
+  String query();
+
+  /**
    * Set the request host.<p/>
    *
    * For HTTP2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header

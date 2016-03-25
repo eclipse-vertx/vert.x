@@ -49,7 +49,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       String uri,
       String host,
       MultiMap headers) throws Http2Exception {
-    super(client);
+    super(client, method, host, uri);
     this.handler = handler;
     this.clientStream = new Http2ClientConnection.Http2ClientStream(handler, this, clientStream);
     this.method = method;

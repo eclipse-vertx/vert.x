@@ -48,13 +48,9 @@ import static io.vertx.core.http.HttpHeaders.*;
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
-  private final String host;
-  private final int port;
   private final boolean ssl;
-  private final HttpClientImpl client;
   private final VertxInternal vertx;
-  private final io.vertx.core.http.HttpMethod method;
-  private final String uri;
+  private final int port;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
   private boolean chunked;
@@ -76,15 +72,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   HttpClientRequestImpl(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, int port,
                         boolean ssl, String relativeURI, VertxInternal vertx) {
-    super(client);
-    this.host = host;
-    this.port = port;
-    this.client = client;
+    super(client, method, host, relativeURI);
     this.chunked = false;
-    this.method = method;
     this.vertx = vertx;
-    this.uri = relativeURI;
     this.ssl = ssl;
+    this.port = port;
   }
 
   @Override
@@ -156,16 +148,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (getLock()) {
       return hostHeader;
     }
-  }
-
-  @Override
-  public io.vertx.core.http.HttpMethod method() {
-    return method;
-  }
-
-  @Override
-  public String uri() {
-    return uri;
   }
 
   @Override
@@ -419,10 +401,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         endHandler.handle(null);
       }
     }
-  }
-
-  io.vertx.core.http.HttpMethod getMethod() {
-    return method;
   }
 
   // After connecting we should synchronize on the client connection instance to prevent deadlock conditions

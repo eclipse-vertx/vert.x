@@ -629,7 +629,7 @@ public class Http2ClientTest extends Http2TestBase {
   public void testPushPromise() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
-      req.response().push(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble?a=b", ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response.end("the_content");
@@ -657,7 +657,9 @@ public class Http2ClientTest extends Http2TestBase {
       }
       assertOnIOContext(current);
       assertEquals(HttpMethod.GET, pushedReq.method());
-      assertEquals("/wibble", pushedReq.uri());
+      assertEquals("/wibble?a=b", pushedReq.uri());
+      assertEquals("/wibble", pushedReq.path());
+      assertEquals("a=b", pushedReq.query());
       pushedReq.handler(resp -> {
         assertEquals(200, resp.statusCode());
         Buffer content = Buffer.buffer();

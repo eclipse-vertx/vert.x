@@ -31,14 +31,24 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   private static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   protected final HttpClientImpl client;
+  protected final io.vertx.core.http.HttpMethod method;
+  protected final String uri;
+  protected final String path;
+  protected final String host;
+  protected final String query;
   private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
   private long lastDataReceived;
   protected boolean exceptionOccurred;
   private Object metric;
 
-  HttpClientRequestBase(HttpClientImpl client) {
+  HttpClientRequestBase(HttpClientImpl client, io.vertx.core.http.HttpMethod method, String host, String uri) {
     this.client = client;
+    this.uri = uri;
+    this.method = method;
+    this.host = host;
+    this.path = HttpUtils.parsePath(uri);
+    this.query = HttpUtils.parseQuery(uri);
   }
 
   Object metric() {
@@ -52,6 +62,23 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   protected abstract Object getLock();
   protected abstract void doHandleResponse(HttpClientResponseImpl resp);
   protected abstract void checkComplete();
+
+  public String query() {
+    return query;
+  }
+
+  public String path() {
+    return path;
+  }
+
+  public String uri() {
+    return uri;
+  }
+
+  @Override
+  public io.vertx.core.http.HttpMethod method() {
+    return method;
+  }
 
   @Override
   public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
