@@ -407,7 +407,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
 
   /**
-   * Reset this stream.
+   * Reset this stream with the error code {@code 0}.
+   */
+  default void reset() {
+    reset(0L);
+  }
+
+  /**
+   * Reset this stream with the error {@code code}.
    *
    * @param code the error code
    */

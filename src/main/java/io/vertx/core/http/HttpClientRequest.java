@@ -283,7 +283,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpClientRequest pushPromiseHandler(Handler<HttpClientRequest> handler);
 
   /**
-   * Reset this stream.
+   * Reset this stream with the error code {@code 0}.
+   */
+  default void reset() {
+    reset(0L);
+  }
+
+  /**
+   * Reset this stream with the error {@code code}.
    *
    * @param code the error code
    */
