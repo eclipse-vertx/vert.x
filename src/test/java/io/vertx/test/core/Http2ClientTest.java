@@ -628,7 +628,7 @@ public class Http2ClientTest extends Http2TestBase {
   public void testPushPromise() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response.end("the_content");
@@ -647,7 +647,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
     });
-    req.pushPromiseHandler(pushedReq -> {
+    req.pushHandler(pushedReq -> {
       Context current = Vertx.currentContext();
       if (ctx.get() == null) {
         ctx.set(current);
@@ -673,7 +673,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testResetActivePushPromise() throws Exception {
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response.exceptionHandler(err -> {
@@ -689,7 +689,7 @@ public class Http2ClientTest extends Http2TestBase {
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       fail();
     });
-    req.pushPromiseHandler(pushedReq -> {
+    req.pushHandler(pushedReq -> {
       pushedReq.handler(pushedResp -> {
         pushedResp.handler(buff -> {
           pushedReq.reset(Http2Error.CANCEL.code());
@@ -703,7 +703,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testResetPendingPushPromise() throws Exception {
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
         assertFalse(ar.succeeded());
         testComplete();
       });
@@ -714,7 +714,7 @@ public class Http2ClientTest extends Http2TestBase {
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       fail();
     });
-    req.pushPromiseHandler(pushedReq -> {
+    req.pushHandler(pushedReq -> {
       pushedReq.reset(Http2Error.CANCEL.code());
     });
     req.end();

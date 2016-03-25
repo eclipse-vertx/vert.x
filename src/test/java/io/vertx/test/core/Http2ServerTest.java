@@ -93,6 +93,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
@@ -982,27 +983,68 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPushPromise() throws Exception {
-    testPushPromise(GET("/").authority("whatever.com"), "whatever.com", false);
+    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
+      resp.push(HttpMethod.GET, "/wibble", handler);
+    }, headers -> {
+      assertEquals("GET", headers.method().toString());
+      assertEquals("/wibble", headers.path().toString());
+      assertEquals("whatever.com", headers.authority().toString());
+    });
+  }
+
+  @Test
+  public void testPushPromiseHeaders() throws Exception {
+    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
+      resp.push(HttpMethod.GET, "/wibble", MultiMap.caseInsensitiveMultiMap().
+          set("foo", "foo_value").
+          set("bar", Arrays.<CharSequence>asList("bar_value_1", "bar_value_2")), handler);
+    }, headers -> {
+      assertEquals("GET", headers.method().toString());
+      assertEquals("/wibble", headers.path().toString());
+      assertEquals(null, headers.authority());
+      assertEquals("foo_value", headers.get("foo").toString());
+      assertEquals(Arrays.asList("bar_value_1", "bar_value_2"), headers.getAll("bar").stream().map(CharSequence::toString).collect(Collectors.toList()));
+    });
   }
 
   @Test
   public void testPushPromiseNoAuthority() throws Exception {
     Http2Headers get = GET("/");
     get.remove("authority");
-    testPushPromise(get, DEFAULT_HTTPS_HOST_AND_PORT, false);
+    testPushPromise(get, (resp, handler ) -> {
+      resp.push(HttpMethod.GET, "/wibble", handler);
+    }, headers -> {
+      assertEquals("GET", headers.method().toString());
+      assertEquals("/wibble", headers.path().toString());
+      assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, headers.authority().toString());
+    });
   }
 
   @Test
   public void testPushPromiseOverrideAuthority() throws Exception {
-    testPushPromise(GET("/").authority("whatever.com"), "override.com", true);
+    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
+      resp.push(HttpMethod.GET, "override.com", "/wibble", handler);
+    }, headers -> {
+      assertEquals("GET", headers.method().toString());
+      assertEquals("/wibble", headers.path().toString());
+      assertEquals("override.com", headers.authority().toString());
+    });
   }
 
   @Test
   public void testPushPromiseOverrideAuthorityWithNull() throws Exception {
-    testPushPromise(GET("/").authority("whatever.com"), null, true);
+    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
+      resp.push(HttpMethod.GET, null, "/wibble", handler);
+    }, headers -> {
+      assertEquals("GET", headers.method().toString());
+      assertEquals("/wibble", headers.path().toString());
+      assertEquals(null, headers.authority());
+    });
   }
 
-  private void testPushPromise(Http2Headers headers, String authority, boolean provide) throws Exception {
+  private void testPushPromise(Http2Headers requestHeaders,
+                               BiConsumer<HttpServerResponse, Handler<AsyncResult<HttpServerResponse>>> pusher,
+                               Consumer<Http2Headers> headerChecker) throws Exception {
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       Handler<AsyncResult<HttpServerResponse>> handler = ar -> {
@@ -1010,21 +1052,17 @@ public class Http2ServerTest extends Http2TestBase {
         assertTrue(ar.succeeded());
         HttpServerResponse response = ar.result();
         response./*putHeader("content-type", "application/plain").*/end("the_content");
-        assertIllegalStateException(() -> response.pushPromise(HttpMethod.GET, "/wibble2", resp -> {
+        assertIllegalStateException(() -> response.push(HttpMethod.GET, "/wibble2", resp -> {
         }));
       };
-      if (provide) {
-        req.response().pushPromise(HttpMethod.GET, authority, "/wibble", handler);
-      } else {
-        req.response().pushPromise(HttpMethod.GET, "/wibble", handler);
-      }
+      pusher.accept(req.response(), handler);
     });
     startServer(ctx);
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+      encoder.writeHeaders(request.context, id, requestHeaders, 0, true, request.context.newPromise());
       Map<Integer, Http2Headers> pushed = new HashMap<>();
       request.decoder.frameListener(new Http2FrameAdapter() {
         @Override
@@ -1038,16 +1076,9 @@ public class Http2ServerTest extends Http2TestBase {
           String content = data.toString(StandardCharsets.UTF_8);
           vertx.runOnContext(v -> {
             assertEquals(Collections.singleton(streamId), pushed.keySet());
-            Http2Headers entries = pushed.get(streamId);
-//            assertEquals("application/data", entries.get("content-type").toString());
-            assertEquals("GET", entries.method().toString());
-            assertEquals("/wibble", entries.path().toString());
             assertEquals("the_content", content);
-            if (authority != null) {
-              assertEquals(authority, entries.authority().toString());
-            } else {
-              assertNull(entries.authority());
-            }
+            Http2Headers pushedHeaders = pushed.get(streamId);
+            headerChecker.accept(pushedHeaders);
             testComplete();
           });
           return delta;
@@ -1062,7 +1093,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void testResetActivePushPromise() throws Exception {
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         assertOnIOContext(ctx);
         HttpServerResponse response = ar.result();
@@ -1101,7 +1132,7 @@ public class Http2ServerTest extends Http2TestBase {
       for (int i = 0; i < numPushes; i++) {
         int val = i;
         String path = "/wibble" + val;
-        req.response().pushPromise(HttpMethod.GET, path, ar -> {
+        req.response().push(HttpMethod.GET, path, ar -> {
           assertTrue(ar.succeeded());
           assertSame(ctx, Vertx.currentContext());
           pushSent.add(path);
@@ -1148,7 +1179,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void testResetPendingPushPromise() throws Exception {
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
         assertFalse(ar.succeeded());
         assertOnIOContext(ctx);
         testComplete();
@@ -1410,7 +1441,7 @@ public class Http2ServerTest extends Http2TestBase {
     waitFor(2);
     Future<Void> when = Future.future();
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
         assertOnIOContext(ctx);
         when.complete();
@@ -1827,7 +1858,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertIllegalStateException(() -> resp.putTrailer("a", (CharSequence) "b"));
       assertIllegalStateException(() -> resp.putTrailer("a", (Iterable<String>)Arrays.asList("a", "b")));
       assertIllegalStateException(() -> resp.putTrailer("a", (Arrays.<CharSequence>asList("a", "b"))));
-      assertIllegalStateException(() -> resp.pushPromise(HttpMethod.GET, "/whatever", ar -> {}));
+      assertIllegalStateException(() -> resp.push(HttpMethod.GET, "/whatever", ar -> {}));
       complete();
     });
     startServer();

@@ -348,7 +348,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequest pushPromiseHandler(Handler<HttpClientRequest> handler) {
+  public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) {
     synchronized (getLock()) {
       pushHandler = handler;
     }

@@ -204,7 +204,7 @@ public class HttpMetricsTest extends HttpTestBase {
     int numBuffers = 10;
     int contentLength = numBuffers * 1000;
     server.requestHandler(req -> {
-      req.response().pushPromise(HttpMethod.GET, "/wibble", ar -> {
+      req.response().push(HttpMethod.GET, "/wibble", ar -> {
         HttpServerResponse pushedResp = ar.result();
         FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
         HttpServerMetric serverMetric = serverMetrics.getMetric(pushedResp);
@@ -228,7 +228,7 @@ public class HttpMetricsTest extends HttpTestBase {
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
     });
-    req.pushPromiseHandler(pushedReq -> {
+    req.pushHandler(pushedReq -> {
       HttpClientMetric metric = metrics.getMetric(pushedReq);
       assertNotNull(metric);
       assertSame(pushedReq, metric.request);

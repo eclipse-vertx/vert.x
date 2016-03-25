@@ -382,29 +382,41 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   int streamId();
 
   /**
-   * Send immediatly a push promise to the client.<p/>
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with no headers.
+   */
+  HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
+   */
+  HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
+   */
+  @Fluent
+  HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Push a response to the client.<p/>
    *
-   * The {@code handler} will be notified with a <i>success</i> when the push promise can be sent and with
+   * The {@code handler} will be notified with a <i>success</i> when the push can be sent and with
    * a <i>failure</i> when the client has disabled push or reset the push before it has been sent.<p/>
    *
    * The {@code handler} may be queued if the client has reduced the maximum number of streams the server can push
    * concurrently.<p/>
    *
-   * Push can be promised only for peer initiated streams and if the response is not ended.
+   * Push can be sent only for peer initiated streams and if the response is not ended.
    *
-   * @param method the push promise method
-   * @param host the push promise host
-   * @param path the push promise path
-   * @param handler the notified handler   @return a reference to this, so the API can be used fluently
+   * @param method the method of the promised request
+   * @param host the host of the promised request
+   * @param path the path of the promised request
+   * @param headers the headers of the promised request
+   * @param handler the handler notified when the response can be written
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse pushPromise(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler);
-
-  /**
-   * Like {@link #pushPromise(HttpMethod, String, String, Handler)} with the host copied from the current request.
-   */
-  @Fluent
-  HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+  HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
 
   /**
    * Reset this stream with the error code {@code 0}.

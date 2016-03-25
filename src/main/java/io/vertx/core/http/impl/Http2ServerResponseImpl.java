@@ -601,25 +601,39 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  public HttpServerResponse pushPromise(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+  @Override
+  public HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, host, path, null, handler);
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, null, path, headers, handler);
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     synchronized (conn) {
       if (push) {
         throw new IllegalStateException("A push response cannot promise another push");
       }
       checkEnded();
-      Http2Headers headers = new DefaultHttp2Headers();
-      headers.method(method.name());
-      headers.path(path);
+      Http2Headers headers_ = new DefaultHttp2Headers();
+      headers_.method(method.name());
+      headers_.path(path);
       if (host != null) {
-        headers.authority(host);
+        headers_.authority(host);
       }
-      conn.sendPush(stream.id(), headers, handler);
+      if (headers != null) {
+        headers.forEach(header -> headers_.add(header.getKey(), header.getValue()));
+      }
+      conn.sendPush(stream.id(), headers_, handler);
       return this;
     }
   }
 
   @Override
-  public HttpServerResponse pushPromise(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return pushPromise(method, host, path, handler);
+  public HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, host, path, handler);
   }
 }

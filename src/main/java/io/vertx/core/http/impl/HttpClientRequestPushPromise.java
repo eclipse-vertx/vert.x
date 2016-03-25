@@ -229,7 +229,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest pushPromiseHandler(Handler<HttpClientRequest> handler) {
+  public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) {
     throw new IllegalStateException();
   }
 

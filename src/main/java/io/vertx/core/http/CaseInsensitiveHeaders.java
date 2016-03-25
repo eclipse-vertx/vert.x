@@ -17,6 +17,7 @@
 package io.vertx.core.http;
 
 
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 
 import java.util.Iterator;
@@ -26,6 +27,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * This multi-map implementation has case insensitive keys, and can be used to hold some HTTP headers
@@ -272,6 +275,15 @@ public final class CaseInsensitiveHeaders implements MultiMap {
       e = e.next;
     }
     return values;
+  }
+
+  @Override
+  public void forEach(Consumer<? super Map.Entry<String, String>> action) {
+    MapEntry e = head.after;
+    while (e != head) {
+      action.accept(e);
+      e = e.after;
+    }
   }
 
   @Override
