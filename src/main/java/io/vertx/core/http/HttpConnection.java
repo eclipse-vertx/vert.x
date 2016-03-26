@@ -101,8 +101,8 @@ public interface HttpConnection {
   HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
-   * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
-   * will be closed.
+   * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current active streams
+   * are closed or after a time out of 30 seconds.
    *
    * @return a reference to this, so the API can be used fluently
    */
@@ -113,6 +113,7 @@ public interface HttpConnection {
    * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
    * will be closed or the {@code timeout} is fired.
    *
+   * @param timeout the timeout in milliseconds
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -128,7 +129,7 @@ public interface HttpConnection {
   HttpConnection closeHandler(Handler<Void> handler);
 
   /**
-   * Close the connection. A {@literal GOAWAY} frame will be sent.<p/>
+   * Close the connection and all the currently active streams. A {@literal GOAWAY} frame will be sent before.<p/>
    */
   void close();
 

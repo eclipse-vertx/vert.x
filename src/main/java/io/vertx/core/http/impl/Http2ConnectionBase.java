@@ -309,6 +309,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void close() {
+    endReadAndFlush();
     shutdown((Long)0L);
   }
 
