@@ -278,27 +278,22 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection shutdown(long timeout) {
-    if (timeout <= 0) {
+  public synchronized HttpConnection shutdown(long timeout) {
+    if (timeout < 0) {
       throw new IllegalArgumentException("Invalid timeout value " + timeout);
     }
-    return shutdown((Long)timeout);
+    if (shuttingdown) {
+      throw new IllegalStateException("Already shutting down");
+    }
+    shuttingdown = true;
+    handler.gracefulShutdownTimeoutMillis(timeout);
+    channel.close();
+    return this;
   }
 
   @Override
   public HttpConnection shutdown() {
-    return shutdown(null);
-  }
-
-  private synchronized HttpConnection shutdown(Long timeout) {
-    if (!shuttingdown) {
-      shuttingdown = true;
-      if (timeout != null) {
-        handler.gracefulShutdownTimeoutMillis(timeout);
-      }
-      channel.close();
-    }
-    return this;
+    return shutdown(30000);
   }
 
   @Override
@@ -310,7 +305,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void close() {
     endReadAndFlush();
-    shutdown((Long)0L);
+    shutdown(0L);
   }
 
   @Override

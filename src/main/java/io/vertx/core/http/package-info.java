@@ -1159,6 +1159,124 @@
  * Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
  * connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
  *
+ * === HTTP/2 connections
+ *
+ * HTTP/2 does not change HTTP programming and the design of HTTP server and clients remains the same. However HTTP/2
+ * defines a mapping of HTTP's semantics to a connection.
+ *
+ * The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP/2 connection events, lifecycle
+ * and settings.
+ *
+ * ==== Server connections
+ *
+ * The {@link io.vertx.core.http.HttpServerRequest#connection()} method returns the request connection on the server:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example16}
+ * ----
+ *
+ * A connection handler can be set on the server to be notified of any incoming connection:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example17}
+ * ----
+ *
+ * ==== Client connections
+ *
+ * The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the request connection on the client:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example18}
+ * ----
+ *
+ * A connection handler can be set on the request to be notified when the connection happens:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example19}
+ * ----
+ *
+ * ==== Connection settings
+ *
+ * The configuration of an HTTP/2 is configured by the {@link io.vertx.core.http.Http2Settings} data object.
+ *
+ * Each endpoint must respect the settings sent by the other side of the connection.
+ *
+ * When a connection is established, the client and the server exchange initial settings. Initial settings
+ * are configured by {@link io.vertx.core.http.HttpClientOptions#setInitialSettings} on the client and
+ * {@link io.vertx.core.http.HttpServerOptions#setInitialSettings} on the server.
+ *
+ * The settings can be changed at any time after the connection is established:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example20}
+ * ----
+ *
+ * As the remote side should acknowledge on reception of the settings update, it's possible to give a callback
+ * to be notified of the acknowledgent:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example21}
+ * ----
+ *
+ * Conversely the {@link io.vertx.core.http.HttpConnection#remoteSettingsHandler(io.vertx.core.Handler)} is notified
+ * when the new remote settings are received:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example22}
+ * ----
+ *
+ * ==== Connection shutdown
+ *
+ * Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GO_AWAY} frame to the
+ * remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
+ * and a server will stop pushing responses. After the {@literal GO_AWAY} frame is sent, the connection
+ * waits some time (30 seconds by default) until all current streams closed and close the connection:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example23}
+ * ----
+ *
+ * Connection {@link io.vertx.core.http.HttpConnection#close} close is a shutdown with no delay, the {@literal GO_AWAY}
+ * frame will still be sent before the connection is closed.
+ *
+ * The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when connection is closed,
+ * {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed but the
+ * connection is not yet closed.
+ *
+ * Finally it's possible to just send a {@literal GO_AWAY} frame, the main difference with a shutdown is that
+ * it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
+ * close:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example24}
+ * ----
+ *
+ * Conversely, it is also possible to be notified when {@literal GO_AWAY} are received:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example25}
+ * ----
+ *
+ * The {@link io.vertx.core.http.HttpConnection#shutdownHandler} will be called when all current streams
+ * have been closed and the connection can be closed:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example26}
+ * ----
+ *
+ * This applies also when a {@literal GO_AWAY} is received.
+ *
  * === HttpClient usage
  *
  * The HttpClient can be used in a Verticle or embedded.

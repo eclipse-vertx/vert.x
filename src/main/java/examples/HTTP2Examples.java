@@ -16,12 +16,15 @@
 
 package examples;
 
+import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -196,6 +199,69 @@ public class HTTP2Examples {
 
       System.out.println("Received a frame type=" + frame.type() +
           " payload" + frame.payload().toString());
+    });
+  }
+
+  public void example16(HttpServerRequest request) {
+    HttpConnection connection = request.connection();
+  }
+
+  public void example17(Vertx vertx, HttpServerOptions http2Options) {
+    HttpServer server = vertx.createHttpServer(http2Options);
+
+    server.connectionHandler(connection -> {
+      System.out.println("A client connected");
+    });
+  }
+
+  public void example18(HttpClientRequest request) {
+    HttpConnection connection = request.connection();
+  }
+
+  public void example19(HttpClientRequest request) {
+    request.connectionHandler(connection -> {
+      System.out.println("Connected to the server");
+    });
+  }
+
+  public void example20(HttpConnection connection) {
+    connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100));
+  }
+
+  public void example21(HttpConnection connection) {
+    connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100), ar -> {
+      if (ar.succeeded()) {
+        System.out.println("The settings update has been acknowledged ");
+      }
+    });
+  }
+
+  public void example22(HttpConnection connection) {
+    connection.remoteSettingsHandler(settings -> {
+      System.out.println("Received new settings");
+    });
+  }
+
+  public void example23(HttpConnection connection) {
+    connection.shutdown();
+  }
+
+  public void example24(HttpConnection connection) {
+    connection.goAway(0);
+  }
+
+  public void example25(HttpConnection connection) {
+    connection.goAwayHandler(goAway -> {
+      System.out.println("Received a go away frame");
+    });
+  }
+
+  public void example26(HttpConnection connection) {
+    connection.goAway(0);
+    connection.shutdownHandler(v -> {
+
+      // All streams are closed, close the connection
+      connection.close();
     });
   }
 }
