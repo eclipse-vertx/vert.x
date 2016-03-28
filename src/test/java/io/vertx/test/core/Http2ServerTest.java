@@ -89,6 +89,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -1818,6 +1819,36 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testShutdownOverride() throws Exception {
+    AtomicLong shutdown = new AtomicLong();
+    Handler<HttpServerRequest> requestHandler = req -> {
+      HttpConnection conn = req.connection();
+      shutdown.set(System.currentTimeMillis());
+      conn.shutdown(10000);
+      vertx.setTimer(300, v -> {
+        conn.shutdown(300);
+      });
+    };
+    server.requestHandler(requestHandler);
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.channel.closeFuture().addListener(v1 -> {
+        vertx.runOnContext(v2 -> {
+          assertTrue(shutdown.get() - System.currentTimeMillis() < 1200);
+          testComplete();
+        });
+      });
+      Http2ConnectionEncoder encoder = request.encoder;
+      int id = request.nextStreamId();
+      encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testRequestResponseLifecycle() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -2103,39 +2134,31 @@ public class Http2ServerTest extends Http2TestBase {
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
       request.decoder.frameListener(new Http2EventAdapter() {
-        int count = 0;
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
-          int c = count++;
           vertx.runOnContext(v -> {
-            assertEquals(0, c);
             assertEquals("200", headers.status().toString());
             assertFalse(endStream);
           });
           request.encoder.writeData(request.context, id, Buffer.buffer("some-data").getByteBuf(), 0, false, request.context.newPromise());
           request.context.flush();
         }
+        StringBuilder received = new StringBuilder();
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           String s = data.toString(StandardCharsets.UTF_8);
-          switch (count++) {
-            case 1:
-              vertx.runOnContext(v -> {
-                assertEquals("some-data", s);
-                assertFalse(endOfStream);
-              });
-              request.encoder.writeData(request.context, id, Buffer.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
-              break;
-            case 2:
-              vertx.runOnContext(v -> {
-                assertEquals("last-data", s);
-                assertTrue(endOfStream);
-                complete();
-              });
-              break;
-            default:
-              fail();
-              break;
+          received.append(s);
+          if (received.toString().equals("some-data")) {
+            received.setLength(0);
+            vertx.runOnContext(v -> {
+              assertFalse(endOfStream);
+            });
+            request.encoder.writeData(request.context, id, Buffer.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
+          } else if (endOfStream) {
+            vertx.runOnContext(v -> {
+              assertEquals("last-data", received.toString());
+              complete();
+            });
           }
           return data.readableBytes() + padding;
         }
@@ -2176,12 +2199,9 @@ public class Http2ServerTest extends Http2TestBase {
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
       request.decoder.frameListener(new Http2EventAdapter() {
-        int count = 0;
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
-          int c = count++;
           vertx.runOnContext(v -> {
-            assertEquals(0, c);
             assertEquals("200", headers.status().toString());
             assertFalse(endStream);
           });
@@ -2251,21 +2271,17 @@ public class Http2ServerTest extends Http2TestBase {
           request.encoder.writeData(request.context, id, Buffer.buffer("some-data").getByteBuf(), 0, false, request.context.newPromise());
           request.context.flush();
         }
+        StringBuilder received = new StringBuilder();
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           String s = data.toString(StandardCharsets.UTF_8);
-          switch (count++) {
-            case 1:
-              vertx.runOnContext(v -> {
-                assertEquals("some-data", s);
-                assertTrue(endOfStream);
-                complete();
-              });
-              request.encoder.writeData(request.context, id, Buffer.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
-              break;
-            default:
-              fail();
-              break;
+          received.append(s);
+          if (endOfStream) {
+            request.encoder.writeData(request.context, id, Buffer.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
+            vertx.runOnContext(v -> {
+              assertEquals("some-data", received.toString());
+              complete();
+            });
           }
           return data.readableBytes() + padding;
         }

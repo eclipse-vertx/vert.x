@@ -113,11 +113,11 @@ public interface HttpConnection {
    * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
    * will be closed or the {@code timeout} is fired.
    *
-   * @param timeout the timeout in milliseconds
+   * @param timeoutMs the timeout in milliseconds
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpConnection shutdown(long timeout);
+  HttpConnection shutdown(long timeoutMs);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.

@@ -57,7 +57,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected ChannelHandlerContext handlerContext;
   protected final Channel channel;
   protected final VertxHttp2ConnectionHandler handler;
-  private boolean shuttingdown;
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
   private final ArrayDeque<Runnable> updateSettingsHandler = new ArrayDeque<>(4);
@@ -282,10 +281,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (timeout < 0) {
       throw new IllegalArgumentException("Invalid timeout value " + timeout);
     }
-    if (shuttingdown) {
-      throw new IllegalStateException("Already shutting down");
-    }
-    shuttingdown = true;
     handler.gracefulShutdownTimeoutMillis(timeout);
     channel.close();
     return this;

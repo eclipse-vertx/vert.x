@@ -194,10 +194,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       try {
         encoder().flowController().writePendingBytes();
       } catch (Http2Exception e) {
+        // Todo handle me
         e.printStackTrace();
       }
-      ctx.channel().flush();
     }
+    ctx.channel().flush();
   }
 
   /**

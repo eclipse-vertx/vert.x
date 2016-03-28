@@ -1209,23 +1209,24 @@ public class Http2ClientTest extends Http2TestBase {
     client.request(HttpMethod.CONNECT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       assertEquals(200, resp.statusCode());
       NetSocket socket = resp.netSocket();
+      StringBuilder received = new StringBuilder();
       AtomicInteger count = new AtomicInteger();
       socket.handler(buff -> {
-        switch (count.getAndIncrement()) {
-          case 0:
-            assertEquals("some-data", buff.toString());
+        if (buff.length() > 0) {
+          received.append(buff.toString());
+          if (received.toString().equals("some-data")) {
+            received.setLength(0);
             socket.end(Buffer.buffer("last-data"));
-            break;
-          case 1:
-            assertEquals("last-data", buff.toString());
-            break;
+          } else if (received.toString().equals("last-data")) {
+            assertEquals(0, count.getAndIncrement());
+          }
         }
       });
       socket.endHandler(v -> {
-        assertEquals(2, count.getAndIncrement());
+        assertEquals(1, count.getAndIncrement());
       });
       socket.closeHandler(v -> {
-        assertEquals(3, count.getAndIncrement());
+        assertEquals(2, count.getAndIncrement());
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
