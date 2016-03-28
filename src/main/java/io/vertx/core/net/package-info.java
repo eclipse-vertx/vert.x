@@ -567,6 +567,42 @@
  *
  * Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
  *
+ * === Application-Layer Protocol Negotiation
+ *
+ * ALPN is a TLS extension for applicationl layer protocol negotitation. It is used by HTTP/2: during the TLS handshake
+ * the client gives the list of application protocols it accepts and the server responds with a protocol it supports.
+ *
+ * Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other means:
+ *
+ * - _OpenSSL_ support
+ * - _Jetty-ALPN_ support
+ *
+ * ==== OpenSSL ALPN support
+ *
+ * Not yet implemented.
+ *
+ * ==== Jetty-ALPN support
+ *
+ * Jetty-ALPN is a small jar that overrides a few classes of Java 8 distribution to support ALPN.
+ *
+ * The JVM must be started with the _alpn-boot-${version}.jar_ in its `bootclasspath`:
+ *
+ * ----
+ * -Xbootclasspath/p:/path/to/alpn-boot${version}.jar
+ * ----
+ *
+ * where ${version} depends on the JVM version, e.g. _8.1.7.v20160121_ for _OpenJDK 1.8.0u74_ . The complete
+ * list is available on the http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html[Jetty-ALPN page].
+ *
+ * The main drawback is that the version depends on the JVM.
+ *
+ * To solve this problem the _Jetty-ALPN_ agent can be use instead. The agent is a JVM agent that will chose the correct
+ * ALPN version for the JVM running it:
+ *
+ * ----
+ * -javaagent:/path/to/alpn/agent
+ * ----
+ *
  */
 @Document(fileName = "net.adoc")
 package io.vertx.core.net;
