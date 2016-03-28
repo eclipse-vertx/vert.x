@@ -1003,6 +1003,10 @@
  *
  *  If option values contain spaces, don't forget to wrap the value between {@code ""} (double-quotes).
  *
+ *  As the `start` command spawns a new process, the java options passed to the JVM are not propagated, so you **must**
+ *  use `java-opts` to configure the JVM (`-X`, `-D`...). If you use the `CLASSPATH` environment variable, be sure it
+ *  contains all the required jars (vertx-core, your jars and all the dependencies).
+ *
  * The set of commands is extensible, refer to the <<Extending the vert.x Launcher>> section.
  *
  * === Live Redeploy
