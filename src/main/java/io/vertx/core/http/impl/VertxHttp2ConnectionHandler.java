@@ -74,7 +74,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     super.exceptionCaught(ctx, cause);
-    cause.printStackTrace();
     ctx.close();
   }
 
@@ -194,8 +193,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       try {
         encoder().flowController().writePendingBytes();
       } catch (Http2Exception e) {
-        // Todo handle me
-        e.printStackTrace();
+        onError(ctx, e);
       }
     }
     ctx.channel().flush();
@@ -211,7 +209,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         ctx.channel().flush();
       }
     } catch (Http2Exception e) {
-      e.printStackTrace();
+      onError(ctx, e);
     }
   }
 

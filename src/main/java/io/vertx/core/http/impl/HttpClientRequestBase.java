@@ -47,7 +47,7 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
     this.uri = uri;
     this.method = method;
     this.host = host;
-    this.path = HttpUtils.parsePath(uri);
+    this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
     this.query = HttpUtils.parseQuery(uri);
   }
 

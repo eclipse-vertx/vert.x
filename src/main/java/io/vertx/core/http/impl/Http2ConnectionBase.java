@@ -64,6 +64,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Throwable> exceptionHandler;
+  private boolean closed;
 
   public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler handler, TCPMetrics metrics) {
     super((VertxInternal) context.owner(), channel, context, metrics);
@@ -103,6 +104,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   boolean isSsl() {
     return channel.pipeline().get(SslHandler.class) != null;
+  }
+
+  synchronized boolean isClosed() {
+    return closed;
   }
 
   synchronized void onConnectionError(Throwable cause) {
@@ -293,6 +298,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized HttpConnection closeHandler(Handler<Void> handler) {
+    closed = true;
     closeHandler = handler;
     return this;
   }

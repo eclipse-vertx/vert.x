@@ -245,6 +245,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public HttpClientRequest writeFrame(int type, int flags, Buffer payload) {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException("Cannot write frame with HTTP/1.x ");
   }
 }

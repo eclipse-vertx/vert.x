@@ -82,16 +82,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     http2Pool.recycle(Http2ClientConnection.this);
   }
 
-  synchronized HttpClientStream createStream() {
-    try {
-      Http2Connection conn = handler.connection();
-      Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
-      Http2ClientStream clientStream = new Http2ClientStream(this, stream);
-      streams.put(clientStream.stream.id(), clientStream);
-      return clientStream;
-    } catch (Http2Exception e) {
-      throw new UnsupportedOperationException("handle me gracefully", e);
-    }
+  synchronized HttpClientStream createStream() throws Http2Exception {
+    Http2Connection conn = handler.connection();
+    Http2Stream stream = conn.local().createStream(conn.local().incrementAndGetNextStreamId(), false);
+    Http2ClientStream clientStream = new Http2ClientStream(this, stream);
+    streams.put(clientStream.stream.id(), clientStream);
+    return clientStream;
   }
 
   @Override
@@ -232,7 +228,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           status = Integer.parseInt(headers.status().toString());
           statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
         } catch (Exception e) {
-          e.printStackTrace();
           handleException(e);
           writeReset(0x01 /* PROTOCOL_ERROR */);
           return;

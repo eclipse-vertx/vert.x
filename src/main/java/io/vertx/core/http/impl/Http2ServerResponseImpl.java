@@ -552,8 +552,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public boolean closed() {
-    // Todo
-    throw new UnsupportedOperationException();
+    return conn.isClosed();
   }
 
   @Override

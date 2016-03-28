@@ -34,6 +34,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -248,7 +249,7 @@ public class ConnectionManager {
               @Override
               protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
                 if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-                  http2Connected(ctx, context, port, host, ch, waiter, false);
+                  http2Connected(context, ch, waiter, false);
                 } else {
                   fallbackToHttp1x(ch, context, fallbackVersion, port, host, waiter);
                 }
@@ -275,7 +276,7 @@ public class ConnectionManager {
                   if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
                     p.remove(this);
                     // Upgrade handler will remove itself
-                    http2Connected(ctx, context, port, host, ch, waiter, true);
+                    http2Connected(context, ch, waiter, true);
                   } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
                     p.remove(httpCodec);
                     p.remove(this);
@@ -342,10 +343,14 @@ public class ConnectionManager {
       );
     }
 
-    private void http2Connected(ChannelHandlerContext handlerCtx, ContextImpl context, int port, String host, Channel ch, Waiter waiter, boolean upgrade) {
-      context.executeFromIO(() ->
-          ((Http2Pool)pool).createConn(context, ch, waiter, upgrade)
-      );
+    private void http2Connected(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
+      context.executeFromIO(() -> {
+        try {
+          ((Http2Pool)pool).createConn(context, ch, waiter, upgrade);
+        } catch (Http2Exception e) {
+          connectionFailed(context, ch, waiter::handleFailure, e);
+        }
+      });
     }
 
     private void connectionFailed(ContextImpl context, Channel ch, Handler<Throwable> connectionExceptionHandler,
@@ -361,11 +366,7 @@ public class ConnectionManager {
           ch.close();
         } catch (Exception ignore) {
         }
-        if (exHandler != null) {
-          exHandler.handle(t);
-        } else {
-          log.error(t);
-        }
+        exHandler.handle(t);
       });
     }
   }
@@ -387,7 +388,7 @@ public class ConnectionManager {
 
     abstract void recycle(HttpClientConnection stream);
 
-    abstract HttpClientStream createStream(HttpClientConnection conn);
+    abstract HttpClientStream createStream(HttpClientConnection conn) throws Exception;
 
     /**
      * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
@@ -403,7 +404,14 @@ public class ConnectionManager {
       } else if (waiter.isCancelled()) {
         recycle(conn);
       } else {
-        waiter.handleStream(createStream(conn));
+        HttpClientStream stream;
+        try {
+          stream = createStream(conn);
+        } catch (Exception e) {
+          queue.getConnection(waiter);
+          return;
+        }
+        waiter.handleStream(stream);
       }
     }
   }

@@ -23,7 +23,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class GoAway {
 
   private long errorCode;
@@ -34,6 +34,7 @@ public class GoAway {
   }
 
   public GoAway(JsonObject json) {
+    GoAwayConverter.fromJson(json, this);
   }
 
   public GoAway(GoAway that) {
@@ -70,6 +71,8 @@ public class GoAway {
   }
 
   public JsonObject toJson() {
-    throw new UnsupportedOperationException();
+    JsonObject json = new JsonObject();
+    GoAwayConverter.toJson(this, json);
+    return json;
   }
 }

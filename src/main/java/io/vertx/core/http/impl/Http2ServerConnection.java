@@ -195,12 +195,10 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     @Override
     void handleEnd() {
-      throw new UnsupportedOperationException();
     }
 
     @Override
     void handleData(Buffer buf) {
-      throw new UnsupportedOperationException();
     }
 
     @Override

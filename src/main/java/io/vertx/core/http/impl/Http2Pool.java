@@ -59,7 +59,7 @@ class Http2Pool extends ConnectionManager.Pool {
     }
   }
 
-  void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) {
+  void createConn(ContextImpl context, Channel ch, Waiter waiter, boolean upgrade) throws Http2Exception {
     ChannelPipeline p = ch.pipeline();
     synchronized (queue) {
       VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
@@ -70,11 +70,7 @@ class Http2Pool extends ConnectionManager.Pool {
           .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, client.metrics))
           .build();
       if (upgrade) {
-        try {
-          handler.onHttpClientUpgrade();
-        } catch (Http2Exception e) {
-          e.printStackTrace();
-        }
+        handler.onHttpClientUpgrade();
       }
       Http2ClientConnection conn = handler.connection;
       connection = conn;
@@ -124,7 +120,7 @@ class Http2Pool extends ConnectionManager.Pool {
   }
 
   @Override
-  HttpClientStream createStream(HttpClientConnection conn) {
+  HttpClientStream createStream(HttpClientConnection conn) throws Exception {
     return ((Http2ClientConnection)conn).createStream();
   }
 
