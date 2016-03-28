@@ -17,7 +17,6 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.Context;
-import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -26,8 +25,8 @@ interface HttpClientConnection {
 
   Context getContext();
 
-  // Try to remove that ?
   void reportBytesWritten(long numberOfBytes);
+
   void reportBytesRead(long s);
 
   /**
