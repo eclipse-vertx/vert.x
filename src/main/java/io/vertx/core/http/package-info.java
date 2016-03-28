@@ -1234,9 +1234,9 @@
  *
  * ==== Connection shutdown
  *
- * Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GO_AWAY} frame to the
+ * Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
  * remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
- * and a server will stop pushing responses. After the {@literal GO_AWAY} frame is sent, the connection
+ * and a server will stop pushing responses. After the {@literal GOAWAY} frame is sent, the connection
  * waits some time (30 seconds by default) until all current streams closed and close the connection:
  *
  * [source,$lang]
@@ -1244,14 +1244,14 @@
  * {@link examples.HTTP2Examples#example23}
  * ----
  *
- * Connection {@link io.vertx.core.http.HttpConnection#close} close is a shutdown with no delay, the {@literal GO_AWAY}
+ * Connection {@link io.vertx.core.http.HttpConnection#close} close is a shutdown with no delay, the {@literal GOAWAY}
  * frame will still be sent before the connection is closed.
  *
  * The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when connection is closed,
  * {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed but the
  * connection is not yet closed.
  *
- * Finally it's possible to just send a {@literal GO_AWAY} frame, the main difference with a shutdown is that
+ * Finally it's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
  * it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
  * close:
  *
@@ -1260,7 +1260,7 @@
  * {@link examples.HTTP2Examples#example24}
  * ----
  *
- * Conversely, it is also possible to be notified when {@literal GO_AWAY} are received:
+ * Conversely, it is also possible to be notified when {@literal GOAWAY} are received:
  *
  * [source,$lang]
  * ----
@@ -1275,7 +1275,7 @@
  * {@link examples.HTTP2Examples#example26}
  * ----
  *
- * This applies also when a {@literal GO_AWAY} is received.
+ * This applies also when a {@literal GOAWAY} is received.
  *
  * === HttpClient usage
  *

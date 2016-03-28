@@ -21,6 +21,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
+ * A {@literal GOAWAY} frame.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject(generateConverter = true)
@@ -43,6 +45,9 @@ public class GoAway {
     debugData = that.debugData != null ? that.debugData.copy() : null;
   }
 
+  /**
+   * @return the {@literal GOAWAY} error code
+   */
   public long getErrorCode() {
     return errorCode;
   }
@@ -52,19 +57,38 @@ public class GoAway {
     return this;
   }
 
+  /**
+   * @return the highest numbered stream identifier for which the sender of the frame might have taken some
+   *         action on or might yet take action
+   */
   public int getLastStreamId() {
     return lastStreamId;
   }
 
+  /**
+   * Set the last stream id.
+   *
+   * @param lastStreamId the last stream id
+   * @return a reference to this, so the API can be used fluently
+   */
   public GoAway setLastStreamId(int lastStreamId) {
     this.lastStreamId = lastStreamId;
     return this;
   }
 
+  /**
+   * @return additional debug data
+   */
   public Buffer getDebugData() {
     return debugData;
   }
 
+  /**
+   * Set the additional debug data
+   *
+   * @param debugData the data
+   * @return a reference to this, so the API can be used fluently
+   */
   public GoAway setDebugData(Buffer debugData) {
     this.debugData = debugData;
     return this;
