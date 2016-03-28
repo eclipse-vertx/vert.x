@@ -419,14 +419,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
 
   /**
-   * Reset this stream with the error code {@code 0}.
+   * Reset this HTTP/2 stream with the error code {@code 0}.
    */
   default void reset() {
     reset(0L);
   }
 
   /**
-   * Reset this stream with the error {@code code}.
+   * Reset this HTTP/2 stream with the error {@code code}.
    *
    * @param code the error code
    */

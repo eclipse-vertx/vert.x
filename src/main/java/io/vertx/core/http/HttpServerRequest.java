@@ -281,7 +281,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler);
 
   /**
-   * @return the http connection associated with this request
+   * @return the {@link HttpConnection} associated with this request when it is an HTTP/2 connection, null otherwise
    */
   @CacheReturn
   HttpConnection connection();
