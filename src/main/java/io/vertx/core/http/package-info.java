@@ -1183,6 +1183,8 @@
  * {@link examples.HTTP2Examples#example17}
  * ----
  *
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
  * ==== Client connections
  *
  * The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the request connection on the client:
@@ -1198,6 +1200,8 @@
  * ----
  * {@link examples.HTTP2Examples#example19}
  * ----
+ *
+ * NOTE: this only applies to the HTTP/2 protocol
  *
  * ==== Connection settings
  *
