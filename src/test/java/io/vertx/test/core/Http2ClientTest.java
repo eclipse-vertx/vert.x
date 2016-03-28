@@ -850,6 +850,65 @@ public class Http2ClientTest extends Http2TestBase {
     await();
   }
 
+  @Test
+  public void testReceivingGoAwayDiscardsTheConnection() throws Exception {
+    AtomicInteger reqCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (reqCount.getAndIncrement()) {
+        case 0:
+          req.connection().goAway(0);
+          break;
+        case 1:
+          req.response().end();
+          break;
+        default:
+          fail();
+      }
+    });
+    startServer();
+    HttpClientRequest req1 = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
+    req1.connectionHandler(conn -> {
+      AtomicInteger gaCount = new AtomicInteger();
+      conn.goAwayHandler(ga -> {
+        if (gaCount.getAndIncrement() == 0) {
+          client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp2 -> {
+            testComplete();
+          }).setTimeout(5000).exceptionHandler(this::fail).end();
+        }
+      });
+    });
+    req1.handler(resp1 -> {
+      fail();
+    }).end();
+    await();
+  }
+
+  @Test
+  public void testSendingGoAwayDiscardsTheConnection() throws Exception {
+    AtomicInteger reqCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (reqCount.getAndIncrement()) {
+        case 0:
+          req.response().setChunked(true).write("some-data");
+          break;
+        case 1:
+          req.response().end();
+          break;
+        default:
+          fail();
+      }
+    });
+    startServer();
+    HttpClientRequest req1 = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
+    req1.handler(resp1 -> {
+      req1.connection().goAway(0);
+      client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp2 -> {
+        testComplete();
+      }).setTimeout(5000).exceptionHandler(this::fail).end();
+    }).end();
+    await();
+  }
+
   private Http2ConnectionHandler createHttpConnectionHandler(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
 
     class Handler extends Http2ConnectionHandler {
