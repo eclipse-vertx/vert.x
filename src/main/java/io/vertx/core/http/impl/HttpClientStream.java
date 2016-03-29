@@ -28,6 +28,10 @@ import io.vertx.core.net.NetSocket;
  */
 interface HttpClientStream {
 
+  /**
+   * @return the stream id or -1 for HTTP/1.x
+   */
+  int id();
   
   /**
    * @return the stream version or null if it's not yet determined

@@ -567,4 +567,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   public HttpVersion version() {
     return null;
   }
+
+  @Override
+  public int id() {
+    return -1;
+  }
 }

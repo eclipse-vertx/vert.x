@@ -210,9 +210,11 @@ public class Http2ClientTest extends Http2TestBase {
       resp.end(expected);
     });
     startServer();
-    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
+    req.handler(resp -> {
       Context ctx = vertx.getOrCreateContext();
       assertOnIOContext(ctx);
+      assertEquals(3, req.streamId());
       assertEquals(1, reqCount.get());
       assertEquals(HttpVersion.HTTP_2, resp.version());
       assertEquals(200, resp.statusCode());
@@ -1219,7 +1221,9 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals(1, status.getAndIncrement());
       req.end(Buffer.buffer("request-body"));
     });
-    req.sendHead();
+    req.sendHead(version -> {
+      assertEquals(3, req.streamId());
+    });
     await();
   }
 

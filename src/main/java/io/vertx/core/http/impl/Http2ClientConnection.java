@@ -158,6 +158,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
+    public int id() {
+      return super.id();
+    }
+
+    @Override
     void handleEnd() {
       if (conn.metrics.isEnabled()) {
         if (request.exceptionOccurred) {

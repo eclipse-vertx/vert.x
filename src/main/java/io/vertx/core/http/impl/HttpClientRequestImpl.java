@@ -80,6 +80,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
+  public int streamId() {
+    synchronized (getLock()) {
+      return stream != null ? stream.id() : -1;
+    }
+  }
+
+  @Override
   public  HttpClientRequest handler(Handler<HttpClientResponse> handler) {
     synchronized (getLock()) {
       if (handler != null) {

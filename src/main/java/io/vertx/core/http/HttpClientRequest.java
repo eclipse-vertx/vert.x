@@ -338,6 +338,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpClientRequest writeFrame(int type, int flags, Buffer payload);
 
   /**
+   * @return the id of the stream of this response, {@literal -1} when it is not yet determined, i.e
+   *         the request has not been yet sent or it is not supported HTTP/1.x
+   */
+  default int streamId() {
+    return -1;
+  }
+
+  /**
    * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
    *
    * @param frame the frame to write
