@@ -251,7 +251,7 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 == GoAway
 
 ++++
- @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ A  frame.
 ++++
 '''
 
@@ -259,9 +259,18 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[debugData]]`debugData`|`Buffer`|-
-|[[errorCode]]`errorCode`|`Number (long)`|-
-|[[lastStreamId]]`lastStreamId`|`Number (int)`|-
+|[[debugData]]`debugData`|`Buffer`|
++++
+Set the additional debug data
++++
+|[[errorCode]]`errorCode`|`Number (long)`|
++++
+@return the  error code
++++
+|[[lastStreamId]]`lastStreamId`|`Number (int)`|
++++
+Set the last stream id.
++++
 |===
 
 [[Http2Settings]]

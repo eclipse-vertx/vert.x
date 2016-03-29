@@ -1558,6 +1558,8 @@ server.connectionHandler(connection -> {
 });
 ----
 
+NOTE: this only applies to the HTTP/2 protocol
+
 ==== Client connections
 
 The `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#connection--[connection]` method returns the request connection on the client:
@@ -1575,6 +1577,8 @@ request.connectionHandler(connection -> {
   System.out.println("Connected to the server");
 });
 ----
+
+NOTE: this only applies to the HTTP/2 protocol
 
 ==== Connection settings
 
@@ -1617,9 +1621,9 @@ connection.remoteSettingsHandler(settings -> {
 
 ==== Connection shutdown
 
-Calling `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdown--[shutdown]` will send a `GO_AWAY` frame to the
+Calling `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdown--[shutdown]` will send a `GOAWAY` frame to the
 remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
-and a server will stop pushing responses. After the `GO_AWAY` frame is sent, the connection
+and a server will stop pushing responses. After the `GOAWAY` frame is sent, the connection
 waits some time (30 seconds by default) until all current streams closed and close the connection:
 
 [source,java]
@@ -1627,14 +1631,14 @@ waits some time (30 seconds by default) until all current streams closed and clo
 connection.shutdown();
 ----
 
-Connection `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` close is a shutdown with no delay, the `GO_AWAY`
+Connection `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` close is a shutdown with no delay, the `GOAWAY`
 frame will still be sent before the connection is closed.
 
 The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#closeHandler-io.vertx.core.Handler-[closeHandler]` notifies when connection is closed,
 `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` notifies when all streams have been closed but the
 connection is not yet closed.
 
-Finally it's possible to just send a `GO_AWAY` frame, the main difference with a shutdown is that
+Finally it's possible to just send a `GOAWAY` frame, the main difference with a shutdown is that
 it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
 close:
 
@@ -1643,7 +1647,7 @@ close:
 connection.goAway(0);
 ----
 
-Conversely, it is also possible to be notified when `GO_AWAY` are received:
+Conversely, it is also possible to be notified when `GOAWAY` are received:
 
 [source,java]
 ----
@@ -1665,7 +1669,7 @@ connection.shutdownHandler(v -> {
 });
 ----
 
-This applies also when a `GO_AWAY` is received.
+This applies also when a `GOAWAY` is received.
 
 === HttpClient usage
 

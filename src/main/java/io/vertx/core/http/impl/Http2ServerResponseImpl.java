@@ -345,7 +345,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void end() {
-    end(Unpooled.EMPTY_BUFFER);
+    end((ByteBuf) null);
   }
 
   void toNetSocket() {
@@ -356,7 +356,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private void end(ByteBuf chunk) {
     synchronized (conn) {
-      if (!chunked && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+      if (chunk != null && !chunked && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
       }
       write(chunk, true);
@@ -392,10 +392,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       if (end) {
         handleEnded(false);
       }
-      int len = chunk.readableBytes();
-      boolean empty = len == 0;
-      boolean sent = checkSendHeaders(end && empty && trailers == null);
-      if (!empty || (!sent && end)) {
+      boolean hasBody = chunk != null;
+      boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
+      if (hasBody || (!sent && end)) {
+        if (chunk == null) {
+          chunk = Unpooled.EMPTY_BUFFER;
+        }
+        int len = chunk.readableBytes();
         stream.writeData(chunk, end && trailers == null);
         bytesWritten += len;
       }

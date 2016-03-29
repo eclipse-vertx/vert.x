@@ -244,6 +244,40 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testResponseBody() throws Exception {
+    testResponseBody(TestUtils.randomAlphaString(100));
+  }
+
+  @Test
+  public void testEmptyResponseBody() throws Exception {
+    testResponseBody("");
+  }
+
+  private void testResponseBody(String expected) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.end(expected);
+    });
+    startServer();
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      AtomicInteger count = new AtomicInteger();
+      Buffer content = Buffer.buffer();
+      resp.handler(buff -> {
+        content.appendBuffer(buff);
+        count.incrementAndGet();
+      });
+      resp.endHandler(v -> {
+        assertTrue(count.get() > 0);
+        assertEquals(expected, content.toString());
+        testComplete();
+      });
+    })
+        .exceptionHandler(err -> fail())
+        .end();
+    await();
+  }
+
+  @Test
   public void testOverrideAuthority() throws Exception {
     server.requestHandler(req -> {
       assertEquals("localhost:4444", req.host());
@@ -308,12 +342,25 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testPost() throws Exception {
+    testPost(TestUtils.randomAlphaString(100));
+  }
+
+  @Test
+  public void testEmptyPost() throws Exception {
+    testPost("");
+  }
+
+  private void testPost(String expected) throws Exception {
     Buffer content = Buffer.buffer();
-    String expected = TestUtils.randomAlphaString(100);
+    AtomicInteger count = new AtomicInteger();
     server.requestHandler(req -> {
       assertEquals(HttpMethod.POST, req.method());
-      req.handler(content::appendBuffer);
+      req.handler(buff -> {
+        content.appendBuffer(buff);
+        count.getAndIncrement();
+      });
       req.endHandler(v -> {
+        assertTrue(count.get() > 0);
         req.response().end();
       });
     });
