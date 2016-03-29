@@ -183,6 +183,20 @@ public class RunCommandTest extends CommandTestBase {
   }
 
   @Test
+  public void testWithBrokenConfProvidedInline() throws IOException {
+    setManifest("MANIFEST-Launcher-Http-Verticle.MF");
+    cli.dispatch(new Launcher(), new String[] {"--conf={\"name\":\"vertx\""});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    assertThat(getContent().getJsonObject("conf").toString()).isEqualToIgnoringCase("{}");
+  }
+
+  @Test
   public void testWithConfProvidedAsFile() throws IOException {
     setManifest("MANIFEST-Launcher-Http-Verticle.MF");
     cli.dispatch(new Launcher(), new String[] {"--conf", "target/test-classes/conf.json"});
