@@ -17,6 +17,28 @@
 |[[HTTP_2]]`HTTP_2`|-
 |===
 
+[[SSLEngine]]
+== SSLEngine
+
+++++
+ The SSL engine implementation to use in a Vert.x server or client.
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Description
+|[[JDK]]`JDK`|
++++
+Use the engine provided by the JDK.
++++
+|[[OPENSSL]]`OPENSSL`|
++++
+Use an OpenSSL based engine.
++++
+|===
+
 [[HttpMethod]]
 == HttpMethod
 

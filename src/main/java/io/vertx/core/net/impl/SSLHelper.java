@@ -16,34 +16,45 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.handler.ssl.JdkAlpnApplicationProtocolNegotiator;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
-import java.security.SecureRandom;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,6 +66,14 @@ import java.util.stream.Stream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SSLHelper {
+
+  private static final Map<HttpVersion, String> PROTOCOL_NAME_MAPPING = new EnumMap<>(HttpVersion.class);
+
+  static {
+    PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_2, "h2");
+    PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_1_1, "http/1.1");
+    PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_1_0, "http/1.0");
+  }
 
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
@@ -70,8 +89,12 @@ public class SSLHelper {
   private ClientAuth clientAuth = ClientAuth.NONE;
   private Set<String> enabledCipherSuites;
   private boolean verifyHost;
+  private io.vertx.core.net.SSLEngine sslEngine;
+  private boolean client;
+  private boolean useAlpn;
+  private List<HttpVersion> applicationProtocols;
 
-  private SSLContext sslContext;
+  private SslContext sslContext;
 
   public SSLHelper(HttpClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
     this.ssl = options.isSsl();
@@ -82,6 +105,9 @@ public class SSLHelper {
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
     this.verifyHost = options.isVerifyHost();
+    this.sslEngine = options.getSslEngine();
+    this.client = true;
+    this.useAlpn = options.isUseAlpn();
   }
 
   public SSLHelper(HttpServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -92,6 +118,9 @@ public class SSLHelper {
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.sslEngine = options.getSslEngine();
+    this.client = false;
+    this.useAlpn = options.isUseAlpn();
   }
 
   public SSLHelper(NetClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -102,6 +131,9 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.sslEngine = options.getSslEngine();
+    this.client = true;
+    this.useAlpn = false;
   }
 
   public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -112,6 +144,9 @@ public class SSLHelper {
     this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
     this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.sslEngine = options.getSslEngine();
+    this.client = false;
+    this.useAlpn = false;
   }
 
   public boolean isSSL() {
@@ -122,42 +157,127 @@ public class SSLHelper {
     return clientAuth;
   }
 
-  /*
-  If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
-  called jsssecacerts or cacerts in the JDK/JRE security directory.
-  You can override this by specifying the javax.echo.ssl.trustStore system property
+  public List<HttpVersion> getApplicationProtocols() {
+    return applicationProtocols;
+  }
 
-  If you don't specify a key store, and don't specify a system property no key store will be used
-  You can override this by specifying the javax.echo.ssl.keyStore system property
-   */
-  private SSLContext createContext(VertxInternal vertx) {
+  public SSLHelper setApplicationProtocols(List<HttpVersion> applicationProtocols) {
+    this.applicationProtocols = applicationProtocols;
+    return this;
+  }
+
+  /*
+    If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
+    called jsssecacerts or cacerts in the JDK/JRE security directory.
+    You can override this by specifying the javax.echo.ssl.trustStore system property
+
+    If you don't specify a key store, and don't specify a system property no key store will be used
+    You can override this by specifying the javax.echo.ssl.keyStore system property
+     */
+  private SslContext createContext(VertxInternal vertx) {
+    boolean openSSL = sslEngine == io.vertx.core.net.SSLEngine.OPENSSL;
     try {
-      SSLContext context = SSLContext.getInstance("TLS");
-      KeyManager[] keyMgrs = keyStoreHelper == null ? null : keyStoreHelper.getKeyMgrs(vertx);
-      TrustManager[] trustMgrs;
-      if (trustAll) {
-        trustMgrs = new TrustManager[]{createTrustAllTrustManager()};
-      } else {
-        trustMgrs = trustStoreHelper == null ? null : trustStoreHelper.getTrustMgrs(vertx);
-      }
-      if (trustMgrs != null && crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
-        Stream<Buffer> tmp = crlPaths.
-            stream().
-            map(path -> vertx.resolveFile(path).getAbsolutePath()).
-            map(vertx.fileSystem()::readFileBlocking);
-        tmp = Stream.concat(tmp, crlValues.stream());
-        CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
-        ArrayList<CRL> crls = new ArrayList<>();
-        for (Buffer crlValue : tmp.collect(Collectors.toList())) {
-          crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
+      KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
+      TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx);
+      SslContextBuilder builder;
+      if (client) {
+        builder = SslContextBuilder.forClient();
+        if (keyMgrFactory != null) {
+          builder.keyManager(keyMgrFactory);
         }
-        trustMgrs = createUntrustRevokedCertTrustManager(trustMgrs, crls);
+      } else {
+        if (openSSL) {
+          if (keyStoreHelper instanceof KeyStoreHelper.KeyCert) {
+            KeyStoreHelper.KeyCert keyStoreHelper = (KeyStoreHelper.KeyCert) this.keyStoreHelper;
+            X509Certificate[] certs = keyStoreHelper.loadCerts();
+            PrivateKey privateKey = keyStoreHelper.loadPrivateKey();
+            builder = SslContextBuilder.forServer(privateKey, certs);
+          } else {
+            throw new VertxException("OpenSSL server key/certificate must be configured with .pem format");
+          }
+        } else {
+          if (keyMgrFactory == null) {
+            throw new VertxException("Key/certificate is mandatory for SSL");
+          }
+          builder = SslContextBuilder.forServer(keyMgrFactory);
+        }
       }
-      context.init(keyMgrs, trustMgrs, new SecureRandom());
-      return context;
+      if (openSSL) {
+        builder.sslProvider(SslProvider.OPENSSL);
+      } else {
+        builder.sslProvider(SslProvider.JDK);
+      }
+      if (trustMgrFactory != null) {
+        builder.trustManager(trustMgrFactory);
+      }
+      if (enabledCipherSuites != null && enabledCipherSuites.size() > 0) {
+        builder.ciphers(enabledCipherSuites);
+      }
+      if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
+        builder.applicationProtocolConfig(new ApplicationProtocolConfig(
+            ApplicationProtocolConfig.Protocol.ALPN,
+            ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+            ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+            applicationProtocols.stream().map(PROTOCOL_NAME_MAPPING::get).collect(Collectors.toList())
+        ));
+      }
+      return builder.build();
     } catch (Exception e) {
       throw new VertxException(e);
     }
+  }
+
+  private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
+    return keyStoreHelper == null ? null : keyStoreHelper.getKeyMgrFactory(vertx);
+  }
+
+  private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
+    TrustManagerFactory fact;
+    if (trustAll) {
+      TrustManager[] mgrs = new TrustManager[]{createTrustAllTrustManager()};
+      fact = new SimpleTrustManagerFactory() {
+        @Override
+        protected void engineInit(KeyStore keyStore) throws Exception {}
+
+        @Override
+        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {}
+
+        @Override
+        protected TrustManager[] engineGetTrustManagers() {
+          return mgrs.clone();
+        }
+      };
+    } else if (trustStoreHelper != null) {
+      fact = trustStoreHelper.getTrustMgrFactory(vertx);
+    } else {
+      return null;
+    }
+    if (crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
+      Stream<Buffer> tmp = crlPaths.
+          stream().
+          map(path -> vertx.resolveFile(path).getAbsolutePath()).
+          map(vertx.fileSystem()::readFileBlocking);
+      tmp = Stream.concat(tmp, crlValues.stream());
+      CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
+      ArrayList<CRL> crls = new ArrayList<>();
+      for (Buffer crlValue : tmp.collect(Collectors.toList())) {
+        crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
+      }
+      TrustManager[] mgrs = createUntrustRevokedCertTrustManager(fact.getTrustManagers(), crls);
+      fact = new SimpleTrustManagerFactory() {
+        @Override
+        protected void engineInit(KeyStore keyStore) throws Exception {}
+
+        @Override
+        protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {}
+
+        @Override
+        protected TrustManager[] engineGetTrustManagers() {
+          return mgrs.clone();
+        }
+      };
+    }
+    return fact;
   }
 
   /*
@@ -173,15 +293,15 @@ public class SSLHelper {
         trustMgrs[i] = new X509TrustManager() {
           @Override
           public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            checkRevocaked(x509Certificates);
+            checkRevoked(x509Certificates);
             x509TrustManager.checkClientTrusted(x509Certificates, s);
           }
           @Override
           public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            checkRevocaked(x509Certificates);
+            checkRevoked(x509Certificates);
             x509TrustManager.checkServerTrusted(x509Certificates, s);
           }
-          private void checkRevocaked(X509Certificate[] x509Certificates) throws CertificateException {
+          private void checkRevoked(X509Certificate[] x509Certificates) throws CertificateException {
             for (X509Certificate cert : x509Certificates) {
               for (CRL crl : crls) {
                 if (crl.isRevoked(cert)) {
@@ -250,7 +370,7 @@ public class SSLHelper {
     return new SslHandler(engine);
   }
 
-  private SSLContext getContext(VertxInternal vertx) {
+  private SslContext getContext(VertxInternal vertx) {
     if (sslContext == null) {
       sslContext = createContext(vertx);
     }
@@ -264,29 +384,13 @@ public class SSLHelper {
     }
   }
 
-  public SslHandler createSslHandler(VertxInternal vertx, boolean client, String host, int port) {
-    return createSslHandler(vertx, client, host, port, false);
-  }
-
-  public SslHandler createSslHandler(VertxInternal vertx, boolean client, String host, int port, boolean useALPN) {
-    SSLEngine engine = getContext(vertx).createSSLEngine(host, port);
-    if (useALPN) {
-      JdkAlpnApplicationProtocolNegotiator apn = new JdkAlpnApplicationProtocolNegotiator(true, "h2", "http/1.1");
-      engine = apn.wrapperFactory().wrapSslEngine(engine, apn, !client);
-    }
+  public SslHandler createSslHandler(VertxInternal vertx, String host, int port) {
+    SSLEngine engine = getContext(vertx).newEngine(ByteBufAllocator.DEFAULT, host, port);
     return createHandler(engine, client);
   }
 
-  public SslHandler createSslHandler(VertxInternal vertx, boolean client) {
-    return createSslHandler(vertx, client, false);
-  }
-
-  public SslHandler createSslHandler(VertxInternal vertx, boolean client, boolean useALPN) {
-    SSLEngine engine = getContext(vertx).createSSLEngine();
-    if (useALPN) {
-      JdkAlpnApplicationProtocolNegotiator apn = new JdkAlpnApplicationProtocolNegotiator(true, "h2", "http/1.1");
-      engine = apn.wrapperFactory().wrapSslEngine(engine, apn, !client);
-    }
+  public SslHandler createSslHandler(VertxInternal vertx) {
+    SSLEngine engine = getContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
     return createHandler(engine, client);
   }
 }

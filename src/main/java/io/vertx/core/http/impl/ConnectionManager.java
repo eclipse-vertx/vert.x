@@ -59,7 +59,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -240,24 +239,27 @@ public class ConnectionManager {
           ChannelPipeline pipeline = ch.pipeline();
           boolean useAlpn = options.isUseAlpn();
           if (useAlpn) {
-
-            SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), true, host, port, useAlpn);
+            SslHandler sslHandler = sslHelper.createSslHandler(client.getVertx(), host, port);
             ch.pipeline().addLast(sslHandler);
-            HttpVersion fallbackVersion = options.getAlpnFallbackProtocolVersion();
-            String fallback = fallbackVersion == HttpVersion.HTTP_1_0 ? "http/1.0" : "http/1.1";
-            ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler(fallback) {
+            ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("http/1.1") {
               @Override
               protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
                 if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
                   http2Connected(context, ch, waiter, false);
+                } else if (ApplicationProtocolNames.HTTP_1_1.equals(protocol)) {
+                  fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
                 } else {
-                  fallbackToHttp1x(ch, context, fallbackVersion, port, host, waiter);
+                  fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_0, port, host, waiter);
                 }
+              }
+              @Override
+              protected void handshakeFailure(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                ConnQueue.this.handshakeFailure(context, ch, cause, waiter);
               }
             });
           } else {
             if (options.isSsl()) {
-              pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, true, host, port, useAlpn));
+              pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
             }
             if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
               HttpClientCodec httpCodec = new HttpClientCodec();
@@ -308,9 +310,7 @@ public class ConnectionManager {
                 if (fut2.isSuccess()) {
                   http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
                 } else {
-                  SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
-                  Optional.ofNullable(fut2.cause()).ifPresent(sslException::initCause);
-                  connectionFailed(context, ch, waiter::handleFailure, sslException);
+                  handshakeFailure(context, ch, fut2.cause(), waiter);
                 }
               });
             } else {
@@ -325,6 +325,14 @@ public class ConnectionManager {
           connectionFailed(context, ch, waiter::handleFailure, channelFuture.cause());
         }
       });
+    }
+
+    private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, Waiter waiter) {
+      SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
+      if (cause != null) {
+        sslException.initCause(cause);
+      }
+      connectionFailed(context, ch, waiter::handleFailure, sslException);
     }
 
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {

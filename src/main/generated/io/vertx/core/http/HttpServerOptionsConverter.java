@@ -27,6 +27,14 @@ import io.vertx.core.json.JsonArray;
 public class HttpServerOptionsConverter {
 
   public static void fromJson(JsonObject json, HttpServerOptions obj) {
+    if (json.getValue("alpnVersions") instanceof JsonArray) {
+      java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
+      json.getJsonArray("alpnVersions").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+      });
+      obj.setAlpnVersions(list);
+    }
     if (json.getValue("compressionSupported") instanceof Boolean) {
       obj.setCompressionSupported((Boolean)json.getValue("compressionSupported"));
     }
@@ -54,6 +62,13 @@ public class HttpServerOptionsConverter {
   }
 
   public static void toJson(HttpServerOptions obj, JsonObject json) {
+    if (obj.getAlpnVersions() != null) {
+      json.put("alpnVersions", new JsonArray(
+          obj.getAlpnVersions().
+              stream().
+              map(item -> item.name()).
+              collect(java.util.stream.Collectors.toList())));
+    }
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     if (obj.getInitialSettings() != null) {

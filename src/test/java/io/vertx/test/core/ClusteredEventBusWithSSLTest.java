@@ -38,7 +38,7 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
   private final EventBusOptions options;
 
 
-  public ClusteredEventBusWithSSLTest(KeyCert cert, Trust trust,
+  public ClusteredEventBusWithSSLTest(TLSCert cert, TLSCert trust,
                                       boolean requireClientAuth,
                                       boolean clientTrustAll,
                                       boolean useCrl,
@@ -53,8 +53,8 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
       options.addCrlPath("tls/ca/crl.pem");
     }
 
-    setOptions(options, getClientTrustOptions(trust));
-    setOptions(options, getServerCertOptions(cert));
+    setOptions(options, trust.getClientTrustOptions());
+    setOptions(options, cert.getServerKeyCertOptions());
 
     if (enabledCipherSuites != null) {
       enabledCipherSuites.forEach(options::addEnabledCipherSuite);
@@ -72,13 +72,13 @@ public class ClusteredEventBusWithSSLTest extends ClusteredEventBusTestBase {
     //KeyCert, Trust, requireClientAuth, clientTrustAll, useCrl, enabledCipherSuites
 
     return Arrays.asList(new Object[][]{
-        {KeyCert.JKS, Trust.NONE, false, true, false, Collections.emptyList()}, // trusts all server certs
-        {KeyCert.JKS, Trust.JKS, false, false, true, Collections.emptyList()},
-        {KeyCert.PKCS12, Trust.JKS, false, false, false, Collections.emptyList()},
-        {KeyCert.PEM, Trust.JKS, false, false, false, Collections.emptyList()},
-        {KeyCert.PKCS12_CA, Trust.JKS_CA, false, false, false, Collections.emptyList()},
-        {KeyCert.PEM_CA, Trust.PKCS12_CA, false, false, false, Collections.emptyList()},
-        {KeyCert.JKS, Trust.PEM_CA, false, true, false, Arrays.asList(Http1xTest.ENABLED_CIPHER_SUITES)},
+        {TLSCert.JKS, TLSCert.NONE, false, true, false, Collections.emptyList()}, // trusts all server certs
+        {TLSCert.JKS, TLSCert.JKS, false, false, true, Collections.emptyList()},
+        {TLSCert.PKCS12, TLSCert.JKS, false, false, false, Collections.emptyList()},
+        {TLSCert.PEM, TLSCert.JKS, false, false, false, Collections.emptyList()},
+        {TLSCert.PKCS12_CA, TLSCert.JKS_CA, false, false, false, Collections.emptyList()},
+        {TLSCert.PEM_CA, TLSCert.PKCS12_CA, false, false, false, Collections.emptyList()},
+        {TLSCert.JKS, TLSCert.PEM_CA, false, true, false, Arrays.asList(Http1xTest.ENABLED_CIPHER_SUITES)},
     });
   }
 

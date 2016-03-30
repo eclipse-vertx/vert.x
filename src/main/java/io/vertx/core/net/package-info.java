@@ -567,7 +567,21 @@
  *
  * Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
  *
- * === Application-Layer Protocol Negotiation
+ * ==== OpenSSL engine
+ *
+ * The default SSL/TLS engine implementation is provided by the JDK.
+ *
+ * The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead. OpenSSL provides
+ * better performances and CPU usage than the JDK engine, as well as JDK version independence.
+ *
+ * OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setSslEngine} to {@link io.vertx.core.net.SSLEngine#OPENSSL}
+ * and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath, as well as the correct
+ * version of OpenSSL installed on your OS.
+ *
+ * OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
+ * configuration.
+ *
+ * ==== Application-Layer Protocol Negotiation
  *
  * ALPN is a TLS extension for applicationl layer protocol negotitation. It is used by HTTP/2: during the TLS handshake
  * the client gives the list of application protocols it accepts and the server responds with a protocol it supports.
@@ -577,11 +591,11 @@
  * - _OpenSSL_ support
  * - _Jetty-ALPN_ support
  *
- * ==== OpenSSL ALPN support
+ * ===== OpenSSL ALPN support
  *
- * Not yet implemented.
+ * OpenSSL provides native ALPN support.
  *
- * ==== Jetty-ALPN support
+ * ===== Jetty-ALPN support
  *
  * Jetty-ALPN is a small jar that overrides a few classes of Java 8 distribution to support ALPN.
  *

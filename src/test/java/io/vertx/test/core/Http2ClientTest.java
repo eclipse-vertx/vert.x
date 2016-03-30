@@ -89,7 +89,7 @@ public class Http2ClientTest extends Http2TestBase {
     super.setUp();
     clientOptions = new HttpClientOptions().
         setUseAlpn(true).
-        setTrustStoreOptions((JksOptions) getClientTrustOptions(Trust.JKS)).
+        setTrustStoreOptions((JksOptions) TLSCert.JKS.getClientTrustOptions()).
         setProtocolVersion(HttpVersion.HTTP_2);
     client = vertx.createHttpClient(clientOptions);
   }
@@ -1017,8 +1017,8 @@ public class Http2ClientTest extends Http2TestBase {
     bootstrap.childHandler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        SSLHelper sslHelper = new SSLHelper(serverOptions, KeyStoreHelper.create((VertxInternal) vertx, getServerCertOptions(KeyCert.JKS)), null);
-        SslHandler sslHandler = sslHelper.createSslHandler((VertxInternal) vertx, false, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT, true);
+        SSLHelper sslHelper = new SSLHelper(serverOptions, KeyStoreHelper.create((VertxInternal) vertx, TLSCert.JKS.getServerKeyCertOptions()), null);
+        SslHandler sslHandler = sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createSslHandler((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
         ch.pipeline().addLast(sslHandler);
         ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
           @Override

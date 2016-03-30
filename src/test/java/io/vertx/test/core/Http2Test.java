@@ -21,6 +21,8 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.SSLEngine;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -113,6 +115,38 @@ public class Http2Test extends HttpTest {
     }).setChunked(true).sendHead();
     awaitLatch(latch2); // The next write won't be buffered
     req.write("hello ").end("world");
+    await();
+  }
+
+  @Test
+  public void testServerOpenSSL() throws Exception {
+    HttpServerOptions opts = new HttpServerOptions()
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTPS_HOST)
+        .setUseAlpn(true)
+        .setSsl(true)
+        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
+        .setPemKeyCertOptions((PemKeyCertOptions) TLSCert.PEM.getServerKeyCertOptions()).setSslEngine(SSLEngine.OPENSSL);
+    server.close();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    server = vertx.createHttpServer(opts);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    System.out.println("starting");
+    try {
+      server.listen(onSuccess(v -> latch.countDown()));
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
+    System.out.println("listening");
+    awaitLatch(latch);
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      assertEquals(200, resp.statusCode());
+      testComplete();
+    }).exceptionHandler(this::fail).end();
     await();
   }
 }

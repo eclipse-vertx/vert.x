@@ -438,6 +438,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslEngine]]`sslEngine`|`link:enums.html#SSLEngine[SSLEngine]`|
++++
+Set to use SSL engine implementation to use.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -675,6 +679,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslEngine]]`sslEngine`|`link:enums.html#SSLEngine[SSLEngine]`|
++++
+Set to use SSL engine implementation to use.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -792,6 +800,10 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`ssl`|`Boolean`|
 +++
 Set whether SSL/TLS is enabled
++++
+|[[sslEngine]]`sslEngine`|`link:enums.html#SSLEngine[SSLEngine]`|
++++
+Set to use SSL engine implementation to use.
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
@@ -958,6 +970,10 @@ Set the key a a buffer
 +++
 Set the accept back log
 +++
+|[[alpnVersions]]`alpnVersions`|`Array of link:enums.html#HttpVersion[HttpVersion]`|
++++
+Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
++++
 |[[clientAuth]]`clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|
 +++
 Set whether client auth is required
@@ -1058,6 +1074,10 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`ssl`|`Boolean`|
 +++
 Set whether SSL/TLS is enabled
++++
+|[[sslEngine]]`sslEngine`|`link:enums.html#SSLEngine[SSLEngine]`|
++++
+Set to use SSL engine implementation to use.
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
@@ -1212,6 +1232,10 @@ Set whether SO_linger keep alive is enabled
 +++
 Set whether SSL/TLS is enabled
 +++
+|[[sslEngine]]`sslEngine`|`link:enums.html#SSLEngine[SSLEngine]`|
++++
+Set to use SSL engine implementation to use.
++++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
 Set whether TCP keep alive is enabled
@@ -1304,9 +1328,15 @@ Set the value of traffic class
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[alpnFallbackProtocolVersion]]`alpnFallbackProtocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|
+|[[alpnVersions]]`alpnVersions`|`Array of link:enums.html#HttpVersion[HttpVersion]`|
 +++
-Set the ALPN fallback protocol version, must be either  or .
+Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+ When the list is empty, the client provides a best effort list according to link:
+
+ <ul>
+   <li>: [ "h2", "http/1.1" ]</li>
+   <li>otherwise: [link]</li>
+ </ul>
 +++
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|
 +++
@@ -1409,6 +1439,10 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`ssl`|`Boolean`|
 +++
 Set whether SSL/TLS is enabled
++++
+|[[sslEngine]]`sslEngine`|`link:enums.html#SSLEngine[SSLEngine]`|
++++
+Set to use SSL engine implementation to use.
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++
@@ -1566,6 +1600,10 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`ssl`|`Boolean`|
 +++
 Set whether SSL/TLS is enabled
++++
+|[[sslEngine]]`sslEngine`|`link:enums.html#SSLEngine[SSLEngine]`|
++++
+Set to use SSL engine implementation to use.
 +++
 |[[tcpKeepAlive]]`tcpKeepAlive`|`Boolean`|
 +++

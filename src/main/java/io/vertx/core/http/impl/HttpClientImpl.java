@@ -35,6 +35,9 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -59,7 +62,21 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
     this.options = new HttpClientOptions(options);
-    this.sslHelper = new SSLHelper(options, KeyStoreHelper.create(vertx, options.getKeyCertOptions()), KeyStoreHelper.create(vertx, options.getTrustOptions()));
+    List<HttpVersion> alpnVersions = options.getAlpnVersions();
+    if (alpnVersions == null || alpnVersions.isEmpty()) {
+      switch (options.getProtocolVersion()) {
+        case HTTP_2:
+          alpnVersions = Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
+          break;
+        default:
+          alpnVersions = Collections.singletonList(options.getProtocolVersion());
+          break;
+      }
+    }
+    this.sslHelper = new SSLHelper(options,
+        KeyStoreHelper.create(vertx, options.getKeyCertOptions()),
+        KeyStoreHelper.create(vertx, options.getTrustOptions())).
+        setApplicationProtocols(alpnVersions);
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();

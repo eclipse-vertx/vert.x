@@ -799,7 +799,21 @@ NetServer server = vertx.createNetServer(options);
 
 Cipher suite can be specified on the `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` or `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` configuration.
 
-=== Application-Layer Protocol Negotiation
+==== OpenSSL engine
+
+The default SSL/TLS engine implementation is provided by the JDK.
+
+The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead. OpenSSL provides
+better performances and CPU usage than the JDK engine, as well as JDK version independence.
+
+OpenSSL requires to configure `link:../../apidocs/io/vertx/core/net/TCPSSLOptions.html#setSslEngine-io.vertx.core.net.SSLEngine-[setSslEngine]` to `link:../../apidocs/io/vertx/core/net/SSLEngine.html#OPENSSL[OPENSSL]`
+and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath, as well as the correct
+version of OpenSSL installed on your OS.
+
+OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
+configuration.
+
+==== Application-Layer Protocol Negotiation
 
 ALPN is a TLS extension for applicationl layer protocol negotitation. It is used by HTTP/2: during the TLS handshake
 the client gives the list of application protocols it accepts and the server responds with a protocol it supports.
@@ -809,11 +823,11 @@ Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other
 - _OpenSSL_ support
 - _Jetty-ALPN_ support
 
-==== OpenSSL ALPN support
+===== OpenSSL ALPN support
 
-Not yet implemented.
+OpenSSL provides native ALPN support.
 
-==== Jetty-ALPN support
+===== Jetty-ALPN support
 
 Jetty-ALPN is a small jar that overrides a few classes of Java 8 distribution to support ALPN.
 

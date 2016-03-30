@@ -24,6 +24,12 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.SSLEngine;
+import io.vertx.core.net.TCPSSLOptions;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -89,9 +95,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
 
   /**
-   * Default alpn fallback protocol version = HTTP/1.1
+   * Default Application-Layer Protocol Negotiation versions = [] (automatic according to protocol version)
    */
-  public static final HttpVersion DEFAULT_ALPN_FALLBACK_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
+  public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.emptyList();
 
   private boolean verifyHost = true;
   private int maxPoolSize;
@@ -104,8 +110,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxWaitQueueSize;
-  private HttpVersion alpnFallbackProtocolVersion;
   private Http2Settings initialSettings;
+  private List<HttpVersion> alpnVersions;
 
   /**
    * Default constructor
@@ -133,8 +139,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
-    this.alpnFallbackProtocolVersion = other.alpnFallbackProtocolVersion;
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
   }
 
   /**
@@ -160,8 +166,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
-    alpnFallbackProtocolVersion = DEFAULT_ALPN_FALLBACK_PROTOCOL_VERSION;
     initialSettings = new Http2Settings();
+    alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
   }
 
   @Override
@@ -505,32 +511,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     return maxWaitQueueSize;
   }
 
-  @Override
-  public HttpClientOptions setUseAlpn(boolean useAlpn) {
-    return (HttpClientOptions) super.setUseAlpn(useAlpn);
-  }
-
-  /**
-   * @return the ALPN fallback protocol version
-   */
-  public HttpVersion getAlpnFallbackProtocolVersion() {
-    return alpnFallbackProtocolVersion;
-  }
-
-  /**
-   * Set the ALPN fallback protocol version, must be either {@link HttpVersion#HTTP_1_1} or {@link HttpVersion#HTTP_1_0}.
-   *
-   * @param alpnFallbackProtocolVersion the ALPN fallback protocol version
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setAlpnFallbackProtocolVersion(HttpVersion alpnFallbackProtocolVersion) {
-    if (alpnFallbackProtocolVersion != HttpVersion.HTTP_1_0 && alpnFallbackProtocolVersion != HttpVersion.HTTP_1_1) {
-      throw new IllegalArgumentException("ALPN fallback protocol must be HTTP/1.1 or HTTP/1.0");
-    }
-    this.alpnFallbackProtocolVersion = alpnFallbackProtocolVersion;
-    return this;
-  }
-
   /**
    * @return the initial HTTP/2 connection settings
    */
@@ -546,6 +526,41 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setInitialSettings(Http2Settings settings) {
     this.initialSettings = settings;
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setUseAlpn(boolean useAlpn) {
+    return (HttpClientOptions) super.setUseAlpn(useAlpn);
+  }
+
+  @Override
+  public HttpClientOptions setSslEngine(SSLEngine sslEngine) {
+    return (HttpClientOptions) super.setSslEngine(sslEngine);
+  }
+
+  /**
+   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiatiation. When
+   * the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}
+   */
+  public List<HttpVersion> getAlpnVersions() {
+    return alpnVersions;
+  }
+
+  /**
+   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+   * When the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}:
+   *
+   * <ul>
+   *   <li>{@link HttpVersion#HTTP_2}: [ "h2", "http/1.1" ]</li>
+   *   <li>otherwise: [{@link #getProtocolVersion()}]</li>
+   * </ul>
+   *
+   * @param alpnVersions the versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
+    this.alpnVersions = alpnVersions;
     return this;
   }
 
@@ -568,7 +583,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (protocolVersion != that.protocolVersion) return false;
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxWaitQueueSize != that.maxWaitQueueSize) return false;
-    if (alpnFallbackProtocolVersion != that.alpnFallbackProtocolVersion) return false;
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
 
     return true;
@@ -588,7 +602,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + protocolVersion.hashCode();
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxWaitQueueSize;
-    result = 31 * result + alpnFallbackProtocolVersion.hashCode();
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     return result;
   }

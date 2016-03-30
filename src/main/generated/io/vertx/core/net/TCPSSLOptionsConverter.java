@@ -69,6 +69,9 @@ public class TCPSSLOptionsConverter {
     if (json.getValue("ssl") instanceof Boolean) {
       obj.setSsl((Boolean)json.getValue("ssl"));
     }
+    if (json.getValue("sslEngine") instanceof String) {
+      obj.setSslEngine(io.vertx.core.net.SSLEngine.valueOf((String)json.getValue("sslEngine")));
+    }
     if (json.getValue("tcpKeepAlive") instanceof Boolean) {
       obj.setTcpKeepAlive((Boolean)json.getValue("tcpKeepAlive"));
     }
@@ -111,6 +114,9 @@ public class TCPSSLOptionsConverter {
     json.put("idleTimeout", obj.getIdleTimeout());
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
+    if (obj.getSslEngine() != null) {
+      json.put("sslEngine", obj.getSslEngine().name());
+    }
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("useAlpn", obj.isUseAlpn());

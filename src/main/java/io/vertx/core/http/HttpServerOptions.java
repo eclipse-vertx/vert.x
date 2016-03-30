@@ -21,11 +21,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -70,6 +69,8 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
 
+  public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.unmodifiableList(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -78,6 +79,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxInitialLineLength;
   private int maxHeaderSize;
   private Http2Settings initialSettings;
+  private List<HttpVersion> alpnVersions;
 
   /**
    * Default constructor
@@ -103,6 +105,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
   }
 
   /**
@@ -125,6 +128,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings();
+    alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
   }
 
   @Override
@@ -190,6 +194,12 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setUseAlpn(boolean useAlpn) {
     super.setUseAlpn(useAlpn);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions setSslEngine(SSLEngine sslEngine) {
+    super.setSslEngine(sslEngine);
     return this;
   }
 
@@ -413,6 +423,24 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setInitialSettings(Http2Settings settings) {
     this.initialSettings = settings;
+    return this;
+  }
+
+  /**
+   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiatiation
+   */
+  public List<HttpVersion> getAlpnVersions() {
+    return alpnVersions;
+  }
+
+  /**
+   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+   *
+   * @param alpnVersions the versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
+    this.alpnVersions = alpnVersions;
     return this;
   }
 

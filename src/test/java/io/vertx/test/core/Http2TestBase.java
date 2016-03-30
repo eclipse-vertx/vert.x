@@ -16,7 +16,6 @@
 
 package io.vertx.test.core;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientOptions;
@@ -36,13 +35,13 @@ public class Http2TestBase extends HttpTestBase {
         .setUseAlpn(true)
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setKeyStoreOptions((JksOptions) getServerCertOptions(KeyCert.JKS));
+        .setKeyStoreOptions((JksOptions) TLSCert.JKS.getServerKeyCertOptions());
   };
 
   static HttpClientOptions createHttp2ClientOptions() {
     return new HttpClientOptions().
         setUseAlpn(true).
-        setTrustStoreOptions((JksOptions) getClientTrustOptions(Trust.JKS)).
+        setTrustStoreOptions((JksOptions) TLSCert.JKS.getClientTrustOptions()).
         setProtocolVersion(HttpVersion.HTTP_2);
   }
 

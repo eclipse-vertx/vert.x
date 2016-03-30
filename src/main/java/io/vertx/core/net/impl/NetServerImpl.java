@@ -174,7 +174,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
             }
             ChannelPipeline pipeline = ch.pipeline();
             if (sslHelper.isSSL()) {
-              SslHandler sslHandler = sslHelper.createSslHandler(vertx, false);
+              SslHandler sslHandler = sslHelper.createSslHandler(vertx);
               pipeline.addLast("ssl", sslHandler);
             }
             if (sslHelper.isSSL()) {

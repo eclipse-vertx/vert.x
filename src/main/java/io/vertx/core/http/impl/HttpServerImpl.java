@@ -39,6 +39,7 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -57,9 +58,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -193,7 +195,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     listenContext = vertx.getOrCreateContext();
     listening = true;
     serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
-    boolean useAlpn = options.isUseAlpn() && !listenContext.isWorkerContext();
+    List<HttpVersion> applicationProtocols = options.getAlpnVersions();
+    if (listenContext.isWorkerContext()) {
+      applicationProtocols =  applicationProtocols.stream().filter(v -> v != HttpVersion.HTTP_2).collect(Collectors.toList());
+    }
+    sslHelper.setApplicationProtocols(applicationProtocols);
     synchronized (vertx.sharedHttpServers()) {
       id = new ServerID(port, host);
       HttpServerImpl shared = vertx.sharedHttpServers().get(id);
@@ -213,8 +219,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               }
               ChannelPipeline pipeline = ch.pipeline();
               if (sslHelper.isSSL()) {
-                pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, false, useAlpn));
-                if (useAlpn) {
+                pipeline.addLast("ssl", sslHelper.createSslHandler(vertx));
+                if (options.isUseAlpn()) {
                   pipeline.addLast("alpn", new ApplicationProtocolNegotiationHandler("http/1.1") {
                     @Override
                     protected void configurePipeline(ChannelHandlerContext ctx, String protocol) throws Exception {
