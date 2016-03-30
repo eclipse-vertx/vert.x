@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -84,11 +85,19 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onEnd() {
+    onEnd(null);
+  }
+
+  void onEnd(MultiMap trailers) {
     synchronized (conn) {
       if (paused || pending.size() > 0) {
-        pending.add(END);
+        if (trailers != null) {
+          pending.add(trailers);
+        } else {
+          pending.add(END);
+        }
       } else {
-        handleEnd();
+        handleEnd(trailers);
       }
     }
   }
@@ -107,8 +116,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
           if (pending.size() > 0) {
             vertx.runOnContext(this::checkNextTick);
           }
-        } if (msg == END) {
-          handleEnd();
+        } else if (msg == END) {
+          handleEnd(null);
+        } else if (msg instanceof MultiMap) {
+          handleEnd((MultiMap) msg);
         }
       }
     }
@@ -158,7 +169,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleUnknownFrame(int type, int flags, Buffer buff) {
   }
 
-  void handleEnd() {
+  void handleEnd(MultiMap trailers) {
   }
 
   void handleReset(long errorCode) {

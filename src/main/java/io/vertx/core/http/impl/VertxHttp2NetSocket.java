@@ -18,13 +18,13 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.NetSocket;
@@ -56,7 +56,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   // Stream impl
 
   @Override
-  void handleEnd() {
+  void handleEnd(MultiMap trailers) {
     try {
       if (endHandler != null) {
         // Give opportunity to send a last chunk

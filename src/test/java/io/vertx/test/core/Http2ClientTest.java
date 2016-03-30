@@ -310,6 +310,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepeth", resp -> {
       assertEquals(null, resp.getTrailer("foo"));
+      resp.exceptionHandler(this::fail);
       resp.endHandler(v -> {
         assertEquals("foo_value", resp.getTrailer("foo"));
         assertEquals("foo_value", resp.getTrailer("Foo"));
@@ -334,6 +335,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       Context ctx = vertx.getOrCreateContext();
+      resp.exceptionHandler(this::fail);
       resp.bodyHandler(body -> {
         assertOnIOContext(ctx);
         assertEquals(expected, body);

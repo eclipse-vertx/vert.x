@@ -144,7 +144,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     }
   }
 
-  void handleEnd() {
+  void handleEnd(MultiMap trailers) {
     ended = true;
     conn.reportBytesRead(bytesRead);
     if (postRequestDecoder != null) {

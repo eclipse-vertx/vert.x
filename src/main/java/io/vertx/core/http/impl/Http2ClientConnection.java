@@ -163,7 +163,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void handleEnd() {
+    void handleEnd(MultiMap trailers) {
       if (conn.metrics.isEnabled()) {
         if (request.exceptionOccurred) {
           conn.metrics.requestReset(request.metric());
@@ -173,7 +173,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
       responseEnded = true;
       // Should use a shared immutable object for CaseInsensitiveHeaders ?
-      response.handleEnd(null, new CaseInsensitiveHeaders());
+      if (trailers == null) {
+        trailers = new CaseInsensitiveHeaders();
+      }
+      response.handleEnd(null, trailers);
     }
 
     @Override
@@ -250,7 +253,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           onEnd();
         }
       } else if (end) {
-        response.handleEnd(null, new Http2HeadersAdaptor(headers));
+        onEnd(new Http2HeadersAdaptor(headers));
       }
     }
 
