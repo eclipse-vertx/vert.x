@@ -199,6 +199,24 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     ctx.channel().flush();
   }
 
+  ChannelFuture writePing(ByteBuf data) {
+    ChannelPromise promise = ctx.newPromise();
+    EventExecutor executor = ctx.executor();
+    if (executor.inEventLoop()) {
+      _writePing(data, promise);
+    } else {
+      executor.execute(() -> {
+        _writePing(data, promise);
+      });
+    }
+    return promise;
+  }
+
+  private void _writePing(ByteBuf data, ChannelPromise promise) {
+    encoder().writePing(ctx, false, data, promise);
+    ctx.channel().flush();
+  }
+
   /**
    * Consume {@code numBytes} for {@code stream}  in the flow controller, this must be called from event loop.
    */

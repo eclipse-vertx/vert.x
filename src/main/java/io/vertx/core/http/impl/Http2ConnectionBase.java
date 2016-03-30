@@ -19,6 +19,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -59,11 +60,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected final VertxHttp2ConnectionHandler handler;
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> clientSettingsHandler;
-  private final ArrayDeque<Runnable> updateSettingsHandler = new ArrayDeque<>(4);
+  private final ArrayDeque<Runnable> updateSettingsHandlers = new ArrayDeque<>(4);
+  private final ArrayDeque<Handler<AsyncResult<Buffer>>> pongHandlers = new ArrayDeque<>();
   private Http2Settings serverSettings = new Http2Settings();
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Throwable> exceptionHandler;
+  private Handler<Buffer> pingHandler;
   private boolean closed;
 
   public Http2ConnectionBase(Channel channel, ContextImpl context, VertxHttp2ConnectionHandler handler, TCPMetrics metrics) {
@@ -178,7 +181,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public synchronized void onSettingsAckRead(ChannelHandlerContext ctx) {
-    Runnable handler = updateSettingsHandler.poll();
+    Runnable handler = updateSettingsHandlers.poll();
     if (handler != null) {
       // No need to run on a particular context it shall be done by the handler instead
       handler.run();
@@ -196,11 +199,25 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) {
+  public synchronized void onPingRead(ChannelHandlerContext ctx, ByteBuf data) {
+    Handler<Buffer> handler = pingHandler;
+    if (handler != null) {
+      Buffer buff = Buffer.buffer(data.copy());
+      context.executeFromIO(() -> {
+        handler.handle(buff);
+      });
+    }
   }
 
   @Override
-  public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) {
+  public synchronized void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) {
+    Handler<AsyncResult<Buffer>> handler = pongHandlers.poll();
+    if (handler != null) {
+      context.executeFromIO(() -> {
+        Buffer buff = Buffer.buffer(data.copy());
+        handler.handle(Future.succeededFuture(buff));
+      });
+    }
   }
 
   @Override
@@ -361,7 +378,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     handler.writeSettings(settingsUpdate).addListener(fut -> {
       if (fut.isSuccess()) {
         synchronized (Http2ConnectionBase.this) {
-          updateSettingsHandler.add(() -> {
+          updateSettingsHandlers.add(() -> {
             serverSettings.putAll(settingsUpdate);
             if (completionHandler != null) {
               completionContext.runOnContext(v -> {
@@ -378,6 +395,27 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         }
       }
     });
+  }
+
+  @Override
+  public synchronized HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
+    if (data.length() != 8) {
+      throw new IllegalArgumentException("Ping data must be exactly 8 bytes");
+    }
+    handler.writePing(data.getByteBuf()).addListener(fut -> {
+      if (fut.isSuccess()) {
+        pongHandlers.add(pongHandler);
+      } else {
+        pongHandler.handle(Future.failedFuture(fut.cause()));
+      }
+    });
+    return this;
+  }
+
+  @Override
+  public synchronized HttpConnection pingHandler(Handler<Buffer> handler) {
+    pingHandler = handler;
+    return this;
   }
 
   @Override

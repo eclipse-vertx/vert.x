@@ -1236,6 +1236,25 @@
  * {@link examples.HTTP2Examples#example22}
  * ----
  *
+ * ==== Connection ping
+ *
+ * HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
+ * validity: {@link io.vertx.core.http.HttpConnection#ping} sends a {@literal PING} frame to the remote
+ * endpoint:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example23}
+ * ----
+ *
+ * Vert.x will send automatically an acknowledgement when a {@literal PING} frame is received,
+ * an handler can be set to be called when the connection is pinged:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example24}
+ * ----
+ *
  * ==== Connection shutdown
  *
  * Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
@@ -1245,7 +1264,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.HTTP2Examples#example23}
+ * {@link examples.HTTP2Examples#example25}
  * ----
  *
  * Connection {@link io.vertx.core.http.HttpConnection#close} close is a shutdown with no delay, the {@literal GOAWAY}
@@ -1261,14 +1280,14 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.HTTP2Examples#example24}
+ * {@link examples.HTTP2Examples#example26}
  * ----
  *
  * Conversely, it is also possible to be notified when {@literal GOAWAY} are received:
  *
  * [source,$lang]
  * ----
- * {@link examples.HTTP2Examples#example25}
+ * {@link examples.HTTP2Examples#example27}
  * ----
  *
  * The {@link io.vertx.core.http.HttpConnection#shutdownHandler} will be called when all current streams
@@ -1276,7 +1295,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.HTTP2Examples#example26}
+ * {@link examples.HTTP2Examples#example28}
  * ----
  *
  * This applies also when a {@literal GOAWAY} is received.

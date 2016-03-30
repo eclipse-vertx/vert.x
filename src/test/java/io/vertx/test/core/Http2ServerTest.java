@@ -2543,4 +2543,59 @@ public class Http2ServerTest extends Http2TestBase {
     }).end();
     await();
   }
+
+  @Test
+  public void testSendPing() throws Exception {
+    waitFor(2);
+    Buffer expected = TestUtils.randomBuffer(8);
+    Context ctx = vertx.getOrCreateContext();
+    server.close();
+    server.connectionHandler(conn -> {
+      conn.ping(expected, ar -> {
+        assertSame(ctx, Vertx.currentContext());
+        assertTrue(ar.succeeded());
+        assertEquals(expected, ar.result());
+        complete();
+      });
+    });
+    server.requestHandler(req -> fail());
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onPingRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+          Buffer buffer = Buffer.buffer(data.copy());
+          vertx.runOnContext(v -> {
+            assertEquals(expected, buffer);
+            complete();
+          });
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testReceivePing() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(8);
+    Context ctx = vertx.getOrCreateContext();
+    server.close();
+    server.connectionHandler(conn -> {
+      conn.pingHandler(buff -> {
+        assertOnIOContext(ctx);
+        assertEquals(expected, buff);
+        testComplete();
+      });
+    });
+    server.requestHandler(req -> fail());
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.encoder.writePing(request.context, false, expected.getByteBuf(), request.context.newPromise());
+    });
+    fut.sync();
+    await();
+  }
 }

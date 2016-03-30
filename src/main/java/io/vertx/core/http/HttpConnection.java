@@ -163,6 +163,25 @@ public interface HttpConnection {
   Handler<Http2Settings> remoteSettingsHandler();
 
   /**
+   * Send a {@literal PING} frame to the remote endpoint.
+   *
+   * @param data the 8 bytes data of the frame
+   * @param pongHandler an async result handler notified with pong reply or the failure
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler);
+
+  /**
+   * Set an handler notified when a {@literal PING} frame is received from the remote endpoint.
+   *
+   * @param handler the handler to be called when a {@literal PING} is received
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection pingHandler(@Nullable Handler<Buffer> handler);
+
+  /**
    * Set an handler called when a connection error happens
    *
    * @param handler the handler

@@ -1619,6 +1619,33 @@ connection.remoteSettingsHandler(settings -> {
 });
 ----
 
+==== Connection ping
+
+HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
+validity: `link:../../apidocs/io/vertx/core/http/HttpConnection.html#ping-io.vertx.core.buffer.Buffer-io.vertx.core.Handler-[ping]` sends a `PING` frame to the remote
+endpoint:
+
+[source,java]
+----
+Buffer data = Buffer.buffer();
+for (byte i = 0;i < 8;i++) {
+  data.appendByte(i);
+}
+connection.ping(data, pong -> {
+  System.out.println("Remote side replied");
+});
+----
+
+Vert.x will send automatically an acknowledgement when a `PING` frame is received,
+an handler can be set to be called when the connection is pinged:
+
+[source,java]
+----
+connection.pingHandler(ping -> {
+  System.out.println("Got pinged by remote side");
+});
+----
+
 ==== Connection shutdown
 
 Calling `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdown--[shutdown]` will send a `GOAWAY` frame to the

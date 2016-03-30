@@ -17,6 +17,7 @@
 package io.vertx.test.core;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -1512,6 +1513,60 @@ public class Http2ClientTest extends Http2TestBase {
     req.connectionHandler(conn -> {
       conn.closeHandler(v -> {
         assertTrue(System.currentTimeMillis() - time.get() > 1000);
+        complete();
+      });
+    });
+    req.end();
+    await();
+  }
+
+  @Test
+  public void testSendPing() throws Exception {
+    waitFor(2);
+    Buffer expected = TestUtils.randomBuffer(8);
+    Context ctx = vertx.getOrCreateContext();
+    server.close();
+    server.connectionHandler(conn -> {
+      conn.pingHandler(data -> {
+        assertEquals(expected, data);
+        complete();
+      });
+    });
+    server.requestHandler(req -> {});
+    startServer(ctx);
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+
+    });
+    req.connectionHandler(conn -> {
+      conn.ping(expected, ar -> {
+        assertTrue(ar.succeeded());
+        Buffer buff = ar.result();
+        assertEquals(expected, buff);
+        complete();
+      });
+    });
+    req.end();
+    await();
+  }
+
+  @Test
+  public void testReceivePing() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(8);
+    Context ctx = vertx.getOrCreateContext();
+    server.close();
+    server.connectionHandler(conn -> {
+      conn.ping(expected, ar -> {
+
+      });
+    });
+    server.requestHandler(req -> {});
+    startServer(ctx);
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+
+    });
+    req.connectionHandler(conn -> {
+      conn.pingHandler(data -> {
+        assertEquals(expected, data);
         complete();
       });
     });

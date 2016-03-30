@@ -243,20 +243,36 @@ public class HTTP2Examples {
   }
 
   public void example23(HttpConnection connection) {
-    connection.shutdown();
+    Buffer data = Buffer.buffer();
+    for (byte i = 0;i < 8;i++) {
+      data.appendByte(i);
+    }
+    connection.ping(data, pong -> {
+      System.out.println("Remote side replied");
+    });
   }
 
   public void example24(HttpConnection connection) {
-    connection.goAway(0);
+    connection.pingHandler(ping -> {
+      System.out.println("Got pinged by remote side");
+    });
   }
 
   public void example25(HttpConnection connection) {
+    connection.shutdown();
+  }
+
+  public void example26(HttpConnection connection) {
+    connection.goAway(0);
+  }
+
+  public void example27(HttpConnection connection) {
     connection.goAwayHandler(goAway -> {
       System.out.println("Received a go away frame");
     });
   }
 
-  public void example26(HttpConnection connection) {
+  public void example28(HttpConnection connection) {
     connection.goAway(0);
     connection.shutdownHandler(v -> {
 
