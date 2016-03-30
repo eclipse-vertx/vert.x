@@ -33,8 +33,8 @@ import io.vertx.core.http.HttpVersion;
  */
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
-  private final Http2ClientConnection handler;
-  private final Http2ClientConnection.Http2ClientStream clientStream;
+  private final Http2ClientConnection conn;
+  private final Http2ClientConnection.Http2ClientStream stream;
   private final HttpMethod method;
   private final String uri;
   private final String host;
@@ -42,16 +42,16 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private Handler<HttpClientResponse> respHandler;
 
   public HttpClientRequestPushPromise(
-      Http2ClientConnection handler,
-      Http2Stream clientStream,
+      Http2ClientConnection conn,
+      Http2Stream stream,
       HttpClientImpl client,
       HttpMethod method,
       String uri,
       String host,
       MultiMap headers) throws Http2Exception {
     super(client, method, host, uri);
-    this.handler = handler;
-    this.clientStream = new Http2ClientConnection.Http2ClientStream(handler, this, clientStream);
+    this.conn = conn;
+    this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream);
     this.method = method;
     this.uri = uri;
     this.host = host;
@@ -59,7 +59,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   Http2ClientConnection.Http2ClientStream getStream() {
-    return clientStream;
+    return stream;
   }
 
   @Override
@@ -90,7 +90,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public HttpConnection connection() {
-    return handler;
+    return conn;
   }
 
   @Override
@@ -100,7 +100,9 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public void reset(long code) {
-    clientStream.reset(code);
+    synchronized (conn) {
+      stream.reset(code);
+    }
   }
 
   @Override

@@ -350,6 +350,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (stream == null) {
         throw new IllegalStateException("Cannot reset the request that is not yet connected");
       }
+      completed = true;
       stream.reset(code);
     }
   }

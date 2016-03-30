@@ -17,7 +17,6 @@
 package io.vertx.test.core;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -77,6 +76,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.zip.GZIPOutputStream;
+
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -652,7 +653,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testClientResetServerStream() throws Exception {
+  public void testClientResetServerStreamDuringRequest() throws Exception {
     Future<Void> bufReceived = Future.future();
     server.requestHandler(req -> {
       req.handler(buf -> {
@@ -674,6 +675,30 @@ public class Http2ClientTest extends Http2TestBase {
     bufReceived.setHandler(ar -> {
       req.reset(10);
     });
+    await();
+  }
+
+  @Test
+  public void testClientResetServerStreamDuringResponse() throws Exception {
+    server.requestHandler(req -> {
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+      });
+      req.response().exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        assertEquals(10L, ((StreamResetException) err).getCode());
+        testComplete();
+      });
+      req.response().setChunked(true).write(Buffer.buffer("some-data"));
+    });
+    startServer();
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
+    req.handler(resp -> {
+      resp.exceptionHandler(this::fail);
+      req.reset(10);
+      assertIllegalStateException(() -> req.write(Buffer.buffer()));
+      assertIllegalStateException(req::end);
+    }).setChunked(true).write(Buffer.buffer("hello"));
     await();
   }
 
