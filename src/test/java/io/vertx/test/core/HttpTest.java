@@ -4535,6 +4535,67 @@ public class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientRequestEnded() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        req.response().setStatusCode(200).end();
+      });
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      HttpClientRequest req = client.get(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/blah");
+      req.handler(resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+      req.end();
+      try {
+        req.endHandler(v2 -> {});
+        fail("Shouldn't be able to set end handler");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+      try {
+        req.handler(v2 -> {});
+        fail("Shouldn't be able to set handler");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+      try {
+        req.continueHandler(v2 -> {});
+        fail("Shouldn't be able to set continue handler");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+      try {
+        req.drainHandler(v2 -> {});
+        fail("Shouldn't be able to set drain handler");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+      try {
+        req.exceptionHandler(v2 -> {});
+        fail("Shouldn't be able to set exception handler");
+      } catch (IllegalStateException e) {
+        // OK
+      }
+
+      try {
+        // if the response handler is unhooked, it will not receive the callback
+        //req.handler(null);
+        req.endHandler(null);
+        req.continueHandler(null);
+        req.drainHandler(null);
+        req.exceptionHandler(null);
+      } catch (IllegalStateException e) {
+        fail("Should be able to unset handler");
+      }
+    });
+    await();
+  }
+
+  @Test
   public void testRequestEnded() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     server.requestHandler(req -> {
@@ -4568,7 +4629,42 @@ public class HttpTest extends HttpTestBase {
           // OK
         }
 
-        req.response().setStatusCode(200).end();
+        try {
+          req.handler(null);
+          req.endHandler(null);
+          req.bodyHandler(null);
+          req.uploadHandler(null);
+          req.exceptionHandler(null);
+        } catch (IllegalStateException e) {
+          fail("Should be able to unset handler");
+        }
+
+        HttpServerResponse resp = req.response();
+        resp.setStatusCode(200).end();
+
+        // test response handler after the response is written
+        try  {
+          resp.exceptionHandler(v2 -> {
+          });
+          fail("Shouldn't be able to set exception handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+        try  {
+          resp.drainHandler(v2 -> {
+          });
+          fail("Shouldn't be able to set drain handler");
+        } catch (IllegalStateException e) {
+          // OK
+        }
+
+        try {
+          resp.exceptionHandler(null);
+          resp.drainHandler(null);
+        } catch (IllegalStateException e) {
+          fail("Should be able to unset handler");
+        }
+
       });
     });
     server.listen(ar -> {
@@ -4616,6 +4712,17 @@ public class HttpTest extends HttpTestBase {
         } catch (IllegalStateException e) {
           // OK
         }
+
+        try {
+          req.handler(null);
+          req.endHandler(null);
+          req.bodyHandler(null);
+          req.uploadHandler(null);
+          req.exceptionHandler(null);
+        } catch (IllegalStateException e) {
+          fail("Should be able to unset handler");
+        }
+
         testComplete();
       });
     });

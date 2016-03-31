@@ -204,33 +204,49 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public synchronized AsyncFile drainHandler(Handler<Void> handler) {
-    check();
-    this.drainHandler = handler;
+    if (handler != null) {
+      check();
+      this.drainHandler = handler;
+    } else {
+      this.drainHandler = null;
+    }
     checkDrained();
     return this;
   }
 
   @Override
   public synchronized AsyncFile exceptionHandler(Handler<Throwable> handler) {
-    check();
-    this.exceptionHandler = handler;
+    if (handler != null) {
+      check();
+      this.exceptionHandler = handler;
+    } else {
+      this.exceptionHandler = null;
+    }
     return this;
   }
 
   @Override
   public synchronized AsyncFile handler(Handler<Buffer> handler) {
-    check();
-    this.dataHandler = handler;
-    if (dataHandler != null && !paused && !closed) {
-      doRead();
+    if (handler != null) {
+      check();
+      this.dataHandler = handler;
+      if (!paused && !closed) {
+        doRead();
+      }
+    } else {
+      this.dataHandler = null;
     }
     return this;
   }
 
   @Override
   public synchronized AsyncFile endHandler(Handler<Void> handler) {
-    check();
-    this.endHandler = handler;
+    if (handler != null) {
+      check();
+      this.endHandler = handler;
+    } else {
+      this.endHandler = null;
+    }
     return this;
   }
 
