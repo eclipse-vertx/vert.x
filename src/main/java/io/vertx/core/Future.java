@@ -206,7 +206,7 @@ public interface Future<T> extends AsyncResult<T> {
       if (ar.succeeded()) {
         complete(ar.result());
       } else {
-        ar.failed();
+        fail(ar.cause());
       }
     };
   }
