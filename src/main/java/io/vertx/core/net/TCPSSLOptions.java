@@ -36,12 +36,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final boolean DEFAULT_TCP_NO_DELAY = true;
 
   /**
-   * The default value of TCP keep alive
+   * The default value of TCP keep alive = false
    */
   public static final boolean DEFAULT_TCP_KEEP_ALIVE = false;
 
   /**
-   * The default value of SO_linger
+   * The default value of SO_linger = -1
    */
   public static final int DEFAULT_SO_LINGER = -1;
 

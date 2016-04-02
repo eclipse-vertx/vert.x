@@ -24,7 +24,7 @@ import java.util.List;
  *
  * An abstract base class that you can extend to write your own Verticle classes.
  * <p>
- * Instead of implementing {@link io.vertx.core.Verticle} directly it it often simpler to just extend this class.
+ * Instead of implementing {@link io.vertx.core.Verticle} directly, it is often simpler to just extend this class.
  * <p>
  * In the simplest case, just override the {@link #start} method. If you have verticle clean-up to do you can
  * optionally override the {@link #stop} method too.
