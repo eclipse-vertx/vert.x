@@ -125,14 +125,14 @@ public class Http2ServerTest extends Http2TestBase {
 
     public final Http2Settings settings = new Http2Settings();
 
-    public class Request {
+    public class Connection {
       public final Channel channel;
       public final ChannelHandlerContext context;
       public final Http2Connection connection;
       public final Http2ConnectionEncoder encoder;
       public final Http2ConnectionDecoder decoder;
 
-      public Request(ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
+      public Connection(ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
         this.channel = context.channel();
         this.context = context;
         this.connection = connection;
@@ -147,11 +147,11 @@ public class Http2ServerTest extends Http2TestBase {
 
     class TestClientHandler extends Http2ConnectionHandler {
 
-      private final Consumer<Request> requestHandler;
+      private final Consumer<Connection> requestHandler;
       private boolean handled;
 
       public TestClientHandler(
-          Consumer<Request> requestHandler,
+          Consumer<Connection> requestHandler,
           Http2ConnectionDecoder decoder,
           Http2ConnectionEncoder encoder,
           Http2Settings initialSettings) {
@@ -176,17 +176,17 @@ public class Http2ServerTest extends Http2TestBase {
       private void checkHandle(ChannelHandlerContext ctx) {
         if (!handled) {
           handled = true;
-          Request request = new Request(ctx, connection(), encoder(), decoder());
-          requestHandler.accept(request);
+          Connection conn = new Connection(ctx, connection(), encoder(), decoder());
+          requestHandler.accept(conn);
         }
       }
     }
 
     class TestClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<TestClientHandler, TestClientHandlerBuilder> {
 
-      private final Consumer<Request> requestHandler;
+      private final Consumer<Connection> requestHandler;
 
-      public TestClientHandlerBuilder(Consumer<Request> requestHandler) {
+      public TestClientHandlerBuilder(Consumer<Connection> requestHandler) {
         this.requestHandler = requestHandler;
       }
 
@@ -208,7 +208,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
     }
 
-    protected ChannelInitializer channelInitializer(int port, String host, Consumer<Request> handler) {
+    protected ChannelInitializer channelInitializer(int port, String host, Consumer<Connection> handler) {
       return new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {
@@ -234,7 +234,7 @@ public class Http2ServerTest extends Http2TestBase {
       };
     }
 
-    public ChannelFuture connect(int port, String host, Consumer<Request> handler) {
+    public ChannelFuture connect(int port, String host, Consumer<Connection> handler) {
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.channel(NioSocketChannel.class);
       bootstrap.group(new NioEventLoopGroup());
@@ -2652,7 +2652,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
     TestClient client = new TestClient() {
       @Override
-      protected ChannelInitializer channelInitializer(int port, String host, Consumer<Request> handler) {
+      protected ChannelInitializer channelInitializer(int port, String host, Consumer<Connection> handler) {
         return new ChannelInitializer() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
