@@ -41,6 +41,9 @@ public class HttpClientOptionsConverter {
     if (json.getValue("defaultPort") instanceof Number) {
       obj.setDefaultPort(((Number)json.getValue("defaultPort")).intValue());
     }
+    if (json.getValue("h2cUpgrade") instanceof Boolean) {
+      obj.setH2cUpgrade((Boolean)json.getValue("h2cUpgrade"));
+    }
     if (json.getValue("initialSettings") instanceof JsonObject) {
       obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
     }
@@ -85,6 +88,7 @@ public class HttpClientOptionsConverter {
       json.put("defaultHost", obj.getDefaultHost());
     }
     json.put("defaultPort", obj.getDefaultPort());
+    json.put("h2cUpgrade", obj.isH2cUpgrade());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }

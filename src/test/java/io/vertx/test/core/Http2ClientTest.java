@@ -1010,7 +1010,7 @@ public class Http2ClientTest extends Http2TestBase {
     return builder.build();
   }
 
-  private ServerBootstrap createServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
+  private ServerBootstrap createH2Server(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
     bootstrap.group(new NioEventLoopGroup());
@@ -1025,7 +1025,6 @@ public class Http2ClientTest extends Http2TestBase {
           protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
             if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
               ChannelPipeline p = ctx.pipeline();
-              createHttpConnectionHandler(handler);
               Http2ConnectionHandler clientHandler = createHttpConnectionHandler(handler);
               p.addLast("handler", clientHandler);
               return;
@@ -1039,23 +1038,28 @@ public class Http2ClientTest extends Http2TestBase {
     return bootstrap;
   }
 
-  private ServerBootstrap createClearTextServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
+  private ServerBootstrap createH2CServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler, boolean upgrade) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
     bootstrap.group(new NioEventLoopGroup());
     bootstrap.childHandler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        HttpServerCodec sourceCodec = new HttpServerCodec();
-        HttpServerUpgradeHandler.UpgradeCodecFactory upgradeCodecFactory = protocol -> {
-          if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
-            return new Http2ServerUpgradeCodec(createHttpConnectionHandler(handler));
-          } else {
-            return null;
-          }
-        };
-        ch.pipeline().addLast(sourceCodec);
-        ch.pipeline().addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory));
+        if (upgrade) {
+          HttpServerCodec sourceCodec = new HttpServerCodec();
+          HttpServerUpgradeHandler.UpgradeCodecFactory upgradeCodecFactory = protocol -> {
+            if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
+              return new Http2ServerUpgradeCodec(createHttpConnectionHandler(handler));
+            } else {
+              return null;
+            }
+          };
+          ch.pipeline().addLast(sourceCodec);
+          ch.pipeline().addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory));
+        } else {
+          Http2ConnectionHandler clientHandler = createHttpConnectionHandler(handler);
+          ch.pipeline().addLast("handler", clientHandler);
+        }
       }
     });
     return bootstrap;
@@ -1064,7 +1068,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testStreamError() throws Exception {
     waitFor(2);
-    ServerBootstrap bootstrap = createServer((dec, enc) -> new Http2EventAdapter() {
+    ServerBootstrap bootstrap = createH2Server((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, false, ctx.newPromise());
@@ -1111,7 +1115,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testConnectionDecodeError() throws Exception {
     waitFor(3);
-    ServerBootstrap bootstrap = createServer((dec, enc) -> new Http2EventAdapter() {
+    ServerBootstrap bootstrap = createH2Server((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, false, ctx.newPromise());
@@ -1152,7 +1156,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testInvalidServerResponse() throws Exception {
-    ServerBootstrap bootstrap = createServer((dec, enc) -> new Http2EventAdapter() {
+    ServerBootstrap bootstrap = createH2Server((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("xyz"), 0, false, ctx.newPromise());
@@ -1433,18 +1437,27 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testUpgradeToClearText() throws Exception {
-    ServerBootstrap bootstrap = createClearTextServer((dec, enc) -> new Http2EventAdapter() {
+  public void testClearTextUpgrade() throws Exception {
+    testClearText(true);
+  }
+
+  @Test
+  public void testClearTextWithPriorKnowledge() throws Exception {
+    testClearText(false);
+  }
+
+  private void testClearText(boolean upgrade) throws Exception {
+    ServerBootstrap bootstrap = createH2CServer((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, true, ctx.newPromise());
         ctx.flush();
       }
-    });
+    }, upgrade);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT).sync();
     try {
       client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setH2cUpgrade(upgrade));
       client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
         assertEquals(HttpVersion.HTTP_2, resp.version());
         testComplete();
@@ -1456,7 +1469,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testRejectUpgradeToClearText() throws Exception {
+  public void testRejectClearTextUpgrade() throws Exception {
     System.setProperty("vertx.disableH2c", "true");
     try {
       server.close();

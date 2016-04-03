@@ -69,6 +69,9 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
 
+  /**
+   * Default Application-Layer Protocol Negotiation versions = [HTTP/2,HTTP/1.1]
+   */
   public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.unmodifiableList(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
 
   private boolean compressionSupported;
@@ -198,12 +201,6 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setSslEngine(SSLEngine sslEngine) {
-    super.setSslEngine(sslEngine);
-    return this;
-  }
-
-  @Override
   public HttpServerOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
@@ -281,6 +278,11 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  @Override
+  public HttpServerOptions setSslEngine(SSLEngine sslEngine) {
+    super.setSslEngine(sslEngine);
+    return this;
+  }
 
   /**
    * @return true if the server supports compression
@@ -459,6 +461,7 @@ public class HttpServerOptions extends NetServerOptions {
     if (maxInitialLineLength != that.maxInitialLineLength) return false;
     if (maxHeaderSize != that.maxHeaderSize) return false;
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
+    if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
   }
 
@@ -473,6 +476,7 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxInitialLineLength;
     result = 31 * result + maxHeaderSize;
+    result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     return result;
   }
 }

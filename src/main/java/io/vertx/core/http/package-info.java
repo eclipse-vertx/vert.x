@@ -62,7 +62,7 @@
  * so.
  *
  * To handle `h2c` requests, TLS must be disabled, the server will upgrade to HTTP/2 any request HTTP/1.1 that wants to
- * upgrade to HTTP/2.
+ * upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with the `PRI * HTTP/2.0\r\nSM\r\n` preface.
  *
  * WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
  *
@@ -669,6 +669,11 @@
  * ----
  * {@link examples.HTTP2Examples#example8}
  * ----
+ *
+ * `h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
+ * {@link io.vertx.core.http.HttpClientOptions#setH2cUpgrade(boolean)} options is set to false: after the
+ * connection is established, the client will send the HTTP/2 connection preface and expect to receive
+ * the same preface from the server.
  *
  * The http server may not support HTTP/2, the actual version can be checked
  * with {@link io.vertx.core.http.HttpClientResponse#version()} when the response arrives.

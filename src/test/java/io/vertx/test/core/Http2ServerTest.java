@@ -58,6 +58,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
@@ -131,8 +132,8 @@ public class Http2ServerTest extends Http2TestBase {
       public final Http2ConnectionEncoder encoder;
       public final Http2ConnectionDecoder decoder;
 
-      public Request(Channel channel, ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
-        this.channel = channel;
+      public Request(ChannelHandlerContext context, Http2Connection connection, Http2ConnectionEncoder encoder, Http2ConnectionDecoder decoder) {
+        this.channel = context.channel();
         this.context = context;
         this.connection = connection;
         this.encoder = encoder;
@@ -144,37 +145,71 @@ public class Http2ServerTest extends Http2TestBase {
       }
     }
 
-    public ChannelFuture connect(int port, String host, Consumer<Request> handler) {
+    class TestClientHandler extends Http2ConnectionHandler {
 
-      class TestClientHandler extends Http2ConnectionHandler {
-        public TestClientHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
-          super(decoder, encoder, initialSettings);
+      private final Consumer<Request> requestHandler;
+      private boolean handled;
+
+      public TestClientHandler(
+          Consumer<Request> requestHandler,
+          Http2ConnectionDecoder decoder,
+          Http2ConnectionEncoder encoder,
+          Http2Settings initialSettings) {
+        super(decoder, encoder, initialSettings);
+        this.requestHandler = requestHandler;
+      }
+
+      @Override
+      public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        super.handlerAdded(ctx);
+        if (ctx.channel().isActive()) {
+          checkHandle(ctx);
         }
       }
 
-      class TestClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<TestClientHandler, TestClientHandlerBuilder> {
-        @Override
-        protected TestClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-          return new TestClientHandler(decoder, encoder, initialSettings);
-        }
-
-        public TestClientHandler build(Http2Connection conn) {
-          connection(conn);
-          initialSettings(settings);
-          frameListener(new Http2EventAdapter() {
-            @Override
-            public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-              return super.onDataRead(ctx, streamId, data, padding, endOfStream);
-            }
-          });
-          return super.build();
-        }
+      @Override
+      public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        super.channelActive(ctx);
+        checkHandle(ctx);
       }
 
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.channel(NioSocketChannel.class);
-      bootstrap.group(new NioEventLoopGroup());
-      bootstrap.handler(new ChannelInitializer<Channel>() {
+      private void checkHandle(ChannelHandlerContext ctx) {
+        if (!handled) {
+          handled = true;
+          Request request = new Request(ctx, connection(), encoder(), decoder());
+          requestHandler.accept(request);
+        }
+      }
+    }
+
+    class TestClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<TestClientHandler, TestClientHandlerBuilder> {
+
+      private final Consumer<Request> requestHandler;
+
+      public TestClientHandlerBuilder(Consumer<Request> requestHandler) {
+        this.requestHandler = requestHandler;
+      }
+
+      @Override
+      protected TestClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
+        return new TestClientHandler(requestHandler, decoder, encoder, initialSettings);
+      }
+
+      public TestClientHandler build(Http2Connection conn) {
+        connection(conn);
+        initialSettings(settings);
+        frameListener(new Http2EventAdapter() {
+          @Override
+          public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+            return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+          }
+        });
+        return super.build();
+      }
+    }
+
+    protected ChannelInitializer channelInitializer(int port, String host, Consumer<Request> handler) {
+      return new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {
           SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true), null, KeyStoreHelper.create((VertxInternal) vertx, TLSCert.JKS.getClientTrustOptions()));
@@ -186,11 +221,9 @@ public class Http2ServerTest extends Http2TestBase {
               if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
                 ChannelPipeline p = ctx.pipeline();
                 Http2Connection connection = new DefaultHttp2Connection(false);
-                TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder();
+                TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler);
                 TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
                 p.addLast(clientHandler);
-                Request request = new Request(ch, ctx, connection, clientHandler.encoder(), clientHandler.decoder());
-                handler.accept(request);
                 return;
               }
               ctx.close();
@@ -198,7 +231,14 @@ public class Http2ServerTest extends Http2TestBase {
             }
           });
         }
-      });
+      };
+    }
+
+    public ChannelFuture connect(int port, String host, Consumer<Request> handler) {
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.group(new NioEventLoopGroup());
+      bootstrap.handler(channelInitializer(port, host, handler));
       return bootstrap.connect(new InetSocketAddress(host, port));
     }
   }
@@ -2594,6 +2634,49 @@ public class Http2ServerTest extends Http2TestBase {
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       request.encoder.writePing(request.context, false, expected.getByteBuf(), request.context.newPromise());
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testPriorKnowledge() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().
+        setPort(DEFAULT_HTTP_PORT).
+        setHost(DEFAULT_HTTP_HOST)
+    );
+    server.requestHandler(req -> {
+      req.response().end("Hello World");
+    });
+    startServer();
+    TestClient client = new TestClient() {
+      @Override
+      protected ChannelInitializer channelInitializer(int port, String host, Consumer<Request> handler) {
+        return new ChannelInitializer() {
+          @Override
+          protected void initChannel(Channel ch) throws Exception {
+            ChannelPipeline p = ch.pipeline();
+            Http2Connection connection = new DefaultHttp2Connection(false);
+            TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler);
+            TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
+            p.addLast(clientHandler);
+          }
+        };
+      }
+    };
+    ChannelFuture fut = client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            testComplete();
+          });
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
     });
     fut.sync();
     await();

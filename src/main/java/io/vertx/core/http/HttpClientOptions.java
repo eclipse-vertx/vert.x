@@ -99,6 +99,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.emptyList();
 
+  /**
+   * Default using HTTP/1.1 upgrade for establishing an <i>h2C</i> connection = true
+   */
+  public static final boolean DEFAULT_H2C_UPGRADE = true;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -112,6 +117,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxWaitQueueSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
+  private boolean h2cUpgrade;
 
   /**
    * Default constructor
@@ -141,6 +147,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxWaitQueueSize = other.maxWaitQueueSize;
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
+    this.h2cUpgrade = other.h2cUpgrade;
   }
 
   /**
@@ -168,6 +175,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
+    h2cUpgrade = DEFAULT_H2C_UPGRADE;
   }
 
   @Override
@@ -564,6 +572,25 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return true when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, false when directly
+   */
+  public boolean isH2cUpgrade() {
+    return h2cUpgrade;
+  }
+
+  /**
+   * Set to {@code true} when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, and {@code false}
+   * when an <i>h2c</i> connection is established directly (with prior knowledge).
+   *
+   * @param value the upgrade value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setH2cUpgrade(boolean value) {
+    this.h2cUpgrade = value;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -584,6 +611,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxWaitQueueSize != that.maxWaitQueueSize) return false;
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
+    if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
+    if (h2cUpgrade != that.h2cUpgrade) return false;
 
     return true;
   }
@@ -603,6 +632,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxWaitQueueSize;
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
+    result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
+    result = 31 * result + (h2cUpgrade ? 1 : 0);
     return result;
   }
 }

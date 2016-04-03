@@ -52,7 +52,7 @@ ALPN will usually agree on the `h2` protocol, although `http/1.1` can be used if
 so.
 
 To handle `h2c` requests, TLS must be disabled, the server will upgrade to HTTP/2 any request HTTP/1.1 that wants to
-upgrade to HTTP/2.
+upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with the `PRI * HTTP/2.0\r\nSM\r\n` preface.
 
 WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
 
@@ -808,6 +808,11 @@ HttpClientOptions options = new HttpClientOptions().setProtocolVersion(HttpVersi
 
 HttpClient client = vertx.createHttpClient(options);
 ----
+
+`h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
+`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setH2cUpgrade-boolean-[setH2cUpgrade]` options is set to false: after the
+connection is established, the client will send the HTTP/2 connection preface and expect to receive
+the same preface from the server.
 
 The http server may not support HTTP/2, the actual version can be checked
 with `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#version--[version]` when the response arrives.

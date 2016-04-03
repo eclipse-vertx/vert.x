@@ -175,6 +175,23 @@ public class Http1xTest extends HttpTest {
     assertEquals(new Http2Settings(), options.getInitialSettings());
     assertEquals(options, options.setInitialSettings(initialSettings));
     assertEquals(initialSettings, options.getInitialSettings());
+
+    assertEquals(false, options.isUseAlpn());
+    assertEquals(options, options.setUseAlpn(true));
+    assertEquals(true, options.isUseAlpn());
+
+    assertEquals(SSLEngine.JDK, options.getSslEngine());
+    assertEquals(options, options.setSslEngine(SSLEngine.OPENSSL));
+    assertEquals(SSLEngine.OPENSSL, options.getSslEngine());
+
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.HTTP_1_1);
+    assertEquals(HttpClientOptions.DEFAULT_ALPN_VERSIONS, options.getAlpnVersions());
+    assertEquals(options, options.setAlpnVersions(alpnVersions));
+    assertEquals(alpnVersions, options.getAlpnVersions());
+
+    assertEquals(true, options.isH2cUpgrade());
+    assertEquals(options, options.setH2cUpgrade(false));
+    assertEquals(false, options.isH2cUpgrade());
   }
 
 
@@ -293,10 +310,19 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
+    assertEquals(SSLEngine.JDK, options.getSslEngine());
+    assertEquals(options, options.setSslEngine(SSLEngine.OPENSSL));
+    assertEquals(SSLEngine.OPENSSL, options.getSslEngine());
+
     Http2Settings initialSettings = randomHttp2Settings();
     assertEquals(new Http2Settings(), options.getInitialSettings());
     assertEquals(options, options.setInitialSettings(initialSettings));
     assertEquals(initialSettings, options.getInitialSettings());
+
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.HTTP_1_1);
+    assertEquals(HttpServerOptions.DEFAULT_ALPN_VERSIONS, options.getAlpnVersions());
+    assertEquals(options, options.setAlpnVersions(alpnVersions));
+    assertEquals(alpnVersions, options.getAlpnVersions());
   }
 
   @Test
@@ -332,8 +358,11 @@ public class Http1xTest extends HttpTest {
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
-    HttpVersion alpnFallbackProtocolVersion = TestUtils.randomBoolean() ? HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
     Http2Settings initialSettings = randomHttp2Settings();
+    boolean useAlpn = TestUtils.randomBoolean();
+    SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
+    boolean h2cUpgrade = TestUtils.randomBoolean();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -360,6 +389,10 @@ public class Http1xTest extends HttpTest {
     options.setProtocolVersion(protocolVersion);
     options.setMaxWaitQueueSize(maxWaitQueueSize);
     options.setInitialSettings(initialSettings);
+    options.setUseAlpn(useAlpn);
+    options.setSslEngine(sslEngine);
+    options.setAlpnVersions(alpnVersions);
+    options.setH2cUpgrade(h2cUpgrade);
     HttpClientOptions copy = new HttpClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -391,6 +424,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(protocolVersion, copy.getProtocolVersion());
     assertEquals(maxWaitQueueSize, copy.getMaxWaitQueueSize());
     assertEquals(initialSettings, copy.getInitialSettings());
+    assertEquals(useAlpn, copy.isUseAlpn());
+    assertEquals(sslEngine, copy.getSslEngine());
+    assertEquals(alpnVersions, copy.getAlpnVersions());
+    assertEquals(h2cUpgrade, copy.isH2cUpgrade());
   }
 
   @Test
@@ -414,6 +451,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getProtocolVersion(), json.getProtocolVersion());
     assertEquals(def.getMaxWaitQueueSize(), json.getMaxWaitQueueSize());
     assertEquals(def.getInitialSettings(), json.getInitialSettings());
+    assertEquals(def.isUseAlpn(), json.isUseAlpn());
+    assertEquals(def.getSslEngine(), json.getSslEngine());
+    assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
+    assertEquals(def.isH2cUpgrade(), json.isH2cUpgrade());
   }
 
   @Test
@@ -450,8 +491,11 @@ public class Http1xTest extends HttpTest {
     boolean tryUseCompression = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
-    HttpVersion alpnFallbackProtocolVersion = TestUtils.randomBoolean() ? HttpVersion.HTTP_1_1 : HttpVersion.HTTP_1_0;
     Http2Settings initialSettings = randomHttp2Settings();
+    boolean useAlpn = TestUtils.randomBoolean();
+    SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
+    boolean h2cUpgrade = rand.nextBoolean();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -477,14 +521,17 @@ public class Http1xTest extends HttpTest {
       .put("tryUseCompression", tryUseCompression)
       .put("protocolVersion", protocolVersion.name())
       .put("maxWaitQueueSize", maxWaitQueueSize)
-      .put("alpnFallbackProtocolVersion", alpnFallbackProtocolVersion)
       .put("initialSettings", new JsonObject()
           .put("pushEnabled", initialSettings.isPushEnabled())
           .put("headerTableSize", initialSettings.getHeaderTableSize())
           .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
           .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
           .put("initialWindowSize", initialSettings.getInitialWindowSize())
-          .put("maxFrameSize", initialSettings.getMaxFrameSize()));
+          .put("maxFrameSize", initialSettings.getMaxFrameSize()))
+      .put("useAlpn", useAlpn)
+      .put("sslEngine", sslEngine.name())
+      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
+      .put("h2cUpgrade", h2cUpgrade);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -517,6 +564,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(protocolVersion, options.getProtocolVersion());
     assertEquals(maxWaitQueueSize, options.getMaxWaitQueueSize());
     assertEquals(initialSettings, options.getInitialSettings());
+    assertEquals(useAlpn, options.isUseAlpn());
+    assertEquals(sslEngine, options.getSslEngine());
+    assertEquals(alpnVersions, options.getAlpnVersions());
+    assertEquals(h2cUpgrade, options.isH2cUpgrade());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -571,8 +622,10 @@ public class Http1xTest extends HttpTest {
     String wsSubProtocol = TestUtils.randomAlphaString(10);
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
-    boolean useAlpn = rand.nextBoolean();
     Http2Settings initialSettings = randomHttp2Settings();
+    boolean useAlpn = TestUtils.randomBoolean();
+    SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
     options.setReuseAddress(reuseAddress);
@@ -598,6 +651,7 @@ public class Http1xTest extends HttpTest {
     options.setMaxChunkSize(maxChunkSize);
     options.setUseAlpn(useAlpn);
     options.setInitialSettings(initialSettings);
+    options.setAlpnVersions(alpnVersions);
     HttpServerOptions copy = new HttpServerOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -627,8 +681,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(wsSubProtocol, copy.getWebsocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, copy.isHandle100ContinueAutomatically());
     assertEquals(maxChunkSize, copy.getMaxChunkSize());
-    assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(initialSettings, copy.getInitialSettings());
+    assertEquals(useAlpn, copy.isUseAlpn());
+    assertEquals(sslEngine, copy.getSslEngine());
+    assertEquals(alpnVersions, copy.getAlpnVersions());
   }
 
   @Test
@@ -653,8 +709,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getMaxChunkSize(), json.getMaxChunkSize());
     assertEquals(def.getMaxInitialLineLength(), json.getMaxInitialLineLength());
     assertEquals(def.getMaxHeaderSize(), json.getMaxHeaderSize());
-    assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getInitialSettings(), json.getInitialSettings());
+    assertEquals(def.isUseAlpn(), json.isUseAlpn());
+    assertEquals(def.getSslEngine(), json.getSslEngine());
+    assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
   }
 
   @Test
@@ -692,9 +750,11 @@ public class Http1xTest extends HttpTest {
     int maxChunkSize = rand.nextInt(10000);
     int maxInitialLineLength = rand.nextInt(10000);
     int maxHeaderSize = rand.nextInt(10000);
-    boolean useAlpn = rand.nextBoolean();
     HttpVersion enabledProtocol = HttpVersion.values()[rand.nextInt(HttpVersion.values().length)];
     Http2Settings initialSettings = TestUtils.randomHttp2Settings();
+    boolean useAlpn = TestUtils.randomBoolean();
+    SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -721,7 +781,6 @@ public class Http1xTest extends HttpTest {
       .put("maxChunkSize", maxChunkSize)
       .put("maxInitialLineLength", maxInitialLineLength)
       .put("maxHeaderSize", maxHeaderSize)
-      .put("useAlpn", useAlpn)
       .put("enabledProtocols", new JsonArray().add(enabledProtocol.name()))
       .put("initialSettings", new JsonObject()
           .put("pushEnabled", initialSettings.isPushEnabled())
@@ -729,7 +788,10 @@ public class Http1xTest extends HttpTest {
           .put("maxHeaderListSize", initialSettings.getMaxHeaderListSize())
           .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
           .put("initialWindowSize", initialSettings.getInitialWindowSize())
-          .put("maxFrameSize", initialSettings.getMaxFrameSize()));
+          .put("maxFrameSize", initialSettings.getMaxFrameSize()))
+      .put("useAlpn", useAlpn)
+      .put("sslEngine", sslEngine.name())
+      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()));
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -762,8 +824,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxChunkSize, options.getMaxChunkSize());
     assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
     assertEquals(maxHeaderSize, options.getMaxHeaderSize());
-    assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(initialSettings, options.getInitialSettings());
+    assertEquals(useAlpn, options.isUseAlpn());
+    assertEquals(sslEngine, options.getSslEngine());
+    assertEquals(alpnVersions, options.getAlpnVersions());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

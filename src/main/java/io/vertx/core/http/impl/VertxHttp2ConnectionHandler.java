@@ -78,6 +78,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   }
 
   @Override
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    super.channelActive(ctx);
+  }
+
+  @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
     connectionMap.remove(ctx.channel());

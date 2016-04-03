@@ -262,34 +262,38 @@ public class ConnectionManager {
               pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
             }
             if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-              HttpClientCodec httpCodec = new HttpClientCodec();
-              class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
-                @Override
-                public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                  DefaultFullHttpRequest upgradeRequest =
-                      new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
-                  ctx.writeAndFlush(upgradeRequest);
-                  ctx.fireChannelActive();
-                }
-                @Override
-                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                  super.userEventTriggered(ctx, evt);
-                  ChannelPipeline p = ctx.pipeline();
-                  if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
-                    p.remove(this);
-                    // Upgrade handler will remove itself
-                    http2Connected(context, ch, waiter, true);
-                  } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
-                    p.remove(httpCodec);
-                    p.remove(this);
-                    // Upgrade handler will remove itself
-                    fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+              if (options.isH2cUpgrade()) {
+                HttpClientCodec httpCodec = new HttpClientCodec();
+                class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
+                  @Override
+                  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                    DefaultFullHttpRequest upgradeRequest =
+                        new DefaultFullHttpRequest(io.netty.handler.codec.http.HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
+                    ctx.writeAndFlush(upgradeRequest);
+                    ctx.fireChannelActive();
+                  }
+                  @Override
+                  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                    super.userEventTriggered(ctx, evt);
+                    ChannelPipeline p = ctx.pipeline();
+                    if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
+                      p.remove(this);
+                      // Upgrade handler will remove itself
+                      http2Connected(context, ch, waiter, true);
+                    } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
+                      p.remove(httpCodec);
+                      p.remove(this);
+                      // Upgrade handler will remove itself
+                      fallbackToHttp1x(ch, context, HttpVersion.HTTP_1_1, port, host, waiter);
+                    }
                   }
                 }
+                VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings());
+                HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
+                ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
+              } else {
+                applyH2ConnectionOptions(pipeline, context);
               }
-              VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings());
-              HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
-              ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
             } else {
               applyHttp1xConnectionOptions(pipeline, context);
             }
@@ -317,7 +321,11 @@ public class ConnectionManager {
               if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
                 // Upgrade handler do nothing
               } else {
-                http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
+                if (options.getProtocolVersion() == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
+                  http2Connected(context, ch, waiter, false);
+                } else {
+                  http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
+                }
               }
             }
           }
@@ -630,6 +638,12 @@ public class ConnectionManager {
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+  }
+
+  void applyH2ConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
+    if (options.getIdleTimeout() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+    }
   }
 
   void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {

@@ -1362,6 +1362,11 @@ Set the default port to be used by this client in requests if none is provided w
 +++
 Add an enabled cipher suite
 +++
+|[[h2cUpgrade]]`h2cUpgrade`|`Boolean`|
++++
+Set to <code>true</code> when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, and <code>false</code>
+ when an <i>h2c</i> connection is established directly (with prior knowledge).
++++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
