@@ -1274,4 +1274,28 @@ public class WebsocketTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testClientWebsocketWithHttp2Client() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setH2cUpgrade(false).setProtocolVersion(HttpVersion.HTTP_2));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("connect");
+    });
+    server.websocketHandler(ws -> {
+      ws.writeFinalTextFrame("ok");
+    });
+    server.listen(onSuccess(server -> {
+      client.getNow(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
+        client.websocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
+          ws.handler(buff -> {
+            assertEquals("ok", buff.toString());
+            testComplete();
+          });
+        });
+      });
+    }));
+    await();
+  }
+
 }

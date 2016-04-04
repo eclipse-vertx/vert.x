@@ -104,7 +104,7 @@ public class ConnectionManager {
     ConnQueue<C> getConnQueue(TargetAddress address) {
       ConnQueue<C> connQueue = connQueues.get(address);
       if (connQueue == null) {
-        connQueue = new ConnQueue<C>(version, address);
+        connQueue = new ConnQueue<>(this, address);
         ConnQueue<C> prev = connQueues.putIfAbsent(address, connQueue);
         if (prev != null) {
           connQueue = prev;
@@ -124,12 +124,12 @@ public class ConnectionManager {
     }
   }
 
-  public void getConnection(int port, String host, Waiter waiter) {
+  public void getConnection(HttpVersion version, int port, String host, Waiter waiter) {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
       TargetAddress address = new TargetAddress(host, port);
-      ConnQueue connQueue = options.getProtocolVersion() == HttpVersion.HTTP_2 ? qm2.getConnQueue(address) : qm.getConnQueue(address);
+      ConnQueue connQueue = version == HttpVersion.HTTP_2 ? qm2.getConnQueue(address) : qm.getConnQueue(address);
       connQueue.getConnection(waiter);
     }
   }
@@ -172,14 +172,16 @@ public class ConnectionManager {
 
   public class ConnQueue<C extends HttpClientConnection> {
 
+    private final QueueManager<C> mgr;
     private final TargetAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private final Pool<C> pool;
     private int connCount;
 
-    ConnQueue(HttpVersion version, TargetAddress address) {
+    ConnQueue(QueueManager<C> mgr, TargetAddress address) {
       this.address = address;
-      if (version == HttpVersion.HTTP_2) {
+      this.mgr = mgr;
+      if (mgr.version == HttpVersion.HTTP_2) {
         pool = (Pool<C>) new Http2Pool((ConnQueue<Http2ClientConnection>) this, client, qm2.connectionMap);
       } else {
         pool = (Pool<C>) new Http1xPool((ConnQueue<ClientConnection>) this);
@@ -232,11 +234,7 @@ public class ConnectionManager {
         createNewConnection(waiter);
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
-        if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-          qm2.connQueues.remove(address);
-        } else {
-          qm.connQueues.remove(address);
-        }
+        mgr.connQueues.remove(address);
       }
     }
 
@@ -280,7 +278,7 @@ public class ConnectionManager {
             if (options.isSsl()) {
               pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
             }
-            if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+            if (mgr.version == HttpVersion.HTTP_2) {
               if (options.isH2cUpgrade()) {
                 HttpClientCodec httpCodec = new HttpClientCodec();
                 class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
@@ -331,7 +329,7 @@ public class ConnectionManager {
               io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
               fut.addListener(fut2 -> {
                 if (fut2.isSuccess()) {
-                  http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
+                  http1xConnected(mgr.version, context, port, host, ch, waiter);
                 } else {
                   handshakeFailure(context, ch, fut2.cause(), waiter);
                 }
@@ -340,10 +338,10 @@ public class ConnectionManager {
               if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
                 // Upgrade handler do nothing
               } else {
-                if (options.getProtocolVersion() == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
+                if (mgr.version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
                   http2Connected(context, ch, waiter, false);
                 } else {
-                  http1xConnected(options.getProtocolVersion(), context, port, host, ch, waiter);
+                  http1xConnected(mgr.version, context, port, host, ch, waiter);
                 }
               }
             }
