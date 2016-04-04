@@ -34,4 +34,7 @@ interface HttpClientConnection {
    * frame could have been sent or received.
    */
   boolean isValid();
+
+  void close();
+
 }

@@ -27,13 +27,13 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2Pool extends ConnectionManager.Pool {
+class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
 
   private Http2ClientConnection connection;
   private final Map<Channel, Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
 
-  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, Map<Channel, Http2ClientConnection> connectionMap) {
+  public Http2Pool(ConnectionManager.ConnQueue<Http2ClientConnection> queue, HttpClientImpl client, Map<Channel, Http2ClientConnection> connectionMap) {
     super(queue, 1);
     this.client = client;
     this.connectionMap = connectionMap;
@@ -111,17 +111,16 @@ class Http2Pool extends ConnectionManager.Pool {
   }
 
   @Override
-  void recycle(HttpClientConnection conn) {
+  void recycle(Http2ClientConnection conn) {
     synchronized (queue) {
-      Http2ClientConnection handler = (Http2ClientConnection) conn;
-      handler.streamCount--;
-      checkPending(handler);
+      conn.streamCount--;
+      checkPending(conn);
     }
   }
 
   @Override
-  HttpClientStream createStream(HttpClientConnection conn) throws Exception {
-    return ((Http2ClientConnection)conn).createStream();
+  HttpClientStream createStream(Http2ClientConnection conn) throws Exception {
+    return conn.createStream();
   }
 
   @Override

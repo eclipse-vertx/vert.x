@@ -71,8 +71,8 @@ public class ConnectionManager {
 
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private final Map<Channel, ClientConnection> connectionMap = new ConcurrentHashMap<>();
-  private final Map<Channel, Http2ClientConnection> connectionMap2 = new ConcurrentHashMap<>();
+  private final QueueManager<ClientConnection> qm = new QueueManager<>(HttpVersion.HTTP_1_1);
+  private final QueueManager<Http2ClientConnection> qm2 = new QueueManager<>(HttpVersion.HTTP_2);
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
   private final HttpClientOptions options;
@@ -80,8 +80,6 @@ public class ConnectionManager {
   private final boolean keepAlive;
   private final boolean pipelining;
   private final int maxWaitQueueSize;
-  private final Map<TargetAddress, ConnQueue<ClientConnection>> connQueues = new ConcurrentHashMap<>();
-  private final Map<TargetAddress, ConnQueue<Http2ClientConnection>> connQueues2 = new ConcurrentHashMap<>();
 
   ConnectionManager(HttpClientImpl client) {
     this.client = client;
@@ -93,53 +91,56 @@ public class ConnectionManager {
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
   }
 
+  private class QueueManager<C extends HttpClientConnection> {
+
+    private final HttpVersion version;
+    private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
+    private final Map<TargetAddress, ConnQueue<C>> connQueues = new ConcurrentHashMap<>();
+
+    public QueueManager(HttpVersion version) {
+      this.version = version;
+    }
+
+    ConnQueue<C> getConnQueue(TargetAddress address) {
+      ConnQueue<C> connQueue = connQueues.get(address);
+      if (connQueue == null) {
+        connQueue = new ConnQueue<C>(version, address);
+        ConnQueue<C> prev = connQueues.putIfAbsent(address, connQueue);
+        if (prev != null) {
+          connQueue = prev;
+        }
+      }
+      return connQueue;
+    }
+
+    public void close() {
+      for (ConnQueue queue: connQueues.values()) {
+        queue.closeAllConnections();
+      }
+      connQueues.clear();
+      for (C conn : connectionMap.values()) {
+        conn.close();
+      }
+    }
+  }
+
   public void getConnection(int port, String host, Waiter waiter) {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
       TargetAddress address = new TargetAddress(host, port);
-      Map<TargetAddress, ConnQueue<HttpClientConnection>> abc;
-      ConnQueue connQueue;
-      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-        connQueue = connQueues2.get(address);
-      } else {
-        connQueue = connQueues.get(address);
-      }
-      if (connQueue == null) {
-        connQueue = new ConnQueue(options.getProtocolVersion(), address);
-        ConnQueue prev;
-        if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-          prev = connQueues2.putIfAbsent(address, connQueue);
-        } else {
-          prev = connQueues.putIfAbsent(address, connQueue);
-        }
-        if (prev != null) {
-          connQueue = prev;
-        }
-      }
+      ConnQueue connQueue = options.getProtocolVersion() == HttpVersion.HTTP_2 ? qm2.getConnQueue(address) : qm.getConnQueue(address);
       connQueue.getConnection(waiter);
     }
   }
 
   public void close() {
-    for (ConnQueue queue: connQueues.values()) {
-      queue.closeAllConnections();
-    }
-    connQueues.clear();
-    for (ConnQueue queue: connQueues2.values()) {
-      queue.closeAllConnections();
-    }
-    connQueues2.clear();
-    for (ClientConnection conn : connectionMap.values()) {
-      conn.close();
-    }
-    for (Http2ClientConnection conn : connectionMap2.values()) {
-      conn.close();
-    }
+    qm.close();
+    qm2.close();
   }
 
   void removeChannel(Channel channel) {
-    connectionMap.remove(channel);
+    qm.connectionMap.remove(channel);
   }
 
   static class TargetAddress {
@@ -173,17 +174,16 @@ public class ConnectionManager {
 
     private final TargetAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
+    private final Pool<C> pool;
     private int connCount;
-    private final Pool pool;
 
     ConnQueue(HttpVersion version, TargetAddress address) {
       this.address = address;
       if (version == HttpVersion.HTTP_2) {
-        pool = new Http2Pool(this, client, connectionMap2);
+        pool = (Pool<C>) new Http2Pool((ConnQueue<Http2ClientConnection>) this, client, qm2.connectionMap);
       } else {
-        pool = new Http1xPool(this);
+        pool = (Pool<C>) new Http1xPool((ConnQueue<ClientConnection>) this);
       }
-
     }
 
     public synchronized void getConnection(Waiter waiter) {
@@ -233,9 +233,9 @@ public class ConnectionManager {
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
         if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-          connQueues2.remove(address);
+          qm2.connQueues.remove(address);
         } else {
-          connQueues.remove(address);
+          qm.connQueues.remove(address);
         }
       }
     }
@@ -365,14 +365,7 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // Fallback
       // change the pool to Http1xPool
-      ConnQueue<ClientConnection> http1Queue = connQueues.get(address);
-      if (http1Queue == null) {
-        http1Queue = new ConnQueue<>(HttpVersion.HTTP_1_1, address);
-        ConnQueue<ClientConnection> prev = connQueues.putIfAbsent(address, http1Queue);
-        if (prev != null) {
-          http1Queue = prev;
-        }
-      }
+      ConnQueue<ClientConnection> http1Queue = qm.getConnQueue(address);
       applyHttp1xConnectionOptions(ch.pipeline(), context);
       http1Queue.http1xConnected(fallbackVersion, context, port, host, ch, waiter);
       // Should remove this queue as it may be empty ????
@@ -412,13 +405,13 @@ public class ConnectionManager {
     }
   }
 
-  static abstract class Pool {
+  static abstract class Pool<C extends HttpClientConnection> {
 
     // Pools must locks on the queue object to keep a single lock
-    final ConnQueue queue;
+    final ConnQueue<C> queue;
     final int maxSockets;
 
-    Pool(ConnQueue queue, int maxSockets) {
+    Pool(ConnQueue<C> queue, int maxSockets) {
       this.queue = queue;
       this.maxSockets = maxSockets;
     }
@@ -427,16 +420,16 @@ public class ConnectionManager {
 
     abstract void closeAllConnections();
 
-    abstract void recycle(HttpClientConnection stream);
+    abstract void recycle(C conn);
 
-    abstract HttpClientStream createStream(HttpClientConnection conn) throws Exception;
+    abstract HttpClientStream createStream(C conn) throws Exception;
 
     /**
      * Handle the connection if the waiter is not cancelled, otherwise recycle the connection.
      *
      * @param conn the connection
      */
-    void deliverStream(HttpClientConnection conn, Waiter waiter) {
+    void deliverStream(C conn, Waiter waiter) {
       if (!conn.isValid()) {
         // The connection has been closed - closed connections can be in the pool
         // Get another connection - Note that we DO NOT call connectionClosed() on the pool at this point
@@ -457,12 +450,12 @@ public class ConnectionManager {
     }
   }
 
-  public class Http1xPool extends Pool {
+  public class Http1xPool extends Pool<ClientConnection> {
 
     private final Set<ClientConnection> allConnections = new HashSet<>();
     private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
 
-    public Http1xPool(ConnQueue queue) {
+    public Http1xPool(ConnQueue<ClientConnection> queue) {
       super(queue, client.getOptions().getMaxPoolSize());
     }
 
@@ -483,16 +476,12 @@ public class ConnectionManager {
     }
 
     @Override
-    HttpClientStream createStream(HttpClientConnection conn) {
-      return (HttpClientStream) conn;
-    }
-
-    void recycle(HttpClientConnection stream) {
-      recycle((ClientConnection) stream);
+    HttpClientStream createStream(ClientConnection conn) {
+      return conn;
     }
 
     // Called when the request has ended
-    public void recycle(ClientConnection conn) {
+    void recycle(ClientConnection conn) {
       synchronized (queue) {
         if (pipelining) {
           // Maybe the connection can be reused
@@ -544,7 +533,7 @@ public class ConnectionManager {
       synchronized (queue) {
         allConnections.add(conn);
       }
-      connectionMap.put(ch, conn);
+      qm.connectionMap.put(ch, conn);
       deliverStream(conn, waiter);
     }
 
@@ -580,7 +569,7 @@ public class ConnectionManager {
     private ContextImpl context;
 
     public ClientHandler(ContextImpl context) {
-      super(ConnectionManager.this.connectionMap);
+      super(ConnectionManager.this.qm.connectionMap);
       this.context = context;
     }
 
