@@ -67,12 +67,11 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
-  private final ConnectionManager manager;
   private final HttpClientImpl client;
   private final boolean ssl;
   private final String host;
   private final int port;
-  private final ConnectionManager.Http1xPool listener;
+  private final ConnectionManager.Http1xPool pool;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
@@ -89,15 +88,14 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(HttpVersion version, ConnectionManager manager, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
-                   int port, ContextImpl context, ConnectionManager.Http1xPool listener, HttpClientMetrics metrics) {
+  ClientConnection(HttpVersion version, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
+                   int port, ContextImpl context, ConnectionManager.Http1xPool pool, HttpClientMetrics metrics) {
     super(vertx, channel, context, metrics);
-    this.manager = manager;
     this.client = client;
     this.ssl = ssl;
     this.host = host;
     this.port = port;
-    this.listener = listener;
+    this.pool = pool;
     this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
     this.metric = metrics.connected(remoteAddress(), remoteName());
@@ -361,7 +359,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
         // currently Vertx forces the Connection header if keepalive is enabled for 1.0
         close = true;
       }
-      listener.responseEnded(this, close);
+      pool.responseEnded(this, close);
     }
     currentResponse = null;
   }
@@ -500,7 +498,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       throw new IllegalStateException("No write in progress");
     }
     currentRequest = null;
-    listener.recycle(this);
+    pool.recycle(this);
   }
 
   @Override
@@ -535,14 +533,14 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        manager.removeChannel(channel);
+        pool.removeChannel(channel);
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        manager.removeChannel(channel);
+        pool.removeChannel(channel);
         super.channelInactive(chctx);
       }
 

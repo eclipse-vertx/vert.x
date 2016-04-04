@@ -71,7 +71,7 @@ public class ConnectionManager {
 
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private final QueueManager<ClientConnection> qm = new QueueManager<>(HttpVersion.HTTP_1_1);
+  private final QueueManager<ClientConnection> qm;
   private final QueueManager<Http2ClientConnection> qm2 = new QueueManager<>(HttpVersion.HTTP_2);
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
@@ -82,6 +82,13 @@ public class ConnectionManager {
   private final int maxWaitQueueSize;
 
   ConnectionManager(HttpClientImpl client) {
+    HttpVersion http1xVersion;
+    if (client.getOptions().getProtocolVersion() == HttpVersion.HTTP_2) {
+      http1xVersion = HttpVersion.HTTP_1_1;
+    } else {
+      http1xVersion = client.getOptions().getProtocolVersion();
+    }
+    this.qm = new QueueManager<>(http1xVersion);
     this.client = client;
     this.sslHelper = client.getSslHelper();
     this.options = client.getOptions();
@@ -137,10 +144,6 @@ public class ConnectionManager {
   public void close() {
     qm.close();
     qm2.close();
-  }
-
-  void removeChannel(Channel channel) {
-    qm.connectionMap.remove(channel);
   }
 
   static class TargetAddress {
@@ -520,7 +523,7 @@ public class ConnectionManager {
     }
 
     private void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-      ClientConnection conn = new ClientConnection(version, ConnectionManager.this, vertx, client, waiter::handleFailure, ch,
+      ClientConnection conn = new ClientConnection(version, vertx, client, waiter::handleFailure, ch,
           options.isSsl(), host, port, context, this, client.metrics);
       conn.closeHandler(v -> {
         // The connection has been closed - tell the pool about it, this allows the pool to create more
@@ -559,6 +562,10 @@ public class ConnectionManager {
           log.error("Failed to close connection", t);
         }
       }
+    }
+
+    void removeChannel(Channel channel) {
+      queue.mgr.connectionMap.remove(channel);
     }
   }
 
