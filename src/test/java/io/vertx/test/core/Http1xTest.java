@@ -650,6 +650,7 @@ public class Http1xTest extends HttpTest {
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
     options.setMaxChunkSize(maxChunkSize);
     options.setUseAlpn(useAlpn);
+    options.setSslEngine(sslEngine);
     options.setInitialSettings(initialSettings);
     options.setAlpnVersions(alpnVersions);
     HttpServerOptions copy = new HttpServerOptions(options);
