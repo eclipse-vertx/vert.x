@@ -71,7 +71,7 @@ public class ConnectionManager {
 
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private final QueueManager<ClientConnection> qm;
+  private final QueueManager<ClientConnection> qm1x;
   private final QueueManager<Http2ClientConnection> qm2 = new QueueManager<>(HttpVersion.HTTP_2);
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
@@ -88,7 +88,7 @@ public class ConnectionManager {
     } else {
       http1xVersion = client.getOptions().getProtocolVersion();
     }
-    this.qm = new QueueManager<>(http1xVersion);
+    this.qm1x = new QueueManager<>(http1xVersion);
     this.client = client;
     this.sslHelper = client.getSslHelper();
     this.options = client.getOptions();
@@ -136,13 +136,13 @@ public class ConnectionManager {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
       TargetAddress address = new TargetAddress(host, port);
-      ConnQueue connQueue = version == HttpVersion.HTTP_2 ? qm2.getConnQueue(address) : qm.getConnQueue(address);
+      ConnQueue connQueue = version == HttpVersion.HTTP_2 ? qm2.getConnQueue(address) : qm1x.getConnQueue(address);
       connQueue.getConnection(waiter);
     }
   }
 
   public void close() {
-    qm.close();
+    qm1x.close();
     qm2.close();
   }
 
@@ -366,7 +366,7 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // Fallback
       // change the pool to Http1xPool
-      ConnQueue<ClientConnection> http1Queue = qm.getConnQueue(address);
+      ConnQueue<ClientConnection> http1Queue = qm1x.getConnQueue(address);
       applyHttp1xConnectionOptions(ch.pipeline(), context);
       http1Queue.http1xConnected(fallbackVersion, context, port, host, ch, waiter);
       // Should remove this queue as it may be empty ????
@@ -534,7 +534,7 @@ public class ConnectionManager {
       synchronized (queue) {
         allConnections.add(conn);
       }
-      qm.connectionMap.put(ch, conn);
+      qm1x.connectionMap.put(ch, conn);
       deliverStream(conn, waiter);
     }
 
@@ -574,7 +574,7 @@ public class ConnectionManager {
     private ContextImpl context;
 
     public ClientHandler(ContextImpl context) {
-      super(ConnectionManager.this.qm.connectionMap);
+      super(ConnectionManager.this.qm1x.connectionMap);
       this.context = context;
     }
 
