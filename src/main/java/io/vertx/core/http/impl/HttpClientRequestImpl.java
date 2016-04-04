@@ -599,7 +599,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
     HttpClientConnection conn = stream.connection();
 
-    synchronized (conn) {
+    synchronized (this) {
       this.conn = conn;
       this.stream = stream;
       stream.beginRequest(this);
