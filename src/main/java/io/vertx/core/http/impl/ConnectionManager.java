@@ -80,7 +80,8 @@ public class ConnectionManager {
   private final boolean keepAlive;
   private final boolean pipelining;
   private final int maxWaitQueueSize;
-  private final Map<TargetAddress, ConnQueue> connQueues = new ConcurrentHashMap<>();
+  private final Map<TargetAddress, ConnQueue<ClientConnection>> connQueues = new ConcurrentHashMap<>();
+  private final Map<TargetAddress, ConnQueue<Http2ClientConnection>> connQueues2 = new ConcurrentHashMap<>();
 
   ConnectionManager(HttpClientImpl client) {
     this.client = client;
@@ -97,10 +98,21 @@ public class ConnectionManager {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
       TargetAddress address = new TargetAddress(host, port);
-      ConnQueue connQueue = connQueues.get(address);
+      Map<TargetAddress, ConnQueue<HttpClientConnection>> abc;
+      ConnQueue connQueue;
+      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+        connQueue = connQueues2.get(address);
+      } else {
+        connQueue = connQueues.get(address);
+      }
       if (connQueue == null) {
-        connQueue = new ConnQueue(address);
-        ConnQueue prev = connQueues.putIfAbsent(address, connQueue);
+        connQueue = new ConnQueue(options.getProtocolVersion(), address);
+        ConnQueue prev;
+        if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+          prev = connQueues2.putIfAbsent(address, connQueue);
+        } else {
+          prev = connQueues.putIfAbsent(address, connQueue);
+        }
         if (prev != null) {
           connQueue = prev;
         }
@@ -114,6 +126,10 @@ public class ConnectionManager {
       queue.closeAllConnections();
     }
     connQueues.clear();
+    for (ConnQueue queue: connQueues2.values()) {
+      queue.closeAllConnections();
+    }
+    connQueues2.clear();
     for (ClientConnection conn : connectionMap.values()) {
       conn.close();
     }
@@ -153,17 +169,16 @@ public class ConnectionManager {
     }
   }
 
-  public class ConnQueue {
+  public class ConnQueue<C extends HttpClientConnection> {
 
     private final TargetAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
     private int connCount;
-    private Pool pool;
+    private final Pool pool;
 
-    ConnQueue(TargetAddress address) {
+    ConnQueue(HttpVersion version, TargetAddress address) {
       this.address = address;
-
-      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+      if (version == HttpVersion.HTTP_2) {
         pool = new Http2Pool(this, client, connectionMap2);
       } else {
         pool = new Http1xPool(this);
@@ -217,7 +232,11 @@ public class ConnectionManager {
         createNewConnection(waiter);
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
-        connQueues.remove(address);
+        if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+          connQueues2.remove(address);
+        } else {
+          connQueues.remove(address);
+        }
       }
     }
 
@@ -346,11 +365,17 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // Fallback
       // change the pool to Http1xPool
-      synchronized (ConnQueue.this) {
-        pool = new Http1xPool(ConnQueue.this);
+      ConnQueue<ClientConnection> http1Queue = connQueues.get(address);
+      if (http1Queue == null) {
+        http1Queue = new ConnQueue<>(HttpVersion.HTTP_1_1, address);
+        ConnQueue<ClientConnection> prev = connQueues.putIfAbsent(address, http1Queue);
+        if (prev != null) {
+          http1Queue = prev;
+        }
       }
       applyHttp1xConnectionOptions(ch.pipeline(), context);
-      http1xConnected(fallbackVersion, context, port, host, ch, waiter);
+      http1Queue.http1xConnected(fallbackVersion, context, port, host, ch, waiter);
+      // Should remove this queue as it may be empty ????
     }
 
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
