@@ -60,6 +60,17 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final int DEFAULT_IDLE_TIMEOUT = 0;
 
+  /**
+   * Default use alpn = false
+   */
+  public static final boolean DEFAULT_USE_ALPN = false;
+
+   /**
+    * Default SSL engine = JDK
+    */
+  public static final SSLEngine DEFAULT_SSL_ENGINE = SSLEngine.JDK;
+
+
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
@@ -126,6 +137,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     ssl = DEFAULT_SSL;
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
+    useAlpn = DEFAULT_USE_ALPN;
+    sslEngine = DEFAULT_SSL_ENGINE;
   }
 
   /**
@@ -179,7 +192,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setSoLinger(int soLinger) {
-    if (soLinger < 0) {
+    if (soLinger < 0 && soLinger != DEFAULT_SO_LINGER) {
       throw new IllegalArgumentException("soLinger must be >= 0");
     }
     this.soLinger = soLinger;

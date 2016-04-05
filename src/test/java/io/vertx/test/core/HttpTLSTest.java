@@ -233,6 +233,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  // Specify some matching TLS protocols
+  public void testTLSInvalidProtocolVersion() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"HelloWorld"}).fail();
+  }
+
+  @Test
   // Specify some non matching TLS protocols
   public void testTLSNonMatchingProtocolVersions() throws Exception {
     testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello"}).fail();
