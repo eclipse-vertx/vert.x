@@ -29,6 +29,7 @@ import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 
 /**
  * Theses test checks the SLF4J log delegate. It assumes the binding used by SLF4J is slf4j-simple with the default
@@ -56,30 +57,30 @@ public class SLF4JLogDelegateTest {
     Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
 
     String result = record(() -> logger.info("hello"));
-    assertEquals("[main] INFO my-slf4j-logger - hello\n", result);
+    assertContains("[main] INFO my-slf4j-logger - hello", result);
 
     result = record(() -> logger.info("exception", new NullPointerException()));
-    assertTrue(result.contains("[main] INFO my-slf4j-logger - exception\n"));
+    assertTrue(result.contains("[main] INFO my-slf4j-logger - exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
 
     result = record(() -> logger.info("hello {} and {}", "Paulo", "Julien"));
-    assertEquals("[main] INFO my-slf4j-logger - hello Paulo and Julien\n", result);
+    assertContains("[main] INFO my-slf4j-logger - hello Paulo and Julien", result);
 
     result = record(() -> logger.info("hello {}", "vert.x"));
-    assertEquals("[main] INFO my-slf4j-logger - hello vert.x\n", result);
+    assertContains("[main] INFO my-slf4j-logger - hello vert.x", result);
 
     result = record(() -> logger.info("hello {} - {}", "vert.x"));
-    assertEquals("[main] INFO my-slf4j-logger - hello vert.x - {}\n", result);
+    assertContains("[main] INFO my-slf4j-logger - hello vert.x - {}", result);
 
     result = record(() -> logger.info("hello {}", "vert.x", "foo"));
-    assertEquals("[main] INFO my-slf4j-logger - hello vert.x\n", result);
+    assertContains("[main] INFO my-slf4j-logger - hello vert.x", result);
 
     result = record(() -> logger.info("{}, an exception has been thrown", new IllegalStateException(), "Luke"));
-    assertTrue(result.contains("[main] INFO my-slf4j-logger - Luke, an exception has been thrown\n"));
+    assertTrue(result.contains("[main] INFO my-slf4j-logger - Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
 
     result = record(() -> logger.info("{}, an exception has been thrown", "Luke", new IllegalStateException()));
-    assertTrue(result.contains("[main] INFO my-slf4j-logger - Luke, an exception has been thrown\n"));
+    assertTrue(result.contains("[main] INFO my-slf4j-logger - Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
@@ -87,31 +88,36 @@ public class SLF4JLogDelegateTest {
   public void testError() {
     Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
     String result = record(() -> logger.error("hello"));
-    assertEquals("[main] ERROR my-slf4j-logger - hello\n", result);
+    assertContains("[main] ERROR my-slf4j-logger - hello", result);
 
     result = record(() -> logger.error("exception", new NullPointerException()));
-    assertTrue(result.contains("[main] ERROR my-slf4j-logger - exception\n"));
+    assertTrue(result.contains("[main] ERROR my-slf4j-logger - exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
 
     result = record(() -> logger.error("hello {} and {}", "Paulo", "Julien"));
-    assertEquals("[main] ERROR my-slf4j-logger - hello Paulo and Julien\n", result);
+    assertContains("[main] ERROR my-slf4j-logger - hello Paulo and Julien", result);
 
     result = record(() -> logger.error("hello {}", "vert.x"));
-    assertEquals("[main] ERROR my-slf4j-logger - hello vert.x\n", result);
+    assertContains("[main] ERROR my-slf4j-logger - hello vert.x", result);
 
     result = record(() -> logger.error("hello {} - {}", "vert.x"));
-    assertEquals("[main] ERROR my-slf4j-logger - hello vert.x - {}\n", result);
+    assertContains("[main] ERROR my-slf4j-logger - hello vert.x - {}", result);
 
     result = record(() -> logger.error("hello {}", "vert.x", "foo"));
-    assertEquals("[main] ERROR my-slf4j-logger - hello vert.x\n", result);
+    assertContains("[main] ERROR my-slf4j-logger - hello vert.x", result);
 
     result = record(() -> logger.error("{}, an exception has been thrown", new IllegalStateException(), "Luke"));
-    assertTrue(result.contains("[main] ERROR my-slf4j-logger - Luke, an exception has been thrown\n"));
+    assertTrue(result.contains("[main] ERROR my-slf4j-logger - Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
 
     result = record(() -> logger.error("{}, an exception has been thrown", "Luke", new IllegalStateException()));
-    assertTrue(result.contains("[main] ERROR my-slf4j-logger - Luke, an exception has been thrown\n"));
+    assertTrue(result.contains("[main] ERROR my-slf4j-logger - Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
+  }
+
+  private void assertContains(String expectedExcerpt, String object) {
+    assertNotNull(object);
+    assertTrue(object.contains(expectedExcerpt));
   }
 
   @Test
@@ -119,30 +125,30 @@ public class SLF4JLogDelegateTest {
     Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
 
     String result = record(() -> logger.warn("hello"));
-    assertEquals("[main] WARN my-slf4j-logger - hello\n", result);
+    assertContains("[main] WARN my-slf4j-logger - hello", result);
 
     result = record(() -> logger.warn("exception", new NullPointerException()));
-    assertTrue(result.contains("[main] WARN my-slf4j-logger - exception\n"));
+    assertTrue(result.contains("[main] WARN my-slf4j-logger - exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
 
     result = record(() -> logger.warn("hello {} and {}", "Paulo", "Julien"));
-    assertEquals("[main] WARN my-slf4j-logger - hello Paulo and Julien\n", result);
+    assertContains("[main] WARN my-slf4j-logger - hello Paulo and Julien", result);
 
     result = record(() -> logger.warn("hello {}", "vert.x"));
-    assertEquals("[main] WARN my-slf4j-logger - hello vert.x\n", result);
+    assertContains("[main] WARN my-slf4j-logger - hello vert.x", result);
 
     result = record(() -> logger.warn("hello {} - {}", "vert.x"));
-    assertEquals("[main] WARN my-slf4j-logger - hello vert.x - {}\n", result);
+    assertContains("[main] WARN my-slf4j-logger - hello vert.x - {}", result);
 
     result = record(() -> logger.warn("hello {}", "vert.x", "foo"));
-    assertEquals("[main] WARN my-slf4j-logger - hello vert.x\n", result);
+    assertContains("[main] WARN my-slf4j-logger - hello vert.x", result);
 
     result = record(() -> logger.warn("{}, an exception has been thrown", new IllegalStateException(), "Luke"));
-    assertTrue(result.contains("[main] WARN my-slf4j-logger - Luke, an exception has been thrown\n"));
+    assertTrue(result.contains("[main] WARN my-slf4j-logger - Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
 
     result = record(() -> logger.warn("{}, an exception has been thrown", "Luke", new IllegalStateException()));
-    assertTrue(result.contains("[main] WARN my-slf4j-logger - Luke, an exception has been thrown\n"));
+    assertTrue(result.contains("[main] WARN my-slf4j-logger - Luke, an exception has been thrown"));
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
