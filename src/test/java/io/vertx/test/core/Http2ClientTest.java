@@ -451,7 +451,6 @@ public class Http2ClientTest extends Http2TestBase {
         assertTrue(paused.get());
         assertEquals(1, numPause.get());
         req.drainHandler(v -> {
-          System.out.println("drained!");
           assertOnIOContext(ctx);
           assertEquals(0, drained.getAndIncrement());
           assertEquals(1, numPause.get());
