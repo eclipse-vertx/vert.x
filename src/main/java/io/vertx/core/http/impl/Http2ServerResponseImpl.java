@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
@@ -152,20 +153,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public String getStatusMessage() {
     synchronized (conn) {
       if (statusMessage == null) {
-        switch (statusCode / 100) {
-          case 1:
-            return "Informational";
-          case 2:
-            return "Success";
-          case 3:
-            return "Redirection";
-          case 4:
-            return "Client Error";
-          case 5:
-            return "Server Error";
-          default:
-            return "Unknown Status";
-        }
+        return HttpResponseStatus.valueOf(statusCode).reasonPhrase();
       }
       return statusMessage;
     }

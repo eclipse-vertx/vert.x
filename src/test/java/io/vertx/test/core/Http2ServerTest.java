@@ -482,6 +482,27 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testStatusMessage() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setStatusCode(404);
+      assertEquals("Not Found", resp.getStatusMessage());
+      resp.setStatusMessage("whatever");
+      assertEquals("whatever", resp.getStatusMessage());
+      testComplete();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testURI() throws Exception {
     server.requestHandler(req -> {
       assertEquals("/some/path", req.path());
