@@ -239,6 +239,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions addEnabledSecureTransportProtocol(final String protocol) {
+    super.addEnabledSecureTransportProtocol(protocol);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (HttpServerOptions) super.addCrlPath(crlPath);
   }
