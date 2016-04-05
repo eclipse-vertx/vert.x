@@ -314,7 +314,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (getLock()) {
       checkComplete();
       checkResponseHandler();
-      write(Unpooled.EMPTY_BUFFER, true);
+      write(null, true);
     }
   }
 
@@ -633,7 +633,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          writeHeadWithContent(Unpooled.EMPTY_BUFFER, true);
+          writeHeadWithContent(null, true);
 
           conn.reportBytesWritten(written);
 
@@ -678,8 +678,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void write(ByteBuf buff, boolean end) {
-    int readableBytes = buff.readableBytes();
-    if (readableBytes == 0 && !end) {
+    if (buff == null && !end) {
       // nothing to write to the connection just return
       return;
     }
@@ -692,20 +691,25 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
               + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
 
-    written += buff.readableBytes();
+    if (buff != null) {
+      written += buff.readableBytes();
+    }
+
     if (stream == null) {
-      if (pendingChunks == null) {
-        pendingChunks = buff;
-      } else {
-        CompositeByteBuf pending;
-        if (pendingChunks instanceof CompositeByteBuf) {
-          pending = (CompositeByteBuf) pendingChunks;
+      if (buff != null) {
+        if (pendingChunks == null) {
+          pendingChunks = buff;
         } else {
-          pending = Unpooled.compositeBuffer();
-          pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
-          pendingChunks = pending;
+          CompositeByteBuf pending;
+          if (pendingChunks instanceof CompositeByteBuf) {
+            pending = (CompositeByteBuf) pendingChunks;
+          } else {
+            pending = Unpooled.compositeBuffer();
+            pending.addComponent(pendingChunks).writerIndex(pendingChunks.writerIndex());
+            pendingChunks = pending;
+          }
+          pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
         }
-        pending.addComponent(buff).writerIndex(pending.writerIndex() + buff.writerIndex());
       }
       connect(null);
     } else {

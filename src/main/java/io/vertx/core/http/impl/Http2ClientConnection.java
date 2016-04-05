@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -316,7 +317,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void writeBuffer(ByteBuf buf, boolean end) {
-      writeData(buf, end);
+      if (buf == null && end) {
+        buf = Unpooled.EMPTY_BUFFER;
+      }
+      if (buf != null) {
+        writeData(buf, end);
+      }
       if (end) {
         handlerContext.flush();
       }

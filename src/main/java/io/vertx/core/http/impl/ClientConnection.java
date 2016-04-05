@@ -447,7 +447,11 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     HttpRequest request = createRequest(version, method, uri, headers);
     prepareHeaders(request, hostHeader, chunked);
     if (end) {
-      writeToChannel(new AssembledFullHttpRequest(request, buf));
+      if (buf != null) {
+        writeToChannel(new AssembledFullHttpRequest(request, buf));
+      } else {
+        writeToChannel(new AssembledFullHttpRequest(request));
+      }
     } else {
       writeToChannel(new AssembledHttpRequest(request, buf));
     }
@@ -456,12 +460,12 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   @Override
   public void writeBuffer(ByteBuf buff, boolean end) {
     if (end) {
-      if (buff.isReadable()) {
+      if (buff != null && buff.isReadable()) {
         writeToChannel(new DefaultLastHttpContent(buff, false));
       } else {
         writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
       }
-    } else {
+    } else if (buff != null) {
       writeToChannel(new DefaultHttpContent(buff));
     }
   }
