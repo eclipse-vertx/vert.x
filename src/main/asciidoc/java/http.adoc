@@ -678,7 +678,7 @@ Buffer payload = Buffer.buffer("some data");
 response.writeFrame(frameType, frameStatus, payload);
 ----
 
-These frames are sent immediatly and are not subject to flow control - when such frame is sent there it may be done
+These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
 before other `DATA` frames.
 
 ==== Stream reset

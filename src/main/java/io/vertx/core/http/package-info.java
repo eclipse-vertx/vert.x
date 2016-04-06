@@ -571,7 +571,7 @@
  * {@link examples.HTTP2Examples#example2}
  * ----
  *
- * These frames are sent immediatly and are not subject to flow control - when such frame is sent there it may be done
+ * These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
  * before other {@literal DATA} frames.
  *
  * ==== Stream reset
