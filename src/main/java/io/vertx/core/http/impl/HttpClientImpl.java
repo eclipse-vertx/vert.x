@@ -657,9 +657,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return options;
   }
 
-  void getConnection(int port, String host, Handler<ClientConnection> handler, Handler<Throwable> connectionExceptionHandler,
-                     ContextImpl context) {
-    connectionManager.getConnection(HttpVersion.HTTP_1_1, port, host, new Waiter(null, context) {
+  void getConnectionForWebsocket(int port,
+                                 String host,
+                                 Handler<ClientConnection> handler,
+                                 Handler<Throwable> connectionExceptionHandler,
+                                 ContextImpl context) {
+    connectionManager.getConnectionForWebsocket(port, host, new Waiter(null, context) {
       @Override
       void handleConnection(HttpClientConnection conn) {
       }
@@ -679,8 +682,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     });
   }
 
-  void getConnection(int port, String host, Waiter waiter) {
-    connectionManager.getConnection(options.getProtocolVersion(), port, host, waiter);
+  void getConnectionForRequest(int port, String host, Waiter waiter) {
+    connectionManager.getConnectionForRequest(options.getProtocolVersion(), port, host, waiter);
   }
 
   /**
@@ -772,7 +775,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         } else {
           wsConnect = handler;
         }
-        getConnection(port, host, conn -> {
+        getConnectionForWebsocket(port, host, conn -> {
           if (conn.isValid()) {
             conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
           } else {

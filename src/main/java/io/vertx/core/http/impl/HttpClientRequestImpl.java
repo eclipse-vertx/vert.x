@@ -590,7 +590,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
-      client.getConnection(port, host, waiter);
+      client.getConnectionForRequest(port, host, waiter);
       connecting = true;
     }
   }

@@ -71,8 +71,8 @@ public class ConnectionManager {
 
   static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
 
-  private final QueueManager<ClientConnection> qm1x;
-  private final QueueManager<Http2ClientConnection> qm2 = new QueueManager<>(HttpVersion.HTTP_2);
+  private final QueueManager wsQM = new QueueManager(); // The queue manager for websockets
+  private final QueueManager requestQM = new QueueManager(); // The queue manager for requests
   private final VertxInternal vertx;
   private final SSLHelper sslHelper;
   private final HttpClientOptions options;
@@ -82,13 +82,6 @@ public class ConnectionManager {
   private final int maxWaitQueueSize;
 
   ConnectionManager(HttpClientImpl client) {
-    HttpVersion http1xVersion;
-    if (client.getOptions().getProtocolVersion() == HttpVersion.HTTP_2) {
-      http1xVersion = HttpVersion.HTTP_1_1;
-    } else {
-      http1xVersion = client.getOptions().getProtocolVersion();
-    }
-    this.qm1x = new QueueManager<>(http1xVersion);
     this.client = client;
     this.sslHelper = client.getSslHelper();
     this.options = client.getOptions();
@@ -98,21 +91,22 @@ public class ConnectionManager {
     this.maxWaitQueueSize = client.getOptions().getMaxWaitQueueSize();
   }
 
-  private class QueueManager<C extends HttpClientConnection> {
+  /**
+   * The queue manager manages the connection queues for a given usage, the idea is to split
+   * queues for HTTP requests and websockets. A websocket uses a pool of connections
+   * usually ugpraded from HTTP/1.1, HTTP requests may ask for HTTP/2 connections but obtain
+   * only HTTP/1.1 connections.
+   */
+  private class QueueManager {
 
-    private final HttpVersion version;
-    private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
-    private final Map<TargetAddress, ConnQueue<C>> queueMap = new ConcurrentHashMap<>();
+    private final Map<Channel, HttpClientConnection> connectionMap = new ConcurrentHashMap<>();
+    private final Map<TargetAddress, ConnQueue> queueMap = new ConcurrentHashMap<>();
 
-    public QueueManager(HttpVersion version) {
-      this.version = version;
-    }
-
-    ConnQueue<C> getConnQueue(TargetAddress address) {
-      ConnQueue<C> connQueue = queueMap.get(address);
+    ConnQueue getConnQueue(TargetAddress address, HttpVersion version) {
+      ConnQueue connQueue = queueMap.get(address);
       if (connQueue == null) {
-        connQueue = new ConnQueue<>(this, address);
-        ConnQueue<C> prev = queueMap.putIfAbsent(address, connQueue);
+        connQueue = new ConnQueue(version, this, address);
+        ConnQueue prev = queueMap.putIfAbsent(address, connQueue);
         if (prev != null) {
           connQueue = prev;
         }
@@ -125,25 +119,35 @@ public class ConnectionManager {
         queue.closeAllConnections();
       }
       queueMap.clear();
-      for (C conn : connectionMap.values()) {
+      for (HttpClientConnection conn : connectionMap.values()) {
         conn.close();
       }
     }
   }
 
-  public void getConnection(HttpVersion version, int port, String host, Waiter waiter) {
+  public void getConnectionForWebsocket(int port, String host, Waiter waiter) {
+//    if (!keepAlive && pipelining) {
+//      waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
+//    } else {
+//    }
+    TargetAddress address = new TargetAddress(host, port);
+    ConnQueue connQueue = wsQM.getConnQueue(address, HttpVersion.HTTP_1_1);
+    connQueue.getConnection(waiter);
+  }
+
+  public void getConnectionForRequest(HttpVersion version, int port, String host, Waiter waiter) {
     if (!keepAlive && pipelining) {
       waiter.handleFailure(new IllegalStateException("Cannot have pipelining with no keep alive"));
     } else {
       TargetAddress address = new TargetAddress(host, port);
-      ConnQueue connQueue = version == HttpVersion.HTTP_2 ? qm2.getConnQueue(address) : qm1x.getConnQueue(address);
+      ConnQueue connQueue = requestQM.getConnQueue(address, version);
       connQueue.getConnection(waiter);
     }
   }
 
   public void close() {
-    qm1x.close();
-    qm2.close();
+    wsQM.close();
+    requestQM.close();
   }
 
   static class TargetAddress {
@@ -173,21 +177,31 @@ public class ConnectionManager {
     }
   }
 
-  public class ConnQueue<C extends HttpClientConnection> {
+  /**
+   * The connection queue delegates to the connection pool, the pooling strategy.
+   *
+   * - HTTP/1.x pools several connections
+   * - HTTP/2 uses a single connection
+   *
+   * After a queue is initialized with an HTTP/2 pool, this pool changed to an HTTP/1/1
+   * pool if the server does not support HTTP/2 or after negotiation. In this situation
+   * all waiters on this queue will use HTTP/1.1 connections.
+   */
+  public class ConnQueue {
 
-    private final QueueManager<C> mgr;
+    private final QueueManager mgr;
     private final TargetAddress address;
     private final Queue<Waiter> waiters = new ArrayDeque<>();
-    private final Pool<C> pool;
+    private Pool<? extends HttpClientConnection> pool;
     private int connCount;
 
-    ConnQueue(QueueManager<C> mgr, TargetAddress address) {
+    ConnQueue(HttpVersion version, QueueManager mgr, TargetAddress address) {
       this.address = address;
       this.mgr = mgr;
-      if (mgr.version == HttpVersion.HTTP_2) {
-        pool = (Pool<C>) new Http2Pool((ConnQueue<Http2ClientConnection>) this, client, qm2.connectionMap);
+      if (version == HttpVersion.HTTP_2) {
+        pool =  new Http2Pool(this, client, mgr.connectionMap);
       } else {
-        pool = (Pool<C>) new Http1xPool((ConnQueue<ClientConnection>) this);
+        pool = new Http1xPool(this, version);
       }
     }
 
@@ -214,7 +228,7 @@ public class ConnectionManager {
 
     private void createNewConnection(Waiter waiter) {
       connCount++;
-      internalConnect(address.host, address.port, waiter);
+      internalConnect(pool.version(), address.host, address.port, waiter);
     }
 
     /**
@@ -241,7 +255,7 @@ public class ConnectionManager {
       }
     }
 
-    protected void internalConnect(String host, int port, Waiter waiter) {
+    protected void internalConnect(HttpVersion version, String host, int port, Waiter waiter) {
       ContextImpl context;
       if (waiter.context == null) {
         // Embedded
@@ -281,7 +295,7 @@ public class ConnectionManager {
             if (options.isSsl()) {
               pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
             }
-            if (mgr.version == HttpVersion.HTTP_2) {
+            if (version == HttpVersion.HTTP_2) {
               if (options.isH2cUpgrade()) {
                 HttpClientCodec httpCodec = new HttpClientCodec();
                 class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
@@ -312,7 +326,7 @@ public class ConnectionManager {
                 HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
                 ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
               } else {
-                applyH2ConnectionOptions(pipeline, context);
+                applyH2ConnectionOptions(pipeline);
               }
             } else {
               applyHttp1xConnectionOptions(pipeline, context);
@@ -332,7 +346,7 @@ public class ConnectionManager {
               io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
               fut.addListener(fut2 -> {
                 if (fut2.isSuccess()) {
-                  http1xConnected(mgr.version, context, port, host, ch, waiter);
+                  http1xConnected(version, context, port, host, ch, waiter);
                 } else {
                   handshakeFailure(context, ch, fut2.cause(), waiter);
                 }
@@ -341,10 +355,10 @@ public class ConnectionManager {
               if (ch.pipeline().get(HttpClientUpgradeHandler.class) != null) {
                 // Upgrade handler do nothing
               } else {
-                if (mgr.version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
+                if (version == HttpVersion.HTTP_2 && !options.isH2cUpgrade()) {
                   http2Connected(context, ch, waiter, false);
                 } else {
-                  http1xConnected(mgr.version, context, port, host, ch, waiter);
+                  http1xConnected(version, context, port, host, ch, waiter);
                 }
               }
             }
@@ -364,12 +378,12 @@ public class ConnectionManager {
     }
 
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
-      // Fallback
       // change the pool to Http1xPool
-      ConnQueue<ClientConnection> http1Queue = qm1x.getConnQueue(address);
+      synchronized (this) {
+        pool = new Http1xPool(this, fallbackVersion);
+      }
       applyHttp1xConnectionOptions(ch.pipeline(), context);
-      http1Queue.http1xConnected(fallbackVersion, context, port, host, ch, waiter);
-      // Should remove this queue as it may be empty ????
+      http1xConnected(fallbackVersion, context, port, host, ch, waiter);
     }
 
     private void http1xConnected(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
@@ -404,18 +418,58 @@ public class ConnectionManager {
         exHandler.handle(t);
       });
     }
+
+    void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
+      bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
+      if (options.getSendBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+      }
+      if (options.getReceiveBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+      }
+      if (options.getSoLinger() != -1) {
+        bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+      }
+      if (options.getTrafficClass() != -1) {
+        bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
+      }
+      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
+      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+      bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    }
+
+    void applyH2ConnectionOptions(ChannelPipeline pipeline) {
+      if (options.getIdleTimeout() > 0) {
+        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+      }
+    }
+
+    void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
+      pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
+      if (options.isTryUseCompression()) {
+        pipeline.addLast("inflater", new HttpContentDecompressor(true));
+      }
+      if (options.getIdleTimeout() > 0) {
+        pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
+      }
+      pipeline.addLast("handler", new ClientHandler(context, (Map)mgr.connectionMap));
+    }
   }
 
   static abstract class Pool<C extends HttpClientConnection> {
 
     // Pools must locks on the queue object to keep a single lock
-    final ConnQueue<C> queue;
+    final ConnQueue queue;
     final int maxSockets;
 
-    Pool(ConnQueue<C> queue, int maxSockets) {
+    Pool(ConnQueue queue, int maxSockets) {
       this.queue = queue;
       this.maxSockets = maxSockets;
     }
+
+    abstract HttpVersion version();
 
     abstract boolean getConnection(Waiter waiter);
 
@@ -453,11 +507,19 @@ public class ConnectionManager {
 
   public class Http1xPool extends Pool<ClientConnection> {
 
+    private final HttpVersion version;
     private final Set<ClientConnection> allConnections = new HashSet<>();
     private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
 
-    public Http1xPool(ConnQueue<ClientConnection> queue) {
+    public Http1xPool(ConnQueue queue, HttpVersion version) {
       super(queue, client.getOptions().getMaxPoolSize());
+      this.version = version;
+    }
+
+    @Override
+    HttpVersion version() {
+      // Correct this
+      return version;
     }
 
     public boolean getConnection(Waiter waiter) {
@@ -534,7 +596,7 @@ public class ConnectionManager {
       synchronized (queue) {
         allConnections.add(conn);
       }
-      qm1x.connectionMap.put(ch, conn);
+      queue.mgr.connectionMap.put(ch, conn);
       deliverStream(conn, waiter);
     }
 
@@ -573,8 +635,8 @@ public class ConnectionManager {
     private boolean closeFrameSent;
     private ContextImpl context;
 
-    public ClientHandler(ContextImpl context) {
-      super(ConnectionManager.this.qm1x.connectionMap);
+    public ClientHandler(ContextImpl context, Map<Channel, ClientConnection> connectionMap) {
+      super(connectionMap);
       this.context = context;
     }
 
@@ -636,43 +698,5 @@ public class ConnectionManager {
         throw new IllegalStateException("Invalid object " + msg);
       }
     }
-  }
-
-  void applyConnectionOptions(HttpClientOptions options, Bootstrap bootstrap) {
-    bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-    if (options.getSendBufferSize() != -1) {
-      bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
-    }
-    if (options.getReceiveBufferSize() != -1) {
-      bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-      bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
-    }
-    if (options.getSoLinger() != -1) {
-      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-    }
-    if (options.getTrafficClass() != -1) {
-      bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
-    }
-    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-  }
-
-  void applyH2ConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-    }
-  }
-
-  void applyHttp1xConnectionOptions(ChannelPipeline pipeline, ContextImpl context) {
-    pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
-    if (options.isTryUseCompression()) {
-      pipeline.addLast("inflater", new HttpContentDecompressor(true));
-    }
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
-    }
-    pipeline.addLast("handler", new ClientHandler(context));
   }
 }

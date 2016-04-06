@@ -25,22 +25,14 @@ import io.netty.handler.codec.http2.Http2ConnectionEncoder;
 import io.netty.handler.codec.http2.Http2Settings;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
-
-import static io.vertx.core.http.Http2Settings.DEFAULT_ENABLE_PUSH;
-import static io.vertx.core.http.Http2Settings.DEFAULT_HEADER_TABLE_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_FRAME_SIZE;
-import static io.vertx.core.http.Http2Settings.DEFAULT_MAX_HEADER_LIST_SIZE;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ConnectionHandler<C>, VertxHttp2ConnectionHandlerBuilder<C>> {
 
-  private Map<Channel, C> connectionMap;
+  private Map<Channel, ? super C> connectionMap;
   private boolean useCompression;
   private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
@@ -52,7 +44,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     return super.server(isServer);
   }
 
-  VertxHttp2ConnectionHandlerBuilder<C> connectionMap(Map<Channel, C> connectionMap) {
+  VertxHttp2ConnectionHandlerBuilder<C> connectionMap(Map<Channel, ? super C> connectionMap) {
     this.connectionMap = connectionMap;
     return this;
   }

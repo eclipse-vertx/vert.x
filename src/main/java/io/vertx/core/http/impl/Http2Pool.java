@@ -20,6 +20,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
 
 import java.util.Map;
@@ -30,13 +31,18 @@ import java.util.Map;
 class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
 
   private Http2ClientConnection connection;
-  private final Map<Channel, Http2ClientConnection> connectionMap;
+  private final Map<Channel, ? super Http2ClientConnection> connectionMap;
   final HttpClientImpl client;
 
-  public Http2Pool(ConnectionManager.ConnQueue<Http2ClientConnection> queue, HttpClientImpl client, Map<Channel, Http2ClientConnection> connectionMap) {
+  public Http2Pool(ConnectionManager.ConnQueue queue, HttpClientImpl client, Map<Channel, ? super Http2ClientConnection> connectionMap) {
     super(queue, 1);
     this.client = client;
     this.connectionMap = connectionMap;
+  }
+
+  @Override
+  HttpVersion version() {
+    return HttpVersion.HTTP_2;
   }
 
   // Under sync when called

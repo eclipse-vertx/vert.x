@@ -46,12 +46,12 @@ import java.util.function.Function;
  */
 class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler implements Http2Connection.Listener {
 
-  private final Map<Channel, C> connectionMap;
+  private final Map<Channel, ? super C> connectionMap;
   C connection;
   private ChannelHandlerContext ctx;
 
   public VertxHttp2ConnectionHandler(
-      Map<Channel, C> connectionMap,
+      Map<Channel, ? super C> connectionMap,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
       Http2Settings initialSettings,
