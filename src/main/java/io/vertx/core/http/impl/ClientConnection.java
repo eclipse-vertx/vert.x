@@ -31,7 +31,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -71,7 +70,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private final boolean ssl;
   private final String host;
   private final int port;
-  private final ConnectionManager.Http1xPool pool;
+  private final Http1xPool pool;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
@@ -88,9 +87,9 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
   private boolean paused;
   private Buffer pausedChunk;
 
-  ClientConnection(HttpVersion version, VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
-                   int port, ContextImpl context, ConnectionManager.Http1xPool pool, HttpClientMetrics metrics) {
-    super(vertx, channel, context, metrics);
+  ClientConnection(HttpVersion version, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
+                   int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
+    super(client.getVertx(), channel, context, metrics);
     this.client = client;
     this.ssl = ssl;
     this.host = host;

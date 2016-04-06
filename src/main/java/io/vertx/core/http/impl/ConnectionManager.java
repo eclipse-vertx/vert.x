@@ -19,7 +19,6 @@ package io.vertx.core.http.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -29,24 +28,17 @@ import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -57,10 +49,8 @@ import io.vertx.core.net.impl.SSLHelper;
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -201,7 +191,7 @@ public class ConnectionManager {
       if (version == HttpVersion.HTTP_2) {
         pool =  new Http2Pool(this, client, mgr.connectionMap);
       } else {
-        pool = new Http1xPool(this, version);
+        pool = new Http1xPool(client, options, this, mgr.connectionMap, version);
       }
     }
 
@@ -380,7 +370,7 @@ public class ConnectionManager {
     private void fallbackToHttp1x(Channel ch, ContextImpl context, HttpVersion fallbackVersion, int port, String host, Waiter waiter) {
       // change the pool to Http1xPool
       synchronized (this) {
-        pool = new Http1xPool(this, fallbackVersion);
+        pool = new Http1xPool(client, options, this, mgr.connectionMap, fallbackVersion);
       }
       applyHttp1xConnectionOptions(ch.pipeline(), context);
       http1xConnected(fallbackVersion, context, port, host, ch, waiter);
@@ -501,201 +491,6 @@ public class ConnectionManager {
           return;
         }
         waiter.handleStream(stream);
-      }
-    }
-  }
-
-  public class Http1xPool extends Pool<ClientConnection> {
-
-    private final HttpVersion version;
-    private final Set<ClientConnection> allConnections = new HashSet<>();
-    private final Queue<ClientConnection> availableConnections = new ArrayDeque<>();
-
-    public Http1xPool(ConnQueue queue, HttpVersion version) {
-      super(queue, client.getOptions().getMaxPoolSize());
-      this.version = version;
-    }
-
-    @Override
-    HttpVersion version() {
-      // Correct this
-      return version;
-    }
-
-    public boolean getConnection(Waiter waiter) {
-      ClientConnection conn = availableConnections.poll();
-      if (conn != null && conn.isValid()) {
-        ContextImpl context = waiter.context;
-        if (context == null) {
-          context = conn.getContext();
-        } else if (context != conn.getContext()) {
-          log.warn("Reusing a connection with a different context: an HttpClient is probably shared between different Verticles");
-        }
-        context.runOnContext(v -> deliverStream(conn, waiter));
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    @Override
-    HttpClientStream createStream(ClientConnection conn) {
-      return conn;
-    }
-
-    // Called when the request has ended
-    void recycle(ClientConnection conn) {
-      synchronized (queue) {
-        if (pipelining) {
-          // Maybe the connection can be reused
-          Waiter waiter = queue.getNextWaiter();
-          if (waiter != null) {
-            Context context = waiter.context;
-            if (context == null) {
-              context = conn.getContext();
-            }
-            context.runOnContext(v -> deliverStream(conn, waiter));
-          }
-        }
-      }
-    }
-
-    // Called when the response has ended
-    public synchronized void responseEnded(ClientConnection conn, boolean close) {
-      synchronized (queue) {
-        if ((pipelining || keepAlive) && !close) {
-          if (conn.getCurrentRequest() == null) {
-            Waiter waiter = queue.getNextWaiter();
-            if (waiter != null) {
-              Context context = waiter.context;
-              if (context == null) {
-                context = conn.getContext();
-              }
-              context.runOnContext(v -> deliverStream(conn, waiter));
-            } else if (conn.getOutstandingRequestCount() == 0) {
-              // Return to set of available from here to not return it several times
-              availableConnections.add(conn);
-            }
-          }
-        } else {
-          // Close it now
-          conn.close();
-        }
-      }
-    }
-
-    private void createConn(HttpVersion version, ContextImpl context, int port, String host, Channel ch, Waiter waiter) {
-      ClientConnection conn = new ClientConnection(version, vertx, client, waiter::handleFailure, ch,
-          options.isSsl(), host, port, context, this, client.metrics);
-      conn.closeHandler(v -> {
-        // The connection has been closed - tell the pool about it, this allows the pool to create more
-        // connections. Note the pool doesn't actually remove the connection, when the next person to get a connection
-        // gets the closed on, they will check if it's closed and if so get another one.
-        connectionClosed(conn);
-      });
-      synchronized (queue) {
-        allConnections.add(conn);
-      }
-      queue.mgr.connectionMap.put(ch, conn);
-      deliverStream(conn, waiter);
-    }
-
-    // Called if the connection is actually closed, OR the connection attempt failed - in the latter case
-    // conn will be null
-    public synchronized void connectionClosed(ClientConnection conn) {
-      synchronized (queue) {
-        allConnections.remove(conn);
-        availableConnections.remove(conn);
-        queue.connectionClosed();
-      }
-    }
-
-    void closeAllConnections() {
-      Set<ClientConnection> copy;
-      synchronized (this) {
-        copy = new HashSet<>(allConnections);
-        allConnections.clear();
-      }
-      // Close outside sync block to avoid deadlock
-      for (ClientConnection conn: copy) {
-        try {
-          conn.close();
-        } catch (Throwable t) {
-          log.error("Failed to close connection", t);
-        }
-      }
-    }
-
-    void removeChannel(Channel channel) {
-      queue.mgr.connectionMap.remove(channel);
-    }
-  }
-
-  private class ClientHandler extends VertxHttpHandler<ClientConnection> {
-    private boolean closeFrameSent;
-    private ContextImpl context;
-
-    public ClientHandler(ContextImpl context, Map<Channel, ClientConnection> connectionMap) {
-      super(connectionMap);
-      this.context = context;
-    }
-
-    @Override
-    protected ContextImpl getContext(ClientConnection connection) {
-      return context;
-    }
-
-    @Override
-    protected void doMessageReceived(ClientConnection conn, ChannelHandlerContext ctx, Object msg) {
-      if (conn == null) {
-        return;
-      }
-      boolean valid = false;
-      if (msg instanceof HttpResponse) {
-        HttpResponse response = (HttpResponse) msg;
-        conn.handleResponse(response);
-        valid = true;
-      }
-      if (msg instanceof HttpContent) {
-        HttpContent chunk = (HttpContent) msg;
-        if (chunk.content().isReadable()) {
-          Buffer buff = Buffer.buffer(chunk.content().slice());
-          conn.handleResponseChunk(buff);
-        }
-        if (chunk instanceof LastHttpContent) {
-          conn.handleResponseEnd((LastHttpContent)chunk);
-        }
-        valid = true;
-      } else if (msg instanceof WebSocketFrameInternal) {
-        WebSocketFrameInternal frame = (WebSocketFrameInternal) msg;
-        switch (frame.type()) {
-          case BINARY:
-          case CONTINUATION:
-          case TEXT:
-            conn.handleWsFrame(frame);
-            break;
-          case PING:
-            // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-            ctx.writeAndFlush(new WebSocketFrameImpl(FrameType.PONG, frame.getBinaryData()));
-            break;
-          case PONG:
-            // Just ignore it
-            break;
-          case CLOSE:
-            if (!closeFrameSent) {
-              // Echo back close frame and close the connection once it was written.
-              // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              ctx.writeAndFlush(frame).addListener(ChannelFutureListener.CLOSE);
-              closeFrameSent = true;
-            }
-            break;
-          default:
-            throw new IllegalStateException("Invalid type: " + frame.type());
-        }
-        valid = true;
-      }
-      if (!valid) {
-        throw new IllegalStateException("Invalid object " + msg);
       }
     }
   }
