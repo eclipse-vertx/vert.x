@@ -83,15 +83,7 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
   void recycle(ClientConnection conn) {
     synchronized (queue) {
       if (pipelining) {
-        // Maybe the connection can be reused
-        Waiter waiter = queue.getNextWaiter();
-        if (waiter != null) {
-          Context context = waiter.context;
-          if (context == null) {
-            context = conn.getContext();
-          }
-          context.runOnContext(v -> deliverStream(conn, waiter));
-        }
+        doRecycle(conn);
       }
     }
   }
@@ -101,22 +93,26 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
     synchronized (queue) {
       if ((pipelining || keepAlive) && !close) {
         if (conn.getCurrentRequest() == null) {
-          Waiter waiter = queue.getNextWaiter();
-          if (waiter != null) {
-            Context context = waiter.context;
-            if (context == null) {
-              context = conn.getContext();
-            }
-            context.runOnContext(v -> deliverStream(conn, waiter));
-          } else if (conn.getOutstandingRequestCount() == 0) {
-            // Return to set of available from here to not return it several times
-            availableConnections.add(conn);
-          }
+          doRecycle(conn);
         }
       } else {
         // Close it now
         conn.close();
       }
+    }
+  }
+
+  private void doRecycle(ClientConnection conn) {
+    Waiter waiter = queue.getNextWaiter();
+    if (waiter != null) {
+      Context context = waiter.context;
+      if (context == null) {
+        context = conn.getContext();
+      }
+      context.runOnContext(v -> deliverStream(conn, waiter));
+    } else if (conn.getOutstandingRequestCount() == 0) {
+      // Return to set of available from here to not return it several times
+      availableConnections.add(conn);
     }
   }
 
