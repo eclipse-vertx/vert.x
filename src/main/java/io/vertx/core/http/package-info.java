@@ -1263,12 +1263,15 @@
  * ----
  *
  * Vert.x will send automatically an acknowledgement when a {@literal PING} frame is received,
- * an handler can be set to be called when the connection is pinged:
+ * an handler can be set to be notified for each ping received:
  *
  * [source,$lang]
  * ----
  * {@link examples.HTTP2Examples#example24}
  * ----
+ *
+ * The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
+ * implementing  protocols on top of HTTP/2.
  *
  * ==== Connection shutdown
  *

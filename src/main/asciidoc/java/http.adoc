@@ -1643,7 +1643,7 @@ connection.ping(data, pong -> {
 ----
 
 Vert.x will send automatically an acknowledgement when a `PING` frame is received,
-an handler can be set to be called when the connection is pinged:
+an handler can be set to be notified for each ping received:
 
 [source,java]
 ----
@@ -1651,6 +1651,9 @@ connection.pingHandler(ping -> {
   System.out.println("Got pinged by remote side");
 });
 ----
+
+The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
+implementing  protocols on top of HTTP/2.
 
 ==== Connection shutdown
 
