@@ -2472,7 +2472,8 @@ public class Http2ServerTest extends Http2TestBase {
     await();
   }
 
-  @Test
+//  @Repeat(times = 10000)
+//  @Test
   public void testUpgradeToClearText() throws Exception {
     server.close();
     server = vertx.createHttpServer(serverOptions.
@@ -2496,7 +2497,9 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
       testComplete();
-    }).exceptionHandler(this::fail).end();
+    }).exceptionHandler(err -> {
+      err.printStackTrace();
+    }).end();
     await();
   }
 
