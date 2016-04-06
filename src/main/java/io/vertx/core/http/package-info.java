@@ -1080,7 +1080,7 @@
  *
  * [source,$lang]
  * ----
- * {@link examples.HTTP2Examples#example13}
+ * {@link examples.HTTP2Examples#example14}
  * ----
  *
  * When no handler is set, any stream pushed will be automatically cancelled by the client with

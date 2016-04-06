@@ -186,7 +186,7 @@ public class HTTP2Examples {
     request.end();
   }
 
-  public void example13(HttpClientRequest request) {
+  public void example14(HttpClientRequest request) {
     request.pushHandler(pushedRequest -> {
       if (pushedRequest.path().equals("/main.js")) {
         pushedRequest.reset();

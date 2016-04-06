@@ -1432,24 +1432,13 @@ If the client does not want to receive a pushed request, it can reset the stream
 
 [source,java]
 ----
-HttpClientRequest request = client.get("/index.html", response -> {
-  // Process index.html response
-});
-
-// Set a push handler to be aware of any resource pushed by the server
 request.pushHandler(pushedRequest -> {
-
-  // A resource is pushed for this request
-  System.out.println("Server pushed " + pushedRequest.path());
-
-  // Set an handler for the response
-  pushedRequest.handler(pushedResponse -> {
-    System.out.println("The response for the pushed request");
-  });
+  if (pushedRequest.path().equals("/main.js")) {
+    pushedRequest.reset();
+  } else {
+    // Handle it
+  }
 });
-
-// End the request
-request.end();
 ----
 
 When no handler is set, any stream pushed will be automatically cancelled by the client with
