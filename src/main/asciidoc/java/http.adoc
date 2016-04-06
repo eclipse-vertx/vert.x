@@ -32,7 +32,7 @@ HttpServer server = vertx.createHttpServer(options);
 
 Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
 
-- `h2` identifies the HTTP/2 protocol when used over TLS negotiated by Application-Layer Protocol Negotiation (ALPN)
+- `h2` identifies the HTTP/2 protocol when used over TLS negotiated by https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation[Application-Layer Protocol Negotiation] (ALPN)
 - `h2c` identifies the HTTP/2 protocol when using in clear text over TCP, such connections are established either with
 an HTTP/1.1 upgraded request or directly
 
