@@ -149,7 +149,7 @@ class FileStreamChannel extends AbstractChannel {
   @Override
   protected void doWrite(ChannelOutboundBuffer in) throws Exception {
     ByteBuf chunk;
-    while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null && length > 0) {
+    while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null) {
       length -= chunk.readableBytes();
       bytesWritten += chunk.readableBytes();
       stream.writeData(chunk.retain(), false);

@@ -1414,6 +1414,13 @@ public class Http2ServerTest extends Http2TestBase {
     testSendFile(expected.slice(from, to), tmp.getAbsolutePath(), from, to - from);
   }
 
+  @Test
+  public void testSendEmptyFile() throws Exception {
+    Buffer expected = Buffer.buffer();
+    File tmp = createTempFile(expected);
+    testSendFile(expected, tmp.getAbsolutePath(), 0, expected.length());
+  }
+
   private void testSendFile(Buffer expected, String path, long offset, long length) throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
