@@ -33,6 +33,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,6 +46,8 @@ import java.nio.channels.ClosedChannelException;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ServerResponseImpl implements HttpServerResponse {
+
+  private static final Logger log = LoggerFactory.getLogger(Http2ServerResponseImpl.class);
 
   private final VertxHttp2Stream stream;
   private final ChannelHandlerContext ctx;
@@ -476,7 +480,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         if (resultHandler != null) {
           resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
         } else {
-          // log.error("File not found: " + filename);
+           log.error("File not found: " + filename);
         }
         return this;
       }
@@ -488,7 +492,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         if (resultHandler != null) {
           resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
         } else {
-          //log.error("Failed to send file", e);
+          log.error("Failed to send file", e);
         }
         return this;
       }
