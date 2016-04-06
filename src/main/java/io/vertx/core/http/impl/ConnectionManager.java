@@ -102,17 +102,17 @@ public class ConnectionManager {
 
     private final HttpVersion version;
     private final Map<Channel, C> connectionMap = new ConcurrentHashMap<>();
-    private final Map<TargetAddress, ConnQueue<C>> connQueues = new ConcurrentHashMap<>();
+    private final Map<TargetAddress, ConnQueue<C>> queueMap = new ConcurrentHashMap<>();
 
     public QueueManager(HttpVersion version) {
       this.version = version;
     }
 
     ConnQueue<C> getConnQueue(TargetAddress address) {
-      ConnQueue<C> connQueue = connQueues.get(address);
+      ConnQueue<C> connQueue = queueMap.get(address);
       if (connQueue == null) {
         connQueue = new ConnQueue<>(this, address);
-        ConnQueue<C> prev = connQueues.putIfAbsent(address, connQueue);
+        ConnQueue<C> prev = queueMap.putIfAbsent(address, connQueue);
         if (prev != null) {
           connQueue = prev;
         }
@@ -121,10 +121,10 @@ public class ConnectionManager {
     }
 
     public void close() {
-      for (ConnQueue queue: connQueues.values()) {
+      for (ConnQueue queue: queueMap.values()) {
         queue.closeAllConnections();
       }
-      connQueues.clear();
+      queueMap.clear();
       for (C conn : connectionMap.values()) {
         conn.close();
       }
@@ -237,7 +237,7 @@ public class ConnectionManager {
         createNewConnection(waiter);
       } else if (connCount == 0) {
         // No waiters and no connections - remove the ConnQueue
-        mgr.connQueues.remove(address);
+        mgr.queueMap.remove(address);
       }
     }
 
