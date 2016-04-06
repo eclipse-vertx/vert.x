@@ -47,7 +47,11 @@
  *
  * Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
  *
- * To handle `h2` requests, TLS must be enabled with Application-Layer Protocol Negotiation:
+ * - `h2` identifies the HTTP/2 protocol when used over TLS negotiated by Application-Layer Protocol Negotiation (ALPN)
+ * - `h2c` identifies the HTTP/2 protocol when using in clear text over TCP, such connections are established either with
+ * an HTTP/1.1 upgraded request or directly
+ *
+ * To handle `h2` requests, TLS must be enabled along with {@link io.vertx.core.http.HttpServerOptions#setUseAlpn(boolean)}:
  *
  * [source,$lang]
  * ----
