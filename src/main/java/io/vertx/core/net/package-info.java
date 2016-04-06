@@ -610,7 +610,7 @@
  *
  * The main drawback is that the version depends on the JVM.
  *
- * To solve this problem the _Jetty-ALPN_ agent can be use instead. The agent is a JVM agent that will chose the correct
+ * To solve this problem the _https://github.com/jetty-project/jetty-alpn-agent[Jetty ALPN agent]_ can be use instead. The agent is a JVM agent that will chose the correct
  * ALPN version for the JVM running it:
  *
  * ----
