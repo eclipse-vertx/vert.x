@@ -1236,7 +1236,7 @@
  * ----
  *
  * As the remote side should acknowledge on reception of the settings update, it's possible to give a callback
- * to be notified of the acknowledgent:
+ * to be notified of the acknowledgment:
  *
  * [source,$lang]
  * ----
