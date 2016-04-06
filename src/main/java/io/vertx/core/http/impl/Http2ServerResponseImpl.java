@@ -344,7 +344,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private void end(ByteBuf chunk) {
     synchronized (conn) {
-      if (chunk != null && !chunked && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+      if (chunk != null && !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
       }
       write(chunk, true);
@@ -353,12 +353,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private boolean checkSendHeaders(boolean end) {
     if (!headWritten) {
-/*
-      if (!headers.contains(HttpHeaderNames.CONTENT_LENGTH) && !chunked) {
-        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-            + "body BEFORE sending any data if you are not sending an HTTP chunked response.");
-      }
-*/
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
       }
