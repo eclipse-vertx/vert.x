@@ -16,6 +16,7 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -62,7 +63,7 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
-  public HttpServerMetric responsePushed(SocketMetric socketMetric, HttpServerResponse response) {
+  public HttpServerMetric responsePushed(SocketMetric socketMetric, HttpMethod method, String uri, HttpServerResponse response) {
     HttpServerMetric requestMetric = new HttpServerMetric(null, socketMetric);
     requestMetric.response.set(response);
     requests.add(requestMetric);

@@ -85,7 +85,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  public Http2ServerResponseImpl(Http2ServerConnection conn, VertxHttp2Stream stream, boolean push, String contentEncoding) {
+  public Http2ServerResponseImpl(
+      Http2ServerConnection conn,
+      VertxHttp2Stream stream,
+      HttpMethod method,
+      String path,
+      boolean push,
+      String contentEncoding) {
     this.stream = stream;
     this.ctx = conn.handlerContext;
     this.conn = conn;
@@ -96,7 +102,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       putHeader(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
     }
 
-    this.metric = conn.metrics().responsePushed(conn.metric(), this);
+    this.metric = conn.metrics().responsePushed(conn.metric(), method, path, this);
   }
 
   void callReset(long code) {
@@ -606,16 +612,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         throw new IllegalStateException("A push response cannot promise another push");
       }
       checkEnded();
-      Http2Headers headers_ = new DefaultHttp2Headers();
-      headers_.method(method.name());
-      headers_.path(path);
-      if (host != null) {
-        headers_.authority(host);
-      }
-      if (headers != null) {
-        headers.forEach(header -> headers_.add(header.getKey(), header.getValue()));
-      }
-      conn.sendPush(stream.id(), headers_, handler);
+      conn.sendPush(stream.id(), host, method, headers, path, handler);
       return this;
     }
   }

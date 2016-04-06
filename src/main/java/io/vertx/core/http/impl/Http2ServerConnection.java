@@ -20,6 +20,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -30,6 +31,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -144,16 +146,25 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     super.onSettingsRead(ctx, settings);
   }
 
-  synchronized void sendPush(int streamId, Http2Headers headers, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
-    handler.writePushPromise(streamId, headers, new Handler<AsyncResult<Integer>>() {
+  synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+    Http2Headers headers_ = new DefaultHttp2Headers();
+    headers_.method(method.name());
+    headers_.path(path);
+    if (host != null) {
+      headers_.authority(host);
+    }
+    if (headers != null) {
+      headers.forEach(header -> headers_.add(header.getKey(), header.getValue()));
+    }
+    handler.writePushPromise(streamId, headers_, new Handler<AsyncResult<Integer>>() {
       @Override
       public void handle(AsyncResult<Integer> ar) {
         if (ar.succeeded()) {
           synchronized (Http2ServerConnection.this) {
             int promisedStreamId = ar.result();
-            String contentEncoding = HttpUtils.determineContentEncoding(headers);
+            String contentEncoding = HttpUtils.determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-            Push push = new Push(promisedStream, contentEncoding, completionHandler);
+            Push push = new Push(promisedStream, contentEncoding, method, path, completionHandler);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
@@ -183,12 +194,20 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
   private class Push extends VertxHttp2Stream<Http2ServerConnection> {
 
+    private final HttpMethod method;
+    private final String uri;
     private final String contentEncoding;
     private Http2ServerResponseImpl response;
     private final Future<HttpServerResponse> completionHandler;
 
-    public Push(Http2Stream stream, String contentEncoding, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+    public Push(Http2Stream stream,
+                String contentEncoding,
+                HttpMethod method,
+                String uri,
+                Handler<AsyncResult<HttpServerResponse>> completionHandler) {
       super(Http2ServerConnection.this, stream);
+      this.method = method;
+      this.uri = uri;
       this.contentEncoding = contentEncoding;
       this.completionHandler = Future.<HttpServerResponse>future().setHandler(completionHandler);
     }
@@ -243,7 +262,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     void complete() {
       synchronized (Http2ServerConnection.this) {
-        response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, true, contentEncoding);
+        response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, method, uri, true, contentEncoding);
         completionHandler.complete(response);
       }
     }

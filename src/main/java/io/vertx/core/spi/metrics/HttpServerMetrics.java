@@ -16,6 +16,7 @@
 
 package io.vertx.core.spi.metrics;
 
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
@@ -63,10 +64,11 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * Called when an http server response is pushed.
    *
    * @param socketMetric the socket metric
-   * @param response the http server response
-   * @return the request metric
+   * @param method the pushed response method
+   * @param uri the pushed response uri
+   * @param response the http server response  @return the request metric
    */
-  R responsePushed(S socketMetric, HttpServerResponse response);
+  R responsePushed(S socketMetric, HttpMethod method, String uri, HttpServerResponse response);
 
   /**
    * Called when an http server response has ended.
