@@ -76,6 +76,7 @@ class Http2Pool extends ConnectionManager.Pool<Http2ClientConnection> {
           .connectionFactory(connHandler -> new Http2ClientConnection(Http2Pool.this, context, ch, connHandler, client.metrics))
           .build();
       if (upgrade) {
+        System.out.println("upgrade");
         handler.onHttpClientUpgrade();
       }
       Http2ClientConnection conn = handler.connection;

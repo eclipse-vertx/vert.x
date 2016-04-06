@@ -66,5 +66,8 @@ public class VertxHttp2ClientUpgradeCodec implements HttpClientUpgradeHandler.Up
 
   @Override
   public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
+
+
+
   }
 }

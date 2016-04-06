@@ -26,6 +26,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
@@ -303,7 +304,6 @@ public class ConnectionManager {
                     if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
                       p.remove(this);
                       // Upgrade handler will remove itself
-                      http2Connected(context, ch, waiter, true);
                     } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
                       p.remove(httpCodec);
                       p.remove(this);
@@ -312,7 +312,12 @@ public class ConnectionManager {
                     }
                   }
                 }
-                VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings());
+                VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
+                  @Override
+                  public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
+                    http2Connected(context, ch, waiter, true);
+                  }
+                };
                 HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
                 ch.pipeline().addLast(httpCodec, upgradeHandler, new UpgradeRequestHandler());
               } else {
