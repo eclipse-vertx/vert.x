@@ -95,8 +95,10 @@ public class HTTP2Examples {
 
     // Push main.js to the client
     response.push(HttpMethod.GET, "/main.js", ar -> {
+
       if (ar.succeeded()) {
 
+        // The server is ready to push the response
         HttpServerResponse pushedResponse = ar.result();
 
         // Send main.js response

@@ -727,8 +727,10 @@ HttpServerResponse response = request.response();
 
 // Push main.js to the client
 response.push(HttpMethod.GET, "/main.js", ar -> {
+
   if (ar.succeeded()) {
 
+    // The server is ready to push the response
     HttpServerResponse pushedResponse = ar.result();
 
     // Send main.js response
@@ -743,6 +745,11 @@ response.push(HttpMethod.GET, "/main.js", ar -> {
 // Send the requested resource
 response.sendFile("<html><head><script src=\"/main.js\"></script></head><body></body></html>");
 ----
+
+When the server is ready to push the response, the push response handler is called and the handler can send the response.
+
+The push response handler may receive a failure, for instance the client may cancel the push because it already has `main.js` in its
+cache and does not want it anymore.
 
 The `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#push-io.vertx.core.http.HttpMethod-java.lang.String-java.lang.String-io.vertx.core.Handler-[push]` method must be called before the initiating response ends, however
 the pushed response can be written after.

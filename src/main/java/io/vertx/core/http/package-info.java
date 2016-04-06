@@ -614,6 +614,11 @@
  * {@link examples.HTTP2Examples#example6}
  * ----
  *
+ * When the server is ready to push the response, the push response handler is called and the handler can send the response.
+ *
+ * The push response handler may receive a failure, for instance the client may cancel the push because it already has `main.js` in its
+ * cache and does not want it anymore.
+ *
  * The {@link io.vertx.core.http.HttpServerResponse#push} method must be called before the initiating response ends, however
  * the pushed response can be written after.
  *
