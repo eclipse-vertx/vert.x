@@ -36,12 +36,39 @@ import java.util.Map;
 @DataObject(generateConverter = true)
 public class Http2Settings {
 
+  /**
+   * Default HTTP/2 spec value for {@link #getHeaderTableSize} : {@code 4096}
+   */
   public static final long DEFAULT_HEADER_TABLE_SIZE = 4096;
+
+  /**
+   * Default HTTP/2 spec value for {@link #isPushEnabled} : {@code true}
+   */
   public static final boolean DEFAULT_ENABLE_PUSH = true;
+
+  /**
+   * Default HTTP/2 spec value for {@link #getMaxConcurrentStreams} : {@code 0xFFFFFFFFL}
+   */
   public static final long DEFAULT_MAX_CONCURRENT_STREAMS = 0xFFFFFFFFL;
+
+  /**
+   * Default HTTP/2 spec value for {@link #getInitialWindowSize} : {@code 65535}
+   */
   public static final int DEFAULT_INITIAL_WINDOW_SIZE = 65535;
+
+  /**
+   * Default HTTP/2 spec value for {@link #getMaxFrameSize} : {@code 16384}
+   */
   public static final int DEFAULT_MAX_FRAME_SIZE = 16384;
+
+  /**
+   * Default HTTP/2 spec value for {@link #getMaxHeaderListSize} : {@code Integer.MAX_VALUE}
+   */
   public static final int DEFAULT_MAX_HEADER_LIST_SIZE = Integer.MAX_VALUE;
+
+  /**
+   * Default HTTP/2 spec value for {@link #getExtraSettings} : {@code null}
+   */
   public static final Map<Integer, Long> DEFAULT_EXTRA_SETTINGS = null;
 
   private long headerTableSize;
