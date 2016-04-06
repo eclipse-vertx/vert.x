@@ -437,7 +437,7 @@
  * Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
  * closed after an idle time, then you configure {@link io.vertx.core.http.HttpServerOptions#setIdleTimeout}.
  *
- * HTTP/2 connections will {@liteal GOAWAY} frame before closing the response.
+ * HTTP/2 connections send a {@literal GOAWAY} frame before closing the response.
  *
  * ==== Setting response headers
  *

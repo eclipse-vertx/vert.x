@@ -487,7 +487,7 @@ Non keep-alive connections will be automatically closed by Vert.x when the respo
 Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
 closed after an idle time, then you configure `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setIdleTimeout-int-[setIdleTimeout]`.
 
-HTTP/2 connections will GOAWAY frame before closing the response.
+HTTP/2 connections send a `GOAWAY` frame before closing the response.
 
 ==== Setting response headers
 
