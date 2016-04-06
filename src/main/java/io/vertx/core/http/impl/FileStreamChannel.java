@@ -54,7 +54,6 @@ class FileStreamChannel extends AbstractChannel {
   private static final SocketAddress REMOTE_ADDRESS = new StreamSocketAddress();
   private static final ChannelMetadata METADATA = new ChannelMetadata(true);
 
-  private long length;
   private final ChannelConfig config = new DefaultChannelConfig(this);
   private boolean active;
   private boolean closed;
@@ -94,7 +93,6 @@ class FileStreamChannel extends AbstractChannel {
       }
     });
 
-    this.length = length;
     this.stream = stream;
   }
 
@@ -150,7 +148,6 @@ class FileStreamChannel extends AbstractChannel {
   protected void doWrite(ChannelOutboundBuffer in) throws Exception {
     ByteBuf chunk;
     while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null) {
-      length -= chunk.readableBytes();
       bytesWritten += chunk.readableBytes();
       stream.writeData(chunk.retain(), false);
       stream.handlerContext.flush();
