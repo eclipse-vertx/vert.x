@@ -111,6 +111,29 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   String uri();
 
   /**
+   * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
+   */
+  String path();
+
+  /**
+   * @return the query part of the uri. For example someparam=32&amp;someotherparam=x
+   */
+  String query();
+
+  /**
+   * Set the request host.<p/>
+   *
+   * For HTTP2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
+   */
+  @Fluent
+  HttpClientRequest setHost(String host);
+
+  /**
+   * @return the request host. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
+   */
+  String getHost();
+
+  /**
    * @return The HTTP headers
    */
   @CacheReturn
@@ -193,6 +216,13 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpClientRequest sendHead();
 
   /**
+   * Like {@link #sendHead()} but with an handler after headers have been sent. The handler will be called with
+   * the {@link HttpVersion} if it can be determined or null otherwise.<p>
+   */
+  @Fluent
+  HttpClientRequest sendHead(Handler<HttpVersion> completionHandler);
+
+  /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding
    *
    * @throws java.lang.IllegalStateException when no response handler is set
@@ -238,4 +268,90 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Fluent
   HttpClientRequest setTimeout(long timeoutMs);
 
+  /**
+   * Set a push handler for this request.<p/>
+   *
+   * The handler is called when the client receives a <i>push promise</i> from the server. The handler can be called
+   * multiple times, for each push promise.<p/>
+   *
+   * The handler is called with a <i>read-only</i> {@link HttpClientRequest}, the following methods can be called:<p/>
+   *
+   * <ul>
+   *   <li>{@link HttpClientRequest#method()}</li>
+   *   <li>{@link HttpClientRequest#uri()}</li>
+   *   <li>{@link HttpClientRequest#headers()}</li>
+   *   <li>{@link HttpClientRequest#getHost()}</li>
+   * </ul>
+   *
+   * In addition the handler should call the {@link HttpClientRequest#handler} method to set an handler to
+   * process the response.<p/>
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest pushHandler(Handler<HttpClientRequest> handler);
+
+  /**
+   * Reset this stream with the error code {@code 0}.
+   */
+  default void reset() {
+    reset(0L);
+  }
+
+  /**
+   * Reset this stream with the error {@code code}.
+   *
+   * @param code the error code
+   */
+  void reset(long code);
+
+  /**
+   * @return the {@link HttpConnection} associated with this request when it is an HTTP/2 connection, null otherwise
+   */
+  @CacheReturn
+  HttpConnection connection();
+
+  /**
+   * Set a connection handler called when an HTTP/2 connection has been established.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler);
+
+  /**
+   * Write an HTTP/2 frame to the request, allowing to extend the HTTP/2 protocol.<p>
+   *
+   * The frame is sent immediatly and is not subject to flow control.<p>
+   *
+   * This method must be called after the request headers have been sent and only for the protocol HTTP/2.
+   * The {@link #sendHead(Handler)} should be used for this purpose.
+   *
+   * @param type the 8-bit frame type
+   * @param flags the 8-bit frame flags
+   * @param payload the frame payload
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest writeFrame(int type, int flags, Buffer payload);
+
+  /**
+   * @return the id of the stream of this response, {@literal -1} when it is not yet determined, i.e
+   *         the request has not been yet sent or it is not supported HTTP/1.x
+   */
+  default int streamId() {
+    return -1;
+  }
+
+  /**
+   * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
+   *
+   * @param frame the frame to write
+   */
+  @Fluent
+  default HttpClientRequest writeFrame(HttpFrame frame) {
+    return writeFrame(frame.type(), frame.flags(), frame.payload());
+  }
 }

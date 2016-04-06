@@ -266,12 +266,12 @@ public abstract class ConnectionBase {
   public SocketAddress remoteAddress() {
     InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
     if (addr == null) return null;
-    return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
+    return new SocketAddressImpl(addr);
   }
 
   public SocketAddress localAddress() {
     InetSocketAddress addr = (InetSocketAddress) channel.localAddress();
     if (addr == null) return null;
-    return new SocketAddressImpl(addr.getPort(), addr.getAddress().getHostAddress());
+    return new SocketAddressImpl(addr);
   }
 }

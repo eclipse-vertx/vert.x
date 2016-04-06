@@ -132,7 +132,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
 
-  protected void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
+  protected static void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
     if (options instanceof JksOptions) {
       sslOptions.setKeyStoreOptions((JksOptions) options);
     } else if (options instanceof PfxOptions) {
@@ -142,89 +142,13 @@ public class VertxTestBase extends AsyncTestBase {
     }
   }
 
-  protected void setOptions(TCPSSLOptions sslOptions, TrustOptions options) {
+  protected static void setOptions(TCPSSLOptions sslOptions, TrustOptions options) {
     if (options instanceof JksOptions) {
       sslOptions.setTrustStoreOptions((JksOptions) options);
     } else if (options instanceof PfxOptions) {
       sslOptions.setPfxTrustOptions((PfxOptions) options);
     } else {
       sslOptions.setPemTrustOptions((PemTrustOptions) options);
-    }
-  }
-
-  protected TrustOptions getClientTrustOptions(Trust trust) {
-    switch (trust) {
-      case JKS:
-        return new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble");
-      case JKS_CA:
-        return new JksOptions().setPath("tls/client-truststore-ca.jks").setPassword("wibble");
-      case PKCS12:
-        return new PfxOptions().setPath("tls/client-truststore.p12").setPassword("wibble");
-      case PKCS12_CA:
-        return new PfxOptions().setPath("tls/client-truststore-ca.p12").setPassword("wibble");
-      case PEM:
-        return new PemTrustOptions().addCertPath("tls/server-cert.pem");
-      case PEM_CA:
-        return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
-      default:
-        return null;
-    }
-  }
-
-  protected KeyCertOptions getClientCertOptions(KeyCert cert) {
-    switch (cert) {
-      case JKS:
-        return new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble");
-      case JKS_CA:
-        throw new UnsupportedOperationException();
-      case PKCS12:
-        return new PfxOptions().setPath("tls/client-keystore.p12").setPassword("wibble");
-      case PKCS12_CA:
-        throw new UnsupportedOperationException();
-      case PEM:
-        return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert.pem");
-      case PEM_CA:
-        return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-ca.pem");
-      default:
-        return null;
-    }
-  }
-
-  protected TrustOptions getServerTrustOptions(Trust trust) {
-    switch (trust) {
-      case JKS:
-        return new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble");
-      case JKS_CA:
-        throw new UnsupportedOperationException();
-      case PKCS12:
-        return new PfxOptions().setPath("tls/server-truststore.p12").setPassword("wibble");
-      case PKCS12_CA:
-        throw new UnsupportedOperationException();
-      case PEM:
-        return new PemTrustOptions().addCertPath("tls/client-cert.pem");
-      case PEM_CA:
-        return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
-      default:
-        return null;
-    }
-  }
-
-  protected KeyCertOptions getServerCertOptions(KeyCert cert) {
-    switch (cert) {
-      case JKS:
-        return new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble");
-      case JKS_CA:
-        return new JksOptions().setPath("tls/server-keystore-ca.jks").setPassword("wibble");
-      case PKCS12:
-        return new PfxOptions().setPath("tls/server-keystore.p12").setPassword("wibble");
-      case PKCS12_CA:
-        return new PfxOptions().setPath("tls/server-keystore-ca.p12").setPassword("wibble");
-      case PEM:
-        return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert.pem");
-      case PEM_CA:
-        return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca.pem");
-      default:
-        return null;
     }
   }
 

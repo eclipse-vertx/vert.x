@@ -36,6 +36,7 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.function.Supplier;
@@ -121,18 +122,27 @@ public abstract class KeyStoreHelper {
     this.password = password;
   }
 
-  public KeyManager[] getKeyMgrs(VertxInternal vertx) throws Exception {
+  public KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    fact.getProvider();
     KeyStore ks = loadStore(vertx);
     fact.init(ks, password != null ? password.toCharArray(): null);
-    return fact.getKeyManagers();
+    return fact;
   }
 
-  public TrustManager[] getTrustMgrs(VertxInternal vertx) throws Exception {
+  public KeyManager[] getKeyMgrs(VertxInternal vertx) throws Exception {
+    return getKeyMgrFactory(vertx).getKeyManagers();
+  }
+
+  public TrustManagerFactory getTrustMgrFactory(VertxInternal vertx) throws Exception {
     TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     KeyStore ts = loadStore(vertx);
     fact.init(ts);
-    return fact.getTrustManagers();
+    return fact;
+  }
+
+  public TrustManager[] getTrustMgrs(VertxInternal vertx) throws Exception {
+    return getTrustMgrFactory(vertx).getTrustManagers();
   }
 
   /**
@@ -187,10 +197,23 @@ public abstract class KeyStoreHelper {
     public KeyStore loadStore(VertxInternal vertx) throws Exception {
       KeyStore keyStore = KeyStore.getInstance("jks");
       keyStore.load(null, null);
-      PrivateKey key = loadPrivateKey(this.keyValue.get());
-      Certificate[] chain = loadCert(this.certValue.get());
+      PrivateKey key = loadPrivateKey();
+      Certificate[] chain = loadCerts();
       keyStore.setEntry("dummy-entry", new KeyStore.PrivateKeyEntry(key, chain), new KeyStore.PasswordProtection(DUMMY_PASSWORD.toCharArray()));
       return keyStore;
+    }
+
+    public PrivateKey loadPrivateKey() throws Exception {
+      if (keyValue == null) {
+        throw new RuntimeException("Missing private key path");
+      }
+      byte[] value = loadPem(keyValue.get(), "PRIVATE KEY");
+      KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
+      return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(value));
+    }
+
+    public X509Certificate[] loadCerts() throws Exception {
+      return KeyStoreHelper.loadCerts(certValue.get());
     }
   }
 
@@ -210,7 +233,7 @@ public abstract class KeyStoreHelper {
       int count = 0;
       Iterable<Buffer> iterable = certValues::iterator;
       for (Buffer certValue : iterable) {
-        for (Certificate cert : loadCert(certValue)) {
+        for (Certificate cert : loadCerts(certValue)) {
           keyStore.setCertificateEntry("cert-" + count, cert);
         }
       }
@@ -239,21 +262,12 @@ public abstract class KeyStoreHelper {
     return Base64.getDecoder().decode(content);
   }
 
-  private static PrivateKey loadPrivateKey(Buffer key) throws Exception {
-    if (key == null) {
-      throw new RuntimeException("Missing private key path");
-    }
-    byte[] value = loadPem(key, "PRIVATE KEY");
-    KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
-    return rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(value));
-  }
-
-  private static Certificate[] loadCert(Buffer cert) throws Exception {
+  private static X509Certificate[] loadCerts(Buffer cert) throws Exception {
     if (cert == null) {
       throw new RuntimeException("Missing X.509 certificate path");
     }
     byte[] value = loadPem(cert, "CERTIFICATE");
     CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-    return certFactory.generateCertificates(new ByteArrayInputStream(value)).toArray(new Certificate[0]);
+    return certFactory.generateCertificates(new ByteArrayInputStream(value)).toArray(new X509Certificate[0]);
   }
 }

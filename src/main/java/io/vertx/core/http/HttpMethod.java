@@ -25,5 +25,5 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum HttpMethod {
-  OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH
+  OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, UNKNOWN
 }

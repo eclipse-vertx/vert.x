@@ -67,8 +67,30 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
   }
 
   @Override
+  public AssembledHttpRequest touch(Object hint) {
+    content.touch(hint);
+    return this;
+  }
+
+  @Override
+  public AssembledHttpRequest touch() {
+    content.touch();
+    return this;
+  }
+
+  @Override
+  public HttpMethod method() {
+    return request.method();
+  }
+
+  @Override
   public HttpMethod getMethod() {
     return request.getMethod();
+  }
+
+  @Override
+  public String uri() {
+    return request.uri();
   }
 
   @Override
@@ -87,6 +109,11 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
   }
 
   @Override
+  public HttpVersion protocolVersion() {
+    return request.protocolVersion();
+  }
+
+  @Override
   public HttpVersion getProtocolVersion() {
     return request.getProtocolVersion();
   }
@@ -99,6 +126,11 @@ class AssembledHttpRequest implements HttpContent, HttpRequest {
   @Override
   public HttpRequest setProtocolVersion(HttpVersion version) {
     return request.setProtocolVersion(version);
+  }
+
+  @Override
+  public DecoderResult decoderResult() {
+    return request.decoderResult();
   }
 
   @Override

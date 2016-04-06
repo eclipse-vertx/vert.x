@@ -16,6 +16,7 @@
 
 package io.vertx.test.core;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
@@ -31,6 +32,9 @@ public class HttpTestBase extends VertxTestBase {
 
   public static final String DEFAULT_HTTP_HOST = "localhost";
   public static final int DEFAULT_HTTP_PORT = 8080;
+  public static final String DEFAULT_HTTPS_HOST = "localhost";
+  public static final int DEFAULT_HTTPS_PORT = 4043;
+  public static final String DEFAULT_HTTPS_HOST_AND_PORT = "localhost:4043";
   public static final String DEFAULT_TEST_URI = "some-uri";
 
   protected HttpServer server;
@@ -43,7 +47,11 @@ public class HttpTestBase extends VertxTestBase {
 
   protected void tearDown() throws Exception {
     if (client != null) {
-      client.close();
+      try {
+        client.close();
+      } catch (IllegalStateException ignore) {
+        // Client was already closed by the test
+      }
     }
     if (server != null) {
       CountDownLatch latch = new CountDownLatch(1);
@@ -63,4 +71,16 @@ public class HttpTestBase extends VertxTestBase {
 
   private static final Handler noOp = e -> {
   };
+
+  protected void startServer() throws Exception {
+    startServer(vertx.getOrCreateContext());
+  }
+
+  protected void startServer(Context context) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      server.listen(onSuccess(s -> latch.countDown()));
+    });
+    awaitLatch(latch);
+  }
 }

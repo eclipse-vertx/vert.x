@@ -60,6 +60,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final int DEFAULT_IDLE_TIMEOUT = 0;
 
+  /**
+   * Default use alpn = false
+   */
+  public static final boolean DEFAULT_USE_ALPN = false;
+
+  /**
+   * Default SSL engine = JDK
+   */
+  public static final SSLEngine DEFAULT_SSL_ENGINE = SSLEngine.JDK;
+
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
@@ -71,6 +81,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private Set<String> enabledCipherSuites = new HashSet<>();
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
+  private boolean useAlpn;
+  private SSLEngine sslEngine;
 
   /**
    * Default constructor
@@ -98,6 +110,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new HashSet<>() : new HashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
+    this.useAlpn = other.useAlpn;
+    this.sslEngine = other.sslEngine;
   }
 
   /**
@@ -120,6 +134,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     ssl = DEFAULT_SSL;
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
+    useAlpn = DEFAULT_USE_ALPN;
+    sslEngine = DEFAULT_SSL_ENGINE;
   }
 
   /**
@@ -375,6 +391,41 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  /**
+   * @return wether to use or not Application-Layer Protocol Negotiation
+   */
+  public boolean isUseAlpn() {
+    return useAlpn;
+  }
+
+  /**
+   * Set the ALPN usage.
+   *
+   * @param useAlpn true when Application-Layer Protocol Negotiation should be used
+   */
+  public TCPSSLOptions setUseAlpn(boolean useAlpn) {
+    this.useAlpn = useAlpn;
+    return this;
+  }
+
+  /**
+   * @return the SSL engine implementation to use
+   */
+  public SSLEngine getSslEngine() {
+    return sslEngine;
+  }
+
+  /**
+   * Set to use SSL engine implementation to use.
+   *
+   * @param sslEngine the ssl engine to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslEngine(SSLEngine sslEngine) {
+    this.sslEngine = sslEngine;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -395,6 +446,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
       return false;
     if (keyCertOptions != null ? !keyCertOptions.equals(that.keyCertOptions) : that.keyCertOptions != null) return false;
     if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
+    if (useAlpn != that.useAlpn) return false;
+    if (sslEngine != that.sslEngine) return false;
 
     return true;
   }
@@ -413,6 +466,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (enabledCipherSuites != null ? enabledCipherSuites.hashCode() : 0);
     result = 31 * result + (crlPaths != null ? crlPaths.hashCode() : 0);
     result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);
+    result = 31 * result + (useAlpn ? 1 : 0);
+    result = 31 * result + (sslEngine != null ? sslEngine.hashCode() : 0);
     return result;
   }
 }

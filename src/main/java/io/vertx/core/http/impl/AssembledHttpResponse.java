@@ -90,6 +90,33 @@ class AssembledHttpResponse implements HttpResponse, HttpContent {
   }
 
   @Override
+  public HttpVersion protocolVersion() {
+    return response.protocolVersion();
+  }
+
+  @Override
+  public HttpResponseStatus status() {
+    return response.status();
+  }
+
+  @Override
+  public AssembledHttpResponse touch() {
+    content.touch();
+    return this;
+  }
+
+  @Override
+  public AssembledHttpResponse touch(Object hint) {
+    content.touch(hint);
+    return this;
+  }
+
+  @Override
+  public DecoderResult decoderResult() {
+    return content.decoderResult();
+  }
+
+  @Override
   public HttpHeaders headers() {
     return response.headers();
   }

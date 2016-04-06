@@ -60,6 +60,7 @@ public abstract class ContextImpl implements ContextInternal {
   protected VertxThread contextThread;
   private volatile boolean closeHooksRun;
   private Map<String, Object> contextData;
+  private volatile Handler<Throwable> exceptionHandler;
 
   protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
@@ -78,6 +79,7 @@ public abstract class ContextImpl implements ContextInternal {
     }
     this.tccl = tccl;
     this.owner = vertx;
+    this.exceptionHandler = vertx.exceptionHandler();
   }
 
   public static void setContext(ContextImpl context) {
@@ -336,6 +338,10 @@ public abstract class ContextImpl implements ContextInternal {
         }
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
+        Handler<Throwable> handler = this.exceptionHandler;
+        if (handler != null) {
+          handler.handle(t);
+        }
       } finally {
         // We don't unset the context after execution - this is done later when the context is closed via
         // VertxThreadFactory
@@ -348,6 +354,17 @@ public abstract class ContextImpl implements ContextInternal {
 
   private void setTCCL() {
     Thread.currentThread().setContextClassLoader(tccl);
+  }
+
+  @Override
+  public Context exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
   }
 
   public int getInstanceCount() {

@@ -19,6 +19,11 @@
  *
  * Vert.x allows you to easily write non blocking HTTP clients and servers.
  *
+ * Vert.x supports the HTTP/1.0, HTTP/1.1 and HTTP/2 protocols.
+ *
+ * The base API for HTTP is the same for HTTP/1.x and HTTP/2, specific API features are available for dealing with the
+ * HTTP/2 protocol.
+ *
  * === Creating an HTTP Server
  *
  * The simplest way to create an HTTP server, using all default options is as follows:
@@ -37,6 +42,33 @@
  * ----
  * {@link examples.HTTPExamples#example2}
  * ----
+ *
+ * === Configuring an HTTP/2 server
+ *
+ * Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+ *
+ * - `h2` identifies the HTTP/2 protocol when used over TLS negotiated by https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation[Application-Layer Protocol Negotiation] (ALPN)
+ * - `h2c` identifies the HTTP/2 protocol when using in clear text over TCP, such connections are established either with
+ * an HTTP/1.1 upgraded request or directly
+ *
+ * To handle `h2` requests, TLS must be enabled along with {@link io.vertx.core.http.HttpServerOptions#setUseAlpn(boolean)}:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example0}
+ * ----
+ *
+ * ALPN is a TLS extension that negotiates the protocol before the client and the server start to exchange data.
+ *
+ * Clients that don't support ALPN will still be able to do a _classic_ SSL handshake.
+ *
+ * ALPN will usually agree on the `h2` protocol, although `http/1.1` can be used if the server or the client decides
+ * so.
+ *
+ * To handle `h2c` requests, TLS must be disabled, the server will upgrade to HTTP/2 any request HTTP/1.1 that wants to
+ * upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with the `PRI * HTTP/2.0\r\nSM\r\n` preface.
+ *
+ * WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
  *
  * === Start the Server Listening
  *
@@ -157,6 +189,12 @@
  * ----
  * {@link examples.HTTPExamples#example8}
  * ----
+ *
+ * ==== Request host
+ *
+ * Use {@link io.vertx.core.http.HttpServerRequest#host} to return the host of the HTTP request.
+ *
+ * For HTTP/1.x requests the `host` header is returned, for HTTP/1 requests the `:authority` pseudo header is returned.
  *
  * ==== Request parameters
  *
@@ -296,6 +334,22 @@
  * WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
  * to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
  *
+ * ==== Receiving unknown HTTP/2 frames
+ *
+ * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+ * of frames to be sent and received.
+ *
+ * To receive unknown frames, you can use the {@link io.vertx.core.http.HttpServerRequest#unknownFrameHandler} on the request,
+ * this will get called every time an unknown frame arrives. Here's an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example1}
+ * ----
+ *
+ * HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when an
+ * unkown frame is received whether the request is paused or is not
+ *
  * === Sending back responses
  *
  * The server response object is an instance of {@link io.vertx.core.http.HttpServerResponse} and is obtained from the
@@ -312,6 +366,9 @@
  * You can also specify a custom status message with {@link io.vertx.core.http.HttpServerResponse#setStatusMessage}.
  *
  * If you don't specify a status message, the default one corresponding to the status code will be used.
+ *
+ * NOTE: for HTTP/2 the status won't be present in the response since the protocol won't transmit the message
+ * to the client
  *
  * ==== Writing HTTP responses
  *
@@ -380,6 +437,8 @@
  * Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
  * closed after an idle time, then you configure {@link io.vertx.core.http.HttpServerOptions#setIdleTimeout}.
  *
+ * HTTP/2 connections send a {@literal GOAWAY} frame before closing the response.
+ *
  * ==== Setting response headers
  *
  * HTTP response headers can be added to the response by adding them directly to the
@@ -418,6 +477,8 @@
  *
  * When in chunked mode you can also write HTTP response trailers to the response. These are actually written in
  * the final chunk of the response.
+ *
+ * NOTE: chunked response has no effect for an HTTP/2 stream
  *
  * To add trailers to the response, add them directly to the {@link io.vertx.core.http.HttpServerResponse#trailers}.
  *
@@ -497,6 +558,70 @@
  * {@link examples.HTTPExamples#example27}
  * ----
  *
+ * ==== Writing HTTP/2 frames
+ *
+ * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+ * of frames to be sent and received.
+ *
+ * To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeFrame} on the response.
+ * Here’s an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example2}
+ * ----
+ *
+ * These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
+ * before other {@literal DATA} frames.
+ *
+ * ==== Stream reset
+ *
+ * HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads
+ * a resource already present on the server, the server needs to accept the entire response.
+ *
+ * HTTP/2 supports stream reset at any time during the request/response:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example3}
+ * ----
+ *
+ * By default the `NO_ERROR` (0) error code is sent, another code can sent instead:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example4}
+ * ----
+ *
+ * The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+ *
+ * The request handler are notified of stream reset events with the {@link io.vertx.core.http.HttpServerRequest#exceptionHandler request handler} and
+ * {@link io.vertx.core.http.HttpServerResponse#exceptionHandler response handler}:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example5}
+ * ----
+ *
+ * ==== Server push
+ *
+ * Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+ *
+ * When a server process a request, it can push a request/response to the client:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example6}
+ * ----
+ *
+ * When the server is ready to push the response, the push response handler is called and the handler can send the response.
+ *
+ * The push response handler may receive a failure, for instance the client may cancel the push because it already has `main.js` in its
+ * cache and does not want it anymore.
+ *
+ * The {@link io.vertx.core.http.HttpServerResponse#push} method must be called before the initiating response ends, however
+ * the pushed response can be written after.
+ *
  * === HTTP Compression
  *
  * Vert.x comes with support for HTTP Compression out of the box.
@@ -534,6 +659,33 @@
  * ----
  * {@link examples.HTTPExamples#example29}
  * ----
+ *
+ * Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+ *
+ * By default the http client performs HTTP/1.1 requests, to perform HTTP/2 requests the {@link io.vertx.core.http.HttpClientOptions#setProtocolVersion}
+ * must be set to {@link io.vertx.core.http.HttpVersion#HTTP_2}.
+ *
+ * For `h2` requests, TLS must be enabled with _Application-Layer Protocol Negotiation_:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example7}
+ * ----
+ *
+ * For `h2c` requests, TLS must be disabled, the client will do an HTTP/1.1 requests and try an upgrade to HTTP/2:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example8}
+ * ----
+ *
+ * `h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
+ * {@link io.vertx.core.http.HttpClientOptions#setH2cUpgrade(boolean)} options is set to false: after the
+ * connection is established, the client will send the HTTP/2 connection preface and expect to receive
+ * the same preface from the server.
+ *
+ * The http server may not support HTTP/2, the actual version can be checked
+ * with {@link io.vertx.core.http.HttpClientResponse#version()} when the response arrives.
  *
  * === Making requests
  *
@@ -745,6 +897,47 @@
  * {@link examples.HTTPExamples#example44}
  * ----
  *
+ * ==== Writing HTTP/2 frames
+ *
+ * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+ * of frames to be sent and received.
+ *
+ * To send such frames, you can use the {@link io.vertx.core.http.HttpClientRequest#write} on the request. Here’s an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example9}
+ * ----
+ *
+ * ==== Stream reset
+ *
+ * HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads a resource already
+ * present on the server, the server needs to accept the entire response.
+ *
+ * HTTP/2 supports stream reset at any time during the request/response:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example10}
+ * ----
+ *
+ * By default the NO_ERROR (0) error code is sent, another code can sent instead:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example11}
+ * ----
+ *
+ * The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+ *
+ * The request handler are notified of stream reset events with the {@link io.vertx.core.http.HttpClientRequest#exceptionHandler request handler} and
+ * {@link io.vertx.core.http.HttpClientResponse#exceptionHandler response handler}:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example12}
+ * ----
+ *
  * === Handling http responses
  *
  * You receive an instance of {@link io.vertx.core.http.HttpClientResponse} into the handler that you specify in of
@@ -872,6 +1065,40 @@
  * {@link examples.HTTPExamples#example50_2}
  * ----
  *
+ * ==== Client push
+ *
+ * Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+ *
+ * A push handler can be set on a request to receive the request/response pushed by the server:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example13}
+ * ----
+ *
+ * If the client does not want to receive a pushed request, it can reset the stream:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example14}
+ * ----
+ *
+ * When no handler is set, any stream pushed will be automatically cancelled by the client with
+ * a stream reset (`8` error code).
+ *
+ * ==== Receiving unknown HTTP/2 frames
+ *
+ * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind of
+ * frames to be sent and received.
+ *
+ * To receive unknown frames, you can use the unknownFrameHandler on the request, this will get called every time an unknown
+ * frame arrives. Here’s an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example15}
+ * ----
+ *
  * === Enabling compression on the client
  *
  * The http client comes with support for HTTP Compression out of the box.
@@ -900,12 +1127,12 @@
  *
  * By default compression is disabled.
  *
- * === Pooling and keep alive
+ * === HTTP/1.x pooling and keep alive
  *
  * Http keep alive allows http connections to be used for more than one request. This can be a more efficient use of
  * connections when you're making multiple requests to the same server.
  *
- * The http client supports pooling of connections, allowing you to reuse connections between requests.
+ * For HTTP/1.x versions, the http client supports pooling of connections, allowing you to reuse connections between requests.
  *
  * For pooling to work, keep alive must be true using {@link io.vertx.core.http.HttpClientOptions#setKeepAlive(boolean)}
  * on the options used when configuring the client. The default value is true.
@@ -924,7 +1151,7 @@
  * Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
  * connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
  *
- * === Pipe-lining
+ * === HTTP/1.1 pipe-lining
  *
  * The client also supports pipe-lining of requests on a connection.
  *
@@ -935,6 +1162,161 @@
  * By default pipe-lining is disabled.
  *
  * When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
+ *
+ * === HTTP/2 multiplexing
+ *
+ * For HTTP/2, the http client uses a single connection for each server, all the requests to the same server are
+ * multiplexed on the same connection.
+ *
+ * HTTP/2 connections will not be closed by the client automatically. To close them you can call {@link io.vertx.core.http.HttpConnection#close()}
+ * or close the client instance.
+ *
+ * Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
+ * connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
+ *
+ * === HTTP/2 connections
+ *
+ * HTTP/2 does not change HTTP programming and the design of HTTP server and clients remains the same. However HTTP/2
+ * defines a mapping of HTTP's semantics to a connection.
+ *
+ * The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP/2 connection events, lifecycle
+ * and settings.
+ *
+ * ==== Server connections
+ *
+ * The {@link io.vertx.core.http.HttpServerRequest#connection()} method returns the request connection on the server:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example16}
+ * ----
+ *
+ * A connection handler can be set on the server to be notified of any incoming connection:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example17}
+ * ----
+ *
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
+ * ==== Client connections
+ *
+ * The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the request connection on the client:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example18}
+ * ----
+ *
+ * A connection handler can be set on the request to be notified when the connection happens:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example19}
+ * ----
+ *
+ * NOTE: this only applies to the HTTP/2 protocol
+ *
+ * ==== Connection settings
+ *
+ * The configuration of an HTTP/2 is configured by the {@link io.vertx.core.http.Http2Settings} data object.
+ *
+ * Each endpoint must respect the settings sent by the other side of the connection.
+ *
+ * When a connection is established, the client and the server exchange initial settings. Initial settings
+ * are configured by {@link io.vertx.core.http.HttpClientOptions#setInitialSettings} on the client and
+ * {@link io.vertx.core.http.HttpServerOptions#setInitialSettings} on the server.
+ *
+ * The settings can be changed at any time after the connection is established:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example20}
+ * ----
+ *
+ * As the remote side should acknowledge on reception of the settings update, it's possible to give a callback
+ * to be notified of the acknowledgment:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example21}
+ * ----
+ *
+ * Conversely the {@link io.vertx.core.http.HttpConnection#remoteSettingsHandler(io.vertx.core.Handler)} is notified
+ * when the new remote settings are received:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example22}
+ * ----
+ *
+ * ==== Connection ping
+ *
+ * HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
+ * validity: {@link io.vertx.core.http.HttpConnection#ping} sends a {@literal PING} frame to the remote
+ * endpoint:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example23}
+ * ----
+ *
+ * Vert.x will send automatically an acknowledgement when a {@literal PING} frame is received,
+ * an handler can be set to be notified for each ping received:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example24}
+ * ----
+ *
+ * The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
+ * implementing  protocols on top of HTTP/2.
+ *
+ * ==== Connection shutdown
+ *
+ * Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
+ * remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
+ * and a server will stop pushing responses. After the {@literal GOAWAY} frame is sent, the connection
+ * waits some time (30 seconds by default) until all current streams closed and close the connection:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example25}
+ * ----
+ *
+ * Connection {@link io.vertx.core.http.HttpConnection#close} close is a shutdown with no delay, the {@literal GOAWAY}
+ * frame will still be sent before the connection is closed.
+ *
+ * The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when connection is closed,
+ * {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed but the
+ * connection is not yet closed.
+ *
+ * Finally it's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
+ * it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
+ * close:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example26}
+ * ----
+ *
+ * Conversely, it is also possible to be notified when {@literal GOAWAY} are received:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example27}
+ * ----
+ *
+ * The {@link io.vertx.core.http.HttpConnection#shutdownHandler} will be called when all current streams
+ * have been closed and the connection can be closed:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTP2Examples#example28}
+ * ----
+ *
+ * This applies also when a {@literal GOAWAY} is received.
  *
  * === HttpClient usage
  *

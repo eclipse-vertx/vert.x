@@ -20,13 +20,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -452,13 +454,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
       }
       if (!contentTypeSet()) {
-        int li = filename.lastIndexOf('.');
-        if (li != -1 && li != filename.length() - 1) {
-          String ext = filename.substring(li + 1, filename.length());
-          String contentType = MimeMapping.getMimeTypeForExtension(ext);
-          if (contentType != null) {
-            putHeader(HttpHeaders.CONTENT_TYPE, contentType);
-          }
+        String contentType = MimeMapping.getMimeTypeForFilename(filename);
+        if (contentType != null) {
+          putHeader(HttpHeaders.CONTENT_TYPE, contentType);
         }
       }
       prepareHeaders();
@@ -597,5 +595,40 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
       return this;
     }
+  }
+
+  @Override
+  public int streamId() {
+    return -1;
+  }
+
+  @Override
+  public void reset(long code) {
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, null, path, headers, handler);
+  }
+
+  @Override
+  public HttpServerResponse push(io.vertx.core.http.HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, path, handler);
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, path, null, null, handler);
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    handler.handle(Future.failedFuture("Push promise is only supported with HTTP2"));
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse writeFrame(int type, int flags, Buffer payload) {
+    return this;
   }
 }

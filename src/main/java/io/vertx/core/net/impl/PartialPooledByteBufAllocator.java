@@ -25,6 +25,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelHandlerInvoker;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
@@ -146,6 +147,11 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
     return true;
   }
 
+  @Override
+  public int calculateNewCapacity(int minNewCapacity, int maxCapacity) {
+    return POOLED.calculateNewCapacity(minNewCapacity, maxCapacity);
+  }
+
   /**
    * Create a new {@link io.netty.channel.ChannelHandlerContext} which wraps the given one anf force the usage of direct buffers.
    */
@@ -158,6 +164,17 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
     PooledChannelHandlerContext(ChannelHandlerContext ctx) {
       this.ctx = ctx;
     }
+
+    @Override
+    public ChannelHandlerInvoker invoker() {
+      return ctx.invoker();
+    }
+
+    @Override
+    public <T> boolean hasAttr(AttributeKey<T> attributeKey) {
+      return ctx.hasAttr(attributeKey);
+    }
+
     @Override
     public Channel channel() {
       return ctx.channel();
@@ -469,6 +486,12 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
     @Override
     public boolean isDirectBufferPooled() {
       return PartialPooledByteBufAllocator.INSTANCE.isDirectBufferPooled();
+    }
+
+
+    @Override
+    public int calculateNewCapacity(int minNewCapacity, int maxCapacity) {
+      return PartialPooledByteBufAllocator.INSTANCE.calculateNewCapacity(minNewCapacity, maxCapacity);
     }
   }
 }

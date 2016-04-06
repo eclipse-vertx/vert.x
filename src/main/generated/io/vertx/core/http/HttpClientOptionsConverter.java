@@ -27,11 +27,25 @@ import io.vertx.core.json.JsonArray;
 public class HttpClientOptionsConverter {
 
   public static void fromJson(JsonObject json, HttpClientOptions obj) {
+    if (json.getValue("alpnVersions") instanceof JsonArray) {
+      java.util.ArrayList<io.vertx.core.http.HttpVersion> list = new java.util.ArrayList<>();
+      json.getJsonArray("alpnVersions").forEach( item -> {
+        if (item instanceof String)
+          list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+      });
+      obj.setAlpnVersions(list);
+    }
     if (json.getValue("defaultHost") instanceof String) {
       obj.setDefaultHost((String)json.getValue("defaultHost"));
     }
     if (json.getValue("defaultPort") instanceof Number) {
       obj.setDefaultPort(((Number)json.getValue("defaultPort")).intValue());
+    }
+    if (json.getValue("h2cUpgrade") instanceof Boolean) {
+      obj.setH2cUpgrade((Boolean)json.getValue("h2cUpgrade"));
+    }
+    if (json.getValue("initialSettings") instanceof JsonObject) {
+      obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)json.getValue("initialSettings")));
     }
     if (json.getValue("keepAlive") instanceof Boolean) {
       obj.setKeepAlive((Boolean)json.getValue("keepAlive"));
@@ -63,10 +77,21 @@ public class HttpClientOptionsConverter {
   }
 
   public static void toJson(HttpClientOptions obj, JsonObject json) {
+    if (obj.getAlpnVersions() != null) {
+      json.put("alpnVersions", new JsonArray(
+          obj.getAlpnVersions().
+              stream().
+              map(item -> item.name()).
+              collect(java.util.stream.Collectors.toList())));
+    }
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }
     json.put("defaultPort", obj.getDefaultPort());
+    json.put("h2cUpgrade", obj.isH2cUpgrade());
+    if (obj.getInitialSettings() != null) {
+      json.put("initialSettings", obj.getInitialSettings().toJson());
+    }
     json.put("keepAlive", obj.isKeepAlive());
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxPoolSize", obj.getMaxPoolSize());

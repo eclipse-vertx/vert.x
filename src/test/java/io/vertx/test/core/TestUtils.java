@@ -19,9 +19,13 @@
 
 package io.vertx.test.core;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.Http2Settings;
 
+import java.util.EnumSet;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.Assert.fail;
 
@@ -198,6 +202,38 @@ public class TestUtils {
       builder.append(c);
     }
     return builder.toString();
+  }
+
+  /**
+   * Create random {@link Http2Settings} with valid values.
+   * @return the random settings
+   */
+  public static Http2Settings randomHttp2Settings() {
+    int headerTableSize = 10 + randomPositiveInt() % (Http2CodecUtil.MAX_HEADER_TABLE_SIZE - 10);
+    boolean enablePush = randomBoolean();
+    long maxConcurrentStreams = randomPositiveLong() % (Http2CodecUtil.MAX_CONCURRENT_STREAMS - 10);
+    int initialWindowSize = 10 + randomPositiveInt() % (Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE - 10);
+    int maxFrameSize = Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND + randomPositiveInt() % (Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND - Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND);
+    int maxHeaderListSize = 10 + randomPositiveInt() % (int) (Http2CodecUtil.MAX_HEADER_LIST_SIZE - 10);
+    Http2Settings settings = new Http2Settings();
+    settings.setHeaderTableSize(headerTableSize);
+    settings.setPushEnabled(enablePush);
+    settings.setMaxConcurrentStreams(maxConcurrentStreams);
+    settings.setInitialWindowSize(initialWindowSize);
+    settings.setMaxFrameSize(maxFrameSize);
+    settings.setMaxHeaderListSize(maxHeaderListSize);
+    settings.set('\u0007', (randomPositiveLong() & 0xFFFFFFFFL));
+    return settings;
+  }
+
+  public static <E extends Enum<E>> Set<E> randomEnumSet(Class<E> enumType) {
+    EnumSet<E> set = EnumSet.noneOf(enumType);
+    for (E e : EnumSet.allOf(enumType)) {
+      if (randomPositiveInt() % 2 == 1) {
+        set.add(e);
+      }
+    }
+    return set;
   }
 
   /**

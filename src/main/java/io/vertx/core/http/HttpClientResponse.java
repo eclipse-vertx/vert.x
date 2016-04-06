@@ -59,6 +59,11 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   HttpClientResponse endHandler(Handler<Void> endHandler);
 
   /**
+   * @return the version of the response
+   */
+  HttpVersion version();
+
+  /**
    * @return the status code of the response
    */
   int statusCode();
@@ -121,6 +126,15 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    */
   @Fluent
   HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler);
+
+  /**
+   * Set an unknown frame handler. The handler will get notified when the http stream receives an unknown HTTP/2
+   * frame. HTTP/2 permits extension of the protocol.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientResponse unknownFrameHandler(Handler<HttpFrame> handler);
 
   /**
    * Get a net socket for the underlying connection of this request.

@@ -165,6 +165,15 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
+    public void requestReset(Void requestMetric) {
+    }
+
+    @Override
+    public Void responsePushed(Void socketMetric, HttpServerResponse response) {
+      return null;
+    }
+
+    @Override
     public void responseEnd(Void requestMetric, HttpServerResponse response) {
     }
 
@@ -218,6 +227,15 @@ public class DummyVertxMetrics implements VertxMetrics {
     @Override
     public Void requestBegin(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
       return null;
+    }
+
+    @Override
+    public Void responsePushed(Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
+      return null;
+    }
+
+    @Override
+    public void requestReset(Void requestMetric) {
     }
 
     @Override

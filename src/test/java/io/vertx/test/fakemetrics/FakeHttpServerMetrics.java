@@ -21,6 +21,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketBase;
+import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -33,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
 public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, SocketMetric> {
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
-  private final ConcurrentMap<HttpServerRequest, HttpServerMetric> requests = new ConcurrentHashMap<>();
+  private final ConcurrentHashSet<HttpServerMetric> requests = new ConcurrentHashSet<>();
   public final HttpServer server;
 
   public FakeHttpServerMetrics(HttpServer server) {
@@ -45,25 +46,43 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
     return webSockets.get(ws);
   }
 
-  public HttpServerMetric getMetric(HttpServerRequest requests) {
-    return this.requests.get(requests);
+  public HttpServerMetric getMetric(HttpServerRequest request) {
+    return requests.stream().filter(m -> m.request == request).findFirst().orElse(null);
+  }
+
+  public HttpServerMetric getMetric(HttpServerResponse response) {
+    return requests.stream().filter(m -> m.response.get() == response).findFirst().orElse(null);
   }
 
   @Override
   public HttpServerMetric requestBegin(SocketMetric socketMetric, HttpServerRequest request) {
     HttpServerMetric metric = new HttpServerMetric(request, socketMetric);
-    requests.put(request, metric);
+    requests.add(metric);
     return metric;
   }
 
   @Override
+  public HttpServerMetric responsePushed(SocketMetric socketMetric, HttpServerResponse response) {
+    HttpServerMetric requestMetric = new HttpServerMetric(null, socketMetric);
+    requestMetric.response.set(response);
+    requests.add(requestMetric);
+    return requestMetric;
+  }
+
+  @Override
+  public void requestReset(HttpServerMetric requestMetric) {
+    requestMetric.failed.set(true);
+    requests.remove(requestMetric);
+  }
+
+  @Override
   public void responseEnd(HttpServerMetric requestMetric, HttpServerResponse response) {
-    requests.remove(requestMetric.request);
+    requests.remove(requestMetric);
   }
 
   @Override
   public WebSocketMetric upgrade(HttpServerMetric requestMetric, ServerWebSocket serverWebSocket) {
-    requests.remove(requestMetric.request);
+    requests.remove(requestMetric);
     WebSocketMetric metric = new WebSocketMetric(requestMetric.socket, serverWebSocket);
     webSockets.put(serverWebSocket, metric);
     return metric;

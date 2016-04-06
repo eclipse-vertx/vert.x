@@ -21,6 +21,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
  *
@@ -64,6 +69,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
 
+  /**
+   * Default Application-Layer Protocol Negotiation versions = [HTTP/2,HTTP/1.1]
+   */
+  public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.unmodifiableList(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
+
   private boolean compressionSupported;
   private int maxWebsocketFrameSize;
   private String websocketSubProtocols;
@@ -71,6 +81,8 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
+  private Http2Settings initialSettings;
+  private List<HttpVersion> alpnVersions;
 
   /**
    * Default constructor
@@ -95,6 +107,8 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxChunkSize = other.getMaxChunkSize();
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
+    this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
   }
 
   /**
@@ -116,6 +130,8 @@ public class HttpServerOptions extends NetServerOptions {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
+    initialSettings = new Http2Settings();
+    alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
   }
 
   @Override
@@ -175,6 +191,12 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setSsl(boolean ssl) {
     super.setSsl(ssl);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions setUseAlpn(boolean useAlpn) {
+    super.setUseAlpn(useAlpn);
     return this;
   }
 
@@ -256,6 +278,11 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  @Override
+  public HttpServerOptions setSslEngine(SSLEngine sslEngine) {
+    super.setSslEngine(sslEngine);
+    return this;
+  }
 
   /**
    * @return true if the server supports compression
@@ -348,18 +375,16 @@ public class HttpServerOptions extends NetServerOptions {
 
   
   /**
-   * Returns the maximum length of the initial line (e.g. {@code "GET / HTTP/1.0"})
-   * 
-   * @return
+   * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
   public int getMaxInitialLineLength() {
     return maxInitialLineLength;
   }
 	
   /**
-   * Set the maximum length of the initial line (e.g. {@code "GET / HTTP/1.0"})
+   * Set the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    * 
-   * @param maxInitialLineLength
+   * @param maxInitialLineLength the new maximum initial length
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxInitialLineLength(int maxInitialLineLength) {
@@ -368,22 +393,56 @@ public class HttpServerOptions extends NetServerOptions {
   }
 	
   /**
-   * Returns the maximum length of all headers
-   * 
-   * @return
+   * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
     return maxHeaderSize;
   }
 	
   /**
-   * Set the maximum length of all headers
-   * 
-   * @param maxHeaderSize
+   * Set the maximum length of all headers for HTTP/1.x .
+   *
+   * @param maxHeaderSize the new maximum length
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxHeaderSize(int maxHeaderSize) {
     this.maxHeaderSize = maxHeaderSize;
+    return this;
+  }
+
+  /**
+   * @return the initial HTTP/2 connection settings
+   */
+  public Http2Settings getInitialSettings() {
+    return initialSettings;
+  }
+
+  /**
+   * Set the HTTP/2 connection settings immediatly sent by the server when a client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setInitialSettings(Http2Settings settings) {
+    this.initialSettings = settings;
+    return this;
+  }
+
+  /**
+   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiatiation
+   */
+  public List<HttpVersion> getAlpnVersions() {
+    return alpnVersions;
+  }
+
+  /**
+   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+   *
+   * @param alpnVersions the versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
+    this.alpnVersions = alpnVersions;
     return this;
   }
 
@@ -401,8 +460,9 @@ public class HttpServerOptions extends NetServerOptions {
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxInitialLineLength != that.maxInitialLineLength) return false;
     if (maxHeaderSize != that.maxHeaderSize) return false;
+    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
+    if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
-
   }
 
   @Override
@@ -411,10 +471,12 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (compressionSupported ? 1 : 0);
     result = 31 * result + maxWebsocketFrameSize;
     result = 31 * result + (websocketSubProtocols != null ? websocketSubProtocols.hashCode() : 0);
+    result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (handle100ContinueAutomatically ? 1 : 0);
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxInitialLineLength;
     result = 31 * result + maxHeaderSize;
+    result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     return result;
   }
 }

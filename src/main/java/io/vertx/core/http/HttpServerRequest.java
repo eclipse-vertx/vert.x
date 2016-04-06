@@ -78,6 +78,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   boolean isSSL();
 
   /**
+   * @return the scheme of the request
+   */
+  @Nullable
+  String scheme();
+
+  /**
    * @return the URI of the request. This is usually a relative URI
    */
   String uri();
@@ -85,6 +91,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
    */
+  @Nullable
   String path();
 
   /**
@@ -92,6 +99,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @Nullable
   String query();
+
+  /**
+   * @return the request host. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
+   */
+  @Nullable
+  String host();
 
   /**
    * @return the response. Each instance of this class has an {@link HttpServerResponse} instance attached to it. This is used
@@ -174,7 +187,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   @Fluent
-  HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler);
+  default HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
+    Buffer body = Buffer.buffer();
+    handler(body::appendBuffer);
+    endHandler(v -> bodyHandler.handle(body));
+    return this;
+  }
 
   /**
    * Get a net socket for the underlying connection of this request.
@@ -252,5 +270,20 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return true if ended
    */
   boolean isEnded();
+
+  /**
+   * Set an unknown frame handler. The handler will get notified when the http stream receives an unknown HTTP/2
+   * frame. HTTP/2 permits extension of the protocol.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerRequest unknownFrameHandler(Handler<HttpFrame> handler);
+
+  /**
+   * @return the {@link HttpConnection} associated with this request when it is an HTTP/2 connection, null otherwise
+   */
+  @CacheReturn
+  HttpConnection connection();
 
 }

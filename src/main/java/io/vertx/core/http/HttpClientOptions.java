@@ -24,6 +24,12 @@ import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.SSLEngine;
+import io.vertx.core.net.TCPSSLOptions;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Options describing how an {@link HttpClient} will make connections.
@@ -88,6 +94,16 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
 
+  /**
+   * Default Application-Layer Protocol Negotiation versions = [] (automatic according to protocol version)
+   */
+  public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.emptyList();
+
+  /**
+   * Default using HTTP/1.1 upgrade for establishing an <i>h2C</i> connection = true
+   */
+  public static final boolean DEFAULT_H2C_UPGRADE = true;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -99,6 +115,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxWaitQueueSize;
+  private Http2Settings initialSettings;
+  private List<HttpVersion> alpnVersions;
+  private boolean h2cUpgrade;
 
   /**
    * Default constructor
@@ -126,6 +145,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
+    this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
+    this.h2cUpgrade = other.h2cUpgrade;
   }
 
   /**
@@ -151,6 +173,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
+    initialSettings = new Http2Settings();
+    alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
+    h2cUpgrade = DEFAULT_H2C_UPGRADE;
   }
 
   @Override
@@ -494,6 +519,78 @@ public class HttpClientOptions extends ClientOptionsBase {
     return maxWaitQueueSize;
   }
 
+  /**
+   * @return the initial HTTP/2 connection settings
+   */
+  public Http2Settings getInitialSettings() {
+    return initialSettings;
+  }
+
+  /**
+   * Set the HTTP/2 connection settings immediatly sent by to the server when the client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setInitialSettings(Http2Settings settings) {
+    this.initialSettings = settings;
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setUseAlpn(boolean useAlpn) {
+    return (HttpClientOptions) super.setUseAlpn(useAlpn);
+  }
+
+  @Override
+  public HttpClientOptions setSslEngine(SSLEngine sslEngine) {
+    return (HttpClientOptions) super.setSslEngine(sslEngine);
+  }
+
+  /**
+   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiatiation. When
+   * the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}
+   */
+  public List<HttpVersion> getAlpnVersions() {
+    return alpnVersions;
+  }
+
+  /**
+   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+   * When the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}:
+   *
+   * <ul>
+   *   <li>{@link HttpVersion#HTTP_2}: [ "h2", "http/1.1" ]</li>
+   *   <li>otherwise: [{@link #getProtocolVersion()}]</li>
+   * </ul>
+   *
+   * @param alpnVersions the versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
+    this.alpnVersions = alpnVersions;
+    return this;
+  }
+
+  /**
+   * @return true when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, false when directly
+   */
+  public boolean isH2cUpgrade() {
+    return h2cUpgrade;
+  }
+
+  /**
+   * Set to {@code true} when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, and {@code false}
+   * when an <i>h2c</i> connection is established directly (with prior knowledge).
+   *
+   * @param value the upgrade value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setH2cUpgrade(boolean value) {
+    this.h2cUpgrade = value;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -513,6 +610,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (protocolVersion != that.protocolVersion) return false;
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxWaitQueueSize != that.maxWaitQueueSize) return false;
+    if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
+    if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
+    if (h2cUpgrade != that.h2cUpgrade) return false;
 
     return true;
   }
@@ -531,6 +631,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + protocolVersion.hashCode();
     result = 31 * result + maxChunkSize;
     result = 31 * result + maxWaitQueueSize;
+    result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
+    result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
+    result = 31 * result + (h2cUpgrade ? 1 : 0);
     return result;
   }
 }

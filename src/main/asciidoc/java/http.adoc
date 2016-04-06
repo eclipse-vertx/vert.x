@@ -2,6 +2,11 @@
 
 Vert.x allows you to easily write non blocking HTTP clients and servers.
 
+Vert.x supports the HTTP/1.0, HTTP/1.1 and HTTP/2 protocols.
+
+The base API for HTTP is the same for HTTP/1.x and HTTP/2, specific API features are available for dealing with the
+HTTP/2 protocol.
+
 === Creating an HTTP Server
 
 The simplest way to create an HTTP server, using all default options is as follows:
@@ -22,6 +27,38 @@ HttpServerOptions options = new HttpServerOptions().setMaxWebsocketFrameSize(100
 
 HttpServer server = vertx.createHttpServer(options);
 ----
+
+=== Configuring an HTTP/2 server
+
+Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+
+- `h2` identifies the HTTP/2 protocol when used over TLS negotiated by https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation[Application-Layer Protocol Negotiation] (ALPN)
+- `h2c` identifies the HTTP/2 protocol when using in clear text over TCP, such connections are established either with
+an HTTP/1.1 upgraded request or directly
+
+To handle `h2` requests, TLS must be enabled along with `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setUseAlpn-boolean-[setUseAlpn]`:
+
+[source,java]
+----
+HttpServerOptions options = new HttpServerOptions()
+    .setUseAlpn(true)
+    .setSsl(true)
+    .setKeyStoreOptions(new JksOptions().setPath("/path/to/my/keystore"));
+
+HttpServer server = vertx.createHttpServer(options);
+----
+
+ALPN is a TLS extension that negotiates the protocol before the client and the server start to exchange data.
+
+Clients that don't support ALPN will still be able to do a _classic_ SSL handshake.
+
+ALPN will usually agree on the `h2` protocol, although `http/1.1` can be used if the server or the client decides
+so.
+
+To handle `h2c` requests, TLS must be disabled, the server will upgrade to HTTP/2 any request HTTP/1.1 that wants to
+upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with the `PRI * HTTP/2.0\r\nSM\r\n` preface.
+
+WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
 
 === Start the Server Listening
 
@@ -162,6 +199,12 @@ System.out.println("User agent is " + headers.get("user-agent"));
 // You can also do this and get the same result:
 System.out.println("User agent is " + headers.get("User-Agent"));
 ----
+
+==== Request host
+
+Use `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#host--[host]` to return the host of the HTTP request.
+
+For HTTP/1.x requests the `host` header is returned, for HTTP/1 requests the `:authority` pseudo header is returned.
 
 ==== Request parameters
 
@@ -331,6 +374,26 @@ request.uploadHandler(upload -> {
 WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
 to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
 
+==== Receiving unknown HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+of frames to be sent and received.
+
+To receive unknown frames, you can use the `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#unknownFrameHandler-io.vertx.core.Handler-[unknownFrameHandler]` on the request,
+this will get called every time an unknown frame arrives. Here's an example:
+
+[source,java]
+----
+request.unknownFrameHandler(frame -> {
+
+  System.out.println("Received a frame type=" + frame.type() +
+      " payload" + frame.payload().toString());
+});
+----
+
+HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when an
+unkown frame is received whether the request is paused or is not
+
 === Sending back responses
 
 The server response object is an instance of `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html[HttpServerResponse]` and is obtained from the
@@ -347,6 +410,9 @@ Use `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#setStatusCode
 You can also specify a custom status message with `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#setStatusMessage-java.lang.String-[setStatusMessage]`.
 
 If you don't specify a status message, the default one corresponding to the status code will be used.
+
+NOTE: for HTTP/2 the status won't be present in the response since the protocol won't transmit the message
+to the client
 
 ==== Writing HTTP responses
 
@@ -421,6 +487,8 @@ Non keep-alive connections will be automatically closed by Vert.x when the respo
 Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
 closed after an idle time, then you configure `link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setIdleTimeout-int-[setIdleTimeout]`.
 
+HTTP/2 connections send a `GOAWAY` frame before closing the response.
+
 ==== Setting response headers
 
 HTTP response headers can be added to the response by adding them directly to the
@@ -464,6 +532,8 @@ methods will result in a new HTTP chunk being written out.
 
 When in chunked mode you can also write HTTP response trailers to the response. These are actually written in
 the final chunk of the response.
+
+NOTE: chunked response has no effect for an HTTP/2 stream
 
 To add trailers to the response, add them directly to the `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#trailers--[trailers]`.
 
@@ -590,6 +660,100 @@ vertx.createHttpServer().requestHandler(request -> {
 }).listen(8080);
 ----
 
+==== Writing HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+of frames to be sent and received.
+
+To send such frames, you can use the `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#writeFrame-int-int-io.vertx.core.buffer.Buffer-[writeFrame]` on the response.
+Here’s an example:
+
+[source,java]
+----
+int frameType = 40;
+int frameStatus = 10;
+Buffer payload = Buffer.buffer("some data");
+
+// Sending a frame to the client
+response.writeFrame(frameType, frameStatus, payload);
+----
+
+These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
+before other `DATA` frames.
+
+==== Stream reset
+
+HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads
+a resource already present on the server, the server needs to accept the entire response.
+
+HTTP/2 supports stream reset at any time during the request/response:
+
+[source,java]
+----
+request.response().reset();
+----
+
+By default the `NO_ERROR` (0) error code is sent, another code can sent instead:
+
+[source,java]
+----
+request.response().reset(8);
+----
+
+The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+
+The request handler are notified of stream reset events with the `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#exceptionHandler-io.vertx.core.Handler-[request handler]` and
+`link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#exceptionHandler-io.vertx.core.Handler-[response handler]`:
+
+[source,java]
+----
+request.response().exceptionHandler(err -> {
+  if (err instanceof StreamResetException) {
+    StreamResetException reset = (StreamResetException) err;
+    System.out.println("Stream reset " + reset.getCode());
+  }
+});
+----
+
+==== Server push
+
+Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+
+When a server process a request, it can push a request/response to the client:
+
+[source,java]
+----
+HttpServerResponse response = request.response();
+
+// Push main.js to the client
+response.push(HttpMethod.GET, "/main.js", ar -> {
+
+  if (ar.succeeded()) {
+
+    // The server is ready to push the response
+    HttpServerResponse pushedResponse = ar.result();
+
+    // Send main.js response
+    pushedResponse.
+        putHeader("content-type", "application/json").
+        end("alert(\"Push response hello\")");
+  } else {
+    System.out.println("Could not push client resource " + ar.cause());
+  }
+});
+
+// Send the requested resource
+response.sendFile("<html><head><script src=\"/main.js\"></script></head><body></body></html>");
+----
+
+When the server is ready to push the response, the push response handler is called and the handler can send the response.
+
+The push response handler may receive a failure, for instance the client may cancel the push because it already has `main.js` in its
+cache and does not want it anymore.
+
+The `link:../../apidocs/io/vertx/core/http/HttpServerResponse.html#push-io.vertx.core.http.HttpMethod-java.lang.String-java.lang.String-io.vertx.core.Handler-[push]` method must be called before the initiating response ends, however
+the pushed response can be written after.
+
 === HTTP Compression
 
 Vert.x comes with support for HTTP Compression out of the box.
@@ -628,6 +792,41 @@ If you want to configure options for the client, you create it as follows:
 HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
 HttpClient client = vertx.createHttpClient(options);
 ----
+
+Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+
+By default the http client performs HTTP/1.1 requests, to perform HTTP/2 requests the `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setProtocolVersion-io.vertx.core.http.HttpVersion-[setProtocolVersion]`
+must be set to `link:../../apidocs/io/vertx/core/http/HttpVersion.html#HTTP_2[HTTP_2]`.
+
+For `h2` requests, TLS must be enabled with _Application-Layer Protocol Negotiation_:
+
+[source,java]
+----
+HttpClientOptions options = new HttpClientOptions().
+    setProtocolVersion(HttpVersion.HTTP_2).
+    setSsl(true).
+    setUseAlpn(true).
+    setTrustAll(true);
+
+HttpClient client = vertx.createHttpClient(options);
+----
+
+For `h2c` requests, TLS must be disabled, the client will do an HTTP/1.1 requests and try an upgrade to HTTP/2:
+
+[source,java]
+----
+HttpClientOptions options = new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2);
+
+HttpClient client = vertx.createHttpClient(options);
+----
+
+`h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
+`link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setH2cUpgrade-boolean-[setH2cUpgrade]` options is set to false: after the
+connection is established, the client will send the HTTP/2 connection preface and expect to receive
+the same preface from the server.
+
+The http server may not support HTTP/2, the actual version can be checked
+with `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#version--[version]` when the response arrives.
 
 === Making requests
 
@@ -942,6 +1141,57 @@ file.endHandler(v -> request.end());
 pump.start();
 ----
 
+==== Writing HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+of frames to be sent and received.
+
+To send such frames, you can use the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#write-io.vertx.core.buffer.Buffer-[write]` on the request. Here’s an example:
+
+[source,java]
+----
+int frameType = 40;
+int frameStatus = 10;
+Buffer payload = Buffer.buffer("some data");
+
+// Sending a frame to the server
+request.writeFrame(frameType, frameStatus, payload);
+----
+
+==== Stream reset
+
+HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads a resource already
+present on the server, the server needs to accept the entire response.
+
+HTTP/2 supports stream reset at any time during the request/response:
+
+[source,java]
+----
+request.reset();
+----
+
+By default the NO_ERROR (0) error code is sent, another code can sent instead:
+
+[source,java]
+----
+request.reset(8);
+----
+
+The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+
+The request handler are notified of stream reset events with the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#exceptionHandler-io.vertx.core.Handler-[request handler]` and
+`link:../../apidocs/io/vertx/core/http/HttpClientResponse.html#exceptionHandler-io.vertx.core.Handler-[response handler]`:
+
+[source,java]
+----
+request.exceptionHandler(err -> {
+  if (err instanceof StreamResetException) {
+    StreamResetException reset = (StreamResetException) err;
+    System.out.println("Stream reset " + reset.getCode());
+  }
+});
+----
+
 === Handling http responses
 
 You receive an instance of `link:../../apidocs/io/vertx/core/http/HttpClientResponse.html[HttpClientResponse]` into the handler that you specify in of
@@ -1150,6 +1400,67 @@ httpServer.requestHandler(request -> {
 });
 ----
 
+==== Client push
+
+Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+
+A push handler can be set on a request to receive the request/response pushed by the server:
+
+[source,java]
+----
+HttpClientRequest request = client.get("/index.html", response -> {
+  // Process index.html response
+});
+
+// Set a push handler to be aware of any resource pushed by the server
+request.pushHandler(pushedRequest -> {
+
+  // A resource is pushed for this request
+  System.out.println("Server pushed " + pushedRequest.path());
+
+  // Set an handler for the response
+  pushedRequest.handler(pushedResponse -> {
+    System.out.println("The response for the pushed request");
+  });
+});
+
+// End the request
+request.end();
+----
+
+If the client does not want to receive a pushed request, it can reset the stream:
+
+[source,java]
+----
+request.pushHandler(pushedRequest -> {
+  if (pushedRequest.path().equals("/main.js")) {
+    pushedRequest.reset();
+  } else {
+    // Handle it
+  }
+});
+----
+
+When no handler is set, any stream pushed will be automatically cancelled by the client with
+a stream reset (`8` error code).
+
+==== Receiving unknown HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind of
+frames to be sent and received.
+
+To receive unknown frames, you can use the unknownFrameHandler on the request, this will get called every time an unknown
+frame arrives. Here’s an example:
+
+[source,java]
+----
+response.unknownFrameHandler(frame -> {
+
+  System.out.println("Received a frame type=" + frame.type() +
+      " payload" + frame.payload().toString());
+});
+----
+
 === Enabling compression on the client
 
 The http client comes with support for HTTP Compression out of the box.
@@ -1178,12 +1489,12 @@ used when creating the client.
 
 By default compression is disabled.
 
-=== Pooling and keep alive
+=== HTTP/1.x pooling and keep alive
 
 Http keep alive allows http connections to be used for more than one request. This can be a more efficient use of
 connections when you're making multiple requests to the same server.
 
-The http client supports pooling of connections, allowing you to reuse connections between requests.
+For HTTP/1.x versions, the http client supports pooling of connections, allowing you to reuse connections between requests.
 
 For pooling to work, keep alive must be true using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setKeepAlive-boolean-[setKeepAlive]`
 on the options used when configuring the client. The default value is true.
@@ -1202,7 +1513,7 @@ Keep alive connections will not be closed by the client automatically. To close 
 Alternatively you can set idle timeout using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setIdleTimeout-int-[setIdleTimeout]` - any
 connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
 
-=== Pipe-lining
+=== HTTP/1.1 pipe-lining
 
 The client also supports pipe-lining of requests on a connection.
 
@@ -1213,6 +1524,188 @@ To enable pipe-lining, it must be enabled using `link:../../apidocs/io/vertx/cor
 By default pipe-lining is disabled.
 
 When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
+
+=== HTTP/2 multiplexing
+
+For HTTP/2, the http client uses a single connection for each server, all the requests to the same server are
+multiplexed on the same connection.
+
+HTTP/2 connections will not be closed by the client automatically. To close them you can call `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]`
+or close the client instance.
+
+Alternatively you can set idle timeout using `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setIdleTimeout-int-[setIdleTimeout]` - any
+connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
+
+=== HTTP/2 connections
+
+HTTP/2 does not change HTTP programming and the design of HTTP server and clients remains the same. However HTTP/2
+defines a mapping of HTTP's semantics to a connection.
+
+The `link:../../apidocs/io/vertx/core/http/HttpConnection.html[HttpConnection]` offers the API for dealing with HTTP/2 connection events, lifecycle
+and settings.
+
+==== Server connections
+
+The `link:../../apidocs/io/vertx/core/http/HttpServerRequest.html#connection--[connection]` method returns the request connection on the server:
+
+[source,java]
+----
+HttpConnection connection = request.connection();
+----
+
+A connection handler can be set on the server to be notified of any incoming connection:
+
+[source,java]
+----
+HttpServer server = vertx.createHttpServer(http2Options);
+
+server.connectionHandler(connection -> {
+  System.out.println("A client connected");
+});
+----
+
+NOTE: this only applies to the HTTP/2 protocol
+
+==== Client connections
+
+The `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#connection--[connection]` method returns the request connection on the client:
+
+[source,java]
+----
+HttpConnection connection = request.connection();
+----
+
+A connection handler can be set on the request to be notified when the connection happens:
+
+[source,java]
+----
+request.connectionHandler(connection -> {
+  System.out.println("Connected to the server");
+});
+----
+
+NOTE: this only applies to the HTTP/2 protocol
+
+==== Connection settings
+
+The configuration of an HTTP/2 is configured by the `link:../../apidocs/io/vertx/core/http/Http2Settings.html[Http2Settings]` data object.
+
+Each endpoint must respect the settings sent by the other side of the connection.
+
+When a connection is established, the client and the server exchange initial settings. Initial settings
+are configured by `link:../../apidocs/io/vertx/core/http/HttpClientOptions.html#setInitialSettings-io.vertx.core.http.Http2Settings-[setInitialSettings]` on the client and
+`link:../../apidocs/io/vertx/core/http/HttpServerOptions.html#setInitialSettings-io.vertx.core.http.Http2Settings-[setInitialSettings]` on the server.
+
+The settings can be changed at any time after the connection is established:
+
+[source,java]
+----
+connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100));
+----
+
+As the remote side should acknowledge on reception of the settings update, it's possible to give a callback
+to be notified of the acknowledgment:
+
+[source,java]
+----
+connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100), ar -> {
+  if (ar.succeeded()) {
+    System.out.println("The settings update has been acknowledged ");
+  }
+});
+----
+
+Conversely the `link:../../apidocs/io/vertx/core/http/HttpConnection.html#remoteSettingsHandler-io.vertx.core.Handler-[remoteSettingsHandler]` is notified
+when the new remote settings are received:
+
+[source,java]
+----
+connection.remoteSettingsHandler(settings -> {
+  System.out.println("Received new settings");
+});
+----
+
+==== Connection ping
+
+HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
+validity: `link:../../apidocs/io/vertx/core/http/HttpConnection.html#ping-io.vertx.core.buffer.Buffer-io.vertx.core.Handler-[ping]` sends a `PING` frame to the remote
+endpoint:
+
+[source,java]
+----
+Buffer data = Buffer.buffer();
+for (byte i = 0;i < 8;i++) {
+  data.appendByte(i);
+}
+connection.ping(data, pong -> {
+  System.out.println("Remote side replied");
+});
+----
+
+Vert.x will send automatically an acknowledgement when a `PING` frame is received,
+an handler can be set to be notified for each ping received:
+
+[source,java]
+----
+connection.pingHandler(ping -> {
+  System.out.println("Got pinged by remote side");
+});
+----
+
+The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
+implementing  protocols on top of HTTP/2.
+
+==== Connection shutdown
+
+Calling `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdown--[shutdown]` will send a `GOAWAY` frame to the
+remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
+and a server will stop pushing responses. After the `GOAWAY` frame is sent, the connection
+waits some time (30 seconds by default) until all current streams closed and close the connection:
+
+[source,java]
+----
+connection.shutdown();
+----
+
+Connection `link:../../apidocs/io/vertx/core/http/HttpConnection.html#close--[close]` close is a shutdown with no delay, the `GOAWAY`
+frame will still be sent before the connection is closed.
+
+The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#closeHandler-io.vertx.core.Handler-[closeHandler]` notifies when connection is closed,
+`link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` notifies when all streams have been closed but the
+connection is not yet closed.
+
+Finally it's possible to just send a `GOAWAY` frame, the main difference with a shutdown is that
+it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
+close:
+
+[source,java]
+----
+connection.goAway(0);
+----
+
+Conversely, it is also possible to be notified when `GOAWAY` are received:
+
+[source,java]
+----
+connection.goAwayHandler(goAway -> {
+  System.out.println("Received a go away frame");
+});
+----
+
+The `link:../../apidocs/io/vertx/core/http/HttpConnection.html#shutdownHandler-io.vertx.core.Handler-[shutdownHandler]` will be called when all current streams
+have been closed and the connection can be closed:
+
+[source,java]
+----
+connection.goAway(0);
+connection.shutdownHandler(v -> {
+
+  // All streams are closed, close the connection
+  connection.close();
+});
+----
+
+This applies also when a `GOAWAY` is received.
 
 === HttpClient usage
 

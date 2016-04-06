@@ -75,6 +75,7 @@ class ServerConnection extends ConnectionBase {
   private final HttpServerImpl server;
   private WebSocketServerHandshaker handshaker;
   private final HttpServerMetrics metrics;
+  private boolean requestFailed;
   private Object requestMetric;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
@@ -103,7 +104,7 @@ class ServerConnection extends ConnectionBase {
     return metric;
   }
 
-  synchronized void setMetric(Object metric) {
+  synchronized void metric(Object metric) {
     this.metric = metric;
   }
 
@@ -139,7 +140,12 @@ class ServerConnection extends ConnectionBase {
     if (metrics.isEnabled()) {
       reportBytesWritten(bytesWritten);
       bytesWritten = 0;
-      metrics.responseEnd(requestMetric, pendingResponse);
+      if (requestFailed) {
+        metrics.requestReset(requestMetric);
+        requestFailed = false;
+      } else {
+        metrics.responseEnd(requestMetric, pendingResponse);
+      }
     }
     pendingResponse = null;
     checkNextTick();
@@ -269,7 +275,9 @@ class ServerConnection extends ConnectionBase {
   private void handleRequest(HttpServerRequestImpl req, HttpServerResponseImpl resp) {
     this.currentRequest = req;
     pendingResponse = resp;
-    requestMetric = metrics.requestBegin(metric, req);
+    if (metrics.isEnabled()) {
+      requestMetric = metrics.requestBegin(metric, req);
+    }
     if (requestHandler != null) {
       requestHandler.handle(req);
     }
@@ -330,7 +338,9 @@ class ServerConnection extends ConnectionBase {
 
   synchronized protected void handleClosed() {
     if (ws != null) {
-      metrics.disconnected(ws.getMetric());
+      if (metrics.isEnabled()) {
+        metrics.disconnected(ws.getMetric());
+      }
       ws.setMetric(null);
     }
     super.handleClosed();
@@ -338,6 +348,9 @@ class ServerConnection extends ConnectionBase {
       ws.handleClosed();
     }
     if (pendingResponse != null) {
+      if (metrics.isEnabled()) {
+        metrics.requestReset(requestMetric);
+      }
       pendingResponse.handleClosed();
     }
   }
@@ -349,6 +362,9 @@ class ServerConnection extends ConnectionBase {
   @Override
   protected synchronized void handleException(Throwable t) {
     super.handleException(t);
+    if (metrics.isEnabled()) {
+      requestFailed = true;
+    }
     if (currentRequest != null) {
       currentRequest.handleException(t);
     }

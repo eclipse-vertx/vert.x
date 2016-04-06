@@ -166,6 +166,18 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   @Override
+  public ReferenceCounted touch() {
+    binaryData.touch();
+    return this;
+  }
+
+  @Override
+  public ReferenceCounted touch(Object hint) {
+    binaryData.touch(hint);
+    return this;
+  }
+
+  @Override
   public boolean isFinal() {
     return isFinalFrame;
   }

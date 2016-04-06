@@ -16,7 +16,6 @@
 
 package io.vertx.core.net.impl;
 
-import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextImpl;
 
 /**
@@ -24,9 +23,9 @@ import io.vertx.core.impl.ContextImpl;
  */
 public class HandlerHolder<T> {
   public final ContextImpl context;
-  public final Handler<T> handler;
+  public final T handler;
 
-  HandlerHolder(ContextImpl context, Handler<T> handler) {
+  public HandlerHolder(ContextImpl context, T handler) {
     this.context = context;
     this.handler = handler;
   }

@@ -16,19 +16,21 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -43,6 +45,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
+import static io.vertx.core.http.HttpHeaders.CLOSE;
+import static io.vertx.core.http.HttpHeaders.CONNECTION;
+import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
+import static io.vertx.core.http.HttpHeaders.HOST;
+import static io.vertx.core.http.HttpHeaders.KEEP_ALIVE;
+import static io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING;
+
 /**
  *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -52,21 +62,21 @@ import java.util.Queue;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class ClientConnection extends ConnectionBase {
+class ClientConnection extends ConnectionBase implements HttpClientConnection, HttpClientStream {
 
   private static final Logger log = LoggerFactory.getLogger(ClientConnection.class);
 
   private final HttpClientImpl client;
-  private final String hostHeader;
   private final boolean ssl;
   private final String host;
   private final int port;
-  private final ConnectionLifeCycleListener listener;
+  private final Http1xPool pool;
   // Requests can be pipelined so we need a queue to keep track of requests
   private final Queue<HttpClientRequestImpl> requests = new ArrayDeque<>();
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
   private final HttpClientMetrics metrics;
+  private final HttpVersion version;
 
   private WebSocketClientHandshaker handshaker;
   private HttpClientRequestImpl currentRequest;
@@ -74,22 +84,21 @@ class ClientConnection extends ConnectionBase {
   private HttpClientRequestImpl requestForResponse;
   private WebSocketImpl ws;
 
-  ClientConnection(VertxInternal vertx, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
-                   int port, ContextImpl context, ConnectionLifeCycleListener listener, HttpClientMetrics metrics) {
-    super(vertx, channel, context, metrics);
+  private boolean paused;
+  private Buffer pausedChunk;
+
+  ClientConnection(HttpVersion version, HttpClientImpl client, Handler<Throwable> exceptionHandler, Channel channel, boolean ssl, String host,
+                   int port, ContextImpl context, Http1xPool pool, HttpClientMetrics metrics) {
+    super(client.getVertx(), channel, context, metrics);
     this.client = client;
     this.ssl = ssl;
     this.host = host;
     this.port = port;
-    if ((port == 80 && !ssl) || (port == 443 && ssl)) {
-      this.hostHeader = host;
-    } else {
-      this.hostHeader = host + ':' + port;
-    }
-    this.listener = listener;
+    this.pool = pool;
     this.exceptionHandler = exceptionHandler;
     this.metrics = metrics;
     this.metric = metrics.connected(remoteAddress(), remoteName());
+    this.version = version;
   }
 
   @Override
@@ -245,12 +254,17 @@ class ClientConnection extends ConnectionBase {
     this.closeHandler = handler;
   }
 
-  boolean isClosed() {
-    return !channel.isOpen();
+  public boolean isValid() {
+    return channel.isOpen();
   }
 
   int getOutstandingRequestCount() {
     return requests.size();
+  }
+
+  @Override
+  public void checkDrained() {
+    handleInterestedOpsChanged();
   }
 
   @Override
@@ -274,37 +288,77 @@ class ClientConnection extends ConnectionBase {
     if (requestForResponse == null) {
       throw new IllegalStateException("No response handler");
     }
-    HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, this, resp);
+    io.netty.handler.codec.http.HttpVersion nettyVersion = resp.protocolVersion();
+    HttpVersion vertxVersion;
+    if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
+      vertxVersion = HttpVersion.HTTP_1_0;
+    } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
+      vertxVersion = HttpVersion.HTTP_1_1;
+    } else {
+      throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
+    }
+    HttpClientResponseImpl nResp = new HttpClientResponseImpl(requestForResponse, vertxVersion, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
     currentResponse = nResp;
     requestForResponse.handleResponse(nResp);
   }
 
+  public void doPause() {
+    super.doPause();
+    paused = true;
+  }
+
+  public void doResume() {
+    super.doResume();
+    paused = false;
+  }
+
   void handleResponseChunk(Buffer buff) {
-    currentResponse.handleChunk(buff);
+    if (paused) {
+      if (pausedChunk == null) {
+        pausedChunk = buff.copy();
+      } else {
+        pausedChunk.appendBuffer(buff);
+      }
+    } else {
+      if (pausedChunk != null) {
+        buff = pausedChunk.appendBuffer(buff);
+        pausedChunk = null;
+      }
+      currentResponse.handleChunk(buff);
+    }
   }
 
   void handleResponseEnd(LastHttpContent trailer) {
-    currentResponse.handleEnd(trailer);
+    if (metrics.isEnabled()) {
+      HttpClientRequestBase req = currentResponse.request();
+      Object reqMetric = req.metric();
+      if (req.exceptionOccurred) {
+        metrics.requestReset(reqMetric);
+      } else {
+        metrics.responseEnd(reqMetric, currentResponse);
+      }
+    }
+    currentResponse.handleEnd(pausedChunk, new HeadersAdaptor(trailer.trailingHeaders()));
 
     // We don't signal response end for a 100-continue response as a real response will follow
     // Also we keep the connection open for an HTTP CONNECT
-    if (currentResponse.statusCode() != 100 && requestForResponse.getRequest().getMethod() != HttpMethod.CONNECT) {
+    if (currentResponse.statusCode() != 100 && requestForResponse.method() != io.vertx.core.http.HttpMethod.CONNECT) {
 
       boolean close = false;
       // See https://tools.ietf.org/html/rfc7230#section-6.3
       String responseConnectionHeader = currentResponse.getHeader(HttpHeaders.Names.CONNECTION);
-      HttpVersion protocolVersion = requestForResponse.getRequest().getProtocolVersion();
-      String requestConnectionHeader = requestForResponse.getRequest().headers().get(HttpHeaders.Names.CONNECTION);
+      io.vertx.core.http.HttpVersion protocolVersion = client.getOptions().getProtocolVersion();
+      String requestConnectionHeader = requestForResponse.headers().get(HttpHeaders.Names.CONNECTION);
       // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
       if (HttpHeaders.Values.CLOSE.equalsIgnoreCase(responseConnectionHeader) || HttpHeaders.Values.CLOSE.equalsIgnoreCase(requestConnectionHeader)) {
         // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
         close = true;
-      } else if (protocolVersion == HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
+      } else if (protocolVersion == io.vertx.core.http.HttpVersion.HTTP_1_0 && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(responseConnectionHeader)) {
         // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
         // currently Vertx forces the Connection header if keepalive is enabled for 1.0
         close = true;
       }
-      listener.responseEnded(this, close);
+      pool.responseEnded(this, close);
     }
     currentResponse = null;
   }
@@ -320,8 +374,19 @@ class ClientConnection extends ConnectionBase {
     if (ws != null) {
       ws.handleClosed();
     }
-    // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     Exception e = new VertxException("Connection was closed");
+
+    // Signal requests failed
+    if (metrics.isEnabled()) {
+      for (HttpClientRequestImpl req: requests) {
+        metrics.requestReset(req.metric());
+      }
+      if (requestForResponse != null) {
+        metrics.requestReset(requestForResponse.metric());
+      }
+    }
+
+    // Connection was closed - call exception handlers for any requests in the pipeline or one being currently written
     for (HttpClientRequestImpl req: requests) {
       req.handleException(e);
     }
@@ -332,8 +397,81 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  protected ContextImpl getContext() {
+  public ContextImpl getContext() {
     return super.getContext();
+  }
+
+  public void reset(long code) {
+    throw new UnsupportedOperationException("HTTP/1.x request cannot be reset");
+  }
+
+  private HttpRequest createRequest(HttpVersion version, HttpMethod method, String uri, MultiMap headers) {
+    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method), uri, false);
+    if (headers != null) {
+      for (Map.Entry<String, String> header : headers) {
+        // Todo : multi valued headers
+        request.headers().add(header.getKey(), header.getValue());
+      }
+    }
+    return request;
+  }
+
+  private void prepareHeaders(HttpRequest request, String hostHeader, boolean chunked) {
+    HttpHeaders headers = request.headers();
+    headers.remove(TRANSFER_ENCODING);
+    if (!headers.contains(HOST)) {
+      request.headers().set(HOST, hostHeader);
+    }
+    if (chunked) {
+      HttpHeaders.setTransferEncodingChunked(request);
+    }
+    if (client.getOptions().isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
+      // if compression should be used but nothing is specified by the user support deflate and gzip.
+      request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
+    }
+    if (!client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      request.headers().set(CONNECTION, CLOSE);
+    } else if (client.getOptions().isKeepAlive() && client.getOptions().getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      request.headers().set(CONNECTION, KEEP_ALIVE);
+    }
+  }
+
+  public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked) {
+    HttpRequest request = createRequest(version, method, uri, headers);
+    prepareHeaders(request, hostHeader, chunked);
+    writeToChannel(request);
+  }
+
+  public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
+    HttpRequest request = createRequest(version, method, uri, headers);
+    prepareHeaders(request, hostHeader, chunked);
+    if (end) {
+      if (buf != null) {
+        writeToChannel(new AssembledFullHttpRequest(request, buf));
+      } else {
+        writeToChannel(new AssembledFullHttpRequest(request));
+      }
+    } else {
+      writeToChannel(new AssembledHttpRequest(request, buf));
+    }
+  }
+
+  @Override
+  public void writeBuffer(ByteBuf buff, boolean end) {
+    if (end) {
+      if (buff != null && buff.isReadable()) {
+        writeToChannel(new DefaultLastHttpContent(buff, false));
+      } else {
+        writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+      }
+    } else if (buff != null) {
+      writeToChannel(new DefaultHttpContent(buff));
+    }
+  }
+
+  @Override
+  public void writeFrame(int type, int flags, ByteBuf payload) {
+    throw new IllegalStateException("Cannot write an HTTP/2 frame over an HTTP/1.x connection");
   }
 
   @Override
@@ -346,24 +484,24 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  synchronized void setCurrentRequest(HttpClientRequestImpl req) {
+  public synchronized void beginRequest(HttpClientRequestImpl req) {
     if (currentRequest != null) {
       throw new IllegalStateException("Connection is already writing a request");
+    }
+    if (metrics.isEnabled()) {
+      Object reqMetric = client.httpClientMetrics().requestBegin(metric, localAddress(), remoteAddress(), req);
+      req.metric(reqMetric);
     }
     this.currentRequest = req;
     this.requests.add(req);
   }
 
-  synchronized void endRequest() {
+  public synchronized void endRequest() {
     if (currentRequest == null) {
       throw new IllegalStateException("No write in progress");
     }
     currentRequest = null;
-    listener.requestEnded(this);
-  }
-
-  public String hostHeader() {
-    return hostHeader;
+    pool.recycle(this);
   }
 
   @Override
@@ -378,7 +516,7 @@ class ClientConnection extends ConnectionBase {
     }
   }
 
-  NetSocket createNetSocket() {
+  public NetSocket createNetSocket() {
     // connection was upgraded to raw TCP socket
     NetSocketImpl socket = new NetSocketImpl(vertx, channel, context, client.getSslHelper(), true, metrics, metric);
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
@@ -398,14 +536,14 @@ class ClientConnection extends ConnectionBase {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping
-        client.removeChannel(channel);
+        pool.removeChannel(channel);
         super.exceptionCaught(chctx, t);
       }
 
       @Override
       public void channelInactive(ChannelHandlerContext chctx) throws Exception {
         // remove from the real mapping
-        client.removeChannel(channel);
+        pool.removeChannel(channel);
         super.channelInactive(chctx);
       }
 
@@ -419,5 +557,22 @@ class ClientConnection extends ConnectionBase {
       }
     });
     return socket;
+  }
+
+  @Override
+  public HttpClientConnection connection() {
+    return this;
+  }
+
+  @Override
+  public HttpVersion version() {
+    // Used to determine the http version in the HttpClientRequest#sendHead handler , for HTTP/1.1 it will
+    // not yet know but it will for HTTP/2
+    return null;
+  }
+
+  @Override
+  public int id() {
+    return -1;
   }
 }

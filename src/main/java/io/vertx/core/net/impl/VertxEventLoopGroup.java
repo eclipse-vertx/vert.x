@@ -19,9 +19,12 @@ package io.vertx.core.net.impl;
 import io.netty.channel.*;
 import io.netty.util.concurrent.*;
 
+import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,7 +56,7 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
 
   @Override
   public Iterator<EventExecutor> iterator() {
-    return new EventLoopIterator(workers.iterator());
+    return children.iterator();
   }
 
   @Override
@@ -81,6 +84,10 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     return latch.await(timeout, unit);
   }
 
+  @Override
+  public <E extends EventExecutor> Set<E> children() {
+    return (Set<E>) children;
+  }
 
   public synchronized void addWorker(EventLoop worker) {
     EventLoopHolder holder = findHolder(worker);
@@ -187,6 +194,74 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
       return worker != null ? worker.hashCode() : 0;
     }
   }
+
+  //
+  private final Set<EventExecutor> children = new Set<EventExecutor>() {
+    @Override
+    public Iterator<EventExecutor> iterator() {
+      return new EventLoopIterator(workers.iterator());
+    }
+
+    @Override
+    public int size() {
+      return workers.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return workers.isEmpty();
+    }
+
+    @Override
+    public boolean contains(Object o) {
+      return workers.contains(o);
+    }
+
+    @Override
+    public Object[] toArray() {
+      return workers.toArray();
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+      return workers.toArray(a);
+    }
+
+    @Override
+    public boolean add(EventExecutor eventExecutor) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean remove(Object o) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+      return workers.containsAll(c);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends EventExecutor> c) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() {
+      throw new UnsupportedOperationException();
+    }
+  };
 
   private static final class EventLoopIterator implements Iterator<EventExecutor> {
     private final Iterator<EventLoopHolder> holderIt;

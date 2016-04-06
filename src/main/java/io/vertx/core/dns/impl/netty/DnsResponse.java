@@ -91,4 +91,15 @@ public class DnsResponse extends DnsMessage<DnsResponseHeader> implements ByteBu
     return originalIndex;
   }
 
+  @Override
+  public ByteBufHolder touch() {
+    rawPacket.touch();
+    return this;
+  }
+
+  @Override
+  public ByteBufHolder touch(Object hint) {
+    rawPacket.touch(hint);
+    return this;
+  }
 }

@@ -248,7 +248,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
   public synchronized NetSocket upgradeToSsl(final Handler<Void> handler) {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
-      sslHandler = helper.createSslHandler(vertx, client);
+      sslHandler = helper.createSslHandler(vertx);
       channel.pipeline().addFirst("ssl", sslHandler);
     }
     sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {

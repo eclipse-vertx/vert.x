@@ -375,4 +375,83 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return the total number of bytes written for the body of the response.
    */
   long bytesWritten();
+
+  /**
+   * @return the id of the stream of this response, {@literal -1} for HTTP/1.x
+   */
+  int streamId();
+
+  /**
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with no headers.
+   */
+  HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
+   */
+  HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
+   */
+  @Fluent
+  HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Push a response to the client.<p/>
+   *
+   * The {@code handler} will be notified with a <i>success</i> when the push can be sent and with
+   * a <i>failure</i> when the client has disabled push or reset the push before it has been sent.<p/>
+   *
+   * The {@code handler} may be queued if the client has reduced the maximum number of streams the server can push
+   * concurrently.<p/>
+   *
+   * Push can be sent only for peer initiated streams and if the response is not ended.
+   *
+   * @param method the method of the promised request
+   * @param host the host of the promised request
+   * @param path the path of the promised request
+   * @param headers the headers of the promised request
+   * @param handler the handler notified when the response can be written
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
+   * Reset this HTTP/2 stream with the error code {@code 0}.
+   */
+  default void reset() {
+    reset(0L);
+  }
+
+  /**
+   * Reset this HTTP/2 stream with the error {@code code}.
+   *
+   * @param code the error code
+   */
+  void reset(long code);
+
+  /**
+   * Write an HTTP/2 frame to the response, allowing to extend the HTTP/2 protocol.<p>
+   *
+   * The frame is sent immediatly and is not subject to flow control.
+   *
+   * @param type the 8-bit frame type
+   * @param flags the 8-bit frame flags
+   * @param payload the frame payload
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse writeFrame(int type, int flags, Buffer payload);
+
+  /**
+   * Like {@link #writeFrame(int, int, Buffer)} but with an {@link HttpFrame}.
+   *
+   * @param frame the frame to write
+   */
+  @Fluent
+  default HttpServerResponse writeFrame(HttpFrame frame) {
+    return writeFrame(frame.type(), frame.flags(), frame.payload());
+  }
 }

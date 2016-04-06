@@ -19,6 +19,7 @@ package io.vertx.core.net.impl;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.net.SocketAddress;
 
+import java.net.InetSocketAddress;
 import java.util.Objects;
 
 /**
@@ -28,6 +29,10 @@ public class SocketAddressImpl implements SocketAddress{
 
   private final String hostAddress;
   private final int port;
+
+  public SocketAddressImpl(InetSocketAddress address) {
+    this(address.getPort(), address.getAddress().getHostAddress());
+  }
 
   public SocketAddressImpl(int port, String host) {
     Objects.requireNonNull(host, "no null host accepted");

@@ -55,7 +55,7 @@ public class HandlerManager<T> {
     return handlers == null ? null : handlers.chooseHandler();
   }
 
-  public synchronized void addHandler(Handler<T> handler, ContextImpl context) {
+  public synchronized void addHandler(T handler, ContextImpl context) {
     EventLoop worker = context.nettyEventLoop();
     availableWorkers.addWorker(worker);
     Handlers<T> handlers = new Handlers<>();
@@ -67,7 +67,7 @@ public class HandlerManager<T> {
     hasHandlers = true;
   }
 
-  public synchronized void removeHandler(Handler<T> handler, ContextImpl context) {
+  public synchronized void removeHandler(T handler, ContextImpl context) {
     EventLoop worker = context.nettyEventLoop();
     Handlers<T> handlers = handlerMap.get(worker);
     if (!handlers.removeHandler(new HandlerHolder<>(context, handler))) {

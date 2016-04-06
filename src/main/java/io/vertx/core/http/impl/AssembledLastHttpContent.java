@@ -18,7 +18,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.LastHttpContent;
 
@@ -60,8 +59,13 @@ class AssembledLastHttpContent extends DefaultByteBufHolder implements LastHttpC
   }
 
   @Override
-  public HttpContent duplicate() {
+  public LastHttpContent duplicate() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public DecoderResult decoderResult() {
+    return result;
   }
 
   @Override
@@ -72,5 +76,17 @@ class AssembledLastHttpContent extends DefaultByteBufHolder implements LastHttpC
   @Override
   public void setDecoderResult(DecoderResult result) {
     this.result = result;
+  }
+
+  @Override
+  public AssembledLastHttpContent touch() {
+    super.touch();
+    return this;
+  }
+
+  @Override
+  public AssembledLastHttpContent touch(Object hint) {
+    super.touch(hint);
+    return this;
   }
 }
