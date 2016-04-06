@@ -575,8 +575,8 @@
  * better performances and CPU usage than the JDK engine, as well as JDK version independence.
  *
  * OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setSslEngine} to {@link io.vertx.core.net.SSLEngine#OPENSSL}
- * and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath, as well as the correct
- * version of OpenSSL installed on your OS.
+ * and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
+ * OpenSSL to be installed on your OS depending on the tcnative implementation.
  *
  * OpenSSL restricts the key/certificate configuration to `.pem` files. However it is still possible to use any trust
  * configuration.
