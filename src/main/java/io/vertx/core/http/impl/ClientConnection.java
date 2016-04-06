@@ -567,6 +567,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
 
   @Override
   public HttpVersion version() {
+    // Used to determine the http version in the HttpClientRequest#sendHead handler , for HTTP/1.1 it will
+    // not yet know but it will for HTTP/2
     return null;
   }
 
