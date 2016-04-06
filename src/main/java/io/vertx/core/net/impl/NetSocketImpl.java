@@ -249,7 +249,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocket {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     if (sslHandler == null) {
       sslHandler = helper.createSslHandler(vertx, client);
-      channel.pipeline().addFirst(sslHandler);
+      channel.pipeline().addFirst("ssl", sslHandler);
     }
     sslHandler.handshakeFuture().addListener(future -> context.executeFromIO(() -> {
       if (future.isSuccess()) {

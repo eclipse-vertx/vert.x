@@ -100,7 +100,7 @@ public class HttpTest extends HttpTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(-2));
     assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
@@ -117,7 +117,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    assertIllegalArgumentException(() -> options.setSoLinger(-1));
+    assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -221,7 +221,7 @@ public class HttpTest extends HttpTestBase {
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
     assertEquals(rand, options.getTrafficClass());
-    assertIllegalArgumentException(() -> options.setTrafficClass(-1));
+    assertIllegalArgumentException(() -> options.setTrafficClass(-2));
     assertIllegalArgumentException(() -> options.setTrafficClass(256));
 
     assertTrue(options.isTcpNoDelay());
@@ -238,7 +238,7 @@ public class HttpTest extends HttpTestBase {
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setSoLinger(rand));
     assertEquals(rand, options.getSoLinger());
-    assertIllegalArgumentException(() -> options.setSoLinger(-1));
+    assertIllegalArgumentException(() -> options.setSoLinger(-2));
 
     assertFalse(options.isUsePooledBuffers());
     assertEquals(options, options.setUsePooledBuffers(true));
@@ -3202,7 +3202,7 @@ public class HttpTest extends HttpTestBase {
       options.setTrustAll(true);
     }
     if (clientUsesCrl) {
-      options.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
+      options.addCrlPath("tls/ca/crl.pem");
     }
     setOptions(options, getClientTrustOptions(clientTrust));
     setOptions(options, getClientCertOptions(clientCert));
@@ -3218,7 +3218,7 @@ public class HttpTest extends HttpTestBase {
       serverOptions.setClientAuth(ClientAuth.REQUIRED);
     }
     if (serverUsesCrl) {
-      serverOptions.addCrlPath(findFileOnClasspath("tls/ca/crl.pem"));
+      serverOptions.addCrlPath("tls/ca/crl.pem");
     }
     for (String suite: enabledCipherSuites) {
       serverOptions.addEnabledCipherSuite(suite);

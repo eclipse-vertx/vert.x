@@ -427,7 +427,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
           if (future.isSuccess()) {
             connected(ch, handler);
           } else {
-            log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl");
+            log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + future.cause());
           }
         });
       } else {

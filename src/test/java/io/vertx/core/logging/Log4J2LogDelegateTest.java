@@ -31,14 +31,14 @@ import static junit.framework.Assert.assertTrue;
  */
 public class Log4J2LogDelegateTest {
 
-  private static Recording recording;
+  private static StreamRecording recording;
 
   @BeforeClass
   public static void initialize() throws IOException {
     // Clear value.
     System.setProperty("vertx.logger-delegate-factory-class-name", Log4j2LogDelegateFactory.class.getName());
     LoggerFactory.initialise();
-    recording = new Recording();
+    recording = new StreamRecording();
   }
 
   @AfterClass

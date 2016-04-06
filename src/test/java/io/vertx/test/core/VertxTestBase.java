@@ -20,7 +20,6 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -35,9 +34,6 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
 
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -136,19 +132,6 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
 
-  protected String findFileOnClasspath(String fileName) {
-    URL url = getClass().getClassLoader().getResource(fileName);
-    if (url == null) {
-      throw new IllegalArgumentException("Cannot find file " + fileName + " on classpath");
-    }
-    try {
-      File file = new File(url.toURI());
-      return file.getAbsolutePath();
-    } catch (URISyntaxException e) {
-      throw new VertxException(e);
-    }
-  }
-
   protected void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
     if (options instanceof JksOptions) {
       sslOptions.setKeyStoreOptions((JksOptions) options);
@@ -172,17 +155,17 @@ public class VertxTestBase extends AsyncTestBase {
   protected TrustOptions getClientTrustOptions(Trust trust) {
     switch (trust) {
       case JKS:
-        return new JksOptions().setPath(findFileOnClasspath("tls/client-truststore.jks")).setPassword("wibble");
+        return new JksOptions().setPath("tls/client-truststore.jks").setPassword("wibble");
       case JKS_CA:
-        return new JksOptions().setPath(findFileOnClasspath("tls/client-truststore-ca.jks")).setPassword("wibble");
+        return new JksOptions().setPath("tls/client-truststore-ca.jks").setPassword("wibble");
       case PKCS12:
-        return new PfxOptions().setPath(findFileOnClasspath("tls/client-truststore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath("tls/client-truststore.p12").setPassword("wibble");
       case PKCS12_CA:
-        return new PfxOptions().setPath(findFileOnClasspath("tls/client-truststore-ca.p12")).setPassword("wibble");
+        return new PfxOptions().setPath("tls/client-truststore-ca.p12").setPassword("wibble");
       case PEM:
-        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/server-cert.pem"));
+        return new PemTrustOptions().addCertPath("tls/server-cert.pem");
       case PEM_CA:
-        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
+        return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
       default:
         return null;
     }
@@ -191,17 +174,17 @@ public class VertxTestBase extends AsyncTestBase {
   protected KeyCertOptions getClientCertOptions(KeyCert cert) {
     switch (cert) {
       case JKS:
-        return new JksOptions().setPath(findFileOnClasspath("tls/client-keystore.jks")).setPassword("wibble");
+        return new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble");
       case JKS_CA:
         throw new UnsupportedOperationException();
       case PKCS12:
-        return new PfxOptions().setPath(findFileOnClasspath("tls/client-keystore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath("tls/client-keystore.p12").setPassword("wibble");
       case PKCS12_CA:
         throw new UnsupportedOperationException();
       case PEM:
-        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert.pem"));
+        return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert.pem");
       case PEM_CA:
-        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/client-key.pem")).setCertPath(findFileOnClasspath("tls/client-cert-ca.pem"));
+        return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-ca.pem");
       default:
         return null;
     }
@@ -210,17 +193,17 @@ public class VertxTestBase extends AsyncTestBase {
   protected TrustOptions getServerTrustOptions(Trust trust) {
     switch (trust) {
       case JKS:
-        return new JksOptions().setPath(findFileOnClasspath("tls/server-truststore.jks")).setPassword("wibble");
+        return new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble");
       case JKS_CA:
         throw new UnsupportedOperationException();
       case PKCS12:
-        return new PfxOptions().setPath(findFileOnClasspath("tls/server-truststore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath("tls/server-truststore.p12").setPassword("wibble");
       case PKCS12_CA:
         throw new UnsupportedOperationException();
       case PEM:
-        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/client-cert.pem"));
+        return new PemTrustOptions().addCertPath("tls/client-cert.pem");
       case PEM_CA:
-        return new PemTrustOptions().addCertPath(findFileOnClasspath("tls/ca/ca-cert.pem"));
+        return new PemTrustOptions().addCertPath("tls/ca/ca-cert.pem");
       default:
         return null;
     }
@@ -229,17 +212,17 @@ public class VertxTestBase extends AsyncTestBase {
   protected KeyCertOptions getServerCertOptions(KeyCert cert) {
     switch (cert) {
       case JKS:
-        return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore.jks")).setPassword("wibble");
+        return new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble");
       case JKS_CA:
-        return new JksOptions().setPath(findFileOnClasspath("tls/server-keystore-ca.jks")).setPassword("wibble");
+        return new JksOptions().setPath("tls/server-keystore-ca.jks").setPassword("wibble");
       case PKCS12:
-        return new PfxOptions().setPath(findFileOnClasspath("tls/server-keystore.p12")).setPassword("wibble");
+        return new PfxOptions().setPath("tls/server-keystore.p12").setPassword("wibble");
       case PKCS12_CA:
-        return new PfxOptions().setPath(findFileOnClasspath("tls/server-keystore-ca.p12")).setPassword("wibble");
+        return new PfxOptions().setPath("tls/server-keystore-ca.p12").setPassword("wibble");
       case PEM:
-        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert.pem"));
+        return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert.pem");
       case PEM_CA:
-        return new PemKeyCertOptions().setKeyPath(findFileOnClasspath("tls/server-key.pem")).setCertPath(findFileOnClasspath("tls/server-cert-ca.pem"));
+        return new PemKeyCertOptions().setKeyPath("tls/server-key.pem").setCertPath("tls/server-cert-ca.pem");
       default:
         return null;
     }

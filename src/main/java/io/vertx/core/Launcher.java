@@ -17,6 +17,7 @@ package io.vertx.core;
 
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
+import io.vertx.core.json.JsonObject;
 
 
 /**
@@ -56,6 +57,13 @@ public class Launcher extends VertxCommandLauncher implements VertxLifecycleHook
    */
   public static void executeCommand(String cmd, String... args) {
     new Launcher().execute(cmd, args);
+  }
+
+  /**
+   *
+   * Hook for sub-classes of {@link Launcher} after the config has been parsed.
+   */
+  public void afterConfigParsed(JsonObject config) {
   }
 
   /**

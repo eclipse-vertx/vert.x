@@ -333,9 +333,9 @@
  *
  * To use this model, you write your code as set of *verticles*.
  *
- * Verticles are chunks of code that get deployed and
- * run by Vert.x. Verticles can be written in any of the languages that Vert.x supports and a single application
- * can include verticles written in multiple languages.
+ * Verticles are chunks of code that get deployed and run by Vert.x. A Vert.x instance maintains N event loop threads
+ * (where N by default is core*2) by default. Verticles can be written in any of the languages that Vert.x supports
+ * and a single application can include verticles written in multiple languages.
  *
  * You can think of a verticle as a bit like an actor in the http://en.wikipedia.org/wiki/Actor_model[Actor Model].
  *

@@ -100,7 +100,7 @@ public abstract class NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public NetworkOptions setSendBufferSize(int sendBufferSize) {
-    Arguments.require(sendBufferSize > 0, "sendBufferSize must be > 0");
+    Arguments.require(sendBufferSize > 0  || sendBufferSize == DEFAULT_SEND_BUFFER_SIZE, "sendBufferSize must be > 0");
     this.sendBufferSize = sendBufferSize;
     return this;
   }
@@ -121,7 +121,7 @@ public abstract class NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
-    Arguments.require(receiveBufferSize > 0, "receiveBufferSize must be > 0");
+    Arguments.require(receiveBufferSize > 0 || receiveBufferSize == DEFAULT_RECEIVE_BUFFER_SIZE, "receiveBufferSize must be > 0");
     this.receiveBufferSize = receiveBufferSize;
     return this;
   }
@@ -157,7 +157,7 @@ public abstract class NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public NetworkOptions setTrafficClass(int trafficClass) {
-    Arguments.requireInRange(trafficClass, 0, 255, "trafficClass tc must be 0 <= tc <= 255");
+    Arguments.requireInRange(trafficClass, DEFAULT_TRAFFIC_CLASS, 255, "trafficClass tc must be 0 <= tc <= 255");
     this.trafficClass = trafficClass;
     return this;
   }

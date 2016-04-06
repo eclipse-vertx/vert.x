@@ -3,6 +3,7 @@ package io.vertx.core.eventbus.impl.clustered;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -37,12 +38,15 @@ class ConnectionHolder {
   private long timeoutID = -1;
   private long pingTimeoutID = -1;
 
-  ConnectionHolder(ClusteredEventBus eventBus, ServerID serverID) {
+  ConnectionHolder(ClusteredEventBus eventBus, ServerID serverID, EventBusOptions options) {
     this.eventBus = eventBus;
     this.serverID = serverID;
     this.vertx = eventBus.vertx();
     this.metrics = eventBus.getMetrics();
-    client = new NetClientImpl(eventBus.vertx(), new NetClientOptions().setConnectTimeout(60 * 1000), false);
+    NetClientOptions clientOptions = new NetClientOptions(options.toJson());
+    ClusteredEventBus.setCertOptions(clientOptions, options.getKeyCertOptions());
+    ClusteredEventBus.setTrustOptions(clientOptions, options.getTrustOptions());
+    client = new NetClientImpl(eventBus.vertx(), clientOptions, false);
   }
 
   synchronized void connect() {
@@ -91,7 +95,7 @@ class ConnectionHolder {
   }
 
   private void schedulePing() {
-    VertxOptions options = eventBus.options();
+    EventBusOptions options = eventBus.options();
     pingTimeoutID = vertx.setTimer(options.getClusterPingInterval(), id1 -> {
       // If we don't get a pong back in time we close the connection
       timeoutID = vertx.setTimer(options.getClusterPingReplyInterval(), id2 -> {

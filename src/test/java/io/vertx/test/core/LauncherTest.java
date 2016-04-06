@@ -477,6 +477,7 @@ public class LauncherTest extends VertxTestBase {
   }
 
   class MyLauncher extends Launcher {
+    boolean afterConfigParsed = false;
     boolean beforeStartingVertxInvoked = false;
     boolean afterStartingVertxInvoked = false;
     boolean beforeDeployingVerticle = false;
@@ -484,6 +485,7 @@ public class LauncherTest extends VertxTestBase {
     Vertx vertx;
     VertxOptions options;
     DeploymentOptions deploymentOptions;
+    JsonObject config;
 
 
     PrintStream stream = new PrintStream(out);
@@ -505,6 +507,12 @@ public class LauncherTest extends VertxTestBase {
     }
 
     @Override
+    public void afterConfigParsed(JsonObject config) {
+      afterConfigParsed = true;
+      this.config = config;
+    }
+
+    @Override
     public void beforeStartingVertx(VertxOptions options) {
       beforeStartingVertxInvoked = true;
       this.options = options;
@@ -523,6 +531,7 @@ public class LauncherTest extends VertxTestBase {
     }
 
     public void assertHooksInvoked() {
+      assertTrue(afterConfigParsed);
       assertTrue(beforeStartingVertxInvoked);
       assertTrue(afterStartingVertxInvoked);
       assertTrue(beforeDeployingVerticle);

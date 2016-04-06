@@ -18,6 +18,7 @@ package io.vertx.core.impl.launcher;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Interface that let sub-classes of launcher to be notified on different events.
@@ -25,6 +26,13 @@ import io.vertx.core.VertxOptions;
  * @author Clement Escoffier <clement@apache.org>
  */
 public interface VertxLifecycleHooks {
+
+  /**
+   * Hook for sub-classes of the starter class before the vertx instance is started. Options can still be updated.
+   *
+   * @param config the json config file passed via -conf on the command line
+   */
+  void afterConfigParsed(JsonObject config);
 
   /**
    * Hook for sub-classes of the starter class before the vertx instance is started. Options can still be updated.

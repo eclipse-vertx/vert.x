@@ -173,7 +173,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setSoLinger(int soLinger) {
-    if (soLinger < 0) {
+    if (soLinger < 0  && soLinger != DEFAULT_SO_LINGER) {
       throw new IllegalArgumentException("soLinger must be >= 0");
     }
     this.soLinger = soLinger;
