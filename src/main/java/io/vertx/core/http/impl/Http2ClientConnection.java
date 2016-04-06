@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
@@ -134,7 +135,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         return;
       }
     }
-    handler.writeReset(promisedStreamId, 0);
+    handler.writeReset(promisedStreamId, Http2Error.CANCEL.code());
   }
 
   static class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> implements HttpClientStream {

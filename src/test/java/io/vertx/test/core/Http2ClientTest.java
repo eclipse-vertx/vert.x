@@ -839,7 +839,7 @@ public class Http2ClientTest extends Http2TestBase {
         resp.setChunked(true).write("content");
         resp.exceptionHandler(err -> {
           assertTrue(err instanceof StreamResetException);
-          assertEquals(0, ((StreamResetException) err).getCode());
+          assertEquals(Http2Error.CANCEL.code(), ((StreamResetException) err).getCode());
           testComplete();
         });
       });

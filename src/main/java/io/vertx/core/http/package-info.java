@@ -1074,7 +1074,8 @@
  * {@link examples.HTTP2Examples#example13}
  * ----
  *
- * When no handler is set, any stream pushed by the server will be automatically reset by the client.
+ * When no handler is set, any stream pushed will be automatically cancelled by the client with
+ * a stream reset (`8` error code).
  *
  * ==== Receiving unknown HTTP/2 frames
  *
