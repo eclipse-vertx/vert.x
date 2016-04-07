@@ -106,6 +106,13 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public void close() {
+    synchronized (conn) {
+      conn.close();
+    }
+  }
+
+  @Override
   public boolean isChunked() {
     return false;
   }

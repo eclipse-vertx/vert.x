@@ -1,22 +1,5 @@
 = Enums
 
-[[HttpVersion]]
-== HttpVersion
-
-++++
- Represents the version of the HTTP protocol.
-++++
-'''
-
-[cols=">25%,75%"]
-[frame="topbot"]
-|===
-^|Name | Description
-|[[HTTP_1_0]]`HTTP_1_0`|-
-|[[HTTP_1_1]]`HTTP_1_1`|-
-|[[HTTP_2]]`HTTP_2`|-
-|===
-
 [[SSLEngine]]
 == SSLEngine
 
@@ -37,6 +20,23 @@ Use the engine provided by the JDK.
 +++
 Use an OpenSSL based engine.
 +++
+|===
+
+[[HttpVersion]]
+== HttpVersion
+
+++++
+ Represents the version of the HTTP protocol.
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Description
+|[[HTTP_1_0]]`HTTP_1_0`|-
+|[[HTTP_1_1]]`HTTP_1_1`|-
+|[[HTTP_2]]`HTTP_2`|-
 |===
 
 [[HttpMethod]]

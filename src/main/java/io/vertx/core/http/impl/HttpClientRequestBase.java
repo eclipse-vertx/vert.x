@@ -18,6 +18,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -105,11 +106,23 @@ abstract class HttpClientRequestBase implements HttpClientRequest {
   public void handleException(Throwable t) {
     synchronized (getLock()) {
       cancelOutstandingTimeoutTimer();
-      exceptionOccurred = true;
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(t);
-      } else {
-        log.error(t);
+
+      // If an exception has already occurred then this request is already in a bad state and firing a second
+      // exception may cause issues it the caller isn't expecting to handle this case.  A prime example is upon
+      // closing the connection below.
+      if (!exceptionOccurred) {
+        exceptionOccurred = true;
+        // If we're connected, rather than leave the connection in an indeterminate state we force the connection
+        // to close so that the pool can open a new one for further requests.
+        if (client.getOptions().isCloseOnException()) {
+          close();
+        }
+
+        if (exceptionHandler != null) {
+          exceptionHandler.handle(t);
+        } else {
+          log.error(t);
+        }
       }
     }
   }

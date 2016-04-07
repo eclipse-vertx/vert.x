@@ -35,6 +35,9 @@ public class HttpClientOptionsConverter {
       });
       obj.setAlpnVersions(list);
     }
+    if (json.getValue("closeOnException") instanceof Boolean) {
+      obj.setCloseOnException((Boolean)json.getValue("closeOnException"));
+    }
     if (json.getValue("defaultHost") instanceof String) {
       obj.setDefaultHost((String)json.getValue("defaultHost"));
     }
@@ -84,6 +87,7 @@ public class HttpClientOptionsConverter {
               map(item -> item.name()).
               collect(java.util.stream.Collectors.toList())));
     }
+    json.put("closeOnException", obj.isCloseOnException());
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }
