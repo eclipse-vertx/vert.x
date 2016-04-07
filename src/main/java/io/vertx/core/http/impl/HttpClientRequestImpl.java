@@ -57,7 +57,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private String hostHeader;
   private Handler<Void> continueHandler;
   private HttpClientStream stream;
-  private volatile HttpClientConnection conn;
+  private volatile Object lock;
   private Handler<Void> drainHandler;
   private Handler<HttpClientRequest> pushHandler;
   private Handler<HttpConnection> connectionHandler;
@@ -417,12 +417,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   protected Object getLock() {
     // We do the initial check outside the synchronized block to prevent the hit of synchronized once the conn has
     // been set
-    if (conn != null) {
-      return conn;
+    if (lock != null) {
+      return lock;
     } else {
       synchronized (this) {
-        if (conn != null) {
-          return conn;
+        if (lock != null) {
+          return lock;
         } else {
           return this;
         }
@@ -600,7 +600,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     HttpClientConnection conn = stream.connection();
 
     synchronized (this) {
-      this.conn = conn;
       this.stream = stream;
       stream.beginRequest(this);
 
@@ -649,6 +648,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
         }
       }
+
+      // Set the lock at the end of the block so we are sure that another non vertx thread will get access to the connection
+      // when this callback runs on the 'this' lock
+      this.lock = conn;
     }
   }
 

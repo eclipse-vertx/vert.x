@@ -1555,7 +1555,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testClientContextWithKeepAlive() throws Exception {
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(false).setMaxPoolSize(1));
     testClientContext();
   }
 
@@ -1568,34 +1568,34 @@ public class Http1xTest extends HttpTest {
 
   private void testClientContext() throws Exception {
     CountDownLatch serverLatch = new CountDownLatch(1);
-    server.requestHandler(req -> req.response().end()).listen(ar -> {
+    server.requestHandler(req -> {
+      req.response().end();
+    } ).listen(ar -> {
       assertTrue(ar.succeeded());
       serverLatch.countDown();;
     });
     awaitLatch(serverLatch);
     CountDownLatch req1Latch = new CountDownLatch(1);
     AtomicReference<Context> c = new AtomicReference<>();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", res -> {
       c.set(Vertx.currentContext());
       res.endHandler(v -> req1Latch.countDown());
     });
     awaitLatch(req1Latch);
     CountDownLatch req2Latch = new CountDownLatch(2);
-    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+    HttpClientRequest req2 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", res -> {
       assertSame(Vertx.currentContext(), c.get());
       req2Latch.countDown();
-    }).sendHead();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+    }).exceptionHandler(this::fail).sendHead();
+    HttpClientRequest req3 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3", res -> {
       assertSame(Vertx.currentContext(), c.get());
       req2Latch.countDown();
-    });
+    }).exceptionHandler(this::fail);
+    req3.end();
     req2.end();
-
-
-
     awaitLatch(req2Latch);
     vertx.getOrCreateContext().runOnContext(v -> {
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4", res -> {
         // This should warn in the log (console) as we are called back on the connection context
         // and not on the context doing the request
         assertSame(Vertx.currentContext(), c.get());
