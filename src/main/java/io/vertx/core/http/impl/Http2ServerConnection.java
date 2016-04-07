@@ -150,6 +150,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());
     headers_.path(path);
+    headers_.scheme(isSsl() ? "https" : "http");
     if (host != null) {
       headers_.authority(host);
     }

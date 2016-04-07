@@ -1049,6 +1049,7 @@ public class Http2ServerTest extends Http2TestBase {
       resp.push(HttpMethod.GET, "/wibble", handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
+      assertEquals("https", headers.scheme().toString());
       assertEquals("/wibble", headers.path().toString());
       assertEquals("whatever.com", headers.authority().toString());
     });
@@ -1062,6 +1063,7 @@ public class Http2ServerTest extends Http2TestBase {
           set("bar", Arrays.<CharSequence>asList("bar_value_1", "bar_value_2")), handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
+      assertEquals("https", headers.scheme().toString());
       assertEquals("/wibble", headers.path().toString());
       assertEquals(null, headers.authority());
       assertEquals("foo_value", headers.get("foo").toString());
@@ -1077,6 +1079,7 @@ public class Http2ServerTest extends Http2TestBase {
       resp.push(HttpMethod.GET, "/wibble", handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
+      assertEquals("https", headers.scheme().toString());
       assertEquals("/wibble", headers.path().toString());
       assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, headers.authority().toString());
     });
@@ -1088,6 +1091,7 @@ public class Http2ServerTest extends Http2TestBase {
       resp.push(HttpMethod.GET, "override.com", "/wibble", handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
+      assertEquals("https", headers.scheme().toString());
       assertEquals("/wibble", headers.path().toString());
       assertEquals("override.com", headers.authority().toString());
     });
@@ -1099,6 +1103,7 @@ public class Http2ServerTest extends Http2TestBase {
       resp.push(HttpMethod.GET, null, "/wibble", handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
+      assertEquals("https", headers.scheme().toString());
       assertEquals("/wibble", headers.path().toString());
       assertEquals(null, headers.authority());
     });
@@ -2497,6 +2502,40 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
       testComplete();
     }).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
+  public void testPushPromiseClearText() throws Exception {
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.
+        setHost(DEFAULT_HTTP_HOST).
+        setPort(DEFAULT_HTTP_PORT).
+        setUseAlpn(false).
+        setSsl(false));
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/resource", ar -> {
+        assertTrue(ar.succeeded());
+        ar.result().end("the-pushed-response");
+      });
+      req.response().end();
+    });
+    startServer();
+    client = vertx.createHttpClient(clientOptions.setUseAlpn(false));
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+    req.handler(resp -> {
+      assertEquals(HttpVersion.HTTP_2, resp.version());
+      complete();
+    }).exceptionHandler(this::fail).pushHandler(pushedReq -> {
+      assertEquals("http", pushedReq.headers().get(":scheme"));
+      pushedReq.handler(pushResp -> {
+        pushResp.bodyHandler(buff -> {
+          assertEquals("the-pushed-response", buff.toString());
+          complete();
+        });
+      });
+    }).end();
     await();
   }
 
