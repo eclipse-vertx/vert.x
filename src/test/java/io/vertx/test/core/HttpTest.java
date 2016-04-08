@@ -180,6 +180,65 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testServerActualPortWhenSet() {
+    server
+        .requestHandler(request -> {
+          request.response().end("hello");
+        })
+        .listen(ar -> {
+          assertEquals(ar.result().actualPort(), DEFAULT_HTTP_PORT);
+          vertx.createHttpClient(createBaseClientOptions()).getNow(ar.result().actualPort(), DEFAULT_HTTP_HOST, "/", response -> {
+            assertEquals(response.statusCode(), 200);
+            response.bodyHandler(body -> {
+              assertEquals(body.toString("UTF-8"), "hello");
+              testComplete();
+            });
+          });
+        });
+    await();
+  }
+
+  @Test
+  public void testServerActualPortWhenZero() {
+    server = vertx.createHttpServer(createBaseServerOptions().setPort(0).setHost(DEFAULT_HTTP_HOST));
+    server
+        .requestHandler(request -> {
+          request.response().end("hello");
+        })
+        .listen(ar -> {
+          assertTrue(ar.result().actualPort() != 0);
+          vertx.createHttpClient(createBaseClientOptions()).getNow(ar.result().actualPort(), DEFAULT_HTTP_HOST, "/", response -> {
+            assertEquals(response.statusCode(), 200);
+            response.bodyHandler(body -> {
+              assertEquals(body.toString("UTF-8"), "hello");
+              testComplete();
+            });
+          });
+        });
+    await();
+  }
+
+  @Test
+  public void testServerActualPortWhenZeroPassedInListen() {
+    server = vertx.createHttpServer(new HttpServerOptions(createBaseServerOptions()).setHost(DEFAULT_HTTP_HOST));
+    server
+        .requestHandler(request -> {
+          request.response().end("hello");
+        })
+        .listen(0, ar -> {
+          assertTrue(ar.result().actualPort() != 0);
+          vertx.createHttpClient(createBaseClientOptions()).getNow(ar.result().actualPort(), DEFAULT_HTTP_HOST, "/", response -> {
+            assertEquals(response.statusCode(), 200);
+            response.bodyHandler(body -> {
+              assertEquals(body.toString("UTF-8"), "hello");
+              testComplete();
+            });
+          });
+        });
+    await();
+  }
+
+  @Test
   public void testRequestNPE() {
     String uri = "/some-uri?foo=bar";
     TestUtils.assertNullPointerException(() -> client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, uri, null));
