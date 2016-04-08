@@ -707,7 +707,7 @@ public class MetricsContextTest extends AsyncTestBase {
       public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
         return new DummyDatagramMetrics() {
           @Override
-          public void listening(SocketAddress localAddress) {
+          public void listening(String localName, SocketAddress localAddress) {
             listening.set(true);
             checker.accept(expectedThread.get(), expectedContext.get());
           }

@@ -29,6 +29,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -90,6 +91,6 @@ public interface VertxInternal extends Vertx {
 
   ClusterManager getClusterManager();
 
-  void resolveAsync(String host, Handler<AsyncResult<String>> resultHandler);
+  void resolveAsync(String host, Handler<AsyncResult<InetAddress>> resultHandler);
 
 }

@@ -194,7 +194,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
         ChannelFuture future = channel().bind(new InetSocketAddress(res.result(), local.port()));
         addListener(future, ar -> {
           if (ar.succeeded()) {
-            ((DatagramSocketMetrics) metrics).listening(localAddress());
+            ((DatagramSocketMetrics) metrics).listening(local.host(), localAddress());
           }
           handler.handle(ar);
         });

@@ -44,11 +44,11 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 
 import javax.net.ssl.SSLHandshakeException;
-import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;

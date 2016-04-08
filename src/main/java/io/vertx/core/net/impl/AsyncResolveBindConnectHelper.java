@@ -1,20 +1,20 @@
 /*
- * Copyright 2014 Red Hat, Inc.
- *
+ * Copyright (c) 2011-2013 The original author or authors
+ *  ------------------------------------------------------
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  and Apache License v2.0 which accompanies this distribution.
  *
- *  The Eclipse Public License is available at
- *  http://www.eclipse.org/legal/epl-v10.html
+ *      The Eclipse Public License is available at
+ *      http://www.eclipse.org/legal/epl-v10.html
  *
- *  The Apache License v2.0 is available at
- *  http://www.opensource.org/licenses/apache2.0.php
+ *      The Apache License v2.0 is available at
+ *      http://www.opensource.org/licenses/apache2.0.php
  *
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -83,7 +83,8 @@ public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>>
     vertx.resolveAsync(host, res -> {
       if (res.succeeded()) {
         // At this point the name is an IP address so there will be no resolve hit
-        ChannelFuture future = cfProducer.apply(new InetSocketAddress(res.result(), port));
+        InetSocketAddress t = new InetSocketAddress(res.result(), port);
+        ChannelFuture future = cfProducer.apply(t);
         future.addListener(f -> {
           if (f.isSuccess()) {
             asyncResolveBindConnectHelper.handle(Future.succeededFuture(future));

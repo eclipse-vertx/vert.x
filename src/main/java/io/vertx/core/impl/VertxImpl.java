@@ -661,12 +661,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void resolveAsync(String host, Handler<AsyncResult<String>> resultHandler) {
+  public void resolveAsync(String host, Handler<AsyncResult<InetAddress>> resultHandler) {
     // For now just do a blocking resolve
     // When Netty 4.1 is released we can use async DNS resolution
     executeBlockingInternal(() -> {
       try {
-        return InetAddress.getByName(host).getHostAddress();
+        return InetAddress.getByName(host);
       } catch (UnknownHostException e) {
         throw new VertxException(e);
       }

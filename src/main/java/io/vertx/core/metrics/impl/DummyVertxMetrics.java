@@ -319,7 +319,7 @@ public class DummyVertxMetrics implements VertxMetrics {
   protected class DummyDatagramMetrics implements DatagramSocketMetrics {
 
     @Override
-    public void listening(SocketAddress localAddress) {
+    public void listening(String localName, SocketAddress localAddress) {
     }
 
     @Override
