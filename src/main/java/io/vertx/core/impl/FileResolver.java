@@ -18,10 +18,8 @@ package io.vertx.core.impl;
 
 import io.vertx.core.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.io.Closeable;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.FileAlreadyExistsException;
@@ -164,8 +162,8 @@ public class FileResolver {
   }
 
   private synchronized File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+    ZipFile zip = null;
     try {
-      ZipFile zip;
       String path = url.getPath();
       int idx1 = path.lastIndexOf(".jar!");
       if (idx1 == -1) {
@@ -208,9 +206,21 @@ public class FileResolver {
       }
     } catch (IOException e) {
       throw new VertxException(e);
+    } finally {
+      closeQuietly(zip);
     }
 
     return new File(cacheDir, fileName);
+  }
+
+  private void closeQuietly(Closeable zip) {
+    if (zip != null) {
+      try {
+        zip.close();
+      } catch (IOException e) {
+        // Ignored.
+      }
+    }
   }
 
   /**
