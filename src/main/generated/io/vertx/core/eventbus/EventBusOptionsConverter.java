@@ -69,6 +69,12 @@ public class EventBusOptionsConverter {
           obj.addEnabledCipherSuite((String)item);
       });
     }
+    if (json.getValue("enabledSecureTransportProtocols") instanceof JsonArray) {
+      json.getJsonArray("enabledSecureTransportProtocols").forEach(item -> {
+        if (item instanceof String)
+          obj.addEnabledSecureTransportProtocol((String)item);
+      });
+    }
     if (json.getValue("host") instanceof String) {
       obj.setHost((String)json.getValue("host"));
     }
@@ -170,6 +176,13 @@ public class EventBusOptionsConverter {
     if (obj.getEnabledCipherSuites() != null) {
       json.put("enabledCipherSuites", new JsonArray(
           obj.getEnabledCipherSuites().
+              stream().
+              map(item -> item).
+              collect(java.util.stream.Collectors.toList())));
+    }
+    if (obj.getEnabledSecureTransportProtocols() != null) {
+      json.put("enabledSecureTransportProtocols", new JsonArray(
+          obj.getEnabledSecureTransportProtocols().
               stream().
               map(item -> item).
               collect(java.util.stream.Collectors.toList())));

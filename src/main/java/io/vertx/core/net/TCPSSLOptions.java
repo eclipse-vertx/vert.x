@@ -65,10 +65,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final boolean DEFAULT_USE_ALPN = false;
 
-  /**
-   * Default SSL engine = JDK
-   */
+   /**
+    * Default SSL engine = JDK
+    */
   public static final SSLEngine DEFAULT_SSL_ENGINE = SSLEngine.JDK;
+
 
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
@@ -83,6 +84,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
   private SSLEngine sslEngine;
+  private Set<String> enabledSecureTransportProtocols = new HashSet<>();
 
   /**
    * Default constructor
@@ -112,6 +114,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
     this.sslEngine = other.sslEngine;
+    this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new HashSet<>() : new HashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
   /**
@@ -189,7 +192,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setSoLinger(int soLinger) {
-    if (soLinger < 0  && soLinger != DEFAULT_SO_LINGER) {
+    if (soLinger < 0 && soLinger != DEFAULT_SO_LINGER) {
       throw new IllegalArgumentException("soLinger must be >= 0");
     }
     this.soLinger = soLinger;
@@ -426,6 +429,25 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  /**
+   * Add an enabled SSL/TLS protocols
+   *
+   * @param protocol  the SSL/TLS protocol do enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions addEnabledSecureTransportProtocol(String protocol) {
+    enabledSecureTransportProtocols.add(protocol);
+    return this;
+  }
+
+  /**
+   * Returns the enabled SSL/TLS protocols
+   * @return the enabled protocols
+   */
+  public Set<String> getEnabledSecureTransportProtocols() {
+    return enabledSecureTransportProtocols;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -448,6 +470,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (trustOptions != null ? !trustOptions.equals(that.trustOptions) : that.trustOptions != null) return false;
     if (useAlpn != that.useAlpn) return false;
     if (sslEngine != that.sslEngine) return false;
+    if (!enabledSecureTransportProtocols.equals(that.enabledSecureTransportProtocols)) return false;
 
     return true;
   }
@@ -468,6 +491,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     result = 31 * result + (crlValues != null ? crlValues.hashCode() : 0);
     result = 31 * result + (useAlpn ? 1 : 0);
     result = 31 * result + (sslEngine != null ? sslEngine.hashCode() : 0);
+    result = 31 * result + (enabledSecureTransportProtocols != null ? enabledSecureTransportProtocols
+        .hashCode() : 0);
     return result;
   }
 }
