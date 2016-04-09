@@ -63,6 +63,9 @@ public class VertxOptionsConverter {
     if (json.getValue("haGroup") instanceof String) {
       obj.setHAGroup((String)json.getValue("haGroup"));
     }
+    if (json.getValue("hostnameResolverOptions") instanceof JsonObject) {
+      obj.setHostnameResolverOptions(new io.vertx.core.dns.HostnameResolverOptions((JsonObject)json.getValue("hostnameResolverOptions")));
+    }
     if (json.getValue("internalBlockingPoolSize") instanceof Number) {
       obj.setInternalBlockingPoolSize(((Number)json.getValue("internalBlockingPoolSize")).intValue());
     }
@@ -106,6 +109,9 @@ public class VertxOptionsConverter {
     json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
       json.put("haGroup", obj.getHAGroup());
+    }
+    if (obj.getHostnameResolverOptions() != null) {
+      json.put("hostnameResolverOptions", obj.getHostnameResolverOptions().toJson());
     }
     json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
     json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());

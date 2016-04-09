@@ -189,7 +189,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
         ((DatagramSocketMetrics) metrics).listening(local);
 =======
 */
-    vertx.resolveAsync(local.host(), res -> {
+    vertx.resolveHostname(local.host(), res -> {
       if (res.succeeded()) {
         ChannelFuture future = channel().bind(new InetSocketAddress(res.result(), local.port()));
         addListener(future, ar -> {
@@ -233,7 +233,7 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     Objects.requireNonNull(host, "no null host accepted");
     InetSocketAddress addr = InetSocketAddress.createUnresolved(host, port);
     if (addr.isUnresolved()) {
-      vertx.resolveAsync(host, res -> {
+      vertx.resolveHostname(host, res -> {
         if (res.succeeded()) {
           doSend(packet, new InetSocketAddress(res.result(), port), handler);
         } else {

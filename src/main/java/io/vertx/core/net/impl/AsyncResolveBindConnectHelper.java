@@ -80,7 +80,7 @@ public class AsyncResolveBindConnectHelper<T> implements Handler<AsyncResult<T>>
                                                                             ChannelFuture> cfProducer) {
     checkPort(port);
     AsyncResolveBindConnectHelper<ChannelFuture> asyncResolveBindConnectHelper = new AsyncResolveBindConnectHelper<>();
-    vertx.resolveAsync(host, res -> {
+    vertx.resolveHostname(host, res -> {
       if (res.succeeded()) {
         // At this point the name is an IP address so there will be no resolve hit
         InetSocketAddress t = new InetSocketAddress(res.result(), port);

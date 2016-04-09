@@ -91,6 +91,12 @@ public interface VertxInternal extends Vertx {
 
   ClusterManager getClusterManager();
 
-  void resolveAsync(String host, Handler<AsyncResult<InetAddress>> resultHandler);
+  /**
+   * Resolve an hostname (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
+   *
+   * @param hostname the hostname to resolve
+   * @param resultHandler the result handler
+   */
+  void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler);
 
 }

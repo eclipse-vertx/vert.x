@@ -19,6 +19,11 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.resolver.InetNameResolver;
+import io.netty.resolver.dns.DnsNameResolverBuilder;
+import io.netty.resolver.dns.DnsServerAddresses;
+import io.netty.util.NetUtil;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
@@ -27,6 +32,7 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
 import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.HostnameResolverOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
@@ -62,6 +68,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -108,6 +115,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private HAManager haManager;
   private boolean closed;
   private Handler<Throwable> exceptionHandler;
+  private final InetNameResolver resolver;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -138,6 +146,37 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                                         new VertxThreadFactory("vert.x-internal-blocking-", checker, true));
     workerOrderedFact = new OrderedExecutorFactory(workerPool);
     internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
+
+    DnsNameResolverBuilder builder = new DnsNameResolverBuilder(createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
+    builder.channelFactory(NioDatagramChannel::new);
+    HostnameResolverOptions dnsOptions = options.getHostnameResolverOptions();
+    if (dnsOptions != null) {
+      List<String> dnsServers = dnsOptions.getServers();
+      if (dnsServers != null && dnsServers.size() > 0) {
+        List<InetSocketAddress> serverList = new ArrayList<>();
+        for (String dnsServer : dnsServers) {
+          int sep = dnsServer.indexOf(':');
+          String ipAddress;
+          int port;
+          if (sep != -1) {
+            ipAddress = dnsServer.substring(0, sep);
+            port = Integer.parseInt(dnsServer.substring(sep + 1));
+          } else {
+            ipAddress = dnsServer;
+            port = 53;
+          }
+          try {
+            serverList.add(new InetSocketAddress(InetAddress.getByAddress(NetUtil.createByteArrayFromIpAddressString(ipAddress)), port));
+          } catch (UnknownHostException e) {
+            throw new VertxException(e);
+          }
+        }
+        builder.nameServerAddresses(DnsServerAddresses.sequential(serverList));
+      }
+      builder.optResourceEnabled(dnsOptions.isOptResourceEnabled());
+    }
+    resolver = builder.build();
+
     this.fileResolver = new FileResolver(this);
     this.deploymentManager = new DeploymentManager(this);
     this.metrics = initialiseMetrics(options);
@@ -459,6 +498,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       return;
     }
     closed = true;
+
+    if (resolver != null) {
+      resolver.close();
+    }
+
     deploymentManager.undeployAll(ar -> {
       if (haManager() != null) {
         haManager().stop();
@@ -661,16 +705,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void resolveAsync(String host, Handler<AsyncResult<InetAddress>> resultHandler) {
-    // For now just do a blocking resolve
-    // When Netty 4.1 is released we can use async DNS resolution
-    executeBlockingInternal(() -> {
-      try {
-        return InetAddress.getByName(host);
-      } catch (UnknownHostException e) {
-        throw new VertxException(e);
-      }
-    }, resultHandler);
+  public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
+    Context callback = getOrCreateContext();
+    io.netty.util.concurrent.Future<InetAddress> fut = resolver.resolve(hostname);
+    fut.addListener(a -> {
+      callback.runOnContext(v -> {
+        if (a.isSuccess()) {
+          InetAddress address = fut.getNow();
+          resultHandler.handle(Future.succeededFuture(address));
+        } else {
+          resultHandler.handle(Future.failedFuture(a.cause()));
+        }
+      });
+    });
   }
 
   @SuppressWarnings("unchecked")

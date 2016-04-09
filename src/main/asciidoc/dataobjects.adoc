@@ -217,6 +217,7 @@ Set whether HA will be enabled on the Vert.x instance.
 +++
 Set the HA group to be used when HA is enabled.
 +++
+|[[hostnameResolverOptions]]`hostnameResolverOptions`|`link:dataobjects.html#HostnameResolverOptions[HostnameResolverOptions]`|-
 |[[internalBlockingPoolSize]]`internalBlockingPoolSize`|`Number (int)`|
 +++
 Set the value of internal blocking pool size
@@ -1534,6 +1535,32 @@ Add a certificate path
 |[[certValues]]`certValues`|`Array of Buffer`|
 +++
 Add a certificate value
++++
+|===
+
+[[HostnameResolverOptions]]
+== HostnameResolverOptions
+
+++++
+ Configuration options for Vert.x hostname resolver.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[optResourceEnabled]]`optResourceEnabled`|`Boolean`|
++++
+Set to true to enable the automatic inclusion in DNS queries of an optional record that hints
+ the remote DNS server about how much data the resolver can read per response.
++++
+|[[servers]]`servers`|`Array of String`|
++++
+Set the list of DNS server addresses, an address is the IP  of the dns server, followed by an optional
+ colon and a port, e.g <code>8.8.8.8</code> or {code 192.168.0.1:40000}. When the list is empty, the resolver
+ will use the list of the system DNS server addresses from the environment, if that list cannot be retrieved
+ it will use Google's public DNS servers <code>"8.8.8.8"</code> and <code>"8.8.4.4"</code>.
 +++
 |===
 

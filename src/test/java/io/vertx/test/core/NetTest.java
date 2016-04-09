@@ -693,6 +693,7 @@ public class NetTest extends VertxTestBase {
     assertIllegalArgumentException(() -> new SocketAddressImpl(65536, "someHost"));
   }
 
+  @Repeat(times = 100)
   @Test
   public void testEchoBytes() {
     Buffer sent = TestUtils.randomBuffer(100);
