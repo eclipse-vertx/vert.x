@@ -27,8 +27,26 @@ import io.vertx.core.json.JsonArray;
 public class HostnameResolverOptionsConverter {
 
   public static void fromJson(JsonObject json, HostnameResolverOptions obj) {
+    if (json.getValue("cacheMaxTimeToLive") instanceof Number) {
+      obj.setCacheMaxTimeToLive(((Number)json.getValue("cacheMaxTimeToLive")).intValue());
+    }
+    if (json.getValue("cacheMinTimeToLive") instanceof Number) {
+      obj.setCacheMinTimeToLive(((Number)json.getValue("cacheMinTimeToLive")).intValue());
+    }
+    if (json.getValue("cacheNegativeTimeToLive") instanceof Number) {
+      obj.setCacheNegativeTimeToLive(((Number)json.getValue("cacheNegativeTimeToLive")).intValue());
+    }
+    if (json.getValue("maxQueries") instanceof Number) {
+      obj.setMaxQueries(((Number)json.getValue("maxQueries")).intValue());
+    }
     if (json.getValue("optResourceEnabled") instanceof Boolean) {
       obj.setOptResourceEnabled((Boolean)json.getValue("optResourceEnabled"));
+    }
+    if (json.getValue("queryTimeout") instanceof Number) {
+      obj.setQueryTimeout(((Number)json.getValue("queryTimeout")).longValue());
+    }
+    if (json.getValue("rdFlag") instanceof Boolean) {
+      obj.setRdFlag((Boolean)json.getValue("rdFlag"));
     }
     if (json.getValue("servers") instanceof JsonArray) {
       json.getJsonArray("servers").forEach(item -> {
@@ -39,7 +57,13 @@ public class HostnameResolverOptionsConverter {
   }
 
   public static void toJson(HostnameResolverOptions obj, JsonObject json) {
+    json.put("cacheMaxTimeToLive", obj.getCacheMaxTimeToLive());
+    json.put("cacheMinTimeToLive", obj.getCacheMinTimeToLive());
+    json.put("cacheNegativeTimeToLive", obj.getCacheNegativeTimeToLive());
+    json.put("maxQueries", obj.getMaxQueries());
     json.put("optResourceEnabled", obj.isOptResourceEnabled());
+    json.put("queryTimeout", obj.getQueryTimeout());
+    json.put("rdFlag", obj.getRdFlag());
     if (obj.getServers() != null) {
       json.put("servers", new JsonArray(
           obj.getServers().

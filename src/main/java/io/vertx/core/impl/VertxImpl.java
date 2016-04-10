@@ -149,9 +149,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder(createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
     builder.channelFactory(NioDatagramChannel::new);
-    HostnameResolverOptions dnsOptions = options.getHostnameResolverOptions();
-    if (dnsOptions != null) {
-      List<String> dnsServers = dnsOptions.getServers();
+    HostnameResolverOptions hostnameResolver = options.getHostnameResolverOptions();
+    DnsServerAddresses nameServerAddresses = DnsServerAddresses.defaultAddresses();
+    if (hostnameResolver != null) {
+      List<String> dnsServers = hostnameResolver.getServers();
       if (dnsServers != null && dnsServers.size() > 0) {
         List<InetSocketAddress> serverList = new ArrayList<>();
         for (String dnsServer : dnsServers) {
@@ -171,11 +172,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             throw new VertxException(e);
           }
         }
-        builder.nameServerAddresses(DnsServerAddresses.sequential(serverList));
+        nameServerAddresses = DnsServerAddresses.sequential(serverList);
+        builder.nameServerAddresses(nameServerAddresses);
       }
-      builder.optResourceEnabled(dnsOptions.isOptResourceEnabled());
+      builder.optResourceEnabled(hostnameResolver.isOptResourceEnabled());
+      builder.ttl(hostnameResolver.getCacheMinTimeToLive(), hostnameResolver.getCacheMaxTimeToLive());
+      builder.negativeTtl(hostnameResolver.getCacheNegativeTimeToLive());
+      builder.queryTimeoutMillis(hostnameResolver.getQueryTimeout());
+      builder.maxQueriesPerResolve(hostnameResolver.getMaxQueries());
+      builder.recursionDesired(hostnameResolver.getRdFlag());
     }
-    resolver = builder.build();
+    this.resolver = builder.build();
 
     this.fileResolver = new FileResolver(this);
     this.deploymentManager = new DeploymentManager(this);
