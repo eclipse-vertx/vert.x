@@ -557,7 +557,7 @@
  *
  * ==== Configuring the Cipher suite
  *
- * By default, the TLS configuration will uses the Cipher suite of the JVM running Vert.x. This Cipher suite can be
+ * By default, the TLS configuration will use the Cipher suite of the JVM running Vert.x. This Cipher suite can be
  * configured with a suite of enabled ciphers:
  *
  * [source,$lang]
@@ -566,6 +566,18 @@
  * ----
  *
  * Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
+ *
+ * ==== Configuring TLS protocol versions
+ *
+ * By default, the TLS configuration will use the following protocol versions: SSLv2Hello, TLSv1, TLSv1.1 and TLSv1.2. Protocol versions can be
+ * configured by explicitly adding enabled protocols:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example45}
+ * ----
+ *
+ * Protocol versions can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
  *
  * ==== OpenSSL engine
  *
