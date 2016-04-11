@@ -630,10 +630,19 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return the hostname resolver options to configure resolving DNS servers, cache TTL, etc...
+   */
   public HostnameResolverOptions getHostnameResolverOptions() {
     return hostnameResolverOptions;
   }
 
+  /**
+   * Sets the hostname resolver configuration to configure resolving DNS servers, cache TTL, etc...
+   *
+   * @param hostnameResolverOptions the hostname resolver options
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setHostnameResolverOptions(HostnameResolverOptions hostnameResolverOptions) {
     this.hostnameResolverOptions = hostnameResolverOptions;
     return this;
@@ -699,7 +708,7 @@ public class VertxOptions {
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metrics +
-        ", dnsResolver=" + hostnameResolverOptions.toJson() +
+        ", hostnameResolver=" + hostnameResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTime=" + warningExceptionTime +
         '}';
