@@ -19,11 +19,6 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.resolver.InetNameResolver;
-import io.netty.resolver.dns.DnsNameResolverBuilder;
-import io.netty.resolver.dns.DnsServerAddresses;
-import io.netty.util.NetUtil;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
@@ -32,7 +27,6 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
 import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.HostnameResolverOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
@@ -68,8 +62,6 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -111,11 +103,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NioEventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
+  private final HostnameResolver hostnameResolver;
   private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
   private Handler<Throwable> exceptionHandler;
-  private final InetNameResolver resolver;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -147,43 +139,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     workerOrderedFact = new OrderedExecutorFactory(workerPool);
     internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
 
-    DnsNameResolverBuilder builder = new DnsNameResolverBuilder(createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
-    builder.channelFactory(NioDatagramChannel::new);
-    HostnameResolverOptions hostnameResolver = options.getHostnameResolverOptions();
-    DnsServerAddresses nameServerAddresses = DnsServerAddresses.defaultAddresses();
-    if (hostnameResolver != null) {
-      List<String> dnsServers = hostnameResolver.getServers();
-      if (dnsServers != null && dnsServers.size() > 0) {
-        List<InetSocketAddress> serverList = new ArrayList<>();
-        for (String dnsServer : dnsServers) {
-          int sep = dnsServer.indexOf(':');
-          String ipAddress;
-          int port;
-          if (sep != -1) {
-            ipAddress = dnsServer.substring(0, sep);
-            port = Integer.parseInt(dnsServer.substring(sep + 1));
-          } else {
-            ipAddress = dnsServer;
-            port = 53;
-          }
-          try {
-            serverList.add(new InetSocketAddress(InetAddress.getByAddress(NetUtil.createByteArrayFromIpAddressString(ipAddress)), port));
-          } catch (UnknownHostException e) {
-            throw new VertxException(e);
-          }
-        }
-        nameServerAddresses = DnsServerAddresses.sequential(serverList);
-        builder.nameServerAddresses(nameServerAddresses);
-      }
-      builder.optResourceEnabled(hostnameResolver.isOptResourceEnabled());
-      builder.ttl(hostnameResolver.getCacheMinTimeToLive(), hostnameResolver.getCacheMaxTimeToLive());
-      builder.negativeTtl(hostnameResolver.getCacheNegativeTimeToLive());
-      builder.queryTimeoutMillis(hostnameResolver.getQueryTimeout());
-      builder.maxQueriesPerResolve(hostnameResolver.getMaxQueries());
-      builder.recursionDesired(hostnameResolver.getRdFlag());
-    }
-    this.resolver = builder.build();
-
+    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.fileResolver = new FileResolver(this);
     this.deploymentManager = new DeploymentManager(this);
     this.metrics = initialiseMetrics(options);
@@ -506,14 +462,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     closed = true;
 
-    if (resolver != null) {
-      resolver.close();
-    }
-
     deploymentManager.undeployAll(ar -> {
       if (haManager() != null) {
         haManager().stop();
       }
+      hostnameResolver.close();
       eventBus.close(ar2 -> {
         closeClusterManager(ar3 -> {
           // Copy set to prevent ConcurrentModificationException
@@ -713,18 +666,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
-    Context callback = getOrCreateContext();
-    io.netty.util.concurrent.Future<InetAddress> fut = resolver.resolve(hostname);
-    fut.addListener(a -> {
-      callback.runOnContext(v -> {
-        if (a.isSuccess()) {
-          InetAddress address = fut.getNow();
-          resultHandler.handle(Future.succeededFuture(address));
-        } else {
-          resultHandler.handle(Future.failedFuture(a.cause()));
-        }
-      });
-    });
+    hostnameResolver.resolveHostname(hostname, resultHandler);
   }
 
   @SuppressWarnings("unchecked")
