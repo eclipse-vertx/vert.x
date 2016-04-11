@@ -217,7 +217,10 @@ Set whether HA will be enabled on the Vert.x instance.
 +++
 Set the HA group to be used when HA is enabled.
 +++
-|[[hostnameResolverOptions]]`hostnameResolverOptions`|`link:dataobjects.html#HostnameResolverOptions[HostnameResolverOptions]`|-
+|[[hostnameResolverOptions]]`hostnameResolverOptions`|`link:dataobjects.html#HostnameResolverOptions[HostnameResolverOptions]`|
++++
+Sets the hostname resolver configuration to configure resolving DNS servers, cache TTL, etc...
++++
 |[[internalBlockingPoolSize]]`internalBlockingPoolSize`|`Number (int)`|
 +++
 Set the value of internal blocking pool size

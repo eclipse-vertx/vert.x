@@ -180,15 +180,6 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
     Objects.requireNonNull(handler, "no null handler accepted");
-/*
-<<<<<<< HEAD
-    InetSocketAddress is = new InetSocketAddress(local.host(), local.port());
-    ChannelFuture future = channel().bind(is);
-    addListener(future, ar -> {
-      if (ar.succeeded()) {
-        ((DatagramSocketMetrics) metrics).listening(local);
-=======
-*/
     vertx.resolveHostname(local.host(), res -> {
       if (res.succeeded()) {
         ChannelFuture future = channel().bind(new InetSocketAddress(res.result(), local.port()));
@@ -200,7 +191,6 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
         });
       } else {
         handler.handle(Future.failedFuture(res.cause()));
-//>>>>>>> a2a6fd9... Do lookups on worker thread to avoid blocking event loop
       }
     });
 
