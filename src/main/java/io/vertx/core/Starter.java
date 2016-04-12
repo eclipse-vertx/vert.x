@@ -477,20 +477,36 @@ public class Starter {
     try {
       Enumeration<URL> resources = getClass().getClassLoader().getResources("META-INF/MANIFEST.MF");
       while (resources.hasMoreElements()) {
-        Manifest manifest = new Manifest(resources.nextElement().openStream());
-        Attributes attributes = manifest.getMainAttributes();
-        String mainClass = attributes.getValue("Main-Class");
-        if (Starter.class.getName().equals(mainClass)) {
-          String theMainVerticle = attributes.getValue("Main-Verticle");
-          if (theMainVerticle != null) {
-            return theMainVerticle;
+        InputStream stream = null;
+        try {
+          stream = resources.nextElement().openStream();
+          Manifest manifest = new Manifest(stream);
+          Attributes attributes = manifest.getMainAttributes();
+          String mainClass = attributes.getValue("Main-Class");
+          if (Starter.class.getName().equals(mainClass)) {
+            String theMainVerticle = attributes.getValue("Main-Verticle");
+            if (theMainVerticle != null) {
+              return theMainVerticle;
+            }
           }
+        } finally {
+          closeQuietly(stream);
         }
       }
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
     }
     return null;
+  }
+
+  private void closeQuietly(InputStream stream) {
+    if (stream != null) {
+      try {
+        stream.close();
+      } catch (IOException e) {
+        // Ignore it.
+      }
+    }
   }
 
   private void displaySyntax() {

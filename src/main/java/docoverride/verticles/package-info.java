@@ -73,7 +73,7 @@
  *       if (res.succeeded()) {
  *         startFuture.complete();
  *       } else {
- *         startFuture.fail();
+ *         startFuture.fail(res.cause());
  *       }
  *     });
  *   }

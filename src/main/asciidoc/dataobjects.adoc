@@ -385,6 +385,10 @@ Add a CRL value
 +++
 Add an enabled cipher suite
 +++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
++++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
@@ -626,6 +630,10 @@ Add a CRL value
 +++
 Add an enabled cipher suite
 +++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
++++
 |[[host]]`host`|`String`|
 +++
 Set the host
@@ -755,6 +763,10 @@ Add a CRL value
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
 Add an enabled cipher suite
++++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
@@ -997,6 +1009,10 @@ Add a CRL value
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
 Add an enabled cipher suite
++++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
 +++
 |[[handle100ContinueAutomatically]]`handle100ContinueAutomatically`|`Boolean`|
 +++
@@ -1567,6 +1583,10 @@ Add a CRL value
 |[[enabledCipherSuites]]`enabledCipherSuites`|`Array of String`|
 +++
 Add an enabled cipher suite
++++
+|[[enabledSecureTransportProtocols]]`enabledSecureTransportProtocols`|`Array of String`|
++++
+Add an enabled SSL/TLS protocols
 +++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++

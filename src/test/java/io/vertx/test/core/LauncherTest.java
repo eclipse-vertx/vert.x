@@ -220,6 +220,54 @@ public class LauncherTest extends VertxTestBase {
     waitUntil(() -> HelloCommand.called);
   }
 
+  @Test
+  public void testRunVerticleWithoutMainVerticleInManifestButWithCustomCommand() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher-Default-Command.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Default-Command.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    Launcher launcher = new Launcher();
+    HelloCommand.called = false;
+    String[] args = {"--name=vert.x"};
+    launcher.dispatch(args);
+    waitUntil(() -> HelloCommand.called);
+  }
+
+  @Test
+  public void testRunWithOverriddenDefaultCommand() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher-hello.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher-hello.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    HelloCommand.called = false;
+    String[] args = {"run", TestVerticle.class.getName(), "--name=vert.x"};
+    Launcher.main(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+  }
+
+  @Test
+  public void testRunWithOverriddenDefaultCommandRequiringArgs() throws Exception {
+    // Copy the right manifest
+    File manifest = new File("target/test-classes/META-INF/MANIFEST-Launcher-run.MF");
+    if (!manifest.isFile()) {
+      throw new IllegalStateException("Cannot find the MANIFEST-Launcher-run.MF file");
+    }
+    File target = new File("target/test-classes/META-INF/MANIFEST.MF");
+    Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+    String[] args = {TestVerticle.class.getName()};
+    Launcher.main(args);
+    waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+  }
+
 
   @Test
   public void testRunVerticleWithExtendedMainVerticleNoArgs() throws Exception {
@@ -366,7 +414,7 @@ public class LauncherTest extends VertxTestBase {
     VertxOptions opts = launcher.getVertxOptions();
 
     assertEquals(123, opts.getEventLoopPoolSize(), 0);
-    assertEquals(123767667l, opts.getMaxEventLoopExecuteTime());
+    assertEquals(123767667L, opts.getMaxEventLoopExecuteTime());
     assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
 

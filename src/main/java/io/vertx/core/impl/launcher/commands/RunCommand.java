@@ -401,7 +401,8 @@ public class RunCommand extends BareCommand {
         try {
           conf = new JsonObject(config);
         } catch (DecodeException e2) {
-          log.error("-conf option does not point to a file and is not valid JSON: " + config);
+          // The configuration is not printed for security purpose, it can contain sensitive data.
+          log.error("The -conf option does not point to an existing file or is not a valid JSON object");
           return null;
         }
       }

@@ -375,6 +375,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     // By default this method retrieve the value from the 'Main-Verticle' Manifest header. However it can be overridden.
 
     String verticle = getMainVerticle();
+    String command = getCommandFromManifest();
     if (verticle != null) {
       // We have a main verticle, append it to the arg list and execute the default command (run)
       String[] newArgs = new String[args.length + 1];
@@ -382,9 +383,12 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
       System.arraycopy(args, 0, newArgs, 1, args.length);
       execute(getDefaultCommand(), newArgs);
       return;
+    } else if (command != null) {
+      execute(command, args);
+      return;
     }
 
-    // Fall backs
+    // Fallbacks
     if (args.length == 0) {
       printGlobalUsage();
     } else {
@@ -401,6 +405,14 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
    * @return the default command if specified in the {@code MANIFEST}, "run" if not found.
    */
   protected String getDefaultCommand() {
+    String fromManifest = getCommandFromManifest();
+    if (fromManifest == null) {
+      return "run";
+    }
+    return fromManifest;
+  }
+
+  protected String getCommandFromManifest() {
     try {
       Enumeration<URL> resources = RunCommand.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
       while (resources.hasMoreElements()) {
@@ -420,7 +432,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
     }
-    return "run";
+    return null;
   }
 
   /**

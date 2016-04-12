@@ -29,6 +29,7 @@ import java.net.URL;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -170,8 +171,9 @@ public class RunCommandTest extends CommandTestBase {
 
   @Test
   public void testWithConfProvidedInline() throws IOException {
+    long someNumber = new Random().nextLong();
     setManifest("MANIFEST-Launcher-Http-Verticle.MF");
-    cli.dispatch(new Launcher(), new String[] {"--conf={\"name\":\"vertx\"}"});
+    cli.dispatch(new Launcher(), new String[] {"--conf={\"random\":" + someNumber + "}"});
     waitUntil(() -> {
       try {
         return getHttpCode() == 200;
@@ -179,7 +181,23 @@ public class RunCommandTest extends CommandTestBase {
         return false;
       }
     });
-    assertThat(getContent().getJsonObject("conf").getString("name")).isEqualToIgnoringCase("vertx");
+    assertThat(getContent().getJsonObject("conf").getLong("random")).isEqualTo(someNumber);
+  }
+
+  @Test
+  public void testWithBrokenConfProvidedInline() throws IOException {
+    setManifest("MANIFEST-Launcher-Http-Verticle.MF");
+    // There is a missing `}` in the json fragment. This is normal, as the test check that the configuration is not
+    // read in this case.
+    cli.dispatch(new Launcher(), new String[] {"--conf={\"name\":\"vertx\""});
+    waitUntil(() -> {
+      try {
+        return getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+    assertThat(getContent().getJsonObject("conf").toString()).isEqualToIgnoringCase("{}");
   }
 
   @Test

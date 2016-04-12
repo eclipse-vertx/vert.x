@@ -104,6 +104,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private ChannelFuture bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
+  private volatile int actualPort;
   private ContextImpl listenContext;
   private HttpServerMetrics metrics;
 
@@ -203,6 +204,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     sslHelper.setApplicationProtocols(applicationProtocols);
     synchronized (vertx.sharedHttpServers()) {
+      this.actualPort = port; // Will be updated on bind for a wildcard port
       id = new ServerID(port, host);
       HttpServerImpl shared = vertx.sharedHttpServers().get(id);
       if (shared == null) {
@@ -255,6 +257,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               if (!channelFuture.isSuccess()) {
                 vertx.sharedHttpServers().remove(id);
               } else {
+                HttpServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
                 metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
               }
             });
@@ -274,6 +277,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
+        this.actualPort = shared.actualPort;
         addHandlers(actualServer, listenContext);
         metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
       }
@@ -491,6 +495,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     ChannelGroupFuture fut = serverChannelGroup.close();
     fut.addListener(cgf -> executeCloseDone(closeContext, done, fut.cause()));
+  }
+
+  @Override
+  public int actualPort() {
+    return actualPort;
   }
 
   private void executeCloseDone(final ContextImpl closeContext, final Handler<AsyncResult<Void>> done, final Exception e) {

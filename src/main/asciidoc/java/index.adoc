@@ -239,11 +239,13 @@ If your application is not responsive it might be a sign that you are blocking a
 you diagnose such issues, Vert.x will automatically log warnings if it detects an event loop hasn't returned for
 some time. If you see warnings like these in your logs, then you should investigate.
 
- Thread vertx-eventloop-thread-3 has been blocked for 20458 ms
+----
+Thread vertx-eventloop-thread-3 has been blocked for 20458 ms
+----
 
 Vert.x will also provide stack traces to pinpoint exactly where the blocking is occurring.
 
-If you want to turn of these warnings or change the settings, you can do that in the
+If you want to turn off these warnings or change the settings, you can do that in the
 `link:../../apidocs/io/vertx/core/VertxOptions.html[VertxOptions]` object before creating the Vertx object.
 
 [[blocking_code]]
@@ -1079,6 +1081,10 @@ The `start`, `stop` and `list` command are also available from the `vertx` tool.
 
  If option values contain spaces, don't forget to wrap the value between `""` (double-quotes).
 
+ As the `start` command spawns a new process, the java options passed to the JVM are not propagated, so you **must**
+ use `java-opts` to configure the JVM (`-X`, `-D`...). If you use the `CLASSPATH` environment variable, be sure it
+ contains all the required jars (vertx-core, your jars and all the dependencies).
+
 The set of commands is extensible, refer to the <<Extending the vert.x Launcher>> section.
 
 === Live Redeploy
@@ -1091,7 +1097,7 @@ examples:
 ----
 vertx run MyVerticle.groovy --redeploy="**/*.groovy" --launcher-class=io.vertx.core.Launcher
 vertx run MyVerticle.groovy --redeploy="**/*.groovy,**/*.rb"  --launcher-class=io.vertx.core.Launcher
-java io.vertx.core.Launcher run org.acme.MyVerticle –redeploy="**/*.class"  --launcher-class=io.vertx.core
+java io.vertx.core.Launcher run org.acme.MyVerticle --redeploy="**/*.class"  --launcher-class=io.vertx.core
 .Launcher -cp ...
 ----
 
@@ -1128,7 +1134,7 @@ You can also hook your build process in the redeploy cycle:
 
 [source]
 ----
-java –jar target/my-fat-jar.jar –redeploy="**/*.java" --on-redeploy="mvn package"
+java -jar target/my-fat-jar.jar --redeploy="**/*.java" --on-redeploy="mvn package"
 java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./gradlew shadowJar'
 ----
 

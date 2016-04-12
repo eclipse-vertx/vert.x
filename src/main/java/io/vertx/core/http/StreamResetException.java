@@ -19,7 +19,7 @@ package io.vertx.core.http;
 import io.vertx.core.VertxException;
 
 /**
- * This exception signals a stream reset, it is used only for HTTP2.
+ * This exception signals a stream reset, it is used only for HTTP/2.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -32,6 +32,9 @@ public class StreamResetException extends VertxException {
     this.code = code;
   }
 
+  /**
+   * @return the reset error code
+   */
   public long getCode() {
     return code;
   }
