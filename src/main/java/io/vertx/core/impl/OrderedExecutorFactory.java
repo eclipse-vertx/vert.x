@@ -31,7 +31,7 @@ import java.util.concurrent.Executor;
  * @version <tt>$Revision$</tt>
  */
 public class OrderedExecutorFactory {
-  private static final Logger log = LoggerFactory.getLogger(OrderedExecutorFactory.class);
+  static final Logger log = LoggerFactory.getLogger(OrderedExecutorFactory.class);
 
   private final Executor parent;
 
