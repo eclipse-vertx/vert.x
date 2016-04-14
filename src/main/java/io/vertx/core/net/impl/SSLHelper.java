@@ -153,6 +153,7 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.verifyHost = options.isVerifyHost();
     this.sslEngine = options.getSslEngine();
     this.client = true;
     this.useAlpn = false;

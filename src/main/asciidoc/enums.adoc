@@ -1,68 +1,5 @@
 = Enums
 
-[[HttpVersion]]
-== HttpVersion
-
-++++
- Represents the version of the HTTP protocol.
-++++
-'''
-
-[cols=">25%,75%"]
-[frame="topbot"]
-|===
-^|Name | Description
-|[[HTTP_1_0]]`HTTP_1_0`|-
-|[[HTTP_1_1]]`HTTP_1_1`|-
-|[[HTTP_2]]`HTTP_2`|-
-|===
-
-[[SSLEngine]]
-== SSLEngine
-
-++++
- The SSL engine implementation to use in a Vert.x server or client.
-++++
-'''
-
-[cols=">25%,75%"]
-[frame="topbot"]
-|===
-^|Name | Description
-|[[JDK]]`JDK`|
-+++
-Use the engine provided by the JDK.
-+++
-|[[OPENSSL]]`OPENSSL`|
-+++
-Use an OpenSSL based engine.
-+++
-|===
-
-[[HttpMethod]]
-== HttpMethod
-
-++++
- Represents an HTTP method
-++++
-'''
-
-[cols=">25%,75%"]
-[frame="topbot"]
-|===
-^|Name | Description
-|[[OPTIONS]]`OPTIONS`|-
-|[[GET]]`GET`|-
-|[[HEAD]]`HEAD`|-
-|[[POST]]`POST`|-
-|[[PUT]]`PUT`|-
-|[[DELETE]]`DELETE`|-
-|[[TRACE]]`TRACE`|-
-|[[CONNECT]]`CONNECT`|-
-|[[PATCH]]`PATCH`|-
-|[[UNKNOWN]]`UNKNOWN`|-
-|===
-
 [[ClientAuth]]
 == ClientAuth
 
@@ -165,6 +102,47 @@ ID 14, bad timestamp
 +++
 |===
 
+[[HttpMethod]]
+== HttpMethod
+
+++++
+ Represents an HTTP method
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Description
+|[[OPTIONS]]`OPTIONS`|-
+|[[GET]]`GET`|-
+|[[HEAD]]`HEAD`|-
+|[[POST]]`POST`|-
+|[[PUT]]`PUT`|-
+|[[DELETE]]`DELETE`|-
+|[[TRACE]]`TRACE`|-
+|[[CONNECT]]`CONNECT`|-
+|[[PATCH]]`PATCH`|-
+|[[UNKNOWN]]`UNKNOWN`|-
+|===
+
+[[HttpVersion]]
+== HttpVersion
+
+++++
+ Represents the version of the HTTP protocol.
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Description
+|[[HTTP_1_0]]`HTTP_1_0`|-
+|[[HTTP_1_1]]`HTTP_1_1`|-
+|[[HTTP_2]]`HTTP_2`|-
+|===
+
 [[ReplyFailure]]
 == ReplyFailure
 
@@ -188,6 +166,28 @@ The message send failed because no handlers were available to handle the message
 |[[RECIPIENT_FAILURE]]`RECIPIENT_FAILURE`|
 +++
 The message send failed because the recipient actively sent back a failure (rejected the message)
++++
+|===
+
+[[SSLEngine]]
+== SSLEngine
+
+++++
+ The SSL engine implementation to use in a Vert.x server or client.
+++++
+'''
+
+[cols=">25%,75%"]
+[frame="topbot"]
+|===
+^|Name | Description
+|[[JDK]]`JDK`|
++++
+Use the engine provided by the JDK.
++++
+|[[OPENSSL]]`OPENSSL`|
++++
+Use an OpenSSL based engine.
 +++
 |===
 

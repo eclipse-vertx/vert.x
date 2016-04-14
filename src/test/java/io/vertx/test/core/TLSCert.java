@@ -164,7 +164,26 @@ enum TLSCert {
     KeyCertOptions getClientKeyCertOptions() {
       return new PemKeyCertOptions().setKeyPath("tls/client-key.pem").setCertPath("tls/client-cert-ca.pem");
     }
-  };
+  },
+
+    FAKE() {
+        @Override
+        KeyCertOptions getServerKeyCertOptions() {
+            return new JksOptions().setPath("tls/fake-server-keystore.jks").setPassword("wibble");
+        }
+        @Override
+        TrustOptions getServerTrustOptions() {
+            return null;
+        }
+        @Override
+        TrustOptions getClientTrustOptions() {
+            return null;
+        }
+        @Override
+        KeyCertOptions getClientKeyCertOptions() {
+            return null;
+        }
+    },;
 
 
   abstract KeyCertOptions getServerKeyCertOptions();

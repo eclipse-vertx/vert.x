@@ -33,10 +33,14 @@ public class NetClientOptionsConverter {
     if (json.getValue("reconnectInterval") instanceof Number) {
       obj.setReconnectInterval(((Number)json.getValue("reconnectInterval")).longValue());
     }
+    if (json.getValue("verifyHost") instanceof Boolean) {
+      obj.setVerifyHost((Boolean)json.getValue("verifyHost"));
+    }
   }
 
   public static void toJson(NetClientOptions obj, JsonObject json) {
     json.put("reconnectAttempts", obj.getReconnectAttempts());
     json.put("reconnectInterval", obj.getReconnectInterval());
+    json.put("verifyHost", obj.isVerifyHost());
   }
 }

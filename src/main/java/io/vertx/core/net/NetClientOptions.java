@@ -38,10 +38,18 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public static final long DEFAULT_RECONNECT_INTERVAL = 1000;
 
+  /**
+   * Default value of whether hostname verification (for SSL/TLS) is enabled = true
+   */
+  public static final boolean DEFAULT_VERIFY_HOST = true;
+
+
   private int reconnectAttempts;
   private long reconnectInterval;
+  private boolean verifyHost = true;
 
-  /**
+
+    /**
    * The default constructor
    */
   public NetClientOptions() {
@@ -58,6 +66,7 @@ public class NetClientOptions extends ClientOptionsBase {
     super(other);
     this.reconnectAttempts = other.getReconnectAttempts();
     this.reconnectInterval = other.getReconnectInterval();
+    this.verifyHost = other.isVerifyHost();
   }
 
   /**
@@ -74,6 +83,7 @@ public class NetClientOptions extends ClientOptionsBase {
   private void init() {
     this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
     this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
+    this.verifyHost = DEFAULT_VERIFY_HOST;
   }
 
   @Override
@@ -244,7 +254,28 @@ public class NetClientOptions extends ClientOptionsBase {
     return reconnectInterval;
   }
 
-  @Override
+    /**
+     * Is hostname verification (for SSL/TLS) enabled?
+     *
+     * @return  true if enabled
+     */
+    public boolean isVerifyHost() {
+        return verifyHost;
+    }
+
+    /**
+     * Set whether hostname verification is enabled
+     *
+     * @param verifyHost  true if enabled
+     * @return a reference to this, so the API can be used fluently
+     */
+    public NetClientOptions setVerifyHost(boolean verifyHost) {
+        this.verifyHost = verifyHost;
+        return this;
+    }
+
+
+    @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof NetClientOptions)) return false;
@@ -254,6 +285,7 @@ public class NetClientOptions extends ClientOptionsBase {
 
     if (reconnectAttempts != that.reconnectAttempts) return false;
     if (reconnectInterval != that.reconnectInterval) return false;
+    if (verifyHost != that.verifyHost) return false;
 
     return true;
   }
@@ -263,6 +295,7 @@ public class NetClientOptions extends ClientOptionsBase {
     int result = super.hashCode();
     result = 31 * result + reconnectAttempts;
     result = 31 * result + (int) (reconnectInterval ^ (reconnectInterval >>> 32));
+    result = 31 * result + (verifyHost ? 1 : 0);
     return result;
   }
 }
