@@ -1,7 +1,7 @@
 = Cheatsheets
 
-[[NoConverterDataObject]]
-== NoConverterDataObject
+[[AggregatedDataObject]]
+== AggregatedDataObject
 
 ++++
  @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -12,6 +12,7 @@
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[value]]`value`|`String`|-
 |===
 
 [[ChildInheritingDataObject]]
@@ -27,6 +28,51 @@
 |===
 ^|Name | Type ^| Description
 |[[childProperty]]`childProperty`|`String`|-
+|[[parentProperty]]`parentProperty`|`String`|-
+|===
+
+[[ChildNotInheritingDataObject]]
+== ChildNotInheritingDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[childProperty]]`childProperty`|`String`|-
+|[[parentProperty]]`parentProperty`|`String`|-
+|===
+
+[[NoConverterDataObject]]
+== NoConverterDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|===
+
+[[ParentDataObject]]
+== ParentDataObject
+
+++++
+ @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
 |[[parentProperty]]`parentProperty`|`String`|-
 |===
 
@@ -105,51 +151,5 @@
 |[[stringValue]]`stringValue`|`String`|-
 |[[stringValueMap]]`stringValueMap`|`String`|-
 |[[stringValues]]`stringValues`|`Array of String`|-
-|===
-
-[[ParentDataObject]]
-== ParentDataObject
-
-++++
- @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[parentProperty]]`parentProperty`|`String`|-
-|===
-
-[[AggregatedDataObject]]
-== AggregatedDataObject
-
-++++
- @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[value]]`value`|`String`|-
-|===
-
-[[ChildNotInheritingDataObject]]
-== ChildNotInheritingDataObject
-
-++++
- @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-++++
-'''
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[childProperty]]`childProperty`|`String`|-
-|[[parentProperty]]`parentProperty`|`String`|-
 |===
 

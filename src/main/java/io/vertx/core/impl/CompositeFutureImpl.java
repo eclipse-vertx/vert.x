@@ -51,6 +51,9 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
         }
       });
     }
+    if (results.length == 0) {
+      composite.setSucceeded();
+    }
     return composite;
   }
 
@@ -78,6 +81,9 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
           handler.handle(composite);
         }
       });
+    }
+    if (results.length == 0) {
+      composite.setSucceeded();
     }
     return composite;
   }

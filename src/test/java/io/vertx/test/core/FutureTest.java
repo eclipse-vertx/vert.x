@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -209,6 +210,12 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAllWithEmptyList() {
+    CompositeFuture composite = CompositeFuture.all(Collections.emptyList());
+    assertTrue(composite.isComplete());
+  }
+
+  @Test
   public void testAllFailed() {
     testAllFailed(CompositeFuture::all);
   }
@@ -254,6 +261,12 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAnyWithEmptyList() {
+    CompositeFuture composite = CompositeFuture.any(Collections.emptyList());
+    assertTrue(composite.isComplete());
+  }
+
+  @Test
   public void testAnySucceeded2() {
     testAnySucceeded2(CompositeFuture::any);
   }
@@ -295,32 +308,61 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testCompositeFutureToList() {
+    Future<String> f1 = Future.future();
+    Future<Integer> f2 = Future.future();
+    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    assertEquals(Arrays.asList(null, null), composite.list());
+    f1.complete("foo");
+    assertEquals(Arrays.asList("foo", null), composite.list());
+    f2.complete(4);
+    assertEquals(Arrays.asList("foo", 4), composite.list());
+  }
+
+  @Test
   public void testComposeSucceed() {
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
     f1.compose(string -> f2.complete(string.length()), f2);
     f1.complete("abcdef");
     assertSucceeded(f2, 6);
+
+    Future<String> f3 = Future.future();
+    Future<Integer> f4 = f3.compose(string -> Future.succeededFuture(string.length()));
+    f3.complete("abcdef");
+    assertSucceeded(f4, 6);
   }
 
   @Test
   public void testComposeFail() {
+    Exception cause = new Exception();
+
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
     f1.compose(string -> f2.complete(string.length()), f2);
-    Exception cause = new Exception();
     f1.fail(cause);
     assertFailed(f2, cause);
+
+    Future<String> f3 = Future.future();
+    Future<Integer> f4 = f3.compose(string -> Future.succeededFuture(string.length()));
+    f3.fail(cause);
+    assertFailed(f4, cause);
   }
 
   @Test
   public void testComposeHandlerFail() {
+    RuntimeException cause = new RuntimeException();
+
     Future<String> f1 = Future.future();
     Future<Integer> f2 = Future.future();
-    RuntimeException cause = new RuntimeException();
     f1.compose(string -> { throw cause; }, f2);
     f1.complete("foo");
     assertFailed(f2, cause);
+
+    Future<String> f3 = Future.future();
+    Future<Integer> f4 = f3.compose(string -> { throw cause; });
+    f3.complete("foo");
+    assertFailed(f4, cause);
   }
 
   @Test
@@ -334,10 +376,36 @@ public class FutureTest extends VertxTestBase {
     }, f2);
     try {
       f1.complete("foo");
+      fail();
     } catch (Exception e) {
       assertEquals(cause, e);
     }
     assertSucceeded(f2, 46);
+  }
+
+  @Test
+  public void testMapSucceeded() {
+    Future<Integer> fut = Future.future();
+    fut.complete(3);
+    assertSucceeded(fut.map(Object::toString), "3");
+  }
+
+  @Test
+  public void testMapFailed() {
+    Throwable cause = new Throwable();
+    Future<Integer> fut = Future.future();
+    fut.fail(cause);
+    assertFailed(fut.map(Object::toString), cause);
+  }
+
+  @Test
+  public void testMapperFailure() {
+    RuntimeException cause = new RuntimeException();
+    Future<Integer> fut = Future.future();
+    fut.fail(cause);
+    assertFailed(fut.map(i -> {
+      throw cause;
+    }), cause);
   }
 
   @Test
