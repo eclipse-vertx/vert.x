@@ -66,7 +66,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
         if (ar.succeeded()) {
           synchronized (composite) {
             if (!composite.isComplete()) {
-              composite.setSucceeded();
+              handler = composite.setSucceeded();
             }
           }
         } else {
