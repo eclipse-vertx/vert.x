@@ -175,7 +175,7 @@
  *
  * === Upgrading connections to SSL/TLS
  *
- * A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.net.NetSocket#upgradeToSsl(io.vertx.core.Handler)}.
+ * A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.net.NetSocket#upgradeToSsl(java.lang.String, int, io.vertx.core.Handler)}.
  *
  * The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
  * for more information.

@@ -16,10 +16,13 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.CompositeFutureImpl;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
@@ -70,7 +73,9 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #all(Future, Future)} but with a list of futures.
+   * Like {@link #all(Future, Future)} but with a list of futures.<p>
+   *
+   * When the list is empty, the returned future will be already completed.
    */
   static CompositeFuture all(List<Future> futures) {
     return CompositeFutureImpl.all(futures.toArray(new Future[futures.size()]));
@@ -116,7 +121,9 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #any(Future, Future)} but with a list of futures.
+   * Like {@link #any(Future, Future)} but with a list of futures.<p>
+   *
+   * When the list is empty, the returned future will be already completed.
    */
   static CompositeFuture any(List<Future> futures) {
     return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
@@ -165,4 +172,17 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    */
   int size();
 
+  /**
+   * @return a list of the current completed values. If one future is not yet resolved or is failed, {@code} null
+   *         will be used
+   */
+  @GenIgnore
+  default <T> List<T> list() {
+    int size = size();
+    ArrayList<T> list = new ArrayList<>(size);
+    for (int index = 0;index < size;index++) {
+      list.add(result(index));
+    }
+    return list;
+  }
 }

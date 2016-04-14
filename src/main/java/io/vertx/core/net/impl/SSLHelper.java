@@ -18,6 +18,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
@@ -51,6 +52,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,24 +62,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
-import io.netty.handler.ssl.SslHandler;
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
 
 /**
  *
@@ -87,6 +73,20 @@ import io.vertx.core.net.NetServerOptions;
 public class SSLHelper {
 
   private static final Map<HttpVersion, String> PROTOCOL_NAME_MAPPING = new EnumMap<>(HttpVersion.class);
+  private static final List<String> DEFAULT_JDK_CIPHER_SUITE;
+
+  static {
+    ArrayList<String> suite = new ArrayList<>();
+    try {
+      SSLContext context = SSLContext.getInstance("TLS");
+      context.init(null, null, null);
+      SSLEngine engine = context.createSSLEngine();
+      Collections.addAll(suite, engine.getEnabledCipherSuites());
+    } catch (Throwable e) {
+      suite = null;
+    }
+    DEFAULT_JDK_CIPHER_SUITE = suite != null ? Collections.unmodifiableList(suite) : null;
+  }
 
   static {
     PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_2, "h2");
@@ -208,7 +208,18 @@ public class SSLHelper {
       if (client) {
         builder = SslContextBuilder.forClient();
         if (keyMgrFactory != null) {
-          builder.keyManager(keyMgrFactory);
+          if (openSSL) {
+            if (keyStoreHelper instanceof KeyStoreHelper.KeyCert) {
+              KeyStoreHelper.KeyCert keyStoreHelper = (KeyStoreHelper.KeyCert) this.keyStoreHelper;
+              X509Certificate[] certs = keyStoreHelper.loadCerts();
+              PrivateKey privateKey = keyStoreHelper.loadPrivateKey();
+              builder.keyManager(privateKey, certs);
+            } else {
+              throw new VertxException("OpenSSL server key/certificate must be configured with .pem format");
+            }
+          } else {
+            builder.keyManager(keyMgrFactory);
+          }
         }
       } else {
         if (openSSL) {
@@ -227,16 +238,23 @@ public class SSLHelper {
           builder = SslContextBuilder.forServer(keyMgrFactory);
         }
       }
+      Collection<String> cipherSuites = enabledCipherSuites;
       if (openSSL) {
         builder.sslProvider(SslProvider.OPENSSL);
+        if (cipherSuites == null || cipherSuites.isEmpty()) {
+          cipherSuites = OpenSsl.availableCipherSuites();
+        }
       } else {
         builder.sslProvider(SslProvider.JDK);
+        if (cipherSuites == null || cipherSuites.isEmpty()) {
+          cipherSuites = DEFAULT_JDK_CIPHER_SUITE;
+        }
       }
       if (trustMgrFactory != null) {
         builder.trustManager(trustMgrFactory);
       }
-      if (enabledCipherSuites != null && enabledCipherSuites.size() > 0) {
-        builder.ciphers(enabledCipherSuites);
+      if (cipherSuites != null && cipherSuites.size() > 0) {
+        builder.ciphers(cipherSuites);
       }
       if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
         builder.applicationProtocolConfig(new ApplicationProtocolConfig(
@@ -401,7 +419,7 @@ public class SSLHelper {
     return new SslHandler(engine);
   }
 
-  private SslContext getContext(VertxInternal vertx) {
+  public SslContext getContext(VertxInternal vertx) {
     if (sslContext == null) {
       sslContext = createContext(vertx);
     }
