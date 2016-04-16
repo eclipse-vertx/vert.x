@@ -230,4 +230,45 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testExceptionHandlerOnDeploymentAsyncResultHandlerFailure() {
+    RuntimeException failure = new RuntimeException();
+    Context ctx = vertx.getOrCreateContext();
+    ctx.exceptionHandler(err -> {
+      assertSame(failure, err);
+      testComplete();
+    });
+    ctx.runOnContext(v -> {
+      vertx.deployVerticle(new AbstractVerticle() {
+        @Override
+        public void start() throws Exception {
+        }
+      }, ar -> {
+        throw failure;
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testExceptionHandlerOnAsyncDeploymentAsyncResultHandlerFailure() {
+    RuntimeException failure = new RuntimeException();
+    Context ctx = vertx.getOrCreateContext();
+    ctx.exceptionHandler(err -> {
+      assertSame(failure, err);
+      testComplete();
+    });
+    ctx.runOnContext(v -> {
+      vertx.deployVerticle(new AbstractVerticle() {
+        @Override
+        public void start(Future<Void> startFuture) throws Exception {
+          context.runOnContext(startFuture::complete);
+        }
+      }, ar -> {
+        throw failure;
+      });
+    });
+    await();
+  }
 }

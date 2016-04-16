@@ -398,6 +398,7 @@ public class DeploymentManager {
         completionHandler.handle(result);
       } catch (Throwable t) {
         log.error("Failure in calling handler", t);
+        throw t;
       }
     });
   }
