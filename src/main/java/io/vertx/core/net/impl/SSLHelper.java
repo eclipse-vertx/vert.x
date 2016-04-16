@@ -50,15 +50,7 @@ import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -114,6 +106,8 @@ public class SSLHelper {
   private List<HttpVersion> applicationProtocols;
   private Set<String> enabledProtocols;
 
+  private String endpointIdentificationAlgorithm = "";
+
   private SslContext sslContext;
 
   public SSLHelper(HttpClientOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -124,11 +118,13 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.verifyHost = options.isVerifyHost();
     this.sslEngine = options.getSslEngine();
     this.client = true;
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
+    if (options.isVerifyHost()) {
+      this.endpointIdentificationAlgorithm = "HTTPS";
+    }
   }
 
   public SSLHelper(HttpServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -153,11 +149,11 @@ public class SSLHelper {
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.verifyHost = options.isVerifyHost();
     this.sslEngine = options.getSslEngine();
     this.client = true;
     this.useAlpn = false;
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
+    this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
   }
 
   public SSLHelper(NetServerOptions options, KeyStoreHelper keyStoreHelper, KeyStoreHelper trustStoreHelper) {
@@ -411,9 +407,9 @@ public class SSLHelper {
           break;
         }
       }
-    } else if (verifyHost) {
+    } else if (!endpointIdentificationAlgorithm.isEmpty()) {
       SSLParameters sslParameters = engine.getSSLParameters();
-      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+      sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
       engine.setSSLParameters(sslParameters);
     }
     return new SslHandler(engine);

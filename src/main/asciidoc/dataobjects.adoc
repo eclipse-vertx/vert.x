@@ -935,6 +935,11 @@ Add an enabled cipher suite
 +++
 Add an enabled SSL/TLS protocols
 +++
+|[[hostnameVerificationAlgorithm]]`hostnameVerificationAlgorithm`|`String`|
++++
+Set the hostname verification algorithm interval
+ To disable hostname verification, set hostnameVerificationAlgorithm to an empty String
++++
 |[[idleTimeout]]`idleTimeout`|`Number (int)`|
 +++
 Set the idle timeout, in seconds. zero means don't timeout.
@@ -1019,10 +1024,6 @@ Set the ALPN usage.
 |[[usePooledBuffers]]`usePooledBuffers`|`Boolean`|
 +++
 Set whether Netty pooled buffers are enabled
-+++
-|[[verifyHost]]`verifyHost`|`Boolean`|
-+++
-Set whether hostname verification is enabled
 +++
 |===
 

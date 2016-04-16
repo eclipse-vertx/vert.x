@@ -156,9 +156,10 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setTrustAll(true));
     assertTrue(options.isTrustAll());
 
-    assertTrue(options.isVerifyHost());
-    assertEquals(options, options.setVerifyHost(false));
-    assertFalse(options.isVerifyHost());
+    String randomAlphaString = TestUtils.randomAlphaString(10);
+    assertTrue(options.getHostnameVerificationAlgorithm().isEmpty());
+    assertEquals(options, options.setHostnameVerificationAlgorithm(randomAlphaString));
+    assertEquals(randomAlphaString, options.getHostnameVerificationAlgorithm());
 
     assertEquals(0, options.getReconnectAttempts());
     assertIllegalArgumentException(() -> options.setReconnectAttempts(-2));
@@ -307,7 +308,7 @@ public class NetTest extends VertxTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
-    boolean verifyHost = rand.nextBoolean();
+    String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
     JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
@@ -344,7 +345,7 @@ public class NetTest extends VertxTestBase {
     options.setReconnectInterval(reconnectInterval);
     options.setUseAlpn(useAlpn);
     options.setSslEngine(sslEngine);
-    options.setVerifyHost(verifyHost);
+    options.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm);
     NetClientOptions copy = new NetClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -372,7 +373,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(reconnectInterval, copy.getReconnectInterval());
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngine());
-    assertEquals(verifyHost, copy.isVerifyHost());
+    assertEquals(hostnameVerificationAlgorithm, copy.getHostnameVerificationAlgorithm());
   }
 
   @Test
@@ -392,7 +393,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngine(), json.getSslEngine());
-    assertEquals(def.isVerifyHost(), json.isVerifyHost());
+    assertEquals(def.getHostnameVerificationAlgorithm(), json.getHostnameVerificationAlgorithm());
   }
 
   @Test
@@ -425,7 +426,7 @@ public class NetTest extends VertxTestBase {
     int reconnectAttempts = TestUtils.randomPositiveInt();
     long reconnectInterval = TestUtils.randomPositiveInt();
     boolean useAlpn = TestUtils.randomBoolean();
-    boolean verifyHost = TestUtils.randomBoolean();
+    String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
 
     JsonObject json = new JsonObject();
@@ -449,7 +450,7 @@ public class NetTest extends VertxTestBase {
         .put("reconnectInterval", reconnectInterval)
         .put("useAlpn", useAlpn)
         .put("sslEngine", sslEngine.name())
-        .put("verifyHost", verifyHost);
+        .put("hostnameVerificationAlgorithm", hostnameVerificationAlgorithm);
 
     NetClientOptions options = new NetClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -478,7 +479,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(reconnectInterval, options.getReconnectInterval());
     assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(sslEngine, options.getSslEngine());
-    assertEquals(verifyHost, options.isVerifyHost());
+    assertEquals(hostnameVerificationAlgorithm, options.getHostnameVerificationAlgorithm());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -1072,99 +1073,85 @@ public class NetTest extends VertxTestBase {
   @Test
   // StartTLS
   public void testStartTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, false, true, true);
+    testTLS(false, false, true, false, false, true, true, true);
   }
 
   @Test
   // Client trusts all server certs
   public void testTLSClientTrustAll() throws Exception {
-    testTLS(false, false, true, false, false, true, false, true, false);
+    testTLS(false, false, true, false, false, true, true, false);
   }
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCert() throws Exception {
-    testTLS(false, true, true, false, false, false, false, true, false);
+    testTLS(false, true, true, false, false, false, true, false);
   }
 
   @Test
   // Server specifies cert that the client doesn't trust
   public void testTLSClientUntrustedServer() throws Exception {
-    testTLS(false, false, true, false, false, false, false, false, false);
+    testTLS(false, false, true, false, false, false, false, false);
   }
 
   @Test
   //Client specifies cert even though it's not required
   public void testTLSClientCertNotRequired() throws Exception {
-    testTLS(true, true, true, true, false, false, false, true, false);
+    testTLS(true, true, true, true, false, false, true, false);
   }
 
   @Test
   //Client specifies cert and it's not required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(true, true, true, true, true, false, false, true, false);
+    testTLS(true, true, true, true, true, false, true, false);
   }
 
   @Test
   //Client doesn't specify cert but it's required
   public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    testTLS(false, true, true, true, true, false, false, false, false);
+    testTLS(false, true, true, true, true, false, false, false);
   }
 
   @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(true, true, true, false, true, false, false, false, false);
+    testTLS(true, true, true, false, true, false, false, false);
   }
 
   @Test
   // Specify some cipher suites
   public void testTLSCipherSuites() throws Exception {
-    testTLS(false, false, true, false, false, true, false, true, false, ENABLED_CIPHER_SUITES);
+    testTLS(false, false, true, false, false, true, true, false, ENABLED_CIPHER_SUITES);
   }
 
   @Test
   // Specify some bogus protocol
   public void testInvalidTlsProtocolVersion() throws Exception {
-    testTLS(false, false, true, false, false, true, false, false, false, new String[0],
+    testTLS(false, false, true, false, false, true, false, false, new String[0],
     new String[]{"TLSv1.999"});
   }
 
   @Test
   // Specify a valid protocol
   public void testSpecificTlsProtocolVersion() throws Exception {
-    testTLS(false, false, true, false, false, true, false, true, false, new String[0],
+    testTLS(false, false, true, false, false, true, true, false, new String[0],
         new String[]{"TLSv1.2"});
-  }
-
-  @Test
-  // Test host verification with a CN matching localhost
-  public void testVerifyMatchingHost() throws Exception {
-    testTLS(false, false, true, false, false, true, true, true, false, new String[0],
-            new String[]{"TLSv1.2"});
-  }
-
-  @Test
-  // Test host verification with a CN NOT matching localhost
-  public void testVerifyNonMatchingHost() throws Exception {
-    testTLS(false, false, true, false, false, true, true, false, false, new String[0],
-            new String[]{"TLSv1.2"});
   }
 
   void testTLS(boolean clientCert, boolean clientTrust,
     boolean serverCert, boolean serverTrust,
-    boolean requireClientAuth, boolean clientTrustAll, boolean verifyHost,
+    boolean requireClientAuth, boolean clientTrustAll,
     boolean shouldPass, boolean startTLS) throws Exception {
-        testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll, verifyHost,
+        testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
         shouldPass, startTLS, new String[0], new String[0]);
   }
 
   void testTLS(boolean clientCert, boolean clientTrust,
     boolean serverCert, boolean serverTrust,
-    boolean requireClientAuth, boolean clientTrustAll, boolean verifyHost,
+    boolean requireClientAuth, boolean clientTrustAll,
     boolean shouldPass, boolean startTLS,
     String[] enabledCipherSuites) throws Exception {
-        testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll, verifyHost,
+        testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
         shouldPass, startTLS, enabledCipherSuites, new String[0]);
     }
 
@@ -1172,7 +1159,6 @@ public class NetTest extends VertxTestBase {
   void testTLS(boolean clientCert, boolean clientTrust,
                boolean serverCert, boolean serverTrust,
                boolean requireClientAuth, boolean clientTrustAll,
-               boolean verifyHost,
                boolean shouldPass, boolean startTLS,
                String[] enabledCipherSuites,
                String[] enabledSecureTransportProtocols) throws Exception {
@@ -1185,12 +1171,7 @@ public class NetTest extends VertxTestBase {
       options.setTrustStoreOptions(new JksOptions().setPath("tls/server-truststore.jks").setPassword("wibble"));
     }
     if (serverCert) {
-      if (verifyHost && !shouldPass) {
-        options.setKeyStoreOptions(new JksOptions().setPath("tls/fake-server-keystore.jks").setPassword("wibble"));
-      } else {
-        options.setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
-      }
-
+      options.setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
     }
     if (requireClientAuth) {
       options.setClientAuth(ClientAuth.REQUIRED);
@@ -1229,7 +1210,7 @@ public class NetTest extends VertxTestBase {
         if (startTLS) {
           if (upgradedServer.compareAndSet(false, true)) {
             assertFalse(socket.isSsl());
-            socket.upgradeToSsl("localhost", 4043 , v -> {
+            socket.upgradeToSsl(v -> {
               certificateChainChecker.accept(socket);
               upgradedServerCount.incrementAndGet();
               assertTrue(socket.isSsl());
@@ -1257,9 +1238,6 @@ public class NetTest extends VertxTestBase {
       }
       if (clientCert) {
         clientOptions.setKeyStoreOptions(new JksOptions().setPath("tls/client-keystore.jks").setPassword("wibble"));
-      }
-      if (verifyHost) {
-        clientOptions.setVerifyHost(true);
       }
       for (String suite: enabledCipherSuites) {
         clientOptions.addEnabledCipherSuite(suite);
@@ -1296,7 +1274,7 @@ public class NetTest extends VertxTestBase {
             if (startTLS && !upgradedClient.get()) {
               upgradedClient.set(true);
               assertFalse(socket.isSsl());
-              socket.upgradeToSsl("localhost", 4043, v -> {
+              socket.upgradeToSsl(v -> {
                 assertTrue(socket.isSsl());
                 // Now send the rest
                 for (int i = 1; i < numChunks; i++) {
@@ -2172,4 +2150,63 @@ public class NetTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testHostVerificationHttpsNotMatching() {
+    server.close();
+    NetServerOptions options = new NetServerOptions()
+            .setPort(1234)
+            .setHost("localhost")
+            .setSsl(true)
+            .setKeyStoreOptions(new JksOptions().setPath("tls/fake-server-keystore.jks").setPassword("wibble"));
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+            .setSsl(true)
+            .setTrustAll(true)
+            .setHostnameVerificationAlgorithm("HTTPS");
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, "localhost", ar2 -> {
+        //Should not be able to connect
+        assertTrue(ar2.failed());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testHostVerificationHttpsMatching() {
+    server.close();
+    NetServerOptions options = new NetServerOptions()
+            .setPort(1234)
+            .setHost("localhost")
+            .setSsl(true)
+            .setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+            .setSsl(true)
+            .setTrustAll(true)
+            .setHostnameVerificationAlgorithm("HTTPS");
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, "localhost", ar2 -> {
+        //Should be able to connect
+        assertTrue(ar2.succeeded());
+        testComplete();
+      });
+    });
+    await();
+  }
+
 }

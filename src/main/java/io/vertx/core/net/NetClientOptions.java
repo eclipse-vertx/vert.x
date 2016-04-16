@@ -18,7 +18,10 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.cli.Option;
 import io.vertx.core.json.JsonObject;
+
+import java.util.Optional;
 
 /**
  * Options for configuring a {@link io.vertx.core.net.NetClient}.
@@ -39,14 +42,14 @@ public class NetClientOptions extends ClientOptionsBase {
   public static final long DEFAULT_RECONNECT_INTERVAL = 1000;
 
   /**
-   * Default value of whether hostname verification (for SSL/TLS) is enabled = true
+   * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = ""
    */
-  public static final boolean DEFAULT_VERIFY_HOST = true;
+  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
 
 
   private int reconnectAttempts;
   private long reconnectInterval;
-  private boolean verifyHost = true;
+  private String hostnameVerificationAlgorithm;
 
 
     /**
@@ -66,7 +69,7 @@ public class NetClientOptions extends ClientOptionsBase {
     super(other);
     this.reconnectAttempts = other.getReconnectAttempts();
     this.reconnectInterval = other.getReconnectInterval();
-    this.verifyHost = other.isVerifyHost();
+    this.hostnameVerificationAlgorithm = other.getHostnameVerificationAlgorithm();
   }
 
   /**
@@ -83,7 +86,7 @@ public class NetClientOptions extends ClientOptionsBase {
   private void init() {
     this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
     this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
-    this.verifyHost = DEFAULT_VERIFY_HOST;
+    this.hostnameVerificationAlgorithm = DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM;
   }
 
   @Override
@@ -248,32 +251,32 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * @return  the value of the hostname verification algorithm
+   */
+
+  public String getHostnameVerificationAlgorithm() {
+    return hostnameVerificationAlgorithm;
+  }
+
+  /**
+   * Set the hostname verification algorithm interval
+   * To disable hostname verification, set hostnameVerificationAlgorithm to an empty String
+   *
+   * @param hostnameVerificationAlgorithm should be HTTPS, LDAPS or an empty String
+   * @return a reference to this, so the API can be used fluently
+   */
+
+  public NetClientOptions setHostnameVerificationAlgorithm(String hostnameVerificationAlgorithm) {
+    this.hostnameVerificationAlgorithm = hostnameVerificationAlgorithm;
+    return this;
+  }
+
+  /**
    * @return  the value of reconnect interval
    */
   public long getReconnectInterval() {
     return reconnectInterval;
   }
-
-    /**
-     * Is hostname verification (for SSL/TLS) enabled?
-     *
-     * @return  true if enabled
-     */
-    public boolean isVerifyHost() {
-        return verifyHost;
-    }
-
-    /**
-     * Set whether hostname verification is enabled
-     *
-     * @param verifyHost  true if enabled
-     * @return a reference to this, so the API can be used fluently
-     */
-    public NetClientOptions setVerifyHost(boolean verifyHost) {
-        this.verifyHost = verifyHost;
-        return this;
-    }
-
 
     @Override
   public boolean equals(Object o) {
@@ -285,7 +288,7 @@ public class NetClientOptions extends ClientOptionsBase {
 
     if (reconnectAttempts != that.reconnectAttempts) return false;
     if (reconnectInterval != that.reconnectInterval) return false;
-    if (verifyHost != that.verifyHost) return false;
+    if (hostnameVerificationAlgorithm != that.hostnameVerificationAlgorithm) return false;
 
     return true;
   }
@@ -295,7 +298,8 @@ public class NetClientOptions extends ClientOptionsBase {
     int result = super.hashCode();
     result = 31 * result + reconnectAttempts;
     result = 31 * result + (int) (reconnectInterval ^ (reconnectInterval >>> 32));
-    result = 31 * result + (verifyHost ? 1 : 0);
+    result = 31 * result + hostnameVerificationAlgorithm.hashCode();
     return result;
   }
+
 }

@@ -505,7 +505,7 @@ public class NetExamples {
   public void example46(Vertx vertx, JksOptions keyStoreOptions) {
     NetClientOptions options = new NetClientOptions().
             setSsl(true).
-            setVerifyHost(true);
+            setHostnameVerificationAlgorithm("HTTPS");
     NetClient client = vertx.createNetClient(options);
   }
 }

@@ -217,7 +217,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetSocket upgradeToSsl(String host, int port, Handler<Void> handler);
+  NetSocket upgradeToSsl(Handler<Void> handler);
 
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS.

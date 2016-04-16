@@ -192,7 +192,7 @@ See the chapter on <<streams, streams and pumps>> for more information.
 
 === Upgrading connections to SSL/TLS
 
-A non SSL/TLS connection can be upgraded to SSL/TLS using `link:../../apidocs/io/vertx/core/net/NetSocket.html#upgradeToSsl-java.lang.String-int-io.vertx.core.Handler-[upgradeToSsl]`.
+A non SSL/TLS connection can be upgraded to SSL/TLS using `link:../../apidocs/io/vertx/core/net/NetSocket.html#upgradeToSsl-io.vertx.core.Handler-[upgradeToSsl]`.
 
 The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
 for more information.
@@ -570,13 +570,15 @@ NetClient client = vertx.createNetClient(options);
 If `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustAll]` is not set then a client trust store must be
 configured and should contain the certificates of the servers that the client trusts.
 
-To enable host verification, simply set verifyHost to true on your client:
+By default, host verification is disabled on the client.
+To enable host verification, set the algorithm to use on your client (only HTTPS and LDAPS is currently supported):
+
 
 [source,java]
 ----
 NetClientOptions options = new NetClientOptions().
         setSsl(true).
-        setVerifyHost(true);
+        setHostnameVerificationAlgorithm("HTTPS");
 NetClient client = vertx.createNetClient(options);
 ----
 
