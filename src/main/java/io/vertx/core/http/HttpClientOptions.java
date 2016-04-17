@@ -119,6 +119,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   private List<HttpVersion> alpnVersions;
   private boolean h2cUpgrade;
 
+  private String proxyHost;
+  private int proxyPort;
+  private String proxyUsername;
+  private String proxyPassword;
+
   /**
    * Default constructor
    */
@@ -148,6 +153,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.h2cUpgrade = other.h2cUpgrade;
+    this.proxyHost = other.proxyHost;
+    this.proxyPort = other.proxyPort;
+    this.proxyUsername = other.proxyUsername;
+    this.proxyPassword = other.proxyPassword;
   }
 
   /**
@@ -176,6 +185,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     h2cUpgrade = DEFAULT_H2C_UPGRADE;
+    proxyHost = null;
+    proxyPort = 0;
+    proxyUsername = null;
+    proxyPassword = null;
   }
 
   @Override
@@ -597,6 +610,42 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  public HttpClientOptions setProxyHost(String proxyHost) {
+    this.proxyHost = proxyHost;
+    return this;
+  }
+
+  public String getProxyHost() {
+    return proxyHost;
+  }
+
+  public HttpClientOptions setProxyPort(int proxyPort) {
+    this.proxyPort = proxyPort;
+    return this;
+  }
+
+  public int getProxyPort() {
+    return proxyPort;
+  }
+
+  public HttpClientOptions setProxyUsername(String proxyUsername) {
+    this.proxyUsername = proxyUsername;
+    return this;
+  }
+
+  public String getProxyUsername() {
+    return proxyUsername;
+  }
+
+  public HttpClientOptions setProxyPassword(String proxyPassword) {
+    this.proxyPassword = proxyPassword;
+    return this;
+  }
+
+  public String getProxyPassword() {
+    return proxyPassword;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -619,6 +668,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (h2cUpgrade != that.h2cUpgrade) return false;
+    if (proxyHost == null ? that.proxyHost != null : !proxyHost.equals(that.proxyHost)) return false;
+    if (proxyPort != that.proxyPort) return false;
+    if (proxyUsername == null ? that.proxyUsername != null : !proxyUsername.equals(that.proxyUsername)) return false;
+    if (proxyPassword == null ? that.proxyPassword != null : !proxyPassword.equals(that.proxyPassword)) return false;
 
     return true;
   }
@@ -640,6 +693,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + (h2cUpgrade ? 1 : 0);
+    result = 31 * result + (proxyHost != null ? proxyHost.hashCode() : 0);
+    result = 31 * result + proxyPort;
+    result = 31 * result + (proxyUsername != null ? proxyUsername.hashCode() : 0);
+    result = 31 * result + (proxyPassword != null ? proxyPassword.hashCode() : 0);
     return result;
   }
 }

@@ -34,6 +34,7 @@ import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -306,6 +307,19 @@ public class ConnectionManager {
             });
           } else {
             if (options.isSsl()) {
+              final String proxyHost = options.getProxyHost();
+              final int proxyPort = options.getProxyPort();
+              if (proxyHost != null) {
+                log.debug("using proxy: " + proxyHost);
+                final String proxyUsername = options.getProxyUsername();
+                final String proxyPassword = options.getProxyPassword();
+                final InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
+                if (proxyUsername != null && proxyPassword != null) {
+                  pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword));
+                } else {
+                  pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr));
+                }
+              }
               pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
             }
             if (version == HttpVersion.HTTP_2) {
