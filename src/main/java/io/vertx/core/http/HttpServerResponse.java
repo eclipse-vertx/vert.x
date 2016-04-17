@@ -419,6 +419,12 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
 
   /**
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} but with a rawMethod to use.
+   */
+  @Fluent
+  HttpServerResponse push(HttpMethod method, String rawMethod, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
+
+  /**
    * Reset this HTTP/2 stream with the error code {@code 0}.
    */
   default void reset() {

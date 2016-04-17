@@ -22,6 +22,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
@@ -113,6 +114,16 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   @Override
   public HttpMethod method() {
     return method;
+  }
+
+  @Override
+  public String getRawMethod() {
+    throw new UnsupportedOperationException("todo");
+  }
+
+  @Override
+  public HttpClientRequest setRawMethod(String method) {
+    throw new UnsupportedOperationException("Todo");
   }
 
   @Override

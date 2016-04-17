@@ -1055,6 +1055,23 @@ public class Http2ServerTest extends Http2TestBase {
     });
   }
 
+//  @Test
+  public void testPushPromiseOtherMethod() throws Exception {
+    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
+      try {
+        resp.push(HttpMethod.OTHER, "/wibble", handler);
+        fail();
+      } catch (IllegalArgumentException ignore) {
+      }
+      resp.push(HttpMethod.OTHER, "SOME", "whatever.com", "/wibble", MultiMap.caseInsensitiveMultiMap(), handler);
+    }, headers -> {
+      assertEquals("SOME", headers.method().toString());
+      assertEquals("https", headers.scheme().toString());
+      assertEquals("/wibble", headers.path().toString());
+      assertEquals("whatever.com", headers.authority().toString());
+    });
+  }
+
   @Test
   public void testPushPromiseHeaders() throws Exception {
     testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {

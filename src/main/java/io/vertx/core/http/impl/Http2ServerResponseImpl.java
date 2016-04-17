@@ -607,12 +607,17 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, null, host, path, headers, handler);
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String rawMethod, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     synchronized (conn) {
       if (push) {
         throw new IllegalStateException("A push response cannot promise another push");
       }
       checkEnded();
-      conn.sendPush(stream.id(), host, method, headers, path, handler);
+      conn.sendPush(stream.id(), host, method, rawMethod, headers, path, handler);
       return this;
     }
   }

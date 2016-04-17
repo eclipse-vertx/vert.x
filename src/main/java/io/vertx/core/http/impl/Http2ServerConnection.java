@@ -146,9 +146,16 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     super.onSettingsRead(ctx, settings);
   }
 
-  synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+  synchronized void sendPush(int streamId, String host, HttpMethod method, String rawMethod, MultiMap headers, String path, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
     Http2Headers headers_ = new DefaultHttp2Headers();
-    headers_.method(method.name());
+    if (method == HttpMethod.OTHER) {
+      if (rawMethod == null) {
+        throw new IllegalArgumentException("You must specify a raw method when using HttpMethod.OTHER");
+      }
+      headers_.method(rawMethod);
+    } else {
+      headers_.method(method.name());
+    }
     headers_.path(path);
     headers_.scheme(isSsl() ? "https" : "http");
     if (host != null) {
