@@ -21,6 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.cli.Option;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -267,6 +268,7 @@ public class NetClientOptions extends ClientOptionsBase {
    */
 
   public NetClientOptions setHostnameVerificationAlgorithm(String hostnameVerificationAlgorithm) {
+    Objects.requireNonNull(hostnameVerificationAlgorithm, "hostnameVerificationAlgorithm can not be null!");
     this.hostnameVerificationAlgorithm = hostnameVerificationAlgorithm;
     return this;
   }
