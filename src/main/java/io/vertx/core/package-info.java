@@ -1144,6 +1144,29 @@
  * {@link examples.CoreExamples#example18}
  * ----
  *
+ * == Hostname resolution
+ *
+ * Vert.x uses an an hostname resolver for resolving hostname into IP addresses instead of
+ * the JVM built-in blocking resolver.
+ *
+ * An hostname are resolve to an IP address using:
+ *
+ * - the _hosts_ file of the operating system
+ * - otherwise DNS queries against a list of servers
+ *
+ * By default it will use the list of the system DNS server addresses from the environment, if that list cannot be
+ * retrieved it will use Google's public DNS servers `"8.8.8.8"` and `"8.8.4.4"`.
+ *
+ * DNS servers can be also configured when creating a {@link io.vertx.core.Vertx} instance:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureDNSServers}
+ * ----
+ *
+ * The default port of a DNS server is `53`, when a server uses a different port, this port can be set
+ * using a colon delimiter: `192.168.0.2:40000`.
+ *
  * == High Availability and Fail-Over
  *
  * Vert.x allows you to run your verticles with high availability (HA) support. In that case, when a vert.x

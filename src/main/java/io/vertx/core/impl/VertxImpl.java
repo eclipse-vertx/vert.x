@@ -61,6 +61,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -102,6 +103,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NioEventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
+  private final HostnameResolver hostnameResolver;
   private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
@@ -136,6 +138,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                                         new VertxThreadFactory("vert.x-internal-blocking-", checker, true));
     workerOrderedFact = new OrderedExecutorFactory(workerPool);
     internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
+
+    this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.fileResolver = new FileResolver(this);
     this.deploymentManager = new DeploymentManager(this);
     this.metrics = initialiseMetrics(options);
@@ -457,10 +461,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       return;
     }
     closed = true;
+
     deploymentManager.undeployAll(ar -> {
       if (haManager() != null) {
         haManager().stop();
       }
+      hostnameResolver.close();
       eventBus.close(ar2 -> {
         closeClusterManager(ar3 -> {
           // Copy set to prevent ConcurrentModificationException
@@ -656,6 +662,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public File resolveFile(String fileName) {
     return fileResolver.resolveFile(fileName);
+  }
+
+  @Override
+  public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
+    hostnameResolver.resolveHostname(hostname, resultHandler);
   }
 
   @SuppressWarnings("unchecked")

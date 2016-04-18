@@ -17,12 +17,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -35,14 +30,13 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.TCPMetrics;
 
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -177,11 +171,12 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     });
 
     applyConnectionOptions(bootstrap);
-    ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
-    future.addListener((ChannelFuture channelFuture) -> {
-      Channel ch = channelFuture.channel();
+    AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+    future.addListener(res -> {
 
-      if (channelFuture.isSuccess()) {
+      if (res.succeeded()) {
+
+        Channel ch = res.result().channel();
 
         if (sslHelper.isSSL()) {
           // TCP connected, so now we must do the SSL handshake
@@ -210,7 +205,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
             );
           });
         } else {
-          failed(context, ch, channelFuture.cause(), connectHandler);
+          failed(context, null, res.cause(), connectHandler);
         }
       }
     });
@@ -228,7 +223,9 @@ public class NetClientImpl implements NetClient, MetricsProvider {
   }
 
   private void failed(ContextImpl context, Channel ch, Throwable t, Handler<AsyncResult<NetSocket>> connectHandler) {
-    ch.close();
+    if (ch != null) {
+      ch.close();
+    }
     context.executeFromIO(() -> doFailed(connectHandler, t));
   }
 

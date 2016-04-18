@@ -41,11 +41,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.Objects;
 
 /**
@@ -184,14 +180,20 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
 
   private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
     Objects.requireNonNull(handler, "no null handler accepted");
-    InetSocketAddress is = new InetSocketAddress(local.host(), local.port());
-    ChannelFuture future = channel().bind(is);
-    addListener(future, ar -> {
-      if (ar.succeeded()) {
-        ((DatagramSocketMetrics) metrics).listening(local);
+    vertx.resolveHostname(local.host(), res -> {
+      if (res.succeeded()) {
+        ChannelFuture future = channel().bind(new InetSocketAddress(res.result(), local.port()));
+        addListener(future, ar -> {
+          if (ar.succeeded()) {
+            ((DatagramSocketMetrics) metrics).listening(local.host(), localAddress());
+          }
+          handler.handle(ar);
+        });
+      } else {
+        handler.handle(Future.failedFuture(res.cause()));
       }
-      handler.handle(ar);
     });
+
     return this;
   }
 
@@ -217,14 +219,30 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
   @Override
   @SuppressWarnings("unchecked")
   public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+    Objects.requireNonNull(packet, "no null packet accepted");
     Objects.requireNonNull(host, "no null host accepted");
-    ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(host, port)));
-    addListener(future, handler);
+    InetSocketAddress addr = InetSocketAddress.createUnresolved(host, port);
+    if (addr.isUnresolved()) {
+      vertx.resolveHostname(host, res -> {
+        if (res.succeeded()) {
+          doSend(packet, new InetSocketAddress(res.result(), port), handler);
+        } else {
+          handler.handle(Future.failedFuture(res.cause()));
+        }
+      });
+    } else {
+      // If it's immediately resolved it means it was just an IP address so no need to async resolve
+      doSend(packet, addr, handler);
+    }
     if (metrics.isEnabled()) {
       metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
     }
-
     return this;
+  }
+
+  private void doSend(Buffer packet, InetSocketAddress addr, Handler<AsyncResult<DatagramSocket>> handler) {
+    ChannelFuture future = channel().writeAndFlush(new DatagramPacket(packet.getByteBuf(), addr));
+    addListener(future, handler);
   }
 
   @Override

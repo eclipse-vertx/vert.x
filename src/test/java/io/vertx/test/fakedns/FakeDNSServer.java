@@ -278,6 +278,24 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
+  public static FakeDNSServer testResolveASameServer(final String ipAddress) {
+    return new FakeDNSServer(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.A);
+        rm.put(DnsAttribute.IP_ADDRESS, ipAddress);
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+  }
+
   @Override
   public void start() throws IOException {
     UdpTransport transport = new UdpTransport("127.0.0.1", PORT);

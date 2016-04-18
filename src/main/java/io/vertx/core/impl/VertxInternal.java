@@ -29,6 +29,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -89,5 +90,13 @@ public interface VertxInternal extends Vertx {
   <T> void executeBlockingInternal(Action<T> action, Handler<AsyncResult<T>> resultHandler);
 
   ClusterManager getClusterManager();
+
+  /**
+   * Resolve an hostname (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
+   *
+   * @param hostname the hostname to resolve
+   * @param resultHandler the result handler
+   */
+  void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler);
 
 }
