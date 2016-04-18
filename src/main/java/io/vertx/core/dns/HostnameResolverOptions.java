@@ -23,7 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Configuration options for Vert.x hostname resolver.
+ * Configuration options for Vert.x hostname resolver. The resolver uses the local <i>hosts</i> file and performs
+ * DNS <i>A</i> and <i>AAAA</i> queries.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
