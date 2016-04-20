@@ -623,11 +623,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, null, host, path, headers, handler);
-  }
-
-  @Override
-  public HttpServerResponse push(HttpMethod method, String rawMethod, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     handler.handle(Future.failedFuture("Push promise is only supported with HTTP2"));
     return this;
   }
