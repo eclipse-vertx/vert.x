@@ -49,7 +49,7 @@ public class Http1xTLSProxyTest extends HttpTLSTest {
   public void startProxy() throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
     proxy = new ConnectHttpProxy();
-    proxy.start(vertx, null, v -> latch.countDown());
+    proxy.start(vertx, v -> latch.countDown());
     awaitLatch(latch);
   }
 
@@ -61,7 +61,24 @@ public class Http1xTLSProxyTest extends HttpTLSTest {
   @Test
   // Access https server via connect proxy
   public void testHttpsProxy() throws Exception {
+    proxy.setUsername(null);
     testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().pass();
+    // check that the connection did in fact go through the proxy
+    assertNotNull(proxy.getLastUri());
+  }
+
+  @Test
+  // Check that proxy auth fails if it is missing
+  public void testHttpsProxyAuthFail() throws Exception {
+    proxy.setUsername("username");
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().fail();
+  }
+
+  @Test
+  // Access https server via connect proxy with proxy auth required
+  public void testHttpsProxyAuth() throws Exception {
+    proxy.setUsername("username");
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().pass();
     // check that the connection did in fact go through the proxy
     assertNotNull(proxy.getLastUri());
   }

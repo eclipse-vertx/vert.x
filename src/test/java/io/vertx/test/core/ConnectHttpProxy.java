@@ -31,6 +31,7 @@ public class ConnectHttpProxy {
   private static final Logger log = LoggerFactory.getLogger(ConnectHttpProxy.class);
 
   private HttpServer server = null;
+  private String user = null;
 
   private String lastUri = null;
 
@@ -52,7 +53,7 @@ public class ConnectHttpProxy {
    * @param finishedHandler
    *          will be called when the start has started
    */
-  public void start(Vertx vertx, String user, Handler<Void> finishedHandler) {
+  public void start(Vertx vertx, Handler<Void> finishedHandler) {
     HttpServerOptions options = new HttpServerOptions();
     options.setHost("localhost").setPort(13128);
     server = vertx.createHttpServer(options);
@@ -60,7 +61,7 @@ public class ConnectHttpProxy {
       HttpMethod method = request.method();
       String uri = request.uri();
       log.debug("uri:" + uri);
-      if (user != null) {
+      if (user  != null) {
         String auth = request.getHeader("Proxy-Authorization");
         String expected = "Basic " + Base64.getEncoder().encodeToString((user + ":" + user).getBytes());
         if (auth == null || !auth.equals(expected)) {
@@ -118,6 +119,13 @@ public class ConnectHttpProxy {
       server.close();
       server = null;
     }
+  }
+
+  /**
+   * @param object
+   */
+  public void setUsername(String username) {
+    this.user = username;
   }
 
 }
