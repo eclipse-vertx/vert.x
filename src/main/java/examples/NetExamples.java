@@ -493,13 +493,19 @@ public class NetExamples {
         addEnabledCipherSuite("CDHE-ECDSA-AES256-GCM-SHA384");
     NetServer server = vertx.createNetServer(options);
   }
-
-    public void example45(Vertx vertx, JksOptions keyStoreOptions) {
-        NetServerOptions options = new NetServerOptions().
-                setSsl(true).
-                setKeyStoreOptions(keyStoreOptions).
-                addEnabledSecureTransportProtocol("TLSv1.1").
-                addEnabledSecureTransportProtocol("TLSv1.2");
+  public void example45(Vertx vertx, JksOptions keyStoreOptions) {
+    NetServerOptions options = new NetServerOptions().
+        setSsl(true).
+        setKeyStoreOptions(keyStoreOptions).
+        addEnabledSecureTransportProtocol("TLSv1.1").
+        addEnabledSecureTransportProtocol("TLSv1.2");
         NetServer server = vertx.createNetServer(options);
     }
+
+  public void example46(Vertx vertx, JksOptions keyStoreOptions) {
+    NetClientOptions options = new NetClientOptions().
+            setSsl(true).
+            setHostnameVerificationAlgorithm("HTTPS");
+    NetClient client = vertx.createNetClient(options);
+  }
 }

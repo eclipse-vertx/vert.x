@@ -434,6 +434,15 @@
  * If {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is not set then a client trust store must be
  * configured and should contain the certificates of the servers that the client trusts.
  *
+ * By default, host verification is disabled on the client.
+ * To enable host verification, set the algorithm to use on your client (only HTTPS and LDAPS is currently supported):
+ *
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.NetExamples#example46}
+ * ----
+ *
  * Likewise server configuration, the client trust can be configured in several ways:
  *
  * The first method is by specifying the location of a Java trust-store which contains the certificate authority.

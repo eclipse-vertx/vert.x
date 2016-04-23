@@ -156,7 +156,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
       protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
         if (sslHelper.isSSL()) {
-          SslHandler sslHandler = sslHelper.createSslHandler(vertx);
+          SslHandler sslHandler = sslHelper.createSslHandler(vertx, host, port);
           pipeline.addLast("ssl", sslHandler);
         }
         if (sslHelper.isSSL()) {
