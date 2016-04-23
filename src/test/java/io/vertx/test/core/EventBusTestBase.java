@@ -22,6 +22,9 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.MessageCodec;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
@@ -546,6 +549,63 @@ public abstract class EventBusTestBase extends VertxTestBase {
     @Override
     public int hashCode() {
       return str != null ? str.hashCode() : 0;
+    }
+  }
+
+  public static class MyReplyException extends ReplyException {
+
+    public MyReplyException(int failureCode, String message) {
+      super(ReplyFailure.RECIPIENT_FAILURE, failureCode, message);
+    }
+  }
+
+  public static class MyReplyExceptionMessageCodec implements
+      MessageCodec<MyReplyException, MyReplyException> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, MyReplyException body) {
+      buffer.appendInt(body.failureCode());
+      if (body.getMessage() == null) {
+        buffer.appendByte((byte)0);
+      } else {
+        buffer.appendByte((byte)1);
+        byte[] encoded = body.getMessage().getBytes(CharsetUtil.UTF_8);
+        buffer.appendInt(encoded.length);
+        buffer.appendBytes(encoded);
+      }
+    }
+
+    @Override
+    public MyReplyException decodeFromWire(int pos, Buffer buffer) {
+      int failureCode = buffer.getInt(pos);
+      pos += 4;
+      boolean isNull = buffer.getByte(pos) == (byte)0;
+      String message;
+      if (!isNull) {
+        pos++;
+        int strLength = buffer.getInt(pos);
+        pos += 4;
+        byte[] bytes = buffer.getBytes(pos, pos + strLength);
+        message = new String(bytes, CharsetUtil.UTF_8);
+      } else {
+        message = null;
+      }
+      return new MyReplyException(failureCode, message);
+    }
+
+    @Override
+    public MyReplyException transform(MyReplyException obj) {
+      return obj;
+    }
+
+    @Override
+    public String name() {
+      return "myReplyException";
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return -1;
     }
   }
 

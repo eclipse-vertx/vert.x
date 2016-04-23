@@ -135,6 +135,21 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     testReply(pojo, pojo, null, null);
   }
 
+  @Test
+  public void testDefaultCodecReplyExceptionSubclass() throws Exception {
+    startNodes(2);
+    MyReplyException myReplyException = new MyReplyException(23, "my exception");
+    MyReplyExceptionMessageCodec codec = new MyReplyExceptionMessageCodec();
+    vertices[0].eventBus().registerDefaultCodec(MyReplyException.class, codec);
+    vertices[1].eventBus().registerDefaultCodec(MyReplyException.class, codec);
+    vertices[0].eventBus().<ReplyException>consumer(ADDRESS1, msg -> {
+      assertTrue(msg.body() instanceof MyReplyException);
+      testComplete();
+    });
+    vertices[1].eventBus().send(ADDRESS1, myReplyException);
+    await();
+  }
+
   // Make sure ping/pong works ok
   @Test
   public void testClusteredPong() throws Exception {

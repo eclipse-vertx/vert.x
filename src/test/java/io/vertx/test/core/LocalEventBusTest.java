@@ -907,6 +907,18 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertNullPointerException(() -> vertx.eventBus().registerDefaultCodec(String.class, new NullNameCodec()));
   }
 
+  @Test
+  public void testDefaultCodecReplyExceptionSubclass() throws Exception {
+    MyReplyException myReplyException = new MyReplyException(23, "my exception");
+    vertx.eventBus().registerDefaultCodec(MyReplyException.class, new MyReplyExceptionMessageCodec());
+    eb.<ReplyException>consumer(ADDRESS1, msg -> {
+      assertTrue(msg.body() instanceof MyReplyException);
+      testComplete();
+    });
+    vertx.eventBus().send(ADDRESS1, myReplyException);
+    await();
+  }
+
 
   @Override
   protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
