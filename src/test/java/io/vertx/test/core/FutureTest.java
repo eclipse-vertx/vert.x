@@ -24,6 +24,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -242,6 +243,41 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testAllLargeList() {
+    testAllLargeList(63);
+    testAllLargeList(64);
+    testAllLargeList(65);
+    testAllLargeList(100);
+  }
+
+  private void testAllLargeList(int size) {
+    List<Future> list = new ArrayList<>();
+    for (int i = 0;i < size;i++) {
+      list.add(Future.succeededFuture());
+    }
+    CompositeFuture composite = CompositeFuture.all(list);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertSucceeded(composite);
+    for (int i = 0;i < size;i++) {
+      list.clear();
+      Throwable cause = new Exception();
+      for (int j = 0;j < size;j++) {
+        list.add(i == j ? Future.failedFuture(cause) : Future.succeededFuture());
+      }
+      composite = CompositeFuture.all(list);
+      checker = new Checker<>(composite);
+      checker.assertFailed(cause);
+      for (int j = 0;j < size;j++) {
+        if (i == j) {
+          assertTrue(composite.failed(j));
+        } else {
+          assertTrue(composite.succeeded(j));
+        }
+      }
+    }
+  }
+
+  @Test
   public void testAnySucceeded1() {
     testAnySucceeded1(CompositeFuture::any);
   }
@@ -312,6 +348,40 @@ public class FutureTest extends VertxTestBase {
     Throwable cause = new Exception();
     f2.fail(cause);
     checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testAnyLargeList() {
+    testAnyLargeList(63);
+    testAnyLargeList(64);
+    testAnyLargeList(65);
+    testAnyLargeList(100);
+  }
+
+  private void testAnyLargeList(int size) {
+    List<Future> list = new ArrayList<>();
+    for (int i = 0;i < size;i++) {
+      list.add(Future.failedFuture(new Exception()));
+    }
+    CompositeFuture composite = CompositeFuture.any(list);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    checker.assertFailed();
+    for (int i = 0;i < size;i++) {
+      list.clear();
+      for (int j = 0;j < size;j++) {
+        list.add(i == j ? Future.succeededFuture() : Future.failedFuture(new RuntimeException()));
+      }
+      composite = CompositeFuture.any(list);
+      checker = new Checker<>(composite);
+      checker.assertSucceeded(composite);
+      for (int j = 0;j < size;j++) {
+        if (i == j) {
+          assertTrue(composite.succeeded(j));
+        } else {
+          assertTrue(composite.failed(j));
+        }
+      }
+    }
   }
 
   @Test
@@ -514,10 +584,13 @@ public class FutureTest extends VertxTestBase {
     }
 
     void assertFailed(Throwable expected) {
+      assertEquals(expected, assertFailed());
+    }
+
+    Throwable assertFailed() {
       assertTrue(future.isComplete());
       assertFalse(future.succeeded());
       assertTrue(future.failed());
-      assertEquals(expected, future.cause());
       assertEquals(null, future.result());
       assertEquals(1, count.get());
       AsyncResult<T> ar = result.get();
@@ -525,9 +598,8 @@ public class FutureTest extends VertxTestBase {
       assertFalse(ar.succeeded());
       assertTrue(ar.failed());
       assertNull(ar.result());
-      assertEquals(expected, future.cause());
+      return future.cause();
     }
-
   }
 
 /*

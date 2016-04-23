@@ -28,14 +28,14 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
 
   public static CompositeFuture all(Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
-    for (int i = 0;i < results.length;i++) {
-      int index = i;
+    int len = results.length;
+    for (int i = 0; i < len; i++) {
       results[i].setHandler(ar -> {
         Handler<AsyncResult<CompositeFuture>> handler = null;
         if (ar.succeeded()) {
           synchronized (composite) {
-            composite.flag |= 1 << index;
-            if (!composite.isComplete() && composite.flag == (1 << results.length) - 1) {
+            composite.count++;
+            if (!composite.isComplete() && composite.count == len) {
               handler = composite.setSucceeded();
             }
           }
@@ -51,7 +51,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
         }
       });
     }
-    if (results.length == 0) {
+    if (len == 0) {
       composite.setSucceeded();
     }
     return composite;
@@ -59,8 +59,8 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
 
   public static CompositeFuture any(Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
-    for (int i = 0;i < results.length;i++) {
-      int index = i;
+    int len = results.length;
+    for (int i = 0;i < len;i++) {
       results[i].setHandler(ar -> {
         Handler<AsyncResult<CompositeFuture>> handler = null;
         if (ar.succeeded()) {
@@ -71,8 +71,8 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
           }
         } else {
           synchronized (composite) {
-            composite.flag |= 1 << index;
-            if (!composite.isComplete() && composite.flag == (1 << results.length) - 1) {
+            composite.count++;
+            if (!composite.isComplete() && composite.count == len) {
               handler = composite.setFailed(ar.cause());
             }
           }
@@ -89,7 +89,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   private final Future[] results;
-  private int flag;
+  private int count;
   private boolean completed;
   private Throwable cause;
   private Handler<AsyncResult<CompositeFuture>> handler;
