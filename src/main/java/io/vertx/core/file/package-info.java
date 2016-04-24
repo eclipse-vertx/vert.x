@@ -167,6 +167,9 @@
  * The whole classpath resolving feature can be disabled by setting the system
  * property `vertx.disableFileCPResolving` to `true`.
  *
+ * NOTE: these system properties are evaluated once when the the `io.vertx.core.impl.FileResolver` class is loaded, so
+ * these properties should be set before loading this class or as a JVM system property when launching it.
+ *
  * ==== Closing an AsyncFile
  *
  * To close an `AsyncFile` call the {@link io.vertx.core.file.AsyncFile#close()} method. Closing is asynchronous and
