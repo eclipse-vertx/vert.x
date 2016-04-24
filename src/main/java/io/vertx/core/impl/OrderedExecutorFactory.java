@@ -31,7 +31,7 @@ import java.util.concurrent.Executor;
  * @version <tt>$Revision$</tt>
  */
 public class OrderedExecutorFactory {
-  // It must be package-private rather than `private` in order to avoid the generation of an accessor, which would
+  // It must be package-protected rather than `private` in order to avoid the generation of an accessor, which would
   // cause Quasar 0.7.5-SNAPSHOT+ to print print an harmless error message during vert.x boot when using the agent
   // instrumentation method. See https://github.com/puniverse/quasar/issues/160#issuecomment-205977756 for details.
   static final Logger log = LoggerFactory.getLogger(OrderedExecutorFactory.class);
