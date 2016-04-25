@@ -59,6 +59,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.metrics.ThreadPoolMetrics;
 
 import java.io.File;
 import java.util.*;
@@ -106,6 +107,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private HAManager haManager;
   private boolean closed;
   private Handler<Throwable> exceptionHandler;
+  private NamedThreadPoolManager namedThreadPools;
+  private Map<String, ThreadPoolMetrics> poolsMetrics;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -130,15 +133,39 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     // under a lot of load
     acceptorEventLoopGroup = new NioEventLoopGroup(1, acceptorEventLoopThreadFactory);
     acceptorEventLoopGroup.setIoRatio(100);
+
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
                                                         new VertxThreadFactory("vert.x-internal-blocking-", checker, true));
     workerOrderedFact = new OrderedExecutorFactory(workerPool);
     internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
+
     this.fileResolver = new FileResolver(this);
     this.deploymentManager = new DeploymentManager(this);
     this.metrics = initialiseMetrics(options);
+
+    this.namedThreadPools = new NamedThreadPoolManager(this, options, workerPool,
+        workerOrderedFact.getExecutor(),
+        metrics);
+
+    if (metrics.isMetricsEnabled()) {
+      ThreadPoolMetrics workerPoolMetrics = metrics.createMetrics("vert.x-worker-thread-pool", options.getWorkerPoolSize());
+      ThreadPoolMetrics  internalBlockingPoolMetrics = metrics.createMetrics("vert.x-internal-blocking-pool",
+          options.getInternalBlockingPoolSize());
+
+      poolsMetrics = new HashMap<>();
+      poolsMetrics.put("vert.x-worker-thread-pool", workerPoolMetrics);
+      poolsMetrics.put("vert.x-internal-blocking-pool", internalBlockingPoolMetrics);
+      this.namedThreadPools.configuration().entrySet()
+          .stream()
+          .forEach(entry -> poolsMetrics
+              .putIfAbsent(entry.getKey(), metrics.createMetrics(entry.getKey(), entry.getValue())));
+
+    } else {
+      poolsMetrics = null;
+    }
+
     this.haEnabled = options.isClustered() && options.isHAEnabled();
     if (options.isClustered()) {
       this.clusterManager = getClusterManager(options);
@@ -161,6 +188,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
   }
+
 
   private void createAndStartEventBus(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     if (options.isClustered()) {
@@ -329,7 +357,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl) {
-    return new EventLoopContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID, config, tccl);
+    return new EventLoopContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(),
+        deploymentID, config, tccl, namedThreadPools, poolsMetrics);
   }
 
   @Override
@@ -395,10 +424,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config,
                                          ClassLoader tccl) {
     if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config, tccl);
+      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID,
+          config, tccl, namedThreadPools, poolsMetrics);
     } else {
       return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
-                               config, tccl);
+                               config, tccl, namedThreadPools, poolsMetrics);
     }
   }
 
@@ -450,7 +480,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (closed || eventBus == null) {
-      // Just call the handler directly since pools shutdown
+      // Just call the handler directly since namedThreadPools shutdown
       if (completionHandler != null) {
         completionHandler.handle(Future.succeededFuture());
       }
@@ -523,7 +553,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       closed = this.closed;
     }
     if (closed) {
-      completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      if (completionHandler != null) {
+        completionHandler.handle(Future.failedFuture("Vert.x closed"));
+      }
     } else {
       deploymentManager.deployVerticle(verticle, options, completionHandler);
     }
@@ -664,6 +696,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
       workerPool.shutdownNow();
       internalBlockingPool.shutdownNow();
+      namedThreadPools.shutdown();
 
       acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
         @Override

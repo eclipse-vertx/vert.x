@@ -18,9 +18,10 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.NamedThreadPoolFactory;
+import io.vertx.core.spi.metrics.ThreadPoolMetrics;
 
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -28,15 +29,16 @@ import java.util.concurrent.Executor;
  */
 public class EventLoopContext extends ContextImpl {
 
-  private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
-
   public EventLoopContext(VertxInternal vertx, Executor internalBlockingExec, Executor workerExec, String deploymentID, JsonObject config,
-                          ClassLoader tccl) {
-    super(vertx, internalBlockingExec, workerExec, deploymentID, config, tccl);
+                          ClassLoader tccl, NamedThreadPoolManager namedThreadPools,
+                          Map<String, ThreadPoolMetrics> poolMetrics) {
+    super(vertx, internalBlockingExec, workerExec, deploymentID, config, tccl, namedThreadPools,
+        poolMetrics);
   }
 
   public void executeAsync(Handler<Void> task) {
-    nettyEventLoop().execute(wrapTask(null, task, true));
+    // No metrics, we are on the event loop.
+    nettyEventLoop().execute(wrapTask(null, task, true, null));
   }
 
   @Override
