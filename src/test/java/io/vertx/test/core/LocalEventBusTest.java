@@ -45,12 +45,12 @@ import static io.vertx.test.core.TestUtils.*;
  */
 public class LocalEventBusTest extends EventBusTestBase {
 
-  private Vertx vertx;
   private EventBus eb;
   private boolean running;
 
   public void setUp() throws Exception {
     super.setUp();
+    vertx.close();
     vertx = Vertx.vertx();
     eb = vertx.eventBus();
     running = true;

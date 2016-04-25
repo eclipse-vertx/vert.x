@@ -23,6 +23,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -71,6 +72,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -85,8 +87,19 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  */
 public class Http2ClientTest extends Http2TestBase {
 
+  private List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+    }
+  }
+
   @Override
   public void setUp() throws Exception {
+    eventLoopGroups.clear();
     super.setUp();
     clientOptions = new HttpClientOptions().
         setUseAlpn(true).
@@ -1042,7 +1055,9 @@ public class Http2ClientTest extends Http2TestBase {
   private ServerBootstrap createH2Server(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
-    bootstrap.group(new NioEventLoopGroup());
+    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    eventLoopGroups.add(eventLoopGroup);
+    bootstrap.group(eventLoopGroup);
     bootstrap.childHandler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {

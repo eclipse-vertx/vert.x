@@ -395,7 +395,7 @@ public class HATest extends VertxTestBase {
     }
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Vertx> vertxRef = new AtomicReference<>();
-    Vertx.clusteredVertx(options, onSuccess(vertx -> {
+    clusteredVertx(options, onSuccess(vertx -> {
       vertxRef.set(vertx);
       latch.countDown();
     }));

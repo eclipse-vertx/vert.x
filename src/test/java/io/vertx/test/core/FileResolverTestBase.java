@@ -171,7 +171,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testDeleteCacheDir() throws Exception {
-    Vertx vertx2 = Vertx.vertx();
+    Vertx vertx2 = vertx();
     FileResolver resolver2 = new FileResolver(vertx2);
     File file = resolver2.resolveFile(webRoot + "/somefile.html");
     assertTrue(file.exists());
@@ -188,7 +188,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testCacheDirDeletedOnVertxClose() {
-    VertxInternal vertx2 = (VertxInternal)Vertx.vertx();
+    VertxInternal vertx2 = (VertxInternal)vertx();
     File file = vertx2.resolveFile(webRoot + "/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();

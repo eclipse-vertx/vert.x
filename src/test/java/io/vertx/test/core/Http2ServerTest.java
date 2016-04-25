@@ -24,6 +24,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -80,6 +81,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -88,6 +90,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -123,7 +126,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   class TestClient {
 
-    public final Http2Settings settings = new Http2Settings();
+    final Http2Settings settings = new Http2Settings();
 
     public class Connection {
       public final Channel channel;
@@ -236,10 +239,28 @@ public class Http2ServerTest extends Http2TestBase {
 
     public ChannelFuture connect(int port, String host, Consumer<Connection> handler) {
       Bootstrap bootstrap = new Bootstrap();
+      NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+      eventLoopGroups.add(eventLoopGroup);
       bootstrap.channel(NioSocketChannel.class);
-      bootstrap.group(new NioEventLoopGroup());
+      bootstrap.group(eventLoopGroup);
       bootstrap.handler(channelInitializer(port, host, handler));
       return bootstrap.connect(new InetSocketAddress(host, port));
+    }
+  }
+
+  private List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
+
+  @Override
+  public void setUp() throws Exception {
+    eventLoopGroups.clear();
+    super.setUp();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
     }
   }
 
