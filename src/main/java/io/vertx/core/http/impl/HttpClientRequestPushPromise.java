@@ -37,6 +37,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private final Http2ClientConnection conn;
   private final Http2ClientConnection.Http2ClientStream stream;
   private final HttpMethod method;
+  private final String rawMethod;
   private final String uri;
   private final String host;
   private final MultiMap headers;
@@ -47,6 +48,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       Http2Stream stream,
       HttpClientImpl client,
       HttpMethod method,
+      String rawMethod,
       String uri,
       String host,
       MultiMap headers) throws Http2Exception {
@@ -54,6 +56,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     this.conn = conn;
     this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream);
     this.method = method;
+    this.rawMethod = rawMethod;
     this.uri = uri;
     this.host = host;
     this.headers = headers;
@@ -118,12 +121,12 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public String getRawMethod() {
-    throw new UnsupportedOperationException("todo");
+    return rawMethod;
   }
 
   @Override
   public HttpClientRequest setRawMethod(String method) {
-    throw new UnsupportedOperationException("Todo");
+    throw new IllegalStateException();
   }
 
   @Override
