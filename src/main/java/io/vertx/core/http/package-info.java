@@ -350,6 +350,11 @@
  * HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when an
  * unkown frame is received whether the request is paused or is not
  *
+ * ==== Non standard HTTP methods
+ *
+ * The {@link io.vertx.core.http.HttpMethod#OTHER} HTTP method is used for non standard methods, in this case
+ * {@link io.vertx.core.http.HttpServerRequest#rawMethod()} returns the HTTP method as sent by the client.
+ *
  * === Sending back responses
  *
  * The server response object is an instance of {@link io.vertx.core.http.HttpServerResponse} and is obtained from the
@@ -806,6 +811,12 @@
  * ----
  *
  * If you wish to write headers to the request you must do so before any part of the request body is written.
+ *
+ * ==== Non standard HTTP methods
+ *
+ * The {@link io.vertx.core.http.HttpMethod#OTHER} HTTP method is used for non standard methods, when this method
+ * is used, {@link io.vertx.core.http.HttpClientRequest#setRawMethod(java.lang.String)} must be used to
+ * set the raw method to send to the server.
  *
  * ==== Ending HTTP requests
  *

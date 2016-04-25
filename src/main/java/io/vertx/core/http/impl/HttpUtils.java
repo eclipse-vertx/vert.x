@@ -243,7 +243,7 @@ public final class HttpUtils {
     return null;
   }
 
-  static HttpMethod toNettyHttpMethod(io.vertx.core.http.HttpMethod method) {
+  static HttpMethod toNettyHttpMethod(io.vertx.core.http.HttpMethod method, String rawMethod) {
     switch (method) {
       case CONNECT: {
         return HttpMethod.CONNECT;
@@ -272,7 +272,9 @@ public final class HttpUtils {
       case PATCH: {
         return HttpMethod.PATCH;
       }
-      default: throw new IllegalArgumentException();
+      default: {
+        return HttpMethod.valueOf(rawMethod);
+      }
     }
   }
 
@@ -293,7 +295,7 @@ public final class HttpUtils {
     try {
       return io.vertx.core.http.HttpMethod.valueOf(method);
     } catch (IllegalArgumentException e) {
-      return io.vertx.core.http.HttpMethod.UNKNOWN;
+      return io.vertx.core.http.HttpMethod.OTHER;
     }
   }
 }
