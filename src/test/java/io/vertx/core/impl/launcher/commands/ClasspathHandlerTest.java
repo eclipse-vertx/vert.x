@@ -56,12 +56,12 @@ public class ClasspathHandlerTest extends CommandTestBase {
   }
 
   @After
-  public void tearDown() {
+  public void tearDown() throws InterruptedException {
     if (run != null) {
-      run.vertx.close();
+      close(run.vertx);
     }
     if (bare != null) {
-      bare.vertx.close();
+      close(bare.vertx);
     }
   }
 

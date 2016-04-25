@@ -26,6 +26,7 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -43,6 +44,8 @@ import java.util.Set;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class StarterTest extends VertxTestBase {
+
+  Vertx vertx;
 
   @Override
   public void setUp() throws Exception {
@@ -65,6 +68,10 @@ public class StarterTest extends VertxTestBase {
   public void tearDown() throws Exception {
     clearProperties();
     super.tearDown();
+
+    if (vertx != null) {
+      vertx.close();
+    }
   }
 
   @Test
@@ -74,6 +81,7 @@ public class StarterTest extends VertxTestBase {
     starter.run(args);
     // TODO some way of getting this from the version in pom.xml
     assertEquals(System.getProperty("vertxVersion"), starter.getVersion());
+    cleanup(starter);
   }
 
   @Test
@@ -93,6 +101,7 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == instances);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     starter.assertHooksInvoked();
+    cleanup(starter);
   }
 
   @Test
@@ -103,6 +112,7 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     starter.assertHooksInvoked();
+    cleanup(starter);
   }
 
   @Test
@@ -113,6 +123,7 @@ public class StarterTest extends VertxTestBase {
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
     starter.assertHooksInvoked();
+    cleanup(starter);
   }
 
 
@@ -123,6 +134,13 @@ public class StarterTest extends VertxTestBase {
     starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    cleanup(starter);
+  }
+
+  private void cleanup(MyStarter starter) {
+    if (starter != null  && starter.getVertx() != null) {
+      starter.getVertx().close();
+    }
   }
 
   @Test
@@ -132,6 +150,7 @@ public class StarterTest extends VertxTestBase {
     starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    cleanup(starter);
   }
 
   @Test
@@ -141,6 +160,7 @@ public class StarterTest extends VertxTestBase {
     starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+    cleanup(starter);
   }
 
   @Test
@@ -151,6 +171,7 @@ public class StarterTest extends VertxTestBase {
     starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(conf, TestVerticle.conf);
+    cleanup(starter);
   }
 
   @Rule
@@ -168,6 +189,7 @@ public class StarterTest extends VertxTestBase {
     starter.run(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(conf, TestVerticle.conf);
+    cleanup(starter);
   }
 
   @Test
@@ -201,10 +223,11 @@ public class StarterTest extends VertxTestBase {
     VertxOptions opts = starter.getVertxOptions();
 
     assertEquals(123, opts.getEventLoopPoolSize(), 0);
-    assertEquals(123767667l, opts.getMaxEventLoopExecuteTime());
+    assertEquals(123767667L, opts.getMaxEventLoopExecuteTime());
     assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
 
+    cleanup(starter);
   }
 
   private void clearProperties() {
@@ -245,6 +268,8 @@ public class StarterTest extends VertxTestBase {
       VertxOptions opts = starter.getVertxOptions();
       CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
       assertEquals("customPropertyValue", custom.getCustomProperty());
+
+      cleanup(starter);
     } finally {
       ConfigurableMetricsFactory.delegate = null;
     }
@@ -268,6 +293,7 @@ public class StarterTest extends VertxTestBase {
       def.getMetricsOptions().setEnabled(true);
     }
     assertEquals(def, opts);
+    cleanup(starter);
   }
 
   @Test
@@ -287,6 +313,7 @@ public class StarterTest extends VertxTestBase {
       def.getMetricsOptions().setEnabled(true);
     }
     assertEquals(def, opts);
+    cleanup(starter);
   }
 
   @Test
@@ -296,6 +323,7 @@ public class StarterTest extends VertxTestBase {
     String cl = "run java:" + TestVerticle.class.getCanonicalName() + " -instances " + instances;
     starter.run(cl);
     waitUntil(() -> TestVerticle.instanceCount.get() == instances);
+    cleanup(starter);
   }
 
   class MyStarter extends Starter {
@@ -303,7 +331,7 @@ public class StarterTest extends VertxTestBase {
     boolean afterStartingVertxInvoked = false;
     boolean beforeDeployingVerticle = false;
 
-    public Vertx getVert() {
+    public Vertx getVertx() {
       return vertx;
     }
 
@@ -341,6 +369,7 @@ public class StarterTest extends VertxTestBase {
     }
 
     public void assertHooksInvoked() {
+      StarterTest.this.vertx = vertx;
       assertTrue(beforeStartingVertxInvoked);
       assertTrue(afterStartingVertxInvoked);
       assertTrue(beforeDeployingVerticle);

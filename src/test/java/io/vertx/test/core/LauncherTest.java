@@ -24,7 +24,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.launcher.Command;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -44,6 +46,7 @@ public class LauncherTest extends VertxTestBase {
   private String expectedVersion;
   private ByteArrayOutputStream out;
   private PrintStream stream;
+  private Vertx vertx;
 
   @Override
   public void setUp() throws Exception {
@@ -76,6 +79,10 @@ public class LauncherTest extends VertxTestBase {
 
     out.close();
     stream.close();
+
+    if (vertx != null) {
+      vertx.close();
+    }
   }
 
 
@@ -184,6 +191,18 @@ public class LauncherTest extends VertxTestBase {
     launcher.dispatch(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+
+    cleanup(launcher);
+  }
+
+  private void cleanup(Launcher launcher) {
+    RunCommand run = (RunCommand) launcher.getExistingCommandInstance("run");
+    if (run != null) {
+      Vertx v = run.vertx();
+      if (v != null) {
+        v.close();
+      }
+    }
   }
 
   @Test
@@ -201,6 +220,8 @@ public class LauncherTest extends VertxTestBase {
     launcher.dispatch(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 10);
     assertEquals(Arrays.asList(args), TestVerticle.processArgs);
+
+    cleanup(launcher);
   }
 
   @Test
@@ -249,8 +270,11 @@ public class LauncherTest extends VertxTestBase {
 
     HelloCommand.called = false;
     String[] args = {"run", TestVerticle.class.getName(), "--name=vert.x"};
-    Launcher.main(args);
+    Launcher launcher = new Launcher();
+    launcher.dispatch(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+
+    cleanup(launcher);
   }
 
   @Test
@@ -264,8 +288,11 @@ public class LauncherTest extends VertxTestBase {
     Files.copy(manifest.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
     String[] args = {TestVerticle.class.getName()};
-    Launcher.main(args);
+    Launcher launcher = new Launcher();
+    launcher.dispatch(args);
     waitUntil(() -> TestVerticle.instanceCount.get() == 1);
+
+    cleanup(launcher);
   }
 
 
@@ -530,7 +557,6 @@ public class LauncherTest extends VertxTestBase {
     boolean afterStartingVertxInvoked = false;
     boolean beforeDeployingVerticle = false;
 
-    Vertx vertx;
     VertxOptions options;
     DeploymentOptions deploymentOptions;
     JsonObject config;
@@ -569,7 +595,7 @@ public class LauncherTest extends VertxTestBase {
     @Override
     public void afterStartingVertx(Vertx vertx) {
       afterStartingVertxInvoked = true;
-      this.vertx = vertx;
+      LauncherTest.this.vertx = vertx;
     }
 
     @Override
