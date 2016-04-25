@@ -20,8 +20,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
-import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -31,6 +29,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.PacketWritestream;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxEpollSupport;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.net.SocketAddress;
@@ -287,23 +286,11 @@ public class DatagramSocketImpl extends ConnectionBase implements DatagramSocket
     return (DatagramChannel) channel;
   }
 
-  private static NioDatagramChannel createChannel(io.vertx.core.datagram.impl.InternetProtocolFamily family,
+  private static DatagramChannel createChannel(io.vertx.core.datagram.impl.InternetProtocolFamily family,
                                                   DatagramSocketOptions options) {
-    NioDatagramChannel channel;
-    if (family == null) {
-      channel = new NioDatagramChannel();
-    } else {
-      switch (family) {
-        case IPv4:
-          channel = new NioDatagramChannel(InternetProtocolFamily.IPv4);
-          break;
-        case IPv6:
-          channel = new NioDatagramChannel(InternetProtocolFamily.IPv6);
-          break;
-        default:
-          channel = new NioDatagramChannel();
-      }
-    }
+
+    DatagramChannel channel = VertxEpollSupport.datagramChannel(family);
+
     if (options.getSendBufferSize() != -1) {
       channel.config().setSendBufferSize(options.getSendBufferSize());
     }

@@ -18,7 +18,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
@@ -99,8 +98,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final OrderedExecutorFactory workerOrderedFact;
   private final OrderedExecutorFactory internalOrderedFact;
   private final ThreadFactory eventLoopThreadFactory;
-  private final NioEventLoopGroup eventLoopGroup;
-  private final NioEventLoopGroup acceptorEventLoopGroup;
+  private final EventLoopGroup eventLoopGroup;
+  private final EventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
   private final HostnameResolver hostnameResolver;
@@ -125,13 +124,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getMaxEventLoopExecuteTime(),
                                        options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false);
-    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
-    eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
+    eventLoopGroup = VertxEpollSupport.eventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
     ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false);
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
-    acceptorEventLoopGroup = new NioEventLoopGroup(1, acceptorEventLoopThreadFactory);
-    acceptorEventLoopGroup.setIoRatio(100);
+    acceptorEventLoopGroup = VertxEpollSupport.eventLoopGroup(1, acceptorEventLoopThreadFactory, 100);
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true));
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
