@@ -363,4 +363,11 @@ public class BareCommand extends ClasspathHandler {
   public void setExecutionContext(ExecutionContext context) {
     this.executionContext = context;
   }
+
+  /**
+   * @return the vert.x instance if created.
+   */
+  public synchronized Vertx vertx() {
+    return vertx;
+  }
 }
