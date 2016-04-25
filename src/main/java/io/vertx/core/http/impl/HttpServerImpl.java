@@ -23,6 +23,7 @@ import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
@@ -210,7 +211,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
-        bootstrap.channelFactory(new VertxNioServerChannelFactory());
+        bootstrap.channel(NioServerSocketChannel.class);
         applyConnectionOptions(bootstrap);
         sslHelper.validate(vertx);
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
@@ -327,7 +328,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     if (options.getIdleTimeout() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
     }
-    pipeline.addLast("handler", new ServerHandler());
+    pipeline.addLast("handler", new ServerHandler(pipeline.channel()));
   }
 
   public void handleHttp2(Channel ch) {
@@ -508,18 +509,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   public class ServerHandler extends VertxHttpHandler<ServerConnection> {
+
     private boolean closeFrameSent;
 
-    public ServerHandler() {
-      super(HttpServerImpl.this.connectionMap);
+    public ServerHandler(Channel ch) {
+      super(HttpServerImpl.this.connectionMap, ch);
     }
 
     FullHttpRequest wsRequest;
 
     @Override
     protected void doMessageReceived(ServerConnection conn, ChannelHandlerContext ctx, Object msg) throws Exception {
-
-      Channel ch = ctx.channel();
 
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids
       // some casting and a header check
@@ -690,6 +690,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         // Put in the connection map before executeFromIO
         ServerConnection conn = new ServerConnection(vertx, HttpServerImpl.this, ch, reqHandler.context, serverOrigin, shake, metrics);
         conn.requestHandler(reqHandler.handler.requesthHandler);
+        this.conn = conn;
         connectionMap.put(ch, conn);
         reqHandler.context.executeFromIO(() -> {
           conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
@@ -724,6 +725,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           wsConn.wsHandler(wsHandler.handler);
 
           Runnable connectRunnable = () -> {
+            VertxHttpHandler<ServerConnection> handler = ch.pipeline().get(VertxHttpHandler.class);
+            handler.conn = wsConn;
             connectionMap.put(ch, wsConn);
             try {
               shake.handshake(ch, request);

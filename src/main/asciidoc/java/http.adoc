@@ -1026,7 +1026,7 @@ If you wish to write headers to the request you must do so before any part of th
 ==== Non standard HTTP methods
 
 The `link:../../apidocs/io/vertx/core/http/HttpMethod.html#OTHER[OTHER]` HTTP method is used for non standard methods, when this method
-is used, the `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#setRawMethod-java.lang.String-[setRawMethod]` must be used to
+is used, `link:../../apidocs/io/vertx/core/http/HttpClientRequest.html#setRawMethod-java.lang.String-[setRawMethod]` must be used to
 set the raw method to send to the server.
 
 ==== Ending HTTP requests

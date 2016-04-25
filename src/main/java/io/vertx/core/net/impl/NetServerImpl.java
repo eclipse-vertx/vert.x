@@ -175,7 +175,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
             if (options.getIdleTimeout() > 0) {
               pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
             }
-            pipeline.addLast("handler", new ServerHandler());
+            pipeline.addLast("handler", new ServerHandler(ch));
           }
         });
 
@@ -377,8 +377,8 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
   }
 
   private class ServerHandler extends VertxNetHandler {
-    public ServerHandler() {
-      super(socketMap);
+    public ServerHandler(Channel ch) {
+      super(ch, socketMap);
     }
 
     @Override
@@ -414,6 +414,8 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
       ContextImpl.setContext(handler.context);
       NetSocketImpl sock = new NetSocketImpl(vertx, ch, handler.context, sslHelper, false, metrics, null);
       socketMap.put(ch, sock);
+      VertxNetHandler netHandler = ch.pipeline().get(VertxNetHandler.class);
+      netHandler.conn = sock;
       handler.context.executeFromIO(() -> {
         sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
         handler.handler.handle(sock);

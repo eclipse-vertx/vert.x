@@ -125,6 +125,8 @@ public class Http1xPool extends ConnectionManager.Pool<ClientConnection> {
       // gets the closed on, they will check if it's closed and if so get another one.
       connectionClosed(conn);
     });
+    ClientHandler handler = ch.pipeline().get(ClientHandler.class);
+    handler.conn = conn;
     synchronized (queue) {
       allConnections.add(conn);
     }
