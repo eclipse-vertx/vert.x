@@ -44,6 +44,7 @@ import io.vertx.core.dns.impl.netty.decoder.RecordDecoderFactory;
 import io.vertx.core.dns.impl.netty.decoder.record.MailExchangerRecord;
 import io.vertx.core.dns.impl.netty.decoder.record.ServiceRecord;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxEpollSupport;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
@@ -81,7 +82,7 @@ public final class DnsClientImpl implements DnsClient {
     actualCtx = vertx.getOrCreateContext();
     bootstrap = new Bootstrap();
     bootstrap.group(actualCtx.nettyEventLoop());
-    bootstrap.channel(NioDatagramChannel.class);
+    bootstrap.channel(VertxEpollSupport.datagramChannel());
     bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
       @Override

@@ -21,7 +21,6 @@ import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -32,6 +31,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Closeable;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxEpollSupport;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -153,7 +153,7 @@ public class NetServerImpl implements NetServer, Closeable, MetricsProvider {
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
-        bootstrap.channel(NioServerSocketChannel.class);
+        bootstrap.channel(VertxEpollSupport.serverChannel());
         sslHelper.validate(vertx);
 
         bootstrap.childHandler(new ChannelInitializer<Channel>() {

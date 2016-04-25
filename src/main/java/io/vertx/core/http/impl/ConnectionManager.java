@@ -41,6 +41,7 @@ import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.impl.VertxEpollSupport;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -256,7 +257,7 @@ public class ConnectionManager {
       }
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
-      bootstrap.channelFactory(new VertxNioSocketChannelFactory());
+      bootstrap.channel(VertxEpollSupport.channel());
       sslHelper.validate(vertx);
       bootstrap.handler(new ChannelInitializer<Channel>() {
         @Override
