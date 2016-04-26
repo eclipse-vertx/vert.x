@@ -876,6 +876,7 @@ public class MetricsTest extends VertxTestBase {
     for (int i = 0; i < 100; i++) {
       vertx.executeBlocking(
           job,
+          false,
           ar -> {
             if (metrics.numberOfWaitingTasks() > 0) {
               hadWaitingQueue.set(true);

@@ -1650,6 +1650,10 @@ Sets the value of max worker execute time, in ns.
 +++
 Set the metrics options
 +++
+|[[namedThreadPoolConfiguration]]`namedThreadPoolConfiguration`|`Json object`|
++++
+Sets the configuration for the named thread pool factory (SPI).
++++
 |[[quorumSize]]`quorumSize`|`Number (int)`|
 +++
 Set the quorum size to be used when HA is enabled.
