@@ -106,6 +106,20 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpMethod method();
 
   /**
+   * @return the raw value of the method this request sends
+   */
+  String getRawMethod();
+
+  /**
+   * Set the value the method to send when the method {@link HttpMethod#OTHER} is used.
+   *
+   * @param method the raw method
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setRawMethod(String method);
+
+  /**
    * @return The URI of the request.
    */
   String uri();

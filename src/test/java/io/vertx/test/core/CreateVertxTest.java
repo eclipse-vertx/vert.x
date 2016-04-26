@@ -23,18 +23,18 @@ import org.junit.Test;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class CreateVertxTest extends AsyncTestBase {
+public class CreateVertxTest extends VertxTestBase {
 
   @Test
   public void testCreateSimpleVertx() {
-    Vertx vertx = Vertx.vertx();
+    Vertx vertx = vertx();
     assertNotNull(vertx);
   }
 
   @Test
   public void testCreateVertxWithOptions() {
     VertxOptions options = new VertxOptions();
-    Vertx vertx = Vertx.vertx(options);
+    Vertx vertx = vertx(options);
     assertNotNull(vertx);
     assertFalse(vertx.isClustered());
   }
@@ -55,7 +55,7 @@ public class CreateVertxTest extends AsyncTestBase {
   public void testCreateClusteredVertxAsync() {
     VertxOptions options = new VertxOptions();
     options.setClustered(true);
-    Vertx.clusteredVertx(options, ar -> {
+    clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
       assertTrue(ar.result().isClustered());
@@ -74,7 +74,7 @@ public class CreateVertxTest extends AsyncTestBase {
   @Test
   public void testCreateClusteredVertxAsyncDontSetClustered() {
     VertxOptions options = new VertxOptions();
-    Vertx.clusteredVertx(options, ar -> {
+    clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
       assertTrue(options.isClustered());

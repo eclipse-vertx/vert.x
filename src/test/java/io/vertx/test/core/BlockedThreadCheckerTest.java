@@ -42,7 +42,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     VertxOptions vertxOptions = new VertxOptions();
     vertxOptions.setMaxEventLoopExecuteTime(1000000000);
     vertxOptions.setWarningExceptionTime(1000000000);
-    Vertx newVertx = Vertx.vertx(vertxOptions);
+    Vertx newVertx = vertx(vertxOptions);
     newVertx.deployVerticle(verticle);
     await();
   }
@@ -60,7 +60,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     VertxOptions vertxOptions = new VertxOptions();
     vertxOptions.setMaxWorkerExecuteTime(1000000000);
     vertxOptions.setWarningExceptionTime(1000000000);
-    Vertx newVertx = Vertx.vertx(vertxOptions);
+    Vertx newVertx = vertx(vertxOptions);
     DeploymentOptions depolymentOptions = new DeploymentOptions();
     depolymentOptions.setWorker(true);
     newVertx.deployVerticle(verticle, depolymentOptions);

@@ -64,6 +64,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private MultiMap headersMap;
   private MultiMap params;
   private HttpMethod method;
+  private String rawMethod;
   private String absoluteURI;
   private String uri;
   private String path;
@@ -248,6 +249,16 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
         method = HttpUtils.toVertxMethod(sMethod);
       }
       return method;
+    }
+  }
+
+  @Override
+  public String rawMethod() {
+    synchronized (conn) {
+      if (rawMethod == null) {
+        rawMethod = headers.method().toString();
+      }
+      return rawMethod;
     }
   }
 

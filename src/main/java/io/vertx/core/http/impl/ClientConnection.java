@@ -405,8 +405,8 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     throw new UnsupportedOperationException("HTTP/1.x request cannot be reset");
   }
 
-  private HttpRequest createRequest(HttpVersion version, HttpMethod method, String uri, MultiMap headers) {
-    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method), uri, false);
+  private HttpRequest createRequest(HttpVersion version, HttpMethod method, String rawMethod, String uri, MultiMap headers) {
+    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method, rawMethod), uri, false);
     if (headers != null) {
       for (Map.Entry<String, String> header : headers) {
         // Todo : multi valued headers
@@ -436,14 +436,14 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
     }
   }
 
-  public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked) {
-    HttpRequest request = createRequest(version, method, uri, headers);
+  public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked) {
+    HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
     prepareHeaders(request, hostHeader, chunked);
     writeToChannel(request);
   }
 
-  public void writeHeadWithContent(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
-    HttpRequest request = createRequest(version, method, uri, headers);
+  public void writeHeadWithContent(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end) {
+    HttpRequest request = createRequest(version, method, rawMethod, uri, headers);
     prepareHeaders(request, hostHeader, chunked);
     if (end) {
       if (buf != null) {

@@ -57,6 +57,7 @@ public class HostnameResolverTest extends VertxTestBase {
     if (dnsServer.isStarted()) {
       dnsServer.stop();
     }
+    super.tearDown();
   }
 
   @Override
