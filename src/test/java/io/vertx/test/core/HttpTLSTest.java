@@ -244,6 +244,17 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello"}).fail();
   }
 
+  @Test
+  // Test host verification with a CN matching localhost
+  public void testTLSVerifyMatchingHost() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.JKS, TLSCert.NONE).clientTrustAll().clientVerifyHost().pass();
+  }
+
+  @Test
+  // Test host verification with a CN NOT matching localhost
+  public void testTLSVerifyNonMatchingHost() throws Exception {
+    testTLS(TLSCert.NONE, TLSCert.NONE, TLSCert.MIM, TLSCert.NONE).clientTrustAll().clientVerifyHost().fail();
+  }
 
     // OpenSSL tests
 
@@ -281,6 +292,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     boolean clientUsesCrl;
     boolean clientUsesAlpn;
     boolean clientOpenSSL;
+    boolean clientVerifyHost;
     boolean requiresClientAuth;
     boolean serverUsesCrl;
     boolean serverOpenSSL;
@@ -325,6 +337,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
     TLSTest clientTrustAll() {
       clientTrustAll = true;
+      return this;
+    }
+
+    TLSTest clientVerifyHost() {
+      clientVerifyHost = true;
       return this;
     }
 
@@ -381,6 +398,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       if (clientUsesAlpn) {
         options.setUseAlpn(true);
+      }
+      if (clientVerifyHost) {
+        options.setVerifyHost(true);
       }
       setOptions(options, clientTrust.getClientTrustOptions());
       setOptions(options, clientCert.getClientKeyCertOptions());

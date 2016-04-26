@@ -43,8 +43,9 @@ public interface DatagramSocketMetrics extends NetworkMetrics<Void> {
    * Called when a socket is listening. For example, this is called when an http or net server
    * has been created and is listening on a specific host/port.
    *
+   * @param localName
    * @param localAddress the local address the net socket is listening on.
    */
-  void listening(SocketAddress localAddress);
+  void listening(String localName, SocketAddress localAddress);
 
 }

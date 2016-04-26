@@ -28,6 +28,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
@@ -55,6 +56,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> endHandler;
   private boolean chunked;
   private String hostHeader;
+  private String rawMethod;
   private Handler<Void> continueHandler;
   private HttpClientStream stream;
   private volatile Object lock;
@@ -139,6 +141,21 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public boolean isChunked() {
     synchronized (getLock()) {
       return chunked;
+    }
+  }
+
+  @Override
+  public String getRawMethod() {
+    synchronized (getLock()) {
+      return rawMethod;
+    }
+  }
+
+  @Override
+  public HttpClientRequest setRawMethod(String method) {
+    synchronized (getLock()) {
+      this.rawMethod = method;
+      return this;
     }
   }
 
@@ -558,6 +575,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private synchronized void connect(Handler<HttpVersion> headersCompletionHandler) {
     if (!connecting) {
 
+      if (method == HttpMethod.OTHER && rawMethod == null) {
+        throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
+      }
+
       Waiter waiter = new Waiter(this, vertx.getContext()) {
 
         @Override
@@ -671,12 +692,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void writeHead() {
-    stream.writeHead(method, uri, headers, hostHeader(), chunked);
+    stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked);
     headWritten = true;
   }
 
   private void writeHeadWithContent(ByteBuf buf, boolean end) {
-    stream.writeHeadWithContent(method, uri, headers, hostHeader(), chunked, buf, end);
+    stream.writeHeadWithContent(method, rawMethod, uri, headers, hostHeader(), chunked, buf, end);
     headWritten = true;
   }
 

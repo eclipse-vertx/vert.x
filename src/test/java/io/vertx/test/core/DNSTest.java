@@ -16,6 +16,11 @@
 
 package io.vertx.test.core;
 
+import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.resolver.dns.DnsNameResolver;
+import io.netty.resolver.dns.DnsNameResolverBuilder;
+import io.netty.resolver.dns.DnsServerAddresses;
+import io.netty.util.concurrent.Future;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.dns.DnsClient;
@@ -23,9 +28,12 @@ import io.vertx.core.dns.DnsException;
 import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.junit.Test;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -316,5 +324,4 @@ public class DNSTest extends VertxTestBase {
     InetSocketAddress addr = (InetSocketAddress) dnsServer.getTransports()[0].getAcceptor().getLocalAddress();
     return vertx.createDnsClient(addr.getPort(), addr.getAddress().getHostAddress());
   }
-
 }

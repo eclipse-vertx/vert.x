@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class NetClientOptionsConverter {
 
   public static void fromJson(JsonObject json, NetClientOptions obj) {
+    if (json.getValue("hostnameVerificationAlgorithm") instanceof String) {
+      obj.setHostnameVerificationAlgorithm((String)json.getValue("hostnameVerificationAlgorithm"));
+    }
     if (json.getValue("reconnectAttempts") instanceof Number) {
       obj.setReconnectAttempts(((Number)json.getValue("reconnectAttempts")).intValue());
     }
@@ -36,6 +39,9 @@ public class NetClientOptionsConverter {
   }
 
   public static void toJson(NetClientOptions obj, JsonObject json) {
+    if (obj.getHostnameVerificationAlgorithm() != null) {
+      json.put("hostnameVerificationAlgorithm", obj.getHostnameVerificationAlgorithm());
+    }
     json.put("reconnectAttempts", obj.getReconnectAttempts());
     json.put("reconnectInterval", obj.getReconnectInterval());
   }

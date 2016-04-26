@@ -123,7 +123,7 @@ ID 14, bad timestamp
 |[[TRACE]]`TRACE`|-
 |[[CONNECT]]`CONNECT`|-
 |[[PATCH]]`PATCH`|-
-|[[UNKNOWN]]`UNKNOWN`|-
+|[[OTHER]]`OTHER`|-
 |===
 
 [[HttpVersion]]

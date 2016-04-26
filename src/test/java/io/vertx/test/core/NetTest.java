@@ -156,6 +156,11 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setTrustAll(true));
     assertTrue(options.isTrustAll());
 
+    String randomAlphaString = TestUtils.randomAlphaString(10);
+    assertTrue(options.getHostnameVerificationAlgorithm().isEmpty());
+    assertEquals(options, options.setHostnameVerificationAlgorithm(randomAlphaString));
+    assertEquals(randomAlphaString, options.getHostnameVerificationAlgorithm());
+
     assertEquals(0, options.getReconnectAttempts());
     assertIllegalArgumentException(() -> options.setReconnectAttempts(-2));
     rand = TestUtils.randomPositiveInt();
@@ -303,6 +308,7 @@ public class NetTest extends VertxTestBase {
     boolean usePooledBuffers = rand.nextBoolean();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
+    String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
     JksOptions keyStoreOptions = new JksOptions();
     String ksPassword = TestUtils.randomAlphaString(100);
     keyStoreOptions.setPassword(ksPassword);
@@ -339,6 +345,7 @@ public class NetTest extends VertxTestBase {
     options.setReconnectInterval(reconnectInterval);
     options.setUseAlpn(useAlpn);
     options.setSslEngine(sslEngine);
+    options.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm);
     NetClientOptions copy = new NetClientOptions(options);
     assertEquals(sendBufferSize, copy.getSendBufferSize());
     assertEquals(receiverBufferSize, copy.getReceiveBufferSize());
@@ -366,6 +373,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(reconnectInterval, copy.getReconnectInterval());
     assertEquals(useAlpn, copy.isUseAlpn());
     assertEquals(sslEngine, copy.getSslEngine());
+    assertEquals(hostnameVerificationAlgorithm, copy.getHostnameVerificationAlgorithm());
   }
 
   @Test
@@ -385,6 +393,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.isSsl(), json.isSsl());
     assertEquals(def.isUseAlpn(), json.isUseAlpn());
     assertEquals(def.getSslEngine(), json.getSslEngine());
+    assertEquals(def.getHostnameVerificationAlgorithm(), json.getHostnameVerificationAlgorithm());
   }
 
   @Test
@@ -417,6 +426,7 @@ public class NetTest extends VertxTestBase {
     int reconnectAttempts = TestUtils.randomPositiveInt();
     long reconnectInterval = TestUtils.randomPositiveInt();
     boolean useAlpn = TestUtils.randomBoolean();
+    String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
     SSLEngine sslEngine = TestUtils.randomBoolean() ? SSLEngine.JDK : SSLEngine.OPENSSL;
 
     JsonObject json = new JsonObject();
@@ -439,7 +449,8 @@ public class NetTest extends VertxTestBase {
         .put("reconnectAttempts", reconnectAttempts)
         .put("reconnectInterval", reconnectInterval)
         .put("useAlpn", useAlpn)
-        .put("sslEngine", sslEngine.name());
+        .put("sslEngine", sslEngine.name())
+        .put("hostnameVerificationAlgorithm", hostnameVerificationAlgorithm);
 
     NetClientOptions options = new NetClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -468,6 +479,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(reconnectInterval, options.getReconnectInterval());
     assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(sslEngine, options.getSslEngine());
+    assertEquals(hostnameVerificationAlgorithm, options.getHostnameVerificationAlgorithm());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
@@ -2138,4 +2150,63 @@ public class NetTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testHostVerificationHttpsNotMatching() {
+    server.close();
+    NetServerOptions options = new NetServerOptions()
+            .setPort(1234)
+            .setHost("localhost")
+            .setSsl(true)
+            .setKeyStoreOptions(new JksOptions().setPath("tls/mim-server-keystore.jks").setPassword("wibble"));
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+            .setSsl(true)
+            .setTrustAll(true)
+            .setHostnameVerificationAlgorithm("HTTPS");
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, "localhost", ar2 -> {
+        //Should not be able to connect
+        assertTrue(ar2.failed());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testHostVerificationHttpsMatching() {
+    server.close();
+    NetServerOptions options = new NetServerOptions()
+            .setPort(1234)
+            .setHost("localhost")
+            .setSsl(true)
+            .setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+            .setSsl(true)
+            .setTrustAll(true)
+            .setHostnameVerificationAlgorithm("HTTPS");
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(1234, "localhost", ar2 -> {
+        //Should be able to connect
+        assertTrue(ar2.succeeded());
+        testComplete();
+      });
+    });
+    await();
+  }
+
 }

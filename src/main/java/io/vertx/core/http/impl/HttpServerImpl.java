@@ -55,7 +55,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.streams.ReadStream;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -101,7 +100,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
-  private ChannelFuture bindFuture;
+  private AsyncResolveBindConnectHelper<ChannelFuture> bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
   private volatile int actualPort;
@@ -250,17 +249,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         addHandlers(this, listenContext);
         try {
-          bindFuture = bootstrap.bind(new InetSocketAddress(InetAddress.getByName(host), port));
-          Channel serverChannel = bindFuture.channel();
-          serverChannelGroup.add(serverChannel);
-          bindFuture.addListener(channelFuture -> {
-              if (!channelFuture.isSuccess()) {
-                vertx.sharedHttpServers().remove(id);
-              } else {
-                HttpServerImpl.this.actualPort = ((InetSocketAddress)bindFuture.channel().localAddress()).getPort();
-                metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
-              }
-            });
+          bindFuture = AsyncResolveBindConnectHelper.doBind(vertx, port, host, bootstrap);
+          bindFuture.addListener(res -> {
+            if (res.failed()) {
+              vertx.sharedHttpServers().remove(id);
+            } else {
+              Channel serverChannel = res.result().channel();
+              HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
+              serverChannelGroup.add(serverChannel);
+              metrics = vertx.metricsSPI().createMetrics(this, new SocketAddressImpl(port, host), options);
+            }
+          });
         } catch (final Throwable t) {
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
@@ -284,14 +283,14 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       actualServer.bindFuture.addListener(future -> {
         if (listenHandler != null) {
           final AsyncResult<HttpServer> res;
-          if (future.isSuccess()) {
+          if (future.succeeded()) {
             res = Future.succeededFuture(HttpServerImpl.this);
           } else {
             res = Future.failedFuture(future.cause());
             listening = false;
           }
           listenContext.runOnContext((v) -> listenHandler.handle(res));
-        } else if (!future.isSuccess()) {
+        } else if (future.failed()) {
           listening  = false;
           // No handler - log so user can see failure
           log.error(future.cause());

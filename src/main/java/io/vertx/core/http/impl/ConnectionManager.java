@@ -44,11 +44,11 @@ import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 
 import javax.net.ssl.SSLHandshakeException;
-import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;
@@ -330,10 +330,10 @@ public class ConnectionManager {
         }
       });
       applyConnectionOptions(options, bootstrap);
-      ChannelFuture future = bootstrap.connect(new InetSocketAddress(host, port));
-      future.addListener((ChannelFuture channelFuture) -> {
-        Channel ch = channelFuture.channel();
-        if (channelFuture.isSuccess()) {
+      AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+      future.addListener(res -> {
+        if (res.succeeded()) {
+          Channel ch = res.result().channel();
           if (!options.isUseAlpn()) {
             if (options.isSsl()) {
               // TCP connected, so now we must do the SSL handshake
@@ -359,7 +359,7 @@ public class ConnectionManager {
             }
           }
         } else {
-          connectionFailed(context, ch, waiter::handleFailure, channelFuture.cause());
+          connectionFailed(context, null, waiter::handleFailure, res.cause());
         }
       });
     }

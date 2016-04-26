@@ -2893,6 +2893,30 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testOtherMethodWithRawMethod() throws Exception {
+    try {
+      client.request(HttpMethod.OTHER, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      }).end();
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+  }
+
+  @Test
+  public void testOtherMethodRequest() throws Exception {
+    server.requestHandler(r -> {
+      assertEquals(HttpMethod.OTHER, r.method());
+      assertEquals("COPY", r.rawMethod());
+      r.response().end();
+    }).listen(onSuccess(s -> {
+      client.request(HttpMethod.OTHER, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+        testComplete();
+      }).setRawMethod("COPY").end();
+    }));
+    await();
+  }
+
   protected File setupFile(String fileName, String content) throws Exception {
     File file = new File(testDir, fileName);
     if (file.exists()) {

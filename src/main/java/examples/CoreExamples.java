@@ -18,6 +18,7 @@ package examples;
 
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.dns.HostnameResolverOptions;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
@@ -274,8 +275,13 @@ public class CoreExamples {
     System.getenv("HOME");
   }
 
-
-
-
+  public void configureDNSServers() {
+    Vertx vertx = Vertx.vertx(new VertxOptions().
+        setHostnameResolverOptions(
+            new HostnameResolverOptions().
+                addServer("192.168.0.1").
+                addServer("192.168.0.2:40000"))
+    );
+  }
 
 }

@@ -69,6 +69,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
+  private String rawMethod;
   private String uri;
   private String path;
   private String query;
@@ -116,15 +117,22 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
-      String sMethod = request.getMethod().toString();
+      String sMethod = request.method().toString();
       try {
         method = io.vertx.core.http.HttpMethod.valueOf(sMethod);
       } catch (IllegalArgumentException e) {
-        sendNotImplementedAndClose();
-        throw new IllegalStateException("Unsupported HTTP method: " + sMethod);
+        method = io.vertx.core.http.HttpMethod.OTHER;
       }
     }
     return method;
+  }
+
+  @Override
+  public String rawMethod() {
+    if (rawMethod == null) {
+      rawMethod = request.method().toString();
+    }
+    return rawMethod;
   }
 
   @Override

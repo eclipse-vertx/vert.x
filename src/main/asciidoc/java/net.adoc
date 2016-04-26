@@ -570,6 +570,18 @@ NetClient client = vertx.createNetClient(options);
 If `link:../../apidocs/io/vertx/core/net/ClientOptionsBase.html#setTrustAll-boolean-[trustAll]` is not set then a client trust store must be
 configured and should contain the certificates of the servers that the client trusts.
 
+By default, host verification is disabled on the client.
+To enable host verification, set the algorithm to use on your client (only HTTPS and LDAPS is currently supported):
+
+
+[source,java]
+----
+NetClientOptions options = new NetClientOptions().
+        setSsl(true).
+        setHostnameVerificationAlgorithm("HTTPS");
+NetClient client = vertx.createNetClient(options);
+----
+
 Likewise server configuration, the client trust can be configured in several ways:
 
 The first method is by specifying the location of a Java trust-store which contains the certificate authority.
@@ -807,11 +819,11 @@ configured by explicitly adding enabled protocols:
 [source,java]
 ----
 NetServerOptions options = new NetServerOptions().
-        setSsl(true).
-        setKeyStoreOptions(keyStoreOptions).
-        addEnabledSecureTransportProtocol("TLSv1.1").
-        addEnabledSecureTransportProtocol("TLSv1.2");
-NetServer server = vertx.createNetServer(options);
+    setSsl(true).
+    setKeyStoreOptions(keyStoreOptions).
+    addEnabledSecureTransportProtocol("TLSv1.1").
+    addEnabledSecureTransportProtocol("TLSv1.2");
+    NetServer server = vertx.createNetServer(options);
 ----
 
 Protocol versions can be specified on the `link:../../apidocs/io/vertx/core/net/NetServerOptions.html[NetServerOptions]` or `link:../../apidocs/io/vertx/core/net/NetClientOptions.html[NetClientOptions]` configuration.

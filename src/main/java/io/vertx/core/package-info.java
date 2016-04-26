@@ -1123,10 +1123,14 @@
  * Log4J or SLF4J.
  *
  * To do this you should set a system property called `vertx.logger-delegate-factory-class-name` with the name of a Java
- * class which implements the interface {@link io.vertx.core.spi.logging.LogDelegateFactory}. We provide pre-built implementations for
- * Log4J and SLF4J with the class names `io.vertx.core.logging.Log4jLogDelegateFactory` and `io.vertx.core.logging.SLF4JLogDelegateFactory`
- * respectively. If you want to use these implementations you should also make sure the relevant Log4J or SLF4J jars
- * are on your classpath.
+ * class which implements the interface {@link io.vertx.core.spi.logging.LogDelegateFactory}. We provide pre-built
+ * implementations for Log4J (version 1), Log4J 2 and SLF4J with the class names
+ * `io.vertx.core.logging.Log4jLogDelegateFactory`, `io.vertx.core.logging.Log4j2LogDelegateFactory` and
+ * `io.vertx.core.logging.SLF4JLogDelegateFactory` respectively. If you want to use these implementations you should
+ * also make sure the relevant Log4J or SLF4J jars are on your classpath.
+ *
+ * Notice that, the provided delegate for Log4J 1 does not support parameterized message. The delegate for Log4J 2
+ * uses the `{}` syntax like the SLF4J delegate. JUL delegate uses the `{x}` syntax.
  *
  * === Logging from your application
  *
@@ -1143,6 +1147,29 @@
  * ----
  * {@link examples.CoreExamples#example18}
  * ----
+ *
+ * == Hostname resolution
+ *
+ * Vert.x uses an an hostname resolver for resolving hostname into IP addresses instead of
+ * the JVM built-in blocking resolver.
+ *
+ * An hostname are resolve to an IP address using:
+ *
+ * - the _hosts_ file of the operating system
+ * - otherwise DNS queries against a list of servers
+ *
+ * By default it will use the list of the system DNS server addresses from the environment, if that list cannot be
+ * retrieved it will use Google's public DNS servers `"8.8.8.8"` and `"8.8.4.4"`.
+ *
+ * DNS servers can be also configured when creating a {@link io.vertx.core.Vertx} instance:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#configureDNSServers}
+ * ----
+ *
+ * The default port of a DNS server is `53`, when a server uses a different port, this port can be set
+ * using a colon delimiter: `192.168.0.2:40000`.
  *
  * == High Availability and Fail-Over
  *

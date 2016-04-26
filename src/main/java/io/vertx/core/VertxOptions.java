@@ -17,6 +17,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.dns.HostnameResolverOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
@@ -133,8 +134,8 @@ public class VertxOptions {
   private String haGroup = DEFAULT_HA_GROUP;
   private MetricsOptions metrics = new MetricsOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
-
   private EventBusOptions eventBusOptions = new EventBusOptions();
+  private HostnameResolverOptions hostnameResolverOptions = new HostnameResolverOptions();
 
   private JsonObject namedThreadPoolConfiguration = new JsonObject();
 
@@ -164,6 +165,7 @@ public class VertxOptions {
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.namedThreadPoolConfiguration = other.namedThreadPoolConfiguration.copy();
+    this.hostnameResolverOptions = other.hostnameResolverOptions != null ? new HostnameResolverOptions() : null;
   }
 
   /**
@@ -652,6 +654,24 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return the hostname resolver options to configure resolving DNS servers, cache TTL, etc...
+   */
+  public HostnameResolverOptions getHostnameResolverOptions() {
+    return hostnameResolverOptions;
+  }
+
+  /**
+   * Sets the hostname resolver configuration to configure resolving DNS servers, cache TTL, etc...
+   *
+   * @param hostnameResolverOptions the hostname resolver options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setHostnameResolverOptions(HostnameResolverOptions hostnameResolverOptions) {
+    this.hostnameResolverOptions = hostnameResolverOptions;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -676,7 +696,8 @@ public class VertxOptions {
     if (namedThreadPoolConfiguration != null ? ! namedThreadPoolConfiguration.equals(that
         .namedThreadPoolConfiguration) : that.namedThreadPoolConfiguration != null)
       return false;
-
+    if (hostnameResolverOptions != null ? !hostnameResolverOptions.equals(that.hostnameResolverOptions) : that.hostnameResolverOptions != null)
+      return false;
     return !(metrics != null ? !metrics.equals(that.metrics) : that.metrics != null);
 
   }
@@ -696,6 +717,7 @@ public class VertxOptions {
     result = 31 * result + (metrics != null ? metrics.hashCode() : 0);
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
     result = 31 * result + (namedThreadPoolConfiguration != null ? namedThreadPoolConfiguration.hashCode() : 0);
+    result = 31 * result + (hostnameResolverOptions != null ? hostnameResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
     return result;
   }
@@ -714,6 +736,8 @@ public class VertxOptions {
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metrics +
+        ", hostnameResolver=" + hostnameResolverOptions.toJson() +
+        ", namedThreadPoolConfiguration=" + namedThreadPoolConfiguration.encode() +
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTime=" + warningExceptionTime +
         '}';

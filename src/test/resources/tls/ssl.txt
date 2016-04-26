@@ -16,6 +16,10 @@ keytool -import -trustcacerts -alias test-store -file localhost.crt -keystore cl
 
 keytool -importkeystore -srckeystore client-truststore.jks -destkeystore client-truststore.p12 -deststoretype PKCS12 -keypass wibble -storepass wibble
 
+5) Create a private key + man-in-middle certificate for the server in a new key store:
+
+keytool -genkey -alias test-store -keyalg RSA -keystore mim-server-keystore.jks -keysize 2048 -validity 1095 -dname CN=mim-localhost -keypass wibble -storepass wibble
+
 
 # PKCS12
 

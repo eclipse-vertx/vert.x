@@ -148,7 +148,11 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
   synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
     Http2Headers headers_ = new DefaultHttp2Headers();
-    headers_.method(method.name());
+    if (method == HttpMethod.OTHER) {
+      throw new IllegalArgumentException("Cannot push HttpMethod.OTHER");
+    } else {
+      headers_.method(method.name());
+    }
     headers_.path(path);
     headers_.scheme(isSsl() ? "https" : "http");
     if (host != null) {

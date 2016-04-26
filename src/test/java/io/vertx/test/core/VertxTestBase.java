@@ -17,8 +17,10 @@
 package io.vertx.test.core;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.logging.Logger;
@@ -35,6 +37,7 @@ import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Rule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -54,9 +57,12 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected Vertx[] vertices;
 
+  private List<Vertx> created;
+
   protected void vinit() {
     vertx = null;
     vertices = null;
+    created = null;
   }
 
   public void setUp() throws Exception {
@@ -77,28 +83,59 @@ public class VertxTestBase extends AsyncTestBase {
       });
       awaitLatch(latch);
     }
-    if (vertices != null) {
-      int numVertices = 0;
-      for (int i = 0; i < vertices.length; i++) {
-        if (vertices[i] != null) {
-          numVertices++;
-        }
-      }
-      CountDownLatch latch = new CountDownLatch(numVertices);
-      for (Vertx vertx: vertices) {
-        if (vertx != null) {
-          vertx.close(ar -> {
-            if (ar.failed()) {
-              log.error("Failed to shutdown vert.x", ar.cause());
-            }
-            latch.countDown();
-          });
-        }
+    if (created != null) {
+      CountDownLatch latch = new CountDownLatch(created.size());
+      for (Vertx v : created) {
+        v.close(ar -> {
+          if (ar.failed()) {
+            log.error("Failed to shutdown vert.x", ar.cause());
+          }
+          latch.countDown();
+        });
       }
       assertTrue(latch.await(180, TimeUnit.SECONDS));
     }
     FakeClusterManager.reset(); // Bit ugly
     super.tearDown();
+  }
+
+  /**
+   * @return create a blank new Vert.x instance with no options closed when tear down executes.
+   */
+  protected Vertx vertx() {
+    if (created == null) {
+      created = new ArrayList<>();
+    }
+    Vertx vertx = Vertx.vertx();
+    created.add(vertx);
+    return vertx;
+  }
+
+  /**
+   * @return create a blank new Vert.x instance with @{@code options} closed when tear down executes.
+   */
+  protected Vertx vertx(VertxOptions options) {
+    if (created == null) {
+      created = new ArrayList<>();
+    }
+    Vertx vertx = Vertx.vertx(options);
+    created.add(vertx);
+    return vertx;
+  }
+
+  /**
+   * Create a blank new clustered Vert.x instance with @{@code options} closed when tear down executes.
+   */
+  protected void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> ar) {
+    if (created == null) {
+      created = Collections.synchronizedList(new ArrayList<>());
+    }
+    Vertx.clusteredVertx(options, event -> {
+      if (event.succeeded()) {
+        created.add(event.result());
+      }
+      ar.handle(event);
+    });
   }
 
   protected ClusterManager getClusterManager() {
@@ -114,7 +151,7 @@ public class VertxTestBase extends AsyncTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      Vertx.clusteredVertx(options.setClusterHost("localhost").setClusterPort(0).setClustered(true)
+      clusteredVertx(options.setClusterHost("localhost").setClusterPort(0).setClustered(true)
         .setClusterManager(getClusterManager()), ar -> {
         if (ar.failed()) {
           ar.cause().printStackTrace();

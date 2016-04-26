@@ -1807,16 +1807,11 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testUnsupportedMethod() throws Exception {
-    testUnsupportedMethod("XTRACK /someuri HTTP/1.1\r\nHost: localhost\r\n\r\n", true);
-  }
-
-  @Test
   public void testUnsupportedHttpVersion() throws Exception {
-    testUnsupportedMethod("GET /someuri HTTP/1.7\r\nHost: localhost\r\n\r\n", false);
+    testUnsupported("GET /someuri HTTP/1.7\r\nHost: localhost\r\n\r\n", false);
   }
 
-  private void testUnsupportedMethod(String rawReq, boolean method) throws Exception {
+  private void testUnsupported(String rawReq, boolean method) throws Exception {
     vertx.createHttpServer()
       .requestHandler(req -> {
         try {
