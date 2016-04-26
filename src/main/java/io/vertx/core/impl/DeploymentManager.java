@@ -412,6 +412,7 @@ public class DeploymentManager {
       throw new IllegalArgumentException("If multi-threaded then must be worker too");
     }
     JsonObject conf = options.getConfig() == null ? new JsonObject() : options.getConfig().copy(); // Copy it
+    String poolName = options.getWorkerPoolName();
 
     Deployment parent = parentContext.getDeployment();
     DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
@@ -419,8 +420,13 @@ public class DeploymentManager {
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
-      ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, conf, tccl) :
-        vertx.createEventLoopContext(deploymentID, conf, tccl);
+      NamedWorkerExecutor workerExec = poolName != null ? vertx.createWorkerExecutor(poolName, options.getWorkerPoolSize()) : null;
+      WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
+      ContextImpl context = options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
+        vertx.createEventLoopContext(deploymentID, pool, conf, tccl);
+      if (workerExec != null) {
+        context.addCloseHook(workerExec);
+      }
       context.setDeployment(deployment);
       deployment.addVerticle(new VerticleHolder(verticle, context));
       context.runOnContext(v -> {

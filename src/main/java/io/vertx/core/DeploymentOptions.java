@@ -43,6 +43,9 @@ public class DeploymentOptions {
   private boolean worker;
   private boolean multiThreaded;
   private String isolationGroup;
+  private String workerPoolName;
+  private int workerPoolSize;
+  private long maxWorkerExecuteTime;
   private boolean ha;
   private List<String> extraClasspath;
   private int instances;
@@ -58,6 +61,9 @@ public class DeploymentOptions {
     this.isolationGroup = DEFAULT_ISOLATION_GROUP;
     this.ha = DEFAULT_HA;
     this.instances = DEFAULT_INSTANCES;
+    this.workerPoolName = null;
+    this.workerPoolSize = VertxOptions.DEFAULT_WORKER_POOL_SIZE;
+    this.maxWorkerExecuteTime = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME;
   }
 
   /**
@@ -271,6 +277,80 @@ public class DeploymentOptions {
    */
   public DeploymentOptions setIsolatedClasses(List<String> isolatedClasses) {
     this.isolatedClasses = isolatedClasses;
+    return this;
+  }
+
+  /**
+   * @return the worker pool name
+   */
+  public String getWorkerPoolName() {
+    return workerPoolName;
+  }
+
+  /**
+   * Set the worker pool name to use for this verticle. When no name is set, the Vert.x
+   * worker pool will be used, when a name is set, the verticle will use a named worker pool.
+   *
+   * @param workerPoolName the worker pool name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setWorkerPoolName(String workerPoolName) {
+    this.workerPoolName = workerPoolName;
+    return this;
+  }
+
+  /**
+   * Get the maximum number of worker threads to be used by the worker pool when the verticle is deployed
+   * with a {@link #setWorkerPoolName}. When the verticle does not use a named worker pool, this option
+   * has no effect.
+   * <p>
+   * Worker threads are used for running blocking code and worker verticles.
+   *
+   * @return the maximum number of worker threads
+   */
+  public int getWorkerPoolSize() {
+    return workerPoolSize;
+  }
+
+  /**
+   * Set the maximum number of worker threads to be used by the Vert.x instance.
+   *
+   * @param workerPoolSize the number of threads
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setWorkerPoolSize(int workerPoolSize) {
+    if (workerPoolSize < 1) {
+      throw new IllegalArgumentException("workerPoolSize must be > 0");
+    }
+    this.workerPoolSize = workerPoolSize;
+    return this;
+  }
+
+  /**
+   * Get the value of max worker execute time, in ns.
+   * <p>
+   * Vert.x will automatically log a warning if it detects that worker threads haven't returned within this time.
+   * <p>
+   * This can be used to detect where the user is blocking a worker thread for too long. Although worker threads
+   * can be blocked longer than event loop threads, they shouldn't be blocked for long periods of time.
+   *
+   * @return The value of max worker execute time, in ms.
+   */
+  public long getMaxWorkerExecuteTime() {
+    return maxWorkerExecuteTime;
+  }
+
+  /**
+   * Sets the value of max worker execute time, in ns.
+   *
+   * @param maxWorkerExecuteTime the value of max worker execute time, in ms.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
+    if (maxWorkerExecuteTime < 1) {
+      throw new IllegalArgumentException("maxWorkerpExecuteTime must be > 0");
+    }
+    this.maxWorkerExecuteTime = maxWorkerExecuteTime;
     return this;
   }
 

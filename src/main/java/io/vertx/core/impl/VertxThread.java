@@ -24,12 +24,14 @@ import io.netty.util.concurrent.FastThreadLocalThread;
 final class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
+  private final long maxExecTime;
   private long execStart;
   private ContextImpl context;
 
-  public VertxThread(Runnable target, String name, boolean worker) {
+  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime) {
     super(target, name);
     this.worker = worker;
+    this.maxExecTime = maxExecTime;
   }
 
   ContextImpl getContext() {
@@ -56,4 +58,7 @@ final class VertxThread extends FastThreadLocalThread {
     return worker;
   }
 
+  public long getMaxExecTime() {
+    return maxExecTime;
+  }
 }

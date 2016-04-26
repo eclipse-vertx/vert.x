@@ -79,6 +79,32 @@ public class CoreExamples {
     });
   }
 
+  public void workerExecutor1(Vertx vertx) {
+    WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool");
+    executor.executeBlocking(future -> {
+      // Call some blocking API that takes a significant amount of time to return
+      String result = someAPI.blockingMethod("hello");
+      future.complete(result);
+    }, res -> {
+      System.out.println("The result is: " + res.result());
+    });
+  }
+
+  public void workerExecutor2(WorkerExecutor executor) {
+    executor.close();
+  }
+
+  public void workerExecutor3(Vertx vertx) {
+    //
+    // 10 threads max
+    int poolSize = 10;
+
+    // 2 minutes
+    long maxExecuteTime = 120000;
+
+    WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
+  }
+
   BlockingAPI someAPI = new BlockingAPI();
 
   class BlockingAPI {
@@ -282,6 +308,10 @@ public class CoreExamples {
                 addServer("192.168.0.1").
                 addServer("192.168.0.2:40000"))
     );
+  }
+
+  public void deployVerticleWithDifferentWorkerPool(Vertx vertx) {
+    vertx.deployVerticle("the-verticle", new DeploymentOptions().setWorkerPoolName("the-specific-pool"));
   }
 
 }

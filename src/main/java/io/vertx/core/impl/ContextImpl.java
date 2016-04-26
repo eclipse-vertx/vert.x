@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,20 +54,17 @@ public abstract class ContextImpl implements ContextInternal {
   private Set<Closeable> closeHooks;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
-  protected final Executor orderedInternalPoolExec;
-  protected final Executor workerExec;
   protected VertxThread contextThread;
   private volatile boolean closeHooksRun;
   private Map<String, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
+  protected final WorkerPool workerPool;
 
-  protected ContextImpl(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID, JsonObject config,
+  protected ContextImpl(VertxInternal vertx, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
     if (DISABLE_TCCL && !tccl.getClass().getName().equals("sun.misc.Launcher$AppClassLoader")) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }
-    this.orderedInternalPoolExec = orderedInternalPoolExec;
-    this.workerExec = workerExec;
     this.deploymentID = deploymentID;
     this.config = config;
     EventLoopGroup group = vertx.getEventLoopGroup();
@@ -80,6 +76,7 @@ public abstract class ContextImpl implements ContextInternal {
     this.tccl = tccl;
     this.owner = vertx;
     this.exceptionHandler = vertx.exceptionHandler();
+    this.workerPool = workerPool;
   }
 
   public static void setContext(ContextImpl context) {
@@ -266,12 +263,12 @@ public abstract class ContextImpl implements ContextInternal {
 
   // Execute an internal task on the internal blocking ordered executor
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, null, true, true, resultHandler);
+    workerPool.executeBlocking(this, action, null, true, true, resultHandler);
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, false, ordered, resultHandler);
+    workerPool.executeBlocking(this, null, blockingCodeHandler, false, ordered, resultHandler);
   }
 
   @Override
@@ -284,32 +281,6 @@ public abstract class ContextImpl implements ContextInternal {
       contextData = new ConcurrentHashMap<>();
     }
     return contextData;
-  }
-
-  private <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler, boolean internal,
-                                   boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    try {
-      Executor exec = internal ? orderedInternalPoolExec : (ordered ? workerExec : owner.getWorkerPool());
-      exec.execute(() -> {
-        Future<T> res = Future.future();
-        try {
-          if (blockingCodeHandler != null) {
-            setContext(this);
-            blockingCodeHandler.handle(res);
-          } else {
-            T result = action.perform();
-            res.complete(result);
-          }
-        } catch (Throwable e) {
-          res.fail(e);
-        }
-        if (resultHandler != null) {
-          runOnContext(v -> res.setHandler(resultHandler));
-        }
-      });
-    } catch (RejectedExecutionException ignore) {
-      // Pool is already shut down
-    }
   }
 
   protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {

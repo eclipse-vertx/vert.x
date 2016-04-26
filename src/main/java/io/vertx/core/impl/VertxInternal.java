@@ -21,6 +21,7 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetServerImpl;
@@ -66,12 +67,21 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl);
+  EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl);
 
   /**
    * @return worker loop context
    */
-  ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config, ClassLoader tccl);
+  ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool pool, JsonObject config, ClassLoader tccl);
+
+  @Override
+  NamedWorkerExecutor createWorkerExecutor(String name);
+
+  @Override
+  NamedWorkerExecutor createWorkerExecutor(String name, int poolSize);
+
+  @Override
+  NamedWorkerExecutor createWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
   void simulateKill();
 

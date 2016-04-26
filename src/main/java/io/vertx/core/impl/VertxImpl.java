@@ -108,6 +108,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private HAManager haManager;
   private boolean closed;
   private Handler<Throwable> exceptionHandler;
+  private final Map<String, NamedWorkerPool> namedWorkerPools;
+  private final WorkerPool vertxWorkerPool;
+  private final int defaultWorkerPoolSize;
+  private final long defaultWorkerMaxExecTime;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -122,22 +126,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
-    checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getMaxEventLoopExecuteTime(),
-                                       options.getMaxWorkerExecuteTime(), options.getWarningExceptionTime());
-    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false);
+    checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getWarningExceptionTime());
+    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime());
     eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
     eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
-    ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false);
+    ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = new NioEventLoopGroup(1, acceptorEventLoopThreadFactory);
     acceptorEventLoopGroup.setIoRatio(100);
     workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
-                                              new VertxThreadFactory("vert.x-worker-thread-", checker, true));
+                                              new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
-                                                        new VertxThreadFactory("vert.x-internal-blocking-", checker, true));
+                                                        new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
     workerOrderedFact = new OrderedExecutorFactory(workerPool);
     internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
+    namedWorkerPools = new HashMap<>();
+    vertxWorkerPool = new WorkerPool(internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), workerPool);
+    defaultWorkerPoolSize = options.getWorkerPoolSize();
+    defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
     this.hostnameResolver = new HostnameResolver(this, options.getHostnameResolverOptions());
     this.fileResolver = new FileResolver(this);
@@ -299,7 +306,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextImpl ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader());
+      ctx = createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader());
     }
     return ctx;
   }
@@ -332,8 +339,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  public EventLoopContext createEventLoopContext(String deploymentID, JsonObject config, ClassLoader tccl) {
-    return new EventLoopContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID, config, tccl);
+  public EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
+    return new EventLoopContext(this, workerPool != null ? workerPool : vertxWorkerPool, deploymentID, config, tccl);
+  }
+
+  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool workerPool, JsonObject config,
+                                         ClassLoader tccl) {
+    if (workerPool == null) {
+      workerPool = vertxWorkerPool;
+    }
+    if (multiThreaded) {
+      return new MultiThreadedWorkerContext(this, workerPool, deploymentID, config, tccl);
+    } else {
+      return new WorkerContext(this, workerPool, deploymentID, config, tccl);
+    }
   }
 
   @Override
@@ -394,16 +413,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     timeouts.put(timerId, task);
     context.addCloseHook(task);
     return timerId;
-  }
-
-  public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, JsonObject config,
-                                         ClassLoader tccl) {
-    if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, internalOrderedFact.getExecutor(), workerPool, deploymentID, config, tccl);
-    } else {
-      return new WorkerContext(this, internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), deploymentID,
-                               config, tccl);
-    }
   }
 
   public static Context context() {
@@ -854,6 +863,63 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.endHandler = endHandler;
       return this;
     }
+  }
+
+  class NamedWorkerPool extends WorkerPool {
+
+    final ExecutorService workerExec;
+    final String name;
+    int refCount = 1;
+
+    public NamedWorkerPool(String name, ExecutorService workerExec) {
+      super(internalOrderedFact.getExecutor(), new OrderedExecutorFactory(workerExec).getExecutor(), workerExec);
+      this.workerExec = workerExec;
+      this.name = name;
+    }
+
+    void release() {
+      synchronized (VertxImpl.this) {
+        if (--refCount == 0) {
+          releaseWorkerPool(name);
+          workerExec.shutdownNow();
+        }
+      }
+    }
+  }
+
+  @Override
+  public NamedWorkerExecutor createWorkerExecutor(String name) {
+    return createWorkerExecutor(name, defaultWorkerPoolSize);
+  }
+
+  @Override
+  public NamedWorkerExecutor createWorkerExecutor(String name, int poolSize) {
+    return createWorkerExecutor(name, poolSize, defaultWorkerMaxExecTime);
+  }
+
+  @Override
+  public NamedWorkerExecutor createWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
+    if (maxExecuteTime < 1) {
+      throw new IllegalArgumentException("poolSize must be > 0");
+    }
+    if (maxExecuteTime < 1) {
+      throw new IllegalArgumentException("maxExecuteTime must be > 0");
+    }
+    NamedWorkerPool namedWorkerPool = namedWorkerPools.get(name);
+    if (namedWorkerPool == null) {
+      ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory("vert.x-" + name + "-", checker, true, maxExecuteTime));
+      namedWorkerPools.put(name, namedWorkerPool = new NamedWorkerPool(name, workerExec));
+    } else {
+      namedWorkerPool.refCount++;
+    }
+    ContextImpl context = getOrCreateContext();
+    NamedWorkerExecutor namedExec = new NamedWorkerExecutor(context, namedWorkerPool);
+    context.addCloseHook(namedExec);
+    return namedExec;
+  }
+
+  synchronized void releaseWorkerPool(String name) {
+    namedWorkerPools.remove(name);
   }
 
   @Override
