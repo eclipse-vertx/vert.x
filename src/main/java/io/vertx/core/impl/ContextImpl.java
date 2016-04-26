@@ -298,6 +298,11 @@ public abstract class ContextImpl implements ContextInternal {
     executeBlocking(null, blockingCodeHandler, false, true, resultHandler, poolName);
   }
 
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered,
+                                  Handler<AsyncResult<T>> resultHandler,  String poolName) {
+    executeBlocking(null, blockingCodeHandler, false, ordered, resultHandler, poolName);
+  }
+
   protected synchronized Map<String, Object> contextData() {
     if (contextData == null) {
       contextData = new ConcurrentHashMap<>();
@@ -319,7 +324,10 @@ public abstract class ContextImpl implements ContextInternal {
     if (poolMetrics != null) {
       ThreadPoolMetrics metrics;
       if (poolName != null) {
-        metrics = namedPools.getMetrics(poolName);
+        metrics = poolMetrics.get(poolName);
+        if (metrics == null) {
+          metrics = workerMetrics;
+        }
       } else {
         metrics = internal ? internalBlockingPoolMetrics : workerMetrics;
       }

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A fake implementation of the {@link ThreadPoolMetrics} SPI.
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class FakeThreadPoolMetrics implements ThreadPoolMetrics {
@@ -32,8 +33,8 @@ public class FakeThreadPoolMetrics implements ThreadPoolMetrics {
 
   private final int poolSize;
 
-  private final  AtomicInteger submitted = new AtomicInteger();
-  private final  AtomicInteger completed = new AtomicInteger();
+  private final AtomicInteger submitted = new AtomicInteger();
+  private final AtomicInteger completed = new AtomicInteger();
   private final AtomicInteger idle = new AtomicInteger();
   private final AtomicInteger waiting = new AtomicInteger();
   private final AtomicInteger running = new AtomicInteger();

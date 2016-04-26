@@ -25,6 +25,8 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.ThreadPoolMetrics;
@@ -679,14 +681,7 @@ public class MetricsTest extends VertxTestBase {
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
 
-    Handler<Future<Void>> job = (future) -> {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        Thread.currentThread().isInterrupted();
-      }
-      future.complete(null);
-    };
+    Handler<Future<Void>> job = getSomeDumbTask();
 
     AtomicInteger counter = new AtomicInteger();
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
@@ -834,7 +829,7 @@ public class MetricsTest extends VertxTestBase {
 
 
     vertx.deployVerticle(worker, options, s -> {
-      for (int i = 0; i <  count; i++) {
+      for (int i = 0; i < count; i++) {
         vertx.eventBus().send("message", i);
       }
     });
@@ -851,5 +846,75 @@ public class MetricsTest extends VertxTestBase {
     assertEquals(metrics.numberOfIdleThreads(), getOptions().getWorkerPoolSize());
     assertEquals(metrics.numberOfRunningTasks(), 0);
     assertEquals(metrics.numberOfWaitingTasks(), 0);
+  }
+
+  @Test
+  public void testThreadPoolMetricsWithNamedExecuteBlocking() {
+    vertx.close(); // Close the instance automatically created
+    vertx = Vertx.vertx(
+        new VertxOptions()
+            .setMetricsOptions(new MetricsOptions().setEnabled(true))
+            .setNamedThreadPoolConfiguration(
+                new JsonObject().put("pools", new JsonArray()
+                    .add(new JsonObject().put("name", "my-pool").put("size", 10))
+                    .add(new JsonObject().put("name", "tiny-pool").put("size", 1)))));
+
+
+    Map<String, ThreadPoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+
+    FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("my-pool");
+
+    assertThat(metrics.getPoolSize(), is(10));
+    assertThat(metrics.numberOfIdleThreads(), is(10));
+
+    Handler<Future<Void>> job = getSomeDumbTask();
+
+    AtomicInteger counter = new AtomicInteger();
+    AtomicBoolean hadWaitingQueue = new AtomicBoolean();
+    AtomicBoolean hadIdle = new AtomicBoolean();
+    AtomicBoolean hadRunning = new AtomicBoolean();
+    for (int i = 0; i < 100; i++) {
+      vertx.executeBlocking(
+          job,
+          ar -> {
+            if (metrics.numberOfWaitingTasks() > 0) {
+              hadWaitingQueue.set(true);
+            }
+            if (metrics.numberOfIdleThreads() > 0) {
+              hadIdle.set(true);
+            }
+            if (metrics.numberOfRunningTasks() > 0) {
+              hadRunning.set(true);
+            }
+            if (counter.incrementAndGet() == 100) {
+              testComplete();
+            }
+          },
+          "my-pool"
+      );
+    }
+
+    await();
+
+    assertEquals(metrics.submitted(), 100);
+    assertEquals(metrics.completed(), 100);
+    assertTrue(hadIdle.get());
+    assertTrue(hadWaitingQueue.get());
+    assertTrue(hadRunning.get());
+
+    assertEquals(metrics.numberOfIdleThreads(), 10);
+    assertEquals(metrics.numberOfRunningTasks(), 0);
+    assertEquals(metrics.numberOfWaitingTasks(), 0);
+  }
+
+  private Handler<Future<Void>> getSomeDumbTask() {
+    return (future) -> {
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e) {
+        Thread.currentThread().isInterrupted();
+      }
+      future.complete(null);
+    };
   }
 }
