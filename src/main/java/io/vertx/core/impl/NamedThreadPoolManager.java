@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,25 +43,26 @@ public class NamedThreadPoolManager {
   private final Map<String, Integer> configuration;
   private final VertxMetrics metrics;
   private final Executor orderedWorkerPool;
+  private final BlockedThreadChecker checker;
 
   public NamedThreadPoolManager(Vertx vertx, VertxOptions options, ExecutorService workerPool, Executor
-      orderedWorkerPool, VertxMetrics metrics) {
+      orderedWorkerPool, VertxMetrics metrics, BlockedThreadChecker checker) {
     this.workerPool = workerPool;
     this.orderedWorkerPool = orderedWorkerPool;
     this.configuration = getNamedThreadPoolFactory(vertx, options);
     this.metrics = metrics;
+    this.checker = checker;
+
+    // Create tuples
+    configuration.entrySet().forEach(entry -> {
+      executors.put(entry.getKey(), new ExecutorTuple(entry.getKey(), entry.getValue()));
+    });
   }
 
   public synchronized Executor get(String name, boolean ordered) {
     ExecutorTuple tuple = executors.get(name);
     if (tuple == null) {
-      Integer max = configuration.get(name);
-      if (max == null || max == 0) {
-        return ordered ? orderedWorkerPool : workerPool;
-      } else {
-        tuple = new ExecutorTuple(Executors.newFixedThreadPool(max));
-        executors.put(name, tuple);
-      }
+      return ordered ? orderedWorkerPool : workerPool;
     }
     return ordered ? tuple.ordered : tuple.parent;
   }
@@ -77,31 +79,36 @@ public class NamedThreadPoolManager {
     if (services.iterator().hasNext()) {
       NamedThreadPoolFactory factory = services.iterator().next();
       factory.configure(vertx, options.getNamedThreadPoolConfiguration());
-      return factory.getNamedThreadPools();
+      return new ConcurrentHashMap<>(factory.getNamedThreadPools());
     }
 
     return Collections.emptyMap();
   }
 
-  public Map<String, Integer> configuration() {
+  public synchronized Map<String, Integer> configuration() {
     return new HashMap<>(configuration);
   }
 
   public ThreadPoolMetrics getMetrics(String poolName) {
-    Integer size = configuration.get(poolName);
-    if (size != null && size > 0 && metrics != null) {
-      return metrics.createMetrics(poolName, configuration.get(poolName));
-    }
-    return null;
+    ExecutorTuple tuple = executors.get(poolName);
+    return tuple != null ? tuple.poolMetrics : null;
   }
 
-  private static class ExecutorTuple {
+  private class ExecutorTuple {
     final ExecutorService parent;
     final Executor ordered;
+    final ThreadPoolMetrics poolMetrics;
 
-    ExecutorTuple(ExecutorService service) {
-      parent = service;
+    ExecutorTuple(String name, int size) {
+      parent = Executors.newFixedThreadPool(size,
+          new VertxThreadFactory(name + "-", checker, true));
       ordered = new OrderedExecutorFactory(parent).getExecutor();
+
+      if (metrics != null) {
+        poolMetrics = metrics.createMetrics(name, size);
+      } else {
+        poolMetrics = null;
+      }
     }
   }
 

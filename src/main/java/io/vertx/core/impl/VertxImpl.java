@@ -147,7 +147,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     this.namedThreadPools = new NamedThreadPoolManager(this, options, workerPool,
         workerOrderedFact.getExecutor(),
-        metrics);
+        metrics,
+        checker);
 
     if (metrics.isMetricsEnabled()) {
       ThreadPoolMetrics workerPoolMetrics = metrics.createMetrics("vert.x-worker-thread-pool", options.getWorkerPoolSize());
@@ -634,9 +635,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler, String poolName) {
+    ContextImpl context = getOrCreateContext();
+    context.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler, poolName);
+  }
+
+  @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
                                   Handler<AsyncResult<T>> asyncResultHandler) {
     executeBlocking(blockingCodeHandler, true, asyncResultHandler);
+  }
+
+  @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler, String poolName) {
+    ContextImpl context = getOrCreateContext();
+    context.executeBlocking(blockingCodeHandler, asyncResultHandler, poolName);
   }
 
   @Override
