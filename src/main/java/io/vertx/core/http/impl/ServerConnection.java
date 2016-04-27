@@ -233,7 +233,7 @@ class ServerConnection extends ConnectionBase {
       pipeline.remove("chunkedWriter");
     }
 
-    channel.pipeline().replace("handler", "handler", new VertxNetHandler(connectionMap) {
+    channel.pipeline().replace("handler", "handler", new VertxNetHandler(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping

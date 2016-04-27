@@ -33,11 +33,12 @@ import java.util.Map;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class ClientHandler extends VertxHttpHandler<ClientConnection> {
+
   private boolean closeFrameSent;
   private ContextImpl context;
 
-  public ClientHandler(ContextImpl context, Map<Channel, ClientConnection> connectionMap) {
-    super(connectionMap);
+  public ClientHandler(Channel ch, ContextImpl context, Map<Channel, ClientConnection> connectionMap) {
+    super(connectionMap, ch);
     this.context = context;
   }
 

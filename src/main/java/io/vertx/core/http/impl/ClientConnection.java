@@ -532,7 +532,7 @@ class ClientConnection extends ConnectionBase implements HttpClientConnection, H
       pipeline.remove(inflater);
     }
     pipeline.remove("codec");
-    pipeline.replace("handler", "handler", new VertxNetHandler(connectionMap) {
+    pipeline.replace("handler", "handler",  new VertxNetHandler(channel, socket, connectionMap) {
       @Override
       public void exceptionCaught(ChannelHandlerContext chctx, Throwable t) throws Exception {
         // remove from the real mapping

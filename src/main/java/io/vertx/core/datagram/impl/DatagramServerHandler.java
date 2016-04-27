@@ -17,7 +17,6 @@ package io.vertx.core.datagram.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.vertx.core.buffer.Buffer;
@@ -36,12 +35,12 @@ final class DatagramServerHandler extends VertxHandler<DatagramSocketImpl> {
   }
 
   @Override
-  protected DatagramSocketImpl getConnection(Channel channel) {
+  protected DatagramSocketImpl getConnection() {
     return socket;
   }
 
   @Override
-  protected DatagramSocketImpl removeConnection(Channel channel) {
+  protected DatagramSocketImpl removeConnection() {
     return socket;
   }
 

@@ -31,9 +31,9 @@ import io.vertx.core.impl.ContextImpl;
  */
 public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
-  protected abstract C getConnection(Channel ch);
+  protected abstract C getConnection();
 
-  protected abstract C removeConnection(Channel ch);
+  protected abstract C removeConnection();
 
   protected ContextImpl getContext(C connection) {
     return connection.getContext();
@@ -61,8 +61,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-    Channel ch = ctx.channel();
-    C conn = getConnection(ch);
+    C conn = getConnection();
     if (conn != null) {
       ContextImpl context = getContext(conn);
       context.executeFromIO(conn::handleInterestedOpsChanged);
@@ -73,7 +72,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) throws Exception {
     Channel ch = chctx.channel();
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
-    C connection = getConnection(ch);
+    C connection = getConnection();
     if (connection != null) {
       ContextImpl context = getContext(connection);
       context.executeFromIO(() -> {
@@ -92,8 +91,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-    Channel ch = chctx.channel();
-    C connection = removeConnection(ch);
+    C connection = removeConnection();
     if (connection != null) {
       ContextImpl context = getContext(connection);
       context.executeFromIO(connection::handleClosed);
@@ -102,7 +100,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    C conn = getConnection(ctx.channel());
+    C conn = getConnection();
     if (conn != null) {
       ContextImpl context = getContext(conn);
       context.executeFromIO(conn::endReadAndFlush);
@@ -112,7 +110,7 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     Object message = safeObject(msg, chctx.alloc());
-    C connection = getConnection(chctx.channel());
+    C connection = getConnection();
 
     ContextImpl context;
     if (connection != null) {

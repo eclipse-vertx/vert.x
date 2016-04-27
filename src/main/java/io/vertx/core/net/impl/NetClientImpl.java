@@ -166,7 +166,7 @@ public class NetClientImpl implements NetClient, MetricsProvider {
         if (options.getIdleTimeout() > 0) {
           pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
         }
-        pipeline.addLast("handler", new VertxNetHandler(socketMap));
+        pipeline.addLast("handler", new VertxNetHandler(ch, socketMap));
       }
     });
 
@@ -215,6 +215,8 @@ public class NetClientImpl implements NetClient, MetricsProvider {
     // Need to set context before constructor is called as writehandler registration needs this
     ContextImpl.setContext(context);
     NetSocketImpl sock = new NetSocketImpl(vertx, ch, context, sslHelper, true, metrics, null);
+    VertxNetHandler handler = ch.pipeline().get(VertxNetHandler.class);
+    handler.conn = sock;
     socketMap.put(ch, sock);
     context.executeFromIO(() -> {
       sock.setMetric(metrics.connected(sock.remoteAddress(), sock.remoteName()));

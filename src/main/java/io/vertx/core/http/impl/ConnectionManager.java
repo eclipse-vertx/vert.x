@@ -25,6 +25,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -256,7 +257,7 @@ public class ConnectionManager {
       }
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
-      bootstrap.channelFactory(new VertxNioSocketChannelFactory());
+      bootstrap.channel(NioSocketChannel.class);
       sslHelper.validate(vertx);
       bootstrap.handler(new ChannelInitializer<Channel>() {
         @Override
@@ -449,7 +450,7 @@ public class ConnectionManager {
       if (options.getIdleTimeout() > 0) {
         pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout()));
       }
-      pipeline.addLast("handler", new ClientHandler(context, (Map)mgr.connectionMap));
+      pipeline.addLast("handler", new ClientHandler(pipeline.channel(), context, (Map)mgr.connectionMap));
     }
   }
 
