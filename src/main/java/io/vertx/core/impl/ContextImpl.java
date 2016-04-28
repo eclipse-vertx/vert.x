@@ -27,6 +27,7 @@ import io.vertx.core.spi.metrics.ThreadPoolMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,7 +46,7 @@ public abstract class ContextImpl implements ContextInternal {
   private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
   private static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
 
-  protected final VertxInternal owner;
+  protected final VertxImpl owner;
   protected final String deploymentID;
   protected final JsonObject config;
   private Deployment deployment;
@@ -57,6 +58,8 @@ public abstract class ContextImpl implements ContextInternal {
   private Map<String, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
   protected final WorkerPool workerPool;
+  protected final Executor orderedInternalPoolExec;
+  protected final Executor workerExec;
 
   protected ContextImpl(VertxInternal vertx, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
@@ -72,9 +75,11 @@ public abstract class ContextImpl implements ContextInternal {
       this.eventLoop = null;
     }
     this.tccl = tccl;
-    this.owner = vertx;
+    this.owner = (VertxImpl) vertx;
     this.exceptionHandler = vertx.exceptionHandler();
     this.workerPool = workerPool;
+    this.orderedInternalPoolExec = owner.internalOrderedFact.getExecutor();
+    this.workerExec = workerPool.workerOrderedFact.getExecutor();
   }
 
   public static void setContext(ContextImpl context) {
@@ -262,17 +267,53 @@ public abstract class ContextImpl implements ContextInternal {
 
   // Execute an internal task on the internal blocking ordered executor
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    workerPool.executeBlocking(this, action, null, true, true, resultHandler);
+    executeBlocking(action, null, resultHandler, orderedInternalPoolExec, owner.internalBlockingPoolMetrics);
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    workerPool.executeBlocking(this, null, blockingCodeHandler, false, ordered, resultHandler);
+    executeBlocking(null, blockingCodeHandler, resultHandler, ordered ? workerExec : workerPool.workerPool, workerPool.workerMetrics);
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
+  }
+
+  <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler,
+      Handler<AsyncResult<T>> resultHandler,
+      Executor exec, ThreadPoolMetrics metrics) {
+    Object metric = metrics != null ? metrics.taskSubmitted() : null;
+    try {
+      exec.execute(() -> {
+        if (metrics != null) {
+          metrics.taskExecuting(metric);
+        }
+        Future<T> res = Future.future();
+        try {
+          if (blockingCodeHandler != null) {
+            ContextImpl.setContext(this);
+            blockingCodeHandler.handle(res);
+          } else {
+            T result = action.perform();
+            res.complete(result);
+          }
+        } catch (Throwable e) {
+          res.fail(e);
+        }
+        if (metrics != null) {
+          metrics.taskCompleted(metric, res.succeeded());
+        }
+        if (resultHandler != null) {
+          runOnContext(v -> res.setHandler(resultHandler));
+        }
+      });
+    } catch (RejectedExecutionException ignore) {
+      // Pool is already shut down
+      if (metrics != null) {
+        metrics.taskRejected(metric);
+      }
+    }
   }
 
   protected synchronized Map<String, Object> contextData() {

@@ -22,6 +22,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.WorkerExecutor;
 
+import java.util.concurrent.Executor;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -30,10 +32,12 @@ class NamedWorkerExecutor implements WorkerExecutor, Closeable {
   private final ContextImpl context;
   final VertxImpl.NamedWorkerPool pool;
   private boolean closed;
+  private final Executor workerExec;
 
   public NamedWorkerExecutor(ContextImpl context, VertxImpl.NamedWorkerPool pool) {
     this.pool = pool;
     this.context = context;
+    this.workerExec = pool.workerOrderedFact.getExecutor();
   }
 
   public WorkerPool getPool() {
@@ -44,7 +48,7 @@ class NamedWorkerExecutor implements WorkerExecutor, Closeable {
     if (closed) {
       throw new IllegalStateException("Worker executor closed");
     }
-    pool.executeBlocking(context, null, blockingCodeHandler, false, ordered, asyncResultHandler);
+    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.workerPool, pool.workerMetrics);
   }
 
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {

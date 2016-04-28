@@ -98,9 +98,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final ExecutorService workerPool;
   private final ThreadPoolMetrics workerPoolMetrics;
   private final ExecutorService internalBlockingPool;
-  private final ThreadPoolMetrics internalBlockingPoolMetrics;
+  final ThreadPoolMetrics internalBlockingPoolMetrics;
   private final OrderedExecutorFactory workerOrderedFact;
-  private final OrderedExecutorFactory internalOrderedFact;
+  final OrderedExecutorFactory internalOrderedFact;
   private final ThreadFactory eventLoopThreadFactory;
   private final NioEventLoopGroup eventLoopGroup;
   private final NioEventLoopGroup acceptorEventLoopGroup;
@@ -147,10 +147,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics("vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
                                                         new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
-    workerOrderedFact = new OrderedExecutorFactory(workerPool);
     internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
     namedWorkerPools = new HashMap<>();
-    vertxWorkerPool = new WorkerPool(internalOrderedFact.getExecutor(), workerOrderedFact.getExecutor(), workerPool, internalBlockingPoolMetrics, workerPoolMetrics);
+    vertxWorkerPool = new WorkerPool(workerPool, workerPoolMetrics);
+    workerOrderedFact = vertxWorkerPool.workerOrderedFact;
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
@@ -880,13 +880,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   class NamedWorkerPool extends WorkerPool {
 
-    final ExecutorService workerExec;
+    private final ExecutorService workerExec;
     final String name;
     private int refCount = 1;
 
     public NamedWorkerPool(String name, ExecutorService workerExec, ThreadPoolMetrics workerMetrics) {
-      super(internalOrderedFact.getExecutor(), new OrderedExecutorFactory(workerExec).getExecutor(), workerExec,
-          VertxImpl.this.internalBlockingPoolMetrics, workerMetrics);
+      super(workerExec, workerMetrics);
       this.workerExec = workerExec;
       this.name = name;
     }

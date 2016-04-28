@@ -16,68 +16,22 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.spi.metrics.ThreadPoolMetrics;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class WorkerPool {
 
-  protected final ThreadPoolMetrics workerMetrics;
-  protected final ThreadPoolMetrics internalBlockingPoolMetrics;
-  protected final Executor orderedInternalPoolExec;
-  protected final Executor workerExec;
+  protected final OrderedExecutorFactory workerOrderedFact;
   protected final Executor workerPool;
+  protected final ThreadPoolMetrics workerMetrics;
 
-  WorkerPool(Executor orderedInternalPoolExec, Executor workerExec, Executor workerPool,
-                    ThreadPoolMetrics internalBlockingPoolMetrics, ThreadPoolMetrics workerMetrics) {
-    this.workerMetrics = workerMetrics;
-    this.internalBlockingPoolMetrics = internalBlockingPoolMetrics;
-    this.orderedInternalPoolExec = orderedInternalPoolExec;
-    this.workerExec = workerExec;
+  public WorkerPool(Executor workerPool, ThreadPoolMetrics workerMetrics) {
+    this.workerOrderedFact = new OrderedExecutorFactory(workerPool);
     this.workerPool = workerPool;
-  }
-
-  <T> void executeBlocking(ContextImpl context, Action<T> action, Handler<Future<T>> blockingCodeHandler, boolean internal,
-                                   boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    ThreadPoolMetrics metrics = internal ? internalBlockingPoolMetrics : workerMetrics;
-    Object metric = metrics != null ? metrics.taskSubmitted() : null;
-    try {
-      Executor exec = internal ? orderedInternalPoolExec : (ordered ? workerExec : workerPool);
-      exec.execute(() -> {
-        if (metrics != null) {
-          metrics.taskExecuting(metric);
-        }
-        Future<T> res = Future.future();
-        try {
-          if (blockingCodeHandler != null) {
-            ContextImpl.setContext(context);
-            blockingCodeHandler.handle(res);
-          } else {
-            T result = action.perform();
-            res.complete(result);
-          }
-        } catch (Throwable e) {
-          res.fail(e);
-        }
-        if (metrics != null) {
-          metrics.taskCompleted(metric, res.succeeded());
-        }
-        if (resultHandler != null) {
-          context.runOnContext(v -> res.setHandler(resultHandler));
-        }
-      });
-    } catch (RejectedExecutionException ignore) {
-      // Pool is already shut down
-      if (metrics != null) {
-        metrics.taskRejected(metric);
-      }
-    }
+    this.workerMetrics = workerMetrics;
   }
 }

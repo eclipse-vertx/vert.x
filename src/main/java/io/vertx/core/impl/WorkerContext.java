@@ -31,7 +31,7 @@ public class WorkerContext extends ContextImpl {
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    workerPool.workerExec.execute(wrapTask(null, task, true, workerPool.workerMetrics));
+    workerExec.execute(wrapTask(null, task, true, workerPool.workerMetrics));
   }
 
   @Override
@@ -53,7 +53,7 @@ public class WorkerContext extends ContextImpl {
   // so we need to execute it on the worker thread
   @Override
   public void executeFromIO(ContextTask task) {
-    workerPool.workerExec.execute(wrapTask(task, null, true, workerPool.workerMetrics));
+    workerExec.execute(wrapTask(task, null, true, workerPool.workerMetrics));
   }
 
 }
