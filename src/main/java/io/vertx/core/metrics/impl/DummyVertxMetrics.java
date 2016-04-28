@@ -32,12 +32,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.spi.metrics.DatagramSocketMetrics;
-import io.vertx.core.spi.metrics.EventBusMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.metrics.*;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -94,6 +89,12 @@ public class DummyVertxMetrics implements VertxMetrics {
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
     return new DummyDatagramMetrics();
   }
+
+  @Override
+  public ThreadPoolMetrics createMetrics(String name, int poolSize) {
+    return new DummyWorkerPoolMetrics();
+  }
+
 
   @Override
   public void close() {
@@ -341,6 +342,35 @@ public class DummyVertxMetrics implements VertxMetrics {
     @Override
     public boolean isEnabled() {
       return false;
+    }
+  }
+
+  private class DummyWorkerPoolMetrics implements ThreadPoolMetrics<Void> {
+
+    @Override
+    public Void taskSubmitted() {
+      return null;
+    }
+
+    @Override
+    public void taskRejected(Void task) {
+    }
+
+    @Override
+    public void taskExecuting(Void task) {
+    }
+
+    @Override
+    public void taskCompleted(Void task, boolean succeeded) {
+    }
+
+    @Override
+    public boolean isEnabled() {
+      return false;
+    }
+
+    @Override
+    public void close() {
     }
   }
 }

@@ -34,7 +34,8 @@ public class EventLoopContext extends ContextImpl {
   }
 
   public void executeAsync(Handler<Void> task) {
-    nettyEventLoop().execute(wrapTask(null, task, true));
+    // No metrics, we are on the event loop.
+    nettyEventLoop().execute(wrapTask(null, task, true, null));
   }
 
   @Override

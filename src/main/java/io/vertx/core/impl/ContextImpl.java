@@ -23,11 +23,9 @@ import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.spi.metrics.ThreadPoolMetrics;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -221,7 +219,8 @@ public abstract class ContextImpl implements ContextInternal {
     if (THREAD_CHECKS) {
       checkCorrectThread();
     }
-    wrapTask(task, null, true).run();
+    // No metrics on this, as we are on the event loop.
+    wrapTask(task, null, true, null).run();
   }
 
   protected abstract void checkCorrectThread();
@@ -283,7 +282,8 @@ public abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread) {
+  protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread, ThreadPoolMetrics metrics) {
+    Object metric = metrics != null ? metrics.taskSubmitted() : null;
     return () -> {
       Thread th = Thread.currentThread();
       if (!(th instanceof VertxThread)) {
@@ -297,6 +297,9 @@ public abstract class ContextImpl implements ContextInternal {
           throw new IllegalStateException("Uh oh! Event loop context executing with wrong thread! Expected " + contextThread + " got " + current);
         }
       }
+      if (metrics != null) {
+        metrics.taskExecuting(metric);
+      }
       if (!DISABLE_TIMINGS) {
         current.executeStart();
       }
@@ -307,11 +310,17 @@ public abstract class ContextImpl implements ContextInternal {
         } else {
           hTask.handle(null);
         }
+        if (metrics != null) {
+          metrics.taskCompleted(metric, true);
+        }
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
         Handler<Throwable> handler = this.exceptionHandler;
         if (handler != null) {
           handler.handle(t);
+        }
+        if (metrics != null) {
+          metrics.taskCompleted(metric, false);
         }
       } finally {
         // We don't unset the context after execution - this is done later when the context is closed via

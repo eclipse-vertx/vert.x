@@ -31,7 +31,7 @@ public class MultiThreadedWorkerContext extends WorkerContext {
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    workerPool.workerExec.execute(wrapTask(null, task, false));
+    workerPool.workerExec.execute(wrapTask(null, task, false, workerPool.workerMetrics));
   }
 
   @Override

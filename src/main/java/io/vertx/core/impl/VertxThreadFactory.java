@@ -16,6 +16,8 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.spi.metrics.ThreadPoolMetrics;
+
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ThreadFactory;

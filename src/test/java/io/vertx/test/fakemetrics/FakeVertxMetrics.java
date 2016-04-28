@@ -30,12 +30,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.metrics.DatagramSocketMetrics;
-import io.vertx.core.spi.metrics.EventBusMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.metrics.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -139,8 +134,13 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeDatagramSocketMetrics(socket);
   }
 
+  @Override
+  public ThreadPoolMetrics createMetrics(String poolName, int poolSize) {
+    return new FakeThreadPoolMetrics(poolName, poolSize);
+  }
+
   public boolean isEnabled() {
-    throw new UnsupportedOperationException();
+    return true;
   }
 
   @Override

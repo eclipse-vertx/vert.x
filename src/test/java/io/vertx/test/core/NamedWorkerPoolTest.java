@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -37,21 +38,31 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testThread() {
     String poolName = TestUtils.randomAlphaString(10);
     WorkerExecutor worker = vertx.createWorkerExecutor(poolName);
+    AtomicBoolean onVertxThread = new AtomicBoolean();
+    AtomicBoolean onWorkerThread = new AtomicBoolean();
+    AtomicBoolean onEventLoopThread = new AtomicBoolean();
+    AtomicReference<String> threadName = new AtomicReference<>();
     worker.executeBlocking(fut -> {
-      assertTrue(Context.isOnVertxThread());
-      assertTrue(Context.isOnWorkerThread());
-      assertFalse(Context.isOnEventLoopThread());
-      assertTrue(Thread.currentThread().getName().startsWith("vert.x-" + poolName + "-"));
+      onVertxThread.set(Context.isOnVertxThread());
+      onWorkerThread.set(Context.isOnWorkerThread());
+      onEventLoopThread.set(Context.isOnEventLoopThread());
+      threadName.set(Thread.currentThread().getName());
       fut.complete(null);
     }, ar -> {
       testComplete();
     });
-    await();
+    // Use regular assertions because the thread name does not start with "vert.x-"
+    // and it confuses the VertxTestBase asserts
+    waitUntil(() -> threadName.get() != null);
+    assertTrue(onVertxThread.get());
+    assertTrue(onWorkerThread.get());
+    assertFalse(onEventLoopThread.get());
+    assertTrue(threadName.get().startsWith(poolName + "-"));
   }
 
   @Test
   public void testOrdered() {
-    String poolName = TestUtils.randomAlphaString(10);
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     WorkerExecutor worker = vertx.createWorkerExecutor(poolName);
     int num = 1000;
     AtomicReference<Thread> t = new AtomicReference<>();
@@ -72,7 +83,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         } else {
           assertEquals(t.get(), Thread.currentThread());
         }
-        assertTrue(Thread.currentThread().getName().startsWith("vert.x-" + poolName + "-"));
+        assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
         fut.complete(null);
       }, ar -> {
         if (last) {
@@ -86,7 +97,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
 
   @Test
   public void testUnordered() throws Exception {
-    String poolName = TestUtils.randomAlphaString(10);
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     int num = 5;
     waitFor(num);
     WorkerExecutor worker = vertx.createWorkerExecutor(poolName);
@@ -101,7 +112,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           fail(e);
           return;
         }
-        assertTrue(Thread.currentThread().getName().startsWith("vert.x-" + poolName + "-"));
+        assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
         fut.complete(null);
       }, false, ar -> {
         complete();
@@ -114,7 +125,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
 
   @Test
   public void testPoolSize() throws Exception {
-    String poolName = TestUtils.randomAlphaString(10);
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     int poolSize = 5;
     waitFor(poolSize);
     WorkerExecutor worker = vertx.createWorkerExecutor(poolName, poolSize);
@@ -133,7 +144,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
 
   @Test
   public void testCloseWorkerPool() throws Exception {
-    String poolName = TestUtils.randomAlphaString(10);
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     AtomicReference<Thread> thread = new AtomicReference<>();
     WorkerExecutor worker1 = vertx.createWorkerExecutor(poolName);
     WorkerExecutor worker2 = vertx.createWorkerExecutor(poolName);
@@ -150,7 +161,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
 
   @Test
   public void testDestroyWorkerPoolWhenVerticleUndeploys() throws Exception {
-    String poolName = TestUtils.randomAlphaString(10);
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     AtomicReference<Thread> thread = new AtomicReference<>();
     AtomicReference<String> deployment = new AtomicReference<>();
     vertx.deployVerticle(new AbstractVerticle() {
@@ -171,7 +182,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   @Test
   public void testDeployUsingNamedPool() throws Exception {
     AtomicReference<Thread> thread = new AtomicReference<>();
-    String poolName = TestUtils.randomAlphaString(10);
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -180,7 +191,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           assertTrue(Context.isOnVertxThread());
           assertTrue(Context.isOnWorkerThread());
           assertFalse(Context.isOnEventLoopThread());
-          assertTrue(Thread.currentThread().getName().startsWith("vert.x-" + poolName + "-"));
+          assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
           fut.complete();
         }, onSuccess(v -> {
           vertx.undeploy(context.deploymentID());
@@ -194,7 +205,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testDeployWorkerUsingNamedPool() throws Exception {
     AtomicReference<Thread> thread = new AtomicReference<>();
     AtomicReference<String> deployment = new AtomicReference<>();
-    String poolName = TestUtils.randomAlphaString(10);
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -202,7 +213,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         assertTrue(Context.isOnVertxThread());
         assertTrue(Context.isOnWorkerThread());
         assertFalse(Context.isOnEventLoopThread());
-        assertTrue(Thread.currentThread().getName().startsWith("vert.x-" + poolName + "-"));
+        assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
         context.runOnContext(v -> {
           vertx.undeploy(context.deploymentID());
         });
