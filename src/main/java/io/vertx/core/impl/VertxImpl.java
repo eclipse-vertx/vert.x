@@ -107,7 +107,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private HAManager haManager;
   private boolean closed;
   private Handler<Throwable> exceptionHandler;
-  private final Map<String, NamedWorkerPool> namedWorkerPools;
+  private final Map<String, SharedWorkerPool> namedWorkerPools;
   private final int defaultWorkerPoolSize;
   private final long defaultWorkerMaxExecTime;
 
@@ -866,13 +866,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  class NamedWorkerPool extends WorkerPool {
+  class SharedWorkerPool extends WorkerPool {
 
     private final ExecutorService workerExec;
-    final String name;
+    private final String name;
     private int refCount = 1;
 
-    public NamedWorkerPool(String name, ExecutorService workerExec, ThreadPoolMetrics workerMetrics) {
+    public SharedWorkerPool(String name, ExecutorService workerExec, ThreadPoolMetrics workerMetrics) {
       super(workerExec, workerMetrics);
       this.workerExec = workerExec;
       this.name = name;
@@ -881,7 +881,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     void release() {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
-          releaseWorkerPool(name);
+          releaseWorkerExecutor(name);
           if (metrics != null) {
             metrics.close();
           }
@@ -902,28 +902,28 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public NamedWorkerExecutor createWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
+  public synchronized NamedWorkerExecutor createWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
     if (maxExecuteTime < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
     if (maxExecuteTime < 1) {
       throw new IllegalArgumentException("maxExecuteTime must be > 0");
     }
-    NamedWorkerPool namedWorkerPool = namedWorkerPools.get(name);
-    if (namedWorkerPool == null) {
+    SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
+    if (sharedWorkerPool == null) {
       ThreadPoolMetrics workerMetrics = isMetricsEnabled() ? metrics.createMetrics(name, poolSize) : null;
       ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime));
-      namedWorkerPools.put(name, namedWorkerPool = new NamedWorkerPool(name, workerExec, workerMetrics));
+      namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {
-      namedWorkerPool.refCount++;
+      sharedWorkerPool.refCount++;
     }
     ContextImpl context = getOrCreateContext();
-    NamedWorkerExecutor namedExec = new NamedWorkerExecutor(context, namedWorkerPool);
+    NamedWorkerExecutor namedExec = new NamedWorkerExecutor(context, sharedWorkerPool);
     context.addCloseHook(namedExec);
     return namedExec;
   }
 
-  synchronized void releaseWorkerPool(String name) {
+  synchronized void releaseWorkerExecutor(String name) {
     namedWorkerPools.remove(name);
   }
 

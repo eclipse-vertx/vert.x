@@ -30,11 +30,11 @@ import java.util.concurrent.Executor;
 class NamedWorkerExecutor implements WorkerExecutor, Closeable {
 
   private final ContextImpl context;
-  final VertxImpl.NamedWorkerPool pool;
+  final VertxImpl.SharedWorkerPool pool;
   private boolean closed;
   private final Executor workerExec;
 
-  public NamedWorkerExecutor(ContextImpl context, VertxImpl.NamedWorkerPool pool) {
+  public NamedWorkerExecutor(ContextImpl context, VertxImpl.SharedWorkerPool pool) {
     this.pool = pool;
     this.context = context;
     this.workerExec = pool.createOrderedExecutor();
