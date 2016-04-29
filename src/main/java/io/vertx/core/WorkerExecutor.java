@@ -19,6 +19,11 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
+ * An executor for executing blocking code in Vert.x .<p>
+ *
+ * It provides the same <code>executeBlocking</code> operation than {@link io.vertx.core.Context} and
+ * {@link io.vertx.core.Vertx} but on a separate worker pool.<p>
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
