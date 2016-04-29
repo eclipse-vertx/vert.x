@@ -80,6 +80,9 @@ public class DeploymentOptions {
     this.extraClasspath = other.getExtraClasspath() == null ? null : new ArrayList<>(other.getExtraClasspath());
     this.instances = other.instances;
     this.isolatedClasses = other.getIsolatedClasses() == null ? null : new ArrayList<>(other.getIsolatedClasses());
+    this.workerPoolName = other.workerPoolName;
+    setWorkerPoolSize(other.workerPoolSize);
+    setMaxWorkerExecuteTime(other.maxWorkerExecuteTime);
   }
 
   /**
@@ -348,7 +351,7 @@ public class DeploymentOptions {
    */
   public DeploymentOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
     if (maxWorkerExecuteTime < 1) {
-      throw new IllegalArgumentException("maxWorkerpExecuteTime must be > 0");
+      throw new IllegalArgumentException("maxWorkerExecuteTime must be > 0");
     }
     this.maxWorkerExecuteTime = maxWorkerExecuteTime;
     return this;
@@ -361,16 +364,7 @@ public class DeploymentOptions {
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
-    if (worker) json.put("worker", true);
-    if (multiThreaded) json.put("multiThreaded", true);
-    if (isolationGroup != null) json.put("isolationGroup", isolationGroup);
-    if (ha) json.put("ha", true);
-    if (config != null) json.put("config", config);
-    if (extraClasspath != null) json.put("extraClasspath", new JsonArray(extraClasspath));
-    if (instances != DEFAULT_INSTANCES) {
-      json.put("instances", instances);
-    }
-    if (isolatedClasses != null) json.put("isolatedClasses", new JsonArray(isolatedClasses));
+    DeploymentOptionsConverter.toJson(this, json);
     return json;
   }
 
@@ -404,6 +398,9 @@ public class DeploymentOptions {
     result = 31 * result + (extraClasspath != null ? extraClasspath.hashCode() : 0);
     result = 31 * result + instances;
     result = 31 * result + (isolatedClasses != null ? isolatedClasses.hashCode() : 0);
+    result = 31 * result + (workerPoolName != null ? workerPoolName.hashCode() : 0);
+    result = 31 * result + workerPoolSize;
+    result = 31 * result + Long.hashCode(maxWorkerExecuteTime);
     return result;
   }
 }

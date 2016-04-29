@@ -76,6 +76,15 @@ public class DeploymentTest extends VertxTestBase {
     List<String> isol = Arrays.asList("com.foo.MyClass", "org.foo.*");
     assertEquals(options, options.setIsolatedClasses(isol));
     assertSame(isol, options.getIsolatedClasses());
+    String workerPoolName = TestUtils.randomAlphaString(10);
+    assertEquals(options, options.setWorkerPoolName(workerPoolName));
+    assertEquals(workerPoolName, options.getWorkerPoolName());
+    int workerPoolSize = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setWorkerPoolSize(workerPoolSize));
+    assertEquals(workerPoolSize, options.getWorkerPoolSize());
+    long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
+    assertEquals(options, options.setMaxWorkerExecuteTime(maxWorkerExecuteTime));
+    assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
   }
 
   @Test
@@ -89,6 +98,9 @@ public class DeploymentTest extends VertxTestBase {
     boolean ha = rand.nextBoolean();
     List<String> cp = Arrays.asList("foo", "bar");
     List<String> isol = Arrays.asList("com.foo.MyClass", "org.foo.*");
+    String poolName = TestUtils.randomAlphaString(10);
+    int poolSize = TestUtils.randomPositiveInt();
+    long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
     options.setConfig(config);
     options.setWorker(worker);
     options.setMultiThreaded(multiThreaded);
@@ -96,6 +108,9 @@ public class DeploymentTest extends VertxTestBase {
     options.setHa(ha);
     options.setExtraClasspath(cp);
     options.setIsolatedClasses(isol);
+    options.setWorkerPoolName(poolName);
+    options.setWorkerPoolSize(poolSize);
+    options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     DeploymentOptions copy = new DeploymentOptions(options);
     assertEquals(worker, copy.isWorker());
     assertEquals(multiThreaded, copy.isMultiThreaded());
@@ -107,6 +122,9 @@ public class DeploymentTest extends VertxTestBase {
     assertNotSame(cp, copy.getExtraClasspath());
     assertEquals(isol, copy.getIsolatedClasses());
     assertNotSame(isol, copy.getIsolatedClasses());
+    assertEquals(poolName, copy.getWorkerPoolName());
+    assertEquals(poolSize, copy.getWorkerPoolSize());
+    assertEquals(maxWorkerExecuteTime, copy.getMaxWorkerExecuteTime());
   }
 
   @Test
@@ -120,6 +138,9 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(def.isHa(), json.isHa());
     assertEquals(def.getExtraClasspath(), json.getExtraClasspath());
     assertEquals(def.getIsolatedClasses(), json.getIsolatedClasses());
+    assertEquals(def.getWorkerPoolName(), json.getWorkerPoolName());
+    assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
+    assertEquals(def.getMaxWorkerExecuteTime(), json.getMaxWorkerExecuteTime());
   }
 
   @Test
@@ -132,6 +153,9 @@ public class DeploymentTest extends VertxTestBase {
     boolean ha = rand.nextBoolean();
     List<String> cp = Arrays.asList("foo", "bar");
     List<String> isol = Arrays.asList("com.foo.MyClass", "org.foo.*");
+    String poolName = TestUtils.randomAlphaString(10);
+    int poolSize = TestUtils.randomPositiveInt();
+    long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
     JsonObject json = new JsonObject();
     json.put("config", config);
     json.put("worker", worker);
@@ -140,6 +164,9 @@ public class DeploymentTest extends VertxTestBase {
     json.put("ha", ha);
     json.put("extraClasspath", new JsonArray(cp));
     json.put("isolatedClasses", new JsonArray(isol));
+    json.put("workerPoolName", poolName);
+    json.put("workerPoolSize", poolSize);
+    json.put("maxWorkerExecuteTime", maxWorkerExecuteTime);
     DeploymentOptions options = new DeploymentOptions(json);
     assertEquals(worker, options.isWorker());
     assertEquals(multiThreaded, options.isMultiThreaded());
@@ -148,6 +175,9 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(ha, options.isHa());
     assertEquals(cp, options.getExtraClasspath());
     assertEquals(isol, options.getIsolatedClasses());
+    assertEquals(poolName, options.getWorkerPoolName());
+    assertEquals(poolSize, options.getWorkerPoolSize());
+    assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
   }
 
   @Test
@@ -161,6 +191,9 @@ public class DeploymentTest extends VertxTestBase {
     boolean ha = rand.nextBoolean();
     List<String> cp = Arrays.asList("foo", "bar");
     List<String> isol = Arrays.asList("com.foo.MyClass", "org.foo.*");
+    String poolName = TestUtils.randomAlphaString(10);
+    int poolSize = TestUtils.randomPositiveInt();
+    long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
     options.setConfig(config);
     options.setWorker(worker);
     options.setMultiThreaded(multiThreaded);
@@ -168,6 +201,9 @@ public class DeploymentTest extends VertxTestBase {
     options.setHa(ha);
     options.setExtraClasspath(cp);
     options.setIsolatedClasses(isol);
+    options.setWorkerPoolName(poolName);
+    options.setWorkerPoolSize(poolSize);
+    options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     JsonObject json = options.toJson();
     DeploymentOptions copy = new DeploymentOptions(json);
     assertEquals(worker, copy.isWorker());
@@ -177,6 +213,9 @@ public class DeploymentTest extends VertxTestBase {
     assertEquals(ha, copy.isHa());
     assertEquals(cp, copy.getExtraClasspath());
     assertEquals(isol, copy.getIsolatedClasses());
+    assertEquals(poolName, copy.getWorkerPoolName());
+    assertEquals(poolSize, copy.getWorkerPoolSize());
+    assertEquals(maxWorkerExecuteTime, copy.getMaxWorkerExecuteTime());
   }
 
   @Test
