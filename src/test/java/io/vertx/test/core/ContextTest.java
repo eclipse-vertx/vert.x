@@ -271,4 +271,54 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testVerticleUseDifferentExecuteBlockingOrderedExecutor() throws Exception {
+    testVerticleUseDifferentOrderedExecutor(false);
+  }
+
+  @Test
+  public void testWorkerVerticleUseDifferentExecuteBlockingOrderedExecutor() throws Exception {
+    testVerticleUseDifferentOrderedExecutor(true);
+  }
+
+  private void testVerticleUseDifferentOrderedExecutor(boolean worker) throws Exception {
+    waitFor(2);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        vertx.executeBlocking(fut -> {
+          latch1.countDown();
+          try {
+            awaitLatch(latch2);
+            fut.complete();
+          } catch (InterruptedException e) {
+            fut.fail(e);
+          }
+        }, ar -> {
+          assertTrue(ar.succeeded());
+          complete();
+        });
+      }
+    }, new DeploymentOptions().setWorker(worker));
+    awaitLatch(latch1);
+    CountDownLatch latch3 = new CountDownLatch(1);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        vertx.executeBlocking(fut -> {
+          latch3.countDown();
+          fut.complete();
+        }, ar -> {
+          assertTrue(ar.succeeded());
+          complete();
+        });
+      }
+    }, new DeploymentOptions().setWorker(worker));
+    awaitLatch(latch3);
+    latch2.countDown();
+    await();
+  }
 }
