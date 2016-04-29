@@ -95,12 +95,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final FileResolver fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
-  private final ExecutorService workerPool;
-  private final ThreadPoolMetrics workerPoolMetrics;
-  private final ExecutorService internalBlockingPool;
-  final ThreadPoolMetrics internalBlockingPoolMetrics;
-  private final OrderedExecutorFactory workerOrderedFact;
-  final OrderedExecutorFactory internalOrderedFact;
+  private final WorkerPool workerPool;
+  private final WorkerPool internalBlockingPool;
   private final ThreadFactory eventLoopThreadFactory;
   private final NioEventLoopGroup eventLoopGroup;
   private final NioEventLoopGroup acceptorEventLoopGroup;
@@ -112,7 +108,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private boolean closed;
   private Handler<Throwable> exceptionHandler;
   private final Map<String, NamedWorkerPool> namedWorkerPools;
-  private final WorkerPool vertxWorkerPool;
   private final int defaultWorkerPoolSize;
   private final long defaultWorkerMaxExecTime;
 
@@ -141,16 +136,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     metrics = initialiseMetrics(options);
 
-    workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics("vert.x-worker-thread", options.getWorkerPoolSize()) : null;
-    workerPool = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
+    ThreadPoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics("vert.x-worker-thread", options.getWorkerPoolSize()) : null;
+    ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
                                               new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
-    internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics("vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
-    internalBlockingPool = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
+    ThreadPoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics("vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
+    ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
                                                         new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
-    internalOrderedFact = new OrderedExecutorFactory(internalBlockingPool);
+    internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
-    vertxWorkerPool = new WorkerPool(workerPool, workerPoolMetrics);
-    workerOrderedFact = vertxWorkerPool.workerOrderedFact;
+    workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
 
@@ -298,7 +292,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   // The background pool is used for making blocking calls to legacy synchronous APIs
   public ExecutorService getWorkerPool() {
-    return workerPool;
+    return workerPool.executor();
   }
 
   public EventLoopGroup getEventLoopGroup() {
@@ -347,18 +341,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public EventLoopContext createEventLoopContext(String deploymentID, WorkerPool workerPool, JsonObject config, ClassLoader tccl) {
-    return new EventLoopContext(this, workerPool != null ? workerPool : vertxWorkerPool, deploymentID, config, tccl);
+    return new EventLoopContext(this, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deploymentID, config, tccl);
   }
 
   public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool workerPool, JsonObject config,
                                          ClassLoader tccl) {
     if (workerPool == null) {
-      workerPool = vertxWorkerPool;
+      workerPool = this.workerPool;
     }
     if (multiThreaded) {
-      return new MultiThreadedWorkerContext(this, workerPool, deploymentID, config, tccl);
+      return new MultiThreadedWorkerContext(this, internalBlockingPool, workerPool, deploymentID, config, tccl);
     } else {
-      return new WorkerContext(this, workerPool, deploymentID, config, tccl);
+      return new WorkerContext(this, internalBlockingPool, workerPool, deploymentID, config, tccl);
     }
   }
 
@@ -689,14 +683,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
     fileResolver.close(res -> {
 
-      if (workerPoolMetrics != null) {
-        workerPoolMetrics.close();
-      }
-      workerPool.shutdownNow();
-      if (internalBlockingPoolMetrics != null) {
-        internalBlockingPoolMetrics.close();
-      }
-      internalBlockingPool.shutdownNow();
+      workerPool.close();
+      internalBlockingPool.close();
 
       acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
         @Override
@@ -894,8 +882,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
           releaseWorkerPool(name);
-          if (workerPoolMetrics != null) {
-            workerPoolMetrics.close();
+          if (metrics != null) {
+            metrics.close();
           }
           workerExec.shutdownNow();
         }

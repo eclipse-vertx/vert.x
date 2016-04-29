@@ -24,14 +24,14 @@ import io.vertx.core.json.JsonObject;
  */
 public class MultiThreadedWorkerContext extends WorkerContext {
 
-  public MultiThreadedWorkerContext(VertxInternal vertx, WorkerPool workerPool,
+  public MultiThreadedWorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool,
                                     String deploymentID, JsonObject config, ClassLoader tccl) {
-    super(vertx, workerPool, deploymentID, config, tccl);
+    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    workerPool.workerPool.execute(wrapTask(null, task, false, workerPool.workerMetrics));
+    workerPool.executor().execute(wrapTask(null, task, false, workerPool.metrics()));
   }
 
   @Override

@@ -46,7 +46,7 @@ public abstract class ContextImpl implements ContextInternal {
   private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
   private static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
 
-  protected final VertxImpl owner;
+  protected final VertxInternal owner;
   protected final String deploymentID;
   protected final JsonObject config;
   private Deployment deployment;
@@ -58,10 +58,11 @@ public abstract class ContextImpl implements ContextInternal {
   private Map<String, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
   protected final WorkerPool workerPool;
+  protected final WorkerPool internalBlockingPool;
   protected final Executor orderedInternalPoolExec;
   protected final Executor workerExec;
 
-  protected ContextImpl(VertxInternal vertx, WorkerPool workerPool, String deploymentID, JsonObject config,
+  protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
                         ClassLoader tccl) {
     if (DISABLE_TCCL && !tccl.getClass().getName().equals("sun.misc.Launcher$AppClassLoader")) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
@@ -75,11 +76,12 @@ public abstract class ContextImpl implements ContextInternal {
       this.eventLoop = null;
     }
     this.tccl = tccl;
-    this.owner = (VertxImpl) vertx;
+    this.owner = vertx;
     this.exceptionHandler = vertx.exceptionHandler();
     this.workerPool = workerPool;
-    this.orderedInternalPoolExec = owner.internalOrderedFact.getExecutor();
-    this.workerExec = workerPool.workerOrderedFact.getExecutor();
+    this.internalBlockingPool = internalBlockingPool;
+    this.orderedInternalPoolExec = internalBlockingPool.createOrderedExecutor();
+    this.workerExec = workerPool.createOrderedExecutor();
   }
 
   public static void setContext(ContextImpl context) {
@@ -267,12 +269,12 @@ public abstract class ContextImpl implements ContextInternal {
 
   // Execute an internal task on the internal blocking ordered executor
   public <T> void executeBlocking(Action<T> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, null, resultHandler, orderedInternalPoolExec, owner.internalBlockingPoolMetrics);
+    executeBlocking(action, null, resultHandler, orderedInternalPoolExec, internalBlockingPool.metrics());
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(null, blockingCodeHandler, resultHandler, ordered ? workerExec : workerPool.workerPool, workerPool.workerMetrics);
+    executeBlocking(null, blockingCodeHandler, resultHandler, ordered ? workerExec : workerPool.executor(), workerPool.metrics());
   }
 
   @Override

@@ -24,14 +24,14 @@ import io.vertx.core.json.JsonObject;
  */
 public class WorkerContext extends ContextImpl {
 
-  public WorkerContext(VertxInternal vertx, WorkerPool workerPool, String deploymentID,
+  public WorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID,
                        JsonObject config, ClassLoader tccl) {
-    super(vertx, workerPool, deploymentID, config, tccl);
+    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    workerExec.execute(wrapTask(null, task, true, workerPool.workerMetrics));
+    workerExec.execute(wrapTask(null, task, true, workerPool.metrics()));
   }
 
   @Override
@@ -53,7 +53,7 @@ public class WorkerContext extends ContextImpl {
   // so we need to execute it on the worker thread
   @Override
   public void executeFromIO(ContextTask task) {
-    workerExec.execute(wrapTask(task, null, true, workerPool.workerMetrics));
+    workerExec.execute(wrapTask(task, null, true, workerPool.metrics()));
   }
 
 }

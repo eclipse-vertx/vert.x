@@ -37,7 +37,7 @@ class NamedWorkerExecutor implements WorkerExecutor, Closeable {
   public NamedWorkerExecutor(ContextImpl context, VertxImpl.NamedWorkerPool pool) {
     this.pool = pool;
     this.context = context;
-    this.workerExec = pool.workerOrderedFact.getExecutor();
+    this.workerExec = pool.createOrderedExecutor();
   }
 
   public WorkerPool getPool() {
@@ -48,7 +48,7 @@ class NamedWorkerExecutor implements WorkerExecutor, Closeable {
     if (closed) {
       throw new IllegalStateException("Worker executor closed");
     }
-    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.workerPool, pool.workerMetrics);
+    context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.executor(), pool.metrics());
   }
 
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
