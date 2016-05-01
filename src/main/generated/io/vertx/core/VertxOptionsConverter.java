@@ -78,6 +78,9 @@ public class VertxOptionsConverter {
     if (json.getValue("metricsOptions") instanceof JsonObject) {
       obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)json.getValue("metricsOptions")));
     }
+    if (json.getValue("namedThreadPoolConfiguration") instanceof JsonObject) {
+      obj.setNamedThreadPoolConfiguration(((JsonObject)json.getValue("namedThreadPoolConfiguration")).copy());
+    }
     if (json.getValue("quorumSize") instanceof Number) {
       obj.setQuorumSize(((Number)json.getValue("quorumSize")).intValue());
     }
@@ -118,6 +121,9 @@ public class VertxOptionsConverter {
     json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
     if (obj.getMetricsOptions() != null) {
       json.put("metricsOptions", obj.getMetricsOptions().toJson());
+    }
+    if (obj.getNamedThreadPoolConfiguration() != null) {
+      json.put("namedThreadPoolConfiguration", obj.getNamedThreadPoolConfiguration());
     }
     json.put("quorumSize", obj.getQuorumSize());
     json.put("warningExceptionTime", obj.getWarningExceptionTime());

@@ -18,7 +18,9 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.metrics.ThreadPoolMetrics;
 
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -27,13 +29,22 @@ import java.util.concurrent.Executor;
 public class WorkerContext extends ContextImpl {
 
   public WorkerContext(VertxInternal vertx, Executor orderedInternalPoolExec, Executor workerExec, String deploymentID,
-                       JsonObject config, ClassLoader tccl) {
-    super(vertx, orderedInternalPoolExec, workerExec, deploymentID, config, tccl);
+                       JsonObject config, ClassLoader tccl, NamedThreadPoolManager namedPools,
+                       Map<String, ThreadPoolMetrics> poolMetrics) {
+    super(vertx, orderedInternalPoolExec, workerExec, deploymentID, config, tccl, namedPools,
+        poolMetrics);
   }
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    workerExec.execute(wrapTask(null, task, true));
+    workerExec.execute(wrapTask(null, task, true, getJob()));
+  }
+
+  ThreadPoolMetrics.Job getJob() {
+    if (workerMetrics != null) {
+      return workerMetrics.jobSubmitted();
+    }
+    return null;
   }
 
   @Override
@@ -55,7 +66,7 @@ public class WorkerContext extends ContextImpl {
   // so we need to execute it on the worker thread
   @Override
   public void executeFromIO(ContextTask task) {
-    workerExec.execute(wrapTask(task, null, true));
+    workerExec.execute(wrapTask(task, null, true, getJob()));
   }
 
 }

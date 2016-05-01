@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FakeMetricsBase implements Metrics {
 
-  private static final ConcurrentHashMap<Object, FakeMetricsBase> metricsMap = new ConcurrentHashMap<>();
+  public static final ConcurrentHashMap<Object, FakeMetricsBase> metricsMap = new ConcurrentHashMap<>();
 
   public static <M extends FakeMetricsBase> M getMetrics(Measured measured) {
     // Free cast :-)

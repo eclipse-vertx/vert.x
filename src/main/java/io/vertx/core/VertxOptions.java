@@ -137,6 +137,8 @@ public class VertxOptions {
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private HostnameResolverOptions hostnameResolverOptions = new HostnameResolverOptions();
 
+  private JsonObject namedThreadPoolConfiguration = new JsonObject();
+
   /**
    * Default constructor
    */
@@ -162,6 +164,7 @@ public class VertxOptions {
     this.metrics = other.getMetricsOptions() != null ? new MetricsOptions(other.getMetricsOptions()) : null;
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
+    this.namedThreadPoolConfiguration = other.namedThreadPoolConfiguration.copy();
     this.hostnameResolverOptions = other.hostnameResolverOptions != null ? new HostnameResolverOptions() : null;
   }
 
@@ -495,7 +498,7 @@ public class VertxOptions {
   /**
    * Set the value of internal blocking pool size
    *
-   * @param internalBlockingPoolSize the maximumn number of threads in the internal blocking pool
+   * @param internalBlockingPoolSize the maximum number of threads in the internal blocking pool
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setInternalBlockingPoolSize(int internalBlockingPoolSize) {
@@ -631,6 +634,27 @@ public class VertxOptions {
   }
 
   /**
+   * Gets the configuration for the named thread pool factory (SPI).
+   *
+   * @return the configuration
+   */
+  public JsonObject getNamedThreadPoolConfiguration() {
+    return namedThreadPoolConfiguration;
+  }
+
+  /**
+   * Sets the configuration for the named thread pool factory (SPI).
+   *
+   * @param namedThreadPoolConfiguration the configuration, must not be {@code null}
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setNamedThreadPoolConfiguration(JsonObject namedThreadPoolConfiguration) {
+    Objects.requireNonNull(namedThreadPoolConfiguration);
+    this.namedThreadPoolConfiguration = namedThreadPoolConfiguration;
+    return this;
+  }
+
+  /**
    * @return the hostname resolver options to configure resolving DNS servers, cache TTL, etc...
    */
   public HostnameResolverOptions getHostnameResolverOptions() {
@@ -669,6 +693,9 @@ public class VertxOptions {
     if (haGroup != null ? !haGroup.equals(that.haGroup) : that.haGroup != null) return false;
     if (eventBusOptions != null ? !eventBusOptions.equals(that.eventBusOptions) : that.eventBusOptions != null)
       return false;
+    if (namedThreadPoolConfiguration != null ? ! namedThreadPoolConfiguration.equals(that
+        .namedThreadPoolConfiguration) : that.namedThreadPoolConfiguration != null)
+      return false;
     if (hostnameResolverOptions != null ? !hostnameResolverOptions.equals(that.hostnameResolverOptions) : that.hostnameResolverOptions != null)
       return false;
     return !(metrics != null ? !metrics.equals(that.metrics) : that.metrics != null);
@@ -689,6 +716,7 @@ public class VertxOptions {
     result = 31 * result + (haGroup != null ? haGroup.hashCode() : 0);
     result = 31 * result + (metrics != null ? metrics.hashCode() : 0);
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
+    result = 31 * result + (namedThreadPoolConfiguration != null ? namedThreadPoolConfiguration.hashCode() : 0);
     result = 31 * result + (hostnameResolverOptions != null ? hostnameResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
     return result;
@@ -709,6 +737,7 @@ public class VertxOptions {
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metrics +
         ", hostnameResolver=" + hostnameResolverOptions.toJson() +
+        ", namedThreadPoolConfiguration=" + namedThreadPoolConfiguration.encode() +
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTime=" + warningExceptionTime +
         '}';

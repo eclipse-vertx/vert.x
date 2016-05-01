@@ -18,7 +18,9 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.metrics.ThreadPoolMetrics;
 
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -27,13 +29,14 @@ import java.util.concurrent.Executor;
 public class MultiThreadedWorkerContext extends WorkerContext {
 
   public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedInternalExec, Executor workerExec,
-                                    String deploymentID, JsonObject config, ClassLoader tccl) {
-    super(vertx, orderedInternalExec, workerExec, deploymentID, config, tccl);
+                                    String deploymentID, JsonObject config, ClassLoader tccl, NamedThreadPoolManager namedPools, Map<String, ThreadPoolMetrics> poolMetrics) {
+    super(vertx, orderedInternalExec, workerExec, deploymentID, config, tccl, namedPools,
+        poolMetrics);
   }
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    workerExec.execute(wrapTask(null, task, false));
+    workerExec.execute(wrapTask(null, task, false, getJob()));
   }
 
   @Override
