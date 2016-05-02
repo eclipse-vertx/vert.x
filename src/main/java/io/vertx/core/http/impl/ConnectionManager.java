@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -28,13 +29,19 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -54,6 +61,7 @@ import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;
@@ -256,20 +264,86 @@ public class ConnectionManager {
       bootstrap.group(eventLoop);
       bootstrap.channel(NioSocketChannel.class);
       applyConnectionOptions(options, bootstrap);
-      bootstrap.handler(new ChannelInitializer<Channel>() {
-        @Override
-        protected void initChannel(Channel ch) throws Exception {
-          // Nothing to do but as we handle this in the channelHandler callback
-        }
-      });
-      AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-      future.addListener(res -> {
-        if (res.succeeded()) {
-          channelHandler.handle(Future.succeededFuture(res.result().channel()));
-        } else {
-          channelHandler.handle(Future.failedFuture(res.cause()));
-        }
-      });
+
+      if (options.isSsl() && !options.isUseAlpn() && options.getProxyHost() != null) {
+        bootstrap.handler(new ChannelInitializer<Channel>() {
+          @Override
+          protected void initChannel(Channel ch) throws Exception {
+            ChannelPipeline pipeline = ch.pipeline();
+            String proxyHost = options.getProxyHost();
+            int proxyPort = options.getProxyPort();
+            log.debug("using proxy: " + proxyHost);
+            String proxyUsername = options.getProxyUsername();
+            String proxyPassword = options.getProxyPassword();
+            InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
+/*
+            if (proxyUsername != null && proxyPassword != null) {
+              pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword));
+            } else {
+              pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr));
+            }
+*/
+            pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
+            pipeline.addLast(new ChannelInboundHandlerAdapter() {
+              HttpResponseStatus status;
+              @Override
+              public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                if (msg instanceof HttpResponse) {
+                  if (status != null) {
+                    // Handle this case
+                  }
+                  status = ((HttpResponse) msg).status();
+                }
+                if (msg instanceof LastHttpContent) {
+                  if (status == null) {
+                    // Handle this case
+                  }
+                  if (status.code() == 200) {
+                    pipeline.remove("codec");
+                    pipeline.remove(this);
+                    channelHandler.handle(Future.succeededFuture(ch));
+                  } else {
+                    // Handle this case
+                  }
+                }
+                super.channelRead(ctx, msg);
+              }
+            });
+          }
+        });
+        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, options.getProxyPort(), options.getProxyHost(), bootstrap);
+        future.addListener(res -> {
+          if (res.failed()) {
+            channelHandler.handle(Future.failedFuture(res.cause()));
+          } else {
+            FullHttpRequest req = new DefaultFullHttpRequest(
+                io.netty.handler.codec.http.HttpVersion.HTTP_1_0, HttpMethod.CONNECT,
+                host + ':' + port,
+                Unpooled.EMPTY_BUFFER, false);
+            req.headers().set(HttpHeaderNames.HOST, options.getProxyHost() + ':' + options.getProxyPort());
+            res.result().channel().writeAndFlush(req).addListener(f -> {
+              if (!f.isSuccess()) {
+                // Handle this case
+              }
+            });
+          }
+        });
+      } else {
+        bootstrap.handler(new ChannelInitializer<Channel>() {
+          @Override
+          protected void initChannel(Channel ch) throws Exception {
+            // Nothing to do but as we handle this in the channelHandler callback
+          }
+        });
+        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+        future.addListener(res -> {
+          if (res.succeeded()) {
+            channelHandler.handle(Future.succeededFuture(res.result().channel()));
+          } else {
+            channelHandler.handle(Future.failedFuture(res.cause()));
+          }
+        });
+      }
     }
 
     protected void internalConnect(HttpVersion version, String host, int port, Waiter waiter) {
@@ -307,19 +381,6 @@ public class ConnectionManager {
             });
           } else {
             if (options.isSsl()) {
-              final String proxyHost = options.getProxyHost();
-              final int proxyPort = options.getProxyPort();
-              if (proxyHost != null) {
-                log.debug("using proxy: " + proxyHost);
-                final String proxyUsername = options.getProxyUsername();
-                final String proxyPassword = options.getProxyPassword();
-                final InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
-                if (proxyUsername != null && proxyPassword != null) {
-                  pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword));
-                } else {
-                  pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr));
-                }
-              }
               pipeline.addLast("ssl", sslHelper.createSslHandler(vertx, host, port));
             }
             if (version == HttpVersion.HTTP_2) {
