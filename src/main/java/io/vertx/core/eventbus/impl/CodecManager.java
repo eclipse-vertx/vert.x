@@ -80,7 +80,10 @@ public class CodecManager {
     } else if (body instanceof Byte) {
       codec = BYTE_MESSAGE_CODEC;
     } else if (body instanceof ReplyException) {
-      codec = REPLY_EXCEPTION_MESSAGE_CODEC;
+      codec = defaultCodecMap.get(body.getClass());
+      if (codec == null) {
+        codec = REPLY_EXCEPTION_MESSAGE_CODEC;
+      }
     } else {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null) {
