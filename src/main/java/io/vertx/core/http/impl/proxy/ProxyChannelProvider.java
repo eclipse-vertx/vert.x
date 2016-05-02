@@ -18,6 +18,7 @@ import io.vertx.core.http.impl.ChannelProvider;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 /**
@@ -31,37 +32,44 @@ public class ProxyChannelProvider implements ChannelProvider {
     int proxyPort = options.getProxyPort();
     String proxyUsername = options.getProxyUsername();
     String proxyPassword = options.getProxyPassword();
-    InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
-    HttpProxyHandler proxy;
-    if (proxyUsername != null && proxyPassword != null) {
-      proxy = new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword);
-    } else {
-      proxy = new HttpProxyHandler(proxyAddr);
-    }
-    HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
-    bootstrap.handler(new ChannelInitializer<Channel>() {
-      @Override
-      protected void initChannel(Channel ch) throws Exception {
-        ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast("proxy", proxy);
-        pipeline.addLast("codec", codec);
-        pipeline.addLast(new ChannelInboundHandlerAdapter() {
+    vertx.resolveHostname(proxyHost, dnsRes -> {
+      if (dnsRes.succeeded()) {
+        InetAddress address = dnsRes.result();
+        InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
+        HttpProxyHandler proxy;
+        if (proxyUsername != null && proxyPassword != null) {
+          proxy = new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword);
+        } else {
+          proxy = new HttpProxyHandler(proxyAddr);
+        }
+        HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
+        bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override
-          public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-            if (evt instanceof ProxyConnectionEvent) {
-              pipeline.remove(proxy);
-              pipeline.remove(codec);
-              pipeline.remove(this);
-              channelHandler.handle(Future.succeededFuture(ch));
-            }
+          protected void initChannel(Channel ch) throws Exception {
+            ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("proxy", proxy);
+            pipeline.addLast("codec", codec);
+            pipeline.addLast(new ChannelInboundHandlerAdapter() {
+              @Override
+              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                if (evt instanceof ProxyConnectionEvent) {
+                  pipeline.remove(proxy);
+                  pipeline.remove(codec);
+                  pipeline.remove(this);
+                  channelHandler.handle(Future.succeededFuture(ch));
+                }
+              }
+            });
           }
         });
-      }
-    });
-    AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-    future.addListener(res -> {
-      if (res.failed()) {
-        channelHandler.handle(Future.failedFuture(res.cause()));
+        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+        future.addListener(res -> {
+          if (res.failed()) {
+            channelHandler.handle(Future.failedFuture(res.cause()));
+          }
+        });
+      } else {
+        channelHandler.handle(Future.failedFuture(dnsRes.cause()));
       }
     });
   }
