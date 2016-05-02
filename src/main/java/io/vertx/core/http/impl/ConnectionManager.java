@@ -17,47 +17,33 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.proxy.HttpProxyHandler;
-import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.AsciiString;
-import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.proxy.ProxyChannelProvider;
 import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -67,10 +53,7 @@ import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SSLHelper;
 
 import javax.net.ssl.SSLHandshakeException;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -267,67 +250,6 @@ public class ConnectionManager {
       }
     }
 
-    private void doConnect(EventLoop eventLoop, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.group(eventLoop);
-      bootstrap.channel(NioSocketChannel.class);
-      applyConnectionOptions(options, bootstrap);
-      if (options.getProxyHost() != null) {
-        bootstrap.handler(new ChannelInitializer<Channel>() {
-          @Override
-          protected void initChannel(Channel ch) throws Exception {
-            ChannelPipeline pipeline = ch.pipeline();
-            String proxyHost = options.getProxyHost();
-            int proxyPort = options.getProxyPort();
-            String proxyUsername = options.getProxyUsername();
-            String proxyPassword = options.getProxyPassword();
-            InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
-            HttpProxyHandler proxy;
-            if (proxyUsername != null && proxyPassword != null) {
-              proxy = new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword);
-            } else {
-              proxy = new HttpProxyHandler(proxyAddr);
-            }
-            HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
-            pipeline.addLast("proxy", proxy);
-            pipeline.addLast("codec", codec);
-            pipeline.addLast(new ChannelInboundHandlerAdapter() {
-              @Override
-              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                if (evt instanceof ProxyConnectionEvent) {
-                  pipeline.remove(proxy);
-                  pipeline.remove(codec);
-                  pipeline.remove(this);
-                  channelHandler.handle(Future.succeededFuture(ch));
-                }
-              }
-            });
-          }
-        });
-        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-        future.addListener(res -> {
-          if (res.failed()) {
-            channelHandler.handle(Future.failedFuture(res.cause()));
-          }
-        });
-      } else {
-        bootstrap.handler(new ChannelInitializer<Channel>() {
-          @Override
-          protected void initChannel(Channel ch) throws Exception {
-            // Nothing to do but as we handle this in the channelHandler callback
-          }
-        });
-        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-        future.addListener(res -> {
-          if (res.succeeded()) {
-            channelHandler.handle(Future.succeededFuture(res.result().channel()));
-          } else {
-            channelHandler.handle(Future.failedFuture(res.cause()));
-          }
-        });
-      }
-    }
-
     protected void internalConnect(HttpVersion version, String host, int port, Waiter waiter) {
       ContextImpl context;
       if (waiter.context == null) {
@@ -338,7 +260,37 @@ public class ConnectionManager {
       }
       sslHelper.validate(vertx);
 
-      doConnect(context.nettyEventLoop(), host, port, res -> {
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.group(context.nettyEventLoop());
+      bootstrap.channel(NioSocketChannel.class);
+      applyConnectionOptions(options, bootstrap);
+
+      //
+      ChannelProvider channelProvider;
+      if (options.getProxyHost() == null) {
+        channelProvider = new ChannelProvider() {
+          @Override
+          public void connect(VertxInternal vertx, Bootstrap bootstrap, HttpClientOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
+            bootstrap.handler(new ChannelInitializer<Channel>() {
+              @Override
+              protected void initChannel(Channel ch) throws Exception {
+              }
+            });
+            AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
+            future.addListener(res -> {
+              if (res.succeeded()) {
+                channelHandler.handle(Future.succeededFuture(res.result().channel()));
+              } else {
+                channelHandler.handle(Future.failedFuture(res.cause()));
+              }
+            });
+          }
+        };
+      } else {
+        channelProvider = new ProxyChannelProvider();
+      }
+
+      Handler<AsyncResult<Channel>> channelHandler = res -> {
 
         if (res.succeeded()) {
           Channel ch = res.result();
@@ -404,7 +356,7 @@ public class ConnectionManager {
               }
             } else {
               applyHttp1xConnectionOptions(pipeline, context);
-            } 
+            }
           }
 
           //
@@ -437,7 +389,16 @@ public class ConnectionManager {
         } else {
           connectionFailed(context, null, waiter::handleFailure, res.cause());
         }
-      });
+      };
+
+      try {
+        channelProvider.connect(vertx, bootstrap, options, host, port, channelHandler);
+      } catch (NoClassDefFoundError e) {
+        if (options.getProxyHost() != null && e.getMessage().contains("io/netty/handler/proxy")) {
+          log.warn("Depedency io.netty:netty-handler-proxy missing - check your classpath");
+          channelHandler.handle(Future.failedFuture(e));
+        }
+      }
     }
 
     private void handshakeFailure(ContextImpl context, Channel ch, Throwable cause, Waiter waiter) {

@@ -108,6 +108,7 @@
       <groupId>io.netty</groupId>
       <artifactId>netty-handler-proxy</artifactId>
       <version>${netty.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
