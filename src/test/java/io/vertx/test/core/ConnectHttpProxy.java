@@ -85,13 +85,13 @@ public class ConnectHttpProxy {
         NetSocket serverSocket = request.netSocket();
         NetClientOptions netOptions = new NetClientOptions();
         NetClient netClient = vertx.createNetClient(netOptions);
-        log.debug("connecting to " + host + ":" + port);
+        System.out.println("connecting to " + host + ":" + port);
         netClient.connect(port, host, result -> {
           if (result.succeeded()) {
-            log.debug("connected");
+            System.out.println("connected");
             NetSocket clientSocket = result.result();
             serverSocket.write("HTTP/1.0 200 Connection established\n\n");
-            log.debug("starting pumps");
+            System.out.println("starting pumps");
             serverSocket.closeHandler(v -> clientSocket.close());
             clientSocket.closeHandler(v -> serverSocket.close());
             Pump.pump(serverSocket, clientSocket).start();
@@ -103,7 +103,7 @@ public class ConnectHttpProxy {
       }
     });
     server.listen(server -> {
-      log.debug("proxy server started");
+      System.out.println("proxy server started");
       finishedHandler.handle(null);
     });
   }

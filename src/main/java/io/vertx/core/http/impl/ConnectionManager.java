@@ -20,12 +20,14 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -270,7 +272,6 @@ public class ConnectionManager {
       bootstrap.group(eventLoop);
       bootstrap.channel(NioSocketChannel.class);
       applyConnectionOptions(options, bootstrap);
-
       if (options.isSsl() && !options.isUseAlpn() && options.getProxyHost() != null) {
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override
@@ -278,59 +279,35 @@ public class ConnectionManager {
             ChannelPipeline pipeline = ch.pipeline();
             String proxyHost = options.getProxyHost();
             int proxyPort = options.getProxyPort();
-            log.debug("using proxy: " + proxyHost);
+            String proxyUsername = options.getProxyUsername();
+            String proxyPassword = options.getProxyPassword();
             InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
-            pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
+            HttpProxyHandler proxy;
+            if (proxyUsername != null && proxyPassword != null) {
+              proxy = new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword);
+            } else {
+              proxy = new HttpProxyHandler(proxyAddr);
+            }
+            HttpClientCodec codec = new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false);
+            pipeline.addLast("proxy", proxy);
+            pipeline.addLast("codec", codec);
             pipeline.addLast(new ChannelInboundHandlerAdapter() {
-              HttpResponseStatus status;
               @Override
-              public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                if (msg instanceof HttpResponse) {
-                  status = ((HttpResponse) msg).status();
-                }
-                if (msg instanceof LastHttpContent) {
-                  pipeline.remove("codec");
+              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                if (evt instanceof ProxyConnectionEvent) {
+                  pipeline.remove(proxy);
+                  pipeline.remove(codec);
                   pipeline.remove(this);
-                  if (status == null) {
-                    throw new VertxException("");
-                  } else {
-                    int sc = status.code();
-                    if (sc == 200) {
-                      channelHandler.handle(Future.succeededFuture(ch));
-                    } else {
-                      throw new VertxException("Could not connect " + sc);
-                    }
-                  }
+                  channelHandler.handle(Future.succeededFuture(ch));
                 }
-              }
-              @Override
-              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                channelHandler.handle(Future.failedFuture(cause));
               }
             });
           }
         });
-        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, options.getProxyPort(), options.getProxyHost(), bootstrap);
+        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
         future.addListener(res -> {
           if (res.failed()) {
             channelHandler.handle(Future.failedFuture(res.cause()));
-          } else {
-            FullHttpRequest req = new DefaultFullHttpRequest(
-                io.netty.handler.codec.http.HttpVersion.HTTP_1_0, HttpMethod.CONNECT,
-                host + ':' + port,
-                Unpooled.EMPTY_BUFFER, false);
-            req.headers().set(HttpHeaderNames.HOST, options.getProxyHost() + ':' + options.getProxyPort());
-            String proxyUsername = options.getProxyUsername();
-            String proxyPassword = options.getProxyPassword();
-            if (proxyUsername != null && proxyPassword != null) {
-              String authorization = "Basic " + new String(Base64.getEncoder().encode((proxyUsername + ':' + proxyPassword).getBytes(StandardCharsets.UTF_8)), StandardCharsets.US_ASCII);
-              req.headers().set(HttpHeaderNames.PROXY_AUTHORIZATION, authorization);
-            }
-            res.result().channel().writeAndFlush(req).addListener(f -> {
-              if (!f.isSuccess()) {
-                // Handle this case
-              }
-            });
           }
         });
       } else {
@@ -427,7 +404,7 @@ public class ConnectionManager {
               }
             } else {
               applyHttp1xConnectionOptions(pipeline, context);
-            }
+            } 
           }
 
           //
