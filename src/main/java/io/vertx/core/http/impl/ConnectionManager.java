@@ -52,6 +52,7 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
@@ -285,27 +286,26 @@ public class ConnectionManager {
               @Override
               public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                 if (msg instanceof HttpResponse) {
-                  if (status != null) {
-                    // Handle this case
-                  }
                   status = ((HttpResponse) msg).status();
                 }
                 if (msg instanceof LastHttpContent) {
+                  pipeline.remove("codec");
+                  pipeline.remove(this);
                   if (status == null) {
-                    // Handle this case
-                  }
-                  int sc = status.code();
-                  System.out.println("sc = " + sc);
-                  if (sc == 200) {
-                    pipeline.remove("codec");
-                    pipeline.remove(this);
-                    channelHandler.handle(Future.succeededFuture(ch));
+                    throw new VertxException("");
                   } else {
-                    channelHandler.handle(Future.failedFuture("Could not connect " + sc));
-                    // Handle this case
+                    int sc = status.code();
+                    if (sc == 200) {
+                      channelHandler.handle(Future.succeededFuture(ch));
+                    } else {
+                      throw new VertxException("Could not connect " + sc);
+                    }
                   }
                 }
-                super.channelRead(ctx, msg);
+              }
+              @Override
+              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                channelHandler.handle(Future.failedFuture(cause));
               }
             });
           }
