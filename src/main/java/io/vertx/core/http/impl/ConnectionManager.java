@@ -17,6 +17,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -46,6 +47,8 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.AsciiString;
+import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -62,7 +65,9 @@ import io.vertx.core.net.impl.SSLHelper;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -273,16 +278,7 @@ public class ConnectionManager {
             String proxyHost = options.getProxyHost();
             int proxyPort = options.getProxyPort();
             log.debug("using proxy: " + proxyHost);
-            String proxyUsername = options.getProxyUsername();
-            String proxyPassword = options.getProxyPassword();
             InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
-/*
-            if (proxyUsername != null && proxyPassword != null) {
-              pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword));
-            } else {
-              pipeline.addLast("proxy", new HttpProxyHandler(proxyAddr));
-            }
-*/
             pipeline.addLast("codec", new HttpClientCodec(4096, 8192, options.getMaxChunkSize(), false, false));
             pipeline.addLast(new ChannelInboundHandlerAdapter() {
               HttpResponseStatus status;
@@ -298,11 +294,14 @@ public class ConnectionManager {
                   if (status == null) {
                     // Handle this case
                   }
-                  if (status.code() == 200) {
+                  int sc = status.code();
+                  System.out.println("sc = " + sc);
+                  if (sc == 200) {
                     pipeline.remove("codec");
                     pipeline.remove(this);
                     channelHandler.handle(Future.succeededFuture(ch));
                   } else {
+                    channelHandler.handle(Future.failedFuture("Could not connect " + sc));
                     // Handle this case
                   }
                 }
@@ -321,6 +320,12 @@ public class ConnectionManager {
                 host + ':' + port,
                 Unpooled.EMPTY_BUFFER, false);
             req.headers().set(HttpHeaderNames.HOST, options.getProxyHost() + ':' + options.getProxyPort());
+            String proxyUsername = options.getProxyUsername();
+            String proxyPassword = options.getProxyPassword();
+            if (proxyUsername != null && proxyPassword != null) {
+              String authorization = "Basic " + new String(Base64.getEncoder().encode((proxyUsername + ':' + proxyPassword).getBytes(StandardCharsets.UTF_8)), StandardCharsets.US_ASCII);
+              req.headers().set(HttpHeaderNames.PROXY_AUTHORIZATION, authorization);
+            }
             res.result().channel().writeAndFlush(req).addListener(f -> {
               if (!f.isSuccess()) {
                 // Handle this case

@@ -674,6 +674,10 @@ Set whether pipe-lining is enabled on the client
 +++
 Set the protocol version.
 +++
+|[[proxyHost]]`proxyHost`|`String`|-
+|[[proxyPassword]]`proxyPassword`|`String`|-
+|[[proxyPort]]`proxyPort`|`Number (int)`|-
+|[[proxyUsername]]`proxyUsername`|`String`|-
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++
 Set the TCP receive buffer size
