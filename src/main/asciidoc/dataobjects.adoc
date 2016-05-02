@@ -268,6 +268,10 @@ Set the isolated class names.
 +++
 Set the isolation group that will be used when deploying the verticle(s)
 +++
+|[[maxWorkerExecuteTime]]`maxWorkerExecuteTime`|`Number (long)`|
++++
+Sets the value of max worker execute time, in ns.
++++
 |[[multiThreaded]]`multiThreaded`|`Boolean`|
 +++
 Set whether the verticle(s) should be deployed as a multi-threaded worker verticle
@@ -275,6 +279,15 @@ Set whether the verticle(s) should be deployed as a multi-threaded worker vertic
 |[[worker]]`worker`|`Boolean`|
 +++
 Set whether the verticle(s) should be deployed as a worker verticle
++++
+|[[workerPoolName]]`workerPoolName`|`String`|
++++
+Set the worker pool name to use for this verticle. When no name is set, the Vert.x
+ worker pool will be used, when a name is set, the verticle will use a named worker pool.
++++
+|[[workerPoolSize]]`workerPoolSize`|`Number (int)`|
++++
+Set the maximum number of worker threads to be used by the Vert.x instance.
 +++
 |===
 

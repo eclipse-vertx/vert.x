@@ -19,21 +19,19 @@ package io.vertx.core.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 
-import java.util.concurrent.Executor;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class MultiThreadedWorkerContext extends WorkerContext {
 
-  public MultiThreadedWorkerContext(VertxInternal vertx, Executor orderedInternalExec, Executor workerExec,
+  public MultiThreadedWorkerContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool,
                                     String deploymentID, JsonObject config, ClassLoader tccl) {
-    super(vertx, orderedInternalExec, workerExec, deploymentID, config, tccl);
+    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
   }
 
   @Override
   public void executeAsync(Handler<Void> task) {
-    workerExec.execute(wrapTask(null, task, false));
+    workerPool.executor().execute(wrapTask(null, task, false, workerPool.metrics()));
   }
 
   @Override

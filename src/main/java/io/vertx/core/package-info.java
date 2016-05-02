@@ -293,6 +293,37 @@
  *
  * A worker verticle is always executed with a thread from the worker pool.
  *
+ * By default blocking code is executed on the Vert.x blocking code pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
+ *
+ * Additional pools can be created for different purposes:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#workerExecutor1}
+ * ----
+ *
+ * The worker executor must be closed when it's not necessary anymore:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#workerExecutor2}
+ * ----
+ *
+ * When several workers are created with the same name, they will share the same pool. The worker pool is destroyed
+ * when all the worker executors using it are closed.
+ *
+ * When an executor is created in a Verticle, Vert.x will close it automatically for you when the Verticle
+ * is undeployed.
+ *
+ * Worker executors can be configured when created:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#workerExecutor3}
+ * ----
+ *
+ * NOTE: the configuration is set when the worker pool is created
+ *
  * == Async coordination
  *
  * Coordination of multiple asynchronous results can be achieved with Vert.x {@link io.vertx.core.Future futures}.
@@ -691,6 +722,18 @@
  *
  * If you're creating timers from inside verticles, those timers will be automatically closed
  * when the verticle is undeployed.
+ *
+ * === Verticle worker pool
+ *
+ * Verticle use the Vert.x worker pool for executing blocking actions, i.e {@link io.vertx.core.Context#executeBlocking} or
+ * worker verticle.
+ *
+ * A different worker pool can be specified in deployment options:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.CoreExamples#deployVerticleWithDifferentWorkerPool}
+ * ----
  *
  * [[event_bus]]
  * include::eventbus.adoc[]

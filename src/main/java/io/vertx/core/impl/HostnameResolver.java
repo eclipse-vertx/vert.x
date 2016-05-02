@@ -45,7 +45,7 @@ public class HostnameResolver {
   private final InetNameResolver resolver;
 
   public HostnameResolver(VertxImpl vertx, HostnameResolverOptions options) {
-    DnsNameResolverBuilder builder = new DnsNameResolverBuilder(vertx.createEventLoopContext(null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
+    DnsNameResolverBuilder builder = new DnsNameResolverBuilder(vertx.createEventLoopContext(null, null, new JsonObject(), Thread.currentThread().getContextClassLoader()).nettyEventLoop());
     builder.channelFactory(NioDatagramChannel::new);
     if (options != null) {
       List<String> dnsServers = options.getServers();

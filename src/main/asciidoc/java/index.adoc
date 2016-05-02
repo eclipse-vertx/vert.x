@@ -291,6 +291,49 @@ An alternative way to run blocking code is to use a <<worker_verticles, worker v
 
 A worker verticle is always executed with a thread from the worker pool.
 
+By default blocking code is executed on the Vert.x blocking code pool, configured with `link:../../apidocs/io/vertx/core/VertxOptions.html#setWorkerPoolSize-int-[setWorkerPoolSize]`.
+
+Additional pools can be created for different purposes:
+
+[source,java]
+----
+WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool");
+executor.executeBlocking(future -> {
+  // Call some blocking API that takes a significant amount of time to return
+  String result = someAPI.blockingMethod("hello");
+  future.complete(result);
+}, res -> {
+  System.out.println("The result is: " + res.result());
+});
+----
+
+The worker executor must be closed when it's not necessary anymore:
+
+[source,java]
+----
+executor.close();
+----
+
+When several workers are created with the same name, they will share the same pool. The worker pool is destroyed
+when all the worker executors using it are closed.
+
+When an executor is created in a Verticle, Vert.x will close it automatically for you when the Verticle
+is undeployed.
+
+Worker executors can be configured when created:
+
+[source,java]
+----
+int poolSize = 10;
+
+// 2 minutes
+long maxExecuteTime = 120000;
+
+WorkerExecutor executor = vertx.createWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime);
+----
+
+NOTE: the configuration is set when the worker pool is created
+
 == Async coordination
 
 Coordination of multiple asynchronous results can be achieved with Vert.x `link:../../apidocs/io/vertx/core/Future.html[futures]`.
@@ -772,6 +815,18 @@ vertx.cancelTimer(timerID);
 
 If you're creating timers from inside verticles, those timers will be automatically closed
 when the verticle is undeployed.
+
+=== Verticle worker pool
+
+Verticle use the Vert.x worker pool for executing blocking actions, i.e `link:../../apidocs/io/vertx/core/Context.html#executeBlocking-io.vertx.core.Handler-boolean-io.vertx.core.Handler-[executeBlocking]` or
+worker verticle.
+
+A different worker pool can be specified in deployment options:
+
+[source,java]
+----
+vertx.deployVerticle("the-verticle", new DeploymentOptions().setWorkerPoolName("the-specific-pool"));
+----
 
 [[event_bus]]
 include::eventbus.adoc[]
