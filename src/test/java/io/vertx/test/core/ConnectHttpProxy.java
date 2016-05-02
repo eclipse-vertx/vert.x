@@ -7,8 +7,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -28,12 +26,13 @@ import io.vertx.core.streams.Pump;
  */
 public class ConnectHttpProxy {
 
-  private static final Logger log = LoggerFactory.getLogger(ConnectHttpProxy.class);
+  private final String username;
+  private HttpServer server;
+  private String lastUri;
 
-  private HttpServer server = null;
-  private String user = null;
-
-  private String lastUri = null;
+  public ConnectHttpProxy(String username) {
+    this.username = username;
+  }
 
   /**
    * check the last accessed host:ip
@@ -48,8 +47,6 @@ public class ConnectHttpProxy {
    * 
    * @param vertx
    *          Vertx instance to use for creating the server and client
-   * @param user
-   *          user/password to be checked for Basic Auth (for testing username and password are required to be the same)
    * @param finishedHandler
    *          will be called when the start has started
    */
@@ -60,12 +57,10 @@ public class ConnectHttpProxy {
     server.requestHandler(request -> {
       HttpMethod method = request.method();
       String uri = request.uri();
-      log.debug("uri:" + uri);
-      if (user  != null) {
+      if (username  != null) {
         String auth = request.getHeader("Proxy-Authorization");
-        String expected = "Basic " + Base64.getEncoder().encodeToString((user + ":" + user).getBytes());
+        String expected = "Basic " + Base64.getEncoder().encodeToString((username + ":" + username).getBytes());
         if (auth == null || !auth.equals(expected)) {
-          log.debug("authentication failed: " + auth + "/" + expected);
           request.response().setStatusCode(407).end("proxy authentication failed");
           return;
         }
@@ -85,13 +80,10 @@ public class ConnectHttpProxy {
         NetSocket serverSocket = request.netSocket();
         NetClientOptions netOptions = new NetClientOptions();
         NetClient netClient = vertx.createNetClient(netOptions);
-        System.out.println("connecting to " + host + ":" + port);
         netClient.connect(port, host, result -> {
           if (result.succeeded()) {
-            System.out.println("connected");
             NetSocket clientSocket = result.result();
             serverSocket.write("HTTP/1.0 200 Connection established\n\n");
-            System.out.println("starting pumps");
             serverSocket.closeHandler(v -> clientSocket.close());
             clientSocket.closeHandler(v -> serverSocket.close());
             Pump.pump(serverSocket, clientSocket).start();
@@ -103,7 +95,6 @@ public class ConnectHttpProxy {
       }
     });
     server.listen(server -> {
-      System.out.println("proxy server started");
       finishedHandler.handle(null);
     });
   }
@@ -115,17 +106,8 @@ public class ConnectHttpProxy {
    */
   public void stop() {
     if (server != null) {
-      log.debug("stopping proxy server");
       server.close();
       server = null;
     }
   }
-
-  /**
-   * @param object
-   */
-  public void setUsername(String username) {
-    this.user = username;
-  }
-
 }

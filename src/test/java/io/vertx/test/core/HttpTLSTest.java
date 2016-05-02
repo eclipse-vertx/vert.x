@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -39,6 +40,22 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
+  private ConnectHttpProxy proxy;
+
+  @Override
+  protected void tearDown() throws Exception {
+    if (proxy != null) {
+      proxy.stop();
+    }
+    super.tearDown();
+  }
+
+  private void startProxy(String username) throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    proxy = new ConnectHttpProxy(username);
+    proxy.start(vertx, v -> latch.countDown());
+    awaitLatch(latch);
+  }
 
   @Test
   // Client trusts all server certs
@@ -687,5 +704,30 @@ public abstract class HttpTLSTest extends HttpTestBase {
       assertNotNull(e.getCause());
       assertEquals(NoSuchFileException.class, e.getCause().getCause().getClass());
     }
+  }
+
+  @Test
+  // Access https server via connect proxy
+  public void testHttpsProxy() throws Exception {
+    startProxy(null);
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().pass();
+    // check that the connection did in fact go through the proxy
+    assertNotNull(proxy.getLastUri());
+  }
+
+  @Test
+  // Check that proxy auth fails if it is missing
+  public void testHttpsProxyAuthFail() throws Exception {
+    startProxy("username");
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().fail();
+  }
+
+  @Test
+  // Access https server via connect proxy with proxy auth required
+  public void testHttpsProxyAuth() throws Exception {
+    startProxy("username");
+    testTLS(TLSCert.NONE, TLSCert.JKS, TLSCert.JKS, TLSCert.NONE).useProxy().useProxyAuth().pass();
+    // check that the connection did in fact go through the proxy
+    assertNotNull(proxy.getLastUri());
   }
 }

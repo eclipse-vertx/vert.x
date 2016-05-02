@@ -272,7 +272,7 @@ public class ConnectionManager {
       bootstrap.group(eventLoop);
       bootstrap.channel(NioSocketChannel.class);
       applyConnectionOptions(options, bootstrap);
-      if (options.isSsl() && !options.isUseAlpn() && options.getProxyHost() != null) {
+      if (options.getProxyHost() != null) {
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
