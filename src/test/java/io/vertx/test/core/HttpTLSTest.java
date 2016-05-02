@@ -284,6 +284,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   class TLSTest {
 
+    HttpVersion version;
     TLSCert clientCert;
     TLSCert clientTrust;
     TLSCert serverCert;
@@ -306,10 +307,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
 
     public TLSTest(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) {
+      this.version = HttpVersion.HTTP_1_1;
       this.clientCert = clientCert;
       this.clientTrust = clientTrust;
       this.serverCert = serverCert;
       this.serverTrust = serverTrust;
+    }
+
+    TLSTest version(HttpVersion version) {
+      this.version = version;
+      return this;
     }
 
     TLSTest requiresClientAuth() {
@@ -398,6 +405,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     void run(boolean shouldPass) {
       server.close();
       HttpClientOptions options = new HttpClientOptions();
+      options.setProtocolVersion(version);
       options.setSsl(true);
       if (clientTrustAll) {
         options.setTrustAll(true);
@@ -455,6 +463,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       server = createHttpServer(serverOptions.setPort(4043));
       server.requestHandler(req -> {
+        assertEquals(version, req.version());
         req.bodyHandler(buffer -> {
           assertEquals(true, req.isSSL());
           assertEquals("foo", buffer.toString());
