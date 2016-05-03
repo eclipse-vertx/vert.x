@@ -686,6 +686,14 @@ public class HTTPExamples {
 
   }
 
+  public void example58(Vertx vertx) {
+
+    HttpClientOptions options = new HttpClientOptions().setProxyHost("localhost").setProxyPort(3128);
+    options.setProxyUsername("username").setProxyPassword("secret");
+    HttpClient client = vertx.createHttpClient(options);
+
+  }
+
   public void serversharing(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       request.response().end("Hello from server " + this);
