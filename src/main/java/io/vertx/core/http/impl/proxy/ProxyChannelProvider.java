@@ -16,7 +16,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.ChannelProvider;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.AsyncResolveBindConnectHelper;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -25,6 +26,8 @@ import java.net.InetSocketAddress;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class ProxyChannelProvider implements ChannelProvider {
+
+  static private Logger log = LoggerFactory.getLogger(ProxyChannelProvider.class);
 
   @Override
   public void connect(VertxInternal vertx, Bootstrap bootstrap, HttpClientOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
@@ -62,10 +65,12 @@ public class ProxyChannelProvider implements ChannelProvider {
             });
           }
         });
-        AsyncResolveBindConnectHelper<ChannelFuture> future = AsyncResolveBindConnectHelper.doConnect(vertx, port, host, bootstrap);
-        future.addListener(res -> {
-          if (res.failed()) {
-            channelHandler.handle(Future.failedFuture(res.cause()));
+        log.info("NotResolve "+host+":"+port);
+        InetSocketAddress t = InetSocketAddress.createUnresolved(host, port);
+        ChannelFuture future1 = bootstrap.connect(t);
+        future1.addListener(f -> {
+          if (!f.isSuccess()) {
+            channelHandler.handle(Future.failedFuture(f.cause()));
           }
         });
       } else {
