@@ -546,7 +546,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set the HTTP/2 connection settings immediatly sent by to the server when the client connects.
+   * Set the HTTP/2 connection settings immediately sent by to the server when the client connects.
    *
    * @param settings the settings value
    * @return a reference to this, so the API can be used fluently
@@ -567,7 +567,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiatiation. When
+   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiation. When
    * the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}
    */
   public List<HttpVersion> getAlpnVersions() {
@@ -575,7 +575,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
    * When the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}:
    *
    * <ul>
@@ -610,38 +610,82 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * Set proxy hostname for ssl connections via CONNECT proxy (e.g. Squid).
+   *
+   * @param proxyHost proxy hostname to use for ssl connections
+   * @return a reference to this, so the API can be used fluently
+   */
   public HttpClientOptions setProxyHost(String proxyHost) {
     this.proxyHost = proxyHost;
     return this;
   }
 
+  /**
+   * Get proxy hostname for ssl connections
+   *
+   * @return proxy hostname
+   */
   public String getProxyHost() {
     return proxyHost;
   }
 
+  /**
+   * Set proxy port for ssl connections
+   *
+   * @param proxyPort proxy port to use for ssl connections
+   * @return a reference to this, so the API can be used fluently
+   */
   public HttpClientOptions setProxyPort(int proxyPort) {
     this.proxyPort = proxyPort;
     return this;
   }
 
+  /**
+   * Get proxy port for ssl connections
+   *
+   * @return proxy port
+   */
   public int getProxyPort() {
     return proxyPort;
   }
 
+  /**
+   * Set proxy username for ssl connections
+   *
+   * @param proxyUsername username for Proxy Authentication header
+   * @return a reference to this, so the API can be used fluently
+   */
   public HttpClientOptions setProxyUsername(String proxyUsername) {
     this.proxyUsername = proxyUsername;
     return this;
   }
 
+  /**
+   * Get proxy username for ssl connections
+   *
+   * @return proxy username
+   */
   public String getProxyUsername() {
     return proxyUsername;
   }
 
+  /**
+   * Set proxy password for ssl connections
+   *
+   * @param proxyPassword password for Proxy Authentication header
+   * @return a reference to this, so the API can be used fluently
+   */
   public HttpClientOptions setProxyPassword(String proxyPassword) {
     this.proxyPassword = proxyPassword;
     return this;
   }
 
+  /**
+   * Get proxy password for ssl connections
+   *
+   * @return proxy password
+   */
   public String getProxyPassword() {
     return proxyPassword;
   }

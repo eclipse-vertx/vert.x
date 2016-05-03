@@ -1527,6 +1527,21 @@
  * When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
  * used with binary frames that are no split over multiple frames.
  *
+ * === Using a HTTP proxy for HTTPS connections
+ *
+ * The http client supports accessing https server via a HTTPS proxy (HTTP CONNECT method), e.g. Squid. This is supported
+ * for HTTP/1.x and HTTP/2.
+ *
+ * The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting hostname, port and optionally
+ * username and password. 
+ *
+ * Here's an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example58}
+ * ----
+ *
  * === Automatic clean-up in verticles
  *
  * If you're creating http servers and clients from inside verticles, those servers and clients will be automatically closed
