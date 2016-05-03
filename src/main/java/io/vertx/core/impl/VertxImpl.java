@@ -106,7 +106,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private EventBus eventBus;
   private HAManager haManager;
   private boolean closed;
-  private Handler<Throwable> exceptionHandler;
+  private volatile Handler<Throwable> exceptionHandler;
   private final Map<String, SharedWorkerPool> namedWorkerPools;
   private final int defaultWorkerPoolSize;
   private final long defaultWorkerMaxExecTime;

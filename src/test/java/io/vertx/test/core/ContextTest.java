@@ -220,11 +220,11 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testDefaultContextExceptionHandler() {
     RuntimeException failure = new RuntimeException();
+    Context context = vertx.getOrCreateContext();
     vertx.exceptionHandler(err -> {
       assertSame(failure, err);
       testComplete();
     });
-    Context context = vertx.getOrCreateContext();
     context.runOnContext(v -> {
       throw failure;
     });

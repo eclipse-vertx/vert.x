@@ -77,7 +77,6 @@ public abstract class ContextImpl implements ContextInternal {
     }
     this.tccl = tccl;
     this.owner = vertx;
-    this.exceptionHandler = vertx.exceptionHandler();
     this.workerPool = workerPool;
     this.internalBlockingPool = internalBlockingPool;
     this.orderedInternalPoolExec = internalBlockingPool.createOrderedExecutor();
@@ -359,6 +358,9 @@ public abstract class ContextImpl implements ContextInternal {
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
         Handler<Throwable> handler = this.exceptionHandler;
+        if (handler == null) {
+          handler = owner.exceptionHandler();
+        }
         if (handler != null) {
           handler.handle(t);
         }
