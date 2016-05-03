@@ -273,7 +273,8 @@
               <vertx.handle100Continue>true</vertx.handle100Continue>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
-            <argLine>-Xmx1200M @{surefireArgLine} -javaagent:${jetty.alpnAgent.path}</argLine>
+            <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
+            <argLine>-Xmx1200M -javaagent:${jetty.alpnAgent.path}</argLine>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
           </configuration>
@@ -470,7 +471,7 @@
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-surefire-plugin</artifactId>
               <configuration>
-                <argLine>-Xmx1200M @{surefireArgLine}</argLine>
+                <argLine>-Xmx1200M @{surefireArgLine} -javaagent:${jetty.alpnAgent.path}</argLine>
               </configuration>
             </plugin>
           </plugins>
