@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +37,11 @@ public class BareCommandTest extends CommandTestBase {
 
     FakeClusterManager.reset();
 
+  }
+
+  protected void waitUntil(BooleanSupplier supplier) {
+    // Extend to 20 seconds for CI
+    waitUntil(supplier, 20000);
   }
 
   public void assertThatVertxInstanceHasBeenCreated() {
