@@ -56,11 +56,14 @@ public interface WorkerExecutor {
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
-  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+  default <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(blockingCodeHandler, true, resultHandler);
+  }
 
   /**
    * Close the executor.
    */
-  void close();
+  default void close() {
+  }
 
 }

@@ -21,7 +21,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.ContextImpl;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.ContextInternal;
 import org.junit.Test;
 
@@ -319,6 +319,30 @@ public class ContextTest extends VertxTestBase {
     }, new DeploymentOptions().setWorker(worker));
     awaitLatch(latch3);
     latch2.countDown();
+    await();
+  }
+
+  @Test
+  public void testContextInternalCreateWorkerExecutor() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    WorkerExecutor executor1 = context.createWorkerExecutor();
+    WorkerExecutor executor2 = context.createWorkerExecutor();
+    executor1.executeBlocking(fut1 -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      executor2.executeBlocking(fut2 -> {
+        fut2.complete();
+      }, ar -> {
+        latch.countDown();
+      });
+      try {
+        awaitLatch(latch);
+      } catch (InterruptedException e) {
+        fail(e);
+      }
+      fut1.complete();
+    }, ar -> {
+      testComplete();
+    });
     await();
   }
 }

@@ -52,7 +52,7 @@ public class OrderedExecutorFactory {
    *
    * @return an ordered executor
    */
-  public Executor getExecutor() {
+  public OrderedExecutor getExecutor() {
     return new OrderedExecutor(parent);
   }
 

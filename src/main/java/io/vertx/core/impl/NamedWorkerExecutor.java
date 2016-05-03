@@ -51,10 +51,6 @@ class NamedWorkerExecutor implements WorkerExecutor, Closeable {
     context.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? workerExec : pool.executor(), pool.metrics());
   }
 
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
-    executeBlocking(blockingCodeHandler, true, asyncResultHandler);
-  }
-
   @Override
   public void close() {
     synchronized (this) {

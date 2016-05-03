@@ -125,6 +125,17 @@ public abstract class ContextImpl implements ContextInternal {
     }
   }
 
+  @Override
+  public WorkerExecutor createWorkerExecutor() {
+    Executor orderedExecutor = workerPool.createOrderedExecutor();
+    return new WorkerExecutor() {
+      @Override
+      public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
+        ContextImpl.this.executeBlocking(null, blockingCodeHandler, asyncResultHandler, ordered ? orderedExecutor :  workerPool.executor(), workerPool.metrics());
+      }
+    };
+  }
+
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
     if (closeHooksRun) {
       // Sanity check
