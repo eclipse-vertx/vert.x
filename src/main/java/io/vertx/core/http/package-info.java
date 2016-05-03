@@ -569,7 +569,7 @@
  * of frames to be sent and received.
  *
  * To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeFrame} on the response.
- * Here’s an example:
+ * Here's an example:
  *
  * [source,$lang]
  * ----
@@ -913,7 +913,7 @@
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
  * of frames to be sent and received.
  *
- * To send such frames, you can use the {@link io.vertx.core.http.HttpClientRequest#write} on the request. Here’s an example:
+ * To send such frames, you can use the {@link io.vertx.core.http.HttpClientRequest#write} on the request. Here's an example:
  *
  * [source,$lang]
  * ----
@@ -1103,7 +1103,7 @@
  * frames to be sent and received.
  *
  * To receive unknown frames, you can use the unknownFrameHandler on the request, this will get called every time an unknown
- * frame arrives. Here’s an example:
+ * frame arrives. Here's an example:
  *
  * [source,$lang]
  * ----
