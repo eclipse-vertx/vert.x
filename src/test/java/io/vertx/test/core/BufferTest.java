@@ -26,17 +26,15 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
-import static io.vertx.test.core.TestUtils.assertIndexOutOfBoundsException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static io.vertx.test.core.TestUtils.*;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class BufferTest {
+
+  private static final int MEDIUM_MAX_VALUE = 2 << 23;
 
   @Test
   public void testConstructorArguments() throws Exception {
@@ -169,10 +167,30 @@ public class BufferTest {
   }
 
   @Test
+  public void testAppendShort() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    b.appendShort(Short.MAX_VALUE);
+    assertEquals(102, b.length());
+    b.appendShortLE(Short.MAX_VALUE);
+    assertEquals(104, b.length());
+  }
+
+  @Test
   public void testAppendUnsignedShort() {
     Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
     b.appendUnsignedShort(Short.MAX_VALUE + Short.MAX_VALUE / 2);
     assertEquals(102, b.length());
+    b.appendUnsignedShortLE(Short.MAX_VALUE + Short.MAX_VALUE / 2);
+    assertEquals(104, b.length());
+  }
+
+  @Test
+  public void testAppendInt() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    b.appendInt(Integer.MAX_VALUE);
+    assertEquals(104, b.length());
+    b.appendIntLE(Integer.MAX_VALUE);
+    assertEquals(108, b.length());
   }
 
   @Test
@@ -180,6 +198,26 @@ public class BufferTest {
     Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
     b.appendUnsignedInt(Integer.MAX_VALUE + (long) Integer.MAX_VALUE / 2);
     assertEquals(104, b.length());
+    b.appendUnsignedIntLE(Integer.MAX_VALUE + (long) Integer.MAX_VALUE / 2);
+    assertEquals(108, b.length());
+  }
+
+  @Test
+  public void testAppendMedium() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    b.appendMedium(MEDIUM_MAX_VALUE);
+    assertEquals(103, b.length());
+    b.appendMediumLE(MEDIUM_MAX_VALUE);
+    assertEquals(106, b.length());
+  }
+
+  @Test
+  public void testAppendLong() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    b.appendLong(Long.MAX_VALUE);
+    assertEquals(108, b.length());
+    b.appendLongLE(Long.MAX_VALUE);
+    assertEquals(116, b.length());
   }
 
   @Test
@@ -202,6 +240,24 @@ public class BufferTest {
   @Test
   public void testAppendString2() throws Exception {
     //TODO
+  }
+
+  @Test
+  public void testLE() {
+    checkBEAndLE(2, Buffer.buffer().appendShort(Short.MAX_VALUE), Buffer.buffer().appendShortLE(Short.MAX_VALUE));
+    checkBEAndLE(2, Buffer.buffer().appendUnsignedShort(Short.MAX_VALUE), Buffer.buffer().appendUnsignedShortLE(Short.MAX_VALUE));
+    checkBEAndLE(3, Buffer.buffer().appendMedium(Integer.MAX_VALUE / 2), Buffer.buffer().appendMediumLE(Integer.MAX_VALUE / 2));
+    checkBEAndLE(4, Buffer.buffer().appendInt(Integer.MAX_VALUE), Buffer.buffer().appendIntLE(Integer.MAX_VALUE));
+    checkBEAndLE(4, Buffer.buffer().appendUnsignedInt(Integer.MAX_VALUE), Buffer.buffer().appendUnsignedIntLE(Integer.MAX_VALUE));
+    checkBEAndLE(8, Buffer.buffer().appendLong(Long.MAX_VALUE), Buffer.buffer().appendLongLE(Long.MAX_VALUE));
+  }
+
+  private void checkBEAndLE(int size, Buffer big, Buffer little) {
+    for (int i = 0; i < size; i++) {
+      byte bigByte = big.getByte(i);
+      byte littleByte = little.getByte(size - 1 - i);
+      assertEquals(bigByte, littleByte);
+    }
   }
 
   @Test
@@ -294,43 +350,156 @@ public class BufferTest {
     }
   }
 
-  @Test
-  public void testGetInt() throws Exception {
+  private void testGetSetInt(boolean isLE) throws Exception {
     int numInts = 100;
     Buffer b = Buffer.buffer(numInts * 4);
     for (int i = 0; i < numInts; i++) {
-      b.setInt(i * 4, i);
+      if (isLE) {
+        b.setIntLE(i * 4, i);
+      } else {
+        b.setInt(i * 4, i);
+      }
     }
 
     for (int i = 0; i < numInts; i++) {
-      assertEquals(i, b.getInt(i * 4));
+      if (isLE) {
+        assertEquals(i, b.getIntLE(i * 4));
+      } else {
+        assertEquals(i, b.getInt(i * 4));
+      }
+    }
+  }
+
+  @Test
+  public void testGetInt() throws Exception {
+    testGetSetInt(false);
+  }
+
+  @Test
+  public void testGetIntLE() throws Exception {
+    testGetSetInt(true);
+  }
+
+  private void testGetSetUnsignedInt(boolean isLE) throws Exception {
+    int numInts = 100;
+    Buffer b = Buffer.buffer(numInts * 4);
+    for (int i = 0; i < numInts; i++) {
+      if (isLE) {
+        b.setUnsignedIntLE(i * 4, (int) (Integer.MAX_VALUE + (long) i));
+      } else {
+        b.setUnsignedInt(i * 4, (int) (Integer.MAX_VALUE + (long) i));
+      }
+    }
+
+    for (int i = 0; i < numInts; i++) {
+      if (isLE) {
+        assertEquals(Integer.toUnsignedLong(Integer.MAX_VALUE + i), b.getUnsignedIntLE(i * 4));
+      } else {
+        assertEquals(Integer.toUnsignedLong(Integer.MAX_VALUE + i), b.getUnsignedInt(i * 4));
+      }
     }
   }
 
   @Test
   public void testGetUnsignedInt() throws Exception {
+    testGetSetUnsignedInt(false);
+  }
+
+  @Test
+  public void testGetUnsignedIntLE() throws Exception {
+    testGetSetUnsignedInt(true);
+  }
+
+  private void testGetSetMedium(boolean isLE) throws Exception {
     int numInts = 100;
-    Buffer b = Buffer.buffer(numInts * 4);
+    Buffer b = Buffer.buffer(numInts * 3);
     for (int i = 0; i < numInts; i++) {
-      b.setInt(i * 4, (int) (Integer.MAX_VALUE + (long) i));
+      if (isLE) {
+        b.setMediumLE(i * 3, MEDIUM_MAX_VALUE + i);
+      } else {
+        b.setMedium(i * 3, MEDIUM_MAX_VALUE + i);
+      }
     }
 
     for (int i = 0; i < numInts; i++) {
-      assertEquals(Integer.toUnsignedLong(Integer.MAX_VALUE + i), b.getUnsignedInt(i * 4));
+      if (isLE) {
+        assertEquals((MEDIUM_MAX_VALUE + i - MEDIUM_MAX_VALUE), b.getMediumLE(i * 3));
+      } else {
+        assertEquals((MEDIUM_MAX_VALUE + i - MEDIUM_MAX_VALUE), b.getMedium(i * 3));
+      }
+    }
+  }
+
+  @Test
+  public void testGetMedium() throws Exception {
+    testGetSetMedium(false);
+  }
+
+  @Test
+  public void testGetMediumLE() throws Exception {
+    testGetSetMedium(true);
+  }
+
+  private void testGetSetUnsignedMedium(boolean isLE) throws Exception {
+    int numInts = 100;
+    int MEDIUM_MAX_VALUE = BufferTest.MEDIUM_MAX_VALUE - numInts;
+    Buffer b = Buffer.buffer(numInts * 3);
+    for (int i = 0; i < numInts; i++) {
+      if (isLE) {
+        b.setMediumLE(i * 3, (MEDIUM_MAX_VALUE + i));
+      } else {
+        b.setMedium(i * 3, (MEDIUM_MAX_VALUE + i));
+      }
+    }
+
+    for (int i = 0; i < numInts; i++) {
+      if (isLE) {
+        assertEquals(Integer.toUnsignedLong(MEDIUM_MAX_VALUE + i), b.getUnsignedMediumLE(i * 3));
+      } else {
+        assertEquals(Integer.toUnsignedLong(MEDIUM_MAX_VALUE + i), b.getUnsignedMedium(i * 3));
+      }
+    }
+  }
+
+  @Test
+  public void testGetUnsignedMedium() throws Exception {
+    testGetSetUnsignedMedium(false);
+  }
+
+  @Test
+  public void testGetUnsignedMediumLE() throws Exception {
+    testGetSetUnsignedMedium(true);
+  }
+
+
+  private void testGetSetLong(boolean isLE) throws Exception {
+    int numLongs = 100;
+    Buffer b = Buffer.buffer(numLongs * 8);
+    for (int i = 0; i < numLongs; i++) {
+      if (isLE) {
+        b.setLongLE(i * 8, i);
+      } else {
+        b.setLong(i * 8, i);
+      }
+    }
+
+    for (int i = 0; i < numLongs; i++) {
+      if (isLE) {
+        assertEquals(i, b.getLongLE(i * 8));
+      } else {
+        assertEquals(i, b.getLong(i * 8));
+      }
     }
   }
 
   @Test
   public void testGetLong() throws Exception {
-    int numLongs = 100;
-    Buffer b = Buffer.buffer(numLongs * 8);
-    for (int i = 0; i < numLongs; i++) {
-      b.setLong(i * 8, i);
-    }
+    testGetSetLong(false);
+  }
 
-    for (int i = 0; i < numLongs; i++) {
-      assertEquals(i, b.getLong(i * 8));
-    }
+  @Test
+  public void testGetLongLE() throws Exception {
+    testGetSetLong(true);
   }
 
   @Test
@@ -359,30 +528,64 @@ public class BufferTest {
     }
   }
 
-  @Test
-  public void testGetShort() throws Exception {
+  private void testGetSetShort(boolean isLE) throws Exception {
     int numShorts = 100;
     Buffer b = Buffer.buffer(numShorts * 2);
     for (short i = 0; i < numShorts; i++) {
-      b.setShort(i * 2, i);
+      if (isLE) {
+        b.setShortLE(i * 2, i);
+      } else {
+        b.setShort(i * 2, i);
+      }
     }
 
     for (short i = 0; i < numShorts; i++) {
-      assertEquals(i, b.getShort(i * 2));
+      if (isLE) {
+        assertEquals(i, b.getShortLE(i * 2));
+      } else {
+        assertEquals(i, b.getShort(i * 2));
+      }
+    }
+  }
+
+  @Test
+  public void testGetShort() throws Exception {
+    testGetSetShort(false);
+  }
+
+  @Test
+  public void testGetShortLE() throws Exception {
+    testGetSetShort(true);
+  }
+
+  private void testGetSetUnsignedShort(boolean isLE) throws Exception {
+    int numShorts = 100;
+    Buffer b = Buffer.buffer(numShorts * 2);
+    for (short i = 0; i < numShorts; i++) {
+      if (isLE) {
+        b.setUnsignedShortLE(i * 2, (short) (Short.MAX_VALUE + (int) i));
+      } else {
+        b.setUnsignedShort(i * 2, (short) (Short.MAX_VALUE + (int) i));
+      }
+    }
+
+    for (short i = 0; i < numShorts; i++) {
+      if (isLE) {
+        assertEquals(Integer.toUnsignedLong(Short.MAX_VALUE + i), b.getUnsignedShortLE(i * 2));
+      } else {
+        assertEquals(Integer.toUnsignedLong(Short.MAX_VALUE + i), b.getUnsignedShort(i * 2));
+      }
     }
   }
 
   @Test
   public void testGetUnsignedShort() throws Exception {
-    int numShorts = 100;
-    Buffer b = Buffer.buffer(numShorts * 2);
-    for (short i = 0; i < numShorts; i++) {
-      b.setShort(i * 2, (short) (Short.MAX_VALUE + (int) i));
-    }
+    testGetSetUnsignedShort(false);
+  }
 
-    for (short i = 0; i < numShorts; i++) {
-      assertEquals(Integer.toUnsignedLong(Short.MAX_VALUE + i), b.getUnsignedShort(i * 2));
-    }
+  @Test
+  public void testGetUnsignedShortLE() throws Exception {
+    testGetSetUnsignedShort(true);
   }
 
   @Test
