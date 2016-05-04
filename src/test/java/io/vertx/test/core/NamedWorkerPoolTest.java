@@ -25,7 +25,9 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -163,7 +165,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testDestroyWorkerPoolWhenVerticleUndeploys() throws Exception {
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     AtomicReference<Thread> thread = new AtomicReference<>();
-    AtomicReference<String> deployment = new AtomicReference<>();
+    CompletableFuture<String> deploymentIdRef = new CompletableFuture<>();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -173,9 +175,10 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         }, ar -> {
         });
       }
-    }, onSuccess(deployment::set));
+    }, onSuccess(deploymentIdRef::complete));
     waitUntil(() -> thread.get() != null);
-    vertx.undeploy(deployment.get(), onSuccess(v -> {}));
+    String deploymentId = deploymentIdRef.get(20, TimeUnit.SECONDS);
+    vertx.undeploy(deploymentId, onSuccess(v -> {}));
     waitUntil(() -> thread.get().getState() == Thread.State.TERMINATED);
   }
 
