@@ -588,7 +588,7 @@ Set the  HTTP/2 setting
 ^|Name | Type ^| Description
 |[[alpnVersions]]`alpnVersions`|`Array of link:enums.html#HttpVersion[HttpVersion]`|
 +++
-Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
  When the list is empty, the client provides a best effort list according to link:
 
  <ul>
@@ -636,7 +636,7 @@ Set the idle timeout, in seconds. zero means don't timeout.
 +++
 |[[initialSettings]]`initialSettings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|
 +++
-Set the HTTP/2 connection settings immediatly sent by to the server when the client connects.
+Set the HTTP/2 connection settings immediately sent by to the server when the client connects.
 +++
 |[[keepAlive]]`keepAlive`|`Boolean`|
 +++
@@ -686,6 +686,22 @@ Set whether pipe-lining is enabled on the client
 |[[protocolVersion]]`protocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|
 +++
 Set the protocol version.
++++
+|[[proxyHost]]`proxyHost`|`String`|
++++
+Set proxy hostname for ssl connections via CONNECT proxy (e.g. Squid).
++++
+|[[proxyPassword]]`proxyPassword`|`String`|
++++
+Set proxy password for ssl connections
++++
+|[[proxyPort]]`proxyPort`|`Number (int)`|
++++
+Set proxy port for ssl connections
++++
+|[[proxyUsername]]`proxyUsername`|`String`|
++++
+Set proxy username for ssl connections
 +++
 |[[receiveBufferSize]]`receiveBufferSize`|`Number (int)`|
 +++

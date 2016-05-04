@@ -20,6 +20,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpVersion;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -34,5 +35,10 @@ public class Http2TLSTest extends HttpTLSTest {
   @Override
   HttpClient createHttpClient(HttpClientOptions options) {
     return vertx.createHttpClient(options.setUseAlpn(true));
+  }
+
+  @Override
+  protected TLSTest testTLS(TLSCert clientCert, TLSCert clientTrust, TLSCert serverCert, TLSCert serverTrust) throws Exception {
+    return super.testTLS(clientCert, clientTrust, serverCert, serverTrust).version(HttpVersion.HTTP_2);
   }
 }

@@ -569,7 +569,7 @@
  * of frames to be sent and received.
  *
  * To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeFrame} on the response.
- * Here’s an example:
+ * Here's an example:
  *
  * [source,$lang]
  * ----
@@ -913,7 +913,7 @@
  * HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
  * of frames to be sent and received.
  *
- * To send such frames, you can use the {@link io.vertx.core.http.HttpClientRequest#write} on the request. Here’s an example:
+ * To send such frames, you can use the {@link io.vertx.core.http.HttpClientRequest#write} on the request. Here's an example:
  *
  * [source,$lang]
  * ----
@@ -1103,7 +1103,7 @@
  * frames to be sent and received.
  *
  * To receive unknown frames, you can use the unknownFrameHandler on the request, this will get called every time an unknown
- * frame arrives. Here’s an example:
+ * frame arrives. Here's an example:
  *
  * [source,$lang]
  * ----
@@ -1526,6 +1526,21 @@
  *
  * When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
  * used with binary frames that are no split over multiple frames.
+ *
+ * === Using a HTTP proxy for HTTPS connections
+ *
+ * The http client supports accessing https server via a HTTPS proxy (HTTP CONNECT method), e.g. Squid. This is supported
+ * for HTTP/1.x and HTTP/2.
+ *
+ * The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting hostname, port and optionally
+ * username and password. 
+ *
+ * Here's an example:
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.HTTPExamples#example58}
+ * ----
  *
  * === Automatic clean-up in verticles
  *
