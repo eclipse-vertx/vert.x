@@ -23,7 +23,7 @@ import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.ThreadPoolMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -294,12 +294,12 @@ public abstract class ContextImpl implements ContextInternal {
 
   <T> void executeBlocking(Action<T> action, Handler<Future<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
-      Executor exec, ThreadPoolMetrics metrics) {
+      Executor exec, PoolMetrics metrics) {
     Object metric = metrics != null ? metrics.taskSubmitted() : null;
     try {
       exec.execute(() -> {
         if (metrics != null) {
-          metrics.taskExecuting(metric);
+          metrics.taskBegin(metric);
         }
         Future<T> res = Future.future();
         try {
@@ -314,7 +314,7 @@ public abstract class ContextImpl implements ContextInternal {
           res.fail(e);
         }
         if (metrics != null) {
-          metrics.taskCompleted(metric, res.succeeded());
+          metrics.taskEnd(metric, res.succeeded());
         }
         if (resultHandler != null) {
           runOnContext(v -> res.setHandler(resultHandler));
@@ -335,7 +335,7 @@ public abstract class ContextImpl implements ContextInternal {
     return contextData;
   }
 
-  protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread, ThreadPoolMetrics metrics) {
+  protected Runnable wrapTask(ContextTask cTask, Handler<Void> hTask, boolean checkThread, PoolMetrics metrics) {
     Object metric = metrics != null ? metrics.taskSubmitted() : null;
     return () -> {
       Thread th = Thread.currentThread();
@@ -351,7 +351,7 @@ public abstract class ContextImpl implements ContextInternal {
         }
       }
       if (metrics != null) {
-        metrics.taskExecuting(metric);
+        metrics.taskBegin(metric);
       }
       if (!DISABLE_TIMINGS) {
         current.executeStart();
@@ -364,7 +364,7 @@ public abstract class ContextImpl implements ContextInternal {
           hTask.handle(null);
         }
         if (metrics != null) {
-          metrics.taskCompleted(metric, true);
+          metrics.taskEnd(metric, true);
         }
       } catch (Throwable t) {
         log.error("Unhandled exception", t);
@@ -376,7 +376,7 @@ public abstract class ContextImpl implements ContextInternal {
           handler.handle(t);
         }
         if (metrics != null) {
-          metrics.taskCompleted(metric, false);
+          metrics.taskEnd(metric, false);
         }
       } finally {
         // We don't unset the context after execution - this is done later when the context is closed via

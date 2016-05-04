@@ -16,7 +16,7 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.spi.metrics.ThreadPoolMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -28,9 +28,9 @@ class WorkerPool {
 
   private final OrderedExecutorFactory orderedFact;
   private final ExecutorService pool;
-  private final ThreadPoolMetrics metrics;
+  private final PoolMetrics metrics;
 
-  public WorkerPool(ExecutorService pool, ThreadPoolMetrics metrics) {
+  public WorkerPool(ExecutorService pool, PoolMetrics metrics) {
     this.orderedFact = new OrderedExecutorFactory(pool);
     this.pool = pool;
     this.metrics = metrics;
@@ -44,7 +44,7 @@ class WorkerPool {
     return orderedFact.getExecutor();
   }
 
-  ThreadPoolMetrics metrics() {
+  PoolMetrics metrics() {
     return metrics;
   }
 

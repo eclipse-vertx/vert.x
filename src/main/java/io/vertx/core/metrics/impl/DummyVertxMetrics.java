@@ -91,10 +91,9 @@ public class DummyVertxMetrics implements VertxMetrics {
   }
 
   @Override
-  public ThreadPoolMetrics createMetrics(String name, int poolSize) {
+  public <P> PoolMetrics<?> createMetrics(P pool, String poolName, int maxPoolSize) {
     return new DummyWorkerPoolMetrics();
   }
-
 
   @Override
   public void close() {
@@ -345,7 +344,7 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
   }
 
-  private class DummyWorkerPoolMetrics implements ThreadPoolMetrics<Void> {
+  private class DummyWorkerPoolMetrics implements PoolMetrics<Void> {
 
     @Override
     public Void taskSubmitted() {
@@ -357,11 +356,11 @@ public class DummyVertxMetrics implements VertxMetrics {
     }
 
     @Override
-    public void taskExecuting(Void task) {
+    public void taskBegin(Void task) {
     }
 
     @Override
-    public void taskCompleted(Void task, boolean succeeded) {
+    public void taskEnd(Void task, boolean succeeded) {
     }
 
     @Override

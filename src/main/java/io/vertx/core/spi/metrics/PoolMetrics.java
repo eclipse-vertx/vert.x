@@ -17,14 +17,14 @@
 package io.vertx.core.spi.metrics;
 
 /**
- * An SPI used internally by Vert.x to gather metrics on a worker thread (execute blocking, worker verticle).
+ * An SPI used internally by Vert.x to gather metrics on pools used by Vert.x  (execute blocking, worker verticle).
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-public interface ThreadPoolMetrics<T> extends Metrics {
+public interface PoolMetrics<T> extends Metrics {
 
   /**
-   * A new task has been submitted to the worker queue.
+   * A new task has been submitted to access the resource.
    * This method is called from the submitter context.
    *
    * @return the submitted task.
@@ -32,20 +32,20 @@ public interface ThreadPoolMetrics<T> extends Metrics {
   T taskSubmitted();
 
   /**
-   * The task has been rejected. The underlying thread pool has probably be shutdown.
+   * The task has been rejected. The underlying resource has probably be shutdown.
    */
   void taskRejected(T task);
 
   /**
-   * The submitted task start its execution.
+   * The submitted task start to use the resource.
    */
-  void taskExecuting(T task);
+  void taskBegin(T task);
 
   /**
-   * The submitted tasks has completed its execution.
+   * The submitted tasks has completed its execution and release the resource.
    *
    * @param succeeded whether or not the task has gracefully completed
    */
-  void taskCompleted(T task, boolean succeeded);
+  void taskEnd(T task, boolean succeeded);
 
 }

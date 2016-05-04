@@ -17,7 +17,6 @@
 package io.vertx.core.spi.metrics;
 
 import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.eventbus.EventBus;
@@ -168,11 +167,12 @@ public interface VertxMetrics extends Metrics, Measured {
   }
 
   /**
-   * Provides the thread pool metrics SPI.
+   * Provides the pool metrics SPI.
    *
+   * @param pool the pool of resource, it can be used by the metrics implementation to gather extra statistics
    * @param poolName the name of the thread pool
-   * @param poolSize the size of the pool
+   * @param maxPoolSize the pool max size, or -1 if the number cannot be determined
    * @return the thread pool metrics SPI
    */
-  ThreadPoolMetrics<?> createMetrics(String poolName, int poolSize);
+  <P> PoolMetrics<?> createMetrics(P pool, String poolName, int maxPoolSize);
 }

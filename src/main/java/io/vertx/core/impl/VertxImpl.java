@@ -58,7 +58,7 @@ import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.ThreadPoolMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
@@ -136,12 +136,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     metrics = initialiseMetrics(options);
 
-    ThreadPoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics("vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService workerExec = Executors.newFixedThreadPool(options.getWorkerPoolSize(),
-                                              new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
-    ThreadPoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics("vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
+        new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime()));
+    PoolMetrics workerPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
-                                                        new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
+        new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime()));
+    PoolMetrics internalBlockingPoolMetrics = isMetricsEnabled() ? metrics.createMetrics(internalBlockingExec, "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
@@ -872,7 +872,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private final String name;
     private int refCount = 1;
 
-    public SharedWorkerPool(String name, ExecutorService workerExec, ThreadPoolMetrics workerMetrics) {
+    public SharedWorkerPool(String name, ExecutorService workerExec, PoolMetrics workerMetrics) {
       super(workerExec, workerMetrics);
       this.workerExec = workerExec;
       this.name = name;
@@ -911,8 +911,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
-      ThreadPoolMetrics workerMetrics = isMetricsEnabled() ? metrics.createMetrics(name, poolSize) : null;
       ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime));
+      PoolMetrics workerMetrics = isMetricsEnabled() ? metrics.createMetrics(workerExec, name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {
       sharedWorkerPool.refCount++;

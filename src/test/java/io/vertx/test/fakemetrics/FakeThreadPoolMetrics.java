@@ -16,7 +16,7 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.spi.metrics.ThreadPoolMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,12 +24,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A fake implementation of the {@link ThreadPoolMetrics} SPI.
+ * A fake implementation of the {@link PoolMetrics} SPI.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-public class FakeThreadPoolMetrics implements ThreadPoolMetrics<Void> {
-  private final static Map<String, ThreadPoolMetrics> METRICS = new ConcurrentHashMap<>();
+public class FakeThreadPoolMetrics implements PoolMetrics<Void> {
+  private final static Map<String, PoolMetrics> METRICS = new ConcurrentHashMap<>();
 
   private final int poolSize;
 
@@ -69,14 +69,14 @@ public class FakeThreadPoolMetrics implements ThreadPoolMetrics<Void> {
   }
 
   @Override
-  public void taskExecuting(Void task) {
+  public void taskBegin(Void task) {
     waiting.decrementAndGet();
     idle.decrementAndGet();
     running.incrementAndGet();
   }
 
   @Override
-  public void taskCompleted(Void task, boolean succeeded) {
+  public void taskEnd(Void task, boolean succeeded) {
     running.decrementAndGet();
     idle.incrementAndGet();
     completed.incrementAndGet();
@@ -117,7 +117,7 @@ public class FakeThreadPoolMetrics implements ThreadPoolMetrics<Void> {
     return running.get();
   }
 
-  public static Map<String, ThreadPoolMetrics> getThreadPoolMetrics() {
+  public static Map<String, PoolMetrics> getThreadPoolMetrics() {
     return METRICS;
   }
 

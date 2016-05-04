@@ -27,7 +27,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.spi.metrics.ThreadPoolMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.test.fakemetrics.*;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -673,7 +673,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithExecuteBlocking() {
-    Map<String, ThreadPoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
 
     FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-worker-thread");
 
@@ -723,7 +723,7 @@ public class MetricsTest extends VertxTestBase {
   public void testThreadPoolMetricsWithInternalExecuteBlocking() {
     // Internal blocking thread pool is used by blocking file system actions.
 
-    Map<String, ThreadPoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
     FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-internal-blocking");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
@@ -784,7 +784,7 @@ public class MetricsTest extends VertxTestBase {
 
   private void testWithWorkerVerticle(DeploymentOptions options) {
     AtomicInteger counter = new AtomicInteger();
-    Map<String, ThreadPoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
     FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("vert.x-worker-thread");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
@@ -854,7 +854,7 @@ public class MetricsTest extends VertxTestBase {
 
     WorkerExecutor workerExec = vertx.createWorkerExecutor("my-pool", 10);
 
-    Map<String, ThreadPoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
+    Map<String, PoolMetrics> all = FakeThreadPoolMetrics.getThreadPoolMetrics();
 
     FakeThreadPoolMetrics metrics = (FakeThreadPoolMetrics) all.get("my-pool");
 
