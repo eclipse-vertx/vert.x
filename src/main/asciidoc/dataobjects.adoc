@@ -596,6 +596,13 @@ Set the list of protocol versions to provide to the server during the Applicatio
    <li>otherwise: [link]</li>
  </ul>
 +++
+|[[closeOnException]]`closeOnException`|`Boolean`|
++++
+Set to <code>true</code> to cause an underlying connection to be closed upon receiving an exception.  This has the
+ added benefit of returning a connection to the pool as quickly as possible after an exception occurs.  If
+ <code>false</code> then any outstanding requests/response (in the case of a request timeout) will cause the connection to
+ remain open and unusable by the pool until the response has ended or the connection is closed naturally.
++++
 |[[connectTimeout]]`connectTimeout`|`Number (int)`|
 +++
 Set the connect timeout

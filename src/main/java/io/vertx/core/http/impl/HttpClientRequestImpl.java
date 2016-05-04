@@ -373,6 +373,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
+  public void close() {
+    synchronized (getLock()) {
+      if (stream != null) {
+        stream.connection().close();
+      }
+    }
+  }
+
+  @Override
   public HttpConnection connection() {
     synchronized (getLock()) {
       if (stream == null) {

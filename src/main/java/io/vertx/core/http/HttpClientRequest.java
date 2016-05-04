@@ -321,6 +321,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void reset(long code);
 
   /**
+   * Close the underlying connection.
+   */
+  void close();
+
+  /**
    * @return the {@link HttpConnection} associated with this request when it is an HTTP/2 connection, null otherwise
    */
   @CacheReturn

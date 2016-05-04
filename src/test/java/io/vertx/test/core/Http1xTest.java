@@ -896,6 +896,122 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testTimedOutConnectionsDontCloseSocketByDefault() throws Exception {
+    long responseDelay = 300;
+    client.close();
+    CountDownLatch firstCloseLatch = new CountDownLatch(1);
+    server.close(onSuccess(v -> firstCloseLatch.countDown()));
+    // Make sure server is closed before continuing
+    awaitLatch(firstCloseLatch);
+
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setMaxPoolSize(1));
+    AtomicInteger connectCount = new AtomicInteger(0);
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    AtomicInteger timersCanceled = new AtomicInteger(0);
+
+    // We need a net server because we need to intercept the socket connection, not just full http requests
+    NetServer server = vertx.createNetServer(new NetServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+    server.connectHandler(socket -> {
+      long timerId = vertx.setTimer(responseDelay, time -> socket.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"));
+      socket.closeHandler(event -> {
+        // Count the number of closes we get, since we're using keepalive we should get one close for ever other request, the timer
+        // should also be present in those cases
+        if (vertx.cancelTimer(timerId)) {
+          timersCanceled.incrementAndGet();
+        }
+        closeLatch.countDown();
+      });
+      connectCount.incrementAndGet();
+      // Delay and write a proper http response
+    });
+
+
+    CountDownLatch latch = new CountDownLatch(1);
+
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals("OK", buff.toString());
+          latch.countDown();
+        });
+      });
+
+      req.setTimeout(responseDelay / 2);
+      req.exceptionHandler(ex -> latch.countDown());
+      req.end();
+    }));
+
+    awaitLatch(latch);
+    awaitLatch(closeLatch);
+
+    assertEquals("Incorrect number of connect attempts.", 1, connectCount.get());
+    assertEquals("Incorrect number of timers canceled.", 0, timersCanceled.get());
+
+    // Make sure we close the netServer so we don't get an address in use exception
+    CountDownLatch netServerCloseLatch = new CountDownLatch(1);
+    server.close(event -> netServerCloseLatch.countDown());
+    awaitLatch(netServerCloseLatch);
+  }
+
+  @Test
+  public void testTimedOutConnectionsCloseSocket() throws Exception {
+    long responseDelay = 300;
+    client.close();
+    CountDownLatch firstCloseLatch = new CountDownLatch(1);
+    server.close(onSuccess(v -> firstCloseLatch.countDown()));
+    // Make sure server is closed before continuing
+    awaitLatch(firstCloseLatch);
+
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setMaxPoolSize(1).setCloseOnException(true));
+    AtomicInteger connectCount = new AtomicInteger(0);
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    AtomicInteger timersCanceled = new AtomicInteger(0);
+
+    // We need a net server because we need to intercept the socket connection, not just full http requests
+    NetServer server = vertx.createNetServer(new NetServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
+    server.connectHandler(socket -> {
+      long timerId = vertx.setTimer(responseDelay, time -> socket.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"));
+      socket.closeHandler(event -> {
+        // Count the number of closes we get, since we're using keepalive we should get one close for ever other request, the timer
+        // should also be present in those cases
+        if (vertx.cancelTimer(timerId)) {
+          timersCanceled.incrementAndGet();
+        }
+        closeLatch.countDown();
+      });
+      connectCount.incrementAndGet();
+      // Delay and write a proper http response
+    });
+
+
+    CountDownLatch latch = new CountDownLatch(1);
+
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.bodyHandler(buff -> {
+          assertEquals("OK", buff.toString());
+          latch.countDown();
+        });
+      });
+
+      req.setTimeout(responseDelay / 2);
+      req.exceptionHandler(ex -> latch.countDown());
+      req.end();
+    }));
+
+    awaitLatch(latch);
+    awaitLatch(closeLatch);
+
+    assertEquals("Incorrect number of connect attempts.", 1, connectCount.get());
+    assertEquals("Incorrect number of timers canceled.", 1, timersCanceled.get());
+
+    // Make sure we close the netServer so we don't get an address in use exception
+    CountDownLatch netServerCloseLatch = new CountDownLatch(1);
+    server.close(event -> netServerCloseLatch.countDown());
+    awaitLatch(netServerCloseLatch);
+  }
+
+  @Test
   public void testPipeliningOrder() throws Exception {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));

@@ -104,6 +104,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_H2C_UPGRADE = true;
 
+  /**
+   * Default value for whether connections should be closed on exception = false
+   */
+  public static final boolean DEFAULT_CLOSE_ON_EXCEPTION = false;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -118,6 +123,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean h2cUpgrade;
+  private boolean closeOnException;
 
   /**
    * Default constructor
@@ -148,6 +154,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.h2cUpgrade = other.h2cUpgrade;
+    this.closeOnException = other.closeOnException;
   }
 
   /**
@@ -176,6 +183,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     h2cUpgrade = DEFAULT_H2C_UPGRADE;
+    closeOnException = DEFAULT_CLOSE_ON_EXCEPTION;
   }
 
   @Override
@@ -597,6 +605,28 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  /**
+   * @return true when connections will be closed when an exception occurs, false will allow the connection to
+   * remain until any open request completes or the connection closes naturally.
+   */
+  public boolean isCloseOnException() {
+    return closeOnException;
+  }
+
+  /**
+   * Set to {@code true} to cause an underlying connection to be closed upon receiving an exception.  This has the
+   * added benefit of returning a connection to the pool as quickly as possible after an exception occurs.  If
+   * {@code false} then any outstanding requests/response (in the case of a request timeout) will cause the connection to
+   * remain open and unusable by the pool until the response has ended or the connection is closed naturally.
+   *
+   * @param value the closeOnException value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setCloseOnException(boolean value) {
+    this.closeOnException = value;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -619,6 +649,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     if (initialSettings == null ? that.initialSettings != null : !initialSettings.equals(that.initialSettings)) return false;
     if (alpnVersions == null ? that.alpnVersions != null : !alpnVersions.equals(that.alpnVersions)) return false;
     if (h2cUpgrade != that.h2cUpgrade) return false;
+    if (closeOnException != that.closeOnException) return false;
 
     return true;
   }
@@ -640,6 +671,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (alpnVersions != null ? alpnVersions.hashCode() : 0);
     result = 31 * result + (h2cUpgrade ? 1 : 0);
+    result = 31 * result + (closeOnException ? 1: 0);
     return result;
   }
 }
