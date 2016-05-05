@@ -28,8 +28,6 @@ import java.net.InetSocketAddress;
  */
 public class ProxyChannelProvider implements ChannelProvider {
 
-  static private Logger log = LoggerFactory.getLogger(ProxyChannelProvider.class);
-
   @Override
   public void connect(VertxInternal vertx, Bootstrap bootstrap, HttpClientOptions options, String host, int port, Handler<AsyncResult<Channel>> channelHandler) {
     String proxyHost = options.getProxyHost();
@@ -66,7 +64,6 @@ public class ProxyChannelProvider implements ChannelProvider {
             });
           }
         });
-        log.info("NotResolve "+host+":"+port);
         // do not resolve the hostname on the client
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         InetSocketAddress t = InetSocketAddress.createUnresolved(host, port);

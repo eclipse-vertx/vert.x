@@ -1529,11 +1529,13 @@
  *
  * === Using a HTTP proxy for HTTPS connections
  *
- * The http client supports accessing https server via a HTTPS proxy (HTTP CONNECT method), e.g. Squid. This is supported
- * for HTTP/1.x and HTTP/2.
+ * The http client supports accessing https server via a HTTPS proxy (HTTP/1.x CONNECT method), e.g. Squid. The proxy protocol uses
+ * HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
  *
  * The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting hostname, port and optionally
  * username and password. 
+ *
+ * For this feature, the jar io.netty:netty-handler-proxy has to be present on the classpath.
  *
  * Here's an example:
  *
